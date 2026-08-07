@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* kimi.builders 品牌 tokens —— 与 kimi-builders-brand-kit 色板一致:
+   真黑夜空、纸月亮、一点蓝,不要紫。 */
+@theme {
+  --color-bg: #0e0e13;
+  --color-moon: #1b1b25;
+  --color-paper: #efe8dc;
+  --color-blue: #1783ff;
+  --color-grey: #9a9aa5;
+
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-blue) 35%, transparent);
+}

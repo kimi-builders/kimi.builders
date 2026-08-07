@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <!-- kimi.builders · 简化版标志(favicon / 小尺寸头像用)
+       与母版 v2 同源:去轨道,月亮放大,双星放大呈对角并肩。
+       ≤96px 场景专用;更大尺寸请用 src/logo-mark.svg。 -->
+  <defs>
+    <mask id="crescent-cut">
+      <circle cx="460" cy="545" r="355" fill="#fff"/>
+      <circle cx="396" cy="518" r="336.6" fill="#000"/>
+    </mask>
+  </defs>
+  <g id="moon">
+    <circle cx="460" cy="545" r="355" fill="#1B1B25" stroke="#EFE8DC" stroke-opacity="0.07" stroke-width="3"/>
+    <circle cx="460" cy="545" r="355" fill="#EFE8DC" mask="url(#crescent-cut)"/>
+  </g>
+  <g id="star-blue">
+    <circle cx="845" cy="310" r="42" fill="#1783FF"/>
+  </g>
+  <g id="star-paper">
+    <circle cx="725" cy="205" r="42" fill="#EFE8DC"/>
+  </g>
+</svg>

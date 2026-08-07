@@ -14,6 +14,7 @@
 
 # production
 /build
+/docs
 
 # misc
 .DS_Store
@@ -34,3 +35,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+.playwright/

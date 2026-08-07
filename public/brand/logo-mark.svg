@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <!-- ============================================================
+    kimi.builders 社区标志 · 母版 v2「月之暗面 · 双星并肩」
+    原创设计,不使用 Kimi 官方 Logo 资产。
+
+    设计语义(直接在几何里,不靠叙事):
+      月亮      = 月之暗面 / AGI 未探明的疆域
+      月牙      = 折射进暗面的一束光;咬合线 = 真理未校准的裂缝
+      earthshine = 暗面靠近裂缝处被微微照亮(地照,天文真实)
+      环形山    = 暗面不是平地,未知疆域有细节
+      蓝星      = Kimi(品牌蓝 #1783FF)
+      纸星      = builders(与月牙同色 #EFE8DC —— 从裂缝启程的一粒光)
+      双星同轨、相邻、等大 = 与 Kimi 并肩探索;纸星沿轨稍前一步
+
+    参数化规格(动画/视频以此为唯一事实源):
+      moon:    center M=(500,480)  R=270
+      orbit:   center M, rx=408, ry=131, x-rotation=-14deg
+      point(theta) = M + Rot(-14deg) · (rx·cosθ, ry·sinθ)
+      蓝星 θ=-27°  纸星 θ=-14°  (Δθ=13° 恒定 = 并肩)
+      动画约定: 两星同角速度沿 #orbit-motion 行进, θ 增大方向,
+               周期 8s; 纸星领先蓝星 13°(begin 偏移 -0.289s);
+               earthshine 透明度 0.72↔1 同周期呼吸。
+
+    轨道遮挡(土星环关系): 轨道与月面的交点在 θ≈52.3° / 127.7°。
+      远弧(θ∈[127.7°,332.3°] 经过月后)压在月亮下面;
+      近弧 #orbit-near(θ∈[52.3°,127.7°],从月面正面下半部扫过)
+      画在月亮之上、双星之下 —— 星在线上,遮挡一致。
+      动画里双星进入远弧段时短暂被月亮遮挡(蓝 5.76–7.44s,
+      纸 5.47–7.15s),从月缘后面重新升起。
+  ============================================================ -->
+  <defs>
+    <mask id="crescent-cut">
+      <circle cx="500" cy="480" r="270" fill="#fff"/>
+      <circle cx="451" cy="459" r="256" fill="#000"/>
+    </mask>
+    <radialGradient id="earthshine" gradientUnits="userSpaceOnUse" cx="301" cy="395" r="330">
+      <stop offset="0" stop-color="#EFE8DC" stop-opacity="0.10"/>
+      <stop offset="0.55" stop-color="#EFE8DC" stop-opacity="0.035"/>
+      <stop offset="1" stop-color="#EFE8DC" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="crescent-light" gradientUnits="userSpaceOnUse" x1="748" y1="586" x2="680" y2="555">
+      <stop offset="0" stop-color="#F9F4EA"/>
+      <stop offset="1" stop-color="#ECE4D5"/>
+    </linearGradient>
+    <!-- 动画运动路径:从蓝星位置(θ=-27°)出发的完整轨道(相对位移,可直接叠加在静态坐标上) -->
+    <path id="orbit-motion" d="m 0 0 a 408 131 -14 1 1 -676.6 291.2 a 408 131 -14 1 1 676.6 -291.2" fill="none"/>
+  </defs>
+
+  <g id="orbit">
+    <ellipse cx="500" cy="480" rx="408" ry="131" transform="rotate(-14 500 480)"
+             fill="none" stroke="#EFE8DC" stroke-opacity="0.26" stroke-width="1.8"/>
+  </g>
+
+  <g id="moon">
+    <circle id="moon-disc" cx="500" cy="480" r="270" fill="#1B1B25"
+            stroke="#EFE8DC" stroke-opacity="0.07" stroke-width="2.3"/>
+    <circle id="moon-earthshine" cx="500" cy="480" r="270" fill="url(#earthshine)"/>
+    <g id="moon-terrain" stroke="#EFE8DC" stroke-opacity="0.07" stroke-width="2" fill="none">
+      <circle cx="400" cy="380" r="46"/>
+      <circle cx="330" cy="500" r="30"/>
+      <circle cx="470" cy="300" r="24"/>
+    </g>
+  </g>
+
+  <g id="crescent">
+    <circle cx="500" cy="480" r="270" fill="url(#crescent-light)" mask="url(#crescent-cut)"/>
+  </g>
+
+  <!-- 近弧:轨道从月面正面跨过的那段(θ 52.3°→127.7°) -->
+  <g id="orbit-near">
+    <path d="M 767.0 520.3 A 408 131 -14 0 1 283.2 640.9" fill="none"
+          stroke="#EFE8DC" stroke-opacity="0.26" stroke-width="1.8"/>
+  </g>
+
+  <g id="star-blue">
+    <circle cx="838.3" cy="334.4" r="21" fill="#1783FF" opacity="0.16"/>
+    <circle cx="838.3" cy="334.4" r="10.5" fill="#1783FF"/>
+  </g>
+  <g id="star-paper">
+    <circle cx="876.5" cy="353.5" r="21" fill="#EFE8DC" opacity="0.10"/>
+    <circle cx="876.5" cy="353.5" r="10.5" fill="#EFE8DC"/>
+  </g>
+</svg>
