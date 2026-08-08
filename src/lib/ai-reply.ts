@@ -1,8 +1,9 @@
 /* AI 回帖:新帖入库 → ai_reply_jobs 排队 → after() 里调 Kimi(Moonshot)API
    → 以 bot 身份写 comments(is_ai=1, user_id NULL)。
    两级开关在入队前(发帖动作)和执行前(这里)各查一次:
-   帖子 ai_reply=0 或作者全局关了 ai_replies_enabled 都跳过。 */
-import { after } from "next/server";
+   帖子 ai_reply=0 或作者全局关了 ai_replies_enabled 都跳过。
+   after 用动态 import:保持本文件可被 Next 之外的普通 Node 脚本引用
+   (如手动重跑任务),顶层静态 import "next/server" 在裸 Node 下解析不了。 */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 
@@ -24,6 +25,7 @@ export async function enqueueAiReply(postId: number): Promise<void> {
     [postId],
   );
   const jobId = Number(res.insertId);
+  const { after } = await import("next/server");
   after(() => processAiReply(jobId));
 }
 
@@ -86,7 +88,7 @@ async function callKimi(
     },
     body: JSON.stringify({
       model,
-      temperature: 0.6,
+      // 不传 temperature:k2.6/k2.7 只允许 temperature=1,显式传其他值直接 400
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
