@@ -2,6 +2,7 @@
    格式 base64url({uid,exp}).base64url(sig),httpOnly + sameSite=lax,30 天。
    小社区够用;要支持强制下线再换 sessions 表。 */
 import { createHmac, timingSafeEqual } from "crypto";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "../db";
@@ -70,7 +71,8 @@ export async function setSessionCookie(uid: number): Promise<void> {
   });
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+/* React cache():同一请求里 Header / 页面 / 表单多处调用只查一次库。 */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (!token) return null;
@@ -104,4 +106,4 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     console.error("getSessionUser: db lookup failed", e);
     return null;
   }
-}
+});

@@ -24,3 +24,94 @@ body {
 ::selection {
   background: color-mix(in srgb, var(--color-blue) 35%, transparent);
 }
+
+/* 社区 Markdown 正文(components/Markdown.tsx)—— 硬边、细线、蓝强调,
+   无圆角无阴影,与品牌语言一致。 */
+.md {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--color-paper);
+  overflow-wrap: break-word;
+}
+.md > *:first-child {
+  margin-top: 0;
+}
+.md > *:last-child {
+  margin-bottom: 0;
+}
+.md p,
+.md ul,
+.md ol,
+.md blockquote,
+.md pre,
+.md table {
+  margin: 0 0 0.9em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  margin: 1.2em 0 0.5em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.md h1 { font-size: 1.3em; }
+.md h2 { font-size: 1.2em; }
+.md h3 { font-size: 1.1em; }
+.md h4 { font-size: 1em; }
+.md a {
+  color: var(--color-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--color-moon);
+  padding: 0.1em 0.35em;
+}
+.md pre {
+  background: var(--color-moon);
+  border: 1px solid color-mix(in srgb, var(--color-paper) 8%, transparent);
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md blockquote {
+  border-left: 2px solid var(--color-blue);
+  padding-left: 12px;
+  color: var(--color-grey);
+}
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md ul,
+.md ol {
+  padding-left: 1.4em;
+}
+.md li + li {
+  margin-top: 0.25em;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--color-moon);
+  margin: 1.5em 0;
+}
+.md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.md th,
+.md td {
+  border: 1px solid var(--color-moon);
+  padding: 6px 10px;
+  text-align: left;
+}
+.md th {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--color-grey);
+}
