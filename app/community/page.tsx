@@ -1,9 +1,10 @@
-/* 社区 feed:?sort=hot|new(默认 hot)& cat=<category> & sub=1(只看订阅,登录可见)。
-   行内点赞可交互(点赞态一条 IN 批量查,避免 N+1);评论数链到详情锚点。 */
+/* 社区 feed:卡片流(头像左 + 标题 + 两行摘要 + 底部图标动作行)。
+   顶部:VibeCafé 式快速发帖框(登录可见,点击进完整发帖页)+ 热门/最新/订阅页签。
+   板块筛选在左栏;行内点赞可交互(点赞态一条 IN 批量查,避免 N+1)。 */
 import Link from "next/link";
-import { ArrowBigUp, MessageCircle } from "lucide-react";
+import { ArrowBigUp, MessageCircle, SquarePen } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { categoryZh, CATEGORIES, getFeed, getUpvotedPostIds } from "@/src/lib/posts";
+import { categoryZh, getFeed, getUpvotedPostIds } from "@/src/lib/posts";
 import { relTime } from "@/src/lib/format";
 import { toggleUpAction } from "./actions";
 
@@ -30,60 +31,45 @@ export default async function CommunityPage({
     ? await getUpvotedPostIds(user.id, posts.map((p) => p.id))
     : new Set<number>();
 
-  const qs = (over: { sort?: string; cat?: string; sub?: string }) => {
-    const s = over.sort ?? currentSort;
-    const c = over.cat !== undefined ? over.cat : cat;
-    const b = over.sub !== undefined ? over.sub : subOnly ? "1" : "";
-    return `/community?sort=${s}${c ? `&cat=${c}` : ""}${b === "1" ? "&sub=1" : ""}`;
-  };
+  const tabHref = (s: string) =>
+    `/community?sort=${s}${cat ? `&cat=${cat}` : ""}${subOnly ? "&sub=1" : ""}`;
+  const tabCls = (active: boolean) =>
+    `pb-2 transition-colors ${
+      active
+        ? "text-paper underline decoration-blue underline-offset-8"
+        : "text-grey hover:text-paper"
+    }`;
 
   return (
-    <div className="pt-8">
-      <div className="flex items-center gap-5 font-mono text-sm">
+    <div>
+      {user && (
         <Link
-          href={qs({ sort: "hot" })}
-          className={currentSort === "hot" && !subOnly ? "text-paper" : "text-grey hover:text-paper"}
+          href="/community/new"
+          className="mb-6 flex items-center gap-3 border border-moon bg-white/[0.015] p-3.5 transition-colors hover:border-paper/25"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={user.avatarUrl}
+            alt=""
+            className="h-8 w-8 rounded-full border border-paper/10"
+          />
+          <span className="text-sm text-grey">有什么新鲜事?(支持 Markdown)</span>
+          <SquarePen size={15} className="ml-auto text-grey" />
+        </Link>
+      )}
+
+      <div className="flex items-center gap-5 border-b border-moon font-mono text-sm">
+        <Link href={tabHref("hot")} className={tabCls(currentSort === "hot" && !subOnly)}>
           热门
         </Link>
-        <Link
-          href={qs({ sort: "new" })}
-          className={currentSort === "new" && !subOnly ? "text-paper" : "text-grey hover:text-paper"}
-        >
+        <Link href={tabHref("new")} className={tabCls(currentSort === "new" && !subOnly)}>
           最新
         </Link>
         {user && (
-          <Link
-            href={qs({ sub: "1" })}
-            className={subOnly ? "text-paper" : "text-grey hover:text-paper"}
-          >
+          <Link href="/community?sub=1" className={tabCls(subOnly)}>
             订阅
           </Link>
         )}
-        <Link
-          href="/community/new"
-          className="ml-auto border border-blue px-4 py-1.5 text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
-        >
-          + 发帖
-        </Link>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2 font-mono text-xs">
-        <Link
-          href={qs({ cat: "" })}
-          className={`border px-3 py-1 ${!cat ? "border-paper/40 text-paper" : "border-moon text-grey hover:text-paper"}`}
-        >
-          全部
-        </Link>
-        {CATEGORIES.map((c) => (
-          <Link
-            key={c.id}
-            href={qs({ cat: c.id })}
-            className={`border px-3 py-1 ${cat === c.id ? "border-paper/40 text-paper" : "border-moon text-grey hover:text-paper"}`}
-          >
-            {c.zh}
-          </Link>
-        ))}
       </div>
 
       {posts.length === 0 ? (
@@ -93,64 +79,87 @@ export default async function CommunityPage({
             : "还没有帖子。来发第一帖 —— 你建的这个社区,第一条内容也该是你的。"}
         </p>
       ) : (
-        <ul className="mt-6 divide-y divide-moon border-y border-moon">
+        <div className="mt-5 space-y-4">
           {posts.map((p) => {
             const up = upvoted.has(p.id);
             return (
-              <li key={p.id} className="py-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="shrink-0 font-mono text-[10px] tracking-wider text-grey">
-                    {categoryZh(p.category)}
-                  </span>
-                  <Link
-                    href={`/community/${p.id}`}
-                    className="min-w-0 flex-1 truncate text-[15px] font-medium text-paper transition-colors hover:text-blue"
-                  >
-                    {p.title}
-                  </Link>
-                  {TYPE_BADGE[p.type] && (
-                    <span className="shrink-0 border border-moon px-1.5 py-0.5 font-mono text-[10px] text-grey">
-                      {TYPE_BADGE[p.type]}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1.5 flex items-center gap-3 font-mono text-[11px] text-grey">
-                  <span>@{p.handle}</span>
-                  <span>{relTime(p.createdAt)}</span>
-                  <span className="ml-auto flex items-center gap-4">
-                    {user ? (
-                      <form action={toggleUpAction}>
-                        <input type="hidden" name="post_id" value={p.id} />
-                        <button
-                          type="submit"
-                          aria-label={up ? "取消点赞" : "点赞"}
-                          className={`inline-flex items-center gap-1 transition-colors ${
-                            up ? "text-blue" : "text-grey hover:text-blue"
-                          }`}
-                        >
-                          <ArrowBigUp size={14} fill={up ? "currentColor" : "none"} />
-                          {p.score}
-                        </button>
-                      </form>
-                    ) : (
-                      <span className="inline-flex items-center gap-1" title="登录后点赞">
-                        <ArrowBigUp size={14} />
-                        {p.score}
+              <article
+                key={p.id}
+                className="border border-moon bg-white/[0.015] p-4 transition-colors hover:border-paper/20"
+              >
+                <div className="flex gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.avatarUrl}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-full border border-paper/10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
+                      <span className="text-paper">@{p.handle}</span>
+                      <span>·</span>
+                      <span>{relTime(p.createdAt)}</span>
+                      <span className="ml-auto shrink-0 tracking-wider">
+                        {categoryZh(p.category)}
                       </span>
-                    )}
+                    </div>
                     <Link
-                      href={`/community/${p.id}#comments`}
-                      className="inline-flex items-center gap-1 transition-colors hover:text-blue"
+                      href={`/community/${p.id}`}
+                      className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
                     >
-                      <MessageCircle size={13} />
-                      {p.commentCount}
+                      {p.title}
+                      {TYPE_BADGE[p.type] && (
+                        <span className="ml-2 border border-moon px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
+                          {TYPE_BADGE[p.type]}
+                        </span>
+                      )}
                     </Link>
-                  </span>
+                    {p.excerpt && (
+                      <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
+                        {p.excerpt}
+                      </p>
+                    )}
+                    <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
+                      {user ? (
+                        <form action={toggleUpAction}>
+                          <input type="hidden" name="post_id" value={p.id} />
+                          <button
+                            type="submit"
+                            aria-label={up ? "取消点赞" : "点赞"}
+                            className={`inline-flex items-center gap-1 transition-colors ${
+                              up ? "text-blue" : "text-grey hover:text-blue"
+                            }`}
+                          >
+                            <ArrowBigUp
+                              size={14}
+                              fill={up ? "currentColor" : "none"}
+                            />
+                            {p.score}
+                          </button>
+                        </form>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1"
+                          title="登录后点赞"
+                        >
+                          <ArrowBigUp size={14} />
+                          {p.score}
+                        </span>
+                      )}
+                      <Link
+                        href={`/community/${p.id}#comments`}
+                        className="inline-flex items-center gap-1 transition-colors hover:text-blue"
+                      >
+                        <MessageCircle size={13} />
+                        {p.commentCount}
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </li>
+              </article>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );

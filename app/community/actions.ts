@@ -1,7 +1,8 @@
 "use server";
 
-/* 社区写操作。UI 对未登录用户不渲染表单;这里再兜底一次(session 为空即静默返回)。
+/* 社区写操作 + UI 偏好切换。UI 对未登录用户不渲染表单;这里再兜底一次(session 为空即静默返回)。
    页面全是动态渲染(Header 读 cookie),action 完成后 Next 会重取数据,无需 revalidate。 */
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { enqueueAiReply } from "@/src/lib/ai-reply";
@@ -100,4 +101,20 @@ export async function votePollAction(formData: FormData): Promise<void> {
   const optionId = Number(formData.get("option_id"));
   if (!postId || !optionId) return;
   await votePoll(user.id, postId, optionId);
+}
+
+/* ---- UI 偏好(cookie,一年期;语义见 src/lib/prefs.ts)---- */
+
+const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
+
+export async function toggleNavAction(): Promise<void> {
+  const store = await cookies();
+  const collapsed = store.get("kb_nav")?.value === "1";
+  store.set("kb_nav", collapsed ? "0" : "1", PREF_COOKIE);
+}
+
+export async function toggleSidebarAction(): Promise<void> {
+  const store = await cookies();
+  const shown = store.get("kb_sidebar")?.value !== "0";
+  store.set("kb_sidebar", shown ? "0" : "1", PREF_COOKIE);
 }

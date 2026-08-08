@@ -1,5 +1,5 @@
 /* 登录态 chip:未登录给 GitHub / Google 入口,已登录显示头像 + @handle + 退出。
-   首页(右上角)和 SiteHeader 共用。 */
+   首页(右上角)和社区壳的移动端 mini 栏共用。 */
 import { getSessionUser } from "@/src/lib/auth/session";
 
 export default async function AuthChip() {

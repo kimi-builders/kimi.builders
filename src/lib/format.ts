@@ -11,3 +11,18 @@ export function relTime(d: Date | string): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
+
+/* Markdown → 纯文本摘要(feed 卡片用):去代码块/图片/链接语法/标记符,收空白。 */
+export function plainExcerpt(md: string, max = 120): string {
+  const text = md
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/[*_~>#]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}

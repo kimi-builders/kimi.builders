@@ -3,6 +3,7 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 import { CATEGORIES, type CategoryId } from "./categories";
+import { plainExcerpt } from "./format";
 
 export { CATEGORIES, categoryZh } from "./categories";
 export type { CategoryId } from "./categories";
@@ -12,6 +13,7 @@ export interface FeedPost {
   type: string;
   category: string;
   title: string;
+  excerpt: string;
   score: number;
   commentCount: number;
   createdAt: Date;
@@ -46,6 +48,7 @@ function mapFeed(r: RowDataPacket): FeedPost {
     type: r.type,
     category: r.category,
     title: r.title,
+    excerpt: r.body_excerpt ? plainExcerpt(r.body_excerpt) : "",
     score: Number(r.score),
     commentCount: Number(r.comment_count),
     createdAt: r.created_at,
@@ -78,7 +81,8 @@ export async function getFeed(opts: {
       ? "p.created_at DESC"
       : "(p.score + p.comment_count * 2) / POW(TIMESTAMPDIFF(HOUR, p.created_at, NOW()) + 2, 1.5) DESC, p.created_at DESC";
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT p.id, p.type, p.category, p.title, p.score, p.comment_count, p.created_at,
+    `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
+            p.score, p.comment_count, p.created_at,
             u.handle, u.name, u.avatar_url
      FROM posts p ${join}
      WHERE ${where.join(" AND ")}
@@ -320,6 +324,51 @@ export async function getPoll(
     options,
     total: options.reduce((s, o) => s + o.voteCount, 0),
     myOptionId,
+  };
+}
+
+/* 右栏 widget 数据:7 日热门 / 社区数据 / 新成员,三条小查询。 */
+export interface SidebarData {
+  hot: { id: number; title: string; commentCount: number; score: number }[];
+  stats: { members: number; posts: number; comments: number };
+  newMembers: { handle: string; avatarUrl: string }[];
+}
+
+export async function getSidebarData(): Promise<SidebarData> {
+  const pool = getPool();
+  const [hotRows, statRows, memberRows] = await Promise.all([
+    pool.query<RowDataPacket[]>(
+      `SELECT id, title, comment_count, score FROM posts
+       WHERE deleted_at IS NULL AND created_at > NOW() - INTERVAL 7 DAY
+       ORDER BY comment_count * 2 + score DESC, created_at DESC LIMIT 5`,
+    ).then(([rows]) => rows),
+    pool.query<RowDataPacket[]>(
+      `SELECT
+         (SELECT COUNT(*) FROM users) AS members,
+         (SELECT COUNT(*) FROM posts WHERE deleted_at IS NULL) AS posts,
+         (SELECT COUNT(*) FROM comments WHERE deleted_at IS NULL) AS comments`,
+    ).then(([rows]) => rows),
+    pool.query<RowDataPacket[]>(
+      "SELECT handle, avatar_url FROM users ORDER BY id DESC LIMIT 5",
+    ).then(([rows]) => rows),
+  ]);
+  const s = statRows[0] ?? { members: 0, posts: 0, comments: 0 };
+  return {
+    hot: hotRows.map((r) => ({
+      id: Number(r.id),
+      title: r.title,
+      commentCount: Number(r.comment_count),
+      score: Number(r.score),
+    })),
+    stats: {
+      members: Number(s.members),
+      posts: Number(s.posts),
+      comments: Number(s.comments),
+    },
+    newMembers: memberRows.map((r) => ({
+      handle: r.handle,
+      avatarUrl: r.avatar_url,
+    })),
   };
 }
 

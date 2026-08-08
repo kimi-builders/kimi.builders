@@ -1,6 +1,6 @@
 /* Coming-soon 门面 —— 站点正式版规划见 docs/plan.md。
    hero 用 SMIL 动画版 Logo(双星 8s 绕轨,<img> 内 SMIL 现代浏览器可播)。
-   右上角登录态由 AuthChip 渲染(与内页 SiteHeader 共用)。 */
+   右上角登录态由 AuthChip 渲染(与社区壳的移动端 mini 栏共用)。 */
 import AuthChip from "@/components/AuthChip";
 
 const LINKS = [
