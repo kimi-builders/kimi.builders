@@ -43,7 +43,7 @@ const SECTIONS = [
   { href: "/learn", icon: BookOpen, key: "nav.learn", soon: true },
   { href: "/works", icon: Rocket, key: "nav.works", soon: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
-  { href: "/awesome", icon: Star, key: "nav.awesome", soon: true },
+  { href: "/awesome", icon: Star, key: "nav.awesome", soon: false },
 ] as const;
 
 export default function LeftNav({

@@ -1,10 +1,13 @@
 "use client";
 
-/* 作品提交/编辑共用表单:名称必填,链接/仓库至少其一(服务端校验);
-   保存成功由 action redirect 回 /works。 */
+/* 作品提交/编辑共用表单:名称必填,链接/仓库至少其一,至少标一个参与的
+   Agent(服务端校验)。Agent 芯片是原生 checkbox(has-checked 着色),无 JS 可提交。
+   保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
 import { useActionState } from "react";
+import { AGENTS } from "@/src/lib/agents";
 import { t, type Locale } from "@/src/lib/i18n";
+import AgentIcon from "@/components/AgentIcon";
 import type { WorkFormState } from "../actions";
 
 const inputCls =
@@ -26,11 +29,16 @@ export default function WorkForm({
     repoUrl: string;
     screenshotUrl: string;
     tags: string[];
+    agents: string[];
+    authorLabel: string;
   };
 }) {
   const [state, formAction, pending] = useActionState<WorkFormState | null, FormData>(
     action,
     null,
+  );
+  const checkedAgents = new Set(
+    initial ? initial.agents : ["kimi"], // 新表单默认勾 Kimi
   );
 
   return (
@@ -109,6 +117,47 @@ export default function WorkForm({
           placeholder="kimi, web, tool"
           className={`${inputCls} mt-1.5 font-mono`}
         />
+      </label>
+      <fieldset>
+        <span className="font-mono text-[11px] text-grey">
+          {t(locale, "works.agents")}
+        </span>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {AGENTS.map((a) => (
+            <label
+              key={a.id}
+              className="flex cursor-pointer items-center gap-1.5 border border-line px-2.5 py-1.5 font-mono text-xs text-grey transition-colors hover:border-paper/30 has-checked:border-blue has-checked:text-blue"
+            >
+              <input
+                type="checkbox"
+                name="agents"
+                value={a.id}
+                defaultChecked={checkedAgents.has(a.id)}
+                className="sr-only"
+              />
+              <AgentIcon id={a.id} size={14} />
+              {a.name}
+            </label>
+          ))}
+        </div>
+        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          {t(locale, "works.agentsHint")}
+        </span>
+      </fieldset>
+      <label className="block">
+        <span className="font-mono text-[11px] text-grey">
+          {t(locale, "works.authorLabel")}
+        </span>
+        <input
+          name="author_label"
+          defaultValue={initial?.authorLabel}
+          maxLength={120}
+          placeholder={t(locale, "works.authorLabelPh")}
+          className={`${inputCls} mt-1.5`}
+        />
+        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          {t(locale, "works.authorLabelHint")}
+        </span>
       </label>
       <p className="text-[11px] leading-relaxed text-grey/80">
         {t(locale, "works.hint")}

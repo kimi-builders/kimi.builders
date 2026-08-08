@@ -312,15 +312,6 @@ const DICT = {
     en: "Sync isn't configured on this site yet — ask the admin to enable it.",
   },
   "usage.lastSync": { zh: "最近同步:{t}", en: "Last synced {t}" },
-  "soon.awesome.desc": {
-    zh: "Awesome Kimi:全世界用 Kimi 构建的项目合集,与 awesome-kimi-builders 仓库联动,欢迎 PR。",
-    en: "Awesome Kimi: a curated list of projects built with Kimi around the world, synced with the awesome-kimi-builders repo. PRs welcome.",
-  },
-  "soon.awesome.items": {
-    zh: "项目收录列表\n分类与标签\nGitHub 仓库同步",
-    en: "Curated project list\nCategories & tags\nSynced with the GitHub repo",
-  },
-  /* ---- 作品库 ---- */
   "works.submit": { zh: "提交作品", en: "Submit work" },
   "works.empty": {
     zh: "还没有作品。来挂第一个 —— 你用 Kimi 做的东西值得被看到。",
@@ -368,6 +359,40 @@ const DICT = {
     zh: "只能编辑自己的作品",
     en: "You can only edit your own works",
   },
+  "works.agents": { zh: "参与的 Agent", en: "Agents involved" },
+  "works.agentsHint": {
+    zh: "哪些 Agent 参与了这个项目(可多选)。",
+    en: "Which agents took part in this project (multi-select).",
+  },
+  "works.authorLabel": { zh: "原作者(可选)", en: "Original author (optional)" },
+  "works.authorLabelPh": {
+    zh: "推荐别人的项目时填作者/团队名",
+    en: "Author or team name when recommending someone else's project",
+  },
+  "works.authorLabelHint": {
+    zh: "填了就是推荐站外项目:进 Awesome 列表、不进你的作品墙。",
+    en: "Filled = recommending an external project: it goes to Awesome, not your works wall.",
+  },
+  "err.workAuthorLong": {
+    zh: "原作者名太长了(120 字以内)",
+    en: "Author name too long (120 chars max)",
+  },
+  "err.workNoAgent": {
+    zh: "至少标记一个参与的 Agent",
+    en: "Mark at least one agent involved",
+  },
+  /* ---- Awesome ---- */
+  "awesome.intro": {
+    zh: "全世界用 Kimi 构建的项目。收录口径很宽:Kimi 参与了构建、为 Kimi 生态做的应用、以 Kimi 为基座的项目都算 —— 不要求 100% 由 Kimi 完成,参与的 Agent 会标在卡片上。",
+    en: "Projects built with Kimi around the world. The bar is deliberately low: Kimi took part, it's made for the Kimi ecosystem, or it's built on Kimi — it doesn't have to be 100% Kimi-made. Participating agents are badged on each card.",
+  },
+  "awesome.recommend": { zh: "推荐项目", en: "Recommend" },
+  "awesome.all": { zh: "全部", en: "All" },
+  "awesome.empty": {
+    zh: "这个过滤条件下还没有项目。",
+    en: "Nothing under this filter yet.",
+  },
+  "awesome.by": { zh: "by {name}", en: "by {name}" },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
   "aria.toDark": { zh: "切换到暗色主题", en: "Switch to dark theme" },

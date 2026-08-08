@@ -43,6 +43,8 @@ export default async function EditWorkPage({
           repoUrl: work.repoUrl,
           screenshotUrl: work.screenshotUrl,
           tags: work.tags,
+          agents: work.agents,
+          authorLabel: work.authorLabel,
         }}
       />
     </div>

@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS works (
   repo_url VARCHAR(500) NOT NULL DEFAULT '',
   screenshot_url VARCHAR(500) NOT NULL DEFAULT '',
   tags JSON NULL,
+  agents JSON NULL COMMENT '参与构建的 agent 品牌键列表(src/lib/agents.ts)',
   source VARCHAR(16) NOT NULL DEFAULT 'site' COMMENT 'site/awesome',
   author_label VARCHAR(120) NOT NULL DEFAULT '' COMMENT 'awesome 条目的外部作者名',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

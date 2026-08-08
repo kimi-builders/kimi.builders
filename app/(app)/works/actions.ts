@@ -5,6 +5,7 @@
    删除返回 MutationResult 由客户端 toast + 跳回列表。 */
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { sanitizeAgentIds } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -37,6 +38,8 @@ function readFields(formData: FormData) {
     repoUrl: String(formData.get("repo_url") || "").trim(),
     screenshotUrl: String(formData.get("screenshot_url") || "").trim(),
     tags: parseTagsInput(String(formData.get("tags") || "")),
+    agents: sanitizeAgentIds(formData.getAll("agents")),
+    authorLabel: String(formData.get("author_label") || "").trim(),
   };
 }
 
@@ -53,6 +56,8 @@ function validate(
     if (u && !isHttp(u)) return t(locale, "err.linkInvalid");
   }
   if (!f.url && !f.repoUrl) return t(locale, "err.workNoLink");
+  if (f.authorLabel.length > 120) return t(locale, "err.workAuthorLong");
+  if (f.agents.length === 0) return t(locale, "err.workNoAgent");
   return null;
 }
 
@@ -68,7 +73,8 @@ export async function createWorkAction(
   if (err) return { error: err };
   await createWork(user.id, f);
   revalidatePath("/works");
-  redirect("/works");
+  revalidatePath("/awesome");
+  redirect(f.authorLabel ? "/awesome" : "/works");
 }
 
 export async function updateWorkAction(
@@ -86,7 +92,8 @@ export async function updateWorkAction(
   const ok = await updateWork(user.id, workId, f);
   if (!ok) return { error: t(locale, "err.notOwnerWork") };
   revalidatePath("/works");
-  redirect("/works");
+  revalidatePath("/awesome");
+  redirect(f.authorLabel ? "/awesome" : "/works");
 }
 
 export async function deleteWorkAction(
@@ -97,6 +104,9 @@ export async function deleteWorkAction(
   const workId = Number(formData.get("work_id"));
   if (!workId) return { ok: false };
   const ok = await deleteWork(user.id, workId);
-  if (ok) revalidatePath("/works");
+  if (ok) {
+    revalidatePath("/works");
+    revalidatePath("/awesome");
+  }
   return { ok };
 }
