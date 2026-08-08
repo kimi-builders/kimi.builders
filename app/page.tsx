@@ -1,5 +1,7 @@
 /* Coming-soon 门面 —— 站点正式版规划见 docs/plan.md。
-   hero 用 SMIL 动画版 Logo(双星 8s 绕轨,<img> 内 SMIL 现代浏览器可播)。 */
+   hero 用 SMIL 动画版 Logo(双星 8s 绕轨,<img> 内 SMIL 现代浏览器可播)。
+   右上角是登录态:未登录给 GitHub / Google 入口,已登录显示 @handle + 退出。 */
+import { getSessionUser } from "@/src/lib/auth/session";
 
 const LINKS = [
   { href: "https://github.com/kimi-builders", label: "GitHub" },
@@ -8,9 +10,62 @@ const LINKS = [
   { href: "mailto:hi@kimi.builders", label: "hi@kimi.builders" },
 ];
 
-export default function Home() {
+const AUTH_ERRORS: Record<string, string> = {
+  state_mismatch: "登录状态校验失败,请重试。",
+  oauth_failed: "OAuth 授权失败,请重试或换另一种登录方式。",
+};
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ auth_error: authError }, user] = await Promise.all([
+    searchParams,
+    getSessionUser(),
+  ]);
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <main className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <div className="absolute right-5 top-5 flex items-center gap-4 font-mono text-xs">
+        {user ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={user.avatarUrl}
+              alt=""
+              className="h-7 w-7 rounded-full border border-paper/20"
+            />
+            <span className="text-paper">@{user.handle}</span>
+            <a
+              href="/api/auth/logout"
+              className="text-grey underline underline-offset-4 transition-colors hover:text-blue"
+            >
+              退出
+            </a>
+          </>
+        ) : (
+          <>
+            <span className="text-grey">登录</span>
+            <a
+              href="/api/auth/github"
+              className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
+            >
+              GitHub
+            </a>
+            <a
+              href="/api/auth/google"
+              className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
+            >
+              Google
+            </a>
+          </>
+        )}
+      </div>
+      {typeof authError === "string" && (
+        <p className="absolute top-16 font-mono text-xs text-blue">
+          {AUTH_ERRORS[authError] ?? "登录失败,请重试。"}
+        </p>
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/brand/logo-animated.svg"
