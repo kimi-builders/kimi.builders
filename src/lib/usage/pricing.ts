@@ -72,7 +72,9 @@ export async function loadModelPrices(
   }));
 }
 
-/* 在 at 时刻生效的行里挑最优:exact > 最长 prefix > source 限定 > 最新 effective_from。 */
+/* 在 at 时刻生效的行里挑最优:exact > 最长 prefix > source 限定 > 最新 effective_from。
+   归一化:先按原样匹配;未命中再试最后一个 / 之后的形式
+   (如 openrouter/moonshotai/kimi-k3 → kimi-k3;供应商前缀形态多见于聚合渠道)。 */
 export function matchModelPrice(
   prices: readonly UsageModelPrice[],
   model: string,
@@ -81,6 +83,22 @@ export function matchModelPrice(
 ): UsageModelPrice | null {
   const name = model.trim();
   if (!name) return null;
+  const slash = name.lastIndexOf("/");
+  const candidates =
+    slash > 0 && slash < name.length - 1 ? [name, name.slice(slash + 1)] : [name];
+  for (const candidate of candidates) {
+    const hit = matchExactOrPrefix(prices, candidate, at, source);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function matchExactOrPrefix(
+  prices: readonly UsageModelPrice[],
+  name: string,
+  at: Date,
+  source?: string,
+): UsageModelPrice | null {
   const inWindow = (price: UsageModelPrice) =>
     price.effectiveFrom <= at && (price.effectiveTo === null || at < price.effectiveTo);
   const sourceRank = (price: UsageModelPrice) =>
@@ -111,6 +129,14 @@ export function matchModelPrice(
     );
   return prefixed[0] ?? null;
 }
+
+/* 展示层汇率(静态,手工维护;只影响展示,不改美元存储与估费口径)。 */
+export const USAGE_FX_AS_OF = "2026-08-08";
+export const USAGE_DISPLAY_CURRENCIES = {
+  usd: { rate: 1, symbol: "$", label: "USD" },
+  cny: { rate: 7.16, symbol: "¥", label: "CNY" },
+} as const;
+export type UsageDisplayCurrency = keyof typeof USAGE_DISPLAY_CURRENCIES;
 
 /* 单条 token 组合的估费。micros = tokens × 每 MTok 美元价(单位恰好抵消)。
    任何一个「有 token 但无费率」的类目都会把结果降级为 partial。 */

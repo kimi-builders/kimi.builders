@@ -43,5 +43,17 @@ export default function AgentIcon({
 }) {
   const Icon = ICONS[id as keyof typeof ICONS];
   if (!Icon) return null;
+  // Kimi 的 Color 图标是白色 K(透明底),浅色主题下不可见 —— 垫一块品牌黑砖,
+  // 双主题都成立(与 Kimi 官方 lockup 一致)。
+  if (id === "kimi" || id === "kimi-code") {
+    return (
+      <span
+        className="inline-flex shrink-0 items-center justify-center bg-[#1A1A1A]"
+        style={{ width: size + 5, height: size + 5 }}
+      >
+        <Icon size={size} />
+      </span>
+    );
+  }
   return <Icon size={size} />;
 }

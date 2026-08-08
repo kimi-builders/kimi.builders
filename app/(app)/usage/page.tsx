@@ -22,6 +22,7 @@ import AgentIcon from "@/components/AgentIcon";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
 import { getLocale } from "@/src/lib/i18n-server";
+import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { listUsageDevices, type UsageDeviceSummary } from "@/src/lib/usage/device";
 import {
   parseUsageFilters,
@@ -29,8 +30,14 @@ import {
   type UsageGranularity,
   type UsageMetric,
   type UsageRangeLabel,
+  type UsageRecordGrain,
 } from "@/src/lib/usage/filters";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
+import {
+  USAGE_DISPLAY_CURRENCIES,
+  USAGE_FX_AS_OF,
+  type UsageDisplayCurrency,
+} from "@/src/lib/usage/pricing";
 import {
   getUsageOverview,
   type UsageDistribution,
@@ -47,6 +54,8 @@ import {
   revokeUsageDeviceAction,
   updateUsageSettingsAction,
 } from "./actions";
+import CurrencyToggle from "./_components/CurrencyToggle";
+import RecordsColumnsMenu from "./_components/RecordsColumnsMenu";
 import TzReporter from "./_components/TzReporter";
 import UsageFilterBar from "./_components/UsageFilterBar";
 
@@ -72,6 +81,20 @@ function duration(seconds: number, zh: boolean): string {
 function hoursSince(value: Date | string | null): number {
   if (!value) return Number.POSITIVE_INFINITY;
   return (Date.now() - new Date(value).getTime()) / 3_600_000;
+}
+
+/* 展示层币种折算(静态汇率,仅影响展示):micros(美元)→ 目标币种;
+   折算值 >= 0.01 两位小数,否则四位(小数额保持可见)。
+   未定价/legacy 不走这里,保持「未定价」/「—」。 */
+function fmtCost(micros: number, ccy: UsageDisplayCurrency): string {
+  const { rate, symbol } = USAGE_DISPLAY_CURRENCIES[ccy];
+  const value = (micros / 1e6) * rate;
+  return `${symbol}${value >= 0.01 ? value.toFixed(2) : value.toFixed(4)}`;
+}
+
+/* 缓存命中率展示:ratio 0..1 → "87.3%";null(无输入侧流量)→ —。 */
+function fmtHitRate(rate: number | null): string {
+  return rate === null ? "—" : `${(rate * 100).toFixed(1)}%`;
 }
 
 const HOUR_MS = 3_600_000;
@@ -163,7 +186,7 @@ function rawQueryString(raw: RawParams): string {
   return params.toString();
 }
 
-/* 页内导航链接:从当前 query 出发改少量 key,其余参数(metric/hm/ps…)原样保留。 */
+/* 页内导航链接:从当前 query 出发改少量 key,其余参数(metric/hm/ps/cols…)原样保留。 */
 function hrefWith(currentQuery: string, changes: Record<string, string | null>): string {
   const params = new URLSearchParams(currentQuery);
   for (const [key, value] of Object.entries(changes)) {
@@ -188,8 +211,13 @@ function heatGrid(heatmap: UsageHeatmap, metric: HeatMetric): number[][] {
   return heatmap.tokens;
 }
 
-function formatHeatValue(metric: HeatMetric, value: number, zh: boolean): string {
-  if (metric === "cost") return `$${(value / 1e6).toFixed(4)}`;
+function formatHeatValue(
+  metric: HeatMetric,
+  value: number,
+  zh: boolean,
+  ccy: UsageDisplayCurrency,
+): string {
+  if (metric === "cost") return fmtCost(value, ccy);
   if (metric === "duration") return duration(value, zh);
   if (metric === "prompts") return zh ? `${compact(value)} 次提示` : `${compact(value)} prompts`;
   return `${compact(value)} tokens`;
@@ -242,7 +270,7 @@ function SwitchLinks({
 }
 
 /* 趋势图:tokens 视图按「输入(含缓存写)/缓存读/输出/推理」四类堆叠
-   (写缓存并入输入是展示层归组,五字段口径仍在明细表与次级条里);
+   (写缓存并入输入是展示层归组,五字段口径仍在明细可选列与次级条里);
    cost/duration 是单系列柱。全零范围渲染居中提示而不是一副空坐标。 */
 function TrendChart({
   trend,
@@ -250,12 +278,14 @@ function TrendChart({
   granularity,
   rangeLabel,
   zh,
+  ccy,
 }: {
   trend: UsageTrendDay[];
   metric: UsageMetric;
   granularity: UsageGranularity;
   rangeLabel: UsageRangeLabel;
   zh: boolean;
+  ccy: UsageDisplayCurrency;
 }) {
   const valueOf = (item: UsageTrendDay): number =>
     metric === "cost" ? item.costMicros : metric === "duration" ? item.activeSeconds : item.totalTokens;
@@ -276,15 +306,15 @@ function TrendChart({
       : key.slice(5);
   const maxMarker =
     metric === "cost"
-      ? `$${(max / 1e6).toFixed(2)}`
+      ? fmtCost(max, ccy)
       : metric === "duration"
         ? duration(max, zh)
         : compact(max);
   const tooltip = (item: UsageTrendDay): string => {
-    if (metric === "cost") return `${item.day} · $${(item.costMicros / 1e6).toFixed(4)}`;
+    if (metric === "cost") return `${item.day} · ${fmtCost(item.costMicros, ccy)}`;
     if (metric === "duration") return `${item.day} · ${duration(item.activeSeconds, zh)}`;
     return [
-      `${item.day} · ${compact(item.totalTokens)} tokens`,
+      `${item.day} · ${compact(item.totalTokens)} tokens · ${zh ? "命中率" : "hit"} ${fmtHitRate(usageCacheHitRate(item))}`,
       `${zh ? "输入(含缓存写)" : "Input (incl. cache write)"} ${compact(item.inputTokens + item.cacheWriteInputTokens)}`,
       `${zh ? "缓存读" : "Cache read"} ${compact(item.cacheReadInputTokens)}`,
       `${zh ? "输出" : "Output"} ${compact(item.outputTokens)}`,
@@ -292,7 +322,7 @@ function TrendChart({
     ].join("\n");
   };
   const srValue = (item: UsageTrendDay): string => {
-    if (metric === "cost") return `$${(item.costMicros / 1e6).toFixed(4)}`;
+    if (metric === "cost") return fmtCost(item.costMicros, ccy);
     if (metric === "duration") return `${item.activeSeconds.toLocaleString()}s`;
     return `${item.totalTokens.toLocaleString()} tokens`;
   };
@@ -398,11 +428,13 @@ function HeatmapGrid({
   metric,
   tzOffsetMinutes,
   zh,
+  ccy,
 }: {
   heatmap: UsageHeatmap;
   metric: HeatMetric;
   tzOffsetMinutes: number;
   zh: boolean;
+  ccy: UsageDisplayCurrency;
 }) {
   const grid = heatGrid(heatmap, metric);
   const max = Math.max(0, ...grid.flat());
@@ -418,7 +450,7 @@ function HeatmapGrid({
     return "bg-blue";
   };
   const cellLabel = (weekday: number, hour: number, value: number): string =>
-    `${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${formatHeatValue(metric, value, zh)}`;
+    `${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${formatHeatValue(metric, value, zh, ccy)}`;
   const top = grid
     .flatMap((row, weekday) => row.map((value, hour) => ({ weekday, hour, value })))
     .filter((cell) => cell.value > 0)
@@ -476,7 +508,7 @@ function HeatmapGrid({
             {top.map((cell) => (
               <li key={`${cell.weekday}-${cell.hour}`}>
                 {longNames[cell.weekday]} {String(cell.hour).padStart(2, "0")}:00 —{" "}
-                {formatHeatValue(metric, cell.value, zh)}
+                {formatHeatValue(metric, cell.value, zh, ccy)}
               </li>
             ))}
           </ol>
@@ -491,6 +523,7 @@ function DistributionCard({
   dist,
   metric,
   zh,
+  ccy,
   labelOf,
   iconOf,
   emptyText,
@@ -499,6 +532,7 @@ function DistributionCard({
   dist: UsageDistribution;
   metric: UsageMetric;
   zh: boolean;
+  ccy: UsageDisplayCurrency;
   labelOf: (row: UsageDistributionRow) => string;
   iconOf?: (row: UsageDistributionRow) => ReactNode;
   emptyText?: string;
@@ -537,7 +571,7 @@ function DistributionCard({
                     {row.hasUnpriced && row.costMicros === 0 ? (
                       <span className="text-grey">{zh ? "未定价" : "unpriced"}</span>
                     ) : (
-                      `$${(row.costMicros / 1e6).toFixed(2)}`
+                      fmtCost(row.costMicros, ccy)
                     )}
                   </span>
                 </div>
@@ -553,14 +587,14 @@ function DistributionCard({
   );
 }
 
-function recordCost(row: UsageRecordRow, zh: boolean): ReactNode {
+function recordCost(row: UsageRecordRow, zh: boolean, ccy: UsageDisplayCurrency): ReactNode {
   if (row.priceStatus === "legacy") return <span className="text-grey">—</span>;
   if (row.priceStatus === "unpriced") {
     return <span className="text-grey">{zh ? "未定价" : "unpriced"}</span>;
   }
   return (
     <>
-      ${(row.costMicros / 1e6).toFixed(2)}
+      {fmtCost(row.costMicros, ccy)}
       {row.priceStatus === "partial" ? "*" : ""}
     </>
   );
@@ -574,6 +608,17 @@ interface KpiCardSpec {
   cur?: number;
   prev?: number;
   sessionNote?: boolean;
+}
+
+/* 明细表的可选列(默认全关;与 RecordsColumnsMenu 的列表一一对应)。 */
+const OPTIONAL_RECORD_COLUMNS = new Set(["device", "project", "reasoning", "cacheWrite"]);
+
+interface RecordColumn {
+  id: string;
+  header: string;
+  cell: (row: UsageRecordRow) => ReactNode;
+  className?: string;
+  titleOf?: (row: UsageRecordRow) => string | undefined;
 }
 
 export default async function UsagePage({
@@ -609,6 +654,8 @@ export default async function UsagePage({
   const cookieStore = await cookies();
   const parsedTz = Number(cookieStore.get("kb_tz")?.value);
   const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
+  const ccy: UsageDisplayCurrency =
+    cookieStore.get("kb_usage_ccy")?.value === "cny" ? "cny" : "usd";
   const raw = await searchParams;
   const filters = parseUsageFilters(raw, {
     uploadProject: settings.uploadProject,
@@ -693,6 +740,7 @@ export default async function UsagePage({
         >
           <Download size={12} /> {zh ? "导出 JSON" : "Export JSON"}
         </a>
+        <CurrencyToggle currency={ccy} label={zh ? "展示币种" : "Display currency"} />
       </div>
     </header>
   );
@@ -787,7 +835,7 @@ export default async function UsagePage({
     {
       icon: Activity,
       label: zh ? "预估费用" : "EST. COST",
-      value: `$${(totals.costMicros / 1e6).toFixed(2)}`,
+      value: fmtCost(totals.costMicros, ccy),
       note: zh
         ? `价格表 ${pricingVersions || "—"} · ${unpricedCount} 个模型未定价`
         : `Pricing ${pricingVersions || "—"} · ${unpricedCount} unpriced`,
@@ -908,6 +956,11 @@ export default async function UsagePage({
       value: avgActiveLabel,
       title: zh ? "≈ 活跃时长 ÷ 请求数" : "≈ active time ÷ requests",
     },
+    {
+      label: zh ? "缓存命中率" : "CACHE HIT",
+      value: fmtHitRate(usageCacheHitRate(totals)),
+      title: zh ? "缓存读 ÷(输入+缓存写+缓存读)" : "cache read ÷ (input + cache write + cache read)",
+    },
   ];
 
   const otherLabel = zh ? "其他" : "Other";
@@ -923,6 +976,136 @@ export default async function UsagePage({
 
   const localDayOf = (date: Date): string =>
     new Date(date.getTime() + filters.tzOffsetMinutes * 60_000).toISOString().slice(0, 10);
+
+  /* 明细粒度 + 可选列(纯 URL 状态) */
+  const grain: UsageRecordGrain = filters.grain;
+  const rawCols = Array.isArray(raw.cols) ? raw.cols[0] : raw.cols;
+  const enabledCols = new Set(
+    (rawCols ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => OPTIONAL_RECORD_COLUMNS.has(value)),
+  );
+  const grainSwitch = [
+    {
+      key: "day",
+      label: zh ? "按日" : "By day",
+      href: hrefWith(query, { grain: null, page: null }),
+      active: grain === "day",
+    },
+    {
+      key: "bucket",
+      label: zh ? "按 30 分钟" : "By 30 min",
+      href: hrefWith(query, { grain: "bucket", page: null }),
+      active: grain === "bucket",
+    },
+  ];
+
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+  /* 30 分钟桶起点(UTC ISO)→ 本地 MM-DD HH:MM(与趋势补零同一套移位数学)。 */
+  const bucketTimeLabel = (iso: string): string => {
+    const d = new Date(new Date(iso).getTime() + filters.tzOffsetMinutes * 60_000);
+    return `${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+  };
+
+  const truncateTd = "max-w-[180px] truncate whitespace-nowrap py-2 pr-4 text-paper";
+  const recordColumns: RecordColumn[] = [
+    {
+      id: "time",
+      header: grain === "bucket" ? (zh ? "时间" : "TIME") : zh ? "日期" : "DAY",
+      cell: (row) => (grain === "bucket" && row.time ? bucketTimeLabel(row.time) : row.day),
+    },
+    {
+      id: "source",
+      header: zh ? "工具" : "SOURCE",
+      cell: (row) => (
+        <span className="inline-flex items-center gap-1.5">
+          <AgentIcon id={row.source} size={12} />
+          {usageSourceLabel(row.source)}
+        </span>
+      ),
+    },
+    {
+      id: "model",
+      header: zh ? "模型" : "MODEL",
+      className: truncateTd,
+      titleOf: (row) => row.model,
+      cell: (row) => row.model,
+    },
+  ];
+  if (enabledCols.has("project")) {
+    recordColumns.push({
+      id: "project",
+      header: zh ? "项目" : "PROJECT",
+      className: "max-w-[140px] truncate whitespace-nowrap py-2 pr-4 text-paper",
+      titleOf: (row) => row.project ?? notUploadedLabel,
+      cell: (row) =>
+        row.project === null ? <span className="text-grey">{notUploadedLabel}</span> : row.project,
+    });
+  }
+  if (enabledCols.has("device")) {
+    recordColumns.push({
+      id: "device",
+      header: zh ? "设备" : "DEVICE",
+      className: "max-w-[120px] truncate whitespace-nowrap py-2 pr-4 text-paper",
+      titleOf: (row) => row.deviceName,
+      cell: (row) => row.deviceName,
+    });
+  }
+  recordColumns.push({
+    id: "input",
+    header: zh ? "输入(含缓存写)" : "INPUT+CW",
+    cell: (row) => compact(row.inputTokens + row.cacheWriteInputTokens),
+  });
+  if (enabledCols.has("cacheWrite")) {
+    recordColumns.push({
+      id: "cacheWrite",
+      header: zh ? "缓存写" : "CACHE W",
+      cell: (row) => compact(row.cacheWriteInputTokens),
+    });
+  }
+  recordColumns.push(
+    {
+      id: "cacheRead",
+      header: zh ? "缓存读" : "CACHE R",
+      cell: (row) => compact(row.cacheReadInputTokens),
+    },
+    {
+      id: "output",
+      header: zh ? "输出" : "OUTPUT",
+      cell: (row) => compact(row.outputTokens),
+    },
+  );
+  if (enabledCols.has("reasoning")) {
+    recordColumns.push({
+      id: "reasoning",
+      header: zh ? "推理" : "REASON",
+      cell: (row) => compact(row.reasoningOutputTokens),
+    });
+  }
+  recordColumns.push(
+    {
+      id: "total",
+      header: zh ? "总 TOKEN" : "TOTAL",
+      cell: (row) => compact(row.totalTokens),
+    },
+    {
+      id: "hitRate",
+      header: zh ? "命中率" : "HIT%",
+      cell: (row) => fmtHitRate(usageCacheHitRate(row)),
+    },
+    {
+      id: "requests",
+      header: zh ? "请求" : "REQS",
+      cell: (row) => compact(row.requests),
+    },
+    {
+      id: "cost",
+      header: zh ? "估费" : "COST",
+      className: "whitespace-nowrap py-2 text-paper",
+      cell: (row) => recordCost(row, zh, ccy),
+    },
+  );
 
   return (
     <div className="usage-dashboard">
@@ -964,9 +1147,6 @@ export default async function UsagePage({
       )}
 
       <UsageFilterBar
-        /* key=当前查询串:任何筛选导航后重挂载,下拉/表单的本地开态随之复位,
-           避免软导航后 openMenu 残影导致再次点击变成"关闭"。 */
-        key={query}
         options={overview.options}
         applied={{
           range: filters.rangeLabel,
@@ -989,7 +1169,7 @@ export default async function UsagePage({
       {renderKpiRow(kpiRow2)}
 
       <section className="mt-3 border border-line bg-card p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {stripStats.map((stat) => (
             <div key={stat.label} title={stat.title}>
               <div className="font-mono text-[9px] tracking-[0.14em] text-grey">{stat.label}</div>
@@ -1020,6 +1200,7 @@ export default async function UsagePage({
             granularity={filters.granularity}
             rangeLabel={filters.rangeLabel}
             zh={zh}
+            ccy={ccy}
           />
         </div>
       </section>
@@ -1042,6 +1223,7 @@ export default async function UsagePage({
             metric={heatMetric}
             tzOffsetMinutes={filters.tzOffsetMinutes}
             zh={zh}
+            ccy={ccy}
           />
         </div>
       </section>
@@ -1052,6 +1234,7 @@ export default async function UsagePage({
           dist={overview.distributions.source}
           metric={filters.metric}
           zh={zh}
+          ccy={ccy}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : usageSourceLabel(row.key))}
           iconOf={(row) =>
             row.key === "__other__" ? null : <AgentIcon id={row.key} size={12} />
@@ -1062,6 +1245,7 @@ export default async function UsagePage({
           dist={overview.distributions.model}
           metric={filters.metric}
           zh={zh}
+          ccy={ccy}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : row.key)}
         />
         <DistributionCard
@@ -1069,6 +1253,7 @@ export default async function UsagePage({
           dist={overview.distributions.project}
           metric={filters.metric}
           zh={zh}
+          ccy={ccy}
           labelOf={(row) =>
             row.key === "__other__" ? otherLabel : row.key === "" ? notUploadedLabel : row.key
           }
@@ -1085,20 +1270,40 @@ export default async function UsagePage({
           dist={overview.distributions.device}
           metric={filters.metric}
           zh={zh}
+          ccy={ccy}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : row.label)}
         />
       </div>
 
       <section className="mt-4 border border-line bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-            {zh ? "明细" : "RECORDS"}
-          </h2>
-          <p className="font-mono text-[9px] text-grey">
-            {zh
-              ? `按 日×工具×模型×项目×设备 聚合 · 共 ${records.total} 组`
-              : `Grouped by day × source × model × project × device · ${records.total} groups`}
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
+              {zh ? "明细" : "RECORDS"}
+            </h2>
+            <p className="mt-1 font-mono text-[9px] text-grey">
+              {zh
+                ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×项目×设备 聚合 · 共 ${records.total} 组`
+                : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × project × device · ${records.total} groups`}
+            </p>
+            {grain === "bucket" && (
+              <p className="mt-1 font-mono text-[9px] text-grey/70">
+                {zh
+                  ? "30 分钟为采集最细粒度,秒级不在日志中"
+                  : "30 minutes is the finest collected granularity; seconds are not in the logs."}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <SwitchLinks items={grainSwitch} label={zh ? "明细粒度" : "Record grain"} />
+            <RecordsColumnsMenu
+              /* key=查询串:cols 变更触发软导航后重挂载,菜单开态复位(同筛选栏) */
+              key={query}
+              enabled={[...enabledCols]}
+              preservedQuery={query}
+              zh={zh}
+            />
+          </div>
         </div>
         {records.rows.length === 0 ? (
           <p className="mt-4 text-xs text-grey">
@@ -1111,12 +1316,9 @@ export default async function UsagePage({
                 <table className="w-full border-collapse font-mono text-[11px]">
                   <thead>
                     <tr className="text-left font-mono text-[10px] tracking-wide text-grey">
-                      {(zh
-                        ? ["日期", "工具", "模型", "项目", "设备", "输入", "缓存写", "缓存读", "输出", "推理", "请求", "估费"]
-                        : ["DAY", "SOURCE", "MODEL", "PROJECT", "DEVICE", "INPUT", "CACHE W", "CACHE R", "OUTPUT", "REASON", "REQS", "COST"]
-                      ).map((heading) => (
-                        <th key={heading} className="whitespace-nowrap pb-2 pr-4 font-normal">
-                          {heading}
+                      {recordColumns.map((column) => (
+                        <th key={column.id} className="whitespace-nowrap pb-2 pr-4 font-normal">
+                          {column.header}
                         </th>
                       ))}
                     </tr>
@@ -1124,45 +1326,20 @@ export default async function UsagePage({
                   <tbody>
                     {records.rows.map((row, index) => (
                       <tr
-                        key={`${row.day}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
+                        key={`${row.day}-${row.time ?? ""}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
                         className="border-t border-line"
                       >
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{row.day}</td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">
-                          <span className="inline-flex items-center gap-1.5">
-                            <AgentIcon id={row.source} size={12} />
-                            {usageSourceLabel(row.source)}
-                          </span>
-                        </td>
-                        <td
-                          className="max-w-[180px] truncate whitespace-nowrap py-2 pr-4 text-paper"
-                          title={row.model}
-                        >
-                          {row.model}
-                        </td>
-                        <td
-                          className="max-w-[140px] truncate whitespace-nowrap py-2 pr-4 text-paper"
-                          title={row.project ?? notUploadedLabel}
-                        >
-                          {row.project === null ? (
-                            <span className="text-grey">{notUploadedLabel}</span>
-                          ) : (
-                            row.project
-                          )}
-                        </td>
-                        <td
-                          className="max-w-[120px] truncate whitespace-nowrap py-2 pr-4 text-paper"
-                          title={row.deviceName}
-                        >
-                          {row.deviceName}
-                        </td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{compact(row.inputTokens)}</td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{compact(row.cacheWriteInputTokens)}</td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{compact(row.cacheReadInputTokens)}</td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{compact(row.outputTokens)}</td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{compact(row.reasoningOutputTokens)}</td>
-                        <td className="whitespace-nowrap py-2 pr-4 text-paper">{compact(row.requests)}</td>
-                        <td className="whitespace-nowrap py-2 text-paper">{recordCost(row, zh)}</td>
+                        {recordColumns.map((column) => (
+                          <td
+                            key={column.id}
+                            className={
+                              column.className ?? "whitespace-nowrap py-2 pr-4 text-paper"
+                            }
+                            title={column.titleOf?.(row)}
+                          >
+                            {column.cell(row)}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
@@ -1172,11 +1349,13 @@ export default async function UsagePage({
             <ul className="mt-4 space-y-2 sm:hidden">
               {records.rows.map((row, index) => (
                 <li
-                  key={`${row.day}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
+                  key={`${row.day}-${row.time ?? ""}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
                   className="border border-line p-3"
                 >
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="shrink-0 font-mono text-[10px] text-grey">{row.day}</span>
+                    <span className="shrink-0 font-mono text-[10px] text-grey">
+                      {grain === "bucket" && row.time ? bucketTimeLabel(row.time) : row.day}
+                    </span>
                     <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
                       <AgentIcon id={row.source} size={12} />
                       <span className="truncate" title={`${usageSourceLabel(row.source)} · ${row.model}`}>
@@ -1185,9 +1364,39 @@ export default async function UsagePage({
                     </span>
                   </div>
                   <div className="mt-2 font-mono text-[10px] text-grey">
-                    {compact(row.totalTokens)} tokens · {recordCost(row, zh)} · {compact(row.requests)}{" "}
-                    {zh ? "次请求" : "req"}
+                    {compact(row.totalTokens)} tokens · {recordCost(row, zh, ccy)} ·{" "}
+                    {zh ? "命中率" : "hit"} {fmtHitRate(usageCacheHitRate(row))} ·{" "}
+                    {compact(row.requests)} {zh ? "次请求" : "req"}
                   </div>
+                  {enabledCols.size > 0 && (
+                    <div className="mt-1 space-y-0.5 font-mono text-[10px] text-grey">
+                      {enabledCols.has("project") && (
+                        <p>
+                          {zh ? "项目" : "Project"}{" "}
+                          {row.project === null ? (
+                            <span className="text-grey">{notUploadedLabel}</span>
+                          ) : (
+                            row.project
+                          )}
+                        </p>
+                      )}
+                      {enabledCols.has("device") && (
+                        <p>
+                          {zh ? "设备" : "Device"} {row.deviceName}
+                        </p>
+                      )}
+                      {enabledCols.has("cacheWrite") && (
+                        <p>
+                          {zh ? "缓存写" : "Cache write"} {compact(row.cacheWriteInputTokens)}
+                        </p>
+                      )}
+                      {enabledCols.has("reasoning") && (
+                        <p>
+                          {zh ? "推理" : "Reasoning"} {compact(row.reasoningOutputTokens)}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -1360,6 +1569,13 @@ export default async function UsagePage({
             ? `估费为服务端价格表的 API 等价估算(版本 ${pricingVersions || "—"}),不代表订阅账单;未定价模型的 token 照常统计但不计费。`
             : `Costs are API-equivalent estimates from the server pricing table (version ${pricingVersions || "—"}), not subscription bills. Tokens from unpriced models are counted as usual but never billed.`}
         </p>
+        {ccy === "cny" && (
+          <p>
+            {zh
+              ? `人民币金额按固定汇率 ${USAGE_DISPLAY_CURRENCIES.cny.rate}(${USAGE_FX_AS_OF})折算,仅用于展示。`
+              : `CNY amounts are converted at a fixed rate of ${USAGE_DISPLAY_CURRENCIES.cny.rate} (${USAGE_FX_AS_OF}); display only.`}
+          </p>
+        )}
         {overview.meta.unpricedModels.length > 0 && (
           <p className="truncate font-mono" title={overview.meta.unpricedModels.join(", ")}>
             {zh ? "未定价模型:" : "Unpriced models: "}

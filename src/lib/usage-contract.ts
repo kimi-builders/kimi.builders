@@ -155,3 +155,17 @@ export function observedTokenTotal(tokens: UsageTokenCountsV2): number {
     tokens.reasoningOutputTokens
   );
 }
+
+/* 缓存命中率 = 缓存读 ÷ 输入侧总量(输入 + 缓存写 + 缓存读)。
+   分母为 0 时返回 null(没有输入侧流量,命中率无意义,展示为 —)。 */
+export function usageCacheHitRate(
+  tokens: Pick<
+    UsageTokenCountsV2,
+    "inputTokens" | "cacheWriteInputTokens" | "cacheReadInputTokens"
+  >,
+): number | null {
+  const base =
+    tokens.inputTokens + tokens.cacheWriteInputTokens + tokens.cacheReadInputTokens;
+  if (base <= 0) return null;
+  return tokens.cacheReadInputTokens / base;
+}

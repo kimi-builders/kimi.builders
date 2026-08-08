@@ -7,6 +7,8 @@ import { isUsageSourceId } from "../usage-contract";
 
 export type UsageRangeLabel = "today" | "24h" | "7d" | "30d" | "90d" | "custom";
 export type UsageMetric = "tokens" | "cost" | "duration";
+/* 明细时间粒度:day = 按本地日聚合;bucket = 按 30 分钟事实桶(最细可查粒度)。 */
+export type UsageRecordGrain = "day" | "bucket";
 /* 趋势粒度:today/24h/≤2 天自定义 → 小时;≥60 天 → 周(周一起);其余按本地日。 */
 export type UsageGranularity = "hour" | "day" | "week";
 
@@ -28,6 +30,7 @@ export interface UsageFilters {
   tzOffsetMinutes: number;
   metric: UsageMetric;
   granularity: UsageGranularity;
+  grain: UsageRecordGrain;
   page: number;
   pageSize: number;
 }
@@ -158,6 +161,7 @@ export function parseUsageFilters(
     devices: csvList(raw.devices, 40, (value) => /^udv_[A-Za-z0-9_-]{1,32}$/.test(value)),
     tzOffsetMinutes,
     metric,
+    grain: first(raw.grain).trim() === "bucket" ? "bucket" : "day",
     granularity:
       rangeLabel === "today" || rangeLabel === "24h"
         ? "hour"
@@ -274,6 +278,7 @@ export function usageFiltersToSearch(filters: UsageFilters): string {
   if (filters.projects) params.set("projects", filters.projects.join(","));
   if (filters.devices) params.set("devices", filters.devices.join(","));
   if (filters.metric !== "tokens") params.set("metric", filters.metric);
+  if (filters.grain === "bucket") params.set("grain", "bucket");
   if (filters.page > 1) params.set("page", String(filters.page));
   if (filters.pageSize !== USAGE_DEFAULT_PAGE_SIZE) params.set("ps", String(filters.pageSize));
   const text = params.toString();

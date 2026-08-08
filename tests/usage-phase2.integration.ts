@@ -90,10 +90,12 @@ async function main() {
   const pool = getPool();
 
   // —— migration 幂等:连续执行两次,价格行不翻倍 ——
-  const migration = readFileSync(
-    new URL("../db/migrations/20260809_usage_phase2.sql", import.meta.url),
-    "utf8",
-  );
+  const migration = [
+    "../db/migrations/20260809_usage_phase2.sql",
+    "../db/migrations/20260809_usage_prices_v2.sql",
+  ]
+    .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
+    .join("\n;\n");
   const statements = migration
     .split(/;\s*(?:\n|$)/)
     .map((statement) =>
@@ -111,7 +113,7 @@ async function main() {
   const [priceCount] = await pool.query<RowDataPacket[]>(
     "SELECT COUNT(*) AS count FROM usage_model_prices",
   );
-  assert.equal(Number(priceCount[0].count), 24);
+  assert.equal(Number(priceCount[0].count), 35); // v1 24 行 + v2 11 行
 
   const handle = `phase2_${Date.now()}`;
   const [userResult] = await pool.query<ResultSetHeader>(
@@ -157,12 +159,14 @@ async function main() {
     assert.equal(overview.records.total, 3); // 同日 × 3 来源/模型
     assert.equal(overview.totals.activeDevices, 1);
 
-    // 未定价模型(kimi-code/k3)token 照常统计、费用不计
-    assert.ok(overview.meta.unpricedModels.includes("kimi-code/k3"));
+    // v2 种子后 kimi-code/k3 命中价格(3.00/15.00/缓存读 0.30):
+    // 150×3 + 20×3(写回退 input)+ 40×0.3 + 15×15 = 747 micros
+    assert.ok(!overview.meta.unpricedModels.includes("kimi-code/k3"));
     assert.ok(overview.meta.pricingVersions.includes("2026-08-08"));
+    assert.ok(overview.meta.pricingVersions.includes("2026-08-09"));
     // claude-opus-4: 300×5 + 105×6.25 + 50×0.5 + 30×25 = 2931.25 micros
     // gpt-5-codex: 700×1.25 + 200×0.125 + 80×10 + 40×10 = 2100 micros
-    assert.ok(Math.abs(overview.totals.costMicros - 5031.25) < 1);
+    assert.ok(Math.abs(overview.totals.costMicros - (5031.25 + 747)) < 1);
 
     // —— 来源筛选 ——
     const codexOnly = await getUsageOverview(userId, filters({ sources: "codex" }));

@@ -91,6 +91,8 @@ export interface UsageDistribution {
 
 export interface UsageRecordRow extends UsageTokenBreakdown {
   day: string;
+  /* grain=bucket 时为本桶起点(UTC ISO);day 粒度为 null */
+  time: string | null;
   source: string;
   model: string;
   /* null = 未上传(项目名上传关闭期间的数据) */
@@ -208,8 +210,10 @@ function recordsQuery(
   offset: number,
 ): { sql: string; params: unknown[] } {
   const filtered = bucketFilterSql(userId, filters, "b");
+  const fine = filters.grain === "bucket";
   return {
     sql: `SELECT ${localDayExpr("b.bucket_start", filters)} AS day,
+            ${fine ? "b.bucket_start AS bucket_time," : "NULL AS bucket_time,"}
             b.source, b.model, b.project_label,
             d.public_id AS device_public_id, d.name AS device_name,
             MIN(b.bucket_start) AS sample_at,
@@ -226,8 +230,8 @@ function recordsQuery(
      FROM usage_buckets b
      JOIN usage_devices d ON d.id = b.device_id
      WHERE ${filtered.where}
-     GROUP BY day, b.source, b.model, b.project_label, d.public_id, d.name
-     ORDER BY day DESC, total_tokens DESC
+     GROUP BY day, ${fine ? "b.bucket_start, " : ""}b.source, b.model, b.project_label, d.public_id, d.name
+     ORDER BY ${fine ? "b.bucket_start" : "day"} DESC, total_tokens DESC
      LIMIT ? OFFSET ?`,
     params: [...filtered.params, limit, offset],
   };
@@ -243,7 +247,7 @@ function recordsCountQuery(
        SELECT 1
        FROM usage_buckets b
        WHERE ${filtered.where}
-       GROUP BY ${localDayExpr("b.bucket_start", filters)}, b.source, b.model, b.project_label, b.device_id
+       GROUP BY ${localDayExpr("b.bucket_start", filters)}, ${filters.grain === "bucket" ? "b.bucket_start, " : ""}b.source, b.model, b.project_label, b.device_id
      ) grouped`,
     params: filtered.params,
   };
@@ -268,6 +272,12 @@ function mapRecordRow(
       );
   return {
     day: utcDay(row.day),
+    time:
+      row.bucket_time instanceof Date
+        ? row.bucket_time.toISOString()
+        : row.bucket_time
+          ? String(row.bucket_time)
+          : null,
     source: String(row.source),
     model: String(row.model),
     project: row.project_label === null ? null : String(row.project_label),

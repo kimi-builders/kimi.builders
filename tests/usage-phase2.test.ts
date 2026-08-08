@@ -204,6 +204,7 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
   const csv = recordsToCsv([
     {
       day: "2026-08-01",
+      time: null,
       source: "kimi-code",
       model: "kimi-code/k3",
       project: "=evil",
