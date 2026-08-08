@@ -3,6 +3,7 @@ import { JetBrains_Mono } from "next/font/google";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUiPrefs } from "@/src/lib/prefs";
+import Toaster from "@/components/Toaster";
 import "./globals.css";
 
 const jetbrains = JetBrains_Mono({
@@ -31,7 +32,10 @@ export default async function RootLayout({
       data-sidebar={prefs.sidebarHidden ? "0" : "1"}
       className={jetbrains.variable}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

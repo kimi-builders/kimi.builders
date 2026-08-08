@@ -172,6 +172,34 @@ const DICT = {
     zh: "投票至少需要 2 个选项",
     en: "A poll needs at least 2 options",
   },
+  "err.commentEmpty": {
+    zh: "评论内容不能为空",
+    en: "Comment cannot be empty",
+  },
+  "err.generic": {
+    zh: "操作失败,请重试",
+    en: "Something went wrong — please try again",
+  },
+  /* ---- 操作反馈(toast)---- */
+  "toast.commented": { zh: "评论已发布", en: "Comment posted" },
+  "toast.saved": { zh: "已保存", en: "Saved" },
+  "toast.deleted": { zh: "已删除", en: "Deleted" },
+  "toast.privateOn": {
+    zh: "已设为私密,仅自己可见",
+    en: "Now private — only you can see it",
+  },
+  "toast.privateOff": { zh: "已恢复公开", en: "Back to public" },
+  "toast.subscribed": {
+    zh: "已订阅,有新讨论会通知你",
+    en: "Subscribed — you'll be notified of new activity",
+  },
+  "toast.unsubscribed": { zh: "已取消订阅", en: "Unsubscribed" },
+  "toast.voted": { zh: "投票成功", en: "Vote recorded" },
+  "toast.failed": {
+    zh: "操作失败,请重试",
+    en: "Action failed — please try again",
+  },
+  "post.submitting": { zh: "提交中…", en: "Sending…" },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
   "aria.toDark": { zh: "切换到暗色主题", en: "Switch to dark theme" },

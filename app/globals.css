@@ -204,3 +204,18 @@ html[data-sidebar="0"] .rightsidebar .sidebar-full {
 html[data-sidebar="0"] .rightsidebar .sidebar-rail {
   display: block;
 }
+
+/* ---- toast:操作反馈轻提示(Toaster 出口,2.6s 自灭)---- */
+@keyframes kb-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.kb-toast {
+  animation: kb-toast-in 0.16s ease-out;
+}

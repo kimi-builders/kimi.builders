@@ -1,7 +1,12 @@
 "use server";
 
-/* 社区写操作 + UI 偏好切换。UI 对未登录用户不渲染表单;这里再兜底一次(session 为空即静默返回)。
-   页面全是动态渲染(Header 读 cookie),action 完成后 Next 会重取数据,无需 revalidate。 */
+/* 社区写操作 + UI 偏好切换。UI 对未登录用户不渲染入口,这里再兜底一次(session 为空即拒)。
+   mutation 统一返回 MutationResult({ ok, error? }):客户端按结果 toast 反馈并
+   router.refresh() 换当前页数据;同时这里用 revalidatePath 作废受影响路径的
+   预取缓存(Next 16:Link 预取会被后续导航复用,只有 revalidate* 能 silently 刷新),
+   否则删帖后回 feed 会看到旧卡片。
+   顶/踩走纯乐观更新(只落库、不作废路径):分数展示本来就是客户端态,避免每票都刷新全站。 */
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -27,6 +32,11 @@ import {
 } from "@/src/lib/posts";
 
 export interface PostFormState {
+  error?: string;
+}
+
+export interface MutationResult {
+  ok: boolean;
   error?: string;
 }
 
@@ -82,21 +92,26 @@ export async function createPostAction(
   /* 入队 AI 回帖:本帖开关 + 作者全局开关都开才排(v2 决策 3)。
      enqueue 内部用 after(),必须在 redirect 抛出前调用。 */
   if (aiReply && user.aiRepliesEnabled) await enqueueAiReply(postId);
+  revalidatePath("/community");
   redirect(`/community/${postId}`);
 }
 
-export async function createCommentAction(formData: FormData): Promise<void> {
+export async function createCommentAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  const locale = await getLocale(user);
+  if (!user) return { ok: false, error: t(locale, "err.login") };
   const postId = Number(formData.get("post_id"));
   const body = String(formData.get("body") || "").trim();
   const parentId = Number(formData.get("parent_id")) || null;
-  if (!postId || !body) return;
+  if (!postId) return { ok: false, error: t(locale, "err.generic") };
+  if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
   /* 楼中楼:parent 必须存在、属于同帖、未删除;层级不限,展示侧拍平到两层 */
   let parent: { id: number; isAi: boolean; userId: number | null } | null = null;
   if (parentId) {
     parent = await getCommentForReply(parentId, postId);
-    if (!parent) return;
+    if (!parent) return { ok: false, error: t(locale, "err.generic") };
   }
   const commentId = await createComment(postId, user.id, body, parentId);
   /* 回复了 AI 的评论 → 触发 AI 接话(带对话链上下文)。
@@ -105,9 +120,12 @@ export async function createCommentAction(formData: FormData): Promise<void> {
     const post = await getPost(postId);
     if (post?.aiReply) await enqueueAiReply(postId, commentId);
   }
+  revalidatePath(`/community/${postId}`);
+  revalidatePath("/community"); /* feed 卡片上的评论数 */
+  return { ok: true };
 }
 
-/* 顶/踩:kind 由点击的按钮携带(name="kind");同向再点=取消,反向=换边。 */
+/* 顶/踩:乐观更新路径,只落库;同向再点=取消,反向=换边。 */
 export async function setPostReactionAction(formData: FormData): Promise<void> {
   const user = await getSessionUser();
   if (!user) return;
@@ -126,21 +144,27 @@ export async function setCommentReactionAction(formData: FormData): Promise<void
   await setCommentReaction(user.id, commentId, kind);
 }
 
+/* 订阅:乐观更新路径;作废旧 feed 预取(「订阅」页签内容会变)。 */
 export async function toggleSubscribeAction(formData: FormData): Promise<void> {
   const user = await getSessionUser();
   if (!user) return;
   const postId = Number(formData.get("post_id"));
   if (!postId) return;
   await toggleSubscribe(user.id, postId);
+  revalidatePath("/community");
 }
 
-export async function votePollAction(formData: FormData): Promise<void> {
+export async function votePollAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  if (!user) return { ok: false };
   const postId = Number(formData.get("post_id"));
   const optionId = Number(formData.get("option_id"));
-  if (!postId || !optionId) return;
-  await votePoll(user.id, postId, optionId);
+  if (!postId || !optionId) return { ok: false };
+  const r = await votePoll(user.id, postId, optionId);
+  if (r === "ok") revalidatePath(`/community/${postId}`);
+  return { ok: r === "ok" };
 }
 
 /* ---- 作者自助:编辑 / 删除 / 可见性(归属校验在 SQL WHERE 里)---- */
@@ -163,42 +187,67 @@ export async function updatePostAction(
     return { error: t(locale, "err.linkInvalid") };
   const ok = await updatePost(user.id, postId, { title, bodyMd: body, linkUrl });
   if (!ok) return { error: t(locale, "err.notOwner") };
+  revalidatePath(`/community/${postId}`);
+  revalidatePath("/community");
   redirect(`/community/${postId}`);
 }
 
-export async function deletePostAction(formData: FormData): Promise<void> {
+/* 删除不 redirect:由客户端 toast 后自行跳转;作废 feed 预取,否则回列表看到旧卡片。 */
+export async function deletePostAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  if (!user) return { ok: false };
   const postId = Number(formData.get("post_id"));
-  if (!postId) return;
+  if (!postId) return { ok: false };
   const ok = await deletePost(user.id, postId);
-  if (ok) redirect("/community");
+  if (ok) revalidatePath("/community");
+  return { ok };
 }
 
-export async function setPostVisibilityAction(formData: FormData): Promise<void> {
+export async function setPostVisibilityAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  if (!user) return { ok: false };
   const postId = Number(formData.get("post_id"));
   const visibility = formData.get("visibility") === "private" ? "private" : "public";
-  if (!postId) return;
-  await setPostVisibility(user.id, postId, visibility);
+  if (!postId) return { ok: false };
+  const ok = await setPostVisibility(user.id, postId, visibility);
+  if (ok) {
+    revalidatePath(`/community/${postId}`);
+    revalidatePath("/community");
+  }
+  return { ok };
 }
 
-export async function updateCommentAction(formData: FormData): Promise<void> {
+/* 评论改/删只有 commentId,取 postId 要多查一次 —— 用动态路由模式整体作废详情页。 */
+export async function updateCommentAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  if (!user) return { ok: false };
   const commentId = Number(formData.get("comment_id"));
   const body = String(formData.get("body") || "").trim();
-  if (!commentId || !body) return;
-  await updateComment(user.id, commentId, body);
+  if (!commentId || !body) return { ok: false };
+  const ok = await updateComment(user.id, commentId, body);
+  if (ok) revalidatePath("/community/[id]", "page");
+  return { ok };
 }
 
-export async function deleteCommentAction(formData: FormData): Promise<void> {
+export async function deleteCommentAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  if (!user) return { ok: false };
   const commentId = Number(formData.get("comment_id"));
-  if (!commentId) return;
-  await deleteComment(user.id, commentId);
+  if (!commentId) return { ok: false };
+  const ok = await deleteComment(user.id, commentId);
+  if (ok) {
+    revalidatePath("/community/[id]", "page");
+    revalidatePath("/community");
+  }
+  return { ok };
 }
 
 /* ---- UI 偏好(cookie,一年期;语义见 src/lib/prefs.ts)---- */

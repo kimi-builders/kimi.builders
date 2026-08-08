@@ -1,13 +1,14 @@
 "use client";
 
 /* 帖子作者自助操作:编辑(独立页)/ 公开⇄私密 / 删除(confirm 后软删)。
-   仅作者本人渲染(服务端判断);删除成功服务端 redirect 回 feed。 */
+   仅作者本人渲染(服务端判断)。操作链路:等待态 → toast 反馈 →
+   可见性切换后 router.refresh();删除成功后 toast + 回 feed。 */
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
-import {
-  deletePostAction,
-  setPostVisibilityAction,
-} from "../actions";
+import { toast } from "@/src/lib/toast";
+import { deletePostAction, setPostVisibilityAction } from "../actions";
 
 export default function PostOwnerActions({
   postId,
@@ -18,36 +19,82 @@ export default function PostOwnerActions({
   visibility: string;
   locale: Locale;
 }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<"vis" | "del" | null>(null);
+
+  const toggleVisibility = async () => {
+    if (busy) return;
+    const next = visibility === "private" ? "public" : "private";
+    setBusy("vis");
+    try {
+      const fd = new FormData();
+      fd.set("post_id", String(postId));
+      fd.set("visibility", next);
+      const res = await setPostVisibilityAction(fd);
+      if (!res.ok) {
+        toast(t(locale, "toast.failed"));
+        return;
+      }
+      toast(
+        t(locale, next === "private" ? "toast.privateOn" : "toast.privateOff"),
+      );
+      router.refresh();
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const remove = async () => {
+    if (busy) return;
+    if (!window.confirm(t(locale, "post.deleteConfirm"))) return;
+    setBusy("del");
+    try {
+      const fd = new FormData();
+      fd.set("post_id", String(postId));
+      const res = await deletePostAction(fd);
+      if (!res.ok) {
+        toast(t(locale, "toast.failed"));
+        setBusy(null);
+        return;
+      }
+      toast(t(locale, "toast.deleted"));
+      router.push("/community");
+    } catch {
+      toast(t(locale, "toast.failed"));
+      setBusy(null);
+    }
+  };
+
   const btn =
-    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-blue";
+    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-blue disabled:opacity-40";
   return (
     <span className="inline-flex items-center gap-4">
       <Link href={`/community/${postId}/edit`} className={btn}>
         {t(locale, "post.edit")}
       </Link>
-      <form action={setPostVisibilityAction} className="inline-flex">
-        <input type="hidden" name="post_id" value={postId} />
-        <input
-          type="hidden"
-          name="visibility"
-          value={visibility === "private" ? "public" : "private"}
-        />
-        <button type="submit" className={btn}>
-          {t(locale, visibility === "private" ? "post.makePublic" : "post.makePrivate")}
-        </button>
-      </form>
-      <form
-        action={deletePostAction}
-        className="inline-flex"
-        onSubmit={(e) => {
-          if (!window.confirm(t(locale, "post.deleteConfirm"))) e.preventDefault();
-        }}
+      <button
+        type="button"
+        onClick={toggleVisibility}
+        disabled={busy !== null}
+        className={btn}
       >
-        <input type="hidden" name="post_id" value={postId} />
-        <button type="submit" className={`${btn} hover:text-red-400`}>
-          {t(locale, "post.delete")}
-        </button>
-      </form>
+        {busy === "vis"
+          ? t(locale, "post.submitting")
+          : t(
+              locale,
+              visibility === "private" ? "post.makePublic" : "post.makePrivate",
+            )}
+      </button>
+      <button
+        type="button"
+        onClick={remove}
+        disabled={busy !== null}
+        className={`${btn} hover:text-red-400`}
+      >
+        {busy === "del" ? t(locale, "post.submitting") : t(locale, "post.delete")}
+      </button>
     </span>
   );
 }

@@ -4,14 +4,14 @@
    标题非强制:无标题帖正文摘要占主链接位。登录用户的私密帖只在自己的 feed 出现(带标);
    被自己点踩的帖不再出现在自己的 feed。 */
 import Link from "next/link";
-import { ArrowBigDown, ArrowBigUp, MessageCircle, SquarePen } from "lucide-react";
+import { ArrowBigUp, MessageCircle, SquarePen } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getFeed, getPostReactions } from "@/src/lib/posts";
 import { relTime } from "@/src/lib/format";
-import { setPostReactionAction } from "./actions";
+import VoteCluster from "./_components/VoteCluster";
 
 export default async function CommunityPage({
   searchParams,
@@ -144,38 +144,15 @@ export default async function CommunityPage({
                     )}
                     <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
                       {user ? (
-                        <form action={setPostReactionAction} className="inline-flex items-center gap-1">
-                          <input type="hidden" name="post_id" value={p.id} />
-                          <button
-                            type="submit"
-                            name="kind"
-                            value="up"
-                            aria-label={t(locale, up ? "post.unup" : "post.up")}
-                            className={`inline-flex items-center gap-1 transition-colors ${
-                              up ? "text-blue" : "text-grey hover:text-blue"
-                            }`}
-                          >
-                            <ArrowBigUp
-                              size={14}
-                              fill={up ? "currentColor" : "none"}
-                            />
-                          </button>
-                          <span className="min-w-3 text-center">{p.score}</span>
-                          <button
-                            type="submit"
-                            name="kind"
-                            value="down"
-                            aria-label={t(locale, down ? "post.undown" : "post.down")}
-                            className={`inline-flex items-center gap-1 transition-colors ${
-                              down ? "text-paper" : "text-grey hover:text-paper"
-                            }`}
-                          >
-                            <ArrowBigDown
-                              size={14}
-                              fill={down ? "currentColor" : "none"}
-                            />
-                          </button>
-                        </form>
+                        <VoteCluster
+                          target="post"
+                          id={p.id}
+                          score={p.score}
+                          up={up}
+                          down={down}
+                          locale={locale}
+                          size={14}
+                        />
                       ) : (
                         <span
                           className="inline-flex items-center gap-1"
@@ -187,6 +164,7 @@ export default async function CommunityPage({
                       )}
                       <Link
                         href={`/community/${p.id}#comments`}
+                        title={t(locale, "post.comments", { n: p.commentCount })}
                         className="inline-flex items-center gap-1 transition-colors hover:text-blue"
                       >
                         <MessageCircle size={13} />

@@ -2,16 +2,19 @@
 
 /* 评论区(客户端):两级楼中楼 —— 顶层评论 + 缩进回复层(更深的回复由服务端
    拍平进所属顶层,并带「回复 @xx」标注)。
-   每条评论:顶/踩 + 回复;自己的评论可行内编辑、删除(confirm 后软删)。
+   每条评论:VoteCluster 顶/踩(乐观)+ 回复;自己的评论可行内编辑、删除(confirm 后软删)。
+   所有 mutation 走「等待态 → toast 反馈 → router.refresh() 换新数据」,操作必有回响。
    净分 ≤ -3 的评论淡化显示。锚点 id=comment-<id> 供消息通知精准定位。
    列表数据在服务端组装:正文 Markdown 已渲成 ReactNode 随 props 传入。 */
 import { useRef, useState } from "react";
-import { ArrowBigDown, ArrowBigUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowBigUp } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
+import { toast } from "@/src/lib/toast";
+import VoteCluster from "./VoteCluster";
 import {
   createCommentAction,
   deleteCommentAction,
-  setCommentReactionAction,
   updateCommentAction,
 } from "../actions";
 
@@ -54,8 +57,11 @@ export default function CommentSection({
     null,
   );
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [posting, setPosting] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
   const loggedIn = meId !== null;
   const up = new Set(upIds);
   const down = new Set(downIds);
@@ -66,6 +72,74 @@ export default function CommentSection({
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       taRef.current?.focus({ preventScroll: true });
     });
+  };
+
+  /* 发评论/回复:成功 → toast + 清空 + 刷新出新高楼 */
+  const submitComment = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (posting) return;
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    setPosting(true);
+    try {
+      const res = await createCommentAction(fd);
+      if (!res.ok) {
+        toast(res.error || t(locale, "toast.failed"));
+        return;
+      }
+      toast(t(locale, "toast.commented"));
+      setReplyTo(null);
+      form.reset();
+      router.refresh();
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  /* 行内编辑保存 */
+  const saveEdit = async (e: React.FormEvent<HTMLFormElement>, id: number) => {
+    e.preventDefault();
+    if (busyId !== null) return;
+    const fd = new FormData(e.currentTarget);
+    setBusyId(id);
+    try {
+      const res = await updateCommentAction(fd);
+      if (!res.ok) {
+        toast(t(locale, "toast.failed"));
+        return;
+      }
+      toast(t(locale, "toast.saved"));
+      setEditingId(null);
+      router.refresh();
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  /* 删除(confirm 后软删) */
+  const remove = async (id: number) => {
+    if (busyId !== null) return;
+    if (!window.confirm(t(locale, "post.commentDeleteConfirm"))) return;
+    setBusyId(id);
+    try {
+      const fd = new FormData();
+      fd.set("comment_id", String(id));
+      const res = await deleteCommentAction(fd);
+      if (!res.ok) {
+        toast(t(locale, "toast.failed"));
+        return;
+      }
+      toast(t(locale, "toast.deleted"));
+      router.refresh();
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const head = (c: CommentView) => (
@@ -92,33 +166,24 @@ export default function CommentSection({
 
   const actions = (c: CommentView) => {
     const mine = meId !== null && c.authorId === meId;
+    const busy = busyId === c.id;
     return (
       <div className="mt-1.5 flex items-center gap-4 font-mono text-[11px] text-grey">
         {loggedIn ? (
-          <form action={setCommentReactionAction} className="inline-flex items-center gap-1">
-            <input type="hidden" name="comment_id" value={c.id} />
-            <button
-              type="submit"
-              name="kind"
-              value="up"
-              aria-label={t(locale, up.has(c.id) ? "post.unup" : "post.up")}
-              className={`transition-colors ${up.has(c.id) ? "text-blue" : "text-grey hover:text-blue"}`}
-            >
-              <ArrowBigUp size={13} fill={up.has(c.id) ? "currentColor" : "none"} />
-            </button>
-            <span className="min-w-3 text-center">{c.score}</span>
-            <button
-              type="submit"
-              name="kind"
-              value="down"
-              aria-label={t(locale, down.has(c.id) ? "post.undown" : "post.down")}
-              className={`transition-colors ${down.has(c.id) ? "text-paper" : "text-grey hover:text-paper"}`}
-            >
-              <ArrowBigDown size={13} fill={down.has(c.id) ? "currentColor" : "none"} />
-            </button>
-          </form>
+          <VoteCluster
+            target="comment"
+            id={c.id}
+            score={c.score}
+            up={up.has(c.id)}
+            down={down.has(c.id)}
+            locale={locale}
+            size={13}
+          />
         ) : (
-          <span className="inline-flex items-center gap-1" title={t(locale, "post.loginToUpvote")}>
+          <span
+            className="inline-flex items-center gap-1"
+            title={t(locale, "post.loginToUpvote")}
+          >
             <ArrowBigUp size={13} />
             {c.score}
           </span>
@@ -136,24 +201,20 @@ export default function CommentSection({
           <>
             <button
               type="button"
+              disabled={busy}
               onClick={() => setEditingId(editingId === c.id ? null : c.id)}
-              className="transition-colors hover:text-blue"
+              className="transition-colors hover:text-blue disabled:opacity-40"
             >
               {t(locale, "post.edit")}
             </button>
-            <form
-              action={deleteCommentAction}
-              className="inline-flex"
-              onSubmit={(e) => {
-                if (!window.confirm(t(locale, "post.commentDeleteConfirm")))
-                  e.preventDefault();
-              }}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => remove(c.id)}
+              className="transition-colors hover:text-red-400 disabled:opacity-40"
             >
-              <input type="hidden" name="comment_id" value={c.id} />
-              <button type="submit" className="transition-colors hover:text-red-400">
-                {t(locale, "post.delete")}
-              </button>
-            </form>
+              {busy ? t(locale, "post.submitting") : t(locale, "post.delete")}
+            </button>
           </>
         )}
       </div>
@@ -171,11 +232,7 @@ export default function CommentSection({
     >
       {head(c)}
       {editingId === c.id ? (
-        <form
-          action={updateCommentAction}
-          onSubmit={() => setEditingId(null)}
-          className="mt-2 space-y-2"
-        >
+        <form onSubmit={(e) => saveEdit(e, c.id)} className="mt-2 space-y-2">
           <input type="hidden" name="comment_id" value={c.id} />
           <textarea
             name="body"
@@ -187,9 +244,12 @@ export default function CommentSection({
           <div className="flex gap-3 font-mono text-[11px]">
             <button
               type="submit"
-              className="border border-blue px-3 py-1 text-blue transition-colors hover:bg-blue hover:text-bg"
+              disabled={busyId === c.id}
+              className="border border-blue px-3 py-1 text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
             >
-              {t(locale, "post.save")}
+              {busyId === c.id
+                ? t(locale, "post.submitting")
+                : t(locale, "post.save")}
             </button>
             <button
               type="button"
@@ -220,12 +280,7 @@ export default function CommentSection({
       <ul className="mt-6 space-y-6">{threads.map((c) => row(c, false))}</ul>
 
       {loggedIn ? (
-        <form
-          ref={formRef}
-          action={createCommentAction}
-          onSubmit={() => setReplyTo(null)}
-          className="mt-10 space-y-3"
-        >
+        <form ref={formRef} onSubmit={submitComment} className="mt-10 space-y-3">
           <input type="hidden" name="post_id" value={postId} />
           {replyTo && (
             <>
@@ -253,9 +308,10 @@ export default function CommentSection({
           />
           <button
             type="submit"
-            className="border border-blue px-5 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+            disabled={posting}
+            className="border border-blue px-5 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
           >
-            {t(locale, "post.comment")}
+            {posting ? t(locale, "post.submitting") : t(locale, "post.comment")}
           </button>
         </form>
       ) : (

@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
-import { ArrowBigDown, ArrowBigUp, Bookmark, MessageCircle } from "lucide-react";
+import { ArrowBigUp, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import { categoryLabel } from "@/src/lib/categories";
@@ -30,12 +30,10 @@ import CommentSection, {
   type CommentThread,
   type CommentView,
 } from "../_components/CommentSection";
+import PollVoteForm from "../_components/PollVoteForm";
 import PostOwnerActions from "../_components/PostOwnerActions";
-import {
-  setPostReactionAction,
-  toggleSubscribeAction,
-  votePollAction,
-} from "../actions";
+import SubscribeButton from "../_components/SubscribeButton";
+import VoteCluster from "../_components/VoteCluster";
 
 export async function generateMetadata({
   params,
@@ -182,30 +180,11 @@ export default async function PostPage({
       {poll && (
         <div className="mt-6 border border-line p-5">
           {user && poll.myOptionId === null ? (
-            <form action={votePollAction} className="space-y-3">
-              <input type="hidden" name="post_id" value={post.id} />
-              {poll.options.map((o) => (
-                <label
-                  key={o.id}
-                  className="flex cursor-pointer items-center gap-3 text-sm text-paper"
-                >
-                  <input
-                    type="radio"
-                    name="option_id"
-                    value={o.id}
-                    className="accent-blue"
-                    required
-                  />
-                  {o.label}
-                </label>
-              ))}
-              <button
-                type="submit"
-                className="border border-blue px-4 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
-              >
-                {t(locale, "post.vote")}
-              </button>
-            </form>
+            <PollVoteForm
+              postId={post.id}
+              options={poll.options.map((o) => ({ id: o.id, label: o.label }))}
+              locale={locale}
+            />
           ) : (
             <div className="space-y-3">
               {poll.options.map((o) => {
@@ -243,30 +222,15 @@ export default async function PostPage({
       {/* 动作条:顶/踩 + 评论 + 订阅 + 分享 + 作者操作(编辑/可见性/删除) */}
       <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-3">
         {user ? (
-          <form action={setPostReactionAction} className="inline-flex items-center gap-1.5">
-            <input type="hidden" name="post_id" value={post.id} />
-            <button
-              type="submit"
-              name="kind"
-              value="up"
-              aria-label={t(locale, upVoted ? "post.unup" : "post.up")}
-              className={`transition-colors ${upVoted ? "text-blue" : "text-grey hover:text-blue"}`}
-            >
-              <ArrowBigUp size={16} fill={upVoted ? "currentColor" : "none"} />
-            </button>
-            <span className="min-w-4 text-center font-mono text-xs text-paper">
-              {post.score}
-            </span>
-            <button
-              type="submit"
-              name="kind"
-              value="down"
-              aria-label={t(locale, downVoted ? "post.undown" : "post.down")}
-              className={`transition-colors ${downVoted ? "text-paper" : "text-grey hover:text-paper"}`}
-            >
-              <ArrowBigDown size={16} fill={downVoted ? "currentColor" : "none"} />
-            </button>
-          </form>
+          <VoteCluster
+            target="post"
+            id={post.id}
+            score={post.score}
+            up={upVoted}
+            down={downVoted}
+            locale={locale}
+            size={16}
+          />
         ) : (
           <span
             className="inline-flex items-center gap-1.5 font-mono text-xs text-grey"
@@ -278,25 +242,18 @@ export default async function PostPage({
         )}
         <a
           href="#comments"
+          title={t(locale, "post.comments", { n: post.commentCount })}
           className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-blue"
         >
           <MessageCircle size={14} />
           {post.commentCount}
         </a>
         {user && (
-          <form action={toggleSubscribeAction}>
-            <input type="hidden" name="post_id" value={post.id} />
-            <button
-              type="submit"
-              aria-label={t(locale, subscribed ? "post.unsubscribe" : "post.subscribe")}
-              className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
-                subscribed ? "text-blue" : "text-grey hover:text-blue"
-              }`}
-            >
-              <Bookmark size={14} fill={subscribed ? "currentColor" : "none"} />
-              {t(locale, subscribed ? "post.subscribed" : "post.subscribe")}
-            </button>
-          </form>
+          <SubscribeButton
+            postId={post.id}
+            subscribed={subscribed}
+            locale={locale}
+          />
         )}
         {user && post.userId === user.id && (
           <PostOwnerActions

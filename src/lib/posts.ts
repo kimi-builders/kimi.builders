@@ -94,10 +94,12 @@ export async function getFeed(opts: {
     where.push("p.category = ?");
     args.push(opts.category);
   }
+  /* comment_count 是 UNSIGNED、score 是有符号:混合运算会被 MySQL 整体提升成
+     UNSIGNED,负分帖直接 ER_DATA_OUT_OF_RANGE(整站 500)—— CAST 成 SIGNED 再算。 */
   const order =
     opts.sort === "new"
       ? "p.created_at DESC"
-      : "(p.score + p.comment_count * 2) / POW(TIMESTAMPDIFF(HOUR, p.created_at, NOW()) + 2, 1.5) DESC, p.created_at DESC";
+      : "(p.score + CAST(p.comment_count AS SIGNED) * 2) / POW(TIMESTAMPDIFF(HOUR, p.created_at, NOW()) + 2, 1.5) DESC, p.created_at DESC";
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
             p.visibility, p.score, p.comment_count, p.created_at,
@@ -486,7 +488,7 @@ export async function getSidebarData(): Promise<SidebarData> {
     pool.query<RowDataPacket[]>(
       `SELECT id, title, LEFT(body_md, 200) AS body_excerpt, comment_count, score FROM posts
        WHERE deleted_at IS NULL AND visibility = 'public' AND created_at > NOW() - INTERVAL 7 DAY
-       ORDER BY comment_count * 2 + score DESC, created_at DESC LIMIT 5`,
+       ORDER BY CAST(comment_count AS SIGNED) * 2 + score DESC, created_at DESC LIMIT 5`,
     ).then(([rows]) => rows),
     pool.query<RowDataPacket[]>(
       `SELECT
