@@ -15,6 +15,24 @@ import {
   type UsageFilters,
   type UsageMetric,
 } from "./filters";
+
+/* 趋势时间格表达式:hour → 'YYYY-MM-DD HH:00'(本地);week → 本地周一日;day → 本地日。 */
+function trendTimeExpr(column: string, filters: UsageFilters): string {
+  const shifted = `DATE_ADD(${column}, INTERVAL ${filters.tzOffsetMinutes} MINUTE)`;
+  if (filters.granularity === "hour") {
+    return `DATE_FORMAT(${shifted}, '%Y-%m-%d %H:00')`;
+  }
+  if (filters.granularity === "week") {
+    return `DATE(DATE_SUB(${shifted}, INTERVAL WEEKDAY(${shifted}) DAY))`;
+  }
+  return `DATE(${shifted})`;
+}
+
+/* DATE_FORMAT 返回字符串;DATE() 经 timezone:'Z' 返回 UTC Date。 */
+function trendKeyOf(value: unknown, granularity: UsageFilters["granularity"]): string {
+  if (granularity === "hour") return String(value);
+  return utcDay(value);
+}
 import {
   createPricingLedger,
   estimateCostMicros,
@@ -28,7 +46,11 @@ export interface UsageTotals extends UsageTokenBreakdown {
   requests: number;
   sessions: number;
   userMessages: number;
+  /* 会话总消息数(含 assistant);legacy 行无此口径 */
+  messages: number;
   activeSeconds: number;
+  /* 会话墙钟时长(first→last)之和;legacy 行无此口径 */
+  durationSeconds: number;
   /* legacy 存储值 + 查询期估费之和;未定价模型永远不在其中。 */
   costMicros: number;
   /* 筛选范围内出现过事实数据的设备数 */
@@ -114,6 +136,22 @@ export interface UsageOverview {
     pageSize: number;
   };
   options: UsageFilterOptions;
+  /* 上一等长周期同口径总量(环比;costMicros 含其窗口内的查询期估费) */
+  previous: {
+    inputTokens: number;
+    cacheWriteInputTokens: number;
+    cacheReadInputTokens: number;
+    outputTokens: number;
+    reasoningOutputTokens: number;
+    totalTokens: number;
+    requests: number;
+    sessions: number;
+    messages: number;
+    userMessages: number;
+    activeSeconds: number;
+    durationSeconds: number;
+    costMicros: number;
+  };
   /* 已链接且未撤销的设备总数(不随筛选变化) */
   activeDevices: number;
   lastSyncAt: Date | null;
@@ -278,6 +316,8 @@ function emptyTotals(): UsageTotals {
     sessions: 0,
     userMessages: 0,
     activeSeconds: 0,
+    durationSeconds: 0,
+    messages: 0,
     costMicros: 0,
     activeDevices: 0,
   };
@@ -291,7 +331,8 @@ export async function getUsageOverview(
   const prices = await loadModelPrices(pool);
   const bucket = bucketFilterSql(userId, filters);
   const session = sessionFilterSql(userId, filters);
-  const day = localDayExpr("bucket_start", filters);
+  const trendBucket = trendTimeExpr("bucket_start", filters);
+  const trendSession = trendTimeExpr("first_message_at", filters);
 
   const rangeOnly: UsageFilters = {
     ...filters,
@@ -301,6 +342,15 @@ export async function getUsageOverview(
     devices: null,
   };
   const rangeBucket = bucketFilterSql(userId, rangeOnly);
+
+  const prevSpan = filters.to.getTime() - filters.from.getTime();
+  const prevFilters: UsageFilters = {
+    ...filters,
+    from: new Date(filters.from.getTime() - prevSpan),
+    to: filters.from,
+  };
+  const prevBucket = bucketFilterSql(userId, prevFilters);
+  const prevSession = sessionFilterSql(userId, prevFilters);
 
   const recordsQ = recordsQuery(
     userId,
@@ -313,10 +363,10 @@ export async function getUsageOverview(
     // 0 趋势+总览:本地日 × source × model
     pool
       .query<RowDataPacket[]>(
-        `SELECT ${day} AS day, source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+        `SELECT ${trendBucket} AS day, source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY ${day}, source, model
+         GROUP BY ${trendBucket}, source, model
          ORDER BY day`,
         bucket.params,
       )
@@ -324,14 +374,16 @@ export async function getUsageOverview(
     // 1 会话日聚合
     pool
       .query<RowDataPacket[]>(
-        `SELECT ${localDayExpr("first_message_at", filters)} AS day,
+        `SELECT ${trendSession} AS day,
                 COUNT(*) AS session_count,
                 SUM(active_seconds) AS active_seconds,
+                SUM(duration_seconds) AS duration_seconds,
+                SUM(message_count) AS message_count,
                 SUM(user_message_count) AS user_messages,
                 COUNT(DISTINCT device_id) AS device_count
          FROM usage_sessions
          WHERE ${session.where}
-         GROUP BY ${localDayExpr("first_message_at", filters)}`,
+         GROUP BY ${trendSession}`,
         session.params,
       )
       .then(([rows]) => rows),
@@ -483,6 +535,28 @@ export async function getUsageOverview(
         [userId],
       )
       .then(([rows]) => rows),
+    // 18/19 上一等长周期(环比):同筛选,窗口整体前移一个 span
+    pool
+      .query<RowDataPacket[]>(
+        `SELECT source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+         FROM usage_buckets
+         WHERE ${prevBucket.where}
+         GROUP BY source, model`,
+        prevBucket.params,
+      )
+      .then(([rows]) => rows),
+    pool
+      .query<RowDataPacket[]>(
+        `SELECT COUNT(*) AS session_count,
+                SUM(active_seconds) AS active_seconds,
+                SUM(duration_seconds) AS duration_seconds,
+                SUM(message_count) AS message_count,
+                SUM(user_message_count) AS user_messages
+         FROM usage_sessions
+         WHERE ${prevSession.where}`,
+        prevSession.params,
+      )
+      .then(([rows]) => rows),
   ];
 
   const [
@@ -504,6 +578,8 @@ export async function getUsageOverview(
     optionModelRows,
     optionProjectRows,
     optionDeviceRows,
+    prevBucketRows,
+    prevSessionRows,
   ] = await Promise.all(queries);
 
   // 全量估费台账:unpriced/partial 名册 + 总估费(trend 部分)。
@@ -560,7 +636,7 @@ export async function getUsageOverview(
 
   for (const row of bucketRows) {
     const tokens = tokensOf(row);
-    const item = ensureDay(utcDay(row.day));
+    const item = ensureDay(trendKeyOf(row.day, filters.granularity));
     const estimated = priceRow(row, tokens);
     const stored = num(row.stored_cost_micros);
     addTokens(item, tokens);
@@ -575,11 +651,13 @@ export async function getUsageOverview(
     totals.costMicros += stored + estimated;
   }
   for (const row of sessionDayRows) {
-    const item = ensureDay(utcDay(row.day));
+    const item = ensureDay(trendKeyOf(row.day, filters.granularity));
     item.sessions += num(row.session_count);
     item.activeSeconds += num(row.active_seconds);
     totals.sessions += num(row.session_count);
     totals.activeSeconds += num(row.active_seconds);
+    totals.durationSeconds += num(row.duration_seconds);
+    totals.messages += num(row.message_count);
     totals.userMessages += num(row.user_messages);
   }
   for (const item of byDay.values()) item.totalTokens = totalOf(item);
@@ -589,6 +667,63 @@ export async function getUsageOverview(
     [...bucketDeviceRows, ...sessionDeviceRows].map((row) => String(row.device_id)),
   ).size;
   const trend = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+
+  // —— 上一等长周期(环比);独立台账,不污染当前范围的 unpriced/partial 名册 ——
+  const previous = {
+    inputTokens: 0,
+    cacheWriteInputTokens: 0,
+    cacheReadInputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+    totalTokens: 0,
+    requests: 0,
+    sessions: 0,
+    messages: 0,
+    userMessages: 0,
+    activeSeconds: 0,
+    durationSeconds: 0,
+    costMicros: 0,
+  };
+  const prevLedger = createPricingLedger();
+  for (const row of prevBucketRows) {
+    const tokens = tokensOf(row);
+    previous.inputTokens += tokens.inputTokens;
+    previous.cacheWriteInputTokens += tokens.cacheWriteInputTokens;
+    previous.cacheReadInputTokens += tokens.cacheReadInputTokens;
+    previous.outputTokens += tokens.outputTokens;
+    previous.reasoningOutputTokens += tokens.reasoningOutputTokens;
+    previous.requests += num(row.request_count);
+    previous.activeSeconds += num(row.legacy_active_seconds);
+    previous.sessions += num(row.legacy_session_count);
+    let estimated = 0;
+    if (String(row.model) !== LEGACY_MODEL) {
+      estimated = estimateCostMicros(
+        tokens,
+        matchModelPrice(
+          prices,
+          String(row.model),
+          new Date(row.sample_at as string),
+          String(row.source),
+        ),
+      ).micros;
+    }
+    previous.costMicros += num(row.stored_cost_micros) + estimated;
+  }
+  const prevSessionAgg = prevSessionRows[0];
+  if (prevSessionAgg) {
+    previous.sessions += num(prevSessionAgg.session_count);
+    previous.activeSeconds += num(prevSessionAgg.active_seconds);
+    previous.durationSeconds += num(prevSessionAgg.duration_seconds);
+    previous.messages += num(prevSessionAgg.message_count);
+    previous.userMessages += num(prevSessionAgg.user_messages);
+  }
+  previous.totalTokens =
+    previous.inputTokens +
+    previous.cacheWriteInputTokens +
+    previous.cacheReadInputTokens +
+    previous.outputTokens +
+    previous.reasoningOutputTokens;
+  void prevLedger;
 
   // —— 热图 ——
   const heatmap = emptyHeatmap();
@@ -802,6 +937,7 @@ export async function getUsageOverview(
     },
     totals,
     trend,
+    previous,
     heatmap,
     distributions,
     records: {

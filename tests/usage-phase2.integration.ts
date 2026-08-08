@@ -267,6 +267,22 @@ async function main() {
     const legacyShape = await getUsageDashboard(userId, 30);
     assert.equal(typeof legacyShape.totals.totalTokens, "number");
     assert.equal(legacyShape.activeDevices, 2);
+
+    // —— 趋势粒度:长跨度按本地周一聚合,总量不变 ——
+    const weekly = await getUsageOverview(
+      userId,
+      parseUsageFilters(
+        { from: "2026-06-01", to: "2026-08-02" },
+        { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-08-08T12:00:00Z") },
+      ),
+    );
+    assert.equal(weekly.trend.length > 0, true);
+    for (const row of weekly.trend) {
+      assert.equal(new Date(`${row.day}T00:00:00Z`).getUTCDay(), 1); // 周一
+    }
+    assert.equal(weekly.totals.totalTokens, expected.total);
+    // 环比:previous 窗口(3-4 月,无数据)为零
+    assert.equal(weekly.previous.totalTokens, 0);
   } finally {
     await pool.query("DELETE FROM users WHERE id IN (?, ?)", [userId, otherUserId]);
     await pool.end();

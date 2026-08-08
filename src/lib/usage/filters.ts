@@ -5,8 +5,10 @@
    SQL 里以整数内联(已夹取),不用占位符(MySQL 预备语句对 INTERVAL ? 支持不稳)。 */
 import { isUsageSourceId } from "../usage-contract";
 
-export type UsageRangeLabel = "7d" | "30d" | "90d" | "custom";
+export type UsageRangeLabel = "today" | "24h" | "7d" | "30d" | "90d" | "custom";
 export type UsageMetric = "tokens" | "cost" | "duration";
+/* 趋势粒度:today/24h/≤2 天自定义 → 小时;≥60 天 → 周(周一起);其余按本地日。 */
+export type UsageGranularity = "hour" | "day" | "week";
 
 export interface UsageFilters {
   /* UTC 边界,[from, to)。预设范围 to=查询时刻;自定义 to=本地结束日次日(夹到 now)。 */
@@ -25,6 +27,7 @@ export interface UsageFilters {
   devices: string[] | null;
   tzOffsetMinutes: number;
   metric: UsageMetric;
+  granularity: UsageGranularity;
   page: number;
   pageSize: number;
 }
@@ -87,6 +90,10 @@ export function parseUsageFilters(
   let to: Date = now;
   const rangeParam = first(raw.range).trim();
   const legacyDays = Number(first(raw.days));
+  if (rangeParam === "today" || rangeParam === "24h") {
+    days = 1;
+    rangeLabel = rangeParam;
+  }
   const preset = rangeParam.endsWith("d")
     ? Number(rangeParam.slice(0, -1))
     : Number(rangeParam);
@@ -110,13 +117,20 @@ export function parseUsageFilters(
       );
     }
   }
-  if (rangeLabel !== "custom") {
-    const localNowMs = now.getTime() + tzOffsetMinutes * 60_000;
-    const localTodayUtc = Date.UTC(
-      new Date(localNowMs).getUTCFullYear(),
-      new Date(localNowMs).getUTCMonth(),
-      new Date(localNowMs).getUTCDate(),
-    );
+  const localNowMs = now.getTime() + tzOffsetMinutes * 60_000;
+  const localTodayUtc = Date.UTC(
+    new Date(localNowMs).getUTCFullYear(),
+    new Date(localNowMs).getUTCMonth(),
+    new Date(localNowMs).getUTCDate(),
+  );
+  if (rangeLabel === "24h") {
+    // 滚动 24 小时,不按日界对齐
+    from = new Date(now.getTime() - 86_400_000);
+    to = now;
+  } else if (rangeLabel === "today") {
+    from = new Date(localTodayUtc - tzOffsetMinutes * 60_000);
+    to = now;
+  } else if (rangeLabel !== "custom") {
     from = new Date(localTodayUtc - (days - 1) * 86_400_000 - tzOffsetMinutes * 60_000);
     to = now;
   }
@@ -144,6 +158,18 @@ export function parseUsageFilters(
     devices: csvList(raw.devices, 40, (value) => /^udv_[A-Za-z0-9_-]{1,32}$/.test(value)),
     tzOffsetMinutes,
     metric,
+    granularity:
+      rangeLabel === "today" || rangeLabel === "24h"
+        ? "hour"
+        : rangeLabel === "custom"
+          ? days <= 2
+            ? "hour"
+            : days >= 60
+              ? "week"
+              : "day"
+          : days >= 60
+            ? "week"
+            : "day",
     page,
     pageSize,
   };

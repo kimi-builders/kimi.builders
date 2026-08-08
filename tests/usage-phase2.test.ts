@@ -228,6 +228,32 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
   assert.equal(cells[13], "unpriced");
 });
 
+test("filters: today/24h/粒度推导", () => {
+  const now = new Date("2026-08-08T12:00:00.000Z");
+  const opts = { uploadProject: false, tzOffsetMinutes: 480, now };
+  const today = parseUsageFilters({ range: "today" }, opts);
+  assert.equal(today.days, 1);
+  assert.equal(today.granularity, "hour");
+  assert.equal(today.from.toISOString(), "2026-08-07T16:00:00.000Z"); // 北京 8/8 00:00
+  assert.equal(today.to.toISOString(), now.toISOString());
+
+  const rolling = parseUsageFilters({ range: "24h" }, opts);
+  assert.equal(rolling.granularity, "hour");
+  assert.equal(rolling.from.toISOString(), "2026-08-07T12:00:00.000Z");
+
+  assert.equal(parseUsageFilters({ range: "7d" }, opts).granularity, "day");
+  assert.equal(parseUsageFilters({ range: "30d" }, opts).granularity, "day");
+  assert.equal(parseUsageFilters({ range: "90d" }, opts).granularity, "week");
+  assert.equal(
+    parseUsageFilters({ from: "2026-06-01", to: "2026-08-08" }, opts).granularity,
+    "week",
+  );
+  assert.equal(
+    parseUsageFilters({ from: "2026-08-07", to: "2026-08-08" }, opts).granularity,
+    "hour",
+  );
+});
+
 test("csv: 文件名安全", () => {
   const filters = parseUsageFilters(
     { range: "7d" },

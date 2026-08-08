@@ -2,7 +2,7 @@
    有 Color 用 Color;没有的用 Mono(currentColor,跟随文字色)。
    图标本身是 "use client",这个 wrapper 保持 RSC,边界停在图标处。 */
 import KimiColor from "@lobehub/icons/es/Kimi/components/Color";
-import ClaudeColor from "@lobehub/icons/es/Claude/components/Color";
+import ClaudeCodeColor from "@lobehub/icons/es/ClaudeCode/components/Color";
 import CodexColor from "@lobehub/icons/es/Codex/components/Color";
 import CursorMono from "@lobehub/icons/es/Cursor/components/Mono";
 import CopilotColor from "@lobehub/icons/es/Copilot/components/Color";
@@ -10,12 +10,21 @@ import WindsurfMono from "@lobehub/icons/es/Windsurf/components/Mono";
 import TraeColor from "@lobehub/icons/es/Trae/components/Color";
 import ClineMono from "@lobehub/icons/es/Cline/components/Mono";
 import GeminiColor from "@lobehub/icons/es/Gemini/components/Color";
+import GeminiCliColor from "@lobehub/icons/es/GeminiCLI/components/Color";
+import OpenCodeMono from "@lobehub/icons/es/OpenCode/components/Mono";
+import AntigravityColor from "@lobehub/icons/es/Antigravity/components/Color";
 import QwenColor from "@lobehub/icons/es/Qwen/components/Color";
 
 const ICONS = {
   kimi: KimiColor,
-  "claude-code": ClaudeColor,
+  // 用量来源 id(usage source id)直接映射
+  "kimi-code": KimiColor,
+  "claude-code": ClaudeCodeColor,
   codex: CodexColor,
+  "gemini-cli": GeminiCliColor,
+  opencode: OpenCodeMono,
+  antigravity: AntigravityColor,
+  // 作品库 Agent id
   cursor: CursorMono,
   copilot: CopilotColor,
   windsurf: WindsurfMono,

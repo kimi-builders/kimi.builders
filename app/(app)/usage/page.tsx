@@ -3,15 +3,22 @@ import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import {
   Activity,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   BarChart3,
   Clock3,
+  Database,
   Download,
   KeyRound,
   Link2,
-  Monitor,
+  MessageSquare,
+  MessagesSquare,
   ShieldCheck,
+  Timer,
   Trash2,
+  User,
 } from "lucide-react";
+import AgentIcon from "@/components/AgentIcon";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -19,7 +26,9 @@ import { listUsageDevices, type UsageDeviceSummary } from "@/src/lib/usage/devic
 import {
   parseUsageFilters,
   usageFiltersToSearch,
+  type UsageGranularity,
   type UsageMetric,
+  type UsageRangeLabel,
 } from "@/src/lib/usage/filters";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import {
@@ -57,41 +66,82 @@ function duration(seconds: number, zh: boolean): string {
   return zh ? `${minutes} 分钟` : `${minutes}m`;
 }
 
-/* 本地日序列:from(UTC 边界)+ tzOffset 即本地首日零点,之后用 UTC 数学逐日 +86400s。 */
-function fillTrend(
-  data: UsageTrendDay[],
-  fromIso: string,
-  days: number,
-  tzOffsetMinutes: number,
-): UsageTrendDay[] {
-  const values = new Map(data.map((item) => [item.day, item]));
-  const startMs = new Date(fromIso).getTime() + tzOffsetMinutes * 60_000;
-  return Array.from({ length: days }, (_, index) => {
-    const day = new Date(startMs + index * 86_400_000).toISOString().slice(0, 10);
-    return (
-      values.get(day) ?? {
-        day,
-        inputTokens: 0,
-        cacheWriteInputTokens: 0,
-        cacheReadInputTokens: 0,
-        outputTokens: 0,
-        reasoningOutputTokens: 0,
-        totalTokens: 0,
-        requests: 0,
-        sessions: 0,
-        activeSeconds: 0,
-        costMicros: 0,
-      }
-    );
-  });
-}
-
 /* 距现在的小时数;null 视为无限大(从未同步 = 过期)。
    时钟读数收在这个非组件 helper 里:组件渲染体内直接 Date.now() 会触发
    react-hooks/purity,而本页是动态服务端组件,每请求重渲染,读时钟是安全的。 */
 function hoursSince(value: Date | string | null): number {
   if (!value) return Number.POSITIVE_INFINITY;
   return (Date.now() - new Date(value).getTime()) / 3_600_000;
+}
+
+const HOUR_MS = 3_600_000;
+const DAY_MS = 86_400_000;
+
+function zeroTrendSlot(key: string): UsageTrendDay {
+  return {
+    day: key,
+    inputTokens: 0,
+    cacheWriteInputTokens: 0,
+    cacheReadInputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+    totalTokens: 0,
+    requests: 0,
+    sessions: 0,
+    activeSeconds: 0,
+    costMicros: 0,
+  };
+}
+
+/* 趋势补零:按粒度生成 [from, to] 的完整本地时间格序列。
+   纯 UTC 数学:localMs = utcMs + tzOffset,再用 getUTC* 读移位后的墙钟。
+   hour → "YYYY-MM-DD HH:00"(24h 滚动从 from 之后第一个整点开始);
+   day → "YYYY-MM-DD";week → 本地周一的 "YYYY-MM-DD"。与 query.ts 的
+   trendTimeExpr 输出一一对应。 */
+function fillTrend(
+  data: UsageTrendDay[],
+  fromIso: string,
+  toIso: string,
+  granularity: UsageGranularity,
+  tzOffsetMinutes: number,
+): UsageTrendDay[] {
+  const values = new Map(data.map((item) => [item.day, item]));
+  const tz = tzOffsetMinutes * 60_000;
+  const fromShifted = new Date(fromIso).getTime() + tz;
+  const toShifted = new Date(toIso).getTime() + tz;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dayKey = (shiftedMs: number) => new Date(shiftedMs).toISOString().slice(0, 10);
+  const hourKey = (shiftedMs: number) => {
+    const d = new Date(shiftedMs);
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(
+      d.getUTCHours(),
+    )}:00`;
+  };
+
+  let cursor: number;
+  let step: number;
+  let keyOf: (shiftedMs: number) => string;
+  if (granularity === "hour") {
+    cursor = Math.ceil(fromShifted / HOUR_MS) * HOUR_MS;
+    step = HOUR_MS;
+    keyOf = hourKey;
+  } else if (granularity === "week") {
+    const dayFloor = Math.floor(fromShifted / DAY_MS) * DAY_MS;
+    cursor = dayFloor - ((new Date(dayFloor).getUTCDay() + 6) % 7) * DAY_MS;
+    step = 7 * DAY_MS;
+    keyOf = dayKey;
+  } else {
+    cursor = Math.floor(fromShifted / DAY_MS) * DAY_MS;
+    step = DAY_MS;
+    keyOf = dayKey;
+  }
+
+  const series: UsageTrendDay[] = [];
+  for (let m = cursor; m <= toShifted; m += step) {
+    const key = keyOf(m);
+    series.push(values.get(key) ?? zeroTrendSlot(key));
+  }
+  return series;
 }
 
 function gmtLabel(tzOffsetMinutes: number): string {
@@ -145,6 +195,27 @@ function formatHeatValue(metric: HeatMetric, value: number, zh: boolean): string
   return `${compact(value)} tokens`;
 }
 
+/* 环比小注:正 emerald / 负 red / 上期为零 → 「—」。 */
+function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
+  const title = zh ? "环比上一等长周期" : "vs the previous equal-length period";
+  if (prev <= 0) {
+    return (
+      <span className="font-mono text-[10px] text-grey" title={title}>
+        —
+      </span>
+    );
+  }
+  const pct = ((cur - prev) / prev) * 100;
+  return (
+    <span
+      className={`font-mono text-[10px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
+      title={title}
+    >
+      {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
+    </span>
+  );
+}
+
 function SwitchLinks({
   items,
   label,
@@ -170,15 +241,20 @@ function SwitchLinks({
   );
 }
 
-/* 每日趋势:tokens 视图是五类堆叠柱,cost/duration 是单系列柱。
-   全零范围渲染居中提示而不是一副空坐标。 */
+/* 趋势图:tokens 视图按「输入(含缓存写)/缓存读/输出/推理」四类堆叠
+   (写缓存并入输入是展示层归组,五字段口径仍在明细表与次级条里);
+   cost/duration 是单系列柱。全零范围渲染居中提示而不是一副空坐标。 */
 function TrendChart({
   trend,
   metric,
+  granularity,
+  rangeLabel,
   zh,
 }: {
   trend: UsageTrendDay[];
   metric: UsageMetric;
+  granularity: UsageGranularity;
+  rangeLabel: UsageRangeLabel;
   zh: boolean;
 }) {
   const valueOf = (item: UsageTrendDay): number =>
@@ -192,10 +268,28 @@ function TrendChart({
     );
   }
   const labelIndices = new Set([0, Math.floor((trend.length - 1) / 2), trend.length - 1]);
+  const axisLabel = (key: string): string =>
+    granularity === "hour"
+      ? rangeLabel === "today"
+        ? key.slice(11)
+        : key.slice(5)
+      : key.slice(5);
+  const maxMarker =
+    metric === "cost"
+      ? `$${(max / 1e6).toFixed(2)}`
+      : metric === "duration"
+        ? duration(max, zh)
+        : compact(max);
   const tooltip = (item: UsageTrendDay): string => {
     if (metric === "cost") return `${item.day} · $${(item.costMicros / 1e6).toFixed(4)}`;
     if (metric === "duration") return `${item.day} · ${duration(item.activeSeconds, zh)}`;
-    return `${item.day} · ${compact(item.totalTokens)} tokens`;
+    return [
+      `${item.day} · ${compact(item.totalTokens)} tokens`,
+      `${zh ? "输入(含缓存写)" : "Input (incl. cache write)"} ${compact(item.inputTokens + item.cacheWriteInputTokens)}`,
+      `${zh ? "缓存读" : "Cache read"} ${compact(item.cacheReadInputTokens)}`,
+      `${zh ? "输出" : "Output"} ${compact(item.outputTokens)}`,
+      `${zh ? "推理" : "Reasoning"} ${compact(item.reasoningOutputTokens)}`,
+    ].join("\n");
   };
   const srValue = (item: UsageTrendDay): string => {
     if (metric === "cost") return `$${(item.costMicros / 1e6).toFixed(4)}`;
@@ -206,54 +300,67 @@ function TrendChart({
     <div>
       <div className="overflow-x-auto">
         <div className="min-w-[520px]">
-          <div className="flex h-48 items-end gap-1.5 border-b border-line px-1">
-            {trend.map((item) => {
-              const value = valueOf(item);
-              const height = value === 0 ? 1 : Math.max(4, (value / max) * 100);
-              return (
-                <div key={item.day} className="group relative flex h-full min-w-1 flex-1 items-end">
-                  {metric === "tokens" ? (
-                    <div
-                      className="flex w-full flex-col-reverse overflow-hidden bg-card transition-opacity group-hover:opacity-80"
-                      style={{ height: `${height}%` }}
-                      title={tooltip(item)}
-                    >
-                      <span
-                        className="block bg-blue"
-                        style={{ height: `${item.totalTokens ? (item.inputTokens / item.totalTokens) * 100 : 0}%` }}
+          <div className="relative">
+            <span className="pointer-events-none absolute left-1 top-0 font-mono text-[9px] text-grey/70">
+              {maxMarker}
+            </span>
+            <div className="flex h-48 items-end gap-1.5 border-b border-line px-1">
+              {trend.map((item) => {
+                const value = valueOf(item);
+                const height = value === 0 ? 1 : Math.max(4, (value / max) * 100);
+                return (
+                  <div key={item.day} className="group relative flex h-full min-w-1 flex-1 items-end">
+                    {metric === "tokens" ? (
+                      <div
+                        className="flex w-full flex-col-reverse overflow-hidden bg-card transition-opacity group-hover:opacity-80"
+                        style={{ height: `${height}%` }}
+                        title={tooltip(item)}
+                      >
+                        <span
+                          className="block bg-blue"
+                          style={{
+                            height: `${
+                              item.totalTokens
+                                ? ((item.inputTokens + item.cacheWriteInputTokens) / item.totalTokens) * 100
+                                : 0
+                            }%`,
+                          }}
+                        />
+                        <span
+                          className="block bg-emerald-400/70"
+                          style={{
+                            height: `${item.totalTokens ? (item.cacheReadInputTokens / item.totalTokens) * 100 : 0}%`,
+                          }}
+                        />
+                        <span
+                          className="block bg-paper/70"
+                          style={{
+                            height: `${item.totalTokens ? (item.outputTokens / item.totalTokens) * 100 : 0}%`,
+                          }}
+                        />
+                        <span
+                          className="block bg-amber-400/90"
+                          style={{
+                            height: `${item.totalTokens ? (item.reasoningOutputTokens / item.totalTokens) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`w-full transition-opacity group-hover:opacity-80 ${
+                          value === 0 ? "bg-card" : metric === "cost" ? "bg-blue" : "bg-blue/70"
+                        }`}
+                        style={{ height: `${height}%` }}
+                        title={tooltip(item)}
                       />
-                      <span
-                        className="block bg-violet-400/80"
-                        style={{ height: `${item.totalTokens ? (item.cacheWriteInputTokens / item.totalTokens) * 100 : 0}%` }}
-                      />
-                      <span
-                        className="block bg-emerald-400/70"
-                        style={{ height: `${item.totalTokens ? (item.cacheReadInputTokens / item.totalTokens) * 100 : 0}%` }}
-                      />
-                      <span
-                        className="block bg-paper/70"
-                        style={{ height: `${item.totalTokens ? (item.outputTokens / item.totalTokens) * 100 : 0}%` }}
-                      />
-                      <span
-                        className="block bg-amber-400/90"
-                        style={{ height: `${item.totalTokens ? (item.reasoningOutputTokens / item.totalTokens) * 100 : 0}%` }}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className={`w-full transition-opacity group-hover:opacity-80 ${
-                        value === 0 ? "bg-card" : metric === "cost" ? "bg-blue" : "bg-blue/70"
-                      }`}
-                      style={{ height: `${height}%` }}
-                      title={tooltip(item)}
-                    />
-                  )}
-                  <span className="sr-only">
-                    {item.day}: {srValue(item)}
-                  </span>
-                </div>
-              );
-            })}
+                    )}
+                    <span className="sr-only">
+                      {item.day}: {srValue(item)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
           <div className="mt-1.5 flex gap-1.5 px-1">
             {trend.map((item, index) => (
@@ -267,7 +374,7 @@ function TrendChart({
                       : "text-center"
                 }`}
               >
-                {labelIndices.has(index) ? item.day.slice(5) : ""}
+                {labelIndices.has(index) ? axisLabel(item.day) : ""}
               </span>
             ))}
           </div>
@@ -275,8 +382,7 @@ function TrendChart({
       </div>
       {metric === "tokens" && (
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[10px] text-grey">
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-blue" />{zh ? "输入" : "Input"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-violet-400/80" />{zh ? "缓存写" : "Cache write"}</span>
+          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-blue" />{zh ? "输入(含缓存写)" : "Input (incl. cache write)"}</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-emerald-400/70" />{zh ? "缓存读" : "Cache read"}</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-paper/70" />{zh ? "输出" : "Output"}</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-400/90" />{zh ? "推理" : "Reasoning"}</span>
@@ -324,7 +430,7 @@ function HeatmapGrid({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="w-6 shrink-0" />
-            <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[2px]">
+            <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
               {Array.from({ length: 24 }, (_, hour) => (
                 <span key={hour} className="text-center font-mono text-[8px] text-grey">
                   {hour % 3 === 0 ? hour : ""}
@@ -332,17 +438,17 @@ function HeatmapGrid({
               ))}
             </div>
           </div>
-          <div className="mt-1 space-y-[2px]">
+          <div className="mt-1 space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
                 <span className="w-6 shrink-0 font-mono text-[9px] text-grey">
                   {shortNames[weekday]}
                 </span>
-                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[2px]">
+                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
                   {row.map((value, hour) => (
                     <span
                       key={hour}
-                      className={`h-4 sm:h-5 ${stepClass(value)}`}
+                      className={`aspect-square ${stepClass(value)}`}
                       title={cellLabel(weekday, hour, value)}
                     />
                   ))}
@@ -386,12 +492,16 @@ function DistributionCard({
   metric,
   zh,
   labelOf,
+  iconOf,
+  emptyText,
 }: {
   title: string;
   dist: UsageDistribution;
   metric: UsageMetric;
   zh: boolean;
   labelOf: (row: UsageDistributionRow) => string;
+  iconOf?: (row: UsageDistributionRow) => ReactNode;
+  emptyText?: string;
 }) {
   const byCost = metric === "cost";
   const denom = byCost ? dist.totalCostMicros : dist.totalTokens;
@@ -404,18 +514,23 @@ function DistributionCard({
         </span>
       </div>
       {dist.rows.length === 0 ? (
-        <p className="mt-4 text-xs text-grey">{zh ? "该范围内暂无数据" : "No data in this range"}</p>
+        <p className="mt-4 text-xs leading-relaxed text-grey">
+          {emptyText ?? (zh ? "该范围内暂无数据" : "No data in this range")}
+        </p>
       ) : (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-3 space-y-1">
           {dist.rows.map((row) => {
             const basis = byCost ? row.costMicros : row.tokens;
             const pct = denom > 0 ? (basis / denom) * 100 : 0;
             const label = labelOf(row);
             return (
-              <li key={row.key === "" ? "__empty__" : row.key}>
+              <li key={row.key === "" ? "__empty__" : row.key} className="-mx-2 px-2 py-2 hover:bg-card">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="min-w-0 truncate text-xs text-paper" title={label}>
-                    {label}
+                  <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
+                    {iconOf?.(row)}
+                    <span className="truncate" title={label}>
+                      {label}
+                    </span>
                   </span>
                   <span className="shrink-0 font-mono text-[10px] text-grey">
                     {compact(row.tokens)} · {Math.round(pct)}% ·{" "}
@@ -426,7 +541,7 @@ function DistributionCard({
                     )}
                   </span>
                 </div>
-                <div className="mt-1 h-1.5 bg-card">
+                <div className="mt-1 h-1.5 bg-bg">
                   <div className="h-full bg-blue/70" style={{ width: `${pct}%` }} />
                 </div>
               </li>
@@ -449,6 +564,16 @@ function recordCost(row: UsageRecordRow, zh: boolean): ReactNode {
       {row.priceStatus === "partial" ? "*" : ""}
     </>
   );
+}
+
+interface KpiCardSpec {
+  icon: typeof Activity;
+  label: string;
+  value: string;
+  note?: string;
+  cur?: number;
+  prev?: number;
+  sessionNote?: boolean;
 }
 
 export default async function UsagePage({
@@ -586,8 +711,14 @@ export default async function UsagePage({
     );
   }
 
-  const { totals } = overview;
-  const trend = fillTrend(overview.trend, overview.range.from, overview.days, filters.tzOffsetMinutes);
+  const { totals, previous } = overview;
+  const trend = fillTrend(
+    overview.trend,
+    overview.range.from,
+    overview.range.to,
+    filters.granularity,
+    overview.meta.tzOffsetMinutes,
+  );
   const totalsEmpty =
     totals.totalTokens === 0 && totals.requests === 0 && totals.sessions === 0;
   const dimensionFiltersActive = !!(
@@ -634,38 +765,148 @@ export default async function UsagePage({
     active: heatMetric === item.key,
   }));
 
+  const trendTitle =
+    filters.granularity === "hour"
+      ? zh
+        ? "每小时趋势"
+        : "HOURLY TREND"
+      : filters.granularity === "week"
+        ? zh
+          ? "每周趋势"
+          : "WEEKLY TREND"
+        : zh
+          ? "每日趋势"
+          : "DAILY TREND";
+
   const pricingVersions = overview.meta.pricingVersions.join("、");
   const unpricedCount = overview.meta.unpricedModels.length;
-  const kpis: { icon: typeof Activity; label: string; value: string; note: string; sessionNote?: boolean }[] = [
+  const inputWithCacheWrite = totals.inputTokens + totals.cacheWriteInputTokens;
+  const prevInputWithCacheWrite = previous.inputTokens + previous.cacheWriteInputTokens;
+
+  const kpiRow1: KpiCardSpec[] = [
     {
       icon: Activity,
-      label: zh ? "API 等价估费" : "API EQUIVALENT",
+      label: zh ? "预估费用" : "EST. COST",
       value: `$${(totals.costMicros / 1e6).toFixed(2)}`,
       note: zh
         ? `价格表 ${pricingVersions || "—"} · ${unpricedCount} 个模型未定价`
-        : `Pricing ${pricingVersions || "—"} · ${unpricedCount} unpriced models`,
+        : `Pricing ${pricingVersions || "—"} · ${unpricedCount} unpriced`,
     },
     {
       icon: BarChart3,
       label: zh ? "总 TOKEN" : "TOTAL TOKENS",
       value: compact(totals.totalTokens),
-      note: `${compact(totals.inputTokens)} ${zh ? "输入" : "input"}`,
+      cur: totals.totalTokens,
+      prev: previous.totalTokens,
     },
+    {
+      icon: ArrowDownToLine,
+      label: zh ? "输入 TOKEN" : "INPUT TOKENS",
+      value: compact(inputWithCacheWrite),
+      note: zh ? "含缓存写" : "incl. cache write",
+      cur: inputWithCacheWrite,
+      prev: prevInputWithCacheWrite,
+    },
+    {
+      icon: ArrowUpFromLine,
+      label: zh ? "输出 TOKEN" : "OUTPUT TOKENS",
+      value: compact(totals.outputTokens),
+      cur: totals.outputTokens,
+      prev: previous.outputTokens,
+    },
+    {
+      icon: Database,
+      label: zh ? "缓存 TOKEN" : "CACHE TOKENS",
+      value: compact(totals.cacheReadInputTokens),
+      note: zh ? "缓存读" : "cache read",
+      cur: totals.cacheReadInputTokens,
+      prev: previous.cacheReadInputTokens,
+    },
+  ];
+  const kpiRow2: KpiCardSpec[] = [
     {
       icon: Clock3,
       label: zh ? "活跃时长" : "ACTIVE TIME",
       value: duration(totals.activeSeconds, zh),
-      note: zh ? "基于本地交互时间" : "From local interactions",
+      cur: totals.activeSeconds,
+      prev: previous.activeSeconds,
       sessionNote: true,
     },
     {
-      icon: Monitor,
+      icon: Timer,
+      label: zh ? "总时长" : "TOTAL TIME",
+      value: duration(totals.durationSeconds, zh),
+      note: zh ? "会话墙钟" : "session wall-clock",
+      cur: totals.durationSeconds,
+      prev: previous.durationSeconds,
+      sessionNote: true,
+    },
+    {
+      icon: MessagesSquare,
       label: zh ? "会话数" : "SESSIONS",
       value: compact(totals.sessions),
-      note: `${compact(totals.requests)} ${zh ? "次调用" : "requests"} · ${totals.activeDevices} ${
-        zh ? "台活跃设备" : "active devices"
-      }`,
+      note: `${totals.activeDevices} ${zh ? "台活跃设备" : "active devices"}`,
+      cur: totals.sessions,
+      prev: previous.sessions,
       sessionNote: true,
+    },
+    {
+      icon: MessageSquare,
+      label: zh ? "总消息数" : "MESSAGES",
+      value: compact(totals.messages),
+      cur: totals.messages,
+      prev: previous.messages,
+      sessionNote: true,
+    },
+    {
+      icon: User,
+      label: zh ? "用户消息数" : "USER MSGS",
+      value: compact(totals.userMessages),
+      cur: totals.userMessages,
+      prev: previous.userMessages,
+      sessionNote: true,
+    },
+  ];
+
+  const renderKpiRow = (cards: KpiCardSpec[]) => (
+    <section className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      {cards.map(({ icon: Icon, label, value, note, cur, prev, sessionNote }) => (
+        <article key={label} className="border border-line bg-card p-4">
+          <div className="flex items-center justify-between gap-2 text-grey">
+            <span className="truncate font-mono text-[10px] tracking-[0.14em]">{label}</span>
+            <Icon size={14} className="shrink-0" />
+          </div>
+          <div className="mt-4 font-mono text-xl font-semibold text-paper">{value}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-grey">
+            {note && <span>{note}</span>}
+            {cur !== undefined && prev !== undefined && deltaNote(cur, prev, zh)}
+          </div>
+          {modelsFiltered && sessionNote && (
+            <div className="mt-1 text-[9px] text-grey/70">
+              {zh ? "会话指标不按模型拆分" : "Session metrics are not split by model"}
+            </div>
+          )}
+        </article>
+      ))}
+    </section>
+  );
+
+  const avgActiveMs =
+    totals.requests > 0 ? (totals.activeSeconds / totals.requests) * 1000 : null;
+  const avgActiveLabel =
+    avgActiveMs === null
+      ? "—"
+      : avgActiveMs >= 1000
+        ? `${(avgActiveMs / 1000).toFixed(1)}s`
+        : `${Math.round(avgActiveMs)}ms`;
+  const stripStats: { label: string; value: string; title?: string }[] = [
+    { label: zh ? "缓存写" : "CACHE WRITE", value: compact(totals.cacheWriteInputTokens) },
+    { label: zh ? "推理" : "REASONING", value: compact(totals.reasoningOutputTokens) },
+    { label: zh ? "请求数" : "REQUESTS", value: compact(totals.requests) },
+    {
+      label: zh ? "平均耗时" : "AVG ACTIVE",
+      value: avgActiveLabel,
+      title: zh ? "≈ 活跃时长 ÷ 请求数" : "≈ active time ÷ requests",
     },
   ];
 
@@ -679,6 +920,9 @@ export default async function UsagePage({
       : null;
   const nextPageHref =
     records.page < totalPages ? hrefWith(query, { page: String(records.page + 1) }) : null;
+
+  const localDayOf = (date: Date): string =>
+    new Date(date.getTime() + filters.tzOffsetMinutes * 60_000).toISOString().slice(0, 10);
 
   return (
     <div className="usage-dashboard">
@@ -720,6 +964,9 @@ export default async function UsagePage({
       )}
 
       <UsageFilterBar
+        /* key=当前查询串:任何筛选导航后重挂载,下拉/表单的本地开态随之复位,
+           避免软导航后 openMenu 残影导致再次点击变成"关闭"。 */
+        key={query}
         options={overview.options}
         applied={{
           range: filters.rangeLabel,
@@ -727,41 +974,24 @@ export default async function UsagePage({
           models: filters.models?.join(","),
           projects: filters.projects?.join(","),
           devices: filters.devices?.join(","),
+          customFrom: filters.rangeLabel === "custom" ? localDayOf(filters.from) : undefined,
+          customTo:
+            filters.rangeLabel === "custom"
+              ? localDayOf(new Date(filters.to.getTime() - 1))
+              : undefined,
         }}
         projectsEnabled={filters.projectsEnabled}
         zh={zh}
         preservedQuery={query}
       />
 
-      <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map(({ icon: Icon, label, value, note, sessionNote }) => (
-          <article key={label} className="border border-line bg-card p-4">
-            <div className="flex items-center justify-between text-grey">
-              <span className="font-mono text-[10px] tracking-[0.14em]">{label}</span>
-              <Icon size={14} />
-            </div>
-            <div className="mt-4 font-mono text-xl font-semibold text-paper">{value}</div>
-            <div className="mt-1.5 text-[10px] text-grey">{note}</div>
-            {modelsFiltered && sessionNote && (
-              <div className="mt-1 text-[9px] text-grey/70">
-                {zh ? "会话指标不按模型拆分" : "Session metrics are not split by model"}
-              </div>
-            )}
-          </article>
-        ))}
-      </section>
+      {renderKpiRow(kpiRow1)}
+      {renderKpiRow(kpiRow2)}
 
       <section className="mt-3 border border-line bg-card p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            { label: zh ? "输入" : "INPUT", value: compact(totals.inputTokens) },
-            { label: zh ? "输出" : "OUTPUT", value: compact(totals.outputTokens) },
-            { label: zh ? "缓存写" : "CACHE WRITE", value: compact(totals.cacheWriteInputTokens) },
-            { label: zh ? "缓存读" : "CACHE READ", value: compact(totals.cacheReadInputTokens) },
-            { label: zh ? "推理" : "REASONING", value: compact(totals.reasoningOutputTokens) },
-            { label: zh ? "请求数" : "REQUESTS", value: compact(totals.requests) },
-          ].map((stat) => (
-            <div key={stat.label}>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {stripStats.map((stat) => (
+            <div key={stat.label} title={stat.title}>
               <div className="font-mono text-[9px] tracking-[0.14em] text-grey">{stat.label}</div>
               <div className="mt-1.5 font-mono text-sm font-semibold text-paper">{stat.value}</div>
             </div>
@@ -773,18 +1003,24 @@ export default async function UsagePage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {zh ? "每日趋势" : "DAILY TREND"}
+              {trendTitle}
             </h2>
             <p className="mt-1 text-[10px] text-grey">
               {zh
-                ? `本地日界(${gmtLabel(filters.tzOffsetMinutes)}) · 30 分钟事实桶聚合`
-                : `Local days (${gmtLabel(filters.tzOffsetMinutes)}) · 30-minute buckets`}
+                ? `${gmtLabel(filters.tzOffsetMinutes)} · 30 分钟事实桶聚合`
+                : `${gmtLabel(filters.tzOffsetMinutes)} · 30-minute buckets`}
             </p>
           </div>
           <SwitchLinks items={trendSwitch} label={zh ? "趋势指标" : "Trend metric"} />
         </div>
         <div className="mt-6">
-          <TrendChart trend={trend} metric={filters.metric} zh={zh} />
+          <TrendChart
+            trend={trend}
+            metric={filters.metric}
+            granularity={filters.granularity}
+            rangeLabel={filters.rangeLabel}
+            zh={zh}
+          />
         </div>
       </section>
 
@@ -817,6 +1053,9 @@ export default async function UsagePage({
           metric={filters.metric}
           zh={zh}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : usageSourceLabel(row.key))}
+          iconOf={(row) =>
+            row.key === "__other__" ? null : <AgentIcon id={row.key} size={12} />
+          }
         />
         <DistributionCard
           title={zh ? "模型" : "MODELS"}
@@ -825,59 +1064,22 @@ export default async function UsagePage({
           zh={zh}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : row.key)}
         />
-        <section className="border border-line bg-card p-4 sm:p-5">
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {zh ? "项目" : "PROJECTS"}
-            </h3>
-            <span className="font-mono text-[9px] text-grey">
-              {filters.metric === "cost" ? (zh ? "按估费" : "by cost") : zh ? "按 Token" : "by tokens"}
-            </span>
-          </div>
-          {!filters.projectsEnabled ? (
-            <p className="mt-4 text-xs leading-relaxed text-grey">
-              {zh
+        <DistributionCard
+          title={zh ? "项目" : "PROJECTS"}
+          dist={overview.distributions.project}
+          metric={filters.metric}
+          zh={zh}
+          labelOf={(row) =>
+            row.key === "__other__" ? otherLabel : row.key === "" ? notUploadedLabel : row.key
+          }
+          emptyText={
+            filters.projectsEnabled
+              ? undefined
+              : zh
                 ? "项目名未上传 — 在隐私设置中开启后按项目拆分"
-                : "Project names are not uploaded — enable them in privacy settings to split by project"}
-            </p>
-          ) : overview.distributions.project.rows.length === 0 ? (
-            <p className="mt-4 text-xs text-grey">
-              {zh ? "该范围内暂无数据" : "No data in this range"}
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {overview.distributions.project.rows.map((row) => {
-                const byCost = filters.metric === "cost";
-                const denom = byCost
-                  ? overview.distributions.project.totalCostMicros
-                  : overview.distributions.project.totalTokens;
-                const pct = denom > 0 ? ((byCost ? row.costMicros : row.tokens) / denom) * 100 : 0;
-                const label =
-                  row.key === "__other__" ? otherLabel : row.key === "" ? notUploadedLabel : row.key;
-                return (
-                  <li key={row.key === "" ? "__empty__" : row.key}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="min-w-0 truncate text-xs text-paper" title={label}>
-                        {label}
-                      </span>
-                      <span className="shrink-0 font-mono text-[10px] text-grey">
-                        {compact(row.tokens)} · {Math.round(pct)}% ·{" "}
-                        {row.hasUnpriced && row.costMicros === 0 ? (
-                          <span className="text-grey">{zh ? "未定价" : "unpriced"}</span>
-                        ) : (
-                          `$${(row.costMicros / 1e6).toFixed(2)}`
-                        )}
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1.5 bg-card">
-                      <div className="h-full bg-blue/70" style={{ width: `${pct}%` }} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+                : "Project names are not uploaded — enable them in privacy settings to split by project"
+          }
+        />
         <DistributionCard
           title={zh ? "设备" : "DEVICES"}
           dist={overview.distributions.device}
@@ -927,7 +1129,10 @@ export default async function UsagePage({
                       >
                         <td className="whitespace-nowrap py-2 pr-4 text-paper">{row.day}</td>
                         <td className="whitespace-nowrap py-2 pr-4 text-paper">
-                          {usageSourceLabel(row.source)}
+                          <span className="inline-flex items-center gap-1.5">
+                            <AgentIcon id={row.source} size={12} />
+                            {usageSourceLabel(row.source)}
+                          </span>
                         </td>
                         <td
                           className="max-w-[180px] truncate whitespace-nowrap py-2 pr-4 text-paper"
@@ -972,8 +1177,11 @@ export default async function UsagePage({
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 font-mono text-[10px] text-grey">{row.day}</span>
-                    <span className="min-w-0 truncate text-xs text-paper" title={`${usageSourceLabel(row.source)} · ${row.model}`}>
-                      {usageSourceLabel(row.source)} · {row.model}
+                    <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
+                      <AgentIcon id={row.source} size={12} />
+                      <span className="truncate" title={`${usageSourceLabel(row.source)} · ${row.model}`}>
+                        {usageSourceLabel(row.source)} · {row.model}
+                      </span>
                     </span>
                   </div>
                   <div className="mt-2 font-mono text-[10px] text-grey">
