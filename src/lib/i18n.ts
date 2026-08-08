@@ -282,14 +282,36 @@ const DICT = {
     zh: "成员作品墙\n投稿与收录\n与 Awesome 列表联动",
     en: "Member gallery\nSubmission & curation\nLinked with the Awesome list",
   },
-  "soon.usage.desc": {
-    zh: "用量看板:本地脚本统计你的 Kimi token 用量,授权后同步到站点,按天看曲线和费用估算。",
-    en: "The usage dashboard: a local script measures your Kimi token usage and, with your consent, syncs it here — daily curves and cost estimates.",
+  /* ---- 用量看板 ---- */
+  "usage.intro": {
+    zh: "本地脚本统计你的 Kimi Code token 用量,授权后同步到这里。只上传按天汇总的数字,不含任何对话内容、文件路径或项目名。",
+    en: "A local script measures your Kimi Code token usage and syncs it here with your consent. Only per-day totals leave your machine — never conversation content, file paths, or project names.",
   },
-  "soon.usage.items": {
-    zh: "本地统计脚本\n每日用量曲线\n费用估算",
-    en: "Local stats script\nDaily usage curves\nCost estimates",
+  "usage.loginRequired": {
+    zh: "登录后查看你的用量看板:",
+    en: "Log in to see your usage dashboard:",
   },
+  "usage.last30": { zh: "最近 30 天", en: "LAST 30 DAYS" },
+  "usage.tokensIn": { zh: "输入", en: "input" },
+  "usage.tokensOut": { zh: "输出", en: "output" },
+  "usage.cached": { zh: "缓存命中", en: "cached" },
+  "usage.calls": { zh: "次调用", en: "calls" },
+  "usage.active": { zh: "活跃时长", en: "active" },
+  "usage.tokensUnit": { zh: "tokens", en: "tokens" },
+  "usage.howto": { zh: "同步方法", en: "HOW TO SYNC" },
+  "usage.noData": {
+    zh: "还没有用量数据 —— 在本机跑一下下面的脚本就有了(可重复跑,按天幂等)。",
+    en: "No usage data yet — run the script below on your machine (safe to re-run, idempotent per day).",
+  },
+  "usage.secretNote": {
+    zh: "密钥即身份,别贴到公开地方;脚本只读 ~/.kimi-code 的本地会话记录。",
+    en: "The secret identifies you — don't post it anywhere public. The script only reads local session records under ~/.kimi-code.",
+  },
+  "usage.notConfigured": {
+    zh: "站点还没配置同步密钥,先找管理员开通。",
+    en: "Sync isn't configured on this site yet — ask the admin to enable it.",
+  },
+  "usage.lastSync": { zh: "最近同步:{t}", en: "Last synced {t}" },
   "soon.awesome.desc": {
     zh: "Awesome Kimi:全世界用 Kimi 构建的项目合集,与 awesome-kimi-builders 仓库联动,欢迎 PR。",
     en: "Awesome Kimi: a curated list of projects built with Kimi around the world, synced with the awesome-kimi-builders repo. PRs welcome.",
@@ -297,6 +319,54 @@ const DICT = {
   "soon.awesome.items": {
     zh: "项目收录列表\n分类与标签\nGitHub 仓库同步",
     en: "Curated project list\nCategories & tags\nSynced with the GitHub repo",
+  },
+  /* ---- 作品库 ---- */
+  "works.submit": { zh: "提交作品", en: "Submit work" },
+  "works.empty": {
+    zh: "还没有作品。来挂第一个 —— 你用 Kimi 做的东西值得被看到。",
+    en: "No works yet. Hang the first one — what you built with Kimi deserves to be seen.",
+  },
+  "works.visit": { zh: "访问", en: "Visit" },
+  "works.repo": { zh: "源码", en: "Source" },
+  "works.deleteConfirm": {
+    zh: "确定删除这个作品?",
+    en: "Delete this work?",
+  },
+  "works.newTitle": { zh: "提交作品", en: "Submit work" },
+  "works.editTitle": { zh: "编辑作品", en: "Edit work" },
+  "works.name": { zh: "作品名称", en: "Name" },
+  "works.tagline": { zh: "一句话介绍", en: "Tagline" },
+  "works.url": { zh: "作品链接", en: "URL" },
+  "works.repoUrl": { zh: "仓库链接", en: "Repo URL" },
+  "works.shot": { zh: "截图 URL(可选)", en: "Screenshot URL (optional)" },
+  "works.tags": {
+    zh: "标签(逗号分隔,最多 5 个)",
+    en: "Tags (comma separated, max 5)",
+  },
+  "works.hint": {
+    zh: "链接和仓库至少填一个;提交后展示在作品墙,可随时编辑或撤下。",
+    en: "Add at least a URL or a repo link. It lands on the wall right away and you can edit or take it down anytime.",
+  },
+  "works.loginRequired": {
+    zh: "登录后提交作品:",
+    en: "Log in to submit your work:",
+  },
+  "err.workName": { zh: "作品名称必填", en: "Name is required" },
+  "err.workNameLong": {
+    zh: "名称太长了(120 字以内)",
+    en: "Name too long (120 chars max)",
+  },
+  "err.workTaglineLong": {
+    zh: "介绍太长了(300 字以内)",
+    en: "Tagline too long (300 chars max)",
+  },
+  "err.workNoLink": {
+    zh: "作品链接和仓库链接至少填一个",
+    en: "Add at least a URL or a repo link",
+  },
+  "err.notOwnerWork": {
+    zh: "只能编辑自己的作品",
+    en: "You can only edit your own works",
   },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },

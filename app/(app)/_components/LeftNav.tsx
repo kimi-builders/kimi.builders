@@ -41,8 +41,8 @@ function GithubIcon({ size = 15 }: { size?: number }) {
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false },
   { href: "/learn", icon: BookOpen, key: "nav.learn", soon: true },
-  { href: "/works", icon: Rocket, key: "nav.works", soon: true },
-  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: true },
+  { href: "/works", icon: Rocket, key: "nav.works", soon: false },
+  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: true },
 ] as const;
 
