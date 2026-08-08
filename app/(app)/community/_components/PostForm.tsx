@@ -5,17 +5,24 @@
 import { useActionState, useState } from "react";
 import { createPostAction, type PostFormState } from "../actions";
 import { CATEGORIES } from "@/src/lib/categories";
+import { t, type Locale } from "@/src/lib/i18n";
 
 const TYPES = [
-  { id: "text", zh: "文字" },
-  { id: "link", zh: "链接" },
-  { id: "poll", zh: "投票" },
+  { id: "text", key: "form.text" },
+  { id: "link", key: "form.link" },
+  { id: "poll", key: "form.poll" },
 ] as const;
 
 const inputCls =
   "w-full border border-moon bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
 
-export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
+export default function PostForm({
+  aiDefault,
+  locale,
+}: {
+  aiDefault: boolean;
+  locale: Locale;
+}) {
   const [type, setType] = useState<string>("text");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [state, formAction, pending] = useActionState<
@@ -26,11 +33,11 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
   return (
     <form action={formAction} className="mt-6 space-y-5">
       <div className="flex gap-2 font-mono text-xs">
-        {TYPES.map((t) => (
+        {TYPES.map((tp) => (
           <label
-            key={t.id}
+            key={tp.id}
             className={`cursor-pointer border px-3 py-1.5 ${
-              type === t.id
+              type === tp.id
                 ? "border-blue text-blue"
                 : "border-moon text-grey hover:text-paper"
             }`}
@@ -38,12 +45,12 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
             <input
               type="radio"
               name="type"
-              value={t.id}
-              checked={type === t.id}
-              onChange={() => setType(t.id)}
+              value={tp.id}
+              checked={type === tp.id}
+              onChange={() => setType(tp.id)}
               className="sr-only"
             />
-            {t.zh}
+            {t(locale, tp.key)}
           </label>
         ))}
       </div>
@@ -52,13 +59,13 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
         <select name="category" className={`${inputCls} w-36 font-mono text-xs`} defaultValue="chat">
           {CATEGORIES.map((c) => (
             <option key={c.id} value={c.id} className="bg-bg">
-              {c.zh}
+              {locale === "zh" ? c.zh : c.en}
             </option>
           ))}
         </select>
         <input
           name="title"
-          placeholder="标题"
+          placeholder={t(locale, "form.title")}
           maxLength={200}
           className={inputCls}
           required
@@ -76,7 +83,7 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
 
       {type === "poll" && (
         <div className="space-y-2 border border-moon p-4">
-          <p className="font-mono text-[11px] text-grey">投票选项(2–8 个)</p>
+          <p className="font-mono text-[11px] text-grey">{t(locale, "form.pollOpts")}</p>
           {options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-4 font-mono text-[11px] text-grey">{i + 1}</span>
@@ -106,7 +113,7 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
               onClick={() => setOptions([...options, ""])}
               className="font-mono text-xs text-blue hover:underline"
             >
-              + 添加选项
+              {t(locale, "form.addOpt")}
             </button>
           )}
         </div>
@@ -115,11 +122,7 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
       <textarea
         name="body"
         rows={type === "text" ? 8 : 4}
-        placeholder={
-          type === "text"
-            ? "正文(支持 Markdown)"
-            : "补充说明(可选,支持 Markdown)"
-        }
+        placeholder={t(locale, type === "text" ? "form.bodyText" : "form.bodyOpt")}
         className={inputCls}
       />
 
@@ -130,7 +133,7 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
           defaultChecked={aiDefault}
           className="accent-blue"
         />
-        允许 Kimi 小筑(AI)回复本帖
+        {t(locale, "form.aiReply")}
       </label>
 
       {state?.error && (
@@ -142,7 +145,7 @@ export default function PostForm({ aiDefault }: { aiDefault: boolean }) {
         disabled={pending}
         className="border border-blue px-6 py-2 font-mono text-sm text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
       >
-        {pending ? "发布中…" : "发布"}
+        {pending ? t(locale, "form.posting") : t(locale, "form.submit")}
       </button>
     </form>
   );

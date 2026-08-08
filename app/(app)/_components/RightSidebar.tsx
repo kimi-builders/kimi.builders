@@ -1,9 +1,11 @@
-/* 社区右栏(仅 ≥xl):关于 / 7 日热门 / 社区数据 / 新成员,全部真实数据。
-   用户可整体关掉(cookie kb_sidebar=0),关掉后留一条细轨按钮可重开。 */
+/* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 7 日热门 / 社区数据 /
+   新成员,全部真实数据。用户可整体关掉(cookie kb_sidebar=0),关掉后留细轨可重开。 */
 import Link from "next/link";
 import { MessageCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { getSidebarData } from "@/src/lib/posts";
-import { toggleSidebarAction } from "../actions";
+import { t, type Locale } from "@/src/lib/i18n";
+import { toggleSidebarAction } from "../community/actions";
+import CategoryNav from "./CategoryNav";
 
 function Widget({
   title,
@@ -13,7 +15,7 @@ function Widget({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border border-moon bg-white/[0.015] p-4">
+    <section className="border border-moon bg-card p-4">
       <h3 className="font-mono text-[10px] tracking-[0.25em] text-grey">
         {title}
       </h3>
@@ -22,14 +24,22 @@ function Widget({
   );
 }
 
-export default async function RightSidebar({ hidden }: { hidden: boolean }) {
+export default async function RightSidebar({
+  hidden,
+  locale,
+  loggedIn,
+}: {
+  hidden: boolean;
+  locale: Locale;
+  loggedIn: boolean;
+}) {
   if (hidden) {
     return (
       <aside className="sticky top-8 hidden xl:block">
         <form action={toggleSidebarAction}>
           <button
             type="submit"
-            title="显示侧栏"
+            title={t(locale, "side.show")}
             className="border border-moon p-2 text-grey transition-colors hover:border-blue hover:text-blue"
           >
             <PanelRightOpen size={15} />
@@ -43,9 +53,13 @@ export default async function RightSidebar({ hidden }: { hidden: boolean }) {
   return (
     <aside className="sticky top-8 hidden w-72 shrink-0 xl:block">
       <div className="space-y-4">
-        <Widget title="关于 KIMI.BUILDERS">
+        <Widget title={t(locale, "side.browse")}>
+          <CategoryNav loggedIn={loggedIn} locale={locale} />
+        </Widget>
+
+        <Widget title={t(locale, "side.about")}>
           <p className="text-xs leading-relaxed text-grey">
-            Kimi 用户自建的公益 builder 社区(非官方)。并肩探索,一起构建。
+            {t(locale, "side.aboutBody")}
           </p>
           <div className="mt-3 flex gap-4 font-mono text-[11px]">
             <a
@@ -63,9 +77,9 @@ export default async function RightSidebar({ hidden }: { hidden: boolean }) {
           </div>
         </Widget>
 
-        <Widget title="7 日热门">
+        <Widget title={t(locale, "side.hot")}>
           {data.hot.length === 0 ? (
-            <p className="text-xs text-grey">还没有足够的讨论。</p>
+            <p className="text-xs text-grey">{t(locale, "side.hotEmpty")}</p>
           ) : (
             <ul className="space-y-2.5">
               {data.hot.map((h, i) => (
@@ -89,12 +103,12 @@ export default async function RightSidebar({ hidden }: { hidden: boolean }) {
           )}
         </Widget>
 
-        <Widget title="社区数据">
+        <Widget title={t(locale, "side.stats")}>
           <div className="flex justify-between">
             {[
-              { n: data.stats.members, l: "成员" },
-              { n: data.stats.posts, l: "帖子" },
-              { n: data.stats.comments, l: "评论" },
+              { n: data.stats.members, l: t(locale, "side.members") },
+              { n: data.stats.posts, l: t(locale, "side.posts") },
+              { n: data.stats.comments, l: t(locale, "side.comments") },
             ].map((s) => (
               <div key={s.l}>
                 <div className="font-mono text-lg font-semibold text-paper">
@@ -108,7 +122,7 @@ export default async function RightSidebar({ hidden }: { hidden: boolean }) {
           </div>
         </Widget>
 
-        <Widget title="新成员">
+        <Widget title={t(locale, "side.newMembers")}>
           <div className="flex gap-2">
             {data.newMembers.map((m) => (
               <span key={m.handle} title={`@${m.handle}`}>
@@ -132,7 +146,7 @@ export default async function RightSidebar({ hidden }: { hidden: boolean }) {
             className="flex items-center gap-1.5 font-mono text-[10px] text-grey transition-colors hover:text-paper"
           >
             <PanelRightClose size={12} />
-            隐藏侧栏(留下的小按钮可重开)
+            {t(locale, "side.hide")}
           </button>
         </form>
       </div>

@@ -1,14 +1,16 @@
-/* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 顶 + 评论区。
-   评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌头像和 AI 标。 */
+/* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 动作条(赞/评论/订阅/分享)+ 评论区。
+   评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌瓷砖头像和 AI 标。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowBigUp, Bookmark, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
+import { categoryLabel } from "@/src/lib/categories";
 import { relTime } from "@/src/lib/format";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import {
-  categoryZh,
   getComments,
   getPoll,
   getPost,
@@ -46,6 +48,7 @@ export default async function PostPage({
   if (!post) notFound();
 
   const user = await getSessionUser();
+  const locale = await getLocale(user);
   const [poll, comments, upVoted, subscribed] = await Promise.all([
     post.type === "poll" ? getPoll(postId, user?.id ?? null) : null,
     getComments(postId, { showAi: user ? user.showAiReplies : true }),
@@ -54,12 +57,12 @@ export default async function PostPage({
   ]);
 
   return (
-    <div className="pt-8">
+    <div>
       <div className="flex items-center gap-3 font-mono text-[11px] tracking-wider text-grey">
         <Link href="/community" className="hover:text-paper">
-          ← 社区
+          ← {t(locale, "nav.community")}
         </Link>
-        <span>{categoryZh(post.category)}</span>
+        <span>{categoryLabel(locale, post.category)}</span>
       </div>
 
       <h1 className="mt-4 text-2xl font-semibold leading-snug">{post.title}</h1>
@@ -111,7 +114,7 @@ export default async function PostPage({
                 type="submit"
                 className="border border-blue px-4 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
               >
-                投票
+                {t(locale, "post.vote")}
               </button>
             </form>
           ) : (
@@ -127,7 +130,7 @@ export default async function PostPage({
                         {mine && " ✓"}
                       </span>
                       <span className="ml-auto font-mono text-[11px] text-grey">
-                        {o.voteCount} 票 · {pct}%
+                        {o.voteCount} · {pct}%
                       </span>
                     </div>
                     <div className="mt-1 h-1 bg-moon">
@@ -140,7 +143,8 @@ export default async function PostPage({
                 );
               })}
               <p className="font-mono text-[11px] text-grey">
-                共 {poll.total} 票{!user && " · 登录后可投票"}
+                {t(locale, "post.votesTotal", { n: poll.total })}
+                {!user && ` · ${t(locale, "post.loginToVote")}`}
               </p>
             </div>
           )}
@@ -154,7 +158,7 @@ export default async function PostPage({
             <input type="hidden" name="post_id" value={post.id} />
             <button
               type="submit"
-              aria-label={upVoted ? "取消点赞" : "点赞"}
+              aria-label={t(locale, upVoted ? "post.unup" : "post.up")}
               className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
                 upVoted ? "text-blue" : "text-grey hover:text-blue"
               }`}
@@ -166,7 +170,7 @@ export default async function PostPage({
         ) : (
           <span
             className="inline-flex items-center gap-1.5 font-mono text-xs text-grey"
-            title="登录后点赞"
+            title={t(locale, "post.loginToUpvote")}
           >
             <ArrowBigUp size={16} />
             {post.score}
@@ -184,23 +188,27 @@ export default async function PostPage({
             <input type="hidden" name="post_id" value={post.id} />
             <button
               type="submit"
-              aria-label={subscribed ? "取消订阅" : "订阅本帖讨论"}
+              aria-label={t(locale, subscribed ? "post.unsubscribe" : "post.subscribe")}
               className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
                 subscribed ? "text-blue" : "text-grey hover:text-blue"
               }`}
             >
               <Bookmark size={14} fill={subscribed ? "currentColor" : "none"} />
-              {subscribed ? "已订阅" : "订阅"}
+              {t(locale, subscribed ? "post.subscribed" : "post.subscribe")}
             </button>
           </form>
         )}
         <span className="ml-auto">
-          <ShareButton path={`/community/${post.id}`} title={post.title} />
+          <ShareButton
+            path={`/community/${post.id}`}
+            title={post.title}
+            locale={locale}
+          />
         </span>
       </div>
 
       <h2 id="comments" className="mt-10 font-mono text-sm text-grey">
-        {comments.length} 条评论
+        {t(locale, "post.comments", { n: comments.length })}
       </h2>
       <ul className="mt-6 space-y-6">
         {comments.map((c) => (
@@ -213,7 +221,7 @@ export default async function PostPage({
               <img
                 src={c.isAi ? BOT_AVATAR : (c.avatarUrl ?? "")}
                 alt=""
-                className="h-5 w-5 rounded-full"
+                className={`h-5 w-5 ${c.isAi ? "rounded" : "rounded-full"}`}
               />
               <span className="text-paper">
                 {c.isAi ? BOT_NAME : `@${c.handle}`}
@@ -239,19 +247,19 @@ export default async function PostPage({
             name="body"
             rows={4}
             required
-            placeholder="写下你的评论(支持 Markdown)…"
+            placeholder={t(locale, "post.commentPh")}
             className="w-full border border-moon bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none"
           />
           <button
             type="submit"
             className="border border-blue px-5 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
           >
-            评论
+            {t(locale, "post.comment")}
           </button>
         </form>
       ) : (
         <p className="mt-10 border-t border-moon pt-6 text-sm text-grey">
-          登录后参与评论:
+          {t(locale, "post.loginToComment")}
           <a href="/api/auth/github" className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
             GitHub
           </a>

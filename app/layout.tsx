@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
+import { getSessionUser } from "@/src/lib/auth/session";
+import { getLocale } from "@/src/lib/i18n-server";
+import { getUiPrefs } from "@/src/lib/prefs";
 import "./globals.css";
 
 const jetbrains = JetBrains_Mono({
@@ -15,11 +18,17 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://kimi.builders"),
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const user = await getSessionUser();
+  const [locale, prefs] = await Promise.all([getLocale(user), getUiPrefs()]);
   return (
-    <html lang="zh-CN" className={jetbrains.variable}>
+    <html
+      lang={locale === "zh" ? "zh-CN" : "en"}
+      data-theme={prefs.theme}
+      className={jetbrains.variable}
+    >
       <body>{children}</body>
     </html>
   );

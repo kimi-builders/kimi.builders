@@ -8,10 +8,37 @@
   --color-paper: #efe8dc;
   --color-blue: #1783ff;
   --color-grey: #9a9aa5;
+  --color-card: rgb(255 255 255 / 0.015); /* 卡片/面板的极浅铺色 */
 
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
     "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+/* 亮色主题:root layout 按 cookie 给 <html data-theme>,这里覆盖令牌即可,
+   组件全部引用 var(--color-*) 所以零改动跟随。蓝色加深保对比度。 */
+:root[data-theme="light"] {
+  --color-bg: #f6f3ec;
+  --color-moon: #e8e2d5;
+  --color-paper: #1b1b25;
+  --color-blue: #0f6fdd;
+  --color-grey: #6e6e78;
+  --color-card: rgb(27 27 37 / 0.03);
+}
+
+/* 强制暗色作用域:首页门面是「海报」,无论 UI 主题始终暗色。
+   在 wrapper 上重声明令牌,子树 var() 解析就近取这里的值。
+   background/color 也要在这里显式重设:body 规则算出的颜色是按 <html>
+   主题解析后再继承下来的,光换令牌挡不住继承。 */
+[data-theme-scope="dark"] {
+  --color-bg: #0e0e13;
+  --color-moon: #1b1b25;
+  --color-paper: #efe8dc;
+  --color-blue: #1783ff;
+  --color-grey: #9a9aa5;
+  --color-card: rgb(255 255 255 / 0.015);
+  background: var(--color-bg);
+  color: var(--color-paper);
 }
 
 body {

@@ -22,7 +22,10 @@ export default async function Home({
 }) {
   const { auth_error: authError } = await searchParams;
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <main
+      data-theme-scope="dark"
+      className="relative flex min-h-screen flex-col items-center justify-center bg-bg px-6 text-center"
+    >
       <div className="absolute right-5 top-5 flex items-center gap-4 font-mono text-xs">
         <AuthChip />
       </div>

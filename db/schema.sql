@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(190) UNIQUE,
   avatar_url VARCHAR(500) NOT NULL DEFAULT '',
   bio VARCHAR(300) NOT NULL DEFAULT '',
-  locale VARCHAR(8) NOT NULL DEFAULT 'zh' COMMENT 'UI 语言偏好 zh/en',
+  locale VARCHAR(8) NOT NULL DEFAULT '' COMMENT 'UI 语言偏好 zh/en,空=自动推断',
   ai_replies_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '全局:允许 AI 回我的帖(v2 决策 3)',
   show_ai_replies TINYINT(1) NOT NULL DEFAULT 1 COMMENT '全局:浏览时显示 AI 回复',
   role VARCHAR(16) NOT NULL DEFAULT 'member' COMMENT 'member/mod/admin',

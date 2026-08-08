@@ -30,6 +30,16 @@ export async function findOrCreateUser(
   return uid;
 }
 
+export async function setUserLocale(
+  userId: number,
+  locale: "zh" | "en",
+): Promise<void> {
+  await getPool().query("UPDATE users SET locale = ? WHERE id = ?", [
+    locale,
+    userId,
+  ]);
+}
+
 function sanitizeHandle(raw: string): string {
   const h = raw
     .toLowerCase()

@@ -5,6 +5,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { setUserLocale } from "@/src/lib/auth/users";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import { enqueueAiReply } from "@/src/lib/ai-reply";
 import {
   CATEGORIES,
@@ -24,22 +27,25 @@ export async function createPostAction(
   formData: FormData,
 ): Promise<PostFormState> {
   const user = await getSessionUser();
-  if (!user) return { error: "请先登录" };
+  const locale = await getLocale(user);
+  if (!user) return { error: t(locale, "err.login") };
 
   const type = String(formData.get("type") || "text");
-  if (!["text", "link", "poll"].includes(type)) return { error: "未知帖子类型" };
+  if (!["text", "link", "poll"].includes(type))
+    return { error: t(locale, "err.unknownType") };
   const category = String(formData.get("category") || "chat");
-  if (!CATEGORIES.some((c) => c.id === category)) return { error: "未知板块" };
+  if (!CATEGORIES.some((c) => c.id === category))
+    return { error: t(locale, "err.unknownCat") };
   const title = String(formData.get("title") || "").trim();
   const body = String(formData.get("body") || "").trim();
   const linkUrl = String(formData.get("link_url") || "").trim();
   const aiReply = formData.get("ai_reply") === "on";
 
-  if (!title) return { error: "标题不能为空" };
-  if (title.length > 200) return { error: "标题太长了(200 字以内)" };
+  if (!title) return { error: t(locale, "err.titleRequired") };
+  if (title.length > 200) return { error: t(locale, "err.titleLong") };
   if (type === "link" && !/^https?:\/\/.+/.test(linkUrl))
-    return { error: "链接需要以 http(s):// 开头" };
-  if (!body && type === "text") return { error: "正文不能为空" };
+    return { error: t(locale, "err.linkInvalid") };
+  if (!body && type === "text") return { error: t(locale, "err.bodyRequired") };
 
   let options: string[] = [];
   if (type === "poll") {
@@ -48,7 +54,7 @@ export async function createPostAction(
       .map((v) => String(v).trim())
       .filter(Boolean)
       .slice(0, 8);
-    if (options.length < 2) return { error: "投票至少需要 2 个选项" };
+    if (options.length < 2) return { error: t(locale, "err.pollMin") };
   }
 
   const lang = /[一-鿿]/.test(title + body) ? "zh" : "en";
@@ -117,4 +123,22 @@ export async function toggleSidebarAction(): Promise<void> {
   const store = await cookies();
   const shown = store.get("kb_sidebar")?.value !== "0";
   store.set("kb_sidebar", shown ? "0" : "1", PREF_COOKIE);
+}
+
+/* 主题:暗 ⇄ 亮 翻转(cookie;默认暗)。 */
+export async function setThemeAction(): Promise<void> {
+  const store = await cookies();
+  const cur = store.get("kb_theme")?.value === "light" ? "light" : "dark";
+  store.set("kb_theme", cur === "light" ? "dark" : "light", PREF_COOKIE);
+}
+
+/* UI 语言:中 ⇄ EN 翻转;登录用户同步写进 users.locale
+   (账号偏好同时是 AI 回帖语言的第一优先级)。 */
+export async function setLocaleAction(): Promise<void> {
+  const user = await getSessionUser();
+  const store = await cookies();
+  const cur = await getLocale(user);
+  const next = cur === "zh" ? "en" : "zh";
+  store.set("kb_locale", next, PREF_COOKIE);
+  if (user) await setUserLocale(user.id, next);
 }

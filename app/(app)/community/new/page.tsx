@@ -1,19 +1,24 @@
 /* 发帖页:登录门槛在服务端,表单交互(PostForm)在客户端。 */
 import { getSessionUser } from "@/src/lib/auth/session";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import PostForm from "../_components/PostForm";
 
 export const metadata = { title: "发帖 — kimi.builders" };
 
 export default async function NewPostPage() {
   const user = await getSessionUser();
+  const locale = await getLocale(user);
   return (
-    <div className="pt-8">
-      <h1 className="font-mono text-lg font-semibold">发帖</h1>
+    <div>
+      <h1 className="font-mono text-lg font-semibold">
+        {t(locale, "form.pageTitle")}
+      </h1>
       {user ? (
-        <PostForm aiDefault={user.aiRepliesEnabled} />
+        <PostForm aiDefault={user.aiRepliesEnabled} locale={locale} />
       ) : (
         <p className="mt-8 text-sm text-grey">
-          发帖需要登录:
+          {t(locale, "form.loginRequired")}
           <a href="/api/auth/github" className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
             GitHub
           </a>

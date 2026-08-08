@@ -4,19 +4,22 @@
    必须客户端:要用 navigator.clipboard 和 window.location.origin。 */
 import { useState } from "react";
 import { Check, Share2 } from "lucide-react";
+import { t, type Locale } from "@/src/lib/i18n";
 
 export default function ShareButton({
   path,
   title,
+  locale,
 }: {
   path: string;
   title: string;
+  locale: Locale;
 }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
-      aria-label="分享(复制链接)"
+      aria-label={t(locale, "post.shareAria")}
       onClick={async () => {
         const url = `${window.location.origin}${path}`;
         try {
@@ -32,7 +35,7 @@ export default function ShareButton({
       }`}
     >
       {copied ? <Check size={14} /> : <Share2 size={14} />}
-      <span>{copied ? "已复制" : "分享"}</span>
+      <span>{t(locale, copied ? "post.copied" : "post.share")}</span>
     </button>
   );
 }

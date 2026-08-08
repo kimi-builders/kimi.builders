@@ -5,7 +5,7 @@ import { getPool } from "./db";
 import { CATEGORIES, type CategoryId } from "./categories";
 import { plainExcerpt } from "./format";
 
-export { CATEGORIES, categoryZh } from "./categories";
+export { CATEGORIES, categoryLabel } from "./categories";
 export type { CategoryId } from "./categories";
 
 export interface FeedPost {
