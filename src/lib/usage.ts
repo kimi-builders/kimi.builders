@@ -1,6 +1,6 @@
-/* Token 用量的写入与读取(usage_daily,按天幂等 upsert,PK user_id+day)。
-   数据来自用户本地脚本(scripts/usage-sync.mjs)扫描 ~/.kimi-code 会话
-   wire.jsonl 的按天汇总;站点只存数字,不存任何对话内容。 */
+/* Legacy Token 日汇总的写入与读取。
+   Phase 0 已停用其共享密钥写入入口,但保留读取以继续展示已有数据。
+   v2 Collector 将写入独立的 bucket/session 事实表;这里不扩展新协议。 */
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 

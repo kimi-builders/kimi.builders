@@ -284,8 +284,8 @@ const DICT = {
   },
   /* ---- 用量看板 ---- */
   "usage.intro": {
-    zh: "本地脚本统计你的 Kimi Code token 用量,授权后同步到这里。只上传按天汇总的数字,不含任何对话内容、文件路径或项目名。",
-    en: "A local script measures your Kimi Code token usage and syncs it here with your consent. Only per-day totals leave your machine — never conversation content, file paths, or project names.",
+    zh: "以 Kimi 为主,汇总多种 AI 编程工具的 token 与活跃数据。Collector 只上传统计字段,不上传对话内容、完整文件路径或供应商凭据。",
+    en: "Kimi-first usage analytics across multiple AI coding tools. The collector uploads metrics only — never conversation content, full file paths, or provider credentials.",
   },
   "usage.loginRequired": {
     zh: "登录后查看你的用量看板:",
@@ -298,18 +298,18 @@ const DICT = {
   "usage.calls": { zh: "次调用", en: "calls" },
   "usage.active": { zh: "活跃时长", en: "active" },
   "usage.tokensUnit": { zh: "tokens", en: "tokens" },
-  "usage.howto": { zh: "同步方法", en: "HOW TO SYNC" },
+  "usage.syncStatus": { zh: "数据同步", en: "DATA SYNC" },
   "usage.noData": {
-    zh: "还没有用量数据 —— 在本机跑一下下面的脚本就有了(可重复跑,按天幂等)。",
-    en: "No usage data yet — run the script below on your machine (safe to re-run, idempotent per day).",
+    zh: "还没有用量数据。新的设备授权同步正在接入中。",
+    en: "No usage data yet. Device-authorized sync is being prepared.",
   },
-  "usage.secretNote": {
-    zh: "密钥即身份,别贴到公开地方;脚本只读 ~/.kimi-code 的本地会话记录。",
-    en: "The secret identifies you — don't post it anywhere public. The script only reads local session records under ~/.kimi-code.",
+  "usage.migrationNotice": {
+    zh: "为保护账号,旧的全站共享密钥同步已停用。已有数据会继续保留。",
+    en: "The legacy site-wide shared-secret sync has been retired to protect accounts. Existing data remains available.",
   },
-  "usage.notConfigured": {
-    zh: "站点还没配置同步密钥,先找管理员开通。",
-    en: "Sync isn't configured on this site yet — ask the admin to enable it.",
+  "usage.migrationDetail": {
+    zh: "新的每用户、每设备授权正在接入;上线后你可以在这里连接、查看或撤销设备。",
+    en: "Per-user, per-device authorization is coming next; you will be able to connect, inspect, and revoke devices here.",
   },
   "usage.lastSync": { zh: "最近同步:{t}", en: "Last synced {t}" },
   "works.submit": { zh: "提交作品", en: "Submit work" },

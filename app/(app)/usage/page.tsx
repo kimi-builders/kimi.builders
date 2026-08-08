@@ -1,7 +1,6 @@
-/* 用量看板 /usage:登录后看自己最近 90 天的 Kimi Code token 用量
-   (30 天合计 + 每日柱状图 + 明细),以及本地同步脚本的使用方法。
-   数据来自 /api/usage/sync(用户本地脚本推送),站点只存按天汇总的数字。
-   未登录 → 登录引导;已开通同步由 USAGE_SYNC_SECRET 是否配置决定。 */
+/* 用量看板 /usage:登录后查看已有的 legacy Kimi Code 日汇总。
+   v1 共享密钥同步已停用;v2 将使用每用户、每设备授权的多工具 Collector。
+   Phase 0 保留已有数据的只读展示,不再向页面输出任何同步凭据。 */
 import type { Metadata } from "next";
 import { BarChart3 } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -57,7 +56,6 @@ function Chart({ days, locale }: { days: UsageDay[]; locale: "zh" | "en" }) {
 export default async function UsagePage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  const secret = process.env.USAGE_SYNC_SECRET ?? "";
 
   if (!user) {
     return (
@@ -95,7 +93,6 @@ export default async function UsagePage() {
   const last30 = days.slice(-30);
   const sum = (k: keyof UsageDay) =>
     last30.reduce((s, d) => s + (typeof d[k] === "number" ? (d[k] as number) : 0), 0);
-  const cmd = `curl -O https://kimi.builders/usage-sync.mjs\nnode usage-sync.mjs --handle ${user.handle} --secret ${secret || "<secret>"}`;
 
   return (
     <div>
@@ -143,23 +140,19 @@ export default async function UsagePage() {
 
       <section className="mt-6 border border-line bg-card p-4">
         <h2 className="font-mono text-[10px] tracking-[0.25em] text-grey">
-          {t(locale, "usage.howto")}
+          {t(locale, "usage.syncStatus")}
         </h2>
         {days.length === 0 && (
           <p className="mt-3 text-sm text-grey">{t(locale, "usage.noData")}</p>
         )}
-        {secret ? (
-          <>
-            <pre className="mt-3 overflow-x-auto border border-line bg-bg p-3 font-mono text-xs leading-relaxed text-paper">
-              {cmd}
-            </pre>
-            <p className="mt-2 text-[11px] leading-relaxed text-grey/80">
-              {t(locale, "usage.secretNote")}
-            </p>
-          </>
-        ) : (
-          <p className="mt-3 text-sm text-grey">{t(locale, "usage.notConfigured")}</p>
-        )}
+        <div className="mt-3 border-l-2 border-blue bg-blue/5 px-3 py-2.5">
+          <p className="text-sm leading-relaxed text-paper">
+            {t(locale, "usage.migrationNotice")}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-grey">
+            {t(locale, "usage.migrationDetail")}
+          </p>
+        </div>
       </section>
     </div>
   );
