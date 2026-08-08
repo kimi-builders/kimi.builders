@@ -286,6 +286,26 @@ CREATE TABLE IF NOT EXISTS usage_rate_limits (
   PRIMARY KEY (scope, identity_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 版本化模型价格表(Phase 2;查询期估费,种子数据见 db/migrations/20260809_usage_phase2.sql)
+CREATE TABLE IF NOT EXISTS usage_model_prices (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  model_pattern VARCHAR(120) NOT NULL,
+  match_kind VARCHAR(8) NOT NULL DEFAULT 'prefix',
+  source VARCHAR(40) NULL,
+  effective_from DATETIME(3) NOT NULL,
+  effective_to DATETIME(3) NULL,
+  currency CHAR(3) NOT NULL DEFAULT 'USD',
+  input_per_mtok DECIMAL(18,6) NOT NULL,
+  cache_write_per_mtok DECIMAL(18,6) NULL,
+  cache_read_per_mtok DECIMAL(18,6) NULL,
+  output_per_mtok DECIMAL(18,6) NOT NULL,
+  reasoning_per_mtok DECIMAL(18,6) NULL,
+  version VARCHAR(40) NOT NULL,
+  note VARCHAR(200) NOT NULL DEFAULT '',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  KEY idx_prices_window (effective_from, effective_to)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 帖子订阅(重点关注的讨论;通知通道后补,先存关系)
 CREATE TABLE IF NOT EXISTS post_subscriptions (
   user_id BIGINT UNSIGNED NOT NULL,

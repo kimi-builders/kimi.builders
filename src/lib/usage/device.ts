@@ -367,6 +367,40 @@ export async function revokeUsageDevice(
   }
 }
 
+export async function deleteUsageForDeviceByPublicId(
+  userId: number,
+  publicId: string,
+): Promise<number | null> {
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query<RowDataPacket[]>(
+      "SELECT id FROM usage_devices WHERE user_id = ? AND public_id = ? LIMIT 1 FOR UPDATE",
+      [userId, publicId],
+    );
+    const row = rows[0];
+    if (!row) {
+      await connection.rollback();
+      return null;
+    }
+    const [sessions] = await connection.query<ResultSetHeader>(
+      "DELETE FROM usage_sessions WHERE user_id = ? AND device_id = ?",
+      [userId, row.id],
+    );
+    const [buckets] = await connection.query<ResultSetHeader>(
+      "DELETE FROM usage_buckets WHERE user_id = ? AND device_id = ?",
+      [userId, row.id],
+    );
+    await connection.commit();
+    return sessions.affectedRows + buckets.affectedRows;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 export async function deleteUsageForDevice(userId: number, deviceId: number): Promise<number> {
   const connection = await getPool().getConnection();
   try {

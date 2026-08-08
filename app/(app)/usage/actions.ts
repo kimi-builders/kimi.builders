@@ -5,6 +5,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import {
   decideDeviceAuthorization,
   deleteAllUsage,
+  deleteUsageForDeviceByPublicId,
   revokeUsageDevice,
 } from "@/src/lib/usage/device";
 import { getUsageSettings, updateUsageSettings } from "@/src/lib/usage/settings";
@@ -60,6 +61,17 @@ export async function revokeUsageDeviceAction(formData: FormData): Promise<void>
     user.id,
     String(formData.get("device_id") ?? ""),
     formData.get("delete_data") === "1",
+  );
+  revalidatePath("/usage");
+}
+
+export async function deleteDeviceDataAction(formData: FormData): Promise<void> {
+  const user = await getSessionUser();
+  if (!user) return;
+  if (String(formData.get("confirm_device_data") ?? "") !== "1") return;
+  await deleteUsageForDeviceByPublicId(
+    user.id,
+    String(formData.get("device_id") ?? ""),
   );
   revalidatePath("/usage");
 }
