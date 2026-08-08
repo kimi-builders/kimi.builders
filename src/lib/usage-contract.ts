@@ -69,7 +69,9 @@ export interface UsageTokenCountsV2 {
   reasoningOutputTokens: number;
 }
 
-export type UsageMeasurement = "exact" | "estimated" | "credit";
+/* `legacy` is server-generated while migrating v1 daily rows. Collectors may
+   only upload exact/estimated/credit measurements. */
+export type UsageMeasurement = "exact" | "estimated" | "credit" | "legacy";
 
 export interface UsageBucketV2 extends UsageTokenCountsV2 {
   source: UsageSourceId;

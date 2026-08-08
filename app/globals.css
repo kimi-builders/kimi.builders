@@ -198,6 +198,16 @@ html:not([data-nav="1"]) .only-nav-collapsed {
 .rightsidebar .sidebar-rail {
   display: none;
 }
+
+/* Usage is the one app route that needs a wide analytical canvas. :has keeps
+   the shared shell server-rendered while widening only this route and removing
+   the community sidebar that would otherwise compete with the dashboard. */
+main:has(> .usage-dashboard) {
+  max-width: 960px;
+}
+main:has(> .usage-dashboard) + .rightsidebar {
+  display: none;
+}
 html[data-sidebar="0"] .rightsidebar .sidebar-full {
   display: none;
 }

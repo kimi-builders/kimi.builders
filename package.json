@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test tests/**/*.test.ts",
+    "test:usage-db": "tsx tests/usage-db.integration.ts"
   },
   "dependencies": {
     "@lobehub/icons": "^5.15.0",

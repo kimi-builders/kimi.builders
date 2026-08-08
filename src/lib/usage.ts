@@ -45,7 +45,7 @@ export async function upsertUsageDays(
   );
 }
 
-export interface UsageDay extends UsageDayInput {}
+export type UsageDay = UsageDayInput;
 
 export async function getUsageDays(
   userId: number,

@@ -150,6 +150,142 @@ CREATE TABLE IF NOT EXISTS usage_daily (
   PRIMARY KEY (user_id, day)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 用量 v2:设备授权、按设备 Key、30 分钟事实桶、会话与隐私设置。
+-- 已有数据库请执行 db/migrations/20260808_usage_v2.sql,其中也包含 legacy 迁移。
+CREATE TABLE IF NOT EXISTS usage_devices (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  public_id VARCHAR(40) NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  platform VARCHAR(16) NOT NULL DEFAULT 'unknown',
+  surface VARCHAR(20) NOT NULL DEFAULT 'cli',
+  client_version VARCHAR(40) NOT NULL DEFAULT '',
+  parser_version VARCHAR(40) NOT NULL DEFAULT '',
+  last_seen_at DATETIME(3) NULL,
+  revoked_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_usage_device_public (public_id),
+  KEY idx_usage_device_user (user_id, revoked_at),
+  CONSTRAINT fk_usage_device_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usage_api_keys (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  device_id BIGINT UNSIGNED NOT NULL,
+  prefix VARCHAR(16) NOT NULL,
+  secret_hash BINARY(32) NOT NULL,
+  scopes VARCHAR(120) NOT NULL DEFAULT 'ingest,read,settings,delete',
+  last_used_at DATETIME(3) NULL,
+  expires_at DATETIME(3) NULL,
+  revoked_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_usage_key_hash (secret_hash),
+  KEY idx_usage_key_prefix (prefix),
+  KEY idx_usage_key_device (device_id, revoked_at),
+  CONSTRAINT fk_usage_key_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usage_device_codes (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  device_code_hash BINARY(32) NOT NULL,
+  user_code_hash BINARY(32) NOT NULL,
+  client_name VARCHAR(80) NOT NULL,
+  requested_device_name VARCHAR(80) NOT NULL DEFAULT '',
+  approved_device_name VARCHAR(80) NOT NULL DEFAULT '',
+  platform VARCHAR(16) NOT NULL DEFAULT 'unknown',
+  surface VARCHAR(20) NOT NULL DEFAULT 'cli',
+  status VARCHAR(16) NOT NULL DEFAULT 'pending',
+  interval_seconds SMALLINT UNSIGNED NOT NULL DEFAULT 5,
+  next_poll_at DATETIME(3) NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
+  approved_user_id BIGINT UNSIGNED NULL,
+  approved_at DATETIME(3) NULL,
+  denied_at DATETIME(3) NULL,
+  delivered_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_usage_device_code (device_code_hash),
+  UNIQUE KEY uq_usage_user_code (user_code_hash),
+  KEY idx_usage_device_code_expiry (status, expires_at),
+  CONSTRAINT fk_usage_code_user FOREIGN KEY (approved_user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usage_settings (
+  user_id BIGINT UNSIGNED PRIMARY KEY,
+  upload_project TINYINT(1) NOT NULL DEFAULT 0,
+  upload_device_label TINYINT(1) NOT NULL DEFAULT 0,
+  upload_quota TINYINT(1) NOT NULL DEFAULT 0,
+  retention_days SMALLINT UNSIGNED NOT NULL DEFAULT 365,
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_usage_setting_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usage_buckets (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  device_id BIGINT UNSIGNED NOT NULL,
+  source VARCHAR(40) NOT NULL,
+  model VARCHAR(160) NOT NULL,
+  project_label VARCHAR(120) NULL,
+  project_hash BINARY(32) NOT NULL,
+  bucket_start DATETIME(3) NOT NULL,
+  input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  cache_write_input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  cache_read_input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  output_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  reasoning_output_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  request_count INT UNSIGNED NOT NULL DEFAULT 0,
+  credit_units DECIMAL(20,6) NULL,
+  measurement VARCHAR(16) NOT NULL DEFAULT 'exact',
+  cost_micros BIGINT UNSIGNED NULL,
+  legacy_active_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  legacy_session_count INT UNSIGNED NOT NULL DEFAULT 0,
+  sync_id CHAR(36) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_usage_bucket (user_id, device_id, source, model, project_hash, bucket_start),
+  KEY idx_usage_bucket_user_time (user_id, bucket_start),
+  KEY idx_usage_bucket_source_time (user_id, source, bucket_start),
+  KEY idx_usage_bucket_model_time (user_id, model, bucket_start),
+  KEY idx_usage_bucket_device_time (user_id, device_id, bucket_start),
+  CONSTRAINT fk_usage_bucket_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_usage_bucket_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usage_sessions (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  device_id BIGINT UNSIGNED NOT NULL,
+  source VARCHAR(40) NOT NULL,
+  session_hash BINARY(32) NOT NULL,
+  project_label VARCHAR(120) NULL,
+  project_hash BINARY(32) NOT NULL,
+  first_message_at DATETIME(3) NOT NULL,
+  last_message_at DATETIME(3) NOT NULL,
+  duration_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  active_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+  message_count INT UNSIGNED NOT NULL DEFAULT 0,
+  user_message_count INT UNSIGNED NOT NULL DEFAULT 0,
+  user_prompt_hours JSON NOT NULL,
+  sync_id CHAR(36) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_usage_session (user_id, device_id, source, session_hash),
+  KEY idx_usage_session_user_time (user_id, first_message_at),
+  KEY idx_usage_session_source_time (user_id, source, first_message_at),
+  KEY idx_usage_session_device_time (user_id, device_id, first_message_at),
+  CONSTRAINT fk_usage_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_usage_session_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usage_rate_limits (
+  scope VARCHAR(40) NOT NULL,
+  identity_hash BINARY(32) NOT NULL,
+  window_start DATETIME(3) NOT NULL,
+  attempts INT UNSIGNED NOT NULL DEFAULT 1,
+  PRIMARY KEY (scope, identity_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 帖子订阅(重点关注的讨论;通知通道后补,先存关系)
 CREATE TABLE IF NOT EXISTS post_subscriptions (
   user_id BIGINT UNSIGNED NOT NULL,

@@ -3,7 +3,7 @@
    隐藏/显示纯 CSS 驱动(html[data-sidebar],见 globals.css):两种状态的结构
    常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。 */
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, UserRound } from "lucide-react";
 import { getSidebarData } from "@/src/lib/posts";
 import { t, type Locale } from "@/src/lib/i18n";
 import CategoryNav from "./CategoryNav";
@@ -110,12 +110,18 @@ export default async function RightSidebar({
           <div className="flex gap-2">
             {data.newMembers.map((m) => (
               <Link key={m.handle} href={`/u/${m.handle}`} title={`@${m.handle}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={m.avatarUrl}
-                  alt={`@${m.handle}`}
-                  className="h-7 w-7 rounded-full border border-paper/10 transition-colors hover:border-blue"
-                />
+                {m.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={m.avatarUrl}
+                    alt={`@${m.handle}`}
+                    className="h-7 w-7 rounded-full border border-paper/10 transition-colors hover:border-blue"
+                  />
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-paper/10 text-grey transition-colors hover:border-blue hover:text-blue">
+                    <UserRound size={13} aria-label={`@${m.handle}`} />
+                  </span>
+                )}
               </Link>
             ))}
           </div>

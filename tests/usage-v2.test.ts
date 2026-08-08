@@ -1,0 +1,90 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { observedTokenTotal } from "../src/lib/usage-contract";
+import { constantTimeHashEqual, usageHmac } from "../src/lib/usage/crypto";
+import { validateUsageIngest, UsageRequestError } from "../src/lib/usage/validation";
+
+process.env.USAGE_KEY_PEPPER = "test-only-usage-pepper-that-is-long-enough";
+
+const settings = {
+  uploadProject: false,
+  uploadDeviceLabel: false,
+  uploadQuotaSnapshots: false,
+  retentionDays: 365,
+};
+
+function payload() {
+  return {
+    protocolVersion: 2,
+    client: {
+      surface: "cli",
+      surfaceVersion: "0.1.0",
+      parserVersion: "kimi-v0.1.0",
+      platform: "darwin",
+      syncId: "f74e775d-8d85-4b0d-b24a-a5d42e728b7b",
+      batchIndex: 0,
+      batchCount: 1,
+    },
+    buckets: [
+      {
+        source: "kimi-code",
+        model: "kimi-code/k3",
+        bucketStart: "2026-08-01T10:00:00.000Z",
+        inputTokens: 10,
+        cacheWriteInputTokens: 3,
+        cacheReadInputTokens: 4,
+        outputTokens: 2,
+        reasoningOutputTokens: 1,
+        requestCount: 1,
+        measurement: "exact",
+      },
+    ],
+    sessions: [
+      {
+        source: "kimi-code",
+        sessionHash: "a".repeat(64),
+        firstMessageAt: "2026-08-01T10:01:00.000Z",
+        lastMessageAt: "2026-08-01T10:02:00.000Z",
+        durationSeconds: 60,
+        activeSeconds: 30,
+        messageCount: 2,
+        userMessageCount: 1,
+        userPromptHours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+    ],
+  };
+}
+
+test("v2 contract keeps cache categories disjoint", () => {
+  assert.equal(
+    observedTokenTotal({
+      inputTokens: 10,
+      cacheWriteInputTokens: 3,
+      cacheReadInputTokens: 4,
+      outputTokens: 2,
+      reasoningOutputTokens: 1,
+    }),
+    20,
+  );
+  const parsed = validateUsageIngest(payload(), settings);
+  assert.equal(parsed.buckets[0].cacheWriteInputTokens, 3);
+  assert.equal(parsed.buckets[0].cacheReadInputTokens, 4);
+});
+
+test("project fields are rejected when project upload is disabled", () => {
+  const value = payload();
+  value.buckets[0] = { ...value.buckets[0], project: "private-repo" } as typeof value.buckets[0];
+  assert.throws(
+    () => validateUsageIngest(value, settings),
+    (error) => error instanceof UsageRequestError && error.code === "project_upload_disabled",
+  );
+});
+
+test("usage credentials are compared as fixed-length HMAC digests", () => {
+  const first = usageHmac(`kbu_${"a".repeat(43)}`);
+  const same = usageHmac(`kbu_${"a".repeat(43)}`);
+  const other = usageHmac(`kbu_${"b".repeat(43)}`);
+  assert.equal(constantTimeHashEqual(first, same), true);
+  assert.equal(constantTimeHashEqual(first, other), false);
+});
+

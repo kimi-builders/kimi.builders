@@ -9,6 +9,7 @@ import {
   STATE_COOKIE,
   type Provider,
 } from "@/src/lib/auth/oauth";
+import { AUTH_RETURN_COOKIE, safeReturnTo } from "@/src/lib/auth/return-to";
 
 export async function GET(
   req: NextRequest,
@@ -19,6 +20,7 @@ export async function GET(
     return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   }
   const origin = new URL(req.url).origin;
+  const returnTo = safeReturnTo(new URL(req.url).searchParams.get("next"));
   const state = createState();
   const res = NextResponse.redirect(
     authorizeUrl(provider as Provider, {
@@ -27,6 +29,13 @@ export async function GET(
     }),
   );
   res.cookies.set(STATE_COOKIE, state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 600,
+  });
+  res.cookies.set(AUTH_RETURN_COOKIE, returnTo, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

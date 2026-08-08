@@ -5,6 +5,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import Link from "next/link";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { UserRound } from "lucide-react";
 
 export default async function AuthChip({ compact = false }: { compact?: boolean }) {
   const user = await getSessionUser();
@@ -13,12 +14,18 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
     return (
       <>
         <Link href={`/u/${user.handle}`} title={`@${user.handle}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={user.avatarUrl}
-            alt=""
-            className="h-7 w-7 rounded-full border border-paper/20 transition-colors hover:border-blue"
-          />
+          {user.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatarUrl}
+              alt=""
+              className="h-7 w-7 rounded-full border border-paper/20 transition-colors hover:border-blue"
+            />
+          ) : (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-paper/20 text-grey transition-colors hover:border-blue hover:text-blue">
+              <UserRound size={13} aria-hidden="true" />
+            </span>
+          )}
         </Link>
         {!compact && (
           <Link
