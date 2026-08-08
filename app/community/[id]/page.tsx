@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowBigUp, Bookmark, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import { relTime } from "@/src/lib/format";
@@ -12,10 +13,13 @@ import {
   getPoll,
   getPost,
   hasUpVoted,
+  isSubscribed,
 } from "@/src/lib/posts";
 import Markdown from "@/components/Markdown";
+import ShareButton from "@/components/ShareButton";
 import {
   createCommentAction,
+  toggleSubscribeAction,
   toggleUpAction,
   votePollAction,
 } from "../actions";
@@ -42,10 +46,11 @@ export default async function PostPage({
   if (!post) notFound();
 
   const user = await getSessionUser();
-  const [poll, comments, upVoted] = await Promise.all([
+  const [poll, comments, upVoted, subscribed] = await Promise.all([
     post.type === "poll" ? getPoll(postId, user?.id ?? null) : null,
     getComments(postId, { showAi: user ? user.showAiReplies : true }),
     user ? hasUpVoted(user.id, postId) : false,
+    user ? isSubscribed(user.id, postId) : false,
   ]);
 
   return (
@@ -63,23 +68,6 @@ export default async function PostPage({
         <img src={post.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
         <span className="text-paper">@{post.handle}</span>
         <span>{relTime(post.createdAt)}</span>
-        <form action={toggleUpAction} className="ml-auto">
-          <input type="hidden" name="post_id" value={post.id} />
-          {user ? (
-            <button
-              type="submit"
-              className={`border px-3 py-1 transition-colors ${
-                upVoted
-                  ? "border-blue text-blue"
-                  : "border-moon text-grey hover:border-blue hover:text-blue"
-              }`}
-            >
-              ▲ {post.score}
-            </button>
-          ) : (
-            <span className="border border-moon px-3 py-1">▲ {post.score}</span>
-          )}
-        </form>
       </div>
 
       {post.bodyMd && (
@@ -159,7 +147,59 @@ export default async function PostPage({
         </div>
       )}
 
-      <h2 className="mt-12 border-t border-moon pt-6 font-mono text-sm text-grey">
+      {/* 动作条:X 风格图标行(赞 / 评论 / 订阅 / 分享),硬边细线承品牌 */}
+      <div className="mt-8 flex items-center gap-6 border-y border-moon py-3">
+        {user ? (
+          <form action={toggleUpAction}>
+            <input type="hidden" name="post_id" value={post.id} />
+            <button
+              type="submit"
+              aria-label={upVoted ? "取消点赞" : "点赞"}
+              className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
+                upVoted ? "text-blue" : "text-grey hover:text-blue"
+              }`}
+            >
+              <ArrowBigUp size={16} fill={upVoted ? "currentColor" : "none"} />
+              {post.score}
+            </button>
+          </form>
+        ) : (
+          <span
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-grey"
+            title="登录后点赞"
+          >
+            <ArrowBigUp size={16} />
+            {post.score}
+          </span>
+        )}
+        <a
+          href="#comments"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-blue"
+        >
+          <MessageCircle size={14} />
+          {post.commentCount}
+        </a>
+        {user && (
+          <form action={toggleSubscribeAction}>
+            <input type="hidden" name="post_id" value={post.id} />
+            <button
+              type="submit"
+              aria-label={subscribed ? "取消订阅" : "订阅本帖讨论"}
+              className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
+                subscribed ? "text-blue" : "text-grey hover:text-blue"
+              }`}
+            >
+              <Bookmark size={14} fill={subscribed ? "currentColor" : "none"} />
+              {subscribed ? "已订阅" : "订阅"}
+            </button>
+          </form>
+        )}
+        <span className="ml-auto">
+          <ShareButton path={`/community/${post.id}`} title={post.title} />
+        </span>
+      </div>
+
+      <h2 id="comments" className="mt-10 font-mono text-sm text-grey">
         {comments.length} 条评论
       </h2>
       <ul className="mt-6 space-y-6">

@@ -145,6 +145,16 @@ CREATE TABLE IF NOT EXISTS usage_daily (
   PRIMARY KEY (user_id, day)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 帖子订阅(重点关注的讨论;通知通道后补,先存关系)
+CREATE TABLE IF NOT EXISTS post_subscriptions (
+  user_id BIGINT UNSIGNED NOT NULL,
+  post_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, post_id),
+  CONSTRAINT fk_sub_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_sub_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- AI 回帖任务(新帖入库后排队,bot 消费)
 CREATE TABLE IF NOT EXISTS ai_reply_jobs (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

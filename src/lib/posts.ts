@@ -55,13 +55,20 @@ function mapFeed(r: RowDataPacket): FeedPost {
   };
 }
 
-/* feed:热门 = (赞 + 评论×2) / (小时+2)^1.5,取前 50;最新按时间。 */
+/* feed:热门 = (赞 + 评论×2) / (小时+2)^1.5,取前 50;最新按时间。
+   subscriberId 给「订阅」页签用:只看自己订阅过的帖子。 */
 export async function getFeed(opts: {
   sort: "hot" | "new";
   category?: string;
+  subscriberId?: number;
 }): Promise<FeedPost[]> {
   const where = ["p.deleted_at IS NULL"];
-  const args: string[] = [];
+  const args: (string | number)[] = [];
+  let join = "JOIN users u ON u.id = p.user_id";
+  if (opts.subscriberId) {
+    join += " JOIN post_subscriptions ps ON ps.post_id = p.id AND ps.user_id = ?";
+    args.push(opts.subscriberId);
+  }
   if (opts.category && CATEGORIES.some((c) => c.id === opts.category)) {
     where.push("p.category = ?");
     args.push(opts.category);
@@ -73,7 +80,7 @@ export async function getFeed(opts: {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.type, p.category, p.title, p.score, p.comment_count, p.created_at,
             u.handle, u.name, u.avatar_url
-     FROM posts p JOIN users u ON u.id = p.user_id
+     FROM posts p ${join}
      WHERE ${where.join(" AND ")}
      ORDER BY ${order} LIMIT 50`,
     args,
@@ -222,6 +229,57 @@ export async function hasUpVoted(
 ): Promise<boolean> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT id FROM reactions WHERE user_id = ? AND target_type = 'post' AND target_id = ? AND kind = 'up' LIMIT 1",
+    [userId, postId],
+  );
+  return !!rows[0];
+}
+
+/* feed 行批量取点赞态:一条 IN 查询代替每行一次(避免 N+1)。 */
+export async function getUpvotedPostIds(
+  userId: number,
+  postIds: number[],
+): Promise<Set<number>> {
+  if (postIds.length === 0) return new Set();
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT target_id FROM reactions WHERE user_id = ? AND target_type = 'post' AND kind = 'up' AND target_id IN (?)",
+    [userId, postIds],
+  );
+  return new Set(rows.map((r) => Number(r.target_id)));
+}
+
+/* 订阅=重点关注这个帖子的讨论;通知通道(回帖提醒)后补,先存关系。 */
+export async function toggleSubscribe(
+  userId: number,
+  postId: number,
+): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    "SELECT user_id FROM post_subscriptions WHERE user_id = ? AND post_id = ? LIMIT 1",
+    [userId, postId],
+  );
+  if (rows[0]) {
+    await pool.query(
+      "DELETE FROM post_subscriptions WHERE user_id = ? AND post_id = ?",
+      [userId, postId],
+    );
+  } else {
+    try {
+      await pool.query(
+        "INSERT INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
+        [userId, postId],
+      );
+    } catch {
+      /* 并发重复订阅 → 主键挡住,当已订阅处理 */
+    }
+  }
+}
+
+export async function isSubscribed(
+  userId: number,
+  postId: number,
+): Promise<boolean> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT user_id FROM post_subscriptions WHERE user_id = ? AND post_id = ? LIMIT 1",
     [userId, postId],
   );
   return !!rows[0];

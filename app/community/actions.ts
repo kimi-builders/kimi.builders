@@ -9,6 +9,7 @@ import {
   CATEGORIES,
   createComment,
   createPost,
+  toggleSubscribe,
   toggleUp,
   votePoll,
 } from "@/src/lib/posts";
@@ -82,6 +83,14 @@ export async function toggleUpAction(formData: FormData): Promise<void> {
   const postId = Number(formData.get("post_id"));
   if (!postId) return;
   await toggleUp(user.id, postId);
+}
+
+export async function toggleSubscribeAction(formData: FormData): Promise<void> {
+  const user = await getSessionUser();
+  if (!user) return;
+  const postId = Number(formData.get("post_id"));
+  if (!postId) return;
+  await toggleSubscribe(user.id, postId);
 }
 
 export async function votePollAction(formData: FormData): Promise<void> {
