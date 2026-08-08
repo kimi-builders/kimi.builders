@@ -1,11 +1,13 @@
-/* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 动作条(赞/评论/订阅/分享)+ 评论区。
+/* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 动作条(顶踩/评论/订阅/分享/作者操作)+ 评论区。
    评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌瓷砖头像和 AI 标。
    楼中楼:parent 链在服务端拍平成「顶层 + 一层回复」,回复层带「回复 @xx」标注。
-   标题非强制:无标题帖正文直接当主体。 */
+   标题非强制:无标题帖正文直接当主体。私密帖仅作者可见(外人 404)。
+   浏览量只记录不展示:after() 里 +1,不阻塞渲染。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowBigUp, Bookmark, MessageCircle } from "lucide-react";
+import { after } from "next/server";
+import { ArrowBigDown, ArrowBigUp, Bookmark, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import { categoryLabel } from "@/src/lib/categories";
@@ -13,10 +15,12 @@ import { plainExcerpt, relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
+  getCommentReactions,
   getComments,
   getPoll,
   getPost,
-  hasUpVoted,
+  getPostReactions,
+  incrementViewCount,
   isSubscribed,
   type CommentRow,
 } from "@/src/lib/posts";
@@ -26,9 +30,10 @@ import CommentSection, {
   type CommentThread,
   type CommentView,
 } from "../_components/CommentSection";
+import PostOwnerActions from "../_components/PostOwnerActions";
 import {
+  setPostReactionAction,
   toggleSubscribeAction,
-  toggleUpAction,
   votePollAction,
 } from "../actions";
 
@@ -69,13 +74,22 @@ export default async function PostPage({
   if (!post) notFound();
 
   const user = await getSessionUser();
+  /* 私密帖仅作者可见;作者本人照常(带「私密」标) */
+  if (post.visibility !== "public" && post.userId !== user?.id) notFound();
+  after(() => incrementViewCount(postId));
+
   const locale = await getLocale(user);
-  const [poll, comments, upVoted, subscribed] = await Promise.all([
+  const [poll, comments, postReactions, subscribed] = await Promise.all([
     post.type === "poll" ? getPoll(postId, user?.id ?? null) : null,
     getComments(postId, { showAi: user ? user.showAiReplies : true }),
-    user ? hasUpVoted(user.id, postId) : false,
+    user ? getPostReactions(user.id, [postId]) : { up: new Set<number>(), down: new Set<number>() },
     user ? isSubscribed(user.id, postId) : false,
   ]);
+  const commentReactions = user
+    ? await getCommentReactions(user.id, comments.map((c) => c.id))
+    : { up: new Set<number>(), down: new Set<number>() };
+  const upVoted = postReactions.up.has(postId);
+  const downVoted = postReactions.down.has(postId);
 
   /* 组装两级楼中楼:顶层按时间升序;任何深度的回复拍平进根的一层列表 */
   const byId = new Map(comments.map((c) => [c.id, c]));
@@ -86,11 +100,15 @@ export default async function PostPage({
     replyToAuthor: string | null,
   ): CommentView => ({
     id: c.id,
+    authorId: c.userId,
     isAi: c.isAi,
     author: c.isAi ? BOT_NAME : `@${c.handle}`,
     avatarUrl: c.isAi ? BOT_AVATAR : (c.avatarUrl ?? ""),
     time: relTime(c.createdAt, locale),
+    edited: !!c.editedAt,
+    score: c.score,
     replyToAuthor,
+    bodyMd: c.bodyMd,
     body: <Markdown source={c.bodyMd} />,
   });
   for (const c of comments) {
@@ -119,6 +137,14 @@ export default async function PostPage({
           ← {t(locale, "nav.community")}
         </Link>
         <span>{categoryLabel(locale, post.category)}</span>
+        {post.visibility === "private" && (
+          <span
+            className="border border-line px-1.5 py-px text-[10px] text-paper"
+            title={t(locale, "post.privateHint")}
+          >
+            {t(locale, "post.private")}
+          </span>
+        )}
       </div>
 
       {post.title && (
@@ -133,6 +159,7 @@ export default async function PostPage({
         <img src={post.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
         <span className="text-paper">@{post.handle}</span>
         <span>{relTime(post.createdAt, locale)}</span>
+        {post.editedAt && <span>({t(locale, "post.edited")})</span>}
       </div>
 
       {post.bodyMd && (
@@ -213,20 +240,31 @@ export default async function PostPage({
         </div>
       )}
 
-      {/* 动作条:X 风格图标行(赞 / 评论 / 订阅 / 分享),硬边细线承品牌 */}
-      <div className="mt-8 flex items-center gap-6 border-y border-line py-3">
+      {/* 动作条:顶/踩 + 评论 + 订阅 + 分享 + 作者操作(编辑/可见性/删除) */}
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-3">
         {user ? (
-          <form action={toggleUpAction}>
+          <form action={setPostReactionAction} className="inline-flex items-center gap-1.5">
             <input type="hidden" name="post_id" value={post.id} />
             <button
               type="submit"
+              name="kind"
+              value="up"
               aria-label={t(locale, upVoted ? "post.unup" : "post.up")}
-              className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
-                upVoted ? "text-blue" : "text-grey hover:text-blue"
-              }`}
+              className={`transition-colors ${upVoted ? "text-blue" : "text-grey hover:text-blue"}`}
             >
               <ArrowBigUp size={16} fill={upVoted ? "currentColor" : "none"} />
+            </button>
+            <span className="min-w-4 text-center font-mono text-xs text-paper">
               {post.score}
+            </span>
+            <button
+              type="submit"
+              name="kind"
+              value="down"
+              aria-label={t(locale, downVoted ? "post.undown" : "post.down")}
+              className={`transition-colors ${downVoted ? "text-paper" : "text-grey hover:text-paper"}`}
+            >
+              <ArrowBigDown size={16} fill={downVoted ? "currentColor" : "none"} />
             </button>
           </form>
         ) : (
@@ -260,6 +298,13 @@ export default async function PostPage({
             </button>
           </form>
         )}
+        {user && post.userId === user.id && (
+          <PostOwnerActions
+            postId={post.id}
+            visibility={post.visibility}
+            locale={locale}
+          />
+        )}
         <span className="ml-auto">
           <ShareButton
             path={`/community/${post.id}`}
@@ -272,9 +317,11 @@ export default async function PostPage({
       <CommentSection
         postId={post.id}
         locale={locale}
-        loggedIn={!!user}
+        meId={user?.id ?? null}
         total={comments.length}
         threads={threads}
+        upIds={[...commentReactions.up]}
+        downIds={[...commentReactions.down]}
       />
     </div>
   );

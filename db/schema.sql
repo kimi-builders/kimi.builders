@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
   CONSTRAINT fk_oauth_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 帖子(text/link/poll/image/work 五种内容类型)
+-- 帖子(text/link/poll/image/work 五种内容类型;标题非强制,至少标题或正文其一)
 CREATE TABLE IF NOT EXISTS posts (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
@@ -43,10 +43,13 @@ CREATE TABLE IF NOT EXISTS posts (
   link_url VARCHAR(500) NOT NULL DEFAULT '',
   lang VARCHAR(8) NOT NULL DEFAULT '' COMMENT '发帖语言,空=自动检测',
   ai_reply TINYINT(1) NOT NULL DEFAULT 1 COMMENT '本帖允许 AI 回帖(默认开,v2 决策 3)',
-  score INT NOT NULL DEFAULT 0,
+  visibility VARCHAR(16) NOT NULL DEFAULT 'public' COMMENT 'public/private(私密=仅作者可见)',
+  score INT NOT NULL DEFAULT 0 COMMENT '顶-踩 净分',
   comment_count INT UNSIGNED NOT NULL DEFAULT 0,
+  view_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '浏览量,先记录不展示',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  edited_at DATETIME NULL COMMENT '最后一次编辑时间(正文/标题)',
   deleted_at DATETIME NULL,
   KEY idx_feed (category, created_at),
   KEY idx_user (user_id),
@@ -74,7 +77,7 @@ CREATE TABLE IF NOT EXISTS poll_votes (
   CONSTRAINT fk_vote_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 评论(user_id 为空 + is_ai=1 即 AI bot 回复)
+-- 评论(user_id 为空 + is_ai=1 即 AI bot 回复;parent_id 楼中楼,展示拍平两层)
 CREATE TABLE IF NOT EXISTS comments (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   post_id BIGINT UNSIGNED NOT NULL,
@@ -82,8 +85,9 @@ CREATE TABLE IF NOT EXISTS comments (
   user_id BIGINT UNSIGNED NULL,
   is_ai TINYINT(1) NOT NULL DEFAULT 0,
   body_md TEXT NOT NULL,
-  score INT NOT NULL DEFAULT 0,
+  score INT NOT NULL DEFAULT 0 COMMENT '顶-踩 净分;≤-3 展示侧淡化',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  edited_at DATETIME NULL,
   deleted_at DATETIME NULL,
   KEY idx_post (post_id, created_at),
   CONSTRAINT fk_comment_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
@@ -155,14 +159,31 @@ CREATE TABLE IF NOT EXISTS post_subscriptions (
   CONSTRAINT fk_sub_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- AI 回帖任务(新帖入库后排队,bot 消费)
+-- AI 回帖任务(新帖入库后排队,bot 消费;comment_id 非空 = 回复某条评论)
 CREATE TABLE IF NOT EXISTS ai_reply_jobs (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   post_id BIGINT UNSIGNED NOT NULL,
+  comment_id BIGINT UNSIGNED NULL COMMENT '触发回复的评论;NULL=回复帖子本身',
   status VARCHAR(16) NOT NULL DEFAULT 'pending' COMMENT 'pending/done/failed/skipped',
   error VARCHAR(500) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed_at DATETIME NULL,
   KEY idx_status (status, created_at),
   CONSTRAINT fk_job_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 消息通知(评论了关注的帖子 / 回复了我的评论;actor NULL = AI 或系统)
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '接收者',
+  actor_id BIGINT UNSIGNED NULL COMMENT '触发者;NULL=AI/系统',
+  type VARCHAR(16) NOT NULL DEFAULT 'comment' COMMENT 'comment/reply',
+  post_id BIGINT UNSIGNED NOT NULL,
+  comment_id BIGINT UNSIGNED NOT NULL COMMENT '触达锚点 /community/<post>#comment-<id>',
+  read_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_user_unread (user_id, read_at),
+  CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_notif_actor FOREIGN KEY (actor_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_notif_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

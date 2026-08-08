@@ -135,6 +135,11 @@ export default function PostForm({
         {t(locale, "form.aiReply")}
       </label>
 
+      <label className="flex cursor-pointer items-center gap-2 font-mono text-xs text-grey">
+        <input type="checkbox" name="private" className="accent-blue" />
+        {t(locale, "form.private")}
+      </label>
+
       {state?.error && (
         <p className="font-mono text-xs text-blue">{state.error}</p>
       )}

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   BookOpen,
   Info,
   MessagesSquare,
@@ -43,7 +44,13 @@ const SECTIONS = [
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: true },
 ] as const;
 
-export default function LeftNav({ locale }: { locale: Locale }) {
+export default function LeftNav({
+  locale,
+  unread = 0,
+}: {
+  locale: Locale;
+  unread?: number;
+}) {
   const pathname = usePathname();
 
   const itemCls = (active: boolean) =>
@@ -112,6 +119,21 @@ export default function LeftNav({ locale }: { locale: Locale }) {
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
+        <Link
+          href="/community/notifications"
+          title={t(locale, "notif.title")}
+          className={itemCls(pathname.startsWith("/community/notifications"))}
+        >
+          <span className="relative shrink-0">
+            <Bell size={15} />
+            {unread > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </span>
+          <span className="nav-label">{t(locale, "notif.title")}</span>
+        </Link>
         <ThemeToggle withLabel className={`${itemCls(false)} w-full`} />
         <LocaleToggle withLabel className={`${itemCls(false)} w-full`} />
         <a

@@ -1,15 +1,17 @@
-/* 社区 feed:卡片流(头像左 + 标题 + 两行摘要 + 底部图标动作行)。
+/* 社区 feed:卡片流(头像左 + 标题/摘要 + 底部图标动作行)。
    顶部:VibeCafé 式快速发帖框(登录可见,点击进完整发帖页)+ 热门/最新/订阅页签。
-   板块筛选在右栏「浏览社区」;行内点赞可交互(点赞态一条 IN 批量查,避免 N+1)。 */
+   板块筛选在右栏「浏览社区」;行内顶/踩可交互(reaction 态一条 IN 批量查,避免 N+1)。
+   标题非强制:无标题帖正文摘要占主链接位。登录用户的私密帖只在自己的 feed 出现(带标);
+   被自己点踩的帖不再出现在自己的 feed。 */
 import Link from "next/link";
-import { ArrowBigUp, MessageCircle, SquarePen } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp, MessageCircle, SquarePen } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getFeed, getUpvotedPostIds } from "@/src/lib/posts";
+import { getFeed, getPostReactions } from "@/src/lib/posts";
 import { relTime } from "@/src/lib/format";
-import { toggleUpAction } from "./actions";
+import { setPostReactionAction } from "./actions";
 
 export default async function CommunityPage({
   searchParams,
@@ -25,10 +27,11 @@ export default async function CommunityPage({
     sort: currentSort,
     category: cat,
     subscriberId: subOnly ? user.id : undefined,
+    viewerId: user?.id,
   });
-  const upvoted = user
-    ? await getUpvotedPostIds(user.id, posts.map((p) => p.id))
-    : new Set<number>();
+  const reacted = user
+    ? await getPostReactions(user.id, posts.map((p) => p.id))
+    : { up: new Set<number>(), down: new Set<number>() };
 
   const tabHref = (s: string) =>
     `/community?sort=${s}${cat ? `&cat=${cat}` : ""}${subOnly ? "&sub=1" : ""}`;
@@ -78,7 +81,8 @@ export default async function CommunityPage({
       ) : (
         <div className="mt-5 space-y-4">
           {posts.map((p) => {
-            const up = upvoted.has(p.id);
+            const up = reacted.up.has(p.id);
+            const down = reacted.down.has(p.id);
             return (
               <article
                 key={p.id}
@@ -96,7 +100,12 @@ export default async function CommunityPage({
                       <span className="text-paper">@{p.handle}</span>
                       <span>·</span>
                       <span>{relTime(p.createdAt, locale)}</span>
-                      <span className="ml-auto shrink-0 tracking-wider">
+                      <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">
+                        {p.visibility === "private" && (
+                          <span className="border border-line px-1 py-px text-[10px] text-paper">
+                            {t(locale, "post.private")}
+                          </span>
+                        )}
                         {categoryLabel(locale, p.category)}
                       </span>
                     </div>
@@ -135,10 +144,12 @@ export default async function CommunityPage({
                     )}
                     <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
                       {user ? (
-                        <form action={toggleUpAction}>
+                        <form action={setPostReactionAction} className="inline-flex items-center gap-1">
                           <input type="hidden" name="post_id" value={p.id} />
                           <button
                             type="submit"
+                            name="kind"
+                            value="up"
                             aria-label={t(locale, up ? "post.unup" : "post.up")}
                             className={`inline-flex items-center gap-1 transition-colors ${
                               up ? "text-blue" : "text-grey hover:text-blue"
@@ -148,7 +159,21 @@ export default async function CommunityPage({
                               size={14}
                               fill={up ? "currentColor" : "none"}
                             />
-                            {p.score}
+                          </button>
+                          <span className="min-w-3 text-center">{p.score}</span>
+                          <button
+                            type="submit"
+                            name="kind"
+                            value="down"
+                            aria-label={t(locale, down ? "post.undown" : "post.down")}
+                            className={`inline-flex items-center gap-1 transition-colors ${
+                              down ? "text-paper" : "text-grey hover:text-paper"
+                            }`}
+                          >
+                            <ArrowBigDown
+                              size={14}
+                              fill={down ? "currentColor" : "none"}
+                            />
                           </button>
                         </form>
                       ) : (

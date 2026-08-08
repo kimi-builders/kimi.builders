@@ -7,6 +7,7 @@
 import { Suspense } from "react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
+import { getUnreadNotificationCount } from "@/src/lib/posts";
 import LeftNav from "./_components/LeftNav";
 import MobileTopBar from "./_components/MobileTopBar";
 import RightSidebar from "./_components/RightSidebar";
@@ -17,14 +18,17 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await getSessionUser();
-  const locale = await getLocale(user);
+  const [locale, unread] = await Promise.all([
+    getLocale(user),
+    user ? getUnreadNotificationCount(user.id) : 0,
+  ]);
   return (
     <div>
-      <MobileTopBar locale={locale} />
+      <MobileTopBar locale={locale} unread={unread} />
       <div className="mx-auto flex max-w-[1200px] items-start gap-8 px-4 lg:px-6">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
-          <LeftNav locale={locale} />
+          <LeftNav locale={locale} unread={unread} />
         </Suspense>
         <main className="w-full min-w-0 max-w-[680px] flex-1 py-6 lg:py-8">
           {children}
