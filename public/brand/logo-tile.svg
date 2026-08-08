@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
-  <!-- kimi.builders · favicon:与小尺寸瓷砖标 public/brand/logo-tile.svg 同稿
-       (母版 v2 月之暗面 · 双星并肩 的小尺寸几何:去轨道、月亮放大、双星放大对角)。
-       深色圆角瓷砖兜底:亮/暗浏览器 UI 里都清晰。 -->
+  <!-- kimi.builders · 小尺寸瓷砖标(导航 20–28px / 评论头像 / favicon)
+       与母版 v2「月之暗面 · 双星并肩」同源,按 icon.svg 的小尺寸几何:
+       去轨道,月亮放大,双星放大呈对角并肩;衬深色圆角瓷砖 ——
+       暗色 UI 里瓷砖边缘和双星都清晰,亮色 UI 里也不隐形。 -->
   <defs>
     <mask id="tile-crescent-cut">
       <circle cx="460" cy="545" r="355" fill="#fff"/>

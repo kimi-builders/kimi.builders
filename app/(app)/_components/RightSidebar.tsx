@@ -1,11 +1,13 @@
 /* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 7 日热门 / 社区数据 /
-   新成员,全部真实数据。用户可整体关掉(cookie kb_sidebar=0),关掉后留细轨可重开。 */
+   新成员,全部真实数据。用户可整体关掉(留细轨可重开)。
+   隐藏/显示纯 CSS 驱动(html[data-sidebar],见 globals.css):两种状态的结构
+   常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。 */
 import Link from "next/link";
-import { MessageCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { getSidebarData } from "@/src/lib/posts";
 import { t, type Locale } from "@/src/lib/i18n";
-import { toggleSidebarAction } from "../community/actions";
 import CategoryNav from "./CategoryNav";
+import { SidebarToggle } from "./pref-controls";
 
 function Widget({
   title,
@@ -15,7 +17,7 @@ function Widget({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border border-moon bg-card p-4">
+    <section className="border border-line bg-card p-4">
       <h3 className="font-mono text-[10px] tracking-[0.25em] text-grey">
         {title}
       </h3>
@@ -25,34 +27,16 @@ function Widget({
 }
 
 export default async function RightSidebar({
-  hidden,
   locale,
   loggedIn,
 }: {
-  hidden: boolean;
   locale: Locale;
   loggedIn: boolean;
 }) {
-  if (hidden) {
-    return (
-      <aside className="sticky top-8 hidden xl:block">
-        <form action={toggleSidebarAction}>
-          <button
-            type="submit"
-            title={t(locale, "side.show")}
-            className="border border-moon p-2 text-grey transition-colors hover:border-blue hover:text-blue"
-          >
-            <PanelRightOpen size={15} />
-          </button>
-        </form>
-      </aside>
-    );
-  }
-
   const data = await getSidebarData();
   return (
-    <aside className="sticky top-8 hidden w-72 shrink-0 xl:block">
-      <div className="space-y-4">
+    <aside className="rightsidebar sticky top-8 hidden xl:block">
+      <div className="sidebar-full w-72 shrink-0 space-y-4">
         <Widget title={t(locale, "side.browse")}>
           <CategoryNav loggedIn={loggedIn} locale={locale} />
         </Widget>
@@ -140,15 +124,12 @@ export default async function RightSidebar({
           </p>
         </Widget>
 
-        <form action={toggleSidebarAction}>
-          <button
-            type="submit"
-            className="flex items-center gap-1.5 font-mono text-[10px] text-grey transition-colors hover:text-paper"
-          >
-            <PanelRightClose size={12} />
-            {t(locale, "side.hide")}
-          </button>
-        </form>
+        <SidebarToggle variant="full" locale={locale} />
+      </div>
+
+      {/* 隐藏后留下的细轨重开按钮(CSS 按 html[data-sidebar] 二选一显示) */}
+      <div className="sidebar-rail">
+        <SidebarToggle variant="rail" locale={locale} />
       </div>
     </aside>
   );

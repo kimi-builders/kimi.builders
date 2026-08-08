@@ -38,7 +38,7 @@ export default function CategoryNav({
           {t(locale, "side.subs")}
         </Link>
       )}
-      <div className="my-2 border-t border-moon" />
+      <div className="my-2 border-t border-line" />
       {CATEGORIES.map((c) => (
         <Link
           key={c.id}

@@ -8,8 +8,8 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 
 export const BOT_NAME = "Kimi 小筑";
-/* 暗色瓷砖头像:浅色主题下也稳定(透明底月牙在亮底会隐形)。 */
-export const BOT_AVATAR = "/brand/avatar-512.png";
+/* 小尺寸瓷砖标(月牙+双星放大,暗底):评论里 20px 也可辨,双主题稳定。 */
+export const BOT_AVATAR = "/brand/logo-tile.svg";
 
 const SYSTEM_PROMPT = `你是 kimi.builders 社区的 AI 助手「${BOT_NAME}」。kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方),成员在这里讨论怎么用 Kimi 构建东西。你在社区里回帖,规则:
 - {LANG_RULE}
@@ -107,7 +107,7 @@ async function callKimi(
         { role: "system", content: SYSTEM_PROMPT.replace("{LANG_RULE}", langRule) },
         {
           role: "user",
-          content: `板块:${post.category}\n标题:${post.title}\n正文:\n${post.body.slice(0, 4000)}`,
+          content: `板块:${post.category}\n标题:${post.title || "(无标题)"}\n正文:\n${post.body.slice(0, 4000)}`,
         },
       ],
     }),

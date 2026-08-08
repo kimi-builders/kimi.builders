@@ -1,5 +1,7 @@
 /* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 动作条(赞/评论/订阅/分享)+ 评论区。
-   评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌瓷砖头像和 AI 标。 */
+   评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌瓷砖头像和 AI 标。
+   楼中楼:parent 链在服务端拍平成「顶层 + 一层回复」,回复层带「回复 @xx」标注。
+   标题非强制:无标题帖正文直接当主体。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,7 +9,7 @@ import { ArrowBigUp, Bookmark, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import { categoryLabel } from "@/src/lib/categories";
-import { relTime } from "@/src/lib/format";
+import { plainExcerpt, relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
@@ -16,11 +18,15 @@ import {
   getPost,
   hasUpVoted,
   isSubscribed,
+  type CommentRow,
 } from "@/src/lib/posts";
 import Markdown from "@/components/Markdown";
 import ShareButton from "@/components/ShareButton";
+import CommentSection, {
+  type CommentThread,
+  type CommentView,
+} from "../_components/CommentSection";
 import {
-  createCommentAction,
   toggleSubscribeAction,
   toggleUpAction,
   votePollAction,
@@ -33,7 +39,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const post = await getPost(Number(id) || 0);
-  return { title: post ? `${post.title} — kimi.builders` : "kimi.builders" };
+  if (!post) return { title: "kimi.builders" };
+  const name = post.title || plainExcerpt(post.bodyMd, 60);
+  return { title: `${name} — kimi.builders` };
+}
+
+/* parent 链 → 根评论 id(带环保护;parent 缺失时退化自身为根) */
+function rootIdOf(c: CommentRow, byId: Map<number, CommentRow>): number {
+  let cur = c;
+  const seen = new Set<number>();
+  while (cur.parentId && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    const p = byId.get(cur.parentId);
+    if (!p) break;
+    cur = p;
+  }
+  return cur.id;
 }
 
 export default async function PostPage({
@@ -56,6 +77,41 @@ export default async function PostPage({
     user ? isSubscribed(user.id, postId) : false,
   ]);
 
+  /* 组装两级楼中楼:顶层按时间升序;任何深度的回复拍平进根的一层列表 */
+  const byId = new Map(comments.map((c) => [c.id, c]));
+  const rootEntries = new Map<number, CommentThread>();
+  const threads: CommentThread[] = [];
+  const view = (
+    c: CommentRow,
+    replyToAuthor: string | null,
+  ): CommentView => ({
+    id: c.id,
+    isAi: c.isAi,
+    author: c.isAi ? BOT_NAME : `@${c.handle}`,
+    avatarUrl: c.isAi ? BOT_AVATAR : (c.avatarUrl ?? ""),
+    time: relTime(c.createdAt, locale),
+    replyToAuthor,
+    body: <Markdown source={c.bodyMd} />,
+  });
+  for (const c of comments) {
+    const parent = c.parentId ? byId.get(c.parentId) : undefined;
+    if (!c.parentId || !parent) {
+      const entry: CommentThread = { ...view(c, null), replies: [] };
+      threads.push(entry);
+      rootEntries.set(c.id, entry);
+      continue;
+    }
+    const replyToAuthor = parent.isAi ? BOT_NAME : `@${parent.handle}`;
+    const entry = rootEntries.get(rootIdOf(c, byId));
+    if (entry) entry.replies.push(view(c, replyToAuthor));
+    else {
+      /* 兜底:根不在本页(评论被过滤)时按顶层显示 */
+      const fallback: CommentThread = { ...view(c, replyToAuthor), replies: [] };
+      threads.push(fallback);
+      rootEntries.set(c.id, fallback);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center gap-3 font-mono text-[11px] tracking-wider text-grey">
@@ -65,16 +121,22 @@ export default async function PostPage({
         <span>{categoryLabel(locale, post.category)}</span>
       </div>
 
-      <h1 className="mt-4 text-2xl font-semibold leading-snug">{post.title}</h1>
-      <div className="mt-3 flex items-center gap-3 font-mono text-[11px] text-grey">
+      {post.title && (
+        <h1 className="mt-4 text-2xl font-semibold leading-snug">{post.title}</h1>
+      )}
+      <div
+        className={`flex items-center gap-3 font-mono text-[11px] text-grey ${
+          post.title ? "mt-3" : "mt-4"
+        }`}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={post.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
         <span className="text-paper">@{post.handle}</span>
-        <span>{relTime(post.createdAt)}</span>
+        <span>{relTime(post.createdAt, locale)}</span>
       </div>
 
       {post.bodyMd && (
-        <div className="mt-8">
+        <div className={post.title ? "mt-8" : "mt-6"}>
           <Markdown source={post.bodyMd} />
         </div>
       )}
@@ -84,14 +146,14 @@ export default async function PostPage({
           href={post.linkUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 block border border-moon p-4 font-mono text-xs text-blue underline-offset-4 transition-colors hover:border-blue hover:underline"
+          className="mt-6 block border border-line p-4 font-mono text-xs text-blue underline-offset-4 transition-colors hover:border-blue hover:underline"
         >
           {post.linkUrl}
         </a>
       )}
 
       {poll && (
-        <div className="mt-6 border border-moon p-5">
+        <div className="mt-6 border border-line p-5">
           {user && poll.myOptionId === null ? (
             <form action={votePollAction} className="space-y-3">
               <input type="hidden" name="post_id" value={post.id} />
@@ -152,7 +214,7 @@ export default async function PostPage({
       )}
 
       {/* 动作条:X 风格图标行(赞 / 评论 / 订阅 / 分享),硬边细线承品牌 */}
-      <div className="mt-8 flex items-center gap-6 border-y border-moon py-3">
+      <div className="mt-8 flex items-center gap-6 border-y border-line py-3">
         {user ? (
           <form action={toggleUpAction}>
             <input type="hidden" name="post_id" value={post.id} />
@@ -201,73 +263,19 @@ export default async function PostPage({
         <span className="ml-auto">
           <ShareButton
             path={`/community/${post.id}`}
-            title={post.title}
+            title={post.title || plainExcerpt(post.bodyMd, 60)}
             locale={locale}
           />
         </span>
       </div>
 
-      <h2 id="comments" className="mt-10 font-mono text-sm text-grey">
-        {t(locale, "post.comments", { n: comments.length })}
-      </h2>
-      <ul className="mt-6 space-y-6">
-        {comments.map((c) => (
-          <li
-            key={c.id}
-            className={c.isAi ? "border-l-2 border-blue pl-4" : ""}
-          >
-            <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={c.isAi ? BOT_AVATAR : (c.avatarUrl ?? "")}
-                alt=""
-                className={`h-5 w-5 ${c.isAi ? "rounded" : "rounded-full"}`}
-              />
-              <span className="text-paper">
-                {c.isAi ? BOT_NAME : `@${c.handle}`}
-              </span>
-              {c.isAi && (
-                <span className="border border-blue px-1 py-px text-[9px] tracking-wider text-blue">
-                  AI
-                </span>
-              )}
-              <span>{relTime(c.createdAt)}</span>
-            </div>
-            <div className="mt-2">
-              <Markdown source={c.bodyMd} />
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {user ? (
-        <form action={createCommentAction} className="mt-10 space-y-3">
-          <input type="hidden" name="post_id" value={post.id} />
-          <textarea
-            name="body"
-            rows={4}
-            required
-            placeholder={t(locale, "post.commentPh")}
-            className="w-full border border-moon bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="border border-blue px-5 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
-          >
-            {t(locale, "post.comment")}
-          </button>
-        </form>
-      ) : (
-        <p className="mt-10 border-t border-moon pt-6 text-sm text-grey">
-          {t(locale, "post.loginToComment")}
-          <a href="/api/auth/github" className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
-            GitHub
-          </a>
-          <a href="/api/auth/google" className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
-            Google
-          </a>
-        </p>
-      )}
+      <CommentSection
+        postId={post.id}
+        locale={locale}
+        loggedIn={!!user}
+        total={comments.length}
+        threads={threads}
+      />
     </div>
   );
 }

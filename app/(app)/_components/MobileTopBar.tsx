@@ -1,28 +1,20 @@
 /* <lg 的顶部 mini 栏:品牌 + 社区/发帖 + 主题/语言切换 + 登录态。
    桌面三栏壳(LeftNav/RightSidebar)在移动端整体让位给它。 */
 import Link from "next/link";
-import { Moon, Sun } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import { t, type Locale } from "@/src/lib/i18n";
-import type { Theme } from "@/src/lib/prefs";
-import { setLocaleAction, setThemeAction } from "../community/actions";
+import { LocaleToggle, ThemeToggle } from "./pref-controls";
 
-export default function MobileTopBar({
-  locale,
-  theme,
-}: {
-  locale: Locale;
-  theme: Theme;
-}) {
+export default function MobileTopBar({ locale }: { locale: Locale }) {
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-5 border-b border-moon bg-bg/90 px-4 py-3 backdrop-blur lg:hidden">
+    <div className="sticky top-0 z-10 flex items-center gap-5 border-b border-line bg-bg/90 px-4 py-3 backdrop-blur lg:hidden">
       <Link
         href="/"
         className="flex items-center gap-2 font-mono text-sm font-semibold tracking-wide"
       >
-        {/* 暗色瓷砖头像:浅色主题下也稳定 */}
+        {/* 小尺寸瓷砖标:双主题稳定 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/avatar-512.png" alt="" className="h-5 w-5 rounded" />
+        <img src="/brand/logo-tile.svg" alt="" className="h-6 w-6 rounded-md" />
         kimi<span className="text-blue">.</span>builders
       </Link>
       <nav className="flex gap-4 font-mono text-xs text-grey">
@@ -37,24 +29,11 @@ export default function MobileTopBar({
         </Link>
       </nav>
       <div className="ml-auto flex items-center gap-4 font-mono text-xs">
-        <form action={setThemeAction}>
-          <button
-            type="submit"
-            aria-label={t(locale, theme === "dark" ? "aria.toLight" : "aria.toDark")}
-            className="text-grey transition-colors hover:text-paper"
-          >
-            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-        </form>
-        <form action={setLocaleAction}>
-          <button
-            type="submit"
-            aria-label={t(locale, "aria.lang")}
-            className="text-grey transition-colors hover:text-paper"
-          >
-            {locale === "zh" ? "EN" : "中"}
-          </button>
-        </form>
+        <ThemeToggle
+          iconSize={14}
+          className="text-grey transition-colors hover:text-paper"
+        />
+        <LocaleToggle className="text-grey transition-colors hover:text-paper" />
         <AuthChip />
       </div>
     </div>

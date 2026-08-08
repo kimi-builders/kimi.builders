@@ -82,12 +82,15 @@ const DICT = {
   "post.loginToVote": { zh: "登录后可投票", en: "Log in to vote" },
   "post.typeLink": { zh: "链接", en: "Link" },
   "post.typePoll": { zh: "投票", en: "Poll" },
+  "post.reply": { zh: "回复", en: "Reply" },
+  "post.replyTo": { zh: "回复 {name}", en: "Reply to {name}" },
+  "post.replying": { zh: "正在回复 {name}", en: "Replying to {name}" },
   /* ---- 发帖 ---- */
   "form.pageTitle": { zh: "发帖", en: "New post" },
   "form.text": { zh: "文字", en: "Text" },
   "form.link": { zh: "链接", en: "Link" },
   "form.poll": { zh: "投票", en: "Poll" },
-  "form.title": { zh: "标题", en: "Title" },
+  "form.title": { zh: "标题(可选)", en: "Title (optional)" },
   "form.bodyText": {
     zh: "正文(支持 Markdown)",
     en: "Body (Markdown supported)",
@@ -112,7 +115,10 @@ const DICT = {
   "err.login": { zh: "请先登录", en: "Please log in first" },
   "err.unknownType": { zh: "未知帖子类型", en: "Unknown post type" },
   "err.unknownCat": { zh: "未知板块", en: "Unknown category" },
-  "err.titleRequired": { zh: "标题不能为空", en: "Title is required" },
+  "err.empty": {
+    zh: "标题和正文至少填一项",
+    en: "Add a title or some body text",
+  },
   "err.titleLong": {
     zh: "标题太长了(200 字以内)",
     en: "Title too long (200 chars max)",
@@ -121,7 +127,6 @@ const DICT = {
     zh: "链接需要以 http(s):// 开头",
     en: "Link must start with http(s)://",
   },
-  "err.bodyRequired": { zh: "正文不能为空", en: "Body is required" },
   "err.pollMin": {
     zh: "投票至少需要 2 个选项",
     en: "A poll needs at least 2 options",

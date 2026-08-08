@@ -13,6 +13,7 @@ import {
   CATEGORIES,
   createComment,
   createPost,
+  getCommentForReply,
   toggleSubscribe,
   toggleUp,
   votePoll,
@@ -41,11 +42,11 @@ export async function createPostAction(
   const linkUrl = String(formData.get("link_url") || "").trim();
   const aiReply = formData.get("ai_reply") === "on";
 
-  if (!title) return { error: t(locale, "err.titleRequired") };
+  /* 标题/正文都不强制:至少填一项即可(降低发布门槛,参考 V2EX/X) */
+  if (!title && !body) return { error: t(locale, "err.empty") };
   if (title.length > 200) return { error: t(locale, "err.titleLong") };
   if (type === "link" && !/^https?:\/\/.+/.test(linkUrl))
     return { error: t(locale, "err.linkInvalid") };
-  if (!body && type === "text") return { error: t(locale, "err.bodyRequired") };
 
   let options: string[] = [];
   if (type === "poll") {
@@ -80,8 +81,14 @@ export async function createCommentAction(formData: FormData): Promise<void> {
   if (!user) return;
   const postId = Number(formData.get("post_id"));
   const body = String(formData.get("body") || "").trim();
+  const parentId = Number(formData.get("parent_id")) || null;
   if (!postId || !body) return;
-  await createComment(postId, user.id, body);
+  /* 楼中楼:parent 必须存在、属于同帖、未删除;层级不限,展示侧拍平到两层 */
+  if (parentId) {
+    const ok = await getCommentForReply(parentId, postId);
+    if (!ok) return;
+  }
+  await createComment(postId, user.id, body, parentId);
 }
 
 export async function toggleUpAction(formData: FormData): Promise<void> {
@@ -141,4 +148,12 @@ export async function setLocaleAction(): Promise<void> {
   const next = cur === "zh" ? "en" : "zh";
   store.set("kb_locale", next, PREF_COOKIE);
   if (user) await setUserLocale(user.id, next);
+}
+
+/* 乐观切换的显式持久化:客户端已翻好 cookie,这里只把登录用户的
+   账号偏好落库(不等界面,幂等)。 */
+export async function saveLocaleAction(locale: string): Promise<void> {
+  if (locale !== "zh" && locale !== "en") return;
+  const user = await getSessionUser();
+  if (user) await setUserLocale(user.id, locale);
 }

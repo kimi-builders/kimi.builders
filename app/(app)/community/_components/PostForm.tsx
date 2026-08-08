@@ -14,7 +14,7 @@ const TYPES = [
 ] as const;
 
 const inputCls =
-  "w-full border border-moon bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
+  "w-full border border-line bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
 
 export default function PostForm({
   aiDefault,
@@ -39,7 +39,7 @@ export default function PostForm({
             className={`cursor-pointer border px-3 py-1.5 ${
               type === tp.id
                 ? "border-blue text-blue"
-                : "border-moon text-grey hover:text-paper"
+                : "border-line text-grey hover:text-paper"
             }`}
           >
             <input
@@ -68,7 +68,6 @@ export default function PostForm({
           placeholder={t(locale, "form.title")}
           maxLength={200}
           className={inputCls}
-          required
         />
       </div>
 
@@ -82,7 +81,7 @@ export default function PostForm({
       )}
 
       {type === "poll" && (
-        <div className="space-y-2 border border-moon p-4">
+        <div className="space-y-2 border border-line p-4">
           <p className="font-mono text-[11px] text-grey">{t(locale, "form.pollOpts")}</p>
           {options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">

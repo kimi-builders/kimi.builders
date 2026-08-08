@@ -2,7 +2,9 @@
 
 /* 全站左栏(X 风格顶级导航):品牌 + 发帖 CTA + 分区导航(社区在用,其余 SOON)
    + 底部工具(主题/语言/GitHub/关于/收起)。板块级导航在右栏「浏览社区」。
-   客户端组件:usePathname 做激活态(蓝边 rail);主题/语言翻转走 server action。 */
+   客户端组件:usePathname 做激活态(蓝边 rail)。
+   收起态纯 CSS 驱动(html[data-nav] + .nav-label,见 globals.css),
+   切换零网络;结构对两种状态常渲染。 */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,21 +12,12 @@ import {
   BookOpen,
   Info,
   MessagesSquare,
-  Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
   Rocket,
   SquarePen,
   Star,
-  Sun,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
-import type { Theme } from "@/src/lib/prefs";
-import {
-  setLocaleAction,
-  setThemeAction,
-  toggleNavAction,
-} from "../community/actions";
+import { LocaleToggle, NavToggle, ThemeToggle } from "./pref-controls";
 
 /* GitHub 品牌字形(Lucide 已移除品牌图标;取自 SimpleIcons,CC0) */
 function GithubIcon({ size = 15 }: { size?: number }) {
@@ -50,56 +43,38 @@ const SECTIONS = [
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: true },
 ] as const;
 
-export default function LeftNav({
-  collapsed,
-  locale,
-  theme,
-}: {
-  collapsed: boolean;
-  locale: Locale;
-  theme: Theme;
-}) {
+export default function LeftNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
 
   const itemCls = (active: boolean) =>
-    `flex items-center gap-3 border-l-2 py-2 font-mono text-xs transition-colors ${
-      collapsed ? "justify-center px-0" : "px-3"
-    } ${
+    `nav-item flex items-center gap-3 border-l-2 px-3 py-2 font-mono text-xs transition-colors ${
       active
         ? "border-blue text-paper"
         : "border-transparent text-grey hover:text-paper"
     }`;
 
   return (
-    <aside
-      className={`sticky top-0 hidden h-screen shrink-0 flex-col overflow-y-auto py-6 lg:flex ${
-        collapsed ? "w-14" : "w-52"
-      }`}
-    >
+    <aside className="leftnav sticky top-0 hidden h-screen shrink-0 flex-col overflow-y-auto py-6 lg:flex">
       <Link
         href="/"
         title="kimi.builders"
-        className={`flex items-center gap-2 font-mono text-sm font-semibold tracking-wide ${
-          collapsed ? "justify-center" : "px-3"
-        }`}
+        className="nav-item flex items-center gap-2 px-3 font-mono text-sm font-semibold tracking-wide"
       >
-        {/* 暗色瓷砖头像:浅色主题下也稳定(透明底月牙在亮底会隐形) */}
+        {/* 小尺寸瓷砖标(月牙+双星放大版):暗色主题下边缘清晰、双星可辨 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/avatar-512.png" alt="" className="h-6 w-6 shrink-0 rounded" />
-        {!collapsed && (
-          <span>
-            kimi<span className="text-blue">.</span>builders
-          </span>
-        )}
+        <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
+        <span className="nav-label">
+          kimi<span className="text-blue">.</span>builders
+        </span>
       </Link>
 
       <Link
         href="/community/new"
         title={t(locale, "nav.post")}
-        className="mt-6 flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+        className="nav-item mt-6 flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
       >
         <SquarePen size={14} className="shrink-0" />
-        {!collapsed && t(locale, "nav.post")}
+        <span className="nav-label">{t(locale, "nav.post")}</span>
       </Link>
 
       <nav className="mt-6 space-y-1">
@@ -113,14 +88,12 @@ export default function LeftNav({
                 className={`${itemCls(false)} cursor-not-allowed opacity-45 hover:text-grey`}
               >
                 <Icon size={15} className="shrink-0" />
-                {!collapsed && (
-                  <>
-                    {t(locale, s.key)}
-                    <span className="ml-auto font-mono text-[9px] tracking-wider text-grey/70">
-                      {t(locale, "nav.soon")}
-                    </span>
-                  </>
-                )}
+                <span className="nav-label flex items-center">
+                  {t(locale, s.key)}
+                  <span className="ml-auto font-mono text-[9px] tracking-wider text-grey/70">
+                    {t(locale, "nav.soon")}
+                  </span>
+                </span>
               </span>
             );
           }
@@ -132,67 +105,28 @@ export default function LeftNav({
               className={itemCls(pathname.startsWith(s.href))}
             >
               <Icon size={15} className="shrink-0" />
-              {!collapsed && t(locale, s.key)}
+              <span className="nav-label">{t(locale, s.key)}</span>
             </Link>
           );
         })}
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
-        <form action={setThemeAction}>
-          <button
-            type="submit"
-            title={t(locale, theme === "dark" ? "aria.toLight" : "aria.toDark")}
-            aria-label={t(locale, theme === "dark" ? "aria.toLight" : "aria.toDark")}
-            className={`${itemCls(false)} w-full`}
-          >
-            {theme === "dark" ? (
-              <Sun size={15} className="shrink-0" />
-            ) : (
-              <Moon size={15} className="shrink-0" />
-            )}
-            {!collapsed && (theme === "dark" ? "Light" : "Dark")}
-          </button>
-        </form>
-        <form action={setLocaleAction}>
-          <button
-            type="submit"
-            title={t(locale, "aria.lang")}
-            aria-label={t(locale, "aria.lang")}
-            className={`${itemCls(false)} w-full`}
-          >
-            <span className="w-[15px] shrink-0 text-center text-[11px]">文</span>
-            {!collapsed && (locale === "zh" ? "English" : "中文")}
-          </button>
-        </form>
+        <ThemeToggle withLabel className={`${itemCls(false)} w-full`} />
+        <LocaleToggle withLabel className={`${itemCls(false)} w-full`} />
         <a
           href="https://github.com/kimi-builders"
           title="GitHub"
           className={itemCls(false)}
         >
           <GithubIcon size={15} />
-          {!collapsed && "GitHub"}
+          <span className="nav-label">GitHub</span>
         </a>
         <Link href="/" title={t(locale, "nav.about")} className={itemCls(false)}>
           <Info size={15} className="shrink-0" />
-          {!collapsed && t(locale, "nav.about")}
+          <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>
-        <form action={toggleNavAction}>
-          <button
-            type="submit"
-            title={t(locale, collapsed ? "nav.expand" : "nav.collapse")}
-            className={`${itemCls(false)} w-full`}
-          >
-            {collapsed ? (
-              <PanelLeftOpen size={15} className="shrink-0" />
-            ) : (
-              <>
-                <PanelLeftClose size={15} className="shrink-0" />
-                {t(locale, "nav.collapse")}
-              </>
-            )}
-          </button>
-        </form>
+        <NavToggle locale={locale} className={`${itemCls(false)} w-full`} />
       </div>
     </aside>
   );

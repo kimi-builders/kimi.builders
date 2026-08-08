@@ -44,7 +44,7 @@ export default async function CommunityPage({
       {user && (
         <Link
           href="/community/new"
-          className="mb-6 flex items-center gap-3 border border-moon bg-card p-3.5 transition-colors hover:border-paper/25"
+          className="mb-6 flex items-center gap-3 border border-line bg-card p-3.5 transition-colors hover:border-paper/25"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -57,7 +57,7 @@ export default async function CommunityPage({
         </Link>
       )}
 
-      <div className="flex items-center gap-5 border-b border-moon font-mono text-sm">
+      <div className="flex items-center gap-5 border-b border-line font-mono text-sm">
         <Link href={tabHref("hot")} className={tabCls(currentSort === "hot" && !subOnly)}>
           {t(locale, "feed.hot")}
         </Link>
@@ -82,7 +82,7 @@ export default async function CommunityPage({
             return (
               <article
                 key={p.id}
-                className="border border-moon bg-card p-4 transition-colors hover:border-paper/20"
+                className="border border-line bg-card p-4 transition-colors hover:border-paper/20"
               >
                 <div className="flex gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -95,26 +95,43 @@ export default async function CommunityPage({
                     <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
                       <span className="text-paper">@{p.handle}</span>
                       <span>·</span>
-                      <span>{relTime(p.createdAt)}</span>
+                      <span>{relTime(p.createdAt, locale)}</span>
                       <span className="ml-auto shrink-0 tracking-wider">
                         {categoryLabel(locale, p.category)}
                       </span>
                     </div>
-                    <Link
-                      href={`/community/${p.id}`}
-                      className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
-                    >
-                      {p.title}
-                      {p.type !== "text" && (
-                        <span className="ml-2 border border-moon px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
-                          {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
-                        </span>
-                      )}
-                    </Link>
-                    {p.excerpt && (
-                      <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
-                        {p.excerpt}
-                      </p>
+                    {/* 标题非强制:无标题帖用正文摘要占主链接位(X 式卡片) */}
+                    {p.title ? (
+                      <>
+                        <Link
+                          href={`/community/${p.id}`}
+                          className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
+                        >
+                          {p.title}
+                          {p.type !== "text" && (
+                            <span className="ml-2 border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
+                              {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
+                            </span>
+                          )}
+                        </Link>
+                        {p.excerpt && (
+                          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
+                            {p.excerpt}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        href={`/community/${p.id}`}
+                        className="mt-1 block text-[15px] leading-relaxed text-paper transition-colors hover:text-blue"
+                      >
+                        <span className="line-clamp-3">{p.excerpt}</span>
+                        {p.type !== "text" && (
+                          <span className="ml-2 border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] text-grey">
+                            {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
+                          </span>
+                        )}
+                      </Link>
                     )}
                     <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
                       {user ? (

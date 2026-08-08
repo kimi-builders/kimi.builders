@@ -27,6 +27,8 @@ export default async function RootLayout({
     <html
       lang={locale === "zh" ? "zh-CN" : "en"}
       data-theme={prefs.theme}
+      data-nav={prefs.navCollapsed ? "1" : "0"}
+      data-sidebar={prefs.sidebarHidden ? "0" : "1"}
       className={jetbrains.variable}
     >
       <body>{children}</body>

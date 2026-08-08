@@ -188,16 +188,29 @@ export async function createComment(
   postId: number,
   userId: number,
   bodyMd: string,
+  parentId: number | null = null,
 ): Promise<void> {
   const pool = getPool();
   await pool.query(
-    "INSERT INTO comments (post_id, user_id, is_ai, body_md) VALUES (?, ?, 0, ?)",
-    [postId, userId, bodyMd.slice(0, 10000)],
+    "INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md) VALUES (?, ?, ?, 0, ?)",
+    [postId, parentId, userId, bodyMd.slice(0, 10000)],
   );
   await pool.query(
     "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
     [postId],
   );
+}
+
+/* 回复前校验:目标评论存在、属于同帖、未删除(防跨帖挂回复)。 */
+export async function getCommentForReply(
+  commentId: number,
+  postId: number,
+): Promise<boolean> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT id FROM comments WHERE id = ? AND post_id = ? AND deleted_at IS NULL LIMIT 1",
+    [commentId, postId],
+  );
+  return !!rows[0];
 }
 
 /* 顶/取消顶(posts.score 冗余计数,每次重算保一致)。 */
@@ -338,7 +351,7 @@ export async function getSidebarData(): Promise<SidebarData> {
   const pool = getPool();
   const [hotRows, statRows, memberRows] = await Promise.all([
     pool.query<RowDataPacket[]>(
-      `SELECT id, title, comment_count, score FROM posts
+      `SELECT id, title, LEFT(body_md, 200) AS body_excerpt, comment_count, score FROM posts
        WHERE deleted_at IS NULL AND created_at > NOW() - INTERVAL 7 DAY
        ORDER BY comment_count * 2 + score DESC, created_at DESC LIMIT 5`,
     ).then(([rows]) => rows),
@@ -356,7 +369,8 @@ export async function getSidebarData(): Promise<SidebarData> {
   return {
     hot: hotRows.map((r) => ({
       id: Number(r.id),
-      title: r.title,
+      /* 无标题帖回退到正文摘要(标题非强制) */
+      title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
       commentCount: Number(r.comment_count),
       score: Number(r.score),
     })),

@@ -1,14 +1,18 @@
 @import "tailwindcss";
 
-/* kimi.builders 品牌 tokens —— 与 kimi-builders-brand-kit 色板一致:
-   真黑夜空、纸月亮、一点蓝,不要紫。 */
+/* kimi.builders UI tokens —— 对齐 Kimi 官方设计令牌(抓自 kimi.com theme-*.js):
+   暗色 Bg.Primary #121212 / Labels 白 84%·56% / Separators 白 12% / KMBlue #1A88FF;
+   亮色 GroundPC #FBFAF9 / Labels 黑 90%·60% / Separators 黑 13% / KMBlue #1783FF。
+   moon = 抬升面(代码块/下拉/进度轨,官方 Bg.Secondary),line = 发丝分隔线
+   (官方 Separators.S1),card = 面板薄涂(官方 Fills.F1)。 */
 @theme {
-  --color-bg: #0e0e13;
-  --color-moon: #1b1b25;
-  --color-paper: #efe8dc;
-  --color-blue: #1783ff;
-  --color-grey: #9a9aa5;
-  --color-card: rgb(255 255 255 / 0.015); /* 卡片/面板的极浅铺色 */
+  --color-bg: #121212;
+  --color-moon: #1f1f1f;
+  --color-paper: rgb(255 255 255 / 0.84);
+  --color-blue: #1a88ff;
+  --color-grey: rgb(255 255 255 / 0.56);
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-card: rgb(255 255 255 / 0.05);
 
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
@@ -16,17 +20,19 @@
 }
 
 /* 亮色主题:root layout 按 cookie 给 <html data-theme>,这里覆盖令牌即可,
-   组件全部引用 var(--color-*) 所以零改动跟随。蓝色加深保对比度。 */
+   组件全部引用 var(--color-*) 所以零改动跟随。 */
 :root[data-theme="light"] {
-  --color-bg: #f6f3ec;
-  --color-moon: #e8e2d5;
-  --color-paper: #1b1b25;
-  --color-blue: #0f6fdd;
-  --color-grey: #6e6e78;
-  --color-card: rgb(27 27 37 / 0.03);
+  --color-bg: #fbfaf9;
+  --color-moon: #f5f5f5;
+  --color-paper: rgb(0 0 0 / 0.9);
+  --color-blue: #1783ff;
+  --color-grey: rgb(0 0 0 / 0.6);
+  --color-line: rgb(0 0 0 / 0.13);
+  --color-card: rgb(0 0 0 / 0.03);
 }
 
-/* 强制暗色作用域:首页门面是「海报」,无论 UI 主题始终暗色。
+/* 强制暗色作用域:首页门面是「海报」,无论 UI 主题始终暗色,且保留品牌
+   暖纸编辑色(不跟随 App UI 的官方中性灰)。
    在 wrapper 上重声明令牌,子树 var() 解析就近取这里的值。
    background/color 也要在这里显式重设:body 规则算出的颜色是按 <html>
    主题解析后再继承下来的,光换令牌挡不住继承。 */
@@ -36,6 +42,7 @@
   --color-paper: #efe8dc;
   --color-blue: #1783ff;
   --color-grey: #9a9aa5;
+  --color-line: rgb(239 232 220 / 0.14);
   --color-card: rgb(255 255 255 / 0.015);
   background: var(--color-bg);
   color: var(--color-paper);
@@ -141,4 +148,59 @@ body {
   font-family: var(--font-mono);
   font-size: 0.8em;
   color: var(--color-grey);
+}
+
+/* ---- 偏好切换:乐观 UI 的支撑规则 ----
+   切换动作在客户端先改 <html> 属性 + 写 cookie(零网络,立即生效);
+   SSR 首屏按 cookie 直出同一组属性,两侧永远一致。 */
+
+/* 按当前主题显隐(dark 下藏 .only-light,反之亦然) */
+[data-theme="dark"] .only-light {
+  display: none !important;
+}
+[data-theme="light"] .only-dark {
+  display: none !important;
+}
+
+/* 按 UI 语言显隐(<html lang> 由 root layout 直出) */
+html[lang="zh-CN"] .only-en {
+  display: none !important;
+}
+html[lang="en"] .only-zh {
+  display: none !important;
+}
+
+/* 左栏收起:结构常渲染、纯 CSS 收束,切换不等网络。
+   未加 layer,优先于 Tailwind utilities 层。 */
+.leftnav {
+  width: 13rem; /* w-52 */
+}
+html[data-nav="1"] .leftnav {
+  width: 3.5rem; /* w-14 */
+}
+html[data-nav="1"] .leftnav .nav-label {
+  display: none;
+}
+html[data-nav="1"] .leftnav .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+/* 收起/展开按钮自身的图标按态切换 */
+html[data-nav="1"] .only-nav-full {
+  display: none !important;
+}
+html:not([data-nav="1"]) .only-nav-collapsed {
+  display: none !important;
+}
+
+/* 右栏隐藏:完整 widget 与细轨按钮都渲染,CSS 二选一 */
+.rightsidebar .sidebar-rail {
+  display: none;
+}
+html[data-sidebar="0"] .rightsidebar .sidebar-full {
+  display: none;
+}
+html[data-sidebar="0"] .rightsidebar .sidebar-rail {
+  display: block;
 }
