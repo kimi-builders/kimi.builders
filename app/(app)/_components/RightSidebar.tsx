@@ -109,14 +109,14 @@ export default async function RightSidebar({
         <Widget title={t(locale, "side.newMembers")}>
           <div className="flex gap-2">
             {data.newMembers.map((m) => (
-              <span key={m.handle} title={`@${m.handle}`}>
+              <Link key={m.handle} href={`/u/${m.handle}`} title={`@${m.handle}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={m.avatarUrl}
                   alt={`@${m.handle}`}
-                  className="h-7 w-7 rounded-full border border-paper/10"
+                  className="h-7 w-7 rounded-full border border-paper/10 transition-colors hover:border-blue"
                 />
-              </span>
+              </Link>
             ))}
           </div>
           <p className="mt-2 font-mono text-[10px] leading-relaxed text-grey">

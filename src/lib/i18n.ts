@@ -200,6 +200,104 @@ const DICT = {
     en: "Action failed — please try again",
   },
   "post.submitting": { zh: "提交中…", en: "Sending…" },
+  /* ---- 个人主页 ---- */
+  "nav.profile": { zh: "个人主页", en: "Profile" },
+  "nav.settings": { zh: "设置", en: "Settings" },
+  "prof.posts": { zh: "帖子", en: "Posts" },
+  "prof.comments": { zh: "评论", en: "Comments" },
+  "prof.likes": { zh: "获赞", en: "Likes" },
+  "prof.joined": { zh: "{d} 加入", en: "Joined {d}" },
+  "prof.edit": { zh: "编辑资料", en: "Edit profile" },
+  "prof.noPosts": { zh: "还没有帖子。", en: "No posts yet." },
+  "prof.noComments": { zh: "还没有评论。", en: "No comments yet." },
+  "prof.commentedOn": { zh: "评论了", en: "commented on" },
+  "prof.notFound": { zh: "没有这个用户。", en: "No such user." },
+  /* ---- 设置 ---- */
+  "set.title": { zh: "设置", en: "Settings" },
+  "set.profile": { zh: "资料", en: "PROFILE" },
+  "set.name": { zh: "显示名", en: "Display name" },
+  "set.bio": { zh: "简介", en: "Bio" },
+  "set.avatar": { zh: "头像 URL", en: "Avatar URL" },
+  "set.avatarHint": {
+    zh: "留空则不修改;头像默认来自登录平台。",
+    en: "Leave empty to keep current. Your avatar comes from the login provider by default.",
+  },
+  "set.handleHint": {
+    zh: "小写字母、数字、下划线;改了之后旧的主页链接会失效。",
+    en: "Lowercase letters, digits, underscores. Changing it breaks old profile links.",
+  },
+  "set.save": { zh: "保存", en: "Save" },
+  "set.saved": { zh: "已保存", en: "Saved" },
+  "set.saving": { zh: "保存中…", en: "Saving…" },
+  "set.prefs": { zh: "偏好", en: "PREFERENCES" },
+  "set.aiMine": {
+    zh: "允许 Kimi 小筑(AI)回复我的帖子和评论",
+    en: "Allow Kimi bot (AI) to reply to my posts and comments",
+  },
+  "set.aiShow": {
+    zh: "浏览时显示 AI 回复",
+    en: "Show AI replies while browsing",
+  },
+  "set.locale": { zh: "界面语言", en: "Interface language" },
+  "set.theme": { zh: "主题", en: "Theme" },
+  "set.account": { zh: "账号", en: "ACCOUNT" },
+  "set.linked": { zh: "已绑定的登录方式", en: "Linked sign-in methods" },
+  "set.linkedSince": { zh: "绑定于 {d}", en: "linked {d}" },
+  "set.email": { zh: "邮箱", en: "Email" },
+  "set.loginRequired": { zh: "登录后才能修改设置:", en: "Log in to change settings:" },
+  "err.handleTaken": { zh: "这个 handle 已被占用", en: "That handle is taken" },
+  "err.handleInvalid": {
+    zh: "handle 只能用小写字母、数字、下划线(28 字以内)",
+    en: "Lowercase letters, digits and underscores only (28 max)",
+  },
+  "err.avatarInvalid": {
+    zh: "头像 URL 需要以 http(s):// 开头",
+    en: "Avatar URL must start with http(s)://",
+  },
+  "err.nameLong": {
+    zh: "显示名太长了(64 字以内)",
+    en: "Name too long (64 chars max)",
+  },
+  "err.bioLong": {
+    zh: "简介太长了(300 字以内)",
+    en: "Bio too long (300 chars max)",
+  },
+  /* ---- 占位页(未开发分区) ---- */
+  "soon.headline": { zh: "这块还在建", en: "Under construction" },
+  "soon.planned": { zh: "规划里有什么", en: "WHAT'S PLANNED" },
+  "soon.cta": { zh: "先去社区逛逛", en: "Browse the community" },
+  "soon.learn.desc": {
+    zh: "知识库:新手指南、实战教程、提示词库、Skills 库、活动归档与运营月报。内容放在 GitHub 公开仓库里维护,飞书做国内镜像。",
+    en: "The knowledge base: beginner guides, hands-on tutorials, prompt library, Skills library, event archive and monthly ops reports. Content lives in a public GitHub repo, mirrored to Feishu for CN readers.",
+  },
+  "soon.learn.items": {
+    zh: "新手指南\n实战教程\n提示词与 Skills 库\n活动归档与运营月报",
+    en: "Beginner guides\nHands-on tutorials\nPrompt & Skills library\nEvent archive & monthly reports",
+  },
+  "soon.works.desc": {
+    zh: "作品库:社区成员用 Kimi 构建的真实作品墙,带截图和链接;发帖「晒作品」板块的优秀内容会收录到这里。",
+    en: "The works gallery: real projects community members built with Kimi, with screenshots and links. The best of the Showcase board gets collected here.",
+  },
+  "soon.works.items": {
+    zh: "成员作品墙\n投稿与收录\n与 Awesome 列表联动",
+    en: "Member gallery\nSubmission & curation\nLinked with the Awesome list",
+  },
+  "soon.usage.desc": {
+    zh: "用量看板:本地脚本统计你的 Kimi token 用量,授权后同步到站点,按天看曲线和费用估算。",
+    en: "The usage dashboard: a local script measures your Kimi token usage and, with your consent, syncs it here — daily curves and cost estimates.",
+  },
+  "soon.usage.items": {
+    zh: "本地统计脚本\n每日用量曲线\n费用估算",
+    en: "Local stats script\nDaily usage curves\nCost estimates",
+  },
+  "soon.awesome.desc": {
+    zh: "Awesome Kimi:全世界用 Kimi 构建的项目合集,与 awesome-kimi-builders 仓库联动,欢迎 PR。",
+    en: "Awesome Kimi: a curated list of projects built with Kimi around the world, synced with the awesome-kimi-builders repo. PRs welcome.",
+  },
+  "soon.awesome.items": {
+    zh: "项目收录列表\n分类与标签\nGitHub 仓库同步",
+    en: "Curated project list\nCategories & tags\nSynced with the GitHub repo",
+  },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
   "aria.toDark": { zh: "切换到暗色主题", en: "Switch to dark theme" },

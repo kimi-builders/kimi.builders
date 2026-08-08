@@ -89,15 +89,22 @@ export default async function CommunityPage({
                 className="border border-line bg-card p-4 transition-colors hover:border-paper/20"
               >
                 <div className="flex gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.avatarUrl}
-                    alt=""
-                    className="h-9 w-9 shrink-0 rounded-full border border-paper/10"
-                  />
+                  <Link href={`/u/${p.handle}`} className="shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.avatarUrl}
+                      alt={`@${p.handle}`}
+                      className="h-9 w-9 rounded-full border border-paper/10"
+                    />
+                  </Link>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
-                      <span className="text-paper">@{p.handle}</span>
+                      <Link
+                        href={`/u/${p.handle}`}
+                        className="text-paper transition-colors hover:text-blue"
+                      >
+                        @{p.handle}
+                      </Link>
                       <span>·</span>
                       <span>{relTime(p.createdAt, locale)}</span>
                       <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">

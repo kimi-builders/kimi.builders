@@ -23,13 +23,14 @@ export default async function AppLayout({
     getLocale(user),
     user ? getUnreadNotificationCount(user.id) : 0,
   ]);
+  const profileHref = user ? `/u/${user.handle}` : undefined;
   return (
     <div>
       <MobileTopBar />
       <div className="mx-auto flex max-w-[1200px] items-start gap-8 px-4 lg:px-6">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
-          <LeftNav locale={locale} unread={unread} />
+          <LeftNav locale={locale} unread={unread} profileHref={profileHref} />
         </Suspense>
         {/* 移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规 */}
         <main className="w-full min-w-0 max-w-[680px] flex-1 py-6 pb-24 lg:py-8">
@@ -38,7 +39,7 @@ export default async function AppLayout({
         <RightSidebar locale={locale} loggedIn={!!user} />
       </div>
       <Suspense fallback={null}>
-        <MobileTabBar locale={locale} unread={unread} />
+        <MobileTabBar locale={locale} unread={unread} profileHref={profileHref} />
       </Suspense>
     </div>
   );

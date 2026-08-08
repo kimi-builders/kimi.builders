@@ -1,19 +1,22 @@
 "use client";
 
-/* <lg 底部标签栏(主流 app 布局):社区 / 发帖 / 消息(带未读角标)/ 关于。
+/* <lg 底部标签栏(主流 app 布局):社区 / 发帖 / 消息(带未读角标)/ 我的
+   (登录→个人主页,未登录→设置页的登录引导;设置也从这里进)。
    桌面三栏壳(LeftNav/RightSidebar)在移动端整体让位给它 + MobileTopBar。
    fixed 定位 + safe-area 内边距(iPhone home 条);主区在 (app)/layout 里补 pb-24 防遮挡。 */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Info, MessagesSquare, SquarePen } from "lucide-react";
+import { Bell, MessagesSquare, SquarePen, User } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 
 export default function MobileTabBar({
   locale,
   unread = 0,
+  profileHref,
 }: {
   locale: Locale;
   unread?: number;
+  profileHref?: string;
 }) {
   const pathname = usePathname();
   const tabs = [
@@ -43,10 +46,10 @@ export default function MobileTabBar({
       badge: unread,
     },
     {
-      href: "/",
-      icon: Info,
-      key: "nav.about" as const,
-      active: pathname === "/",
+      href: profileHref ?? "/settings",
+      icon: User,
+      key: "nav.profile" as const,
+      active: pathname.startsWith("/u/") || pathname.startsWith("/settings"),
       badge: 0,
     },
   ];

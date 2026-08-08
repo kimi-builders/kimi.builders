@@ -2,6 +2,7 @@
    首页(右上角)和社区壳的移动端 mini 栏共用;compact = 隐去 @handle(窄屏省宽)。
    文案跟随 UI 语言。 */
 import { getSessionUser } from "@/src/lib/auth/session";
+import Link from "next/link";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 
@@ -11,13 +12,22 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
   if (user) {
     return (
       <>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={user.avatarUrl}
-          alt=""
-          className="h-7 w-7 rounded-full border border-paper/20"
-        />
-        {!compact && <span className="text-paper">@{user.handle}</span>}
+        <Link href={`/u/${user.handle}`} title={`@${user.handle}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={user.avatarUrl}
+            alt=""
+            className="h-7 w-7 rounded-full border border-paper/20 transition-colors hover:border-blue"
+          />
+        </Link>
+        {!compact && (
+          <Link
+            href={`/u/${user.handle}`}
+            className="text-paper transition-colors hover:text-blue"
+          >
+            @{user.handle}
+          </Link>
+        )}
         <a
           href="/api/auth/logout"
           className="text-grey underline underline-offset-4 transition-colors hover:text-blue"

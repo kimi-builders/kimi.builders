@@ -101,6 +101,7 @@ export default async function PostPage({
     authorId: c.userId,
     isAi: c.isAi,
     author: c.isAi ? BOT_NAME : `@${c.handle}`,
+    handle: c.isAi ? null : c.handle,
     avatarUrl: c.isAi ? BOT_AVATAR : (c.avatarUrl ?? ""),
     time: relTime(c.createdAt, locale),
     edited: !!c.editedAt,
@@ -155,7 +156,12 @@ export default async function PostPage({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={post.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
-        <span className="text-paper">@{post.handle}</span>
+        <Link
+          href={`/u/${post.handle}`}
+          className="text-paper transition-colors hover:text-blue"
+        >
+          @{post.handle}
+        </Link>
         <span>{relTime(post.createdAt, locale)}</span>
         {post.editedAt && <span>({t(locale, "post.edited")})</span>}
       </div>

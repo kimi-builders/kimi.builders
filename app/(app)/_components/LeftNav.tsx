@@ -14,8 +14,10 @@ import {
   Info,
   MessagesSquare,
   Rocket,
+  Settings,
   SquarePen,
   Star,
+  User,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { LocaleToggle, NavToggle, ThemeToggle } from "./pref-controls";
@@ -47,9 +49,11 @@ const SECTIONS = [
 export default function LeftNav({
   locale,
   unread = 0,
+  profileHref,
 }: {
   locale: Locale;
   unread?: number;
+  profileHref?: string;
 }) {
   const pathname = usePathname();
 
@@ -87,23 +91,6 @@ export default function LeftNav({
       <nav className="mt-6 space-y-1">
         {SECTIONS.map((s) => {
           const Icon = s.icon;
-          if (s.soon) {
-            return (
-              <span
-                key={s.href}
-                title={locale === "zh" ? "即将上线" : "Coming soon"}
-                className={`${itemCls(false)} cursor-not-allowed opacity-45 hover:text-grey`}
-              >
-                <Icon size={15} className="shrink-0" />
-                <span className="nav-label flex items-center">
-                  {t(locale, s.key)}
-                  <span className="ml-auto font-mono text-[9px] tracking-wider text-grey/70">
-                    {t(locale, "nav.soon")}
-                  </span>
-                </span>
-              </span>
-            );
-          }
           return (
             <Link
               key={s.href}
@@ -112,10 +99,27 @@ export default function LeftNav({
               className={itemCls(pathname.startsWith(s.href))}
             >
               <Icon size={15} className="shrink-0" />
-              <span className="nav-label">{t(locale, s.key)}</span>
+              <span className="nav-label flex items-center">
+                {t(locale, s.key)}
+                {s.soon && (
+                  <span className="ml-auto font-mono text-[9px] tracking-wider text-grey/70">
+                    {t(locale, "nav.soon")}
+                  </span>
+                )}
+              </span>
             </Link>
           );
         })}
+        {profileHref && (
+          <Link
+            href={profileHref}
+            title={t(locale, "nav.profile")}
+            className={itemCls(pathname.startsWith("/u/"))}
+          >
+            <User size={15} className="shrink-0" />
+            <span className="nav-label">{t(locale, "nav.profile")}</span>
+          </Link>
+        )}
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
@@ -136,6 +140,14 @@ export default function LeftNav({
         </Link>
         <ThemeToggle withLabel className={`${itemCls(false)} w-full`} />
         <LocaleToggle withLabel className={`${itemCls(false)} w-full`} />
+        <Link
+          href="/settings"
+          title={t(locale, "nav.settings")}
+          className={itemCls(pathname.startsWith("/settings"))}
+        >
+          <Settings size={15} className="shrink-0" />
+          <span className="nav-label">{t(locale, "nav.settings")}</span>
+        </Link>
         <a
           href="https://github.com/kimi-builders"
           title="GitHub"

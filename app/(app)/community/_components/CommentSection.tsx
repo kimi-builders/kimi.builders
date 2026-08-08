@@ -7,6 +7,7 @@
    净分 ≤ -3 的评论淡化显示。锚点 id=comment-<id> 供消息通知精准定位。
    列表数据在服务端组装:正文 Markdown 已渲成 ReactNode 随 props 传入。 */
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowBigUp } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -23,6 +24,7 @@ export interface CommentView {
   authorId: number | null;
   isAi: boolean;
   author: string;
+  handle: string | null;
   avatarUrl: string;
   time: string;
   edited: boolean;
@@ -150,7 +152,16 @@ export default function CommentSection({
         alt=""
         className={`h-5 w-5 ${c.isAi ? "rounded" : "rounded-full"}`}
       />
-      <span className="text-paper">{c.author}</span>
+      {c.handle ? (
+        <Link
+          href={`/u/${c.handle}`}
+          className="text-paper transition-colors hover:text-blue"
+        >
+          {c.author}
+        </Link>
+      ) : (
+        <span className="text-paper">{c.author}</span>
+      )}
       {c.isAi && (
         <span className="border border-blue px-1 py-px text-[9px] tracking-wider text-blue">
           AI

@@ -689,3 +689,55 @@ export async function markNotificationsRead(userId: number): Promise<void> {
     [userId],
   );
 }
+
+/* ---- 个人主页 ---- */
+
+/* 某用户的帖子(主页「帖子」页签):self=true 含私密帖,访客只见公开。 */
+export async function getUserPosts(
+  userId: number,
+  self: boolean,
+): Promise<FeedPost[]> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
+            p.visibility, p.score, p.comment_count, p.created_at,
+            u.handle, u.name, u.avatar_url
+     FROM posts p JOIN users u ON u.id = p.user_id
+     WHERE p.user_id = ? AND p.deleted_at IS NULL ${self ? "" : "AND p.visibility = 'public'"}
+     ORDER BY p.created_at DESC LIMIT 50`,
+    [userId],
+  );
+  return rows.map(mapFeed);
+}
+
+export interface UserCommentRow {
+  id: number;
+  postId: number;
+  postTitle: string;
+  excerpt: string;
+  score: number;
+  createdAt: Date;
+}
+
+/* 某用户的评论(主页「评论」页签):带上所在帖标题;访客视角不含私密帖下的评论。 */
+export async function getUserComments(
+  userId: number,
+  self: boolean,
+): Promise<UserCommentRow[]> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT c.id, c.post_id, LEFT(c.body_md, 300) AS body_excerpt, c.score, c.created_at,
+            p.title, LEFT(p.body_md, 200) AS post_excerpt
+     FROM comments c JOIN posts p ON p.id = c.post_id
+     WHERE c.user_id = ? AND c.deleted_at IS NULL AND p.deleted_at IS NULL
+           ${self ? "" : "AND p.visibility = 'public'"}
+     ORDER BY c.id DESC LIMIT 50`,
+    [userId],
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    postId: Number(r.post_id),
+    postTitle: r.title || plainExcerpt(r.post_excerpt ?? "", 60),
+    excerpt: plainExcerpt(r.body_excerpt ?? "", 140),
+    score: Number(r.score),
+    createdAt: r.created_at,
+  }));
+}
