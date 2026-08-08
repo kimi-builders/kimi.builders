@@ -1,10 +1,11 @@
 /* 登录态 chip:未登录给 GitHub / Google 入口,已登录显示头像 + @handle + 退出。
-   首页(右上角)和社区壳的移动端 mini 栏共用;文案跟随 UI 语言。 */
+   首页(右上角)和社区壳的移动端 mini 栏共用;compact = 隐去 @handle(窄屏省宽)。
+   文案跟随 UI 语言。 */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 
-export default async function AuthChip() {
+export default async function AuthChip({ compact = false }: { compact?: boolean }) {
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (user) {
@@ -16,7 +17,7 @@ export default async function AuthChip() {
           alt=""
           className="h-7 w-7 rounded-full border border-paper/20"
         />
-        <span className="text-paper">@{user.handle}</span>
+        {!compact && <span className="text-paper">@{user.handle}</span>}
         <a
           href="/api/auth/logout"
           className="text-grey underline underline-offset-4 transition-colors hover:text-blue"

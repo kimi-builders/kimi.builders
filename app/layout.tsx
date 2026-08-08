@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description:
     "An open community of builders creating good things with Kimi. 用 Kimi,构建美好。",
   metadataBase: new URL("https://kimi.builders"),
+};
+
+/* viewport-fit=cover:让 env(safe-area-inset-*) 生效(底部标签栏给 iPhone home 条让位) */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({

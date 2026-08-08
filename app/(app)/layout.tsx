@@ -9,6 +9,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUnreadNotificationCount } from "@/src/lib/posts";
 import LeftNav from "./_components/LeftNav";
+import MobileTabBar from "./_components/MobileTabBar";
 import MobileTopBar from "./_components/MobileTopBar";
 import RightSidebar from "./_components/RightSidebar";
 
@@ -24,17 +25,21 @@ export default async function AppLayout({
   ]);
   return (
     <div>
-      <MobileTopBar locale={locale} unread={unread} />
+      <MobileTopBar />
       <div className="mx-auto flex max-w-[1200px] items-start gap-8 px-4 lg:px-6">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
           <LeftNav locale={locale} unread={unread} />
         </Suspense>
-        <main className="w-full min-w-0 max-w-[680px] flex-1 py-6 lg:py-8">
+        {/* 移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规 */}
+        <main className="w-full min-w-0 max-w-[680px] flex-1 py-6 pb-24 lg:py-8">
           {children}
         </main>
         <RightSidebar locale={locale} loggedIn={!!user} />
       </div>
+      <Suspense fallback={null}>
+        <MobileTabBar locale={locale} unread={unread} />
+      </Suspense>
     </div>
   );
 }

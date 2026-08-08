@@ -36,7 +36,7 @@ export default function Toaster() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed bottom-6 left-1/2 z-50 flex w-max max-w-[90vw] -translate-x-1/2 flex-col items-center gap-2"
+      className="pointer-events-none fixed bottom-20 left-1/2 z-50 flex w-max max-w-[90vw] -translate-x-1/2 flex-col items-center gap-2 lg:bottom-6"
     >
       {items.map((i) => (
         <p
