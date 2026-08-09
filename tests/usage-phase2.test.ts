@@ -116,6 +116,88 @@ test("pricing: rate fallbacks — cacheWrite→input, reasoning→output, cacheR
   assert.equal(none.unpricedTokens, 250);
 });
 
+test("pricing: Codex GPT-5.6 variants beat the generic gpt-5 prefix", () => {
+  const prices = [
+    price({ modelPattern: "gpt-5", inputPerMtok: 1.25, cacheReadPerMtok: 0.125, outputPerMtok: 10 }),
+    price({
+      modelPattern: "gpt-5.6",
+      inputPerMtok: 5,
+      cacheWritePerMtok: 6.25,
+      cacheReadPerMtok: 0.5,
+      outputPerMtok: 30,
+      version: "2026-08-11",
+    }),
+  ];
+  const matched = matchModelPrice(prices, "gpt-5.6-sol", day("2026-08-08"), "codex");
+  assert.equal(matched?.modelPattern, "gpt-5.6");
+  const estimate = estimateCostMicros(
+    {
+      inputTokens: 261_628,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 12_168_704,
+      outputTokens: 42_658,
+      reasoningOutputTokens: 17_592,
+    },
+    matched,
+  );
+  assert.equal(estimate.micros, 9_199_992);
+});
+
+test("pricing: Codex auto-review uses its source-limited gpt-5.4 equivalent", () => {
+  const autoReview = price({
+    modelPattern: "codex-auto-review",
+    matchKind: "exact",
+    source: "codex",
+    inputPerMtok: 2.5,
+    cacheReadPerMtok: 0.25,
+    outputPerMtok: 15,
+    version: "2026-08-11",
+  });
+  assert.equal(
+    matchModelPrice([autoReview], "codex-auto-review", day("2026-08-08"), "claude-code"),
+    null,
+  );
+  const matched = matchModelPrice(
+    [autoReview],
+    "codex-auto-review",
+    day("2026-08-08"),
+    "codex",
+  );
+  const estimate = estimateCostMicros(
+    {
+      inputTokens: 672_697,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 8_628_480,
+      outputTokens: 3_886,
+      reasoningOutputTokens: 855,
+    },
+    matched,
+  );
+  assert.equal(estimate.micros, 3_909_977.5);
+});
+
+test("pricing: Terra and Luna retain the official July 30 price windows", () => {
+  const terraBefore = price({
+    modelPattern: "gpt-5.6-terra",
+    effectiveFrom: day("2026-07-09"),
+    effectiveTo: day("2026-07-30"),
+    inputPerMtok: 2.5,
+  });
+  const terraAfter = price({
+    modelPattern: "gpt-5.6-terra",
+    effectiveFrom: day("2026-07-30"),
+    inputPerMtok: 2,
+  });
+  assert.equal(
+    matchModelPrice([terraBefore, terraAfter], "gpt-5.6-terra", day("2026-07-29"))?.inputPerMtok,
+    2.5,
+  );
+  assert.equal(
+    matchModelPrice([terraBefore, terraAfter], "gpt-5.6-terra", day("2026-07-30"))?.inputPerMtok,
+    2,
+  );
+});
+
 function zeroTokens() {
   return {
     inputTokens: 0,

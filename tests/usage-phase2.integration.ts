@@ -94,6 +94,7 @@ async function main() {
     "../db/migrations/20260809_usage_phase2.sql",
     "../db/migrations/20260809_usage_prices_v2.sql",
     "../db/migrations/20260810_usage_prices_v3.sql",
+    "../db/migrations/20260811_usage_prices_v4.sql",
   ]
     .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
     .join("\n;\n");
@@ -114,7 +115,7 @@ async function main() {
   const [priceCount] = await pool.query<RowDataPacket[]>(
     "SELECT COUNT(*) AS count FROM usage_model_prices",
   );
-  assert.equal(Number(priceCount[0].count), 36); // v1 24 行 + v2 11 行 + v3 1 行
+  assert.equal(Number(priceCount[0].count), 42); // v1 24 + v2 11 + v3 1 + v4 6
   const [correctedPrices] = await pool.query<RowDataPacket[]>(
     `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok
        FROM usage_model_prices
@@ -125,6 +126,25 @@ async function main() {
   assert.equal(Number(priceByModel.get("gpt-5.4")?.cache_read_per_mtok), 0.25);
   assert.equal(Number(priceByModel.get("gemini-3-flash-preview")?.input_per_mtok), 0.5);
   assert.equal(Number(priceByModel.get("gemini-3-flash-preview")?.output_per_mtok), 3);
+
+  const [codexPrices] = await pool.query<RowDataPacket[]>(
+    `SELECT model_pattern, source, effective_from, effective_to,
+            input_per_mtok, cache_write_per_mtok, cache_read_per_mtok, output_per_mtok
+       FROM usage_model_prices
+      WHERE version = '2026-08-11'
+      ORDER BY model_pattern, effective_from`,
+  );
+  assert.equal(codexPrices.length, 6);
+  const sol = codexPrices.find((row) => row.model_pattern === "gpt-5.6");
+  assert.equal(Number(sol?.input_per_mtok), 5);
+  assert.equal(Number(sol?.cache_write_per_mtok), 6.25);
+  assert.equal(Number(sol?.cache_read_per_mtok), 0.5);
+  assert.equal(Number(sol?.output_per_mtok), 30);
+  const autoReview = codexPrices.find((row) => row.model_pattern === "codex-auto-review");
+  assert.equal(autoReview?.source, "codex");
+  assert.equal(Number(autoReview?.input_per_mtok), 2.5);
+  assert.equal(Number(autoReview?.cache_read_per_mtok), 0.25);
+  assert.equal(Number(autoReview?.output_per_mtok), 15);
 
   const handle = `phase2_${Date.now()}`;
   const [userResult] = await pool.query<ResultSetHeader>(
