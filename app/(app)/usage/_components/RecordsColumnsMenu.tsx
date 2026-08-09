@@ -61,7 +61,8 @@ export default function RecordsColumnsMenu({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex min-h-10 items-center gap-1.5 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        aria-haspopup="true"
+        className="flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {zh ? "列" : "Columns"}
         {enabled.length > 0 ? ` · ${enabled.length}` : ""}
@@ -72,7 +73,7 @@ export default function RecordsColumnsMenu({
           {OPTIONAL_RECORD_COLUMNS.map((column) => (
             <label
               key={column.id}
-              className="flex min-h-10 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
+              className="flex min-h-11 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
             >
               <input
                 type="checkbox"

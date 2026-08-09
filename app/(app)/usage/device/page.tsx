@@ -29,7 +29,7 @@ export default async function UsageDevicePage({
 
   return (
     <div className="mx-auto max-w-xl">
-      <a href="/usage" className="font-mono text-[11px] text-grey hover:text-blue">
+      <a href="/usage" className="inline-flex min-h-11 items-center font-mono text-[11px] text-grey hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
         ← {zh ? "用量看板" : "Usage"}
       </a>
       <h1 className="mt-5 flex items-center gap-2 font-mono text-lg font-semibold">
@@ -44,18 +44,27 @@ export default async function UsageDevicePage({
 
       {!code && (
         <form method="get" className="mt-7 border border-line bg-card p-4">
-          <label className="font-mono text-[10px] tracking-[0.18em] text-grey">
+          <label htmlFor="usage-device-code" className="font-mono text-[11px] tracking-[0.18em] text-grey">
             {zh ? "终端验证码" : "TERMINAL CODE"}
           </label>
+          <p id="usage-device-code-help" className="mt-1 text-[11px] leading-relaxed text-grey">
+            {zh ? "输入 Collector 在终端显示的 8 位验证码。" : "Enter the 8-character code shown by the Collector."}
+          </p>
           <div className="mt-2 flex gap-2">
             <input
+              id="usage-device-code"
               name="code"
               placeholder="ABCD-EFGH"
               autoCapitalize="characters"
               autoComplete="one-time-code"
-              className="min-w-0 flex-1 border border-line bg-bg px-3 py-2.5 font-mono text-sm uppercase tracking-[0.14em] text-paper outline-none focus:border-blue"
+              aria-describedby="usage-device-code-help"
+              minLength={8}
+              maxLength={9}
+              pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}"
+              required
+              className="min-h-11 min-w-0 flex-1 border border-line bg-bg px-3 font-mono text-sm uppercase tracking-[0.14em] text-paper outline-none focus:border-blue"
             />
-            <button className="border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white">
+            <button className="min-h-11 border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
               {zh ? "继续" : "Continue"}
             </button>
           </div>
@@ -76,7 +85,7 @@ export default async function UsageDevicePage({
           <section className="mt-7 border border-line bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="font-mono text-[10px] tracking-[0.18em] text-grey">
+                <div className="font-mono text-[11px] tracking-[0.18em] text-grey">
                   {zh ? "连接请求" : "CONNECTION REQUEST"}
                 </div>
                 <div className="mt-2 font-mono text-xl font-semibold tracking-[0.12em] text-paper">
@@ -134,23 +143,23 @@ export default async function UsageDevicePage({
                   ? "可以返回终端了。设备 Key 只会在那里交付并保存一次。"
                   : "Return to your terminal. The device key is delivered and stored there only once."}
               </p>
-              <a href="/usage" className="mt-4 inline-block text-sm text-blue hover:underline">
+              <a href="/usage" className="mt-4 inline-flex min-h-11 items-center text-sm text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
                 {zh ? "返回用量看板 →" : "Back to usage →"}
               </a>
             </div>
           ) : !user ? (
             <div className="mt-6 border-l-2 border-blue bg-blue/5 p-4">
               <p className="text-sm text-paper">{zh ? "登录后批准这个设备。" : "Sign in to approve this device."}</p>
-              <div className="mt-3 flex gap-4 font-mono text-xs">
+              <div className="mt-3 flex flex-wrap gap-2 font-mono text-xs">
                 <a
                   href={`/api/auth/github?next=${encodeURIComponent(returnTo)}`}
-                  className="text-blue hover:underline"
+                  className="inline-flex min-h-11 items-center px-2 text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   GitHub →
                 </a>
                 <a
                   href={`/api/auth/google?next=${encodeURIComponent(returnTo)}`}
-                  className="text-blue hover:underline"
+                  className="inline-flex min-h-11 items-center px-2 text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   Google →
                 </a>

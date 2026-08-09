@@ -3,6 +3,7 @@
 import { useId, useRef } from "react";
 import { CircleHelp, Info, X } from "lucide-react";
 import type { UsagePricingMatch } from "@/src/lib/usage/query";
+import { formatUsageLocalDateTime } from "@/src/lib/usage/presentation";
 
 type GuideKind = "all" | "pricing" | "tokens" | "duration" | "changes";
 
@@ -16,22 +17,12 @@ interface Props {
   assumedTokens?: number;
   currentRange: { from: string; to: string };
   tzLabel: string;
+  tzOffsetMinutes: number;
 }
 
 function rate(value: number | null, fallback: boolean): string {
   if (value === null) return "—";
   return `$${value.toLocaleString("en-US", { maximumFractionDigits: 4 })}/M${fallback ? "*" : ""}`;
-}
-
-function localDateTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(iso));
 }
 
 function compactTokens(value: number, locale: string): string {
@@ -51,6 +42,7 @@ export default function UsageMethodologyDialog({
   assumedTokens = 0,
   currentRange,
   tzLabel,
+  tzOffsetMinutes,
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const uid = useId().replaceAll(":", "");
@@ -89,11 +81,12 @@ export default function UsageMethodologyDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-label={title}
+        aria-haspopup="dialog"
         title={title}
         className={
           compact
-            ? "inline-flex shrink-0 text-grey/70 hover:text-blue"
-            : "inline-flex items-center gap-1.5 border border-line px-3 py-1.5 font-mono text-[10px] text-grey hover:border-blue hover:text-paper"
+            ? "inline-flex size-7 shrink-0 items-center justify-center text-grey/70 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            : "inline-flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         }
       >
         {compact ? <CircleHelp size={12} /> : <><Info size={12} />{title}</>}
@@ -117,7 +110,7 @@ export default function UsageMethodologyDialog({
             type="button"
             onClick={() => dialogRef.current?.close()}
             aria-label={zh ? "关闭" : "Close"}
-            className="shrink-0 text-grey hover:text-paper"
+            className="flex size-11 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <X size={17} />
           </button>
@@ -316,11 +309,11 @@ export default function UsageMethodologyDialog({
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div>
                   <div className="font-mono text-[10px] text-paper">{zh ? "当前周期" : "CURRENT"}</div>
-                  <p className="mt-1">{localDateTime(currentRange.from, locale)} → {localDateTime(currentRange.to, locale)}</p>
+                  <p className="mt-1">{formatUsageLocalDateTime(currentRange.from, locale, tzOffsetMinutes)} → {formatUsageLocalDateTime(currentRange.to, locale, tzOffsetMinutes)}</p>
                 </div>
                 <div>
                   <div className="font-mono text-[10px] text-paper">{zh ? "上一等长周期" : "PREVIOUS EQUAL PERIOD"}</div>
-                  <p className="mt-1">{localDateTime(previousRange.from, locale)} → {localDateTime(previousRange.to, locale)}</p>
+                  <p className="mt-1">{formatUsageLocalDateTime(previousRange.from, locale, tzOffsetMinutes)} → {formatUsageLocalDateTime(previousRange.to, locale, tzOffsetMinutes)}</p>
                 </div>
               </div>
               <p className="mt-3">

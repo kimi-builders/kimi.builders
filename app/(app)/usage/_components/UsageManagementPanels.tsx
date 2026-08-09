@@ -4,6 +4,7 @@ import type { Locale } from "@/src/lib/i18n";
 import type { UsageDeviceSummary } from "@/src/lib/usage/device";
 import { usageDeviceDetail, usageDeviceDisplayName } from "@/src/lib/usage/device-label";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
+import { USAGE_STALE_AFTER_HOURS } from "@/src/lib/usage/presentation";
 import type { UsageSettings } from "@/src/lib/usage/settings";
 import DeleteAllUsageDialog from "./DeleteAllUsageDialog";
 import DeviceManagementDialog from "./DeviceManagementDialog";
@@ -31,15 +32,15 @@ export default function UsageManagementPanels({
   const sessionCount = devices?.reduce((sum, device) => sum + device.sessionCount, 0) ?? 0;
 
   return (
-    <div className="mt-4 grid gap-4 lg:grid-cols-2">
-      <section className="border border-line bg-card p-4 sm:p-5">
+    <div id="usage-management" className="mt-4 grid scroll-mt-4 gap-4 lg:grid-cols-2">
+      <section className="border border-line bg-card p-4 sm:p-5" aria-labelledby="usage-devices-title">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-mono text-xs font-semibold tracking-[0.14em] text-paper">
+          <h2 id="usage-devices-title" className="font-mono text-xs font-semibold tracking-[0.14em] text-paper">
             {zh ? "设备与 Key" : "DEVICES & KEYS"}
           </h2>
           <a
             href="/usage/device"
-            className="inline-flex min-h-9 items-center px-2 font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-11 items-center px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             + {zh ? "连接" : "Connect"}
           </a>
@@ -53,7 +54,7 @@ export default function UsageManagementPanels({
         ) : (
           <ul className="mt-4 divide-y divide-line">
             {devices?.map((device) => {
-              const stale = hoursSince(device.lastSeenAt) > 24;
+              const stale = hoursSince(device.lastSeenAt) > USAGE_STALE_AFTER_HOURS;
               const displayName = usageDeviceDisplayName(device);
               const detail = usageDeviceDetail(device);
               const agentVersions = Object.entries(device.agentVersions);
@@ -62,22 +63,24 @@ export default function UsageManagementPanels({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm text-paper">{displayName}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] text-grey">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-grey">
                         <span title={detail}>
                           {detail}{device.lastSeenAt ? ` · ${relTime(device.lastSeenAt, locale)}` : ""}
                         </span>
                         {stale && (
                           <span className="inline-flex items-center gap-1 text-grey">
                             <Clock3 size={11} aria-hidden="true" />
-                            {zh ? ">24h 未同步" : "stale >24h"}
+                            {zh
+                              ? `>${USAGE_STALE_AFTER_HOURS}h 未同步`
+                              : `stale >${USAGE_STALE_AFTER_HOURS}h`}
                           </span>
                         )}
                       </div>
-                      <div className="mt-1.5 font-mono text-[10px] text-grey/80">
+                      <div className="mt-1.5 font-mono text-[11px] text-grey/80">
                         {device.bucketCount.toLocaleString()} buckets · {device.sessionCount.toLocaleString()} sessions
                       </div>
                       {agentVersions.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-grey/80">
+                        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-grey/80">
                           {agentVersions.map(([source, version]) => (
                             <span key={source}>{usageSourceLabel(source)} v{version.replace(/^v/i, "")}</span>
                           ))}
@@ -108,8 +111,8 @@ export default function UsageManagementPanels({
         )}
       </section>
 
-      <section className="border border-line bg-card p-4 sm:p-5">
-        <h2 className="font-mono text-xs font-semibold tracking-[0.14em] text-paper">
+      <section className="border border-line bg-card p-4 sm:p-5" aria-labelledby="usage-privacy-title">
+        <h2 id="usage-privacy-title" className="font-mono text-xs font-semibold tracking-[0.14em] text-paper">
           {zh ? "隐私设置" : "PRIVACY"}
         </h2>
         <UsagePrivacyForm
@@ -117,20 +120,22 @@ export default function UsageManagementPanels({
           retentionDays={settings.retentionDays}
           zh={zh}
         />
-        <div className="mt-5 border-t border-line pt-4">
-          <p className="mb-3 text-[11px] leading-relaxed text-grey">
-            {zh
-              ? "危险操作会保留设备授权；如需停止同步，请先在设备管理中撤销对应 Key。"
-              : "Dangerous data operations keep device authorizations. Revoke the corresponding key first if you also want syncing to stop."}
-          </p>
-          {devices ? (
-            <DeleteAllUsageDialog bucketCount={bucketCount} sessionCount={sessionCount} zh={zh} />
-          ) : (
-            <p className="text-[11px] text-grey">
-              {zh ? "设备数据加载成功后才可执行全量删除。" : "Load device data before deleting all usage."}
+        {(bucketCount > 0 || sessionCount > 0 || devices === null) && (
+          <div className="mt-5 border-t border-line pt-4">
+            <p className="mb-3 text-[11px] leading-relaxed text-grey">
+              {zh
+                ? "危险操作会保留设备授权；如需停止同步，请先在设备管理中撤销对应 Key。"
+                : "Dangerous data operations keep device authorizations. Revoke the corresponding key first if you also want syncing to stop."}
             </p>
-          )}
-        </div>
+            {devices ? (
+              <DeleteAllUsageDialog bucketCount={bucketCount} sessionCount={sessionCount} zh={zh} />
+            ) : (
+              <p className="text-[11px] text-grey">
+                {zh ? "设备数据加载成功后才可执行全量删除。" : "Load device data before deleting all usage."}
+              </p>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );

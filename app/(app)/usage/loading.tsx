@@ -1,5 +1,5 @@
 function Skeleton({ className }: { className: string }) {
-  return <div className={`animate-pulse bg-line/70 ${className}`} aria-hidden="true" />;
+  return <div className={`bg-line/70 motion-safe:animate-pulse ${className}`} aria-hidden="true" />;
 }
 
 export default function UsageLoading() {

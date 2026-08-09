@@ -63,12 +63,12 @@ export default function UsagePrivacyForm({
       </label>
       {error && <p role="alert" className="mt-3 text-xs text-red-400">{error}</p>}
       <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="font-mono text-[10px] text-grey">
+        <span className="font-mono text-[11px] text-grey">
           {zh ? `保留 ${retentionDays} 天` : `${retentionDays}-day retention`}
         </span>
         <button
           disabled={pending}
-          className="min-h-10 border border-line px-4 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50"
+          className="min-h-11 border border-line px-4 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50"
         >
           {pending ? (zh ? "保存中…" : "Saving…") : (zh ? "保存" : "Save")}
         </button>

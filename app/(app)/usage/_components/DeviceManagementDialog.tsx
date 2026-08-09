@@ -31,6 +31,7 @@ export default function DeviceManagementDialog({
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const deletesData = mode === "delete-data" || mode === "revoke-delete";
+  const locale = zh ? "zh-CN" : "en-US";
 
   function close() {
     if (pending) return;
@@ -101,7 +102,8 @@ export default function DeviceManagementDialog({
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="inline-flex min-h-9 items-center gap-1.5 px-2 font-mono text-[10px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        aria-haspopup="dialog"
+        className="inline-flex min-h-11 items-center gap-1.5 px-2 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <Settings2 size={12} aria-hidden="true" />
         {zh ? "管理" : "Manage"}
@@ -126,8 +128,8 @@ export default function DeviceManagementDialog({
               </h3>
               <p id={`manage-device-description-${deviceId}`} className="mt-2 text-xs leading-relaxed text-grey">
                 {zh
-                  ? `当前远端保存 ${bucketCount.toLocaleString()} 个用量桶、${sessionCount.toLocaleString()} 个会话。请选择本次操作。`
-                  : `The site currently stores ${bucketCount.toLocaleString()} usage buckets and ${sessionCount.toLocaleString()} sessions for this device.`}
+                  ? `当前远端保存 ${bucketCount.toLocaleString(locale)} 个用量桶、${sessionCount.toLocaleString(locale)} 个会话。请选择本次操作。`
+                  : `The site currently stores ${bucketCount.toLocaleString(locale)} usage buckets and ${sessionCount.toLocaleString(locale)} sessions for this device.`}
               </p>
             </div>
             <button
@@ -135,7 +137,7 @@ export default function DeviceManagementDialog({
               disabled={pending}
               onClick={close}
               aria-label={zh ? "关闭" : "Close"}
-              className="flex size-9 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="flex size-11 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               <X size={17} aria-hidden="true" />
             </button>
@@ -201,14 +203,14 @@ export default function DeviceManagementDialog({
               type="button"
               disabled={pending}
               onClick={close}
-              className="min-h-10 border border-line px-4 font-mono text-[10px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="min-h-11 border border-line px-4 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               {zh ? "取消" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={pending}
-              className={`min-h-10 border px-4 font-mono text-[10px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50 ${
+              className={`min-h-11 border px-4 font-mono text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50 ${
                 deletesData
                   ? "border-red-400/50 text-red-300 hover:bg-red-400/10"
                   : "border-amber-400/50 text-amber-300 hover:bg-amber-400/10"

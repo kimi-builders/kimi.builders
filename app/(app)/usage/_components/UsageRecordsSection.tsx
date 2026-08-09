@@ -293,13 +293,13 @@ export default function UsageRecordsSection({
           <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
             {zh ? "明细" : "RECORDS"}
           </h2>
-          <p className="mt-1 font-mono text-[10px] text-grey">
+          <p className="mt-1 font-mono text-[11px] text-grey">
             {zh
-              ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total.toLocaleString()} 组`
-              : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × effort × Agent version × project × device · ${records.total.toLocaleString()} groups`}
+              ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total.toLocaleString("zh-CN")} 组`
+              : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × effort × Agent version × project × device · ${records.total.toLocaleString("en-US")} groups`}
           </p>
           {grain === "bucket" && (
-            <p className="mt-1 font-mono text-[10px] text-grey/70">
+            <p className="mt-1 font-mono text-[11px] text-grey/80">
               {zh
                 ? "30 分钟为采集最细粒度，秒级不在日志中"
                 : "30 minutes is the finest collected granularity; seconds are not in the logs."}
@@ -314,7 +314,7 @@ export default function UsageRecordsSection({
                 href={item.href}
                 scroll={false}
                 aria-current={item.active ? "page" : undefined}
-                className={`inline-flex min-h-10 items-center px-3 font-mono text-[10px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                   item.active ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
                 }`}
               >
@@ -334,7 +334,7 @@ export default function UsageRecordsSection({
             <div className="overflow-x-auto">
               <table className="w-full border-collapse font-mono text-[11px]">
                 <thead>
-                  <tr className="text-left font-mono text-[10px] tracking-wide text-grey">
+                  <tr className="text-left font-mono text-[11px] tracking-wide text-grey">
                     {columns.map((column) => (
                       <th key={column.id} className="whitespace-nowrap pb-2 pr-4 font-normal">
                         {column.header}
@@ -370,7 +370,7 @@ export default function UsageRecordsSection({
                 className="border border-line p-3"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="shrink-0 font-mono text-[10px] text-grey">
+                  <span className="shrink-0 font-mono text-[11px] text-grey">
                     {grain === "bucket" && row.time ? bucketTimeLabel(row.time) : row.day}
                   </span>
                   <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
@@ -388,7 +388,7 @@ export default function UsageRecordsSection({
                     </span>
                   </span>
                 </div>
-                <div className="mt-2 font-mono text-[10px] text-grey">
+                <div className="mt-2 font-mono text-[11px] text-grey">
                   {compact(row.totalTokens)} tokens · {recordCost(row, zh, currency)} · {zh ? "命中率" : "hit"}{" "}
                   {formatHitRate(usageCacheHitRate(row))} · {compact(row.requests)} {zh ? "次请求" : "req"}
                 </div>
@@ -396,7 +396,7 @@ export default function UsageRecordsSection({
                   <div className="mt-1 truncate font-mono text-[9px] text-grey/70">raw model: {row.model}</div>
                 )}
                 {enabled.size > 0 && (
-                  <div className="mt-1 space-y-0.5 font-mono text-[10px] text-grey">
+                  <div className="mt-1 space-y-0.5 font-mono text-[11px] text-grey">
                     {enabled.has("project") && <p>{zh ? "项目" : "Project"} {row.project ?? notUploadedLabel}</p>}
                     {enabled.has("device") && <p>{zh ? "设备" : "Device"} {row.deviceDetail}</p>}
                     {enabled.has("effort") && <p>{zh ? "推理强度" : "Effort"} {row.reasoningEffort || "—"}</p>}
@@ -414,23 +414,23 @@ export default function UsageRecordsSection({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
         {previousHref ? (
-          <Link href={previousHref} scroll={false} className="inline-flex min-h-10 items-center border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          <Link href={previousHref} scroll={false} className="inline-flex min-h-11 items-center border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
             {zh ? "上一页" : "Prev"}
           </Link>
         ) : (
-          <span aria-disabled="true" className="inline-flex min-h-10 cursor-not-allowed items-center border border-line px-3 font-mono text-[10px] text-grey/40">
+          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center border border-line px-3 font-mono text-[11px] text-grey/40">
             {zh ? "上一页" : "Prev"}
           </span>
         )}
-        <span className="font-mono text-[10px] text-grey" aria-live="polite">
+        <span className="font-mono text-[11px] text-grey" aria-live="polite">
           {zh ? `第 ${records.page} / ${totalPages} 页` : `Page ${records.page} / ${totalPages}`}
         </span>
         {nextHref ? (
-          <Link href={nextHref} scroll={false} className="inline-flex min-h-10 items-center border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          <Link href={nextHref} scroll={false} className="inline-flex min-h-11 items-center border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
             {zh ? "下一页" : "Next"}
           </Link>
         ) : (
-          <span aria-disabled="true" className="inline-flex min-h-10 cursor-not-allowed items-center border border-line px-3 font-mono text-[10px] text-grey/40">
+          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center border border-line px-3 font-mono text-[11px] text-grey/40">
             {zh ? "下一页" : "Next"}
           </span>
         )}

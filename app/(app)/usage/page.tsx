@@ -10,7 +10,6 @@ import {
   Clock3,
   Database,
   Gauge,
-  KeyRound,
   Link2,
   MessageSquare,
   MessagesSquare,
@@ -34,6 +33,10 @@ import {
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
+  USAGE_STALE_AFTER_HOURS,
+  usageDashboardViewState,
+} from "@/src/lib/usage/presentation";
+import {
   USAGE_DISPLAY_CURRENCIES,
   USAGE_FX_AS_OF,
   type UsageDisplayCurrency,
@@ -47,6 +50,7 @@ import {
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import CurrencyToggle from "./_components/CurrencyToggle";
 import TzReporter from "./_components/TzReporter";
+import { UsageFirstRun, UsageRangeEmpty } from "./_components/UsageEmptyStates";
 import UsageFilterBar from "./_components/UsageFilterBar";
 import UsageExportDialog from "./_components/UsageExportDialog";
 import UsageLoadErrorCard from "./_components/UsageLoadErrorCard";
@@ -203,7 +207,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const title = zh ? "环比上一等长周期" : "vs the previous equal-length period";
   if (prev <= 0) {
     return (
-      <span className="font-mono text-[10px] text-grey" title={title}>
+      <span className="font-mono text-[11px] text-grey" title={title}>
         —
       </span>
     );
@@ -211,7 +215,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const pct = ((cur - prev) / prev) * 100;
   return (
     <span
-      className={`font-mono text-[10px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
+      className={`font-mono text-[11px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
       title={title}
     >
       {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
@@ -234,7 +238,7 @@ function SwitchLinks({
           href={item.href}
           scroll={false}
           aria-current={item.active ? "page" : undefined}
-          className={`inline-flex min-h-10 items-center px-3 font-mono text-[10px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+          className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
             item.active ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
           }`}
         >
@@ -270,7 +274,7 @@ function DistributionCard({
     <section className="border border-line bg-card p-4 sm:p-5">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">{title}</h3>
-        <span className="font-mono text-[9px] text-grey">
+        <span className="font-mono text-[10px] text-grey">
           {byCost ? (zh ? "按估费" : "by cost") : zh ? "按 Token" : "by tokens"}
         </span>
       </div>
@@ -293,7 +297,7 @@ function DistributionCard({
                       {label}
                     </span>
                   </span>
-                  <span className="shrink-0 font-mono text-[10px] text-grey">
+                  <span className="shrink-0 font-mono text-[11px] text-grey">
                     {compact(row.tokens)} · {Math.round(pct)}% ·{" "}
                     {row.hasUnpriced && row.costMicros === 0 ? (
                       <span className="text-grey">{zh ? "未定价" : "unpriced"}</span>
@@ -338,18 +342,20 @@ export default async function UsagePage({
     return (
       <div>
         <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
-          <BarChart3 size={17} /> {zh ? "用量" : "Usage"}
+          <BarChart3 size={17} aria-hidden="true" /> {zh ? "用量" : "Usage"}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-grey">
           {zh
             ? "以 Kimi 为第一公民的多工具 AI 编程用量中心。数据默认私有，只上传统计字段。"
             : "A Kimi-first usage center for AI coding tools. Data stays private and only metrics are uploaded."}
         </p>
-        <p className="mt-8 text-sm text-grey">
-          {zh ? "登录后连接设备：" : "Sign in to connect a device:"}
-          <a href="/api/auth/github?next=%2Fusage" className="ml-2 text-blue hover:underline">GitHub</a>
-          <a href="/api/auth/google?next=%2Fusage" className="ml-3 text-blue hover:underline">Google</a>
-        </p>
+        <div className="mt-8">
+          <p className="text-sm text-grey">{zh ? "登录后连接设备：" : "Sign in to connect a device:"}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="/api/auth/github?next=%2Fusage" className="inline-flex min-h-11 items-center border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">GitHub</a>
+            <a href="/api/auth/google?next=%2Fusage" className="inline-flex min-h-11 items-center border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">Google</a>
+          </div>
+        </div>
       </div>
     );
   }
@@ -394,7 +400,8 @@ export default async function UsagePage({
     return !latest || value > latest ? value : latest;
   }, null) ?? null;
   const lastSyncAt = overview?.lastSyncAt ?? deviceLastSyncAt;
-  const staleSync = lastSyncAt !== null && hoursSince(lastSyncAt) > 48;
+  const hasUsageHistory = Boolean(overview?.lastSyncAt);
+  const staleSync = lastSyncAt !== null && hoursSince(lastSyncAt) > USAGE_STALE_AFTER_HOURS;
 
   const filterSearch = usageFiltersToSearch(filters);
   const exportSuffix = `tz=${filters.tzOffsetMinutes}${filterSearch ? `&${filterSearch.slice(1)}` : ""}`;
@@ -419,9 +426,9 @@ export default async function UsagePage({
             ? "Kimi-first，多工具兼容。这里只接收 token、时间与计数，不接收对话内容、完整路径或供应商凭据。"
             : "Kimi-first and multi-tool ready. Only token, timing, and count metrics are accepted—never conversations, full paths, or provider credentials."}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-3 font-mono text-[10px] text-grey">
+        <div className="mt-3 flex flex-wrap items-center gap-3 font-mono text-[11px] text-grey" role="status" aria-live="polite">
           <span className="flex items-center gap-1.5">
-            <ShieldCheck size={12} className="text-blue" />
+            <ShieldCheck size={13} className="text-blue" aria-hidden="true" />
             {zh ? "默认私有" : "Private by default"}
           </span>
           <span>·</span>
@@ -436,19 +443,19 @@ export default async function UsagePage({
           </span>
           {staleSync && (
             <span className="border border-amber-500/40 px-1.5 py-0.5 text-amber-400">
-              {zh ? "数据可能过期" : "Possibly stale"}
+              {zh ? `超过 ${USAGE_STALE_AFTER_HOURS} 小时未同步` : `Not synced for ${USAGE_STALE_AFTER_HOURS}+ hours`}
             </span>
           )}
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <a
+        <Link
           href="/usage/device"
-          className="inline-flex items-center justify-center gap-2 border border-blue bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white hover:opacity-90"
+          className="inline-flex min-h-11 items-center justify-center gap-2 border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
-          <Link2 size={14} /> {zh ? "连接设备" : "Connect device"}
-        </a>
-        {overview && (
+          <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
+        </Link>
+        {overview && hasUsageHistory && (
           <UsageExportDialog
             csvHref={`/api/usage/export?format=csv&${exportSuffix}`}
             jsonHref={`/api/usage/export?format=json&${exportSuffix}`}
@@ -457,7 +464,7 @@ export default async function UsagePage({
             zh={zh}
           />
         )}
-        {overview && (
+        {overview && hasUsageHistory && (
           <UsageMethodologyDialog
             zh={zh}
             pricingMatches={overview.meta.pricingMatches}
@@ -466,9 +473,12 @@ export default async function UsagePage({
             assumedTokens={overview.meta.assumedTokens}
             currentRange={overview.range}
             tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
+            tzOffsetMinutes={overview.meta.tzOffsetMinutes}
           />
         )}
-        <CurrencyToggle currency={ccy} label={zh ? "展示币种" : "Display currency"} />
+        {hasUsageHistory && (
+          <CurrencyToggle currency={ccy} label={zh ? "展示币种" : "Display currency"} />
+        )}
       </div>
     </header>
   );
@@ -492,6 +502,35 @@ export default async function UsagePage({
   }
 
   const { totals, previous } = overview;
+  const viewState = usageDashboardViewState({
+    lastSyncAt: overview.lastSyncAt,
+    totalTokens: totals.totalTokens,
+    requests: totals.requests,
+    sessions: totals.sessions,
+  });
+
+  if (viewState === "first-run") {
+    return (
+      <div className="usage-dashboard">
+        {header}
+        <UsageFirstRun
+          hasAuthorizedDevice={(devices?.length ?? 0) > 0}
+          currentRange={overview.range}
+          tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
+          tzOffsetMinutes={overview.meta.tzOffsetMinutes}
+          zh={zh}
+        />
+        <UsageManagementPanels
+          devices={devices}
+          deviceErrorReference={deviceErrorReference}
+          settings={settings}
+          locale={locale}
+        />
+        <TzReporter />
+      </div>
+    );
+  }
+
   const trend = fillTrend(
     overview.trend,
     overview.range.from,
@@ -506,12 +545,10 @@ export default async function UsagePage({
     "week",
     overview.meta.tzOffsetMinutes,
   );
-  const peak = trend.reduce<UsageTrendDay | null>(
+  const peak = trend.filter((item) => item.totalTokens > 0).reduce<UsageTrendDay | null>(
     (best, item) => (!best || item.totalTokens > best.totalTokens ? item : best),
     null,
   );
-  const totalsEmpty =
-    totals.totalTokens === 0 && totals.requests === 0 && totals.sessions === 0;
   const dimensionFiltersActive = !!(
     filters.sources ||
     filters.models ||
@@ -520,8 +557,6 @@ export default async function UsagePage({
     filters.projects ||
     filters.devices
   );
-  const showOnboarding = (devices?.length ?? 1) === 0 || (totalsEmpty && !dimensionFiltersActive);
-  const showRangeEmpty = !showOnboarding && totalsEmpty && dimensionFiltersActive;
   const bucketOnlyFiltersActive = filters.models !== null || filters.efforts !== null;
 
   const rawHm = Array.isArray(raw.hm) ? raw.hm[0] : raw.hm;
@@ -582,6 +617,7 @@ export default async function UsagePage({
     zh,
     currentRange: overview.range,
     tzLabel: gmtLabel(overview.meta.tzOffsetMinutes),
+    tzOffsetMinutes: overview.meta.tzOffsetMinutes,
   };
   const pricingMethodologyProps = {
     pricingMatches: overview.meta.pricingMatches,
@@ -722,7 +758,7 @@ export default async function UsagePage({
         <article key={label} className="border border-line bg-card p-4">
           <div className="flex items-center justify-between gap-2 text-grey">
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-mono text-[10px] tracking-[0.14em]">{label}</span>
+              <span className="truncate font-mono text-[11px] tracking-[0.14em]">{label}</span>
               {help && (
                 <UsageMethodologyDialog
                   kind={help}
@@ -735,12 +771,12 @@ export default async function UsagePage({
             <Icon size={14} className="shrink-0" aria-hidden="true" />
           </div>
           <div className="mt-4 font-mono text-xl font-semibold text-paper">{value}</div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-grey">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-grey">
             {note && <span>{note}</span>}
             {cur !== undefined && prev !== undefined && deltaNote(cur, prev, zh)}
           </div>
           {bucketOnlyFiltersActive && sessionNote && (
-            <div className="mt-1 text-[9px] text-grey/70">
+            <div className="mt-1 text-[10px] text-grey/80">
               {zh
                 ? "会话指标不按模型或推理强度拆分"
                 : "Session metrics are not split by model or effort"}
@@ -775,10 +811,77 @@ export default async function UsagePage({
     },
   ];
 
-  const otherLabel = zh ? "其他" : "Other";
-  const notUploadedLabel = zh ? "未上传" : "Not uploaded";
   const localDayOf = (date: Date): string =>
     new Date(date.getTime() + filters.tzOffsetMinutes * 60_000).toISOString().slice(0, 10);
+  const usageFilterBar = (
+    <UsageFilterBar
+      options={overview.options}
+      applied={{
+        range: filters.rangeLabel,
+        sources: filters.sources?.join(","),
+        models: filters.models?.join(","),
+        efforts: filters.efforts?.join(","),
+        agentVersions: filters.agentVersions?.join(","),
+        projects: filters.projects?.join(","),
+        devices: filters.devices?.join(","),
+        customFrom: filters.rangeLabel === "custom" ? localDayOf(filters.from) : undefined,
+        customTo:
+          filters.rangeLabel === "custom"
+            ? localDayOf(new Date(filters.to.getTime() - 1))
+            : undefined,
+      }}
+      projectsEnabled={filters.projectsEnabled}
+      zh={zh}
+      preservedQuery={query}
+    />
+  );
+  const staleNotice = staleSync ? (
+    <aside className="mt-4 flex flex-col gap-3 border border-amber-400/35 bg-amber-400/5 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+      <div className="flex items-start gap-2">
+        <Clock3 size={16} className="mt-0.5 shrink-0 text-amber-300" aria-hidden="true" />
+        <div>
+          <p className="text-sm font-medium text-paper">
+            {zh ? "这份看板可能已经过期" : "This dashboard may be out of date"}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-grey">
+            {zh
+              ? `最近一次同步已超过 ${USAGE_STALE_AFTER_HOURS} 小时；站点不会主动读取本地日志。`
+              : `The last sync was over ${USAGE_STALE_AFTER_HOURS} hours ago; the site never reads local logs on its own.`}
+          </p>
+        </div>
+      </div>
+      <code className="shrink-0 border border-line bg-bg px-3 py-2 font-mono text-[11px] text-paper">
+        npx @kimi-builders/usage sync
+      </code>
+    </aside>
+  ) : null;
+
+  if (viewState === "empty-range") {
+    return (
+      <div className="usage-dashboard">
+        {header}
+        {usageFilterBar}
+        {staleNotice}
+        <UsageRangeEmpty
+          clearHref={clearFiltersHref}
+          range30Href={hrefWith(query, { range: "30d", from: null, to: null, days: null, page: null })}
+          range90Href={hrefWith(query, { range: "90d", from: null, to: null, days: null, page: null })}
+          filtersActive={dimensionFiltersActive}
+          zh={zh}
+        />
+        <UsageManagementPanels
+          devices={devices}
+          deviceErrorReference={deviceErrorReference}
+          settings={settings}
+          locale={locale}
+        />
+        <TzReporter />
+      </div>
+    );
+  }
+
+  const otherLabel = zh ? "其他" : "Other";
+  const notUploadedLabel = zh ? "未上传" : "Not uploaded";
   const rawCols = Array.isArray(raw.cols) ? raw.cols[0] : raw.cols;
   const initialEnabledColumns = (rawCols ?? "")
     .split(",")
@@ -788,62 +891,8 @@ export default async function UsagePage({
   return (
     <div className="usage-dashboard">
       {header}
-
-      {showOnboarding && (
-        <section className="mt-6 border border-blue/35 bg-blue/5 p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <KeyRound size={18} className="mt-0.5 shrink-0 text-blue" />
-            <div className="min-w-0 flex-1">
-              <h2 className="font-mono text-sm font-semibold text-paper">
-                {zh ? "连接 Kimi Code，生成第一份用量" : "Connect Kimi Code for your first report"}
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-grey">
-                {zh
-                  ? "默认支持 Kimi Code、Claude Code、Codex、OpenCode、Gemini CLI、Antigravity、Copilot CLI 和 Roo Code；Cursor 可显式开启。Collector 在本地读取日志，先展示将上传的字段，再由浏览器批准这台设备。"
-                  : "Kimi Code, Claude Code, Codex, OpenCode, Gemini CLI, Antigravity, Copilot CLI, and Roo Code are enabled by default; Cursor is opt-in. The collector reads logs locally, previews uploaded fields, then asks you to approve this device in the browser."}
-              </p>
-              <pre className="mt-4 overflow-x-auto border border-line bg-bg px-3 py-3 font-mono text-xs text-paper">
-                npx @kimi-builders/usage init
-              </pre>
-              <ol className="mt-4 grid gap-3 text-xs text-grey sm:grid-cols-3">
-                <li><span className="mr-2 font-mono text-blue">01</span>{zh ? "本地检测日志" : "Detect local logs"}</li>
-                <li><span className="mr-2 font-mono text-blue">02</span>{zh ? "浏览器批准设备" : "Approve in browser"}</li>
-                <li><span className="mr-2 font-mono text-blue">03</span>{zh ? "幂等增量同步" : "Idempotent sync"}</li>
-              </ol>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {showRangeEmpty && (
-        <section className="mt-6 border border-line bg-card p-4 text-xs text-grey">
-          {zh ? "该筛选范围内没有数据，" : "No data in this filtered range. "}
-          <Link href={clearFiltersHref} scroll={false} className="text-blue hover:underline">
-            {zh ? "试试清除筛选" : "Try clearing filters"}
-          </Link>
-        </section>
-      )}
-
-      <UsageFilterBar
-        options={overview.options}
-        applied={{
-          range: filters.rangeLabel,
-          sources: filters.sources?.join(","),
-          models: filters.models?.join(","),
-          efforts: filters.efforts?.join(","),
-          agentVersions: filters.agentVersions?.join(","),
-          projects: filters.projects?.join(","),
-          devices: filters.devices?.join(","),
-          customFrom: filters.rangeLabel === "custom" ? localDayOf(filters.from) : undefined,
-          customTo:
-            filters.rangeLabel === "custom"
-              ? localDayOf(new Date(filters.to.getTime() - 1))
-              : undefined,
-        }}
-        projectsEnabled={filters.projectsEnabled}
-        zh={zh}
-        preservedQuery={query}
-      />
+      {usageFilterBar}
+      {staleNotice}
 
       {renderKpiRow(kpiRow1)}
       {renderKpiRow(kpiRow2)}
@@ -852,7 +901,7 @@ export default async function UsagePage({
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {stripStats.map((stat) => (
             <div key={stat.label} title={stat.title}>
-              <div className="font-mono text-[9px] tracking-[0.14em] text-grey">{stat.label}</div>
+              <div className="font-mono text-[10px] tracking-[0.14em] text-grey">{stat.label}</div>
               <div className="mt-1.5 font-mono text-sm font-semibold text-paper">{stat.value}</div>
             </div>
           ))}
@@ -865,7 +914,7 @@ export default async function UsagePage({
             <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
               {trendTitle}
             </h2>
-            <p className="mt-1 text-[10px] text-grey">
+            <p className="mt-1 text-[11px] text-grey">
               {zh
                 ? `${gmtLabel(filters.tzOffsetMinutes)} · 30 分钟事实桶聚合`
                 : `${gmtLabel(filters.tzOffsetMinutes)} · 30-minute buckets`}
@@ -891,7 +940,7 @@ export default async function UsagePage({
             <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
               {zh ? "自然周趋势" : "NATURAL-WEEK TREND"}
             </h2>
-            <p className="mt-1 text-[10px] text-grey">
+            <p className="mt-1 text-[11px] text-grey">
               {zh
                 ? `截至所选范围末尾的 12 周 · 周一 00:00 → 下周一 00:00 · ${gmtLabel(filters.tzOffsetMinutes)}`
                 : `12 weeks ending at the selected range · Monday 00:00 → next Monday 00:00 · ${gmtLabel(filters.tzOffsetMinutes)}`}
@@ -910,7 +959,7 @@ export default async function UsagePage({
             <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
               {zh ? "分时活跃" : "ACTIVITY HEATMAP"}
             </h2>
-            <p className="mt-1 text-[10px] text-grey">
+            <p className="mt-1 text-[11px] text-grey">
               {zh
                 ? "星期 × 本地小时 · 新版 Collector 精确到小时"
                 : "Weekday × local hour · exact hourly facts from current collectors"}
@@ -994,7 +1043,7 @@ export default async function UsagePage({
         locale={locale}
       />
 
-      <div className="mt-5 space-y-2 text-[10px] leading-relaxed text-grey/80">
+      <div className="mt-5 space-y-2 text-[11px] leading-relaxed text-grey/80">
         <p>
           {zh
             ? "可信度说明：数据来自用户设备的自报日志，可能不完整或被修改；它用于个人洞察，不是可验证的计量凭证。"

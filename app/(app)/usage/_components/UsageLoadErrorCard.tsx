@@ -33,9 +33,9 @@ export default function UsageLoadErrorCard({
             type="button"
             disabled={pending}
             onClick={() => startTransition(() => router.refresh())}
-            className="mt-3 inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50"
+            className="mt-3 inline-flex min-h-11 items-center gap-2 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50"
           >
-            <RefreshCw size={13} className={pending ? "animate-spin" : ""} aria-hidden="true" />
+            <RefreshCw size={13} className={pending ? "motion-safe:animate-spin" : ""} aria-hidden="true" />
             {pending ? (zh ? "重试中…" : "Retrying…") : (zh ? "重新加载" : "Retry")}
           </button>
         </div>

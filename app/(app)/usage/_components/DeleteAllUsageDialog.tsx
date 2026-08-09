@@ -20,6 +20,7 @@ export default function DeleteAllUsageDialog({
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
+  const locale = zh ? "zh-CN" : "en-US";
 
   function close() {
     if (pending) return;
@@ -58,7 +59,8 @@ export default function DeleteAllUsageDialog({
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="inline-flex min-h-10 items-center gap-2 border border-red-500/35 px-3 font-mono text-[10px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        aria-haspopup="dialog"
+        className="inline-flex min-h-11 items-center gap-2 border border-red-500/35 px-3 font-mono text-[11px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <Trash2 size={13} aria-hidden="true" />
         {zh ? "删除全部用量数据" : "Delete all usage data"}
@@ -83,8 +85,8 @@ export default function DeleteAllUsageDialog({
               </h3>
               <p id="delete-all-usage-description" className="mt-2 text-xs leading-relaxed text-grey">
                 {zh
-                  ? `将删除 ${bucketCount.toLocaleString()} 个用量桶和 ${sessionCount.toLocaleString()} 个会话；设备授权会保留。`
-                  : `This removes ${bucketCount.toLocaleString()} usage buckets and ${sessionCount.toLocaleString()} sessions. Device authorizations remain.`}
+                  ? `将删除 ${bucketCount.toLocaleString(locale)} 个用量桶和 ${sessionCount.toLocaleString(locale)} 个会话；设备授权会保留。`
+                  : `This removes ${bucketCount.toLocaleString(locale)} usage buckets and ${sessionCount.toLocaleString(locale)} sessions. Device authorizations remain.`}
               </p>
             </div>
             <button
@@ -92,7 +94,7 @@ export default function DeleteAllUsageDialog({
               disabled={pending}
               onClick={close}
               aria-label={zh ? "关闭" : "Close"}
-              className="flex size-9 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="flex size-11 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               <X size={17} aria-hidden="true" />
             </button>
@@ -132,14 +134,14 @@ export default function DeleteAllUsageDialog({
               type="button"
               disabled={pending}
               onClick={close}
-              className="min-h-10 border border-line px-4 font-mono text-[10px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="min-h-11 border border-line px-4 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               {zh ? "取消" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={pending || confirmation !== "DELETE"}
-              className="min-h-10 border border-red-400/50 px-4 font-mono text-[10px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-11 border border-red-400/50 px-4 font-mono text-[11px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
             >
               {pending ? (zh ? "删除中…" : "Deleting…") : (zh ? "永久删除" : "Delete permanently")}
             </button>

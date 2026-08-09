@@ -37,7 +37,7 @@ export default function CurrencyToggle({
           onClick={() => select(item.id)}
           aria-pressed={currency === item.id}
           title={item.id.toUpperCase()}
-          className={`px-2.5 py-1.5 font-mono text-[10px] transition-colors ${
+          className={`inline-flex min-h-11 min-w-11 items-center justify-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
             index > 0 ? "border-l border-line" : ""
           } ${currency === item.id ? "bg-paper text-bg" : "text-grey hover:text-paper"}`}
         >

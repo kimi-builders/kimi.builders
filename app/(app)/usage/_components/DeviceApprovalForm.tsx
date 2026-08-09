@@ -32,7 +32,7 @@ export default function DeviceApprovalForm({
             ? "可以返回终端了。API Key 只会在那里显示并保存一次。"
             : "Return to your terminal. The API key is delivered and stored there only once."}
         </p>
-        <a href="/usage" className="mt-4 inline-block text-sm text-blue hover:underline">
+        <a href="/usage" className="mt-4 inline-flex min-h-11 items-center text-sm text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           {zh ? "返回用量看板 →" : "Back to usage →"}
         </a>
       </div>
@@ -51,7 +51,7 @@ export default function DeviceApprovalForm({
     <form action={action} className="mt-6 space-y-5">
       <input type="hidden" name="user_code" value={userCode} />
       <label className="block">
-        <span className="font-mono text-[10px] tracking-[0.18em] text-grey">
+        <span className="font-mono text-[11px] tracking-[0.18em] text-grey">
           {zh ? "设备别名" : "DEVICE NAME"}
         </span>
         <input
@@ -59,7 +59,7 @@ export default function DeviceApprovalForm({
           defaultValue={suggestedName}
           maxLength={80}
           required
-          className="mt-2 w-full border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none transition-colors focus:border-blue"
+          className="mt-2 min-h-11 w-full border border-line bg-bg px-3 text-sm text-paper outline-none transition-colors focus:border-blue"
         />
       </label>
 
@@ -96,7 +96,7 @@ export default function DeviceApprovalForm({
           name="decision"
           value="approve"
           disabled={pending}
-          className="border border-blue bg-blue px-5 py-2.5 font-mono text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="min-h-11 border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
         >
           {pending ? (zh ? "处理中…" : "Working…") : zh ? "批准并连接" : "Approve & connect"}
         </button>
@@ -105,7 +105,7 @@ export default function DeviceApprovalForm({
           name="decision"
           value="deny"
           disabled={pending}
-          className="border border-line px-5 py-2.5 font-mono text-xs text-grey hover:border-paper/30 hover:text-paper disabled:opacity-50"
+          className="min-h-11 border border-line px-5 font-mono text-xs text-grey hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
         >
           {zh ? "拒绝" : "Deny"}
         </button>
@@ -113,4 +113,3 @@ export default function DeviceApprovalForm({
     </form>
   );
 }
-

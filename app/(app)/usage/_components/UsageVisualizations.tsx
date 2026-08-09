@@ -88,7 +88,7 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
     { label: zh ? "推理" : "Reasoning", value: item.reasoningOutputTokens, color: "bg-amber-400" },
   ];
   return (
-    <dl className="mt-2 space-y-1 font-mono text-[10px]">
+    <dl className="mt-2 space-y-1 font-mono text-[11px]">
       {rows.map((row) => (
         <div key={row.label} className="flex items-center justify-between gap-4">
           <dt className="flex items-center gap-1.5 text-grey">
@@ -184,7 +184,7 @@ export function UsageTrendChart({
       <div className="overflow-x-auto pb-1">
         <div style={{ minWidth }}>
           <div className="relative">
-            <span className="pointer-events-none absolute left-1 top-0 z-10 font-mono text-[9px] text-grey/70">
+            <span className="pointer-events-none absolute left-1 top-0 z-10 font-mono text-[10px] text-grey/80">
               {maxMarker}
             </span>
             <div className="flex h-52 items-end gap-1.5 border-b border-line px-1">
@@ -228,7 +228,7 @@ export function UsageTrendChart({
               return (
                 <span
                   key={item.day}
-                  className={`absolute whitespace-nowrap font-mono text-[9px] text-grey ${
+                  className={`absolute whitespace-nowrap font-mono text-[10px] text-grey ${
                     index === 0 ? "translate-x-0" : index === trend.length - 1 ? "-translate-x-full" : "-translate-x-1/2"
                   }`}
                   style={{ left: `${pct}%` }}
@@ -247,8 +247,8 @@ export function UsageTrendChart({
           className="pointer-events-none absolute top-3 z-20 w-[244px] border border-line bg-moon p-3 shadow-2xl"
           style={{ left: hovered.left }}
         >
-          <div className="font-mono text-[10px] font-semibold text-paper">{active.day}</div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[10px]">
+          <div className="font-mono text-[11px] font-semibold text-paper">{active.day}</div>
+          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
             <span className="text-paper">{metricText(active, metric, zh, currency)}</span>
             {metric === "tokens" && (
               <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(active)}</span>
@@ -259,7 +259,7 @@ export function UsageTrendChart({
       )}
 
       {metric === "tokens" && (
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[10px] text-grey">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11px] text-grey">
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-blue" />{zh ? "输入(含缓存写)" : "Input (incl. cache write)"}</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-emerald-400/80" />{zh ? "缓存读" : "Cache read"}</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-paper/75" />{zh ? "输出" : "Output"}</span>
@@ -296,7 +296,7 @@ export function UsageWeeklyTrend({
   const active = hovered === null ? null : trend[hovered];
   return (
     <div onMouseLeave={() => setHovered(null)}>
-      <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[10px] text-grey">
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] text-grey">
         <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0)}</strong></span>
         <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0)}</strong></span>
         <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-emerald-400" : "text-red-400"}>
@@ -307,7 +307,7 @@ export function UsageWeeklyTrend({
         <div className="overflow-x-auto pb-1">
           <div className="min-w-[680px]">
             <div className="relative">
-              <span className="pointer-events-none absolute left-1 top-0 font-mono text-[9px] text-grey/70">
+              <span className="pointer-events-none absolute left-1 top-0 font-mono text-[10px] text-grey/80">
                 {compact(max)}
               </span>
               <div className="flex h-40 items-end gap-2 border-b border-line px-1">
@@ -331,7 +331,7 @@ export function UsageWeeklyTrend({
             </div>
             <div className="mt-1.5 grid grid-cols-12 gap-2 px-1">
               {trend.map((item, index) => (
-                <span key={item.day} className="text-center font-mono text-[8px] text-grey" title={item.day}>
+                <span key={item.day} className="text-center font-mono text-[9px] text-grey" title={item.day}>
                   {index % 2 === 0 || index === trend.length - 1 ? item.day.slice(5) : ""}
                 </span>
               ))}
@@ -345,10 +345,10 @@ export function UsageWeeklyTrend({
               hovered < trend.length / 2 ? "left-3" : "right-3"
             }`}
           >
-            <div className="font-mono text-[10px] font-semibold text-paper">
+            <div className="font-mono text-[11px] font-semibold text-paper">
               {active.day} → {weekEnd(active.day)}
             </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[10px]">
+            <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
               <span className="text-paper">{compact(active.totalTokens)} tokens</span>
               <span className="text-grey">
                 {zh ? "环比" : "WoW"} {percentDelta(active.totalTokens, trend[hovered - 1]?.totalTokens ?? 0)}
@@ -443,7 +443,7 @@ export function UsageHeatmapGrid({
             <span className="w-6 shrink-0" />
             <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
               {Array.from({ length: 24 }, (_, hour) => (
-                <span key={hour} className="text-center font-mono text-[8px] text-grey">
+                <span key={hour} className="text-center font-mono text-[9px] text-grey">
                   {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
                 </span>
               ))}
@@ -452,7 +452,7 @@ export function UsageHeatmapGrid({
           <div className="mt-1 space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-6 shrink-0 font-mono text-[9px] text-grey">{shortNames[weekday]}</span>
+                <span className="w-6 shrink-0 font-mono text-[10px] text-grey">{shortNames[weekday]}</span>
                 <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
                   {row.map((value, hour) => (
                     <button
@@ -474,15 +474,15 @@ export function UsageHeatmapGrid({
 
       {hovered && cell && (
         <div role="tooltip" className="pointer-events-none absolute right-1 top-5 z-20 w-[252px] border border-line bg-moon p-3 shadow-2xl">
-          <div className="font-mono text-[10px] font-semibold text-paper">
+          <div className="font-mono text-[11px] font-semibold text-paper">
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
           </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[10px]">
+          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
             <span className="text-paper">{compact(cell.totalTokens)} tokens</span>
             <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(cell)}</span>
           </div>
           <TokenBreakdown item={cell} zh={zh} />
-          <div className="mt-2 border-t border-line pt-2 font-mono text-[9px] text-grey">
+          <div className="mt-2 border-t border-line pt-2 font-mono text-[10px] text-grey">
             {zh ? "估费" : "Cost"} {fmtCost(heatmap.costMicros[hovered.weekday][hovered.hour], currency)} ·{" "}
             {zh ? "活跃" : "Active"} {duration(heatmap.activeSeconds[hovered.weekday][hovered.hour], zh)} ·{" "}
             {compact(heatmap.prompts[hovered.weekday][hovered.hour])}{" "}
@@ -491,11 +491,11 @@ export function UsageHeatmapGrid({
         </div>
       )}
 
-      <p className="mt-3 font-mono text-[9px] text-grey">
+      <p className="mt-3 font-mono text-[10px] text-grey">
         {zh ? `时区:${tzLabel}(浏览器本地)` : `Timezone: ${tzLabel} (browser local)`}
       </p>
       <details className="mt-2">
-        <summary className="cursor-pointer font-mono text-[10px] text-grey hover:text-paper">
+        <summary className="min-h-11 cursor-pointer py-3 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           {zh ? "最活跃时段(TOP 5)" : "BUSIEST SLOTS (TOP 5)"}
         </summary>
         {top.length === 0 ? (

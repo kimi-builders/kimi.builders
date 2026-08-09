@@ -99,7 +99,8 @@ function DimensionDropdown({
           onOpenChange(open ? null : dimension.key);
         }}
         aria-expanded={open}
-        className="flex min-h-10 w-full items-center justify-between gap-2 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto sm:min-w-28"
+        aria-haspopup="true"
+        className="flex min-h-11 w-full items-center justify-between gap-2 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto sm:min-w-28"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 text-grey">{dimension.label}</span>
@@ -112,13 +113,13 @@ function DimensionDropdown({
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1 w-full border border-line bg-moon shadow-xl sm:w-64">
           <div className="flex items-center justify-between border-b border-line px-3 py-1.5">
-            <span className="font-mono text-[9px] text-grey">
+            <span className="font-mono text-[10px] text-grey">
               {zh ? "不勾选表示不限" : "No selection means any"}
             </span>
             <button
               type="button"
               onClick={() => setDraft([])}
-              className="min-h-8 px-1 font-mono text-[9px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-11 px-2 font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "不限" : "Any"}
             </button>
@@ -132,7 +133,7 @@ function DimensionDropdown({
               dimension.entries.map((entry) => (
                 <label
                   key={entry.value}
-                  className="flex min-h-10 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
                 >
                   <input
                     type="checkbox"
@@ -152,7 +153,7 @@ function DimensionDropdown({
             <button
               type="button"
               onClick={() => onOpenChange(null)}
-              className="min-h-9 px-3 font-mono text-[10px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-11 px-3 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "取消" : "Cancel"}
             </button>
@@ -163,7 +164,7 @@ function DimensionDropdown({
                 onApply(dimension.key, draft);
                 onOpenChange(null);
               }}
-              className="min-h-9 border border-blue px-3 font-mono text-[10px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-11 border border-blue px-3 font-mono text-[11px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
             >
               {zh ? "应用" : "Apply"}
             </button>
@@ -295,7 +296,7 @@ export default function UsageFilterBar({
   };
 
   const dateInputClass =
-    "border border-line bg-bg px-2 py-1.5 font-mono text-[11px] text-paper outline-none focus:border-blue [color-scheme:dark] [html[data-theme=light]_&]:[color-scheme:light]";
+    "min-h-11 border border-line bg-bg px-2 font-mono text-[11px] text-paper outline-none focus:border-blue [color-scheme:dark] [html[data-theme=light]_&]:[color-scheme:light]";
 
   return (
     <div className="mt-5 border-b border-line pb-4">
@@ -310,7 +311,7 @@ export default function UsageFilterBar({
                 disabled={pending}
                 onClick={() => pushParams({ range: chip.id, from: null, to: null, days: null })}
                 aria-current={isActive ? "page" : undefined}
-                className={`inline-flex min-h-10 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
+                className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
                   isActive ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
                 }`}
               >
@@ -323,7 +324,7 @@ export default function UsageFilterBar({
             disabled={pending}
             onClick={() => setCustomOpen((value) => !value)}
             aria-expanded={customOpen}
-            className={`inline-flex min-h-10 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
+            className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
               applied.range === "custom"
                 ? "bg-paper text-bg"
                 : "text-grey hover:bg-card hover:text-paper"
@@ -337,7 +338,7 @@ export default function UsageFilterBar({
           disabled={pending}
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
-          className="flex min-h-10 items-center gap-1.5 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:hidden"
+          className="flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:hidden"
         >
           <SlidersHorizontal size={11} />
           {zh ? "筛选" : "Filters"}
@@ -374,14 +375,14 @@ export default function UsageFilterBar({
                 projects: null,
                 devices: null,
               })}
-              className="min-h-10 px-2 font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               {zh ? "清除筛选" : "Clear filters"}
             </button>
           )}
           {pending && (
-            <span role="status" className="inline-flex min-h-10 items-center gap-1.5 font-mono text-[10px] text-grey">
-              <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+            <span role="status" className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[11px] text-grey">
+              <LoaderCircle size={12} className="motion-safe:animate-spin" aria-hidden="true" />
               {zh ? "正在更新…" : "Updating…"}
             </span>
           )}
@@ -410,7 +411,7 @@ export default function UsageFilterBar({
           <button
             type="submit"
             disabled={pending}
-            className="min-h-10 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+            className="min-h-11 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
           >
             {zh ? "应用" : "Apply"}
           </button>
