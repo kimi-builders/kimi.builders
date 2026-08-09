@@ -203,7 +203,7 @@ html:not([data-nav="1"]) .only-nav-collapsed {
    the shared shell server-rendered while widening only this route and removing
    the community sidebar that would otherwise compete with the dashboard. */
 main:has(> .usage-dashboard) {
-  max-width: 960px;
+  max-width: 1120px;
 }
 main:has(> .usage-dashboard) + .rightsidebar {
   display: none;

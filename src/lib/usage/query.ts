@@ -82,9 +82,33 @@ export interface UsageTrendDay extends UsageTokenBreakdown {
 export interface UsageHeatmap {
   /* 7(周一..周日)× 24(本地小时) */
   tokens: number[][];
+  inputTokens: number[][];
+  cacheWriteInputTokens: number[][];
+  cacheReadInputTokens: number[][];
+  outputTokens: number[][];
+  reasoningOutputTokens: number[][];
   costMicros: number[][];
   activeSeconds: number[][];
   prompts: number[][];
+}
+
+export interface UsagePricingMatch {
+  source: string;
+  model: string;
+  matchedPattern: string | null;
+  matchKind: "exact" | "prefix" | null;
+  status: "priced" | "partial" | "unpriced";
+  inputPerMtok: number | null;
+  cacheWritePerMtok: number | null;
+  cacheReadPerMtok: number | null;
+  outputPerMtok: number | null;
+  reasoningPerMtok: number | null;
+  cacheWriteFallback: boolean;
+  reasoningFallback: boolean;
+  effectiveFrom: string | null;
+  effectiveTo: string | null;
+  version: string | null;
+  tokens: number;
 }
 
 export interface UsageDistributionRow {
@@ -136,7 +160,15 @@ export interface UsageOverview {
     metric: UsageMetric;
   };
   totals: UsageTotals;
+  /* 日期范围不参与 Lifetime；工具/模型/项目/设备筛选仍然参与。 */
+  lifetimeTokens: number;
   trend: UsageTrendDay[];
+  /* 最近 12 个自然周，周一 00:00 到下周一 00:00；维度筛选与主看板一致。 */
+  weekly: {
+    from: string;
+    to: string;
+    trend: UsageTrendDay[];
+  };
   heatmap: UsageHeatmap;
   distributions: {
     source: UsageDistribution;
@@ -177,6 +209,7 @@ export interface UsageOverview {
     pricedTokens: number;
     unpricedTokens: number;
     pricingCoverage: number;
+    pricingMatches: UsagePricingMatch[];
     tzOffsetMinutes: number;
     generatedAt: string;
   };
@@ -215,7 +248,17 @@ function totalOf(tokens: UsageTokenBreakdown): number {
 
 function emptyHeatmap(): UsageHeatmap {
   const grid = () => Array.from({ length: 7 }, () => Array<number>(24).fill(0));
-  return { tokens: grid(), costMicros: grid(), activeSeconds: grid(), prompts: grid() };
+  return {
+    tokens: grid(),
+    inputTokens: grid(),
+    cacheWriteInputTokens: grid(),
+    cacheReadInputTokens: grid(),
+    outputTokens: grid(),
+    reasoningOutputTokens: grid(),
+    costMicros: grid(),
+    activeSeconds: grid(),
+    prompts: grid(),
+  };
 }
 
 /* 明细查询(分页/导出共用同一段 SQL,防止口径漂移)。 */
@@ -377,6 +420,32 @@ export async function getUsageOverview(
   };
   const prevBucket = bucketFilterSql(userId, prevFilters);
   const prevSession = sessionFilterSql(userId, prevFilters);
+
+  /* Lifetime 忽略日期范围但保留维度筛选；自然周固定取筛选结束点之前
+     最近 12 个周一边界。Lifetime 以请求时刻为终点，避免自定义范围截断累计值。 */
+  const generatedAt = new Date();
+  const lifetimeFilters: UsageFilters = {
+    ...filters,
+    from: new Date(0),
+    to: generatedAt,
+  };
+  const lifetimeBucket = bucketFilterSql(userId, lifetimeFilters);
+  const tzMs = filters.tzOffsetMinutes * 60_000;
+  /* 自然周以主筛选结束点为锚；历史自定义范围因此仍能看到对应时期的 12 周，
+     普通预设的 filters.to 就是当前请求时刻。减 1ms 处理恰好落在周一 00:00 的右开边界。 */
+  const weeklyAnchor = new Date(filters.to.getTime() - 1);
+  const localNowMs = weeklyAnchor.getTime() + tzMs;
+  const localDayStartMs = Math.floor(localNowMs / 86_400_000) * 86_400_000;
+  const localWeekday = (new Date(localDayStartMs).getUTCDay() + 6) % 7;
+  const currentMondayUtcMs = localDayStartMs - localWeekday * 86_400_000 - tzMs;
+  const weeklyFilters: UsageFilters = {
+    ...filters,
+    from: new Date(currentMondayUtcMs - 11 * 7 * 86_400_000),
+    to: filters.to,
+    granularity: "week",
+  };
+  const weeklyBucket = bucketFilterSql(userId, weeklyFilters);
+  const weeklyBucketExpr = trendTimeExpr("bucket_start", weeklyFilters);
 
   const recordsQ = recordsQuery(
     userId,
@@ -587,6 +656,30 @@ export async function getUsageOverview(
         prevSession.params,
       )
       .then(([rows]) => rows),
+    // 20 Lifetime token:忽略日期范围,保留全部维度筛选。
+    pool
+      .query<RowDataPacket[]>(
+        `SELECT SUM(input_tokens) AS input_tokens,
+                SUM(cache_write_input_tokens) AS cache_write_input_tokens,
+                SUM(cache_read_input_tokens) AS cache_read_input_tokens,
+                SUM(output_tokens) AS output_tokens,
+                SUM(reasoning_output_tokens) AS reasoning_output_tokens
+         FROM usage_buckets
+         WHERE ${lifetimeBucket.where}`,
+        lifetimeBucket.params,
+      )
+      .then(([rows]) => rows),
+    // 21 最近 12 个自然周:仍保留 30 分钟事实时间,便于历史价格精确匹配。
+    pool
+      .query<RowDataPacket[]>(
+        `SELECT ${weeklyBucketExpr} AS day, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+         FROM usage_buckets
+         WHERE ${weeklyBucket.where}
+         GROUP BY bucket_start, source, model
+         ORDER BY day`,
+        weeklyBucket.params,
+      )
+      .then(([rows]) => rows),
   ];
 
   const [
@@ -610,6 +703,8 @@ export async function getUsageOverview(
     optionDeviceRows,
     prevBucketRows,
     prevSessionRows,
+    lifetimeRows,
+    weeklyRows,
   ] = await Promise.all(queries);
 
   // 全量估费台账:unpriced/partial 名册 + 总估费(trend 部分)。
@@ -703,6 +798,7 @@ export async function getUsageOverview(
   }
   for (const item of byDay.values()) item.totalTokens = totalOf(item);
   totals.totalTokens = totalOf(totals);
+  const lifetimeTokens = lifetimeRows[0] ? totalOf(tokensOf(lifetimeRows[0])) : 0;
   // 范围内活跃设备 = bucket ∪ session 事实里的去重 device_id
   totals.activeDevices = new Set(
     [...bucketDeviceRows, ...sessionDeviceRows].map((row) => String(row.device_id)),
@@ -776,6 +872,11 @@ export async function getUsageOverview(
     if (!inGrid(weekday, hour)) continue;
     const tokens = tokensOf(row);
     heatmap.tokens[weekday][hour] += totalOf(tokens);
+    heatmap.inputTokens[weekday][hour] += tokens.inputTokens;
+    heatmap.cacheWriteInputTokens[weekday][hour] += tokens.cacheWriteInputTokens;
+    heatmap.cacheReadInputTokens[weekday][hour] += tokens.cacheReadInputTokens;
+    heatmap.outputTokens[weekday][hour] += tokens.outputTokens;
+    heatmap.reasoningOutputTokens[weekday][hour] += tokens.reasoningOutputTokens;
     heatmap.costMicros[weekday][hour] +=
       num(row.stored_cost_micros) + estimateRow(row, tokens).micros;
   }
@@ -839,6 +940,79 @@ export async function getUsageOverview(
     });
   }
   const trend = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+
+  // —— 最近 12 个自然周 ——
+  const weeklyByDay = new Map<string, UsageTrendDay>();
+  for (const row of weeklyRows) {
+    const key = trendKeyOf(row.day, "week");
+    let item = weeklyByDay.get(key);
+    if (!item) {
+      item = {
+        day: key,
+        inputTokens: 0,
+        cacheWriteInputTokens: 0,
+        cacheReadInputTokens: 0,
+        outputTokens: 0,
+        reasoningOutputTokens: 0,
+        totalTokens: 0,
+        requests: 0,
+        sessions: 0,
+        activeSeconds: 0,
+        costMicros: 0,
+      };
+      weeklyByDay.set(key, item);
+    }
+    const tokens = tokensOf(row);
+    addTokens(item, tokens);
+    item.requests += num(row.request_count);
+    item.costMicros += num(row.stored_cost_micros) + estimateRow(row, tokens).micros;
+  }
+  for (const item of weeklyByDay.values()) item.totalTokens = totalOf(item);
+  const weeklyTrend = [...weeklyByDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+
+  // 当前筛选范围内实际出现过的模型与其价格命中，供“计算与数据说明”直接解释。
+  const pricingMatchMap = new Map<string, UsagePricingMatch>();
+  const statusRank = { priced: 0, partial: 1, unpriced: 2 } as const;
+  for (const row of bucketRows) {
+    const source = String(row.source);
+    const model = String(row.model);
+    const at = new Date(row.sample_at as string);
+    const tokens = tokensOf(row);
+    const matched = model === LEGACY_MODEL ? null : matchModelPrice(prices, model, at, source);
+    const estimate = estimateCostMicros(tokens, matched);
+    const key = `${source}\u0000${model}\u0000${matched?.version ?? ""}\u0000${matched?.effectiveFrom.toISOString() ?? ""}`;
+    const existing = pricingMatchMap.get(key);
+    if (existing) {
+      existing.tokens += totalOf(tokens);
+      if (statusRank[estimate.status] > statusRank[existing.status]) existing.status = estimate.status;
+      continue;
+    }
+    pricingMatchMap.set(key, {
+      source,
+      model,
+      matchedPattern: matched?.modelPattern ?? null,
+      matchKind: matched?.matchKind ?? null,
+      status: estimate.status,
+      inputPerMtok: matched?.inputPerMtok ?? null,
+      cacheWritePerMtok: matched
+        ? (matched.cacheWritePerMtok ?? matched.inputPerMtok)
+        : null,
+      cacheReadPerMtok: matched?.cacheReadPerMtok ?? null,
+      outputPerMtok: matched?.outputPerMtok ?? null,
+      reasoningPerMtok: matched
+        ? (matched.reasoningPerMtok ?? matched.outputPerMtok)
+        : null,
+      cacheWriteFallback: matched !== null && matched.cacheWritePerMtok === null,
+      reasoningFallback: matched !== null && matched.reasoningPerMtok === null,
+      effectiveFrom: matched?.effectiveFrom.toISOString() ?? null,
+      effectiveTo: matched?.effectiveTo?.toISOString() ?? null,
+      version: matched?.version ?? null,
+      tokens: totalOf(tokens),
+    });
+  }
+  const pricingMatches = [...pricingMatchMap.values()].sort(
+    (a, b) => b.tokens - a.tokens || a.model.localeCompare(b.model),
+  );
 
   // —— 分布(token + 估费,Top 6 + 其他) ——
   interface DistInput {
@@ -966,7 +1140,13 @@ export async function getUsageOverview(
       metric: filters.metric,
     },
     totals,
+    lifetimeTokens,
     trend,
+    weekly: {
+      from: weeklyFilters.from.toISOString(),
+      to: weeklyFilters.to.toISOString(),
+      trend: weeklyTrend,
+    },
     previous,
     heatmap,
     distributions,
@@ -997,8 +1177,9 @@ export async function getUsageOverview(
         ledger.pricedTokens + ledger.unpricedTokens > 0
           ? ledger.pricedTokens / (ledger.pricedTokens + ledger.unpricedTokens)
           : 1,
+      pricingMatches,
       tzOffsetMinutes: filters.tzOffsetMinutes,
-      generatedAt: new Date().toISOString(),
+      generatedAt: generatedAt.toISOString(),
     },
   };
 }

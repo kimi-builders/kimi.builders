@@ -9,10 +9,12 @@ import {
   Clock3,
   Database,
   Download,
+  Gauge,
   KeyRound,
   Link2,
   MessageSquare,
   MessagesSquare,
+  Orbit,
   ShieldCheck,
   Timer,
   Trash2,
@@ -29,7 +31,6 @@ import {
   usageFiltersToSearch,
   type UsageGranularity,
   type UsageMetric,
-  type UsageRangeLabel,
   type UsageRecordGrain,
 } from "@/src/lib/usage/filters";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
@@ -42,7 +43,6 @@ import {
   getUsageOverview,
   type UsageDistribution,
   type UsageDistributionRow,
-  type UsageHeatmap,
   type UsageOverview,
   type UsageRecordRow,
   type UsageTrendDay,
@@ -58,6 +58,13 @@ import DeleteDeviceDataForm from "./_components/DeleteDeviceDataForm";
 import RecordsColumnsMenu from "./_components/RecordsColumnsMenu";
 import TzReporter from "./_components/TzReporter";
 import UsageFilterBar from "./_components/UsageFilterBar";
+import UsageMethodologyDialog from "./_components/UsageMethodologyDialog";
+import {
+  UsageHeatmapGrid,
+  UsageTrendChart,
+  UsageWeeklyTrend,
+  type UsageHeatMetric,
+} from "./_components/UsageVisualizations";
 
 export const metadata: Metadata = { title: "用量 — kimi.builders" };
 
@@ -116,7 +123,7 @@ function zeroTrendSlot(key: string): UsageTrendDay {
   };
 }
 
-/* 趋势补零:按粒度生成 [from, to] 的完整本地时间格序列。
+/* 趋势补零:按粒度生成 [from, to) 的完整本地时间格序列。
    纯 UTC 数学:localMs = utcMs + tzOffset,再用 getUTC* 读移位后的墙钟。
    hour → "YYYY-MM-DD HH:00"(24h 滚动从 from 之后第一个整点开始);
    day → "YYYY-MM-DD";week → 本地周一的 "YYYY-MM-DD"。与 query.ts 的
@@ -160,7 +167,7 @@ function fillTrend(
   }
 
   const series: UsageTrendDay[] = [];
-  for (let m = cursor; m <= toShifted; m += step) {
+  for (let m = cursor; m < toShifted; m += step) {
     const key = keyOf(m);
     series.push(values.get(key) ?? zeroTrendSlot(key));
   }
@@ -195,32 +202,6 @@ function hrefWith(currentQuery: string, changes: Record<string, string | null>):
   }
   const text = params.toString();
   return text ? `/usage?${text}` : "/usage";
-}
-
-const WEEKDAY_LONG_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
-const WEEKDAY_LONG_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const WEEKDAY_SHORT_ZH = ["一", "二", "三", "四", "五", "六", "日"];
-const WEEKDAY_SHORT_EN = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
-
-type HeatMetric = UsageMetric | "prompts";
-
-function heatGrid(heatmap: UsageHeatmap, metric: HeatMetric): number[][] {
-  if (metric === "cost") return heatmap.costMicros;
-  if (metric === "duration") return heatmap.activeSeconds;
-  if (metric === "prompts") return heatmap.prompts;
-  return heatmap.tokens;
-}
-
-function formatHeatValue(
-  metric: HeatMetric,
-  value: number,
-  zh: boolean,
-  ccy: UsageDisplayCurrency,
-): string {
-  if (metric === "cost") return fmtCost(value, ccy);
-  if (metric === "duration") return duration(value, zh);
-  if (metric === "prompts") return zh ? `${compact(value)} 次提示` : `${compact(value)} prompts`;
-  return `${compact(value)} tokens`;
 }
 
 /* 环比小注:正 emerald / 负 red / 上期为零 → 「—」。 */
@@ -266,255 +247,6 @@ function SwitchLinks({
         </a>
       ))}
     </nav>
-  );
-}
-
-/* 趋势图:tokens 视图按「输入(含缓存写)/缓存读/输出/推理」四类堆叠
-   (写缓存并入输入是展示层归组,五字段口径仍在明细可选列与次级条里);
-   cost/duration 是单系列柱。全零范围渲染居中提示而不是一副空坐标。 */
-function TrendChart({
-  trend,
-  metric,
-  granularity,
-  rangeLabel,
-  zh,
-  ccy,
-}: {
-  trend: UsageTrendDay[];
-  metric: UsageMetric;
-  granularity: UsageGranularity;
-  rangeLabel: UsageRangeLabel;
-  zh: boolean;
-  ccy: UsageDisplayCurrency;
-}) {
-  const valueOf = (item: UsageTrendDay): number =>
-    metric === "cost" ? item.costMicros : metric === "duration" ? item.activeSeconds : item.totalTokens;
-  const max = Math.max(0, ...trend.map(valueOf));
-  if (max <= 0) {
-    return (
-      <div className="flex h-48 items-center justify-center text-xs text-grey">
-        {zh ? "该范围内暂无数据" : "No data in this range"}
-      </div>
-    );
-  }
-  const labelIndices = new Set([0, Math.floor((trend.length - 1) / 2), trend.length - 1]);
-  const axisLabel = (key: string): string =>
-    granularity === "hour"
-      ? rangeLabel === "today"
-        ? key.slice(11)
-        : key.slice(5)
-      : key.slice(5);
-  const maxMarker =
-    metric === "cost"
-      ? fmtCost(max, ccy)
-      : metric === "duration"
-        ? duration(max, zh)
-        : compact(max);
-  const tooltip = (item: UsageTrendDay): string => {
-    if (metric === "cost") return `${item.day} · ${fmtCost(item.costMicros, ccy)}`;
-    if (metric === "duration") return `${item.day} · ${duration(item.activeSeconds, zh)}`;
-    return [
-      `${item.day} · ${compact(item.totalTokens)} tokens · ${zh ? "命中率" : "hit"} ${fmtHitRate(usageCacheHitRate(item))}`,
-      `${zh ? "输入(含缓存写)" : "Input (incl. cache write)"} ${compact(item.inputTokens + item.cacheWriteInputTokens)}`,
-      `${zh ? "缓存读" : "Cache read"} ${compact(item.cacheReadInputTokens)}`,
-      `${zh ? "输出" : "Output"} ${compact(item.outputTokens)}`,
-      `${zh ? "推理" : "Reasoning"} ${compact(item.reasoningOutputTokens)}`,
-    ].join("\n");
-  };
-  const srValue = (item: UsageTrendDay): string => {
-    if (metric === "cost") return fmtCost(item.costMicros, ccy);
-    if (metric === "duration") return `${item.activeSeconds.toLocaleString()}s`;
-    return `${item.totalTokens.toLocaleString()} tokens`;
-  };
-  return (
-    <div>
-      <div className="overflow-x-auto">
-        <div className="min-w-[520px]">
-          <div className="relative">
-            <span className="pointer-events-none absolute left-1 top-0 font-mono text-[9px] text-grey/70">
-              {maxMarker}
-            </span>
-            <div className="flex h-48 items-end gap-1.5 border-b border-line px-1">
-              {trend.map((item) => {
-                const value = valueOf(item);
-                const height = value === 0 ? 1 : Math.max(4, (value / max) * 100);
-                return (
-                  <div key={item.day} className="group relative flex h-full min-w-1 flex-1 items-end">
-                    {metric === "tokens" ? (
-                      <div
-                        className="flex w-full flex-col-reverse overflow-hidden bg-card transition-opacity group-hover:opacity-80"
-                        style={{ height: `${height}%` }}
-                        title={tooltip(item)}
-                      >
-                        <span
-                          className="block bg-blue"
-                          style={{
-                            height: `${
-                              item.totalTokens
-                                ? ((item.inputTokens + item.cacheWriteInputTokens) / item.totalTokens) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                        <span
-                          className="block bg-emerald-400/70"
-                          style={{
-                            height: `${item.totalTokens ? (item.cacheReadInputTokens / item.totalTokens) * 100 : 0}%`,
-                          }}
-                        />
-                        <span
-                          className="block bg-paper/70"
-                          style={{
-                            height: `${item.totalTokens ? (item.outputTokens / item.totalTokens) * 100 : 0}%`,
-                          }}
-                        />
-                        <span
-                          className="block bg-amber-400/90"
-                          style={{
-                            height: `${item.totalTokens ? (item.reasoningOutputTokens / item.totalTokens) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className={`w-full transition-opacity group-hover:opacity-80 ${
-                          value === 0 ? "bg-card" : metric === "cost" ? "bg-blue" : "bg-blue/70"
-                        }`}
-                        style={{ height: `${height}%` }}
-                        title={tooltip(item)}
-                      />
-                    )}
-                    <span className="sr-only">
-                      {item.day}: {srValue(item)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="mt-1.5 flex gap-1.5 px-1">
-            {trend.map((item, index) => (
-              <span
-                key={item.day}
-                className={`min-w-1 flex-1 truncate font-mono text-[9px] text-grey ${
-                  index === 0
-                    ? "text-left"
-                    : index === trend.length - 1
-                      ? "text-right"
-                      : "text-center"
-                }`}
-              >
-                {labelIndices.has(index) ? axisLabel(item.day) : ""}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      {metric === "tokens" && (
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[10px] text-grey">
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-blue" />{zh ? "输入(含缓存写)" : "Input (incl. cache write)"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-emerald-400/70" />{zh ? "缓存读" : "Cache read"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-paper/70" />{zh ? "输出" : "Output"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-400/90" />{zh ? "推理" : "Reasoning"}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* 分时活跃热图:7(周一..周日)× 24(本地小时),格子不造页面级横向滚动。 */
-function HeatmapGrid({
-  heatmap,
-  metric,
-  tzOffsetMinutes,
-  zh,
-  ccy,
-}: {
-  heatmap: UsageHeatmap;
-  metric: HeatMetric;
-  tzOffsetMinutes: number;
-  zh: boolean;
-  ccy: UsageDisplayCurrency;
-}) {
-  const grid = heatGrid(heatmap, metric);
-  const max = Math.max(0, ...grid.flat());
-  const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
-  const shortNames = zh ? WEEKDAY_SHORT_ZH : WEEKDAY_SHORT_EN;
-  const stepClass = (value: number): string => {
-    if (value <= 0 || max <= 0) return "bg-card";
-    const ratio = value / max;
-    if (ratio <= 0.25) return "bg-blue/25";
-    if (ratio <= 0.45) return "bg-blue/45";
-    if (ratio <= 0.65) return "bg-blue/65";
-    if (ratio <= 0.85) return "bg-blue/85";
-    return "bg-blue";
-  };
-  const cellLabel = (weekday: number, hour: number, value: number): string =>
-    `${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${formatHeatValue(metric, value, zh, ccy)}`;
-  const top = grid
-    .flatMap((row, weekday) => row.map((value, hour) => ({ weekday, hour, value })))
-    .filter((cell) => cell.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
-  return (
-    <div>
-      <div className="overflow-x-auto">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="w-6 shrink-0" />
-            <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
-              {Array.from({ length: 24 }, (_, hour) => (
-                <span key={hour} className="text-center font-mono text-[8px] text-grey">
-                  {hour % 3 === 0 ? hour : ""}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="mt-1 space-y-[3px]">
-            {grid.map((row, weekday) => (
-              <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-6 shrink-0 font-mono text-[9px] text-grey">
-                  {shortNames[weekday]}
-                </span>
-                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
-                  {row.map((value, hour) => (
-                    <span
-                      key={hour}
-                      className={`aspect-square ${stepClass(value)}`}
-                      title={cellLabel(weekday, hour, value)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <p className="mt-3 font-mono text-[9px] text-grey">
-        {zh
-          ? `时区:${gmtLabel(tzOffsetMinutes)}(浏览器本地)`
-          : `Timezone: ${gmtLabel(tzOffsetMinutes)} (browser local)`}
-      </p>
-      <details className="mt-2">
-        <summary className="cursor-pointer font-mono text-[10px] text-grey hover:text-paper">
-          {zh ? "最活跃时段(TOP 5)" : "BUSIEST SLOTS (TOP 5)"}
-        </summary>
-        {top.length === 0 ? (
-          <p className="mt-2 text-[10px] text-grey">
-            {zh ? "该范围内暂无数据" : "No data in this range"}
-          </p>
-        ) : (
-          <ol className="mt-2 space-y-1 font-mono text-[10px] text-grey">
-            {top.map((cell) => (
-              <li key={`${cell.weekday}-${cell.hour}`}>
-                {longNames[cell.weekday]} {String(cell.hour).padStart(2, "0")}:00 —{" "}
-                {formatHeatValue(metric, cell.value, zh, ccy)}
-              </li>
-            ))}
-          </ol>
-        )}
-      </details>
-    </div>
   );
 }
 
@@ -608,6 +340,7 @@ interface KpiCardSpec {
   cur?: number;
   prev?: number;
   sessionNote?: boolean;
+  help?: "pricing" | "tokens" | "duration";
 }
 
 /* 明细表的可选列(默认全关;与 RecordsColumnsMenu 的列表一一对应)。 */
@@ -740,6 +473,16 @@ export default async function UsagePage({
         >
           <Download size={12} /> {zh ? "导出 JSON" : "Export JSON"}
         </a>
+        {overview && (
+          <UsageMethodologyDialog
+            zh={zh}
+            pricingMatches={overview.meta.pricingMatches}
+            pricingCoverage={`${(overview.meta.pricingCoverage * 100).toFixed(1)}%`}
+            pricingVersions={overview.meta.pricingVersions.join("、")}
+            currentRange={overview.range}
+            tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
+          />
+        )}
         <CurrencyToggle currency={ccy} label={zh ? "展示币种" : "Display currency"} />
       </div>
     </header>
@@ -767,6 +510,17 @@ export default async function UsagePage({
     filters.granularity,
     overview.meta.tzOffsetMinutes,
   );
+  const weeklyTrend = fillTrend(
+    overview.weekly.trend,
+    overview.weekly.from,
+    overview.weekly.to,
+    "week",
+    overview.meta.tzOffsetMinutes,
+  );
+  const peak = trend.reduce<UsageTrendDay | null>(
+    (best, item) => (!best || item.totalTokens > best.totalTokens ? item : best),
+    null,
+  );
   const totalsEmpty =
     totals.totalTokens === 0 && totals.requests === 0 && totals.sessions === 0;
   const dimensionFiltersActive = !!(
@@ -780,7 +534,7 @@ export default async function UsagePage({
   const modelsFiltered = filters.models !== null;
 
   const rawHm = Array.isArray(raw.hm) ? raw.hm[0] : raw.hm;
-  const heatMetric: HeatMetric =
+  const heatMetric: UsageHeatMetric =
     rawHm === "cost" || rawHm === "duration" || rawHm === "prompts" || rawHm === "tokens"
       ? rawHm
       : filters.metric;
@@ -800,10 +554,10 @@ export default async function UsagePage({
 
   const heatSwitch = (
     [
-      { key: "tokens" as HeatMetric, label: "Token" },
-      { key: "cost" as HeatMetric, label: zh ? "费用" : "Cost" },
-      { key: "duration" as HeatMetric, label: zh ? "时长" : "Time" },
-      { key: "prompts" as HeatMetric, label: zh ? "提示" : "Prompts" },
+      { key: "tokens" as UsageHeatMetric, label: "Token" },
+      { key: "cost" as UsageHeatMetric, label: zh ? "费用" : "Cost" },
+      { key: "duration" as UsageHeatMetric, label: zh ? "时长" : "Time" },
+      { key: "prompts" as UsageHeatMetric, label: zh ? "提示" : "Prompts" },
     ] as const
   ).map((item) => ({
     key: item.key,
@@ -833,6 +587,33 @@ export default async function UsagePage({
   const pricingIncomplete = overview.meta.pricingCoverage < 0.9995;
   const inputWithCacheWrite = totals.inputTokens + totals.cacheWriteInputTokens;
   const prevInputWithCacheWrite = previous.inputTokens + previous.cacheWriteInputTokens;
+  const methodologyProps = {
+    zh,
+    currentRange: overview.range,
+    tzLabel: gmtLabel(overview.meta.tzOffsetMinutes),
+  };
+  const pricingMethodologyProps = {
+    pricingMatches: overview.meta.pricingMatches,
+    pricingCoverage,
+    pricingVersions,
+  };
+  const peakNote = peak
+    ? `${peak.day} · ${
+        filters.granularity === "hour"
+          ? zh
+            ? "小时峰值"
+            : "hour peak"
+          : filters.granularity === "week"
+            ? zh
+              ? "自然周峰值"
+              : "natural-week peak"
+            : zh
+              ? "单日峰值"
+              : "daily peak"
+      }`
+    : zh
+      ? "当前范围无数据"
+      : "No data in range";
 
   const kpiRow1: KpiCardSpec[] = [
     {
@@ -848,6 +629,9 @@ export default async function UsagePage({
       note: zh
         ? `覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价`
         : `${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial`,
+      cur: totals.costMicros,
+      prev: previous.costMicros,
+      help: "pricing",
     },
     {
       icon: BarChart3,
@@ -855,6 +639,13 @@ export default async function UsagePage({
       value: compact(totals.totalTokens),
       cur: totals.totalTokens,
       prev: previous.totalTokens,
+      help: "tokens",
+    },
+    {
+      icon: Orbit,
+      label: "LIFETIME TOKENS",
+      value: compact(overview.lifetimeTokens),
+      note: zh ? "全部已同步历史 · 保留维度筛选" : "all synced history · dimension filters apply",
     },
     {
       icon: ArrowDownToLine,
@@ -882,12 +673,19 @@ export default async function UsagePage({
   ];
   const kpiRow2: KpiCardSpec[] = [
     {
+      icon: Gauge,
+      label: zh ? "峰值 TOKEN" : "PEAK TOKENS",
+      value: compact(peak?.totalTokens ?? 0),
+      note: peakNote,
+    },
+    {
       icon: Clock3,
       label: zh ? "活跃时长" : "ACTIVE TIME",
       value: duration(totals.activeSeconds, zh),
       cur: totals.activeSeconds,
       prev: previous.activeSeconds,
       sessionNote: true,
+      help: "duration",
     },
     {
       icon: Timer,
@@ -897,6 +695,7 @@ export default async function UsagePage({
       cur: totals.durationSeconds,
       prev: previous.durationSeconds,
       sessionNote: true,
+      help: "duration",
     },
     {
       icon: MessagesSquare,
@@ -926,12 +725,22 @@ export default async function UsagePage({
   ];
 
   const renderKpiRow = (cards: KpiCardSpec[]) => (
-    <section className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      {cards.map(({ icon: Icon, label, value, note, cur, prev, sessionNote }) => (
+    <section className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {cards.map(({ icon: Icon, label, value, note, cur, prev, sessionNote, help }) => (
         <article key={label} className="border border-line bg-card p-4">
           <div className="flex items-center justify-between gap-2 text-grey">
-            <span className="truncate font-mono text-[10px] tracking-[0.14em]">{label}</span>
-            <Icon size={14} className="shrink-0" />
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate font-mono text-[10px] tracking-[0.14em]">{label}</span>
+              {help && (
+                <UsageMethodologyDialog
+                  kind={help}
+                  compact
+                  {...methodologyProps}
+                  {...(help === "pricing" ? pricingMethodologyProps : {})}
+                />
+              )}
+            </span>
+            <Icon size={14} className="shrink-0" aria-hidden="true" />
           </div>
           <div className="mt-4 font-mono text-xl font-semibold text-paper">{value}</div>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-grey">
@@ -1203,14 +1012,33 @@ export default async function UsagePage({
           <SwitchLinks items={trendSwitch} label={zh ? "趋势指标" : "Trend metric"} />
         </div>
         <div className="mt-6">
-          <TrendChart
+          <UsageTrendChart
             trend={trend}
             metric={filters.metric}
             granularity={filters.granularity}
             rangeLabel={filters.rangeLabel}
             zh={zh}
-            ccy={ccy}
+            currency={USAGE_DISPLAY_CURRENCIES[ccy]}
           />
+        </div>
+      </section>
+
+      <section className="mt-4 border border-line bg-card p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
+              {zh ? "自然周趋势" : "NATURAL-WEEK TREND"}
+            </h2>
+            <p className="mt-1 text-[10px] text-grey">
+              {zh
+                ? `截至所选范围末尾的 12 周 · 周一 00:00 → 下周一 00:00 · ${gmtLabel(filters.tzOffsetMinutes)}`
+                : `12 weeks ending at the selected range · Monday 00:00 → next Monday 00:00 · ${gmtLabel(filters.tzOffsetMinutes)}`}
+            </p>
+          </div>
+          <UsageMethodologyDialog kind="changes" compact {...methodologyProps} />
+        </div>
+        <div className="mt-5">
+          <UsageWeeklyTrend trend={weeklyTrend} zh={zh} />
         </div>
       </section>
 
@@ -1229,12 +1057,12 @@ export default async function UsagePage({
           <SwitchLinks items={heatSwitch} label={zh ? "热图指标" : "Heatmap metric"} />
         </div>
         <div className="mt-5">
-          <HeatmapGrid
+          <UsageHeatmapGrid
             heatmap={overview.heatmap}
             metric={heatMetric}
-            tzOffsetMinutes={filters.tzOffsetMinutes}
+            tzLabel={gmtLabel(filters.tzOffsetMinutes)}
             zh={zh}
-            ccy={ccy}
+            currency={USAGE_DISPLAY_CURRENCIES[ccy]}
           />
         </div>
       </section>

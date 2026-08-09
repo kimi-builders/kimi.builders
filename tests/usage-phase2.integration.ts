@@ -187,8 +187,20 @@ async function main() {
     assert.equal(overview.totals.sessions, expected.sessions);
     assert.equal(overview.totals.userMessages, expected.userMessages);
     assert.equal(overview.totals.activeSeconds, expected.activeSeconds);
+    assert.equal(overview.lifetimeTokens, expected.total);
     assert.equal(overview.records.total, 3); // 同日 × 3 来源/模型
     assert.equal(overview.totals.activeDevices, 1);
+    const gridTotal = (grid: number[][]) => grid.flat().reduce((sum, value) => sum + value, 0);
+    assert.equal(gridTotal(overview.heatmap.inputTokens), expected.input);
+    assert.equal(gridTotal(overview.heatmap.cacheWriteInputTokens), expected.cacheWrite);
+    assert.equal(gridTotal(overview.heatmap.cacheReadInputTokens), expected.cacheRead);
+    assert.equal(gridTotal(overview.heatmap.outputTokens), expected.output);
+    assert.equal(gridTotal(overview.heatmap.reasoningOutputTokens), expected.reasoning);
+    assert.equal(
+      overview.weekly.trend.reduce((sum, row) => sum + row.totalTokens, 0),
+      expected.total,
+    );
+    assert.ok(overview.meta.pricingMatches.some((row) => row.model === "gpt-5-codex"));
 
     // v2 种子后 kimi-code/k3 命中价格(3.00/15.00/缓存读 0.30):
     // 150×3 + 20×3(写回退 input)+ 40×0.3 + 15×15 = 747 micros
@@ -304,6 +316,7 @@ async function main() {
     assert.ok(publicB);
     const byDevice = await getUsageOverview(userId, filters({ devices: publicB.id }));
     assert.equal(byDevice.totals.totalTokens, 1000);
+    assert.equal(byDevice.lifetimeTokens, 1000);
     assert.equal(byDevice.totals.activeDevices, 1);
     const combo = await getUsageOverview(
       userId,
@@ -314,6 +327,7 @@ async function main() {
     // —— 用户隔离 ——
     const bystander = await getUsageOverview(otherUserId, filters());
     assert.equal(bystander.totals.totalTokens, 0);
+    assert.equal(bystander.lifetimeTokens, 0);
     assert.equal(bystander.totals.sessions, 0);
     assert.equal(bystander.records.rows.length, 0);
 
