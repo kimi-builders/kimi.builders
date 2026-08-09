@@ -202,11 +202,15 @@ async function main() {
     );
     assert.ok(overview.meta.pricingMatches.some((row) => row.model === "gpt-5-codex"));
 
-    // v2 种子后 kimi-code/k3 命中价格(3.00/15.00/缓存读 0.30):
+    // kimi-code/k3 在摄入时被归一为 canonical kimi-k3,命中 v1 前缀行(3.00/15.00/缓存读 0.30):
     // 150×3 + 20×3(写回退 input)+ 40×0.3 + 15×15 = 747 micros
     assert.ok(!overview.meta.unpricedModels.includes("kimi-code/k3"));
     assert.ok(overview.meta.pricingVersions.includes("2026-08-08"));
-    assert.ok(overview.meta.pricingVersions.includes("2026-08-09"));
+    const kimiMatch = overview.meta.pricingMatches.find(
+      (row) => row.model === "kimi-code/k3",
+    );
+    assert.equal(kimiMatch?.modelCanonical, "kimi-k3");
+    assert.equal(kimiMatch?.matchedPattern, "kimi-k3");
     // claude-opus-4: 300×5 + 105×6.25 + 50×0.5 + 30×25 = 2931.25 micros
     // gpt-5-codex: 700×1.25 + 200×0.125 + 80×10 + 40×10 = 2100 micros
     assert.ok(Math.abs(overview.totals.costMicros - (5031.25 + 747)) < 1);
