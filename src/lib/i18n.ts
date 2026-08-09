@@ -514,8 +514,39 @@ const DICT = {
   },
   "lb.entry": { zh: "社区用量榜", en: "Community leaderboard" },
   "lb.entryHint": {
-    zh: "自愿公开成员的周期聚合排名。",
-    en: "Period aggregates from members who opted in.",
+    zh: "自愿公开成员的周期聚合排名:24 小时 / 7 天 / 30 天,含总榜与分工具、分模型榜。",
+    en: "Period aggregates from opted-in members: 24H / 7D / 30D — overall plus per-tool and per-model boards.",
+  },
+  /* ---- 社区用量榜增强(24H 周期 / 分工具分模型榜 / 我的排名 / 分享;独立分区,降低合并冲突面) ---- */
+  "lb.period24": { zh: "24 小时", en: "24H" },
+  "lb.mine": { zh: "我的排名", en: "MY RANK" },
+  "lb.mineTokens": { zh: "TOKEN 总榜", en: "TOKENS" },
+  "lb.mineDays": { zh: "活跃天数", en: "ACTIVE DAYS" },
+  "lb.mineCost": { zh: "预估费用", en: "EST. COST" },
+  "lb.mineNoData": {
+    zh: "本周期暂无同步数据,下个周期再来。",
+    en: "No synced data in this period yet.",
+  },
+  "lb.mineOptin": {
+    zh: "你还没有开启「参与社区榜」公开开关,开启后即可参与各榜排名。",
+    en: "Leaderboard sharing is off — turn it on to join the rankings.",
+  },
+  "lb.mineOptinCta": { zh: "去开启公开开关", en: "Turn it on" },
+  "lb.mineCostNote": {
+    zh: "名次按周期计,超出 TOP 50 显示 50+;费用名次在总榜 TOP 50 成员内按估费排序。",
+    en: "Ranks are per period; beyond TOP 50 shows 50+. Cost rank is sorted by estimate within the top-50 board.",
+  },
+  "lb.boardAll": { zh: "总榜", en: "OVERALL" },
+  "lb.boardSource": { zh: "分工具榜", en: "BY TOOL" },
+  "lb.boardModel": { zh: "分模型榜", en: "BY MODEL" },
+  "lb.colCost": { zh: "预估费用", en: "EST. COST" },
+  "lb.dimEmpty": {
+    zh: "该周期内暂无此维度的公开数据。",
+    en: "No public data for this dimension in this period.",
+  },
+  "lb.costScope": {
+    zh: "估费口径:服务端版本化价格表的 API 等价估算(USD),不代表订阅账单;未定价部分照常统计但不计费。",
+    en: "Costs are API-equivalent estimates (USD) from the server versioned pricing table, not subscription bills; unpriced usage is counted but never billed.",
   },
   /* ---- S2-2:主页页签 / 作品徽章 / 列表分页(独立分区,降低合并冲突面) ---- */
   "prof.works": { zh: "作品", en: "Works" },
@@ -640,6 +671,38 @@ const DICT = {
   },
   "err.artBody": { zh: "正文不能为空", en: "Body cannot be empty" },
   "err.artMeta": { zh: "类型或语言不合法", en: "Invalid kind or language" },
+  /* ---- S2-3:个人主页年度构建足迹(独立分区,降低合并冲突面) ---- */
+  "prof.footprint": { zh: "构建足迹", en: "BUILD FOOTPRINT" },
+  "prof.footprintHint": {
+    zh: "最近 12 个月 · 每日 token 总量",
+    en: "Last 12 months · daily token totals",
+  },
+  /* ---- P1-2:作品详情 + 互动(支持/评论;独立分区,降低合并冲突面) ---- */
+  "works.tryIt": { zh: "体验作品", en: "Try it" },
+  "works.support": { zh: "支持", en: "Support" },
+  "works.supported": { zh: "已支持", en: "Supported" },
+  "works.loginToSupport": {
+    zh: "登录后支持这个作品",
+    en: "Log in to support this work",
+  },
+  "works.discuss": {
+    zh: "与作者聊聊这个作品",
+    en: "Chat with the author about this work",
+  },
+  "works.noComments": {
+    zh: "还没有评论 —— 来问作者第一个问题。",
+    en: "No comments yet — ask the author the first question.",
+  },
+  "works.authorChip": { zh: "作者", en: "AUTHOR" },
+  "works.notFound": {
+    zh: "这个作品不存在,或已被作者撤下。",
+    en: "This work doesn't exist, or the author took it down.",
+  },
+  "works.backToWorks": { zh: "返回作品墙", en: "Back to works" },
+  "works.sideAuthor": { zh: "作者", en: "AUTHOR" },
+  "works.sideLinks": { zh: "链接", en: "LINKS" },
+  "works.sideInfo": { zh: "信息", en: "INFO" },
+  "works.published": { zh: "发布时间", en: "Published" },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

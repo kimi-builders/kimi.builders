@@ -1,0 +1,343 @@
+/* 作品详情(P1-2):面包屑 + 标题(精选芯片)+ 大截图 + 「体验作品/支持/分享」按钮行
+   + 长描述(works 无独立长描述字段,tagline 按 Markdown 渲染)+ 右侧信息栏
+   (作者卡/链接/agents/发布时间/支持数,窄屏折行)+ 底部单层评论区。
+   浏览无需登录;支持/评论需登录(comment/vote 配额限流)。AI 不介入作品评论。
+   不存在/已删作品给友好文案,不 404 硬错。 */
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ExternalLink, Heart } from "lucide-react";
+import AgentIcon from "@/components/AgentIcon";
+import LoadMore from "@/components/LoadMore";
+import Markdown from "@/components/Markdown";
+import ShareButton from "@/components/ShareButton";
+import { agentName } from "@/src/lib/agents";
+import { getSessionUser } from "@/src/lib/auth/session";
+import { compactNumber, relTime } from "@/src/lib/format";
+import { t, type Locale } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
+import { getPublicTokenTotals } from "@/src/lib/usage/social";
+import {
+  badgeTokensOf,
+  getWork,
+  getWorkDetail,
+  hasWorkVote,
+} from "@/src/lib/works";
+import { loadMoreWorkCommentsAction } from "../actions";
+import { loadWorkComments } from "../_components/work-comment-page";
+import WorkCommentForm from "../_components/WorkCommentForm";
+import WorkScreenshot from "../_components/WorkScreenshot";
+import WorkVoteButton from "../_components/WorkVoteButton";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const work = await getWork(Number(id) || 0);
+  if (!work) return { title: "kimi.builders" };
+  return { title: `${work.name} — kimi.builders` };
+}
+
+/* 不存在/已撤下:友好文案 + 回作品墙,不硬 404。 */
+function WorkGone({ locale }: { locale: Locale }) {
+  return (
+    <div className="mt-16 text-center">
+      <p className="text-sm leading-relaxed text-grey">
+        {t(locale, "works.notFound")}
+      </p>
+      <Link
+        href="/works"
+        className="mt-4 inline-block border border-line px-4 py-1.5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue"
+      >
+        {t(locale, "works.backToWorks")}
+      </Link>
+    </div>
+  );
+}
+
+export default async function WorkPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const workId = Number(id);
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!Number.isInteger(workId) || workId <= 0) return <WorkGone locale={locale} />;
+  const work = await getWorkDetail(workId);
+  if (!work) return <WorkGone locale={locale} />;
+
+  const [voted, badgeTotals, comments] = await Promise.all([
+    user ? hasWorkVote(user.id, workId) : false,
+    /* 作者用量徽章:门禁在 SQL JOIN(show_on_leaderboard),未 opt-in 即无数据 */
+    getPublicTokenTotals([work.userId]),
+    loadWorkComments(workId, work.userId, user, locale),
+  ]);
+  const badgeTokens = badgeTokensOf(work, badgeTotals);
+
+  return (
+    <div>
+      {/* 面包屑:作品(awesome 条目回 /awesome)/ 名称 */}
+      <div className="flex items-center gap-3 font-mono text-[11px] tracking-wider text-grey">
+        <Link
+          href={work.source === "awesome" ? "/awesome" : "/works"}
+          className="shrink-0 hover:text-paper"
+        >
+          ← {t(locale, work.source === "awesome" ? "nav.awesome" : "nav.works")}
+        </Link>
+        <span className="truncate">{work.name}</span>
+      </div>
+
+      <h1 className="mt-4 text-2xl font-semibold leading-snug">
+        {work.name}
+        {work.featuredAt && (
+          <span
+            className="ml-2 inline-block border border-blue/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-blue"
+            title={`${work.featuredReason ?? ""}${
+              work.editorHandle
+                ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
+                : ""
+            }`}
+          >
+            {t(locale, "featured.badge")}
+          </span>
+        )}
+      </h1>
+      <div className="mt-3 flex items-center gap-3 font-mono text-[11px] text-grey">
+        {work.handle ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={work.avatarUrl ?? ""} alt="" className="h-5 w-5 rounded-full" />
+            <Link
+              href={`/u/${work.handle}`}
+              className="text-paper transition-colors hover:text-blue"
+            >
+              @{work.handle}
+            </Link>
+          </>
+        ) : (
+          <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
+        )}
+        <span>{relTime(work.createdAt, locale)}</span>
+      </div>
+
+      <div className="mt-6">
+        <WorkScreenshot url={work.screenshotUrl} name={work.name} />
+      </div>
+
+      {/* 按钮行:体验作品(外链新 tab)/ 支持(登录,乐观更新)/ 分享 */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        {work.url && (
+          <a
+            href={work.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 border border-blue px-4 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+          >
+            <ExternalLink size={13} />
+            {t(locale, "works.tryIt")}
+          </a>
+        )}
+        {user ? (
+          <WorkVoteButton
+            workId={work.id}
+            voted={voted}
+            count={work.voteCount}
+            locale={locale}
+          />
+        ) : (
+          <span
+            className="inline-flex items-center gap-1.5 border border-line px-4 py-1.5 font-mono text-xs text-grey"
+            title={t(locale, "works.loginToSupport")}
+          >
+            <Heart size={13} />
+            {t(locale, "works.support")} · {work.voteCount}
+          </span>
+        )}
+        <span className="ml-auto">
+          <ShareButton
+            path={`/works/${work.id}`}
+            title={work.name}
+            locale={locale}
+          />
+        </span>
+      </div>
+
+      {/* 正文 + 右侧信息栏(窄屏折行) */}
+      <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_180px]">
+        <div>
+          {work.tagline && <Markdown source={work.tagline} />}
+          {work.tags.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {work.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="border border-line px-1.5 py-px font-mono text-[10px] text-grey"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <aside className="space-y-6 border-t border-line pt-6 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+          <div>
+            <h3 className="font-mono text-[11px] tracking-wider text-grey">
+              {t(locale, "works.sideAuthor")}
+            </h3>
+            {work.handle ? (
+              <Link
+                href={`/u/${work.handle}`}
+                className="mt-3 flex items-center gap-3 border border-line p-3 transition-colors hover:border-blue"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={work.avatarUrl ?? ""}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-full"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-paper">
+                    @{work.handle}
+                  </span>
+                  {badgeTokens !== null && (
+                    <span
+                      className="mt-1 inline-block border border-emerald-400/60 px-1.5 py-px font-mono text-[10px] text-emerald-400"
+                      title={t(locale, "works.badgeTitle")}
+                    >
+                      {t(locale, "works.badge", {
+                        n: compactNumber(badgeTokens, locale),
+                      })}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            ) : (
+              <p className="mt-3 border border-line p-3 text-sm text-grey">
+                {work.authorLabel}
+              </p>
+            )}
+          </div>
+
+          {(work.url || work.repoUrl) && (
+            <div>
+              <h3 className="font-mono text-[11px] tracking-wider text-grey">
+                {t(locale, "works.sideLinks")}
+              </h3>
+              <div className="mt-3 space-y-2 font-mono text-xs">
+                {work.url && (
+                  <a
+                    href={work.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 break-all text-blue underline-offset-4 hover:underline"
+                  >
+                    <ExternalLink size={12} className="shrink-0" />
+                    {t(locale, "works.visit")}
+                  </a>
+                )}
+                {work.repoUrl && (
+                  <a
+                    href={work.repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 break-all text-grey transition-colors hover:text-blue"
+                  >
+                    <ExternalLink size={12} className="shrink-0" />
+                    {t(locale, "works.repo")}
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {work.agents.length > 0 && (
+            <div>
+              <h3 className="font-mono text-[11px] tracking-wider text-grey">
+                {t(locale, "works.agents")}
+              </h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {work.agents.map((a) => (
+                  <span
+                    key={a}
+                    className="inline-flex items-center gap-1.5 border border-line px-2 py-1 font-mono text-[10px] text-grey"
+                  >
+                    <AgentIcon id={a} size={13} />
+                    {agentName(a)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 className="font-mono text-[11px] tracking-wider text-grey">
+              {t(locale, "works.sideInfo")}
+            </h3>
+            <div className="mt-3 space-y-1.5 font-mono text-[11px] text-grey">
+              <div className="flex items-center justify-between gap-2">
+                <span>{t(locale, "works.published")}</span>
+                <span>{relTime(work.createdAt, locale)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span>{t(locale, "works.support")}</span>
+                <span className="inline-flex items-center gap-1">
+                  <Heart size={11} />
+                  {work.voteCount}
+                </span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删) */}
+      <section>
+        <h2 id="comments" className="mt-12 font-mono text-sm text-grey">
+          {t(locale, "works.discuss")} ·{" "}
+          {t(locale, "post.comments", { n: comments.total })}
+        </h2>
+        {comments.nodes.length === 0 ? (
+          <p className="mt-6 text-sm text-grey">
+            {t(locale, "works.noComments")}
+          </p>
+        ) : (
+          /* LoadMore 在容器内:追加页直接落进 space-y 流(同作品墙网格语义) */
+          <div className="mt-6 space-y-6">
+            {comments.nodes}
+            {/* key 带首屏规模与游标:发/删评论触发 refresh 后首屏一变即 remount,
+                已追加的页作废(同作品墙/评论区语义) */}
+            <LoadMore
+              key={`wc-${comments.nodes.length}-${comments.nextCursor ?? "end"}-${locale}`}
+              initialCursor={comments.nextCursor}
+              load={loadMoreWorkCommentsAction.bind(null, workId)}
+              locale={locale}
+            />
+          </div>
+        )}
+        {user ? (
+          <WorkCommentForm workId={workId} locale={locale} />
+        ) : (
+          <p className="mt-8 border-t border-line pt-6 text-sm text-grey">
+            {t(locale, "post.loginToComment")}
+            <a
+              href="/api/auth/github"
+              className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+            >
+              GitHub
+            </a>
+            <a
+              href="/api/auth/google"
+              className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+            >
+              Google
+            </a>
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}

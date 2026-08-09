@@ -1,8 +1,9 @@
 /* 个人主页 /u/[handle]:资料头(头像/显示名/handle/简介/加入时间)+ 三项统计
-   (帖子/评论/获赞)+ 帖子|评论|作品|用量页签(P1-3)。本人视角多一颗「编辑资料」
+   (帖子/评论/获赞)+ 年度构建足迹(53 周每日 token 贡献图,S2-3)
+   + 帖子|评论|作品|用量页签(P1-3)。本人视角多一颗「编辑资料」
    入口(去 /settings),且能看到自己的私密帖(带标);访客只统计/展示公开内容。
-   作品本来就公开,访客与本人同视图;用量热图仅本人或对方自愿公开
-   (usage_settings.show_on_leaderboard=1)时可见,否则页签完全不渲染(无负面标记)。 */
+   作品本来就公开,访客与本人同视图;构建足迹与用量热图仅本人或对方自愿公开
+   (usage_settings.show_on_leaderboard=1)时可见,否则整块完全不渲染(无负面标记)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -15,12 +16,15 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
 import { getProfileByHandle, getProfileStats } from "@/src/lib/users";
 import {
+  getSocialDailyActivity,
   getSocialUsageHeatmap,
   isUsagePublic,
 } from "@/src/lib/usage/social";
+import { buildYearGrid, localTodayYmd } from "@/src/lib/usage/year-grid";
 import { getUserWorks } from "@/src/lib/works";
 import WorkCard from "../../works/_components/WorkCard";
 import SocialUsageHeatmap from "./_components/SocialUsageHeatmap";
+import YearFootprint from "./_components/YearFootprint";
 
 function ymd(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -70,7 +74,7 @@ export default async function ProfilePage({
   const store = await cookies();
   const parsedTz = Number(store.get("kb_tz")?.value);
   const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
-  const [stats, posts, comments, works, heatmap] = await Promise.all([
+  const [stats, posts, comments, works, heatmap, daily] = await Promise.all([
     getProfileStats(profile.id, self),
     activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
     activeTab === "comments" ? getUserComments(profile.id, self) : Promise.resolve([]),
@@ -78,7 +82,10 @@ export default async function ProfilePage({
     activeTab === "usage"
       ? getSocialUsageHeatmap(profile.id, tz)
       : Promise.resolve(null),
+    /* 年度构建足迹:门禁同分时热图(仅本人或对方 opt-in),与页签无关恒取 */
+    usageVisible ? getSocialDailyActivity(profile.id, tz) : Promise.resolve(null),
   ]);
+  const footprint = daily ? buildYearGrid(daily, localTodayYmd(tz)) : null;
 
   const tabCls = (active: boolean) =>
     `pb-2 transition-colors ${
@@ -144,6 +151,24 @@ export default async function ProfilePage({
           ))}
         </div>
       </header>
+
+      {/* 年度构建足迹:53 周 × 7 天每日 token 贡献图;门禁同用量页签
+          (仅本人或对方 opt-in),未公开整区块不渲染(无负面标记) */}
+      {footprint && (
+        <section className="mt-6 border border-line bg-card p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-mono text-xs tracking-[0.25em] text-grey">
+              {t(locale, "prof.footprint")}
+            </h2>
+            <span className="font-mono text-[10px] text-grey">
+              {t(locale, "prof.footprintHint")}
+            </span>
+          </div>
+          <div className="mt-3">
+            <YearFootprint grid={footprint} zh={locale === "zh"} />
+          </div>
+        </section>
+      )}
 
       {/* 页签 */}
       <div className="mt-6 flex items-center gap-5 border-b border-line font-mono text-sm">

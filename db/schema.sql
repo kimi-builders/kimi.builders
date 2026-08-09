@@ -141,6 +141,9 @@ CREATE TABLE IF NOT EXISTS works (
   featured_at DATETIME NULL COMMENT '精选时间;NULL=未精选(每周精选 v0)',
   featured_reason VARCHAR(280) NULL COMMENT '精选理由(编辑填写,一句话)',
   featured_by BIGINT UNSIGNED NULL COMMENT '定夺编辑 users.id(admin/mod)',
+  -- vote_count/comment_count 由 20260821_work_interactions.sql 引入,已有库执行该迁移
+  vote_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '支持数(冗余;写路径随 work_votes 维护)',
+  comment_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '可见评论数(冗余;软删即减)',
   KEY idx_source (source, created_at),
   KEY idx_featured (featured_at),
   CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),
@@ -446,4 +449,35 @@ CREATE TABLE IF NOT EXISTS demo_rsvps (
   KEY idx_demo_rsvp_user (user_id),
   CONSTRAINT fk_demo_rsvp_event FOREIGN KEY (event_id) REFERENCES demo_events (id) ON DELETE CASCADE,
   CONSTRAINT fk_demo_rsvp_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------------
+-- 作品互动(P1-2):支持 + 单层评论。
+-- 由 20260821_work_interactions.sql 引入,已有库执行该迁移。
+-- 支持只有「顶」没有踩,再点取消;复合主键天然幂等。
+-- 评论单层、软删;评论作者本人或作品作者可删(权限钉在 SQL WHERE),AI 不介入。
+-- works.vote_count / comment_count 为冗余计数(同 posts 模式),写路径维护。
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS work_votes (
+  work_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (work_id, user_id),
+  KEY idx_work_vote_user (user_id),
+  CONSTRAINT fk_work_vote_work FOREIGN KEY (work_id) REFERENCES works (id) ON DELETE CASCADE,
+  CONSTRAINT fk_work_vote_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS work_comments (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  work_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '评论作者;AI 不介入作品评论(无 is_ai)',
+  body TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  KEY idx_work_comment_work (work_id, id),
+  CONSTRAINT fk_work_comment_work FOREIGN KEY (work_id) REFERENCES works (id) ON DELETE CASCADE,
+  CONSTRAINT fk_work_comment_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

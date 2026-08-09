@@ -79,6 +79,58 @@ export async function getSocialUsageHeatmap(
   return heatmapGridFromRows(rows);
 }
 
+/* ---- 个人主页年度构建足迹:最近 371 天(53 周)按日 token 总量 ----
+   日粒度 = 用户本地日历日(DATE 按 tz 偏移换算,与分时热图同一套夹取内联约定);
+   窗口 = 本地今天往前 370 天,含今天共 371 天,只 SUM tokens,无其他维度。 */
+
+export function socialDailyActivityQuery(
+  userId: number,
+  tzOffsetMinutes: number,
+): { sql: string; args: number[] } {
+  const tz = clampTz(tzOffsetMinutes);
+  const local = `DATE_ADD(bucket_start, INTERVAL ${tz} MINUTE)`;
+  const localToday = `DATE(DATE_ADD(UTC_TIMESTAMP(), INTERVAL ${tz} MINUTE))`;
+  return {
+    sql: `SELECT DATE(${local}) AS day,
+                 SUM(input_tokens + cache_write_input_tokens + cache_read_input_tokens
+                     + output_tokens + reasoning_output_tokens) AS tokens
+          FROM usage_buckets
+          WHERE user_id = ?
+            AND ${local} >= DATE_SUB(${localToday}, INTERVAL 370 DAY)
+          GROUP BY day
+          ORDER BY day`,
+    args: [userId],
+  };
+}
+
+/* DATE() 在 mysql2 下可能落 string 也可能落 Date(池端 timezone:'Z' → UTC 零点),
+   统一归一成 YYYY-MM-DD。 */
+function dayKey(value: unknown): string | null {
+  if (typeof value === "string") return value.slice(0, 10);
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${value.getUTCFullYear()}-${pad(value.getUTCMonth() + 1)}-${pad(value.getUTCDate())}`;
+  }
+  return null;
+}
+
+/* 可见性门禁在页面侧(仅本人或 isUsagePublic 为真才调用),本函数只管取数。
+   返回 YYYY-MM-DD → 当天 tokens 的映射,网格组装见 year-grid.ts。 */
+export async function getSocialDailyActivity(
+  userId: number,
+  tzOffsetMinutes: number,
+  db: Queryable = getPool(),
+): Promise<Record<string, number>> {
+  const q = socialDailyActivityQuery(userId, tzOffsetMinutes);
+  const [rows] = await db.query<RowDataPacket[]>(q.sql, q.args);
+  const days: Record<string, number> = {};
+  for (const r of rows) {
+    const key = dayKey(r.day);
+    if (key) days[key] = Number(r.tokens) || 0;
+  }
+  return days;
+}
+
 /* ---- 作品徽章:一组作者 → 各自全部时间 token 总量(只 SUM,无其他维度) ----
    opt-in 门禁钉在 SQL JOIN 里:未公开的作者根本不会出现在结果集,
    即使页面组装出纰漏也漏不出数字。批量一条查询,避免 N+1。 */

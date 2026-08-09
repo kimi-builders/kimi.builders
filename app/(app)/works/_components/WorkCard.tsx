@@ -1,12 +1,13 @@
-/* 作品卡片:/works(成员作品墙)与 /awesome(全来源)共用。
+/* 作品卡片:/works(成员作品墙)与 /awesome(全来源)、/u/[handle] 作品页签共用。
    截图(无图占位)→ 名称/介绍 → Agent 徽章(lobehub 图标)→ 标签 →
    作者行(站内作者链主页;awesome 条目用 author_label);自己的条目带编辑/删除。
+   整卡链到详情页(P1-2,absolute 覆盖链接);作者/访问/源码/操作行抬 z-10 保持独立跳转。
    编辑精选:featured_at 非空的卡片带「编辑精选」蓝芯片;canFeature(admin/mod,
    由页面用 session role 判断)时底部多一行设/撤精选操作(每周精选 v0)。
    用量徽章(S2-2):badgeTokens 非空(作者已自愿公开用量且有数据)时标题旁多一颗
    「已验证构建投入」芯片;null = 完全不渲染(未 opt-in / 无数据,无负面标记)。 */
 import Link from "next/link";
-import { ExternalLink, Rocket } from "lucide-react";
+import { ExternalLink, Heart, Rocket } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -29,7 +30,13 @@ export default function WorkCard({
   badgeTokens?: number | null;
 }) {
   return (
-    <article className="flex flex-col border border-line bg-card transition-colors hover:border-paper/20">
+    <article className="relative flex flex-col border border-line bg-card transition-colors hover:border-paper/20">
+      {/* 整卡链详情页(P1-2,absolute 覆盖链接);下方交互元素抬 z-10 保持独立跳转 */}
+      <Link
+        href={`/works/${w.id}`}
+        aria-label={w.name}
+        className="absolute inset-0"
+      />
       {w.screenshotUrl ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
@@ -98,7 +105,7 @@ export default function WorkCard({
             ) : w.handle ? (
               <Link
                 href={`/u/${w.handle}`}
-                className="flex min-w-0 items-center gap-1.5 text-grey transition-colors hover:text-blue"
+                className="relative z-10 flex min-w-0 items-center gap-1.5 text-grey transition-colors hover:text-blue"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -113,7 +120,15 @@ export default function WorkCard({
                 {t(locale, "awesome.by", { name: w.authorLabel })}
               </span>
             )}
-            <span className="ml-auto flex shrink-0 items-center gap-3">
+            <span className="relative z-10 ml-auto flex shrink-0 items-center gap-3">
+              {/* 支持数(P1-2):只读展示,投票在详情页 */}
+              <span
+                className="inline-flex items-center gap-1"
+                title={t(locale, "works.support")}
+              >
+                <Heart size={12} />
+                {w.voteCount}
+              </span>
               {w.url && (
                 <a
                   href={w.url}
@@ -143,11 +158,13 @@ export default function WorkCard({
             </span>
           </div>
           {canFeature && (
-            <WorkFeaturedToggle
-              workId={w.id}
-              featuredReason={w.featuredAt ? (w.featuredReason ?? "") : null}
-              locale={locale}
-            />
+            <div className="relative z-10">
+              <WorkFeaturedToggle
+                workId={w.id}
+                featuredReason={w.featuredAt ? (w.featuredReason ?? "") : null}
+                locale={locale}
+              />
+            </div>
           )}
         </div>
       </div>

@@ -4,9 +4,11 @@ import type { RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import {
   getPublicTokenTotals,
+  getSocialDailyActivity,
   getSocialUsageHeatmap,
   heatmapGridFromRows,
   isUsagePublic,
+  socialDailyActivityQuery,
   socialHeatmapQuery,
   socialOptInQuery,
   socialTokenTotalsQuery,
@@ -134,4 +136,43 @@ test("badgeTokensOf: null means render nothing (no negative marker)", () => {
   /* 0 tokens 的徽章没有意义 */
   assert.equal(badgeTokensOf({ userId: 2 }, totals), null);
   assert.equal(badgeTokensOf({ userId: 1 }, totals), 2500);
+});
+
+test("daily activity query aggregates tokens per local calendar day over 371 days", () => {
+  const { sql, args } = socialDailyActivityQuery(7, 480);
+  /* 日粒度 = DATE(本地桶时间);tz 夹取后内联,与分时热图同约定 */
+  assert.match(sql, /DATE\(DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\)\) AS day/);
+  /* 窗口 = 本地今天往前 370 天(含今天共 371 天 = 53 周) */
+  assert.match(
+    sql,
+    /AND DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\) >= DATE_SUB\(DATE\(DATE_ADD\(UTC_TIMESTAMP\(\), INTERVAL 480 MINUTE\)\), INTERVAL 370 DAY\)/,
+  );
+  assert.match(sql, /FROM usage_buckets/);
+  assert.match(sql, /GROUP BY day/);
+  /* 只 SUM tokens,无其他维度 */
+  assert.match(
+    sql,
+    /SUM\(input_tokens \+ cache_write_input_tokens \+ cache_read_input_tokens\s+\+ output_tokens \+ reasoning_output_tokens\) AS tokens/,
+  );
+  assert.deepEqual(args, [7]);
+});
+
+test("daily activity query clamps tz offset like the dashboard filters", () => {
+  assert.match(socialDailyActivityQuery(1, 480).sql, /INTERVAL 480 MINUTE/);
+  assert.match(socialDailyActivityQuery(1, 100000).sql, /INTERVAL 840 MINUTE/);
+  assert.match(socialDailyActivityQuery(1, -100000).sql, /INTERVAL -720 MINUTE/);
+  assert.match(socialDailyActivityQuery(1, Number.NaN).sql, /INTERVAL 0 MINUTE/);
+});
+
+test("getSocialDailyActivity maps rows to a YYYY-MM-DD -> tokens record", async () => {
+  /* mysql2 下 DATE() 可能落 string 也可能落 Date(池端 timezone:'Z' → UTC 零点) */
+  const db = fakeDb([
+    { day: "2026-08-09", tokens: 321 },
+    { day: new Date(Date.UTC(2026, 7, 8)), tokens: "654" },
+    { day: null, tokens: 999 },
+  ]);
+  const days = await getSocialDailyActivity(9, 480, db);
+  assert.equal(db.calls.length, 1);
+  assert.deepEqual(db.calls[0].params, [9]);
+  assert.deepEqual(days, { "2026-08-09": 321, "2026-08-08": 654 });
 });

@@ -18,7 +18,20 @@ import {
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { createWork, deleteWork, updateWork } from "@/src/lib/works";
+import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
+import {
+  createWork,
+  createWorkComment,
+  deleteWork,
+  deleteWorkComment,
+  getWork,
+  toggleWorkVote,
+  updateWork,
+} from "@/src/lib/works";
+import {
+  loadWorkComments,
+  type WorkCommentPageData,
+} from "./_components/work-comment-page";
 import {
   loadWorksCards,
   type WorksPageData,
@@ -31,6 +44,8 @@ export interface WorkFormState {
 export interface MutationResult {
   ok: boolean;
   error?: string;
+  /* 限流(P1-5):超限时带上的等待秒数,客户端可直接展示 error 文案 */
+  retryAfterSeconds?: number;
 }
 
 /* 标签:逗号/空格分隔,≤5 个,每个 ≤24 字。 */
@@ -191,5 +206,97 @@ export async function loadMoreWorksAction(
     locale,
     after,
   );
+  return { ok: true, ...data };
+}
+
+
+/* ---- 详情互动(P1-2):支持 toggle + 单层评论 ----
+   支持走纯乐观更新(只落库、不作废路径,同社区顶踩);评论 mutation 后由客户端
+   router.refresh() 换当前页数据,这里 revalidatePath 作废详情页预取缓存。
+   评论从简:不发通知、不排 AI 任务;删除权限(评论作者/作品作者)钉在 SQL WHERE。 */
+
+export async function toggleWorkVoteAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
+  const workId = Number(formData.get("work_id"));
+  if (!Number.isSafeInteger(workId) || workId <= 0) return { ok: false };
+  /* 作品已删/不存在 → FK 会拒,提前挡掉按失败处理(客户端回滚乐观态) */
+  const work = await getWork(workId);
+  if (!work) return { ok: false };
+  /* 限流(P1-5):投票类动作用 vote 配额;超限返回结构化错误,客户端回滚 + toast */
+  const rate = await consumeCommunityRateLimit(user.id, "vote");
+  if (!rate.allowed) {
+    const locale = await getLocale(user);
+    return {
+      ok: false,
+      error: t(locale, "err.rateVote", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
+  }
+  await toggleWorkVote(user.id, workId);
+  return { ok: true };
+}
+
+export async function createWorkCommentAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { ok: false, error: t(locale, "err.login") };
+  const workId = Number(formData.get("work_id"));
+  const body = String(formData.get("body") || "").trim();
+  if (!Number.isSafeInteger(workId) || workId <= 0)
+    return { ok: false, error: t(locale, "err.generic") };
+  if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
+  const work = await getWork(workId);
+  if (!work) return { ok: false, error: t(locale, "err.generic") };
+  /* 限流(P1-5):作品评论共用社区 comment 配额,写库前消耗额度 */
+  const rate = await consumeCommunityRateLimit(user.id, "comment");
+  if (!rate.allowed)
+    return {
+      ok: false,
+      error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
+  await createWorkComment(workId, user.id, body);
+  revalidatePath(`/works/${workId}`);
+  return { ok: true };
+}
+
+export async function deleteWorkCommentAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
+  const commentId = Number(formData.get("comment_id"));
+  const workId = Number(formData.get("work_id"));
+  if (!Number.isSafeInteger(commentId) || commentId <= 0) return { ok: false };
+  /* 权限(评论作者本人或作品作者)在 SQL WHERE;affectedRows=0 即越权/已删 */
+  const ok = await deleteWorkComment(user.id, commentId);
+  if (ok && Number.isSafeInteger(workId) && workId > 0)
+    revalidatePath(`/works/${workId}`);
+  return { ok };
+}
+
+/* 评论「加载更多」:只读,不落库不作废缓存。返回服务端渲染好的一页
+   (ReactNode 随 RSC 序列化),客户端直接追加;游标 = 上一页最后一条评论 id。 */
+export async function loadMoreWorkCommentsAction(
+  workId: number,
+  after: number,
+): Promise<({ ok: true } & WorkCommentPageData) | { ok: false }> {
+  if (
+    !Number.isSafeInteger(workId) ||
+    workId <= 0 ||
+    !Number.isSafeInteger(after) ||
+    after < 0
+  )
+    return { ok: false };
+  const work = await getWork(workId);
+  if (!work) return { ok: false };
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  const data = await loadWorkComments(workId, work.userId, user, locale, after);
   return { ok: true, ...data };
 }
