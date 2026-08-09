@@ -27,9 +27,8 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { listUsageDevices, type UsageDeviceSummary } from "@/src/lib/usage/device";
 import {
+  usageDeviceDetail,
   usageDeviceDisplayName,
-  usagePlatformLabel,
-  usageSurfaceLabel,
 } from "@/src/lib/usage/device-label";
 import {
   parseUsageFilters,
@@ -39,6 +38,7 @@ import {
   type UsageRecordGrain,
 } from "@/src/lib/usage/filters";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
+import { usageModelDetail } from "@/src/lib/usage/model-meta";
 import {
   USAGE_DISPLAY_CURRENCIES,
   USAGE_FX_AS_OF,
@@ -349,7 +349,15 @@ interface KpiCardSpec {
 }
 
 /* 明细表的可选列(默认全关;与 RecordsColumnsMenu 的列表一一对应)。 */
-const OPTIONAL_RECORD_COLUMNS = new Set(["device", "project", "reasoning", "cacheWrite"]);
+const OPTIONAL_RECORD_COLUMNS = new Set([
+  "device",
+  "project",
+  "reasoning",
+  "effort",
+  "agentVersion",
+  "modelProvider",
+  "cacheWrite",
+]);
 
 interface RecordColumn {
   id: string;
@@ -421,6 +429,8 @@ export default async function UsagePage({
   const clearFiltersHref = hrefWith(query, {
     sources: null,
     models: null,
+    efforts: null,
+    agentVersions: null,
     projects: null,
     devices: null,
     page: null,
@@ -531,12 +541,14 @@ export default async function UsagePage({
   const dimensionFiltersActive = !!(
     filters.sources ||
     filters.models ||
+    filters.efforts ||
+    filters.agentVersions ||
     filters.projects ||
     filters.devices
   );
   const showOnboarding = devices.length === 0 || (totalsEmpty && !dimensionFiltersActive);
   const showRangeEmpty = !showOnboarding && totalsEmpty && dimensionFiltersActive;
-  const modelsFiltered = filters.models !== null;
+  const bucketOnlyFiltersActive = filters.models !== null || filters.efforts !== null;
 
   const rawHm = Array.isArray(raw.hm) ? raw.hm[0] : raw.hm;
   const heatMetric: UsageHeatMetric =
@@ -752,9 +764,11 @@ export default async function UsagePage({
             {note && <span>{note}</span>}
             {cur !== undefined && prev !== undefined && deltaNote(cur, prev, zh)}
           </div>
-          {modelsFiltered && sessionNote && (
+          {bucketOnlyFiltersActive && sessionNote && (
             <div className="mt-1 text-[9px] text-grey/70">
-              {zh ? "会话指标不按模型拆分" : "Session metrics are not split by model"}
+              {zh
+                ? "会话指标不按模型或推理强度拆分"
+                : "Session metrics are not split by model or effort"}
             </div>
           )}
         </article>
@@ -852,8 +866,21 @@ export default async function UsagePage({
       id: "model",
       header: zh ? "模型" : "MODEL",
       className: truncateTd,
-      titleOf: (row) => row.model,
-      cell: (row) => row.model,
+      titleOf: (row) =>
+        usageModelDetail({
+          source: row.source,
+          model: row.model,
+          modelCanonical: row.modelCanonical,
+          modelProvider: row.modelProvider,
+        }),
+      cell: (row) => (
+        <span>
+          <span className="block truncate">{row.modelDisplayName}</span>
+          {row.modelDisplayName !== row.model && (
+            <span className="block truncate text-[9px] text-grey">{row.model}</span>
+          )}
+        </span>
+      ),
     },
   ];
   if (enabledCols.has("project")) {
@@ -871,8 +898,33 @@ export default async function UsagePage({
       id: "device",
       header: zh ? "设备" : "DEVICE",
       className: "max-w-[120px] truncate whitespace-nowrap py-2 pr-4 text-paper",
-      titleOf: (row) => row.deviceName,
+      titleOf: (row) => row.deviceDetail,
       cell: (row) => row.deviceName,
+    });
+  }
+  if (enabledCols.has("effort")) {
+    recordColumns.push({
+      id: "effort",
+      header: zh ? "推理强度" : "EFFORT",
+      cell: (row) => row.reasoningEffort || <span className="text-grey">—</span>,
+    });
+  }
+  if (enabledCols.has("agentVersion")) {
+    recordColumns.push({
+      id: "agentVersion",
+      header: zh ? "AGENT 版本" : "AGENT VER.",
+      className: "max-w-[130px] truncate whitespace-nowrap py-2 pr-4 text-paper",
+      titleOf: (row) => row.agentVersion || undefined,
+      cell: (row) => row.agentVersion || <span className="text-grey">—</span>,
+    });
+  }
+  if (enabledCols.has("modelProvider")) {
+    recordColumns.push({
+      id: "modelProvider",
+      header: zh ? "模型供应方" : "PROVIDER",
+      className: "max-w-[130px] truncate whitespace-nowrap py-2 pr-4 text-paper",
+      titleOf: (row) => row.modelProvider || undefined,
+      cell: (row) => row.modelProvider || <span className="text-grey">—</span>,
     });
   }
   recordColumns.push({
@@ -975,6 +1027,8 @@ export default async function UsagePage({
           range: filters.rangeLabel,
           sources: filters.sources?.join(","),
           models: filters.models?.join(","),
+          efforts: filters.efforts?.join(","),
+          agentVersions: filters.agentVersions?.join(","),
           projects: filters.projects?.join(","),
           devices: filters.devices?.join(","),
           customFrom: filters.rangeLabel === "custom" ? localDayOf(filters.from) : undefined,
@@ -1090,7 +1144,7 @@ export default async function UsagePage({
           metric={filters.metric}
           zh={zh}
           ccy={ccy}
-          labelOf={(row) => (row.key === "__other__" ? otherLabel : row.key)}
+          labelOf={(row) => (row.key === "__other__" ? otherLabel : row.label)}
         />
         <DistributionCard
           title={zh ? "项目" : "PROJECTS"}
@@ -1127,8 +1181,8 @@ export default async function UsagePage({
             </h2>
             <p className="mt-1 font-mono text-[9px] text-grey">
               {zh
-                ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×项目×设备 聚合 · 共 ${records.total} 组`
-                : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × project × device · ${records.total} groups`}
+                ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total} 组`
+                : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × effort × Agent version × project × device · ${records.total} groups`}
             </p>
             {grain === "bucket" && (
               <p className="mt-1 font-mono text-[9px] text-grey/70">
@@ -1202,8 +1256,16 @@ export default async function UsagePage({
                     </span>
                     <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
                       <AgentIcon id={row.source} size={12} />
-                      <span className="truncate" title={`${usageSourceLabel(row.source)} · ${row.model}`}>
-                        {usageSourceLabel(row.source)} · {row.model}
+                      <span
+                        className="truncate"
+                        title={`${usageSourceLabel(row.source)} · ${usageModelDetail({
+                          source: row.source,
+                          model: row.model,
+                          modelCanonical: row.modelCanonical,
+                          modelProvider: row.modelProvider,
+                        })}`}
+                      >
+                        {usageSourceLabel(row.source)} · {row.modelDisplayName}
                       </span>
                     </span>
                   </div>
@@ -1212,6 +1274,11 @@ export default async function UsagePage({
                     {zh ? "命中率" : "hit"} {fmtHitRate(usageCacheHitRate(row))} ·{" "}
                     {compact(row.requests)} {zh ? "次请求" : "req"}
                   </div>
+                  {row.modelDisplayName !== row.model && (
+                    <div className="mt-1 truncate font-mono text-[9px] text-grey/70">
+                      raw model: {row.model}
+                    </div>
+                  )}
                   {enabledCols.size > 0 && (
                     <div className="mt-1 space-y-0.5 font-mono text-[10px] text-grey">
                       {enabledCols.has("project") && (
@@ -1226,7 +1293,22 @@ export default async function UsagePage({
                       )}
                       {enabledCols.has("device") && (
                         <p>
-                          {zh ? "设备" : "Device"} {row.deviceName}
+                          {zh ? "设备" : "Device"} {row.deviceDetail}
+                        </p>
+                      )}
+                      {enabledCols.has("effort") && (
+                        <p>
+                          {zh ? "推理强度" : "Effort"} {row.reasoningEffort || "—"}
+                        </p>
+                      )}
+                      {enabledCols.has("agentVersion") && (
+                        <p>
+                          {zh ? "Agent 版本" : "Agent version"} {row.agentVersion || "—"}
+                        </p>
+                      )}
+                      {enabledCols.has("modelProvider") && (
+                        <p>
+                          {zh ? "模型供应方" : "Model provider"} {row.modelProvider || "—"}
                         </p>
                       )}
                       {enabledCols.has("cacheWrite") && (
@@ -1296,17 +1378,16 @@ export default async function UsagePage({
               {devices.map((device) => {
                 const stale = hoursSince(device.lastSeenAt) > 24;
                 const displayName = usageDeviceDisplayName(device);
+                const detail = usageDeviceDetail(device);
+                const agentVersions = Object.entries(device.agentVersions);
                 return (
                   <li key={device.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm text-paper">{displayName}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] text-grey">
-                          <span>
-                            {usageSurfaceLabel(device.surface)} · {usagePlatformLabel(device.platform)}
-                            {device.clientVersion && device.clientVersion !== "0.0.0"
-                              ? ` · Collector v${device.clientVersion.replace(/^v/i, "")}`
-                              : ""}
+                          <span title={detail}>
+                            {detail}
                             {device.lastSeenAt ? ` · ${relTime(device.lastSeenAt, locale)}` : ""}
                           </span>
                           {stale && (
@@ -1316,6 +1397,15 @@ export default async function UsagePage({
                             </span>
                           )}
                         </div>
+                        {agentVersions.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[9px] text-grey/80">
+                            {agentVersions.map(([source, version]) => (
+                              <span key={source}>
+                                {usageSourceLabel(source)} v{version.replace(/^v/i, "")}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
                         {device.revokedAt ? (

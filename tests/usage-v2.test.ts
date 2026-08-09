@@ -71,6 +71,39 @@ test("v2 contract keeps cache categories disjoint", () => {
   assert.equal(parsed.buckets[0].cacheReadInputTokens, 4);
 });
 
+test("v2 contract preserves factual device, model, effort, and Agent version metadata", () => {
+  const value = payload() as ReturnType<typeof payload> & {
+    client: ReturnType<typeof payload>["client"] & {
+      device: {
+        terminal: { name: string; version: string };
+        os: { name: string; version: string; architecture: string };
+      };
+      agentVersions: Record<string, string>;
+    };
+  };
+  value.client.device = {
+    terminal: { name: "Warp", version: "v0.2026.07.29.09.05.stable_02" },
+    os: { name: "macOS", version: "26.5.2", architecture: "arm64" },
+  };
+  value.client.agentVersions = { "kimi-code": "1.44.0", codex: "0.146.1" };
+  Object.assign(value.buckets[0], {
+    modelCanonical: "kimi-k3",
+    modelProvider: "moonshot",
+    reasoningEffort: "HIGH",
+    agentVersion: "1.44.0",
+  });
+  Object.assign(value.sessions[0], { agentVersion: "1.44.0" });
+
+  const parsed = validateUsageIngest(value, settings);
+  assert.deepEqual(parsed.client.device, value.client.device);
+  assert.deepEqual(parsed.client.agentVersions, value.client.agentVersions);
+  assert.equal(parsed.buckets[0].model, "kimi-code/k3");
+  assert.equal(parsed.buckets[0].modelCanonical, "kimi-k3");
+  assert.equal(parsed.buckets[0].reasoningEffort, "high");
+  assert.equal(parsed.buckets[0].agentVersion, "1.44.0");
+  assert.equal(parsed.sessions[0].agentVersion, "1.44.0");
+});
+
 test("v2 contract accepts exact calendar-hour session activity", () => {
   const value = payload();
   const rawSession = value.sessions[0] as typeof value.sessions[0] & {

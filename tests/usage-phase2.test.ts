@@ -233,6 +233,8 @@ test("filters: 维度解析与隐私门禁", () => {
     {
       sources: "codex,not-a-source,claude-code",
       models: "kimi-k3, gpt-5.2 ",
+      efforts: "high,max,not allowed",
+      agentVersions: "0.146.1,2.1.220",
       projects: "demo-app",
       devices: "udv_abc-123,not-a-device",
       metric: "cost",
@@ -243,6 +245,8 @@ test("filters: 维度解析与隐私门禁", () => {
   );
   assert.deepEqual(parsed.sources, ["codex", "claude-code"]);
   assert.deepEqual(parsed.models, ["kimi-k3", "gpt-5.2"]);
+  assert.deepEqual(parsed.efforts, ["high", "max"]);
+  assert.deepEqual(parsed.agentVersions, ["0.146.1", "2.1.220"]);
   // 项目名上传关闭 → 项目筛选被强制清空,不允许按项目过滤
   assert.equal(parsed.projects, null);
   assert.equal(parsed.projectsEnabled, false);
@@ -262,7 +266,15 @@ test("filters: 维度解析与隐私门禁", () => {
 test("filters: URL 往返一致(刷新/分享可恢复)", () => {
   const opts = { uploadProject: true, tzOffsetMinutes: 0, now: new Date() };
   const first = parseUsageFilters(
-    { range: "7d", sources: "codex", models: "gpt-5.2", metric: "duration", page: "2" },
+    {
+      range: "7d",
+      sources: "codex",
+      models: "gpt-5.2",
+      efforts: "high",
+      agentVersions: "0.146.1",
+      metric: "duration",
+      page: "2",
+    },
     opts,
   );
   const search = usageFiltersToSearch(first);
@@ -270,6 +282,8 @@ test("filters: URL 往返一致(刷新/分享可恢复)", () => {
   const second = parseUsageFilters(raw, opts);
   assert.deepEqual(second.sources, first.sources);
   assert.deepEqual(second.models, first.models);
+  assert.deepEqual(second.efforts, first.efforts);
+  assert.deepEqual(second.agentVersions, first.agentVersions);
   assert.equal(second.metric, "duration");
   assert.equal(second.page, 2);
   assert.equal(second.days, 7);
@@ -295,9 +309,15 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
       time: null,
       source: "kimi-code",
       model: "kimi-code/k3",
+      modelCanonical: "kimi-k3",
+      modelDisplayName: "Kimi K3",
+      modelProvider: "moonshot",
+      reasoningEffort: "high",
+      agentVersion: "1.44.0",
       project: "=evil",
       deviceId: "udv_test",
       deviceName: "mbp",
+      deviceDetail: "Warp v1 · macOS 26.5.2 · Collector v0.3.3",
       inputTokens: 100,
       cacheWriteInputTokens: 0,
       cacheReadInputTokens: 0,
@@ -312,9 +332,9 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
   const lines = csv.split("\r\n");
   assert.ok(lines[0].startsWith("﻿date,source,model"));
   const cells = lines[1].split(",");
-  assert.equal(cells[3], "'=evil");
-  assert.equal(cells[12], ""); // 未定价 → 费用留空,不是 0
-  assert.equal(cells[13], "unpriced");
+  assert.equal(cells[7], "'=evil");
+  assert.equal(cells[17], ""); // 未定价 → 费用留空,不是 0
+  assert.equal(cells[18], "unpriced");
 });
 
 test("filters: today/24h/粒度推导", () => {

@@ -98,6 +98,11 @@ function text(value: unknown, field: string, maxLength: number): string {
   return cleaned;
 }
 
+function optionalText(value: unknown, field: string, maxLength: number): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  return text(value, field, maxLength);
+}
+
 function safeInteger(value: unknown, field: string, max = MAX_TOKEN_COUNT): number {
   if (!Number.isSafeInteger(value) || Number(value) < 0 || Number(value) > max) {
     throw new UsageRequestError(
@@ -164,6 +169,44 @@ function clientMeta(value: unknown): UsageClientMetaV2 {
   if (batchCount < 1 || batchIndex >= batchCount) {
     throw new UsageRequestError("invalid_payload", "client batch metadata is inconsistent.");
   }
+  let device: UsageClientMetaV2["device"];
+  if (input.device !== undefined) {
+    const rawDevice = record(input.device, "client.device");
+    const terminal = record(rawDevice.terminal, "client.device.terminal");
+    const os = record(rawDevice.os, "client.device.os");
+    device = {
+      terminal: {
+        name: text(terminal.name, "client.device.terminal.name", 60),
+        ...(optionalText(terminal.version, "client.device.terminal.version", 80)
+          ? { version: optionalText(terminal.version, "client.device.terminal.version", 80) }
+          : {}),
+      },
+      os: {
+        name: text(os.name, "client.device.os.name", 40),
+        ...(optionalText(os.version, "client.device.os.version", 60)
+          ? { version: optionalText(os.version, "client.device.os.version", 60) }
+          : {}),
+        ...(optionalText(os.architecture, "client.device.os.architecture", 24)
+          ? { architecture: optionalText(os.architecture, "client.device.os.architecture", 24) }
+          : {}),
+      },
+    };
+  }
+  let agentVersions: UsageClientMetaV2["agentVersions"];
+  if (input.agentVersions !== undefined) {
+    const rawVersions = record(input.agentVersions, "client.agentVersions");
+    const entries = Object.entries(rawVersions);
+    if (entries.length > 32) {
+      throw new UsageRequestError("invalid_payload", "client.agentVersions has too many entries.");
+    }
+    agentVersions = {};
+    for (const [source, version] of entries) {
+      if (!isUsageSourceId(source)) {
+        throw new UsageRequestError("unknown_source", `Unknown Agent version source: ${source}`);
+      }
+      agentVersions[source] = text(version, `client.agentVersions.${source}`, 80);
+    }
+  }
   return {
     surface: surface as UsageClientMetaV2["surface"],
     surfaceVersion: text(input.surfaceVersion, "client.surfaceVersion", 40),
@@ -172,6 +215,8 @@ function clientMeta(value: unknown): UsageClientMetaV2 {
     syncId,
     batchIndex,
     batchCount,
+    ...(device ? { device } : {}),
+    ...(agentVersions ? { agentVersions } : {}),
   };
 }
 
@@ -200,6 +245,18 @@ function bucket(value: unknown, index: number, settings: UsageSettings): UsageBu
   return {
     source,
     model: text(input.model, `buckets[${index}].model`, 160),
+    ...(optionalText(input.modelCanonical, `buckets[${index}].modelCanonical`, 160)
+      ? { modelCanonical: optionalText(input.modelCanonical, `buckets[${index}].modelCanonical`, 160) }
+      : {}),
+    ...(optionalText(input.modelProvider, `buckets[${index}].modelProvider`, 80)
+      ? { modelProvider: optionalText(input.modelProvider, `buckets[${index}].modelProvider`, 80) }
+      : {}),
+    ...(optionalText(input.reasoningEffort, `buckets[${index}].reasoningEffort`, 32)
+      ? { reasoningEffort: optionalText(input.reasoningEffort, `buckets[${index}].reasoningEffort`, 32)?.toLowerCase() }
+      : {}),
+    ...(optionalText(input.agentVersion, `buckets[${index}].agentVersion`, 80)
+      ? { agentVersion: optionalText(input.agentVersion, `buckets[${index}].agentVersion`, 80) }
+      : {}),
     bucketStart,
     project: project(input.project, `buckets[${index}].project`, settings),
     inputTokens: safeInteger(input.inputTokens, `buckets[${index}].inputTokens`),
@@ -327,6 +384,9 @@ function session(value: unknown, index: number, settings: UsageSettings): UsageS
   }
   return {
     source,
+    ...(optionalText(input.agentVersion, `sessions[${index}].agentVersion`, 80)
+      ? { agentVersion: optionalText(input.agentVersion, `sessions[${index}].agentVersion`, 80) }
+      : {}),
     sessionHash: sessionHash.toLowerCase(),
     project: project(input.project, `sessions[${index}].project`, settings),
     firstMessageAt,

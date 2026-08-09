@@ -75,7 +75,15 @@ export type UsageMeasurement = "exact" | "estimated" | "credit" | "legacy";
 
 export interface UsageBucketV2 extends UsageTokenCountsV2 {
   source: UsageSourceId;
+  /* Exact ID found in the local log. Never replace this with a display alias. */
   model: string;
+  /* Optional conservative semantic ID for cross-tool comparison/pricing. */
+  modelCanonical?: string;
+  modelProvider?: string;
+  /* Log-native request/turn setting only; omitted when it cannot be proven. */
+  reasoningEffort?: string;
+  /* Version attached by the Agent to this historical request, not today's version. */
+  agentVersion?: string;
   /* UTC ISO-8601 timestamp aligned to a 30-minute boundary. */
   bucketStart: string;
   /* Omit when project upload is disabled; never send a full path or URL. */
@@ -88,6 +96,7 @@ export interface UsageBucketV2 extends UsageTokenCountsV2 {
 
 export interface UsageSessionV2 {
   source: UsageSourceId;
+  agentVersion?: string;
   /* HMAC-SHA-256 with an installation-local salt; never a raw session id. */
   sessionHash: string;
   project?: string;
@@ -133,6 +142,13 @@ export interface UsageClientMetaV2 {
   surfaceVersion: string;
   parserVersion: string;
   platform: "darwin" | "linux" | "win32";
+  device?: {
+    terminal: { name: string; version?: string };
+    os: { name: string; version?: string; architecture?: string };
+  };
+  /* Current installed versions for diagnostics. Historical request attribution
+     uses bucket/session.agentVersion instead. */
+  agentVersions?: Partial<Record<UsageSourceId, string>>;
   /* Stable per sync run; shared by every batch in that run. */
   syncId: string;
   batchIndex: number;

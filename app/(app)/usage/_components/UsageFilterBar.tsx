@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AgentIcon from "@/components/AgentIcon";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
+import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
 import type { UsageFilterOptions } from "@/src/lib/usage/query";
 
 interface AppliedFilters {
   range: string;
   sources?: string;
   models?: string;
+  efforts?: string;
+  agentVersions?: string;
   projects?: string;
   devices?: string;
   customFrom?: string;
@@ -18,7 +21,7 @@ interface AppliedFilters {
 }
 
 interface Dimension {
-  key: "sources" | "models" | "projects" | "devices";
+  key: "sources" | "models" | "efforts" | "agentVersions" | "projects" | "devices";
   label: string;
   entries: { value: string; label: string }[];
   withIcons?: boolean;
@@ -155,7 +158,7 @@ function DimensionDropdown({
   );
 }
 
-/* 筛选栏:范围 chips(含自定义日期)+ 四个多选下拉。所有状态都在 URL 上
+/* 筛选栏:范围 chips(含自定义日期)+ 维度多选下拉。所有状态都在 URL 上
    (可分享/可刷新);任何筛选变化把 page 重置回 1,metric/hm/ps 等原样保留。 */
 export default function UsageFilterBar({
   options,
@@ -195,6 +198,8 @@ export default function UsageFilterBar({
   const appliedCsv: Record<Dimension["key"], string | undefined> = {
     sources: applied.sources,
     models: applied.models,
+    efforts: applied.efforts,
+    agentVersions: applied.agentVersions,
     projects: applied.projects,
     devices: applied.devices,
   };
@@ -209,7 +214,23 @@ export default function UsageFilterBar({
     {
       key: "models",
       label: zh ? "模型" : "Model",
-      entries: options.models.map((model) => ({ value: model, label: model })),
+      entries: options.models.map((model) => ({
+        value: model,
+        label: (() => {
+          const display = usageModelDisplayName({ model });
+          return display === model ? model : `${display} · ${model}`;
+        })(),
+      })),
+    },
+    {
+      key: "efforts",
+      label: zh ? "推理强度" : "Effort",
+      entries: options.efforts.map((effort) => ({ value: effort, label: effort })),
+    },
+    {
+      key: "agentVersions",
+      label: zh ? "Agent 版本" : "Agent version",
+      entries: options.agentVersions.map((version) => ({ value: version, label: version })),
     },
     ...(projectsEnabled
       ? [
@@ -247,8 +268,11 @@ export default function UsageFilterBar({
     pushParams({ range: null, days: null, from, to });
   };
 
-  const chipLabel = (dimension: Dimension, value: string): string =>
-    dimension.key === "sources" ? usageSourceLabel(value) : value;
+  const chipLabel = (dimension: Dimension, value: string): string => {
+    if (dimension.key === "sources") return usageSourceLabel(value);
+    if (dimension.key === "models") return usageModelDisplayName({ model: value });
+    return value;
+  };
 
   const dateInputClass =
     "border border-line bg-bg px-2 py-1.5 font-mono text-[11px] text-paper outline-none focus:border-blue [color-scheme:dark] [html[data-theme=light]_&]:[color-scheme:light]";

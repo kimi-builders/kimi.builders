@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS usage_daily (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 用量 v2:设备授权、按设备 Key、30 分钟事实桶、会话与隐私设置。
--- 已有数据库请执行 db/migrations/20260808_usage_v2.sql,其中也包含 legacy 迁移。
+-- 已有数据库依次执行 20260808_usage_v2.sql 与 20260812_usage_metadata.sql。
 CREATE TABLE IF NOT EXISTS usage_devices (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
@@ -161,6 +161,12 @@ CREATE TABLE IF NOT EXISTS usage_devices (
   surface VARCHAR(20) NOT NULL DEFAULT 'cli',
   client_version VARCHAR(40) NOT NULL DEFAULT '',
   parser_version VARCHAR(40) NOT NULL DEFAULT '',
+  terminal_name VARCHAR(60) NOT NULL DEFAULT '',
+  terminal_version VARCHAR(80) NOT NULL DEFAULT '',
+  os_name VARCHAR(40) NOT NULL DEFAULT '',
+  os_version VARCHAR(60) NOT NULL DEFAULT '',
+  architecture VARCHAR(24) NOT NULL DEFAULT '',
+  agent_versions JSON NULL,
   last_seen_at DATETIME(3) NULL,
   revoked_at DATETIME(3) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -226,6 +232,10 @@ CREATE TABLE IF NOT EXISTS usage_buckets (
   device_id BIGINT UNSIGNED NOT NULL,
   source VARCHAR(40) NOT NULL,
   model VARCHAR(160) NOT NULL,
+  model_canonical VARCHAR(160) NOT NULL DEFAULT '',
+  model_provider VARCHAR(80) NOT NULL DEFAULT '',
+  reasoning_effort VARCHAR(32) NOT NULL DEFAULT '',
+  agent_version VARCHAR(80) NOT NULL DEFAULT '',
   project_label VARCHAR(120) NULL,
   project_hash BINARY(32) NOT NULL,
   bucket_start DATETIME(3) NOT NULL,
@@ -243,11 +253,15 @@ CREATE TABLE IF NOT EXISTS usage_buckets (
   sync_id CHAR(36) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  UNIQUE KEY uq_usage_bucket (user_id, device_id, source, model, project_hash, bucket_start),
+  UNIQUE KEY uq_usage_bucket
+    (user_id, device_id, source, model, model_provider, reasoning_effort,
+     agent_version, project_hash, bucket_start),
   KEY idx_usage_bucket_user_time (user_id, bucket_start),
   KEY idx_usage_bucket_source_time (user_id, source, bucket_start),
   KEY idx_usage_bucket_model_time (user_id, model, bucket_start),
   KEY idx_usage_bucket_device_time (user_id, device_id, bucket_start),
+  KEY idx_usage_bucket_effort_time (user_id, reasoning_effort, bucket_start),
+  KEY idx_usage_bucket_agent_time (user_id, agent_version, bucket_start),
   CONSTRAINT fk_usage_bucket_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_usage_bucket_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -257,6 +271,7 @@ CREATE TABLE IF NOT EXISTS usage_sessions (
   user_id BIGINT UNSIGNED NOT NULL,
   device_id BIGINT UNSIGNED NOT NULL,
   source VARCHAR(40) NOT NULL,
+  agent_version VARCHAR(80) NOT NULL DEFAULT '',
   session_hash BINARY(32) NOT NULL,
   project_label VARCHAR(120) NULL,
   project_hash BINARY(32) NOT NULL,

@@ -11,7 +11,7 @@ import {
 } from "./crypto";
 import type { UsageSettings } from "./settings";
 import { updateUsageSettings } from "./settings";
-import { usageDeviceDisplayName } from "./device-label";
+import { parseUsageAgentVersions, usageDeviceDisplayName } from "./device-label";
 
 const DEVICE_CODE_TTL_SECONDS = 10 * 60;
 const DEVICE_POLL_INTERVAL_SECONDS = 5;
@@ -298,6 +298,12 @@ export interface UsageDeviceSummary {
   surface: string;
   clientVersion: string;
   parserVersion: string;
+  terminalName: string;
+  terminalVersion: string;
+  osName: string;
+  osVersion: string;
+  architecture: string;
+  agentVersions: Record<string, string>;
   lastSeenAt: Date | null;
   revokedAt: Date | null;
   createdAt: Date;
@@ -306,6 +312,8 @@ export interface UsageDeviceSummary {
 export async function listUsageDevices(userId: number): Promise<UsageDeviceSummary[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT public_id, name, platform, surface, client_version, parser_version,
+            terminal_name, terminal_version, os_name, os_version, architecture,
+            agent_versions,
             last_seen_at, revoked_at, created_at
      FROM usage_devices
      WHERE user_id = ?
@@ -319,11 +327,22 @@ export async function listUsageDevices(userId: number): Promise<UsageDeviceSumma
       platform: row.platform,
       surface: row.surface,
       clientVersion: row.client_version,
+      terminalName: row.terminal_name,
+      terminalVersion: row.terminal_version,
+      osName: row.os_name,
+      osVersion: row.os_version,
+      architecture: row.architecture,
     }),
     platform: String(row.platform),
     surface: String(row.surface),
     clientVersion: row.client_version === null ? "" : String(row.client_version),
     parserVersion: row.parser_version === null ? "" : String(row.parser_version),
+    terminalName: row.terminal_name === null ? "" : String(row.terminal_name),
+    terminalVersion: row.terminal_version === null ? "" : String(row.terminal_version),
+    osName: row.os_name === null ? "" : String(row.os_name),
+    osVersion: row.os_version === null ? "" : String(row.os_version),
+    architecture: row.architecture === null ? "" : String(row.architecture),
+    agentVersions: parseUsageAgentVersions(row.agent_versions),
     lastSeenAt: (row.last_seen_at as Date | null) ?? null,
     revokedAt: (row.revoked_at as Date | null) ?? null,
     createdAt: row.created_at as Date,

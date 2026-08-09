@@ -153,6 +153,16 @@ export default function UsageMethodologyDialog({
                       : "Natural weeks run local Monday 00:00 to next Monday 00:00. Heatmap cells aggregate the same weekday/hour across the selected range, not one specific date."}
                   </p>
                 </div>
+                <div className="border border-line bg-card p-3 sm:col-span-2">
+                  <div className="font-mono text-[10px] text-paper">
+                    {zh ? "模型、推理强度与版本" : "MODEL, EFFORT & VERSION"}
+                  </div>
+                  <p className="mt-1.5">
+                    {zh
+                      ? "原始模型名始终保留日志中的精确 ID；规范模型名仅用于统一展示、跨工具比较和价格匹配，不会覆盖原始事实。推理强度与请求时 Agent 版本只在日志明确提供时记录，缺失显示「—」，不会用默认值或当前版本推断历史请求。设备页展示的是最近同步时检测到的终端、系统、Collector 与已安装 Agent 版本。"
+                      : "The raw model keeps the exact log ID. A separate canonical model is used only for display, cross-tool comparison, and pricing; it never overwrites the raw fact. Reasoning effort and request-time Agent version are recorded only when the log explicitly provides them; missing values show “—” and are never inferred from defaults or today's version. The device panel shows terminal, OS, Collector, and installed Agent versions detected at the latest sync."}
+                  </p>
+                </div>
               </div>
             </section>
           )}
@@ -194,7 +204,15 @@ export default function UsageMethodologyDialog({
                     ) : (
                       pricingMatches.map((row) => (
                         <tr key={`${row.source}-${row.model}-${row.version}-${row.effectiveFrom}`} className="border-t border-line">
-                          <td className="max-w-[220px] truncate px-3 py-2 text-paper" title={`${row.source} · ${row.model}`}>{row.model}</td>
+                          <td
+                            className="max-w-[220px] px-3 py-2 text-paper"
+                            title={`${row.source} · raw: ${row.model}${row.modelCanonical !== row.model ? ` · canonical: ${row.modelCanonical}` : ""}${row.modelProvider ? ` · provider: ${row.modelProvider}` : ""}`}
+                          >
+                            <span className="block truncate">{row.modelDisplayName}</span>
+                            {row.modelDisplayName !== row.model && (
+                              <span className="block truncate text-[9px] text-grey">{row.model}</span>
+                            )}
+                          </td>
                           <td className={`max-w-[180px] truncate px-3 py-2 ${row.matchedPattern ? "text-emerald-400" : "text-grey"}`} title={row.matchedPattern ?? undefined}>
                             {row.matchedPattern ?? (zh ? "未匹配" : "unmatched")}
                           </td>
@@ -235,7 +253,7 @@ export default function UsageMethodologyDialog({
                 </div>
               </div>
               <p className="mt-3 text-[10px]">
-                {zh ? "按模型筛选时，会话日志没有模型字段，因此会话数、消息数与时长不会按模型拆分。" : "Session logs do not carry a model field, so sessions, messages, and time are not split by model filters."}
+                {zh ? "会话日志没有逐会话模型或推理强度字段，因此会话数、消息数与时长不会按模型或推理强度拆分；请求时 Agent 版本可用时会参与会话筛选。" : "Session logs do not carry per-session model or reasoning-effort fields, so sessions, messages, and time are not split by those filters. Request-time Agent version applies to sessions when available."}
               </p>
             </section>
           )}

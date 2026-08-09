@@ -10,6 +10,9 @@ const OPTIONAL_COLUMNS = [
   { id: "device", zh: "设备", en: "Device" },
   { id: "project", zh: "项目", en: "Project" },
   { id: "reasoning", zh: "推理", en: "Reasoning" },
+  { id: "effort", zh: "推理强度", en: "Effort" },
+  { id: "agentVersion", zh: "Agent 版本", en: "Agent version" },
+  { id: "modelProvider", zh: "模型供应方", en: "Model provider" },
   { id: "cacheWrite", zh: "缓存写", en: "Cache write" },
 ] as const;
 

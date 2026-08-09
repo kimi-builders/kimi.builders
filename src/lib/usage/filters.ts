@@ -21,6 +21,8 @@ export interface UsageFilters {
   days: number;
   sources: string[] | null;
   models: string[] | null;
+  efforts: string[] | null;
+  agentVersions: string[] | null;
   /* 仅 uploadProject=true 时非 null;否则强制 null(不允许按项目筛选) */
   projects: string[] | null;
   /* 用户是否开启了项目名上传(决定项目维度/筛选是否展示) */
@@ -154,6 +156,8 @@ export function parseUsageFilters(
     days,
     sources: csvList(raw.sources, 40, (value) => isUsageSourceId(value)),
     models: csvList(raw.models, 160, () => true),
+    efforts: csvList(raw.efforts, 32, (value) => /^[A-Za-z0-9._+-]+$/.test(value)),
+    agentVersions: csvList(raw.agentVersions, 80, (value) => /^[A-Za-z0-9._+-]+$/.test(value)),
     projects: options.uploadProject
       ? csvList(raw.projects, 120, (value) => !value.includes("/") && !value.includes("\\"))
       : null,
@@ -187,7 +191,7 @@ export interface UsageFilterSql {
 function sharedClauses(
   userId: number,
   filters: UsageFilters,
-  column: { time: string; hasModel: boolean },
+  column: { time: string; hasModel: boolean; hasEffort: boolean; hasAgentVersion: boolean },
   alias = "",
 ): { clauses: string[]; params: unknown[] } {
   const a = alias ? `${alias}.` : "";
@@ -205,6 +209,14 @@ function sharedClauses(
     clauses.push(`${a}model IN (${filters.models.map(() => "?").join(",")})`);
     params.push(...filters.models);
   }
+  if (column.hasEffort && filters.efforts) {
+    clauses.push(`${a}reasoning_effort IN (${filters.efforts.map(() => "?").join(",")})`);
+    params.push(...filters.efforts);
+  }
+  if (column.hasAgentVersion && filters.agentVersions) {
+    clauses.push(`${a}agent_version IN (${filters.agentVersions.map(() => "?").join(",")})`);
+    params.push(...filters.agentVersions);
+  }
   if (filters.projects) {
     clauses.push(`${a}project_label IN (${filters.projects.map(() => "?").join(",")})`);
     params.push(...filters.projects);
@@ -220,8 +232,8 @@ function sharedClauses(
   return { clauses, params };
 }
 
-/* usage_buckets 筛选。会话表没有 model 列:模型筛选只作用于 bucket 派生指标,
-   会话数/活跃时长/热图时长视图不按模型拆分(页面需注明)。 */
+/* usage_buckets 筛选。会话表没有 model/reasoning_effort 列:这两个筛选只作用于
+   bucket 派生指标；agent_version 是会话可用的独立事实。页面需注明口径差异。 */
 export function bucketFilterSql(
   userId: number,
   filters: UsageFilters,
@@ -230,7 +242,7 @@ export function bucketFilterSql(
   const { clauses, params } = sharedClauses(
     userId,
     filters,
-    { time: "bucket_start", hasModel: true },
+    { time: "bucket_start", hasModel: true, hasEffort: true, hasAgentVersion: true },
     alias,
   );
   return { where: clauses.join(" AND "), params: [userId, ...params] };
@@ -244,7 +256,7 @@ export function sessionFilterSql(
   const { clauses, params } = sharedClauses(
     userId,
     filters,
-    { time: "first_message_at", hasModel: false },
+    { time: "first_message_at", hasModel: false, hasEffort: false, hasAgentVersion: true },
     alias,
   );
   return { where: clauses.join(" AND "), params: [userId, ...params] };
@@ -275,6 +287,8 @@ export function usageFiltersToSearch(filters: UsageFilters): string {
   }
   if (filters.sources) params.set("sources", filters.sources.join(","));
   if (filters.models) params.set("models", filters.models.join(","));
+  if (filters.efforts) params.set("efforts", filters.efforts.join(","));
+  if (filters.agentVersions) params.set("agentVersions", filters.agentVersions.join(","));
   if (filters.projects) params.set("projects", filters.projects.join(","));
   if (filters.devices) params.set("devices", filters.devices.join(","));
   if (filters.metric !== "tokens") params.set("metric", filters.metric);

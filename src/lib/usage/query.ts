@@ -15,7 +15,11 @@ import {
   type UsageFilters,
   type UsageMetric,
 } from "./filters";
-import { usageDeviceDisplayName } from "./device-label";
+import { usageDeviceDetail, usageDeviceDisplayName } from "./device-label";
+import {
+  canonicalUsageModel,
+  usageModelDisplayName,
+} from "./model-meta";
 
 /* 趋势时间格表达式:hour → 'YYYY-MM-DD HH:00'(本地);week → 本地周一日;day → 本地日。 */
 function trendTimeExpr(column: string, filters: UsageFilters): string {
@@ -96,6 +100,9 @@ export interface UsageHeatmap {
 export interface UsagePricingMatch {
   source: string;
   model: string;
+  modelCanonical: string;
+  modelDisplayName: string;
+  modelProvider: string;
   matchedPattern: string | null;
   matchKind: "exact" | "prefix" | null;
   status: "priced" | "partial" | "unpriced";
@@ -133,10 +140,16 @@ export interface UsageRecordRow extends UsageTokenBreakdown {
   time: string | null;
   source: string;
   model: string;
+  modelCanonical: string;
+  modelDisplayName: string;
+  modelProvider: string;
+  reasoningEffort: string;
+  agentVersion: string;
   /* null = 未上传(项目名上传关闭期间的数据) */
   project: string | null;
   deviceId: string;
   deviceName: string;
+  deviceDetail: string;
   totalTokens: number;
   requests: number;
   costMicros: number;
@@ -146,6 +159,8 @@ export interface UsageRecordRow extends UsageTokenBreakdown {
 export interface UsageFilterOptions {
   sources: string[];
   models: string[];
+  efforts: string[];
+  agentVersions: string[];
   projects: string[];
   devices: { id: string; name: string }[];
 }
@@ -156,6 +171,8 @@ export interface UsageOverview {
   filters: {
     sources: string[] | null;
     models: string[] | null;
+    efforts: string[] | null;
+    agentVersions: string[] | null;
     projects: string[] | null;
     devices: string[] | null;
     metric: UsageMetric;
@@ -247,6 +264,15 @@ function totalOf(tokens: UsageTokenBreakdown): number {
   );
 }
 
+function canonicalModelOf(row: RowDataPacket): string {
+  return canonicalUsageModel({
+    source: row.source,
+    model: row.model,
+    modelCanonical: row.model_canonical,
+    modelProvider: row.model_provider,
+  });
+}
+
 function emptyHeatmap(): UsageHeatmap {
   const grid = () => Array.from({ length: 7 }, () => Array<number>(24).fill(0));
   return {
@@ -274,10 +300,16 @@ function recordsQuery(
   return {
     sql: `SELECT ${localDayExpr("b.bucket_start", filters)} AS day,
             ${fine ? "b.bucket_start AS bucket_time," : "NULL AS bucket_time,"}
-            b.source, b.model, b.project_label,
+            b.source, b.model, b.model_canonical, b.model_provider,
+            b.reasoning_effort, b.agent_version, b.project_label,
             d.public_id AS device_public_id, d.name AS device_name,
             d.platform AS device_platform, d.surface AS device_surface,
             d.client_version AS device_client_version,
+            d.parser_version AS device_parser_version,
+            d.terminal_name AS device_terminal_name,
+            d.terminal_version AS device_terminal_version,
+            d.os_name AS device_os_name, d.os_version AS device_os_version,
+            d.architecture AS device_architecture,
             MIN(b.bucket_start) AS sample_at,
             MAX(b.measurement) AS measurement,
             SUM(b.input_tokens) AS input_tokens,
@@ -292,8 +324,11 @@ function recordsQuery(
      FROM usage_buckets b
      JOIN usage_devices d ON d.id = b.device_id
      WHERE ${filtered.where}
-     GROUP BY day, ${fine ? "b.bucket_start, " : ""}b.source, b.model, b.project_label,
-              d.public_id, d.name, d.platform, d.surface, d.client_version
+     GROUP BY day, ${fine ? "b.bucket_start, " : ""}b.source, b.model,
+              b.model_canonical, b.model_provider, b.reasoning_effort, b.agent_version,
+              b.project_label, d.public_id, d.name, d.platform, d.surface,
+              d.client_version, d.parser_version, d.terminal_name, d.terminal_version,
+              d.os_name, d.os_version, d.architecture
      ORDER BY ${fine ? "b.bucket_start" : "day"} DESC, total_tokens DESC
      LIMIT ? OFFSET ?`,
     params: [...filtered.params, limit, offset],
@@ -310,7 +345,9 @@ function recordsCountQuery(
        SELECT 1
        FROM usage_buckets b
        WHERE ${filtered.where}
-       GROUP BY ${localDayExpr("b.bucket_start", filters)}, ${filters.grain === "bucket" ? "b.bucket_start, " : ""}b.source, b.model, b.project_label, b.device_id
+       GROUP BY ${localDayExpr("b.bucket_start", filters)}, ${filters.grain === "bucket" ? "b.bucket_start, " : ""}b.source, b.model,
+                b.model_canonical, b.model_provider, b.reasoning_effort, b.agent_version,
+                b.project_label, b.device_id
      ) grouped`,
     params: filtered.params,
   };
@@ -328,7 +365,12 @@ function mapRecordRow(
         tokens,
         matchModelPrice(
           prices,
-          String(row.model),
+          canonicalUsageModel({
+            source: row.source,
+            model: row.model,
+            modelCanonical: row.model_canonical,
+            modelProvider: row.model_provider,
+          }),
           new Date(row.sample_at as string),
           String(row.source),
         ),
@@ -343,6 +385,21 @@ function mapRecordRow(
           : null,
     source: String(row.source),
     model: String(row.model),
+    modelCanonical: canonicalUsageModel({
+      source: row.source,
+      model: row.model,
+      modelCanonical: row.model_canonical,
+      modelProvider: row.model_provider,
+    }),
+    modelDisplayName: usageModelDisplayName({
+      source: row.source,
+      model: row.model,
+      modelCanonical: row.model_canonical,
+      modelProvider: row.model_provider,
+    }),
+    modelProvider: String(row.model_provider ?? ""),
+    reasoningEffort: String(row.reasoning_effort ?? ""),
+    agentVersion: String(row.agent_version ?? ""),
     project: row.project_label === null ? null : String(row.project_label),
     deviceId: String(row.device_public_id),
     deviceName: usageDeviceDisplayName({
@@ -350,6 +407,24 @@ function mapRecordRow(
       platform: row.device_platform,
       surface: row.device_surface,
       clientVersion: row.device_client_version,
+      parserVersion: row.device_parser_version,
+      terminalName: row.device_terminal_name,
+      terminalVersion: row.device_terminal_version,
+      osName: row.device_os_name,
+      osVersion: row.device_os_version,
+      architecture: row.device_architecture,
+    }),
+    deviceDetail: usageDeviceDetail({
+      name: row.device_name,
+      platform: row.device_platform,
+      surface: row.device_surface,
+      clientVersion: row.device_client_version,
+      parserVersion: row.device_parser_version,
+      terminalName: row.device_terminal_name,
+      terminalVersion: row.device_terminal_version,
+      osName: row.device_os_name,
+      osVersion: row.device_os_version,
+      architecture: row.device_architecture,
     }),
     ...tokens,
     totalTokens: totalOf(tokens),
@@ -416,10 +491,13 @@ export async function getUsageOverview(
     ...filters,
     sources: null,
     models: null,
+    efforts: null,
+    agentVersions: null,
     projects: null,
     devices: null,
   };
   const rangeBucket = bucketFilterSql(userId, rangeOnly);
+  const rangeSession = sessionFilterSql(userId, rangeOnly);
 
   const prevSpan = filters.to.getTime() - filters.from.getTime();
   const prevFilters: UsageFilters = {
@@ -468,10 +546,11 @@ export async function getUsageOverview(
     // 再在 JS 聚合到小时/日/周,避免价格窗口跨日/跨周时整段套用最早价格。
     pool
       .query<RowDataPacket[]>(
-        `SELECT ${trendBucket} AS day, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+        `SELECT ${trendBucket} AS day, source, model, model_canonical, model_provider,
+                bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY bucket_start, source, model
+         GROUP BY bucket_start, source, model, model_canonical, model_provider
          ORDER BY day`,
         bucket.params,
       )
@@ -499,10 +578,11 @@ export async function getUsageOverview(
       .query<RowDataPacket[]>(
         `SELECT ${localWeekdayExpr("bucket_start", filters)} AS weekday,
                 ${localHourExpr("bucket_start", filters)} AS hour,
-                source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+                source, model, model_canonical, model_provider,
+                bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY bucket_start, source, model`,
+         GROUP BY bucket_start, source, model, model_canonical, model_provider`,
         bucket.params,
       )
       .then(([rows]) => rows),
@@ -562,10 +642,11 @@ export async function getUsageOverview(
     // 9 分布:source
     pool
       .query<RowDataPacket[]>(
-        `SELECT source AS k, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+        `SELECT source AS k, source, model, model_canonical, model_provider,
+                bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY bucket_start, source, model`,
+         GROUP BY bucket_start, source, model, model_canonical, model_provider`,
         bucket.params,
       )
       .then(([rows]) => rows),
@@ -573,10 +654,11 @@ export async function getUsageOverview(
     filters.projectsEnabled
       ? pool
           .query<RowDataPacket[]>(
-            `SELECT COALESCE(project_label, '') AS k, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+            `SELECT COALESCE(project_label, '') AS k, source, model,
+                    model_canonical, model_provider, bucket_start AS sample_at, ${TOKEN_SUMS}
              FROM usage_buckets
              WHERE ${bucket.where}
-             GROUP BY bucket_start, k, source, model`,
+             GROUP BY bucket_start, k, source, model, model_canonical, model_provider`,
             bucket.params,
           )
           .then(([rows]) => rows)
@@ -586,7 +668,13 @@ export async function getUsageOverview(
       .query<RowDataPacket[]>(
         `SELECT d.public_id AS k, d.name AS device_name,
                 d.platform AS device_platform, d.surface AS device_surface,
-                d.client_version AS device_client_version, b.source, b.model,
+                d.client_version AS device_client_version,
+                d.parser_version AS device_parser_version,
+                d.terminal_name AS device_terminal_name,
+                d.terminal_version AS device_terminal_version,
+                d.os_name AS device_os_name, d.os_version AS device_os_version,
+                d.architecture AS device_architecture,
+                b.source, b.model, b.model_canonical, b.model_provider,
                 b.bucket_start AS sample_at,
                 SUM(b.input_tokens) AS input_tokens,
                 SUM(b.cache_write_input_tokens) AS cache_write_input_tokens,
@@ -601,7 +689,9 @@ export async function getUsageOverview(
          JOIN usage_devices d ON d.id = b.device_id
          WHERE ${bucketFilterSql(userId, filters, "b").where}
          GROUP BY b.bucket_start, d.public_id, d.name, d.platform, d.surface,
-                  d.client_version, b.source, b.model`,
+                  d.client_version, d.parser_version, d.terminal_name,
+                  d.terminal_version, d.os_name, d.os_version, d.architecture,
+                  b.source, b.model, b.model_canonical, b.model_provider`,
         bucketFilterSql(userId, filters, "b").params,
       )
       .then(([rows]) => rows),
@@ -629,6 +719,29 @@ export async function getUsageOverview(
         rangeBucket.params,
       )
       .then(([rows]) => rows),
+    pool
+      .query<RowDataPacket[]>(
+        `SELECT reasoning_effort
+         FROM usage_buckets
+         WHERE ${rangeBucket.where} AND reasoning_effort <> ''
+         GROUP BY reasoning_effort ORDER BY reasoning_effort`,
+        rangeBucket.params,
+      )
+      .then(([rows]) => rows),
+    pool
+      .query<RowDataPacket[]>(
+        `SELECT agent_version
+         FROM (
+           SELECT agent_version FROM usage_buckets
+           WHERE ${rangeBucket.where} AND agent_version <> ''
+           UNION
+           SELECT agent_version FROM usage_sessions
+           WHERE ${rangeSession.where} AND agent_version <> ''
+         ) versions
+         ORDER BY agent_version LIMIT 50`,
+        [...rangeBucket.params, ...rangeSession.params],
+      )
+      .then(([rows]) => rows),
     filters.projectsEnabled
       ? pool
           .query<RowDataPacket[]>(
@@ -641,7 +754,9 @@ export async function getUsageOverview(
       : Promise.resolve([]),
     pool
       .query<RowDataPacket[]>(
-        `SELECT public_id, name, platform, surface, client_version FROM usage_devices
+        `SELECT public_id, name, platform, surface, client_version, parser_version,
+                terminal_name, terminal_version, os_name, os_version, architecture
+         FROM usage_devices
          WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at`,
         [userId],
       )
@@ -649,10 +764,11 @@ export async function getUsageOverview(
     // 18/19 上一等长周期(环比):同筛选,窗口整体前移一个 span
     pool
       .query<RowDataPacket[]>(
-        `SELECT source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+        `SELECT source, model, model_canonical, model_provider,
+                bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${prevBucket.where}
-         GROUP BY bucket_start, source, model`,
+         GROUP BY bucket_start, source, model, model_canonical, model_provider`,
         prevBucket.params,
       )
       .then(([rows]) => rows),
@@ -684,10 +800,11 @@ export async function getUsageOverview(
     // 21 最近 12 个自然周:仍保留 30 分钟事实时间,便于历史价格精确匹配。
     pool
       .query<RowDataPacket[]>(
-        `SELECT ${weeklyBucketExpr} AS day, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
+        `SELECT ${weeklyBucketExpr} AS day, source, model, model_canonical, model_provider,
+                bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${weeklyBucket.where}
-         GROUP BY bucket_start, source, model
+         GROUP BY bucket_start, source, model, model_canonical, model_provider
          ORDER BY day`,
         weeklyBucket.params,
       )
@@ -711,6 +828,8 @@ export async function getUsageOverview(
     recordCountRows,
     optionSourceRows,
     optionModelRows,
+    optionEffortRows,
+    optionAgentVersionRows,
     optionProjectRows,
     optionDeviceRows,
     prevBucketRows,
@@ -759,7 +878,7 @@ export async function getUsageOverview(
         ? null
         : matchModelPrice(
             prices,
-            String(row.model),
+            canonicalModelOf(row),
             new Date(row.sample_at as string),
             String(row.source),
           ),
@@ -770,7 +889,7 @@ export async function getUsageOverview(
     row: RowDataPacket,
     tokens: UsageTokenBreakdown,
   ): number => {
-    const model = String(row.model);
+    const model = canonicalModelOf(row);
     const estimate = priceIntoLedger(
       ledger,
       prices,
@@ -847,7 +966,7 @@ export async function getUsageOverview(
         tokens,
         matchModelPrice(
           prices,
-          String(row.model),
+          canonicalModelOf(row),
           new Date(row.sample_at as string),
           String(row.source),
         ),
@@ -988,11 +1107,15 @@ export async function getUsageOverview(
   for (const row of bucketRows) {
     const source = String(row.source);
     const model = String(row.model);
+    const modelCanonical = canonicalModelOf(row);
+    const modelProvider = String(row.model_provider ?? "");
     const at = new Date(row.sample_at as string);
     const tokens = tokensOf(row);
-    const matched = model === LEGACY_MODEL ? null : matchModelPrice(prices, model, at, source);
+    const matched = model === LEGACY_MODEL
+      ? null
+      : matchModelPrice(prices, modelCanonical, at, source);
     const estimate = estimateCostMicros(tokens, matched);
-    const key = `${source}\u0000${model}\u0000${matched?.version ?? ""}\u0000${matched?.effectiveFrom.toISOString() ?? ""}`;
+    const key = `${source}\u0000${model}\u0000${modelCanonical}\u0000${modelProvider}\u0000${matched?.version ?? ""}\u0000${matched?.effectiveFrom.toISOString() ?? ""}`;
     const existing = pricingMatchMap.get(key);
     if (existing) {
       existing.tokens += totalOf(tokens);
@@ -1002,6 +1125,14 @@ export async function getUsageOverview(
     pricingMatchMap.set(key, {
       source,
       model,
+      modelCanonical,
+      modelDisplayName: usageModelDisplayName({
+        source,
+        model,
+        modelCanonical,
+        modelProvider,
+      }),
+      modelProvider,
       matchedPattern: matched?.modelPattern ?? null,
       matchKind: matched?.matchKind ?? null,
       status: estimate.status,
@@ -1031,6 +1162,8 @@ export async function getUsageOverview(
     k: unknown;
     source: unknown;
     model: unknown;
+    model_canonical?: unknown;
+    model_provider?: unknown;
     sample_at: unknown;
     input_tokens: unknown;
     cache_write_input_tokens: unknown;
@@ -1042,6 +1175,12 @@ export async function getUsageOverview(
     device_platform?: unknown;
     device_surface?: unknown;
     device_client_version?: unknown;
+    device_parser_version?: unknown;
+    device_terminal_name?: unknown;
+    device_terminal_version?: unknown;
+    device_os_name?: unknown;
+    device_os_version?: unknown;
+    device_architecture?: unknown;
   }
   const distTokens = (row: DistInput): UsageTokenBreakdown => ({
     inputTokens: num(row.input_tokens),
@@ -1067,6 +1206,12 @@ export async function getUsageOverview(
       const key = String(row.k);
       const tokens = distTokens(row);
       const model = String(row.model);
+      const modelCanonical = canonicalUsageModel({
+        source: row.source,
+        model,
+        modelCanonical: row.model_canonical,
+        modelProvider: row.model_provider,
+      });
       const stored = num(row.stored_cost_micros);
       let estimated = 0;
       // legacy 迁入行的存储成本是旧口径假值,标记未定价,避免把 $0.00 伪装成准确值
@@ -1076,7 +1221,7 @@ export async function getUsageOverview(
           tokens,
           matchModelPrice(
             prices,
-            model,
+            modelCanonical,
             new Date(row.sample_at as string),
             String(row.source),
           ),
@@ -1135,13 +1280,19 @@ export async function getUsageOverview(
         platform: row.device_platform,
         surface: row.device_surface,
         clientVersion: row.device_client_version,
+        parserVersion: row.device_parser_version,
+        terminalName: row.device_terminal_name,
+        terminalVersion: row.device_terminal_version,
+        osName: row.device_os_name,
+        osVersion: row.device_os_version,
+        architecture: row.device_architecture,
       }),
     ),
   };
   // model 分布直接由精确时间行集派生;不得先跨价格窗口合并再套用首个价格。
   distributions.model = buildDistribution(
-    bucketRows.map((row) => ({ ...row, k: String(row.model) })) as unknown as DistInput[],
-    (row) => String(row.k),
+    bucketRows.map((row) => ({ ...row, k: canonicalModelOf(row) })) as unknown as DistInput[],
+    (row) => usageModelDisplayName({ model: row.k, modelCanonical: row.k }),
   );
 
   // —— 明细 ——
@@ -1157,6 +1308,8 @@ export async function getUsageOverview(
     filters: {
       sources: filters.sources,
       models: filters.models,
+      efforts: filters.efforts,
+      agentVersions: filters.agentVersions,
       projects: filters.projects,
       devices: filters.devices,
       metric: filters.metric,
@@ -1181,6 +1334,8 @@ export async function getUsageOverview(
     options: {
       sources: optionSourceRows.map((row) => String(row.source)),
       models: optionModelRows.map((row) => String(row.model)),
+      efforts: optionEffortRows.map((row) => String(row.reasoning_effort)),
+      agentVersions: optionAgentVersionRows.map((row) => String(row.agent_version)),
       projects: optionProjectRows.map((row) => String(row.project_label)),
       devices: optionDeviceRows.map((row) => ({
         id: String(row.public_id),
@@ -1189,6 +1344,12 @@ export async function getUsageOverview(
           platform: row.platform,
           surface: row.surface,
           clientVersion: row.client_version,
+          parserVersion: row.parser_version,
+          terminalName: row.terminal_name,
+          terminalVersion: row.terminal_version,
+          osName: row.os_name,
+          osVersion: row.os_version,
+          architecture: row.architecture,
         }),
       })),
     },
