@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, LoaderCircle, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import AgentIcon from "@/components/AgentIcon";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
@@ -42,14 +42,15 @@ function parseCsv(csv: string | undefined): string[] {
   return csv ? csv.split(",").filter(Boolean) : [];
 }
 
-/* 单维度多选下拉:checkbox 列表,勾选即写 URL(逗号连接;空集 = 参数缺席)。
-   外点/Escape 关闭;选择状态完全由 URL 经 props 驱动,不持有本地镜像。 */
+/* 单维度多选下拉:先在本地暂存勾选,点击“应用”后只触发一次服务端导航。
+   空集 = 参数缺席 = 不限;外点/Escape 关闭且不会误提交草稿。 */
 function DimensionDropdown({
   dimension,
   selected,
   open,
   onOpenChange,
   onApply,
+  pending,
   zh,
 }: {
   dimension: Dimension;
@@ -57,9 +58,11 @@ function DimensionDropdown({
   open: boolean;
   onOpenChange: (id: string | null) => void;
   onApply: (key: Dimension["key"], values: string[]) => void;
+  pending: boolean;
   zh: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [draft, setDraft] = useState<string[]>(selected);
   useEffect(() => {
     if (!open) return;
     const close = () => onOpenChange(null);
@@ -78,30 +81,25 @@ function DimensionDropdown({
   }, [open, onOpenChange]);
 
   const toggle = (value: string) => {
-    onApply(
-      dimension.key,
-      selected.includes(value)
-        ? selected.filter((item) => item !== value)
-        : [...selected, value],
+    setDraft((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value].slice(0, MAX_EXPLICIT_VALUES),
     );
   };
-  const selectAll = () => {
-    /* 选项超过服务端上限时,全选直接清参数(语义等同);否则写显式列表。 */
-    onApply(
-      dimension.key,
-      dimension.entries.length > MAX_EXPLICIT_VALUES
-        ? []
-        : dimension.entries.map((entry) => entry.value),
-    );
-  };
+  const dirty = [...draft].sort().join("\u0000") !== [...selected].sort().join("\u0000");
 
   return (
     <div ref={ref} className="relative w-full sm:w-auto">
       <button
         type="button"
-        onClick={() => onOpenChange(open ? null : dimension.key)}
+        disabled={pending}
+        onClick={() => {
+          if (!open) setDraft(selected);
+          onOpenChange(open ? null : dimension.key);
+        }}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 border border-line px-2.5 py-1.5 font-mono text-[10px] text-paper hover:border-blue sm:w-auto sm:min-w-28"
+        className="flex min-h-10 w-full items-center justify-between gap-2 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto sm:min-w-28"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 text-grey">{dimension.label}</span>
@@ -112,46 +110,64 @@ function DimensionDropdown({
         <ChevronDown size={11} className="shrink-0 text-grey" />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full overflow-y-auto border border-line bg-moon sm:w-56">
+        <div className="absolute left-0 top-full z-30 mt-1 w-full border border-line bg-moon shadow-xl sm:w-64">
           <div className="flex items-center justify-between border-b border-line px-3 py-1.5">
+            <span className="font-mono text-[9px] text-grey">
+              {zh ? "不勾选表示不限" : "No selection means any"}
+            </span>
             <button
               type="button"
-              onClick={selectAll}
-              className="font-mono text-[9px] text-blue hover:underline"
+              onClick={() => setDraft([])}
+              className="min-h-8 px-1 font-mono text-[9px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
-              {zh ? "全选" : "Select all"}
-            </button>
-            <button
-              type="button"
-              onClick={() => onApply(dimension.key, [])}
-              className="font-mono text-[9px] text-grey hover:text-paper"
-            >
-              {zh ? "清空" : "Clear"}
+              {zh ? "不限" : "Any"}
             </button>
           </div>
-          {dimension.entries.length === 0 ? (
-            <p className="px-3 py-2 text-[10px] text-grey">
-              {zh ? "该范围内无可选项" : "No options in range"}
-            </p>
-          ) : (
-            dimension.entries.map((entry) => (
-              <label
-                key={entry.value}
-                className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs text-paper hover:bg-card"
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.includes(entry.value)}
-                  onChange={() => toggle(entry.value)}
-                  className="h-3.5 w-3.5 shrink-0 accent-blue"
-                />
-                {dimension.withIcons && <AgentIcon id={entry.value} size={12} />}
-                <span className="min-w-0 truncate" title={entry.label}>
-                  {entry.label}
-                </span>
-              </label>
-            ))
-          )}
+          <div className="max-h-64 overflow-y-auto">
+            {dimension.entries.length === 0 ? (
+              <p className="px-3 py-3 text-[10px] text-grey">
+                {zh ? "该范围内无可选项" : "No options in range"}
+              </p>
+            ) : (
+              dimension.entries.map((entry) => (
+                <label
+                  key={entry.value}
+                  className="flex min-h-10 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
+                >
+                  <input
+                    type="checkbox"
+                    checked={draft.includes(entry.value)}
+                    onChange={() => toggle(entry.value)}
+                    className="size-4 shrink-0 accent-blue"
+                  />
+                  {dimension.withIcons && <AgentIcon id={entry.value} size={12} />}
+                  <span className="min-w-0 truncate" title={entry.label}>
+                    {entry.label}
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2 border-t border-line p-2">
+            <button
+              type="button"
+              onClick={() => onOpenChange(null)}
+              className="min-h-9 px-3 font-mono text-[10px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              {zh ? "取消" : "Cancel"}
+            </button>
+            <button
+              type="button"
+              disabled={!dirty || pending}
+              onClick={() => {
+                onApply(dimension.key, draft);
+                onOpenChange(null);
+              }}
+              className="min-h-9 border border-blue px-3 font-mono text-[10px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {zh ? "应用" : "Apply"}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -178,6 +194,7 @@ export default function UsageFilterBar({
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [customOpen, setCustomOpen] = useState(applied.range === "custom");
   const [customError, setCustomError] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   const handleOpenChange = useCallback((id: string | null) => setOpenMenu(id), []);
 
@@ -192,7 +209,10 @@ export default function UsageFilterBar({
   };
 
   const pushParams = (changes: Record<string, string | null>) => {
-    router.push(buildHref({ page: null, ...changes }), { scroll: false });
+    setOpenMenu(null);
+    startTransition(() => {
+      router.push(buildHref({ page: null, ...changes }), { scroll: false });
+    });
   };
 
   const appliedCsv: Record<Dimension["key"], string | undefined> = {
@@ -284,23 +304,26 @@ export default function UsageFilterBar({
           {RANGE_CHIPS.map((chip) => {
             const isActive = applied.range === chip.id;
             return (
-              <a
+              <button
+                type="button"
                 key={chip.id}
-                href={buildHref({ range: chip.id, from: null, to: null, days: null, page: null })}
+                disabled={pending}
+                onClick={() => pushParams({ range: chip.id, from: null, to: null, days: null })}
                 aria-current={isActive ? "page" : undefined}
-                className={`px-3 py-1.5 font-mono text-[11px] transition-colors ${
+                className={`inline-flex min-h-10 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
                   isActive ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
                 }`}
               >
                 {zh ? chip.zh : chip.en}
-              </a>
+              </button>
             );
           })}
           <button
             type="button"
+            disabled={pending}
             onClick={() => setCustomOpen((value) => !value)}
             aria-expanded={customOpen}
-            className={`px-3 py-1.5 font-mono text-[11px] transition-colors ${
+            className={`inline-flex min-h-10 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
               applied.range === "custom"
                 ? "bg-paper text-bg"
                 : "text-grey hover:bg-card hover:text-paper"
@@ -311,9 +334,10 @@ export default function UsageFilterBar({
         </nav>
         <button
           type="button"
+          disabled={pending}
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
-          className="flex items-center gap-1.5 border border-line px-2.5 py-1.5 font-mono text-[10px] text-paper hover:border-blue sm:hidden"
+          className="flex min-h-10 items-center gap-1.5 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:hidden"
         >
           <SlidersHorizontal size={11} />
           {zh ? "筛选" : "Filters"}
@@ -334,16 +358,32 @@ export default function UsageFilterBar({
               onApply={(key, values) =>
                 pushParams({ [key]: values.length > 0 ? values.join(",") : null })
               }
+              pending={pending}
               zh={zh}
             />
           ))}
           {activeCount > 0 && (
-            <a
-              href={buildHref({ sources: null, models: null, projects: null, devices: null, page: null })}
-              className="font-mono text-[10px] text-blue hover:underline"
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => pushParams({
+                sources: null,
+                models: null,
+                efforts: null,
+                agentVersions: null,
+                projects: null,
+                devices: null,
+              })}
+              className="min-h-10 px-2 font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               {zh ? "清除筛选" : "Clear filters"}
-            </a>
+            </button>
+          )}
+          {pending && (
+            <span role="status" className="inline-flex min-h-10 items-center gap-1.5 font-mono text-[10px] text-grey">
+              <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+              {zh ? "正在更新…" : "Updating…"}
+            </span>
           )}
         </div>
       </div>
@@ -369,7 +409,8 @@ export default function UsageFilterBar({
           />
           <button
             type="submit"
-            className="border border-line px-3 py-1.5 font-mono text-[10px] text-paper hover:border-blue"
+            disabled={pending}
+            className="min-h-10 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
           >
             {zh ? "应用" : "Apply"}
           </button>
@@ -392,13 +433,15 @@ export default function UsageFilterBar({
                 >
                   <span className="shrink-0 text-grey">{dimension.label}</span>
                   <span>×{selected.length}</span>
-                  <a
-                    href={buildHref({ [dimension.key]: null, page: null })}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => pushParams({ [dimension.key]: null })}
                     aria-label={zh ? `清除${dimension.label}筛选` : `Clear ${dimension.label} filter`}
-                    className="shrink-0 text-grey hover:text-paper"
+                    className="flex size-6 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
                   >
                     <X size={10} />
-                  </a>
+                  </button>
                 </span>
               );
             }
@@ -411,16 +454,17 @@ export default function UsageFilterBar({
                 >
                   <span className="shrink-0 text-grey">{dimension.label}</span>
                   <span className="max-w-40 truncate">{chipLabel(dimension, value)}</span>
-                  <a
-                    href={buildHref({
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => pushParams({
                       [dimension.key]: rest.length > 0 ? rest.join(",") : null,
-                      page: null,
                     })}
                     aria-label={zh ? `移除筛选 ${chipLabel(dimension, value)}` : `Remove filter ${chipLabel(dimension, value)}`}
-                    className="shrink-0 text-grey hover:text-paper"
+                    className="flex size-6 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
                   >
                     <X size={10} />
-                  </a>
+                  </button>
                 </span>
               );
             });

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import {
@@ -29,10 +30,8 @@ import {
   usageFiltersToSearch,
   type UsageGranularity,
   type UsageMetric,
-  type UsageRecordGrain,
 } from "@/src/lib/usage/filters";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
-import { usageModelDetail } from "@/src/lib/usage/model-meta";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
   USAGE_DISPLAY_CURRENCIES,
@@ -43,18 +42,17 @@ import {
   getUsageOverview,
   type UsageDistribution,
   type UsageDistributionRow,
-  type UsageRecordRow,
   type UsageTrendDay,
 } from "@/src/lib/usage/query";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import CurrencyToggle from "./_components/CurrencyToggle";
-import RecordsColumnsMenu from "./_components/RecordsColumnsMenu";
 import TzReporter from "./_components/TzReporter";
 import UsageFilterBar from "./_components/UsageFilterBar";
 import UsageExportDialog from "./_components/UsageExportDialog";
 import UsageLoadErrorCard from "./_components/UsageLoadErrorCard";
 import UsageManagementPanels from "./_components/UsageManagementPanels";
 import UsageMethodologyDialog from "./_components/UsageMethodologyDialog";
+import UsageRecordsSection from "./_components/UsageRecordsSection";
 import {
   UsageHeatmapGrid,
   UsageTrendChart,
@@ -231,16 +229,17 @@ function SwitchLinks({
   return (
     <nav aria-label={label} className="flex items-center gap-1">
       {items.map((item) => (
-        <a
+        <Link
           key={item.key}
           href={item.href}
+          scroll={false}
           aria-current={item.active ? "page" : undefined}
-          className={`px-2.5 py-1 font-mono text-[10px] transition-colors ${
+          className={`inline-flex min-h-10 items-center px-3 font-mono text-[10px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
             item.active ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
           }`}
         >
           {item.label}
-        </a>
+        </Link>
       ))}
     </nav>
   );
@@ -315,19 +314,6 @@ function DistributionCard({
   );
 }
 
-function recordCost(row: UsageRecordRow, zh: boolean, ccy: UsageDisplayCurrency): ReactNode {
-  if (row.priceStatus === "legacy") return <span className="text-grey">—</span>;
-  if (row.priceStatus === "unpriced") {
-    return <span className="text-grey">{zh ? "未定价" : "unpriced"}</span>;
-  }
-  return (
-    <>
-      {fmtCost(row.costMicros, ccy)}
-      {row.priceStatus === "partial" ? "*" : ""}
-    </>
-  );
-}
-
 interface KpiCardSpec {
   icon: typeof Activity;
   label: string;
@@ -337,25 +323,6 @@ interface KpiCardSpec {
   prev?: number;
   sessionNote?: boolean;
   help?: "pricing" | "tokens" | "duration";
-}
-
-/* 明细表的可选列(默认全关;与 RecordsColumnsMenu 的列表一一对应)。 */
-const OPTIONAL_RECORD_COLUMNS = new Set([
-  "device",
-  "project",
-  "reasoning",
-  "effort",
-  "agentVersion",
-  "modelProvider",
-  "cacheWrite",
-]);
-
-interface RecordColumn {
-  id: string;
-  header: string;
-  cell: (row: UsageRecordRow) => ReactNode;
-  className?: string;
-  titleOf?: (row: UsageRecordRow) => string | undefined;
 }
 
 export default async function UsagePage({
@@ -406,6 +373,8 @@ export default async function UsagePage({
       summarize: (value) => ({
         recordGroups: value.records.total,
         activeDevices: value.activeDevices,
+        databaseQueries: value.meta.diagnostics.statements,
+        rowsFetched: value.meta.diagnostics.rowsFetched,
       }),
     }),
     captureUsageOperation("usage.dashboard.devices", () => listUsageDevices(user.id), {
@@ -808,185 +777,13 @@ export default async function UsagePage({
 
   const otherLabel = zh ? "其他" : "Other";
   const notUploadedLabel = zh ? "未上传" : "Not uploaded";
-  const records = overview.records;
-  const totalPages = Math.max(1, Math.ceil(records.total / records.pageSize));
-  const prevPageHref =
-    records.page > 1
-      ? hrefWith(query, { page: records.page - 1 > 1 ? String(records.page - 1) : null })
-      : null;
-  const nextPageHref =
-    records.page < totalPages ? hrefWith(query, { page: String(records.page + 1) }) : null;
-
   const localDayOf = (date: Date): string =>
     new Date(date.getTime() + filters.tzOffsetMinutes * 60_000).toISOString().slice(0, 10);
-
-  /* 明细粒度 + 可选列(纯 URL 状态) */
-  const grain: UsageRecordGrain = filters.grain;
   const rawCols = Array.isArray(raw.cols) ? raw.cols[0] : raw.cols;
-  const enabledCols = new Set(
-    (rawCols ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter((value) => OPTIONAL_RECORD_COLUMNS.has(value)),
-  );
-  const grainSwitch = [
-    {
-      key: "day",
-      label: zh ? "按日" : "By day",
-      href: hrefWith(query, { grain: null, page: null }),
-      active: grain === "day",
-    },
-    {
-      key: "bucket",
-      label: zh ? "按 30 分钟" : "By 30 min",
-      href: hrefWith(query, { grain: "bucket", page: null }),
-      active: grain === "bucket",
-    },
-  ];
-
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-  /* 30 分钟桶起点(UTC ISO)→ 本地 MM-DD HH:MM(与趋势补零同一套移位数学)。 */
-  const bucketTimeLabel = (iso: string): string => {
-    const d = new Date(new Date(iso).getTime() + filters.tzOffsetMinutes * 60_000);
-    return `${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
-  };
-
-  const truncateTd = "max-w-[180px] truncate whitespace-nowrap py-2 pr-4 text-paper";
-  const recordColumns: RecordColumn[] = [
-    {
-      id: "time",
-      header: grain === "bucket" ? (zh ? "时间" : "TIME") : zh ? "日期" : "DAY",
-      cell: (row) => (grain === "bucket" && row.time ? bucketTimeLabel(row.time) : row.day),
-    },
-    {
-      id: "source",
-      header: zh ? "工具" : "SOURCE",
-      cell: (row) => (
-        <span className="inline-flex items-center gap-1.5">
-          <AgentIcon id={row.source} size={12} />
-          {usageSourceLabel(row.source)}
-        </span>
-      ),
-    },
-    {
-      id: "model",
-      header: zh ? "模型" : "MODEL",
-      className: truncateTd,
-      titleOf: (row) =>
-        usageModelDetail({
-          source: row.source,
-          model: row.model,
-          modelCanonical: row.modelCanonical,
-          modelProvider: row.modelProvider,
-        }),
-      cell: (row) => (
-        <span>
-          <span className="block truncate">{row.modelDisplayName}</span>
-          {row.modelDisplayName !== row.model && (
-            <span className="block truncate text-[9px] text-grey">{row.model}</span>
-          )}
-        </span>
-      ),
-    },
-  ];
-  if (enabledCols.has("project")) {
-    recordColumns.push({
-      id: "project",
-      header: zh ? "项目" : "PROJECT",
-      className: "max-w-[140px] truncate whitespace-nowrap py-2 pr-4 text-paper",
-      titleOf: (row) => row.project ?? notUploadedLabel,
-      cell: (row) =>
-        row.project === null ? <span className="text-grey">{notUploadedLabel}</span> : row.project,
-    });
-  }
-  if (enabledCols.has("device")) {
-    recordColumns.push({
-      id: "device",
-      header: zh ? "设备" : "DEVICE",
-      className: "max-w-[120px] truncate whitespace-nowrap py-2 pr-4 text-paper",
-      titleOf: (row) => row.deviceDetail,
-      cell: (row) => row.deviceName,
-    });
-  }
-  if (enabledCols.has("effort")) {
-    recordColumns.push({
-      id: "effort",
-      header: zh ? "推理强度" : "EFFORT",
-      cell: (row) => row.reasoningEffort || <span className="text-grey">—</span>,
-    });
-  }
-  if (enabledCols.has("agentVersion")) {
-    recordColumns.push({
-      id: "agentVersion",
-      header: zh ? "AGENT 版本" : "AGENT VER.",
-      className: "max-w-[130px] truncate whitespace-nowrap py-2 pr-4 text-paper",
-      titleOf: (row) => row.agentVersion || undefined,
-      cell: (row) => row.agentVersion || <span className="text-grey">—</span>,
-    });
-  }
-  if (enabledCols.has("modelProvider")) {
-    recordColumns.push({
-      id: "modelProvider",
-      header: zh ? "模型供应方" : "PROVIDER",
-      className: "max-w-[130px] truncate whitespace-nowrap py-2 pr-4 text-paper",
-      titleOf: (row) => row.modelProvider || undefined,
-      cell: (row) => row.modelProvider || <span className="text-grey">—</span>,
-    });
-  }
-  recordColumns.push({
-    id: "input",
-    header: zh ? "输入(含缓存写)" : "INPUT+CW",
-    cell: (row) => compact(row.inputTokens + row.cacheWriteInputTokens),
-  });
-  if (enabledCols.has("cacheWrite")) {
-    recordColumns.push({
-      id: "cacheWrite",
-      header: zh ? "缓存写" : "CACHE W",
-      cell: (row) => compact(row.cacheWriteInputTokens),
-    });
-  }
-  recordColumns.push(
-    {
-      id: "cacheRead",
-      header: zh ? "缓存读" : "CACHE R",
-      cell: (row) => compact(row.cacheReadInputTokens),
-    },
-    {
-      id: "output",
-      header: zh ? "输出" : "OUTPUT",
-      cell: (row) => compact(row.outputTokens),
-    },
-  );
-  if (enabledCols.has("reasoning")) {
-    recordColumns.push({
-      id: "reasoning",
-      header: zh ? "推理" : "REASON",
-      cell: (row) => compact(row.reasoningOutputTokens),
-    });
-  }
-  recordColumns.push(
-    {
-      id: "total",
-      header: zh ? "总 TOKEN" : "TOTAL",
-      cell: (row) => compact(row.totalTokens),
-    },
-    {
-      id: "hitRate",
-      header: zh ? "命中率" : "HIT%",
-      cell: (row) => fmtHitRate(usageCacheHitRate(row)),
-    },
-    {
-      id: "requests",
-      header: zh ? "请求" : "REQS",
-      cell: (row) => compact(row.requests),
-    },
-    {
-      id: "cost",
-      header: zh ? "估费" : "COST",
-      className: "whitespace-nowrap py-2 text-paper",
-      cell: (row) => recordCost(row, zh, ccy),
-    },
-  );
+  const initialEnabledColumns = (rawCols ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 
   return (
     <div className="usage-dashboard">
@@ -1021,9 +818,9 @@ export default async function UsagePage({
       {showRangeEmpty && (
         <section className="mt-6 border border-line bg-card p-4 text-xs text-grey">
           {zh ? "该筛选范围内没有数据，" : "No data in this filtered range. "}
-          <a href={clearFiltersHref} className="text-blue hover:underline">
+          <Link href={clearFiltersHref} scroll={false} className="text-blue hover:underline">
             {zh ? "试试清除筛选" : "Try clearing filters"}
-          </a>
+          </Link>
         </section>
       )}
 
@@ -1179,191 +976,16 @@ export default async function UsagePage({
         />
       </div>
 
-      <section className="mt-4 border border-line bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {zh ? "明细" : "RECORDS"}
-            </h2>
-            <p className="mt-1 font-mono text-[9px] text-grey">
-              {zh
-                ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total} 组`
-                : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × effort × Agent version × project × device · ${records.total} groups`}
-            </p>
-            {grain === "bucket" && (
-              <p className="mt-1 font-mono text-[9px] text-grey/70">
-                {zh
-                  ? "30 分钟为采集最细粒度,秒级不在日志中"
-                  : "30 minutes is the finest collected granularity; seconds are not in the logs."}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <SwitchLinks items={grainSwitch} label={zh ? "明细粒度" : "Record grain"} />
-            <RecordsColumnsMenu
-              /* key=查询串:cols 变更触发软导航后重挂载,菜单开态复位(同筛选栏) */
-              key={query}
-              enabled={[...enabledCols]}
-              preservedQuery={query}
-              zh={zh}
-            />
-          </div>
-        </div>
-        {records.rows.length === 0 ? (
-          <p className="mt-4 text-xs text-grey">
-            {zh ? "该范围内暂无数据" : "No data in this range"}
-          </p>
-        ) : (
-          <>
-            <div className="mt-4 hidden sm:block">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse font-mono text-[11px]">
-                  <thead>
-                    <tr className="text-left font-mono text-[10px] tracking-wide text-grey">
-                      {recordColumns.map((column) => (
-                        <th key={column.id} className="whitespace-nowrap pb-2 pr-4 font-normal">
-                          {column.header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.rows.map((row, index) => (
-                      <tr
-                        key={`${row.day}-${row.time ?? ""}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
-                        className="border-t border-line"
-                      >
-                        {recordColumns.map((column) => (
-                          <td
-                            key={column.id}
-                            className={
-                              column.className ?? "whitespace-nowrap py-2 pr-4 text-paper"
-                            }
-                            title={column.titleOf?.(row)}
-                          >
-                            {column.cell(row)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <ul className="mt-4 space-y-2 sm:hidden">
-              {records.rows.map((row, index) => (
-                <li
-                  key={`${row.day}-${row.time ?? ""}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
-                  className="border border-line p-3"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="shrink-0 font-mono text-[10px] text-grey">
-                      {grain === "bucket" && row.time ? bucketTimeLabel(row.time) : row.day}
-                    </span>
-                    <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
-                      <AgentIcon id={row.source} size={12} />
-                      <span
-                        className="truncate"
-                        title={`${usageSourceLabel(row.source)} · ${usageModelDetail({
-                          source: row.source,
-                          model: row.model,
-                          modelCanonical: row.modelCanonical,
-                          modelProvider: row.modelProvider,
-                        })}`}
-                      >
-                        {usageSourceLabel(row.source)} · {row.modelDisplayName}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-2 font-mono text-[10px] text-grey">
-                    {compact(row.totalTokens)} tokens · {recordCost(row, zh, ccy)} ·{" "}
-                    {zh ? "命中率" : "hit"} {fmtHitRate(usageCacheHitRate(row))} ·{" "}
-                    {compact(row.requests)} {zh ? "次请求" : "req"}
-                  </div>
-                  {row.modelDisplayName !== row.model && (
-                    <div className="mt-1 truncate font-mono text-[9px] text-grey/70">
-                      raw model: {row.model}
-                    </div>
-                  )}
-                  {enabledCols.size > 0 && (
-                    <div className="mt-1 space-y-0.5 font-mono text-[10px] text-grey">
-                      {enabledCols.has("project") && (
-                        <p>
-                          {zh ? "项目" : "Project"}{" "}
-                          {row.project === null ? (
-                            <span className="text-grey">{notUploadedLabel}</span>
-                          ) : (
-                            row.project
-                          )}
-                        </p>
-                      )}
-                      {enabledCols.has("device") && (
-                        <p>
-                          {zh ? "设备" : "Device"} {row.deviceDetail}
-                        </p>
-                      )}
-                      {enabledCols.has("effort") && (
-                        <p>
-                          {zh ? "推理强度" : "Effort"} {row.reasoningEffort || "—"}
-                        </p>
-                      )}
-                      {enabledCols.has("agentVersion") && (
-                        <p>
-                          {zh ? "Agent 版本" : "Agent version"} {row.agentVersion || "—"}
-                        </p>
-                      )}
-                      {enabledCols.has("modelProvider") && (
-                        <p>
-                          {zh ? "模型供应方" : "Model provider"} {row.modelProvider || "—"}
-                        </p>
-                      )}
-                      {enabledCols.has("cacheWrite") && (
-                        <p>
-                          {zh ? "缓存写" : "Cache write"} {compact(row.cacheWriteInputTokens)}
-                        </p>
-                      )}
-                      {enabledCols.has("reasoning") && (
-                        <p>
-                          {zh ? "推理" : "Reasoning"} {compact(row.reasoningOutputTokens)}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
-          {prevPageHref ? (
-            <a
-              href={prevPageHref}
-              className="border border-line px-3 py-1.5 font-mono text-[10px] text-paper hover:border-blue"
-            >
-              {zh ? "上一页" : "Prev"}
-            </a>
-          ) : (
-            <span className="cursor-not-allowed border border-line px-3 py-1.5 font-mono text-[10px] text-grey/40">
-              {zh ? "上一页" : "Prev"}
-            </span>
-          )}
-          <span className="font-mono text-[10px] text-grey">
-            {zh ? `第 ${records.page} / ${totalPages} 页` : `Page ${records.page} / ${totalPages}`}
-          </span>
-          {nextPageHref ? (
-            <a
-              href={nextPageHref}
-              className="border border-line px-3 py-1.5 font-mono text-[10px] text-paper hover:border-blue"
-            >
-              {zh ? "下一页" : "Next"}
-            </a>
-          ) : (
-            <span className="cursor-not-allowed border border-line px-3 py-1.5 font-mono text-[10px] text-grey/40">
-              {zh ? "下一页" : "Next"}
-            </span>
-          )}
-        </div>
-      </section>
+      <UsageRecordsSection
+        key={`${filters.grain}:${overview.records.page}:${rawCols ?? ""}`}
+        records={overview.records}
+        grain={filters.grain}
+        initialEnabledColumns={initialEnabledColumns}
+        preservedQuery={query}
+        tzOffsetMinutes={filters.tzOffsetMinutes}
+        currency={USAGE_DISPLAY_CURRENCIES[ccy]}
+        zh={zh}
+      />
 
       <UsageManagementPanels
         devices={devices}

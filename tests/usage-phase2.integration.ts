@@ -110,6 +110,27 @@ async function main() {
         .trim(),
     )
     .filter(Boolean);
+  // Fresh schema already has the query indexes. Drop and replay the upgrade
+  // migration once so both new installs and existing databases are covered.
+  await pool.query("DROP INDEX idx_usage_bucket_project_time ON usage_buckets");
+  await pool.query("DROP INDEX idx_usage_session_user_overlap ON usage_sessions");
+  await pool.query("DROP INDEX idx_usage_session_agent_overlap ON usage_sessions");
+  const queryIndexMigration = readFileSync(
+    new URL("../db/migrations/20260814_usage_query_indexes.sql", import.meta.url),
+    "utf8",
+  );
+  for (const statement of statementsOf(queryIndexMigration)) await pool.query(statement);
+  const [queryIndexes] = await pool.query<RowDataPacket[]>(
+    `SELECT INDEX_NAME FROM information_schema.statistics
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND INDEX_NAME IN (
+         'idx_usage_bucket_project_time',
+         'idx_usage_session_user_overlap',
+         'idx_usage_session_agent_overlap'
+       )
+     GROUP BY INDEX_NAME`,
+  );
+  assert.equal(queryIndexes.length, 3);
   const statements = statementsOf(priceMigration);
   assert.ok(statements.length >= 2);
   for (let round = 0; round < 2; round += 1) {
@@ -256,6 +277,8 @@ async function main() {
     // —— 一致性:parser 产物 = 服务端聚合 ——
     const overview = await getUsageOverview(userId, filters());
     const expected = FIXTURE.expected;
+    assert.equal(overview.meta.diagnostics.statements, 15);
+    assert.ok(overview.meta.diagnostics.rowsFetched > 0);
     assert.equal(overview.totals.inputTokens, expected.input);
     assert.equal(overview.totals.cacheWriteInputTokens, expected.cacheWrite);
     assert.equal(overview.totals.cacheReadInputTokens, expected.cacheRead);
@@ -427,6 +450,7 @@ async function main() {
       filters({ projects: "demo-app" }, false),
     );
     assert.equal(projectOff.totals.totalTokens, expected.total);
+    assert.equal(projectOff.meta.diagnostics.statements, 14);
 
     // —— 设备 B + 设备筛选 + 组合 ——
     const deviceB = await provisionDevice(userId, "integration B");

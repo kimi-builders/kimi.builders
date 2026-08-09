@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS usage_daily (
 
 -- 用量 v2:设备授权、按设备 Key、30 分钟事实桶、会话与隐私设置。
 -- 已有数据库依次执行 20260808_usage_v2.sql、20260812_usage_metadata.sql
--- 与 20260813_usage_cost_facts.sql。
+-- 与 20260813_usage_cost_facts.sql、20260814_usage_query_indexes.sql。
 CREATE TABLE IF NOT EXISTS usage_devices (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
@@ -269,6 +269,7 @@ CREATE TABLE IF NOT EXISTS usage_buckets (
   KEY idx_usage_bucket_effort_time (user_id, reasoning_effort, bucket_start),
   KEY idx_usage_bucket_agent_time (user_id, agent_version, bucket_start),
   KEY idx_usage_bucket_context_time (user_id, context_tier, bucket_start),
+  KEY idx_usage_bucket_project_time (user_id, project_label, bucket_start),
   CONSTRAINT fk_usage_bucket_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_usage_bucket_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -296,6 +297,8 @@ CREATE TABLE IF NOT EXISTS usage_sessions (
   KEY idx_usage_session_user_time (user_id, first_message_at),
   KEY idx_usage_session_source_time (user_id, source, first_message_at),
   KEY idx_usage_session_device_time (user_id, device_id, first_message_at),
+  KEY idx_usage_session_user_overlap (user_id, last_message_at, first_message_at),
+  KEY idx_usage_session_agent_overlap (user_id, agent_version, last_message_at, first_message_at),
   CONSTRAINT fk_usage_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_usage_session_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

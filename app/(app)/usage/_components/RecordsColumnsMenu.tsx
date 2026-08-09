@@ -1,12 +1,11 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 /* 明细表的可选列(默认全关)。顺序即列选择器里的展示顺序;
    cols 参数的值从这里出,垃圾值由页面侧解析时丢弃。 */
-const OPTIONAL_COLUMNS = [
+export const OPTIONAL_RECORD_COLUMNS = [
   { id: "device", zh: "设备", en: "Device" },
   { id: "project", zh: "项目", en: "Project" },
   { id: "reasoning", zh: "推理", en: "Reasoning" },
@@ -16,18 +15,19 @@ const OPTIONAL_COLUMNS = [
   { id: "cacheWrite", zh: "缓存写", en: "Cache write" },
 ] as const;
 
+export type OptionalRecordColumn = (typeof OPTIONAL_RECORD_COLUMNS)[number]["id"];
+
 /* 明细列选择器:勾选即写 cols 参数(空集 = 参数缺席 = 默认列)。
    不动 page(列显隐不影响分页),其余参数原样保留。 */
 export default function RecordsColumnsMenu({
   enabled,
-  preservedQuery,
+  onChange,
   zh,
 }: {
-  enabled: string[];
-  preservedQuery: string;
+  enabled: OptionalRecordColumn[];
+  onChange: (columns: OptionalRecordColumn[]) => void;
   zh: boolean;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,15 +48,11 @@ export default function RecordsColumnsMenu({
   }, [open]);
 
   const toggle = (id: string) => {
-    const next = OPTIONAL_COLUMNS.map((column) => column.id).filter(
+    const next = OPTIONAL_RECORD_COLUMNS.map((column) => column.id).filter(
       (columnId) =>
         columnId === id ? !enabled.includes(id) : enabled.includes(columnId),
     );
-    const params = new URLSearchParams(preservedQuery);
-    if (next.length > 0) params.set("cols", next.join(","));
-    else params.delete("cols");
-    const text = params.toString();
-    router.push(text ? `/usage?${text}` : "/usage", { scroll: false });
+    onChange(next);
   };
 
   return (
@@ -65,7 +61,7 @@ export default function RecordsColumnsMenu({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex items-center gap-1.5 border border-line px-2.5 py-1.5 font-mono text-[10px] text-paper hover:border-blue"
+        className="flex min-h-10 items-center gap-1.5 border border-line px-3 font-mono text-[10px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {zh ? "列" : "Columns"}
         {enabled.length > 0 ? ` · ${enabled.length}` : ""}
@@ -73,16 +69,16 @@ export default function RecordsColumnsMenu({
       </button>
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 w-44 border border-line bg-moon">
-          {OPTIONAL_COLUMNS.map((column) => (
+          {OPTIONAL_RECORD_COLUMNS.map((column) => (
             <label
               key={column.id}
-              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs text-paper hover:bg-card"
+              className="flex min-h-10 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
             >
               <input
                 type="checkbox"
                 checked={enabled.includes(column.id)}
                 onChange={() => toggle(column.id)}
-                className="h-3.5 w-3.5 shrink-0 accent-blue"
+                className="size-4 shrink-0 accent-blue"
               />
               <span className="min-w-0 truncate">{zh ? column.zh : column.en}</span>
             </label>
