@@ -180,6 +180,24 @@ function clientMeta(value: unknown): UsageClientMetaV2 {
         ...(optionalText(terminal.version, "client.device.terminal.version", 80)
           ? { version: optionalText(terminal.version, "client.device.terminal.version", 80) }
           : {}),
+        ...(optionalText(terminal.confidence, "client.device.terminal.confidence", 16)
+          ? {
+              confidence: (() => {
+                const confidence = optionalText(
+                  terminal.confidence,
+                  "client.device.terminal.confidence",
+                  16,
+                );
+                if (confidence !== "detected" && confidence !== "fallback") {
+                  throw new UsageRequestError(
+                    "invalid_payload",
+                    "client.device.terminal.confidence is unsupported.",
+                  );
+                }
+                return confidence;
+              })(),
+            }
+          : {}),
       },
       os: {
         name: text(os.name, "client.device.os.name", 40),
@@ -242,6 +260,46 @@ function bucket(value: unknown, index: number, settings: UsageSettings): UsageBu
     input.creditUnits === undefined
       ? undefined
       : finiteNumber(input.creditUnits, `buckets[${index}].creditUnits`);
+  const contextTier = optionalText(input.contextTier, `buckets[${index}].contextTier`, 16);
+  if (contextTier && contextTier !== "short" && contextTier !== "long") {
+    throw new UsageRequestError("invalid_payload", `buckets[${index}].contextTier is unsupported.`);
+  }
+  const processingTier = optionalText(
+    input.processingTier,
+    `buckets[${index}].processingTier`,
+    16,
+  );
+  if (
+    processingTier &&
+    !new Set(["standard", "batch", "flex", "priority"]).has(processingTier)
+  ) {
+    throw new UsageRequestError(
+      "invalid_payload",
+      `buckets[${index}].processingTier is unsupported.`,
+    );
+  }
+  const cacheWriteInputTokens = safeInteger(
+    input.cacheWriteInputTokens,
+    `buckets[${index}].cacheWriteInputTokens`,
+  );
+  const cacheWrite5mInputTokens = input.cacheWrite5mInputTokens === undefined
+    ? 0
+    : safeInteger(
+        input.cacheWrite5mInputTokens,
+        `buckets[${index}].cacheWrite5mInputTokens`,
+      );
+  const cacheWrite1hInputTokens = input.cacheWrite1hInputTokens === undefined
+    ? 0
+    : safeInteger(
+        input.cacheWrite1hInputTokens,
+        `buckets[${index}].cacheWrite1hInputTokens`,
+      );
+  if (cacheWrite5mInputTokens + cacheWrite1hInputTokens > cacheWriteInputTokens) {
+    throw new UsageRequestError(
+      "invalid_payload",
+      `buckets[${index}] cache-write TTL partitions exceed cacheWriteInputTokens.`,
+    );
+  }
   return {
     source,
     model: text(input.model, `buckets[${index}].model`, 160),
@@ -257,13 +315,16 @@ function bucket(value: unknown, index: number, settings: UsageSettings): UsageBu
     ...(optionalText(input.agentVersion, `buckets[${index}].agentVersion`, 80)
       ? { agentVersion: optionalText(input.agentVersion, `buckets[${index}].agentVersion`, 80) }
       : {}),
+    ...(contextTier ? { contextTier: contextTier as UsageBucketV2["contextTier"] } : {}),
+    ...(processingTier
+      ? { processingTier: processingTier as UsageBucketV2["processingTier"] }
+      : {}),
     bucketStart,
     project: project(input.project, `buckets[${index}].project`, settings),
     inputTokens: safeInteger(input.inputTokens, `buckets[${index}].inputTokens`),
-    cacheWriteInputTokens: safeInteger(
-      input.cacheWriteInputTokens,
-      `buckets[${index}].cacheWriteInputTokens`,
-    ),
+    cacheWriteInputTokens,
+    ...(cacheWrite5mInputTokens > 0 ? { cacheWrite5mInputTokens } : {}),
+    ...(cacheWrite1hInputTokens > 0 ? { cacheWrite1hInputTokens } : {}),
     cacheReadInputTokens: safeInteger(
       input.cacheReadInputTokens,
       `buckets[${index}].cacheReadInputTokens`,
@@ -330,6 +391,7 @@ function session(value: unknown, index: number, settings: UsageSettings): UsageS
       );
     }
     const seen = new Set<string>();
+    let hasExtendedHours = false;
     activityHours = input.activityHours.map((value, hourIndex) => {
       const item = record(value, `sessions[${index}].activityHours[${hourIndex}]`);
       const hourStart = timestamp(
@@ -357,6 +419,15 @@ function session(value: unknown, index: number, settings: UsageSettings): UsageS
           `sessions[${index}].activityHours must stay inside the session window.`,
         );
       }
+      const hasEngaged = item.engagedSeconds !== undefined;
+      const hasMessages = item.messageCount !== undefined;
+      if (hasEngaged !== hasMessages) {
+        throw new UsageRequestError(
+          "invalid_payload",
+          `sessions[${index}].activityHours[${hourIndex}] must provide engagedSeconds and messageCount together.`,
+        );
+      }
+      hasExtendedHours ||= hasEngaged;
       return {
         hourStart,
         activeSeconds: safeInteger(
@@ -369,6 +440,20 @@ function session(value: unknown, index: number, settings: UsageSettings): UsageS
           `sessions[${index}].activityHours[${hourIndex}].userMessageCount`,
           MAX_COUNT,
         ),
+        ...(hasEngaged
+          ? {
+              engagedSeconds: safeInteger(
+                item.engagedSeconds,
+                `sessions[${index}].activityHours[${hourIndex}].engagedSeconds`,
+                3_600,
+              ),
+              messageCount: safeInteger(
+                item.messageCount,
+                `sessions[${index}].activityHours[${hourIndex}].messageCount`,
+                MAX_COUNT,
+              ),
+            }
+          : {}),
       };
     });
     activityHours.sort((left, right) => left.hourStart.localeCompare(right.hourStart));
@@ -379,6 +464,21 @@ function session(value: unknown, index: number, settings: UsageSettings): UsageS
       throw new UsageRequestError(
         "invalid_payload",
         `sessions[${index}].activityHours totals must match the session counters.`,
+      );
+    }
+    if (
+      hasExtendedHours &&
+      (activityHours.some(
+        (item) => item.engagedSeconds === undefined || item.messageCount === undefined,
+      ) ||
+        activityHours.reduce((sum, item) => sum + (item.engagedSeconds ?? 0), 0) !==
+          durationSeconds ||
+        activityHours.reduce((sum, item) => sum + (item.messageCount ?? 0), 0) !==
+          safeInteger(input.messageCount, `sessions[${index}].messageCount`, MAX_COUNT))
+    ) {
+      throw new UsageRequestError(
+        "invalid_payload",
+        `sessions[${index}] extended activity hours must match duration and message counters.`,
       );
     }
   }

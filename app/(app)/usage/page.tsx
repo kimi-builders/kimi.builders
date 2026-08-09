@@ -494,6 +494,7 @@ export default async function UsagePage({
             pricingMatches={overview.meta.pricingMatches}
             pricingCoverage={`${(overview.meta.pricingCoverage * 100).toFixed(1)}%`}
             pricingVersions={overview.meta.pricingVersions.join("、")}
+            assumedTokens={overview.meta.assumedTokens}
             currentRange={overview.range}
             tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
           />
@@ -613,6 +614,7 @@ export default async function UsagePage({
     pricingMatches: overview.meta.pricingMatches,
     pricingCoverage,
     pricingVersions,
+    assumedTokens: overview.meta.assumedTokens,
   };
   const peakNote = peak
     ? `${peak.day} · ${
@@ -644,8 +646,8 @@ export default async function UsagePage({
           : "EST. COST",
       value: fmtCost(totals.costMicros, ccy),
       note: zh
-        ? `覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价`
-        : `${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial`,
+        ? `覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} 使用估算假设` : ""}`
+        : `${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} assumed` : ""}`,
       cur: totals.costMicros,
       prev: previous.costMicros,
       help: "pricing",
@@ -996,8 +998,8 @@ export default async function UsagePage({
               </h2>
               <p className="mt-2 text-xs leading-relaxed text-grey">
                 {zh
-                  ? "支持 Kimi Code / Claude Code / Codex 三个来源。Collector 在本地读取日志；先展示将上传的字段，再由浏览器批准这台设备。"
-                  : "Kimi Code, Claude Code, and Codex are supported. The collector reads logs locally, previews uploaded fields, then asks you to approve this device in the browser."}
+                  ? "默认支持 Kimi Code、Claude Code、Codex、OpenCode、Gemini CLI、Antigravity、Copilot CLI 和 Roo Code；Cursor 可显式开启。Collector 在本地读取日志，先展示将上传的字段，再由浏览器批准这台设备。"
+                  : "Kimi Code, Claude Code, Codex, OpenCode, Gemini CLI, Antigravity, Copilot CLI, and Roo Code are enabled by default; Cursor is opt-in. The collector reads logs locally, previews uploaded fields, then asks you to approve this device in the browser."}
               </p>
               <pre className="mt-4 overflow-x-auto border border-line bg-bg px-3 py-3 font-mono text-xs text-paper">
                 npx @kimi-builders/usage init

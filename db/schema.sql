@@ -151,7 +151,8 @@ CREATE TABLE IF NOT EXISTS usage_daily (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 用量 v2:设备授权、按设备 Key、30 分钟事实桶、会话与隐私设置。
--- 已有数据库依次执行 20260808_usage_v2.sql 与 20260812_usage_metadata.sql。
+-- 已有数据库依次执行 20260808_usage_v2.sql、20260812_usage_metadata.sql
+-- 与 20260813_usage_cost_facts.sql。
 CREATE TABLE IF NOT EXISTS usage_devices (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
@@ -163,6 +164,7 @@ CREATE TABLE IF NOT EXISTS usage_devices (
   parser_version VARCHAR(40) NOT NULL DEFAULT '',
   terminal_name VARCHAR(60) NOT NULL DEFAULT '',
   terminal_version VARCHAR(80) NOT NULL DEFAULT '',
+  terminal_confidence VARCHAR(16) NOT NULL DEFAULT 'unknown',
   os_name VARCHAR(40) NOT NULL DEFAULT '',
   os_version VARCHAR(60) NOT NULL DEFAULT '',
   architecture VARCHAR(24) NOT NULL DEFAULT '',
@@ -236,11 +238,15 @@ CREATE TABLE IF NOT EXISTS usage_buckets (
   model_provider VARCHAR(80) NOT NULL DEFAULT '',
   reasoning_effort VARCHAR(32) NOT NULL DEFAULT '',
   agent_version VARCHAR(80) NOT NULL DEFAULT '',
+  context_tier VARCHAR(16) NOT NULL DEFAULT '',
+  processing_tier VARCHAR(16) NOT NULL DEFAULT '',
   project_label VARCHAR(120) NULL,
   project_hash BINARY(32) NOT NULL,
   bucket_start DATETIME(3) NOT NULL,
   input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
   cache_write_input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  cache_write_5m_input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  cache_write_1h_input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
   cache_read_input_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
   output_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
   reasoning_output_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -254,14 +260,15 @@ CREATE TABLE IF NOT EXISTS usage_buckets (
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_usage_bucket
-    (user_id, device_id, source, model, model_provider, reasoning_effort,
-     agent_version, project_hash, bucket_start),
+     (user_id, device_id, source, model, model_provider, reasoning_effort,
+     agent_version, context_tier, processing_tier, project_hash, bucket_start),
   KEY idx_usage_bucket_user_time (user_id, bucket_start),
   KEY idx_usage_bucket_source_time (user_id, source, bucket_start),
   KEY idx_usage_bucket_model_time (user_id, model, bucket_start),
   KEY idx_usage_bucket_device_time (user_id, device_id, bucket_start),
   KEY idx_usage_bucket_effort_time (user_id, reasoning_effort, bucket_start),
   KEY idx_usage_bucket_agent_time (user_id, agent_version, bucket_start),
+  KEY idx_usage_bucket_context_time (user_id, context_tier, bucket_start),
   CONSTRAINT fk_usage_bucket_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_usage_bucket_device FOREIGN KEY (device_id) REFERENCES usage_devices (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -307,15 +314,22 @@ CREATE TABLE IF NOT EXISTS usage_model_prices (
   model_pattern VARCHAR(120) NOT NULL,
   match_kind VARCHAR(8) NOT NULL DEFAULT 'prefix',
   source VARCHAR(40) NULL,
+  context_tier VARCHAR(16) NOT NULL DEFAULT '',
+  processing_tier VARCHAR(16) NOT NULL DEFAULT 'standard',
   effective_from DATETIME(3) NOT NULL,
   effective_to DATETIME(3) NULL,
   currency CHAR(3) NOT NULL DEFAULT 'USD',
   input_per_mtok DECIMAL(18,6) NOT NULL,
   cache_write_per_mtok DECIMAL(18,6) NULL,
+  cache_write_5m_per_mtok DECIMAL(18,6) NULL,
+  cache_write_1h_per_mtok DECIMAL(18,6) NULL,
   cache_read_per_mtok DECIMAL(18,6) NULL,
   output_per_mtok DECIMAL(18,6) NOT NULL,
   reasoning_per_mtok DECIMAL(18,6) NULL,
   version VARCHAR(40) NOT NULL,
+  pricing_source_url VARCHAR(500) NOT NULL DEFAULT '',
+  verified_at DATE NULL,
+  pricing_basis VARCHAR(40) NOT NULL DEFAULT 'standard-api',
   note VARCHAR(200) NOT NULL DEFAULT '',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   KEY idx_prices_window (effective_from, effective_to)

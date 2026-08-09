@@ -11,10 +11,14 @@ interface ExistingBucketRow extends RowDataPacket {
   model_provider: string;
   reasoning_effort: string;
   agent_version: string;
+  context_tier: string;
+  processing_tier: string;
   project_hash: string;
   bucket_start: Date;
   input_tokens: number | string;
   cache_write_input_tokens: number | string;
+  cache_write_5m_input_tokens: number | string;
+  cache_write_1h_input_tokens: number | string;
   cache_read_input_tokens: number | string;
   output_tokens: number | string;
   reasoning_output_tokens: number | string;
@@ -30,6 +34,8 @@ function incomingBucketKey(
     (bucket.modelProvider ?? "").toLowerCase(),
     (bucket.reasoningEffort ?? "").toLowerCase(),
     (bucket.agentVersion ?? "").toLowerCase(),
+    (bucket.contextTier ?? "").toLowerCase(),
+    (bucket.processingTier ?? "").toLowerCase(),
     projectHash.toString("hex"),
     bucket.bucketStart,
   ].join("\u0000");
@@ -42,6 +48,8 @@ function existingBucketKey(row: ExistingBucketRow): string {
     String(row.model_provider).toLowerCase(),
     String(row.reasoning_effort).toLowerCase(),
     String(row.agent_version).toLowerCase(),
+    String(row.context_tier).toLowerCase(),
+    String(row.processing_tier).toLowerCase(),
     String(row.project_hash).toLowerCase(),
     row.bucket_start.toISOString(),
   ].join("\u0000");
@@ -85,7 +93,18 @@ function existingBucketBaseKey(row: ExistingBucketRow): string {
 }
 
 function hasRequestMetadata(bucket: UsageIngestRequestV2["buckets"][number]): boolean {
-  return Boolean(bucket.modelProvider || bucket.reasoningEffort || bucket.agentVersion);
+  return Boolean(
+    bucket.modelProvider || bucket.reasoningEffort || bucket.agentVersion ||
+    bucket.contextTier || bucket.processingTier ||
+    bucket.cacheWrite5mInputTokens || bucket.cacheWrite1hInputTokens
+  );
+}
+
+function hasPricingMetadata(bucket: UsageIngestRequestV2["buckets"][number]): boolean {
+  return Boolean(
+    bucket.contextTier || bucket.processingTier ||
+    bucket.cacheWrite5mInputTokens || bucket.cacheWrite1hInputTokens
+  );
 }
 
 /* v2 additive metadata expands a former base bucket into request-metadata
@@ -122,8 +141,10 @@ export async function prepareBucketMetadataTransition(
   ]);
   const [rows] = await connection.query<ExistingBucketRow[]>(
     `SELECT source, model, model_provider, reasoning_effort, agent_version,
+            context_tier, processing_tier,
             HEX(project_hash) AS project_hash, bucket_start,
-            input_tokens, cache_write_input_tokens, cache_read_input_tokens,
+            input_tokens, cache_write_input_tokens, cache_write_5m_input_tokens,
+            cache_write_1h_input_tokens, cache_read_input_tokens,
             output_tokens, reasoning_output_tokens
        FROM usage_buckets
       WHERE user_id = ? AND device_id = ?
@@ -132,13 +153,25 @@ export async function prepareBucketMetadataTransition(
     [principal.userId, principal.deviceId, ...parameters],
   );
 
-  const existingByBase = new Map<string, { total: number; hasMetadata: boolean }>();
+  const existingByBase = new Map<string, {
+    total: number;
+    hasMetadata: boolean;
+    hasPricingMetadata: boolean;
+  }>();
   for (const row of rows) {
     const key = existingBucketBaseKey(row);
-    const current = existingByBase.get(key) ?? { total: 0, hasMetadata: false };
+    const current = existingByBase.get(key) ?? {
+      total: 0,
+      hasMetadata: false,
+      hasPricingMetadata: false,
+    };
     current.total += existingTokenTotal(row);
     current.hasMetadata ||= Boolean(
       row.model_provider || row.reasoning_effort || row.agent_version,
+    );
+    current.hasPricingMetadata ||= Boolean(
+      row.context_tier || row.processing_tier ||
+      Number(row.cache_write_5m_input_tokens) || Number(row.cache_write_1h_input_tokens),
     );
     existingByBase.set(key, current);
   }
@@ -152,7 +185,11 @@ export async function prepareBucketMetadataTransition(
   const blockedBases = new Set<string>();
   for (const key of candidateByBase.keys()) {
     const existing = existingByBase.get(key);
-    if (!existing || existing.hasMetadata) continue;
+    if (!existing) continue;
+    const incomingNeedsPricingMetadata = buckets.some(
+      (bucket) => incomingBucketBaseKey(bucket) === key && hasPricingMetadata(bucket),
+    );
+    if (incomingNeedsPricingMetadata ? existing.hasPricingMetadata : existing.hasMetadata) continue;
     if ((incomingTotals.get(key) ?? 0) >= existing.total) replaceBases.add(key);
     else blockedBases.add(key);
   }
@@ -169,7 +206,6 @@ export async function prepareBucketMetadataTransition(
     await connection.query(
       `DELETE FROM usage_buckets
        WHERE user_id = ? AND device_id = ?
-         AND model_provider = '' AND reasoning_effort = '' AND agent_version = ''
          AND (source, model, project_hash, bucket_start) IN (${replacePlaceholders})`,
       [principal.userId, principal.deviceId, ...replaceParameters],
     );
@@ -188,24 +224,29 @@ async function protectLargerExistingBuckets(
 ) {
   if (buckets.length === 0) return { accepted: [], protectedCount: 0 };
   const hashes = buckets.map((bucket) => projectLabelHash(bucket.project));
-  const tuples = buckets.map(() => "(?, ?, ?, ?, ?, ?, ?)").join(", ");
+  const tuples = buckets.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
   const parameters = buckets.flatMap((bucket, index) => [
     bucket.source,
     bucket.model,
     bucket.modelProvider ?? "",
     bucket.reasoningEffort ?? "",
     bucket.agentVersion ?? "",
+    bucket.contextTier ?? "",
+    bucket.processingTier ?? "",
     hashes[index],
     new Date(bucket.bucketStart),
   ]);
   const [rows] = await connection.query<ExistingBucketRow[]>(
     `SELECT source, model, model_provider, reasoning_effort, agent_version,
+            context_tier, processing_tier,
             HEX(project_hash) AS project_hash, bucket_start,
-            input_tokens, cache_write_input_tokens, cache_read_input_tokens,
+            input_tokens, cache_write_input_tokens, cache_write_5m_input_tokens,
+            cache_write_1h_input_tokens, cache_read_input_tokens,
             output_tokens, reasoning_output_tokens
        FROM usage_buckets
       WHERE user_id = ? AND device_id = ?
         AND (source, model, model_provider, reasoning_effort, agent_version,
+             context_tier, processing_tier,
              project_hash, bucket_start) IN (${tuples})
       FOR UPDATE`,
     [principal.userId, principal.deviceId, ...parameters],
@@ -252,11 +293,15 @@ export async function ingestUsage(
         bucket.modelProvider ?? "",
         bucket.reasoningEffort ?? "",
         bucket.agentVersion ?? "",
+        bucket.contextTier ?? "",
+        bucket.processingTier ?? "",
         bucket.project ?? null,
         projectLabelHash(bucket.project),
         new Date(bucket.bucketStart),
         bucket.inputTokens,
         bucket.cacheWriteInputTokens,
+        bucket.cacheWrite5mInputTokens ?? 0,
+        bucket.cacheWrite1hInputTokens ?? 0,
         bucket.cacheReadInputTokens,
         bucket.outputTokens,
         bucket.reasoningOutputTokens,
@@ -268,8 +313,10 @@ export async function ingestUsage(
       await connection.query(
         `INSERT INTO usage_buckets
            (user_id, device_id, source, model, model_canonical, model_provider,
-            reasoning_effort, agent_version, project_label, project_hash,
-            bucket_start, input_tokens, cache_write_input_tokens,
+            reasoning_effort, agent_version, context_tier, processing_tier,
+            project_label, project_hash, bucket_start, input_tokens,
+            cache_write_input_tokens, cache_write_5m_input_tokens,
+            cache_write_1h_input_tokens,
             cache_read_input_tokens, output_tokens, reasoning_output_tokens,
             request_count, credit_units, measurement, sync_id)
          VALUES ?
@@ -278,6 +325,8 @@ export async function ingestUsage(
            model_canonical = VALUES(model_canonical),
            input_tokens = VALUES(input_tokens),
            cache_write_input_tokens = VALUES(cache_write_input_tokens),
+           cache_write_5m_input_tokens = VALUES(cache_write_5m_input_tokens),
+           cache_write_1h_input_tokens = VALUES(cache_write_1h_input_tokens),
            cache_read_input_tokens = VALUES(cache_read_input_tokens),
            output_tokens = VALUES(output_tokens),
            reasoning_output_tokens = VALUES(reasoning_output_tokens),
@@ -304,6 +353,8 @@ export async function ingestUsage(
             AND fresh.model_provider = stale.model_provider
             AND fresh.reasoning_effort = stale.reasoning_effort
             AND fresh.agent_version = stale.agent_version
+            AND fresh.context_tier = stale.context_tier
+            AND fresh.processing_tier = stale.processing_tier
             AND fresh.bucket_start = stale.bucket_start
            WHERE fresh.user_id = ? AND fresh.device_id = ?
              AND fresh.sync_id = ? AND fresh.project_hash = ?
@@ -327,6 +378,8 @@ export async function ingestUsage(
             AND fresh.model_provider = stale.model_provider
             AND fresh.reasoning_effort = stale.reasoning_effort
             AND fresh.agent_version = stale.agent_version
+            AND fresh.context_tier = stale.context_tier
+            AND fresh.processing_tier = stale.processing_tier
             AND fresh.bucket_start = stale.bucket_start
            WHERE fresh.user_id = ? AND fresh.device_id = ?
              AND fresh.sync_id = ? AND fresh.project_hash <> ?
@@ -358,7 +411,12 @@ export async function ingestUsage(
         session.userMessageCount,
         JSON.stringify(
           session.activityHours
-            ? { version: 2, hours: session.activityHours }
+            ? {
+                version: session.activityHours.every(
+                  (hour) => hour.engagedSeconds !== undefined && hour.messageCount !== undefined,
+                ) ? 3 : 2,
+                hours: session.activityHours,
+              }
             : session.userPromptHours,
         ),
         payload.client.syncId,
@@ -384,15 +442,32 @@ export async function ingestUsage(
         [rows],
       );
     }
+    const terminal = payload.client.device?.terminal;
+    const terminalConfidence = terminal?.confidence ??
+      (terminal?.name.toLowerCase() === "cli" ? "fallback" : "detected");
+    const detectedTerminalName = terminal && terminalConfidence === "detected"
+      ? terminal.name
+      : null;
+    const detectedTerminalVersion = detectedTerminalName
+      ? terminal?.version || null
+      : null;
+    const incomingAgentVersions =
+      payload.client.agentVersions && Object.keys(payload.client.agentVersions).length > 0
+        ? JSON.stringify(payload.client.agentVersions)
+        : null;
     await connection.query(
       `UPDATE usage_devices
        SET surface = ?, client_version = ?, parser_version = ?, platform = ?,
            terminal_name = COALESCE(?, terminal_name),
            terminal_version = COALESCE(?, terminal_version),
+           terminal_confidence = CASE WHEN ? IS NULL THEN terminal_confidence ELSE 'detected' END,
            os_name = COALESCE(?, os_name),
            os_version = COALESCE(?, os_version),
            architecture = COALESCE(?, architecture),
-           agent_versions = COALESCE(?, agent_versions),
+           agent_versions = CASE
+             WHEN ? IS NULL THEN agent_versions
+             ELSE JSON_MERGE_PATCH(COALESCE(agent_versions, JSON_OBJECT()), CAST(? AS JSON))
+           END,
            last_seen_at = UTC_TIMESTAMP(3)
        WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
       [
@@ -400,18 +475,14 @@ export async function ingestUsage(
         payload.client.surfaceVersion,
         payload.client.parserVersion,
         payload.client.platform,
-        payload.client.surface === "cli"
-          ? payload.client.device?.terminal.name || null
-          : null,
-        payload.client.surface === "cli"
-          ? payload.client.device?.terminal.version || null
-          : null,
+        payload.client.surface === "cli" ? detectedTerminalName : null,
+        payload.client.surface === "cli" ? detectedTerminalVersion : null,
+        payload.client.surface === "cli" ? detectedTerminalName : null,
         payload.client.device?.os.name || null,
         payload.client.device?.os.version || null,
         payload.client.device?.os.architecture || null,
-        payload.client.agentVersions && Object.keys(payload.client.agentVersions).length > 0
-          ? JSON.stringify(payload.client.agentVersions)
-          : null,
+        incomingAgentVersions,
+        incomingAgentVersions,
         principal.deviceId,
         principal.userId,
       ],

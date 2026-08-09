@@ -22,6 +22,15 @@ test("legacy source-based device names fall back to stored environment facts", (
   );
 });
 
+test("generic CLI device names can upgrade to detected terminal facts", () => {
+  assert.equal(isGenericUsageDeviceName("CLI · macOS"), true);
+  assert.equal(usageDeviceDisplayName({
+    name: "CLI · macOS",
+    terminalName: "Warp",
+    osName: "macOS",
+  }), "Warp · macOS");
+});
+
 test("a user-edited or collector-detected device name is preserved", () => {
   assert.equal(
     usageDeviceDisplayName({

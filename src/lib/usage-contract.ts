@@ -23,13 +23,13 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "qwen-code", tier: "beta" },
   { id: "amp", tier: "beta" },
   { id: "droid", tier: "beta" },
-  { id: "antigravity", tier: "beta" },
+  { id: "antigravity", tier: "stable" },
   { id: "trae-cli", tier: "beta" },
   { id: "hermes", tier: "beta" },
   { id: "kiro", tier: "beta" },
   { id: "mimocode", tier: "beta" },
   { id: "cline", tier: "beta" },
-  { id: "roo-code", tier: "beta" },
+  { id: "roo-code", tier: "stable" },
   { id: "zcode", tier: "beta" },
 ] as const;
 
@@ -84,6 +84,12 @@ export interface UsageBucketV2 extends UsageTokenCountsV2 {
   reasoningEffort?: string;
   /* Version attached by the Agent to this historical request, not today's version. */
   agentVersion?: string;
+  /* Request pricing facts. Omit when the source log does not prove them. */
+  contextTier?: "short" | "long";
+  processingTier?: "standard" | "batch" | "flex" | "priority";
+  /* Optional partitions of cacheWriteInputTokens; never additional tokens. */
+  cacheWrite5mInputTokens?: number;
+  cacheWrite1hInputTokens?: number;
   /* UTC ISO-8601 timestamp aligned to a 30-minute boundary. */
   bucketStart: string;
   /* Omit when project upload is disabled; never send a full path or URL. */
@@ -120,6 +126,9 @@ export interface UsageSessionHourV2 {
   hourStart: string;
   activeSeconds: number;
   userMessageCount: number;
+  /* Collector 0.4+ facts used to clip sessions to arbitrary date ranges. */
+  engagedSeconds?: number;
+  messageCount?: number;
 }
 
 export type UsageQuotaWindow = "five-hour" | "seven-day" | "monthly" | "balance";
@@ -143,7 +152,11 @@ export interface UsageClientMetaV2 {
   parserVersion: string;
   platform: "darwin" | "linux" | "win32";
   device?: {
-    terminal: { name: string; version?: string };
+    terminal: {
+      name: string;
+      version?: string;
+      confidence?: "detected" | "fallback";
+    };
     os: { name: string; version?: string; architecture?: string };
   };
   /* Current installed versions for diagnostics. Historical request attribution

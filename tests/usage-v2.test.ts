@@ -75,14 +75,18 @@ test("v2 contract preserves factual device, model, effort, and Agent version met
   const value = payload() as ReturnType<typeof payload> & {
     client: ReturnType<typeof payload>["client"] & {
       device: {
-        terminal: { name: string; version: string };
+        terminal: { name: string; version: string; confidence: "detected" };
         os: { name: string; version: string; architecture: string };
       };
       agentVersions: Record<string, string>;
     };
   };
   value.client.device = {
-    terminal: { name: "Warp", version: "v0.2026.07.29.09.05.stable_02" },
+    terminal: {
+      name: "Warp",
+      version: "v0.2026.07.29.09.05.stable_02",
+      confidence: "detected",
+    },
     os: { name: "macOS", version: "26.5.2", architecture: "arm64" },
   };
   value.client.agentVersions = { "kimi-code": "1.44.0", codex: "0.146.1" };
@@ -91,6 +95,10 @@ test("v2 contract preserves factual device, model, effort, and Agent version met
     modelProvider: "moonshot",
     reasoningEffort: "HIGH",
     agentVersion: "1.44.0",
+    contextTier: "short",
+    processingTier: "standard",
+    cacheWrite5mInputTokens: 1,
+    cacheWrite1hInputTokens: 2,
   });
   Object.assign(value.sessions[0], { agentVersion: "1.44.0" });
 
@@ -101,6 +109,10 @@ test("v2 contract preserves factual device, model, effort, and Agent version met
   assert.equal(parsed.buckets[0].modelCanonical, "kimi-k3");
   assert.equal(parsed.buckets[0].reasoningEffort, "high");
   assert.equal(parsed.buckets[0].agentVersion, "1.44.0");
+  assert.equal(parsed.buckets[0].contextTier, "short");
+  assert.equal(parsed.buckets[0].processingTier, "standard");
+  assert.equal(parsed.buckets[0].cacheWrite5mInputTokens, 1);
+  assert.equal(parsed.buckets[0].cacheWrite1hInputTokens, 2);
   assert.equal(parsed.sessions[0].agentVersion, "1.44.0");
 });
 
@@ -120,6 +132,28 @@ test("v2 contract accepts exact calendar-hour session activity", () => {
       userMessageCount: 1,
     },
   ];
+  const parsed = validateUsageIngest(value, settings);
+  assert.deepEqual(parsed.sessions[0].activityHours, rawSession.activityHours);
+});
+
+test("v2 contract accepts complete v3 range-clippable session facts", () => {
+  const value = payload();
+  const rawSession = value.sessions[0] as typeof value.sessions[0] & {
+    activityHours: Array<{
+      hourStart: string;
+      activeSeconds: number;
+      engagedSeconds: number;
+      messageCount: number;
+      userMessageCount: number;
+    }>;
+  };
+  rawSession.activityHours = [{
+    hourStart: "2026-08-01T10:00:00.000Z",
+    activeSeconds: 30,
+    engagedSeconds: 60,
+    messageCount: 2,
+    userMessageCount: 1,
+  }];
   const parsed = validateUsageIngest(value, settings);
   assert.deepEqual(parsed.sessions[0].activityHours, rawSession.activityHours);
 });

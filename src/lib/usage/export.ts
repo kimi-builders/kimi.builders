@@ -24,11 +24,15 @@ export const USAGE_CSV_HEADER = [
   "model_provider",
   "reasoning_effort",
   "agent_version",
+  "context_tier",
+  "processing_tier",
   "project",
   "device",
   "device_detail",
   "input_tokens",
   "cache_write_input_tokens",
+  "cache_write_5m_input_tokens",
+  "cache_write_1h_input_tokens",
   "cache_read_input_tokens",
   "output_tokens",
   "reasoning_output_tokens",
@@ -50,11 +54,15 @@ export function recordsToCsv(records: readonly UsageRecordRow[]): string {
         row.modelProvider,
         row.reasoningEffort,
         row.agentVersion,
+        row.contextTier,
+        row.processingTier,
         row.project ?? "",
         row.deviceName,
         row.deviceDetail,
         row.inputTokens,
         row.cacheWriteInputTokens,
+        row.cacheWrite5mInputTokens ?? 0,
+        row.cacheWrite1hInputTokens ?? 0,
         row.cacheReadInputTokens,
         row.outputTokens,
         row.reasoningOutputTokens,
@@ -82,7 +90,7 @@ const JSON_ROW_CAP = 100_000;
 
 export interface UsagePrivateExport {
   format: "kimi-builders/usage-export";
-  version: 1;
+  version: 2;
   exportedAt: string;
   rangeNote: string;
   settings: Record<string, unknown>;
@@ -104,7 +112,8 @@ export async function exportUsageData(userId: number): Promise<UsagePrivateExpor
     ),
     pool.query<RowDataPacket[]>(
       `SELECT public_id, name, platform, surface, client_version, parser_version,
-              terminal_name, terminal_version, os_name, os_version, architecture,
+              terminal_name, terminal_version, terminal_confidence,
+              os_name, os_version, architecture,
               agent_versions,
               last_seen_at, revoked_at, created_at
        FROM usage_devices WHERE user_id = ? ORDER BY created_at`,
@@ -113,7 +122,10 @@ export async function exportUsageData(userId: number): Promise<UsagePrivateExpor
     pool.query<RowDataPacket[]>(
       `SELECT b.bucket_start, b.source, b.model, b.model_canonical, b.model_provider,
               b.reasoning_effort, b.agent_version, b.project_label,
-              b.input_tokens, b.cache_write_input_tokens, b.cache_read_input_tokens,
+              b.context_tier, b.processing_tier,
+              b.input_tokens, b.cache_write_input_tokens,
+              b.cache_write_5m_input_tokens, b.cache_write_1h_input_tokens,
+              b.cache_read_input_tokens,
               b.output_tokens, b.reasoning_output_tokens,
               b.request_count, b.credit_units, b.measurement, b.cost_micros,
               d.name AS device_name
@@ -142,7 +154,7 @@ export async function exportUsageData(userId: number): Promise<UsagePrivateExpor
   const truncated = buckets.length > JSON_ROW_CAP || sessions.length > JSON_ROW_CAP;
   return {
     format: "kimi-builders/usage-export",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     rangeNote:
       "Self-reported metrics from your own devices. No conversation content, paths, or credentials are ever uploaded.",

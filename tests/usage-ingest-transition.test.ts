@@ -29,17 +29,21 @@ function bucket(inputTokens: number, extra: Partial<UsageBucketV2> = {}): UsageB
   };
 }
 
-function existing(inputTokens: number, metadata = false) {
+function existing(inputTokens: number, metadata = false, pricingMetadata = false) {
   return {
     source: "codex",
     model: "gpt-5.6-sol",
     model_provider: metadata ? "openai" : "",
     reasoning_effort: metadata ? "high" : "",
     agent_version: metadata ? "0.146.1" : "",
+    context_tier: pricingMetadata ? "short" : "",
+    processing_tier: pricingMetadata ? "standard" : "",
     project_hash: projectLabelHash(undefined).toString("hex").toUpperCase(),
     bucket_start: new Date("2026-08-01T10:00:00.000Z"),
     input_tokens: inputTokens,
     cache_write_input_tokens: 0,
+    cache_write_5m_input_tokens: 0,
+    cache_write_1h_input_tokens: 0,
     cache_read_input_tokens: 0,
     output_tokens: 0,
     reasoning_output_tokens: 0,
@@ -90,4 +94,18 @@ test("already-segmented server data bypasses the one-time transition", async () 
   assert.deepEqual(planned.accepted, incoming);
   assert.equal(planned.protectedCount, 0);
   assert.equal(db.sql.some((statement) => statement.startsWith("DELETE")), false);
+});
+
+test("pricing metadata replaces a request-metadata-only aggregate", async () => {
+  const db = connection([existing(100, true, false)]);
+  const incoming = [bucket(100, {
+    reasoningEffort: "high",
+    agentVersion: "0.146.1",
+    contextTier: "short",
+    processingTier: "standard",
+  })];
+  const planned = await prepareBucketMetadataTransition(db.value, principal, incoming);
+  assert.deepEqual(planned.accepted, incoming);
+  assert.equal(planned.protectedCount, 0);
+  assert.equal(db.sql.some((statement) => statement.startsWith("DELETE")), true);
 });

@@ -16,7 +16,7 @@ const GENERIC_DEVICE_NAMES = [
   /^kimi code(?: cli)?$/i,
   /^kimi code\s*\((?:darwin|linux|win32|unknown)\)$/i,
   /^kimi builders usage$/i,
-  /^(?:terminal|background sync|macos app|windows app)\s*·\s*(?:macos|windows|linux|unknown os)$/i,
+  /^(?:cli|terminal|background sync|macos app|windows app)\s*·\s*(?:macos|windows|linux|unknown os)$/i,
 ];
 
 function text(value: unknown): string {

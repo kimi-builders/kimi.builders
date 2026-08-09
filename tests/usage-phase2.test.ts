@@ -22,14 +22,21 @@ function price(partial: Partial<UsageModelPrice>): UsageModelPrice {
     modelPattern: "model",
     matchKind: "prefix",
     source: null,
+    contextTier: "",
+    processingTier: "standard",
     effectiveFrom: day("2026-01-01"),
     effectiveTo: null,
     inputPerMtok: 1,
     cacheWritePerMtok: null,
+    cacheWrite5mPerMtok: null,
+    cacheWrite1hPerMtok: null,
     cacheReadPerMtok: null,
     outputPerMtok: 2,
     reasoningPerMtok: null,
     version: "v1",
+    pricingSourceUrl: "https://example.com/pricing",
+    verifiedAt: "2026-08-08",
+    pricingBasis: "standard-api",
     ...partial,
   };
 }
@@ -141,6 +148,62 @@ test("pricing: Codex GPT-5.6 variants beat the generic gpt-5 prefix", () => {
     matched,
   );
   assert.equal(estimate.micros, 9_199_992);
+});
+
+test("pricing: GPT-5.6 context tier selects the correct rate and discloses legacy assumptions", () => {
+  const prices = [
+    price({
+      modelPattern: "gpt-5.6-sol",
+      matchKind: "exact",
+      contextTier: "short",
+      inputPerMtok: 5,
+      outputPerMtok: 30,
+    }),
+    price({
+      modelPattern: "gpt-5.6-sol",
+      matchKind: "exact",
+      contextTier: "long",
+      inputPerMtok: 10,
+      outputPerMtok: 45,
+    }),
+  ];
+  assert.equal(
+    matchModelPrice(prices, "gpt-5.6-sol", day("2026-08-08"), "codex", "long")
+      ?.inputPerMtok,
+    10,
+  );
+  const assumed = estimateCostMicros(
+    { ...zeroTokens(), inputTokens: 1_000_000 },
+    matchModelPrice(prices, "gpt-5.6-sol", day("2026-08-08"), "codex"),
+  );
+  assert.equal(assumed.micros, 5_000_000);
+  assert.equal(assumed.assumedTokens, 1_000_000);
+  assert.deepEqual(assumed.assumptions, ["short-context"]);
+});
+
+test("pricing: Claude cache writes use their 5-minute and 1-hour TTL rates", () => {
+  const claude = price({
+    modelPattern: "claude-opus-5",
+    cacheWritePerMtok: 6.25,
+    cacheWrite5mPerMtok: 6.25,
+    cacheWrite1hPerMtok: 10,
+  });
+  const exact = estimateCostMicros({
+    ...zeroTokens(),
+    cacheWriteInputTokens: 2_000_000,
+    cacheWrite5mInputTokens: 1_000_000,
+    cacheWrite1hInputTokens: 1_000_000,
+  }, claude);
+  assert.equal(exact.micros, 16_250_000);
+  assert.equal(exact.assumedTokens, 0);
+
+  const legacy = estimateCostMicros({
+    ...zeroTokens(),
+    cacheWriteInputTokens: 2_000_000,
+  }, claude);
+  assert.equal(legacy.micros, 12_500_000);
+  assert.equal(legacy.assumedTokens, 2_000_000);
+  assert.deepEqual(legacy.assumptions, ["cache-write-ttl"]);
 });
 
 test("pricing: Codex auto-review uses its source-limited gpt-5.4 equivalent", () => {
@@ -314,6 +377,8 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
       modelProvider: "moonshot",
       reasoningEffort: "high",
       agentVersion: "1.44.0",
+      contextTier: "short",
+      processingTier: "standard",
       project: "=evil",
       deviceId: "udv_test",
       deviceName: "mbp",
@@ -331,10 +396,12 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
   ]);
   const lines = csv.split("\r\n");
   assert.ok(lines[0].startsWith("﻿date,source,model"));
+  const headers = lines[0].replace(/^﻿/, "").split(",");
   const cells = lines[1].split(",");
-  assert.equal(cells[7], "'=evil");
-  assert.equal(cells[17], ""); // 未定价 → 费用留空,不是 0
-  assert.equal(cells[18], "unpriced");
+  assert.equal(cells[headers.indexOf("project")], "'=evil");
+  assert.equal(cells[headers.indexOf("cost_usd_estimate")], ""); // 未定价 → 费用留空,不是 0
+  assert.equal(cells[headers.indexOf("price_status")], "unpriced");
+  assert.equal(cells[headers.indexOf("context_tier")], "short");
 });
 
 test("filters: today/24h/粒度推导", () => {

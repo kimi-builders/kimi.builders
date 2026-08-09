@@ -13,14 +13,21 @@ export interface UsageModelPrice {
   modelPattern: string;
   matchKind: "exact" | "prefix";
   source: string | null;
+  contextTier: string;
+  processingTier: string;
   effectiveFrom: Date;
   effectiveTo: Date | null;
   inputPerMtok: number;
   cacheWritePerMtok: number | null;
+  cacheWrite5mPerMtok: number | null;
+  cacheWrite1hPerMtok: number | null;
   cacheReadPerMtok: number | null;
   outputPerMtok: number;
   reasoningPerMtok: number | null;
   version: string;
+  pricingSourceUrl: string;
+  verifiedAt: string | null;
+  pricingBasis: string;
 }
 
 export interface UsageTokenBreakdown {
@@ -29,6 +36,9 @@ export interface UsageTokenBreakdown {
   cacheReadInputTokens: number;
   outputTokens: number;
   reasoningOutputTokens: number;
+  /* Partitions of cacheWriteInputTokens; excluded from observed-token totals. */
+  cacheWrite5mInputTokens?: number;
+  cacheWrite1hInputTokens?: number;
 }
 
 export type UsagePriceStatus = "priced" | "partial" | "unpriced";
@@ -43,6 +53,8 @@ export interface UsagePriceEstimate {
      tokens and unpriced cache-read tokens in the same row. */
   pricedTokens: number;
   unpricedTokens: number;
+  assumedTokens: number;
+  assumptions: string[];
 }
 
 function rate(value: unknown): number | null {
@@ -56,23 +68,35 @@ export async function loadModelPrices(
 ): Promise<UsageModelPrice[]> {
   const pool = db ?? getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT model_pattern, match_kind, source, effective_from, effective_to,
-            input_per_mtok, cache_write_per_mtok, cache_read_per_mtok,
-            output_per_mtok, reasoning_per_mtok, version
+    `SELECT model_pattern, match_kind, source, context_tier, processing_tier,
+            effective_from, effective_to, input_per_mtok, cache_write_per_mtok,
+            cache_write_5m_per_mtok, cache_write_1h_per_mtok,
+            cache_read_per_mtok, output_per_mtok, reasoning_per_mtok, version,
+            pricing_source_url, verified_at, pricing_basis
      FROM usage_model_prices`,
   );
   return rows.map((row) => ({
     modelPattern: String(row.model_pattern),
     matchKind: row.match_kind === "exact" ? "exact" : "prefix",
     source: row.source === null ? null : String(row.source),
+    contextTier: String(row.context_tier ?? ""),
+    processingTier: String(row.processing_tier ?? "standard"),
     effectiveFrom: new Date(row.effective_from as string),
     effectiveTo: row.effective_to === null ? null : new Date(row.effective_to as string),
     inputPerMtok: Number(row.input_per_mtok),
     cacheWritePerMtok: rate(row.cache_write_per_mtok),
+    cacheWrite5mPerMtok: rate(row.cache_write_5m_per_mtok),
+    cacheWrite1hPerMtok: rate(row.cache_write_1h_per_mtok),
     cacheReadPerMtok: rate(row.cache_read_per_mtok),
     outputPerMtok: Number(row.output_per_mtok),
     reasoningPerMtok: rate(row.reasoning_per_mtok),
     version: String(row.version),
+    pricingSourceUrl: String(row.pricing_source_url ?? ""),
+    verifiedAt:
+      row.verified_at === null || row.verified_at === undefined
+        ? null
+        : new Date(row.verified_at as string).toISOString().slice(0, 10),
+    pricingBasis: String(row.pricing_basis ?? "standard-api"),
   }));
 }
 
@@ -84,6 +108,7 @@ export function matchModelPrice(
   model: string,
   at: Date,
   source?: string,
+  contextTier?: string,
 ): UsageModelPrice | null {
   const name = model.trim();
   if (!name) return null;
@@ -91,7 +116,7 @@ export function matchModelPrice(
   const candidates =
     slash > 0 && slash < name.length - 1 ? [name, name.slice(slash + 1)] : [name];
   for (const candidate of candidates) {
-    const hit = matchExactOrPrefix(prices, candidate, at, source);
+    const hit = matchExactOrPrefix(prices, candidate, at, source, contextTier);
     if (hit) return hit;
   }
   return null;
@@ -102,20 +127,32 @@ function matchExactOrPrefix(
   name: string,
   at: Date,
   source?: string,
+  contextTier?: string,
 ): UsageModelPrice | null {
   const inWindow = (price: UsageModelPrice) =>
     price.effectiveFrom <= at && (price.effectiveTo === null || at < price.effectiveTo);
   const sourceRank = (price: UsageModelPrice) =>
     source !== undefined && price.source === source ? 1 : 0;
+  const contextRank = (price: UsageModelPrice) => {
+    if (contextTier) {
+      if (price.contextTier === contextTier) return 2;
+      return price.contextTier === "" ? 0 : -1;
+    }
+    // Historical clients did not upload the request tier. Use the short row
+    // as an explicit estimate, never a long-context price by accident.
+    if (price.contextTier === "short") return 1;
+    return price.contextTier === "" ? 0 : -1;
+  };
   const exact = prices
     .filter(
       (price) =>
         price.matchKind === "exact" &&
         price.modelPattern === name &&
         inWindow(price) &&
+        contextRank(price) >= 0 &&
         (price.source === null || price.source === source),
     )
-    .sort((a, b) => sourceRank(b) - sourceRank(a));
+    .sort((a, b) => contextRank(b) - contextRank(a) || sourceRank(b) - sourceRank(a));
   if (exact.length > 0) return exact[0];
   const prefixed = prices
     .filter(
@@ -123,11 +160,13 @@ function matchExactOrPrefix(
         price.matchKind === "prefix" &&
         name.startsWith(price.modelPattern) &&
         inWindow(price) &&
+        contextRank(price) >= 0 &&
         (price.source === null || price.source === source),
     )
     .sort(
       (a, b) =>
         b.modelPattern.length - a.modelPattern.length ||
+        contextRank(b) - contextRank(a) ||
         sourceRank(b) - sourceRank(a) ||
         b.effectiveFrom.getTime() - a.effectiveFrom.getTime(),
     );
@@ -147,6 +186,7 @@ export type UsageDisplayCurrency = keyof typeof USAGE_DISPLAY_CURRENCIES;
 export function estimateCostMicros(
   tokens: UsageTokenBreakdown,
   price: UsageModelPrice | null,
+  contextTier?: string,
 ): UsagePriceEstimate {
   const totalTokens =
     tokens.inputTokens +
@@ -161,11 +201,27 @@ export function estimateCostMicros(
       version: null,
       pricedTokens: 0,
       unpricedTokens: totalTokens,
+      assumedTokens: 0,
+      assumptions: [],
     };
   }
+  const cacheWrite5m = Math.max(0, tokens.cacheWrite5mInputTokens ?? 0);
+  const cacheWrite1h = Math.max(0, tokens.cacheWrite1hInputTokens ?? 0);
+  const unclassifiedCacheWrite = Math.max(
+    0,
+    tokens.cacheWriteInputTokens - cacheWrite5m - cacheWrite1h,
+  );
   const legs: Array<[number, number | null]> = [
     [tokens.inputTokens, price.inputPerMtok],
-    [tokens.cacheWriteInputTokens, price.cacheWritePerMtok ?? price.inputPerMtok],
+    [unclassifiedCacheWrite, price.cacheWritePerMtok ?? price.inputPerMtok],
+    [
+      cacheWrite5m,
+      price.cacheWrite5mPerMtok ?? price.cacheWritePerMtok ?? price.inputPerMtok,
+    ],
+    [
+      cacheWrite1h,
+      price.cacheWrite1hPerMtok ?? price.cacheWritePerMtok ?? price.inputPerMtok,
+    ],
     [tokens.cacheReadInputTokens, price.cacheReadPerMtok],
     [tokens.outputTokens, price.outputPerMtok],
     [tokens.reasoningOutputTokens, price.reasoningPerMtok ?? price.outputPerMtok],
@@ -174,6 +230,21 @@ export function estimateCostMicros(
   let partial = false;
   let pricedTokens = 0;
   let unpricedTokens = 0;
+  const assumptions: string[] = [];
+  let assumedTokens = 0;
+  if (!contextTier && price.contextTier === "short") {
+    assumptions.push("short-context");
+    assumedTokens += totalTokens;
+  }
+  if (
+    unclassifiedCacheWrite > 0 &&
+    price.cacheWrite5mPerMtok !== null &&
+    price.cacheWrite1hPerMtok !== null &&
+    price.cacheWrite5mPerMtok !== price.cacheWrite1hPerMtok
+  ) {
+    assumptions.push("cache-write-ttl");
+    assumedTokens += unclassifiedCacheWrite;
+  }
   for (const [count, perMtok] of legs) {
     if (count <= 0) continue;
     if (perMtok === null) {
@@ -190,6 +261,8 @@ export function estimateCostMicros(
     version: price.version,
     pricedTokens,
     unpricedTokens,
+    assumedTokens: Math.min(totalTokens, assumedTokens),
+    assumptions,
   };
 }
 
@@ -198,6 +271,7 @@ export interface PricingLedger {
   micros: number;
   pricedTokens: number;
   unpricedTokens: number;
+  assumedTokens: number;
   versions: Set<string>;
   unpricedModels: Set<string>;
   partialModels: Set<string>;
@@ -208,6 +282,7 @@ export function createPricingLedger(): PricingLedger {
     micros: 0,
     pricedTokens: 0,
     unpricedTokens: 0,
+    assumedTokens: 0,
     versions: new Set(),
     unpricedModels: new Set(),
     partialModels: new Set(),
@@ -221,11 +296,17 @@ export function priceIntoLedger(
   tokens: UsageTokenBreakdown,
   at: Date,
   source?: string,
+  contextTier?: string,
 ): UsagePriceEstimate {
-  const estimate = estimateCostMicros(tokens, matchModelPrice(prices, model, at, source));
+  const estimate = estimateCostMicros(
+    tokens,
+    matchModelPrice(prices, model, at, source, contextTier),
+    contextTier,
+  );
   ledger.micros += estimate.micros;
   ledger.pricedTokens += estimate.pricedTokens;
   ledger.unpricedTokens += estimate.unpricedTokens;
+  ledger.assumedTokens += estimate.assumedTokens;
   if (estimate.version) ledger.versions.add(estimate.version);
   if (estimate.status === "unpriced") ledger.unpricedModels.add(model);
   if (estimate.status === "partial") ledger.partialModels.add(model);

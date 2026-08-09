@@ -191,13 +191,19 @@ export interface UsageFilterSql {
 function sharedClauses(
   userId: number,
   filters: UsageFilters,
-  column: { time: string; hasModel: boolean; hasEffort: boolean; hasAgentVersion: boolean },
+  column: {
+    time: string;
+    endTime?: string;
+    hasModel: boolean;
+    hasEffort: boolean;
+    hasAgentVersion: boolean;
+  },
   alias = "",
 ): { clauses: string[]; params: unknown[] } {
   const a = alias ? `${alias}.` : "";
   const clauses: string[] = [
     `${a}user_id = ?`,
-    `${a}${column.time} >= ?`,
+    `${a}${column.endTime ?? column.time} >= ?`,
     `${a}${column.time} < ?`,
   ];
   const params: unknown[] = [filters.from, filters.to];
@@ -253,10 +259,20 @@ export function sessionFilterSql(
   filters: UsageFilters,
   alias = "",
 ): UsageFilterSql {
+  /* Sessions are reusable and can span the selected boundary. Select every
+     overlapping session; query.ts then clips its sparse UTC-hour facts to the
+     exact [from,to) window. Filtering only first_message_at loses activity
+     from long-lived sessions that began before the range. */
   const { clauses, params } = sharedClauses(
     userId,
     filters,
-    { time: "first_message_at", hasModel: false, hasEffort: false, hasAgentVersion: true },
+    {
+      time: "first_message_at",
+      endTime: "last_message_at",
+      hasModel: false,
+      hasEffort: false,
+      hasAgentVersion: true,
+    },
     alias,
   );
   return { where: clauses.join(" AND "), params: [userId, ...params] };

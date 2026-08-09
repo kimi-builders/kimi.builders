@@ -13,6 +13,7 @@ interface Props {
   pricingMatches?: UsagePricingMatch[];
   pricingCoverage?: string;
   pricingVersions?: string;
+  assumedTokens?: number;
   currentRange: { from: string; to: string };
   tzLabel: string;
 }
@@ -33,6 +34,13 @@ function localDateTime(iso: string, locale: string): string {
   }).format(new Date(iso));
 }
 
+function compactTokens(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 export default function UsageMethodologyDialog({
   kind = "all",
   compact = false,
@@ -40,6 +48,7 @@ export default function UsageMethodologyDialog({
   pricingMatches = [],
   pricingCoverage = "—",
   pricingVersions = "",
+  assumedTokens = 0,
   currentRange,
   tzLabel,
 }: Props) {
@@ -175,35 +184,45 @@ export default function UsageMethodologyDialog({
                   ? `每个 30 分钟事实桶按发生时间匹配服务端版本化标准 API 价格。当前覆盖 ${pricingCoverage} Token，命中版本 ${pricingVersions || "—"}。这是 API 等价估算，不是 Kimi Code、Claude Code、Codex 等订阅账单或实际扣款。`
                   : `Every 30-minute fact bucket is matched to the versioned standard API price active at that time. Current coverage is ${pricingCoverage}; matched versions: ${pricingVersions || "—"}. This is an API-equivalent estimate, not a subscription invoice or actual charge.`}
               </p>
+              {assumedTokens > 0 ? (
+                <p className="mt-2 border-l-2 border-amber-400 pl-3 text-amber-300">
+                  {zh
+                    ? `${compactTokens(assumedTokens, locale)} Token 使用了明确标注的估算假设（例如旧数据缺少上下文档位，或缓存写入缺少 TTL）。假设不影响 Token 总量，只影响估费精度。`
+                    : `${compactTokens(assumedTokens, locale)} tokens use an explicitly disclosed pricing assumption (for example, missing context tier or cache-write TTL in historical data). Assumptions do not change token totals, only estimate precision.`}
+                </p>
+              ) : null}
               <code className="mt-3 block overflow-x-auto border border-line bg-card p-3 font-mono text-[10px] text-paper">
                 cost = Σ(tokens ÷ 1,000,000 × category API rate)
               </code>
               <p className="mt-2 text-[10px]">
                 {zh
-                  ? "匹配顺序：精确模型名 → 最长前缀 → 来源限定 → 生效时间。* 表示供应商未单列该类价格：缓存写回退输入价，推理回退输出价；缓存读没有价格时不回退并标记部分定价。"
-                  : "Match order: exact name → longest prefix → source restriction → effective window. * means the provider does not publish a separate category: cache write falls back to input and reasoning to output. Missing cache-read price does not fall back and is marked partial."}
+                  ? "匹配顺序：精确模型名 → 最长前缀 → 来源限定 → 上下文档位 → 生效时间。* 表示供应商未单列该类价格：普通缓存写回退输入价，推理回退输出价；Claude 缓存写按日志中的 5 分钟/1 小时 TTL 分别计价。缓存读没有价格时不回退并标记部分定价。"
+                  : "Match order: exact name → longest prefix → source restriction → context tier → effective window. * means the provider does not publish a separate category: generic cache write falls back to input and reasoning to output. Claude cache writes use the logged 5-minute/1-hour TTL. Missing cache-read price does not fall back and is marked partial."}
               </p>
 
               <div className="mt-4 overflow-x-auto border border-line">
-                <table className="w-full min-w-[900px] border-collapse font-mono text-[10px]">
+                <table className="w-full min-w-[1180px] border-collapse font-mono text-[10px]">
                   <thead className="bg-card text-left text-grey">
                     <tr>
                       <th className="px-3 py-2 font-normal">{zh ? "模型" : "MODEL"}</th>
                       <th className="px-3 py-2 font-normal">{zh ? "匹配" : "MATCH"}</th>
+                      <th className="px-3 py-2 font-normal">{zh ? "档位" : "TIER"}</th>
                       <th className="px-3 py-2 text-right font-normal">{zh ? "输入" : "INPUT"}</th>
                       <th className="px-3 py-2 text-right font-normal">{zh ? "缓存写" : "CACHE W"}</th>
+                      <th className="px-3 py-2 text-right font-normal">{zh ? "写 5 分钟" : "WRITE 5M"}</th>
+                      <th className="px-3 py-2 text-right font-normal">{zh ? "写 1 小时" : "WRITE 1H"}</th>
                       <th className="px-3 py-2 text-right font-normal">{zh ? "缓存读" : "CACHE R"}</th>
                       <th className="px-3 py-2 text-right font-normal">{zh ? "输出" : "OUTPUT"}</th>
                       <th className="px-3 py-2 text-right font-normal">{zh ? "推理" : "REASON"}</th>
-                      <th className="px-3 py-2 font-normal">{zh ? "版本" : "VERSION"}</th>
+                      <th className="px-3 py-2 font-normal">{zh ? "版本 / 来源" : "VERSION / SOURCE"}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pricingMatches.length === 0 ? (
-                      <tr><td colSpan={8} className="border-t border-line px-3 py-4 text-center text-grey">{zh ? "当前范围内没有模型数据" : "No model data in this range"}</td></tr>
+                      <tr><td colSpan={11} className="border-t border-line px-3 py-4 text-center text-grey">{zh ? "当前范围内没有模型数据" : "No model data in this range"}</td></tr>
                     ) : (
                       pricingMatches.map((row) => (
-                        <tr key={`${row.source}-${row.model}-${row.version}-${row.effectiveFrom}`} className="border-t border-line">
+                        <tr key={`${row.source}-${row.model}-${row.contextTier}-${row.processingTier}-${row.version}-${row.effectiveFrom}`} className="border-t border-line">
                           <td
                             className="max-w-[220px] px-3 py-2 text-paper"
                             title={`${row.source} · raw: ${row.model}${row.modelCanonical !== row.model ? ` · canonical: ${row.modelCanonical}` : ""}${row.modelProvider ? ` · provider: ${row.modelProvider}` : ""}`}
@@ -216,12 +235,42 @@ export default function UsageMethodologyDialog({
                           <td className={`max-w-[180px] truncate px-3 py-2 ${row.matchedPattern ? "text-emerald-400" : "text-grey"}`} title={row.matchedPattern ?? undefined}>
                             {row.matchedPattern ?? (zh ? "未匹配" : "unmatched")}
                           </td>
+                          <td className="px-3 py-2 text-grey">
+                            {row.contextTier || (zh ? "未知上下文" : "unknown context")}
+                            <span className="block text-[9px]">{row.processingTier || "standard"}</span>
+                          </td>
                           <td className="px-3 py-2 text-right">{rate(row.inputPerMtok, false)}</td>
                           <td className="px-3 py-2 text-right">{rate(row.cacheWritePerMtok, row.cacheWriteFallback)}</td>
+                          <td className="px-3 py-2 text-right">{rate(row.cacheWrite5mPerMtok, false)}</td>
+                          <td className="px-3 py-2 text-right">{rate(row.cacheWrite1hPerMtok, false)}</td>
                           <td className="px-3 py-2 text-right">{rate(row.cacheReadPerMtok, false)}</td>
                           <td className="px-3 py-2 text-right">{rate(row.outputPerMtok, false)}</td>
                           <td className="px-3 py-2 text-right">{rate(row.reasoningPerMtok, row.reasoningFallback)}</td>
-                          <td className="px-3 py-2 text-grey">{row.version ?? "—"}</td>
+                          <td className="px-3 py-2 text-grey">
+                            <span className="block text-paper">{row.version ?? "—"}</span>
+                            {row.pricingSourceUrl ? (
+                              <a
+                                href={row.pricingSourceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline decoration-grey/50 underline-offset-2 hover:text-blue"
+                              >
+                                {zh ? "官方价格" : "official pricing"}
+                              </a>
+                            ) : null}
+                            {row.verifiedAt ? <span className="ml-1">· {row.verifiedAt}</span> : null}
+                            {row.assumptions.length > 0 ? (
+                              <span className="block text-[9px] text-amber-300">
+                                {row.assumptions.map((assumption) =>
+                                  assumption === "short-context"
+                                    ? (zh ? "假设短上下文" : "short-context assumed")
+                                    : assumption === "cache-write-ttl"
+                                      ? (zh ? "缓存 TTL 未知" : "cache TTL unknown")
+                                      : assumption,
+                                ).join(" · ")}
+                              </span>
+                            ) : null}
+                          </td>
                         </tr>
                       ))
                     )}
@@ -247,8 +296,8 @@ export default function UsageMethodologyDialog({
                   <div className="font-mono text-[10px] text-paper">{zh ? "投入时长" : "ENGAGED TIME"}</div>
                   <p className="mt-1.5">
                     {zh
-                      ? "会话内从首条到末条事件的相邻时间跨度之和，包含思考、阅读和查看代码；每段空闲间隔最多计 30 分钟，不包含会话之间的间隔。"
-                      : "Sum of adjacent event spans inside a session, including thinking, reading, and code review. Each idle gap is capped at 30 minutes; gaps between sessions are excluded."}
+                      ? "会话内相邻事件跨度之和，包含思考、阅读和查看代码；每段空闲间隔最多计 30 分钟，不包含会话之间的间隔。Collector v0.4 起按 UTC 小时存储完整切片，跨日或跨筛选边界时只计范围内切片；旧数据会明确使用兼容降级口径。"
+                      : "Sum of adjacent event spans inside a session, including thinking, reading, and code review. Each idle gap is capped at 30 minutes; gaps between sessions are excluded. Collector v0.4 stores complete UTC-hour slices so cross-day/range sessions count only in-range slices; older data uses an explicit compatibility fallback."}
                   </p>
                 </div>
               </div>

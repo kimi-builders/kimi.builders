@@ -66,7 +66,7 @@ async function provisionDevice(userId: number, name: string) {
 }
 
 let syncCounter = 0;
-function clientMeta() {
+function clientMeta(extra: Record<string, unknown> = {}) {
   syncCounter += 1;
   return {
     surface: "cli",
@@ -76,6 +76,7 @@ function clientMeta() {
     syncId: `00000000-0000-4000-8000-${String(syncCounter).padStart(12, "0")}`,
     batchIndex: 0,
     batchCount: 1,
+    ...extra,
   };
 }
 
@@ -90,7 +91,7 @@ async function main() {
   const pool = getPool();
 
   // —— migration 幂等:连续执行两次,价格行不翻倍 ——
-  const migration = [
+  const priceMigration = [
     "../db/migrations/20260809_usage_phase2.sql",
     "../db/migrations/20260809_usage_prices_v2.sql",
     "../db/migrations/20260810_usage_prices_v3.sql",
@@ -98,7 +99,7 @@ async function main() {
   ]
     .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
     .join("\n;\n");
-  const statements = migration
+  const statementsOf = (sql: string) => sql
     .split(/;\s*(?:\n|$)/)
     .map((statement) =>
       statement
@@ -108,14 +109,31 @@ async function main() {
         .trim(),
     )
     .filter(Boolean);
+  const statements = statementsOf(priceMigration);
   assert.ok(statements.length >= 2);
   for (let round = 0; round < 2; round += 1) {
     for (const statement of statements) await pool.query(statement);
   }
-  const [priceCount] = await pool.query<RowDataPacket[]>(
-    "SELECT COUNT(*) AS count FROM usage_model_prices",
+  // Fresh integration schemas already include the v5 columns. Execute the
+  // migration's idempotent price-data section twice to verify provenance and
+  // long-context seed stability without re-running ALTER TABLE.
+  const costFactsMigration = readFileSync(
+    new URL("../db/migrations/20260813_usage_cost_facts.sql", import.meta.url),
+    "utf8",
   );
-  assert.equal(Number(priceCount[0].count), 42); // v1 24 + v2 11 + v3 1 + v4 6
+  const priceDataStart = costFactsMigration.indexOf("UPDATE usage_model_prices");
+  assert.ok(priceDataStart > 0);
+  const costFactStatements = statementsOf(costFactsMigration.slice(priceDataStart));
+  for (let round = 0; round < 2; round += 1) {
+    for (const statement of costFactStatements) await pool.query(statement);
+  }
+  const [priceCount] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS count,
+            SUM(pricing_source_url <> '' AND verified_at IS NOT NULL) AS verified_count
+       FROM usage_model_prices`,
+  );
+  assert.equal(Number(priceCount[0].count), 47); // v1–v4 42 + GPT-5.6 long-context 5
+  assert.equal(Number(priceCount[0].verified_count), 47);
   const [correctedPrices] = await pool.query<RowDataPacket[]>(
     `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok
        FROM usage_model_prices
@@ -145,6 +163,18 @@ async function main() {
   assert.equal(Number(autoReview?.input_per_mtok), 2.5);
   assert.equal(Number(autoReview?.cache_read_per_mtok), 0.25);
   assert.equal(Number(autoReview?.output_per_mtok), 15);
+  const [longContextPrices] = await pool.query<RowDataPacket[]>(
+    `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok,
+            pricing_source_url, verified_at
+       FROM usage_model_prices
+      WHERE version = '2026-08-13' AND context_tier = 'long'`,
+  );
+  assert.equal(longContextPrices.length, 5);
+  const longSol = longContextPrices.find((row) => row.model_pattern === "gpt-5.6");
+  assert.equal(Number(longSol?.input_per_mtok), 10);
+  assert.equal(Number(longSol?.cache_read_per_mtok), 1);
+  assert.equal(Number(longSol?.output_per_mtok), 45);
+  assert.match(String(longSol?.pricing_source_url), /developers\.openai\.com/);
 
   const handle = `phase2_${Date.now()}`;
   const [userResult] = await pool.query<ResultSetHeader>(
@@ -173,6 +203,54 @@ async function main() {
     );
     await ingestUsage(deviceA.principal, payload);
     await ingestUsage(deviceA.principal, payload);
+
+    // —— 设备事实可信度:后续 CLI fallback 不覆盖 Warp;Agent 版本增量合并 ——
+    await ingestUsage(
+      deviceA.principal,
+      validateUsageIngest({
+        protocolVersion: 2,
+        client: clientMeta({
+          device: {
+            terminal: {
+              name: "Warp",
+              version: "v0.2026.07.29.09.05.stable_02",
+              confidence: "detected",
+            },
+            os: { name: "macOS", version: "26.5.2", architecture: "arm64" },
+          },
+          agentVersions: { codex: "0.146.1" },
+        }),
+        buckets: [],
+        sessions: [],
+      }, settings),
+    );
+    await ingestUsage(
+      deviceA.principal,
+      validateUsageIngest({
+        protocolVersion: 2,
+        client: clientMeta({
+          device: {
+            terminal: { name: "CLI", confidence: "fallback" },
+            os: { name: "macOS", version: "26.5.2", architecture: "arm64" },
+          },
+          agentVersions: { "kimi-code": "1.44.0" },
+        }),
+        buckets: [],
+        sessions: [],
+      }, settings),
+    );
+    const [deviceFacts] = await pool.query<RowDataPacket[]>(
+      `SELECT terminal_name, terminal_version, terminal_confidence, agent_versions
+         FROM usage_devices WHERE id = ?`,
+      [deviceA.principal.deviceId],
+    );
+    assert.equal(deviceFacts[0].terminal_name, "Warp");
+    assert.equal(deviceFacts[0].terminal_version, "v0.2026.07.29.09.05.stable_02");
+    assert.equal(deviceFacts[0].terminal_confidence, "detected");
+    const agentVersions = typeof deviceFacts[0].agent_versions === "string"
+      ? JSON.parse(deviceFacts[0].agent_versions)
+      : deviceFacts[0].agent_versions;
+    assert.deepEqual(agentVersions, { codex: "0.146.1", "kimi-code": "1.44.0" });
 
     // —— 一致性:parser 产物 = 服务端聚合 ——
     const overview = await getUsageOverview(userId, filters());
@@ -270,6 +348,62 @@ async function main() {
       [userId, exactSessionHash],
     );
 
+    // v3 hourly facts clip every session metric, even when first_message_at
+    // is outside the selected day.
+    const clippedSessionHash = "e".repeat(64);
+    await ingestUsage(
+      deviceA.principal,
+      validateUsageIngest({
+        protocolVersion: 2,
+        client: clientMeta(),
+        buckets: [],
+        sessions: [{
+          source: "copilot-cli",
+          agentVersion: "v3-range-test",
+          sessionHash: clippedSessionHash,
+          firstMessageAt: "2026-08-01T23:58:00.000Z",
+          lastMessageAt: "2026-08-02T00:02:00.000Z",
+          durationSeconds: 240,
+          activeSeconds: 120,
+          messageCount: 4,
+          userMessageCount: 2,
+          userPromptHours: Array.from({ length: 24 }, (_, hour) => hour === 0 || hour === 23 ? 1 : 0),
+          activityHours: [
+            {
+              hourStart: "2026-08-01T23:00:00.000Z",
+              activeSeconds: 60,
+              engagedSeconds: 120,
+              messageCount: 2,
+              userMessageCount: 1,
+            },
+            {
+              hourStart: "2026-08-02T00:00:00.000Z",
+              activeSeconds: 60,
+              engagedSeconds: 120,
+              messageCount: 2,
+              userMessageCount: 1,
+            },
+          ],
+        }],
+      }, settings),
+    );
+    const clipped = await getUsageOverview(
+      userId,
+      parseUsageFilters(
+        { from: "2026-08-02", to: "2026-08-02", sources: "copilot-cli", agentVersions: "v3-range-test" },
+        { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-08-08T12:00:00Z") },
+      ),
+    );
+    assert.equal(clipped.totals.sessions, 1);
+    assert.equal(clipped.totals.activeSeconds, 60);
+    assert.equal(clipped.totals.durationSeconds, 120);
+    assert.equal(clipped.totals.messages, 2);
+    assert.equal(clipped.totals.userMessages, 1);
+    await pool.query(
+      "DELETE FROM usage_sessions WHERE user_id = ? AND session_hash = UNHEX(?)",
+      [userId, clippedSessionHash],
+    );
+
     // —— 来源筛选 ——
     const codexOnly = await getUsageOverview(userId, filters({ sources: "codex" }));
     assert.equal(codexOnly.totals.totalTokens, 1020);
@@ -346,6 +480,16 @@ async function main() {
         [userId, deviceA.principal.deviceId, start],
       );
     }
+    for (const start of ["2026-08-31 23:30:00", "2026-09-01 00:00:00"]) {
+      await pool.query(
+        `INSERT INTO usage_buckets
+           (user_id, device_id, source, model, project_label, project_hash, bucket_start,
+            input_tokens, request_count, measurement)
+         VALUES (?, ?, 'claude-code', 'claude-sonnet-5-20260101', NULL, UNHEX(SHA2('', 256)), ?,
+                 1000000, 1, 'exact')`,
+        [userId, deviceA.principal.deviceId, start],
+      );
+    }
     const windowed = await getUsageOverview(
       userId,
       parseUsageFilters(
@@ -353,10 +497,10 @@ async function main() {
         { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-11-01T00:00:00Z") },
       ),
     );
-    // 1M input × $2 + 1M input × $3 = $5 → 5e6 micros
-    assert.ok(Math.abs(windowed.totals.costMicros - 5_000_000) < 1);
-    assert.equal(windowed.totals.totalTokens, 2_000_000);
-    assert.equal(windowed.meta.pricedTokens, 2_000_000);
+    // 两个体验价桶 + 两个标准价桶 = $10；每条事实独立命中价格窗口。
+    assert.ok(Math.abs(windowed.totals.costMicros - 10_000_000) < 1);
+    assert.equal(windowed.totals.totalTokens, 4_000_000);
+    assert.equal(windowed.meta.pricedTokens, 4_000_000);
     assert.equal(windowed.meta.unpricedTokens, 0);
     assert.equal(windowed.meta.pricingCoverage, 1);
     assert.equal(
@@ -382,6 +526,17 @@ async function main() {
         windowed.totals.costMicros,
       );
     }
+    const sameLocalDay = await getUsageOverview(
+      userId,
+      parseUsageFilters(
+        { from: "2026-08-31", to: "2026-08-31", sources: "claude-code" },
+        { uploadProject: true, tzOffsetMinutes: -60, now: new Date("2026-11-01T00:00:00Z") },
+      ),
+    );
+    assert.equal(sameLocalDay.records.rows.length, 1);
+    assert.equal(sameLocalDay.records.rows[0].totalTokens, 2_000_000);
+    assert.ok(Math.abs(sameLocalDay.records.rows[0].costMicros - 5_000_000) < 1);
+    assert.ok(Math.abs(sameLocalDay.totals.costMicros - 5_000_000) < 1);
 
     // —— 分页 ——
     const page1 = await getUsageOverview(userId, filters({ ps: "2", page: "1" }));
