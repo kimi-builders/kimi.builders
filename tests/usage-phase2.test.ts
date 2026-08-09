@@ -2,11 +2,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { csvCell, recordsToCsv, usageCsvFilename } from "../src/lib/usage/export";
+import {
+  capUsageExportRows,
+  csvCell,
+  recordsToCsv,
+  usageCsvFilename,
+} from "../src/lib/usage/export";
 import {
   parseUsageFilters,
   usageFiltersToSearch,
   USAGE_EXPORT_MAX_ROWS,
+  USAGE_JSON_EXPORT_ROW_CAP,
   USAGE_MAX_RANGE_DAYS,
 } from "../src/lib/usage/filters";
 import {
@@ -402,6 +408,18 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
   assert.equal(cells[headers.indexOf("cost_usd_estimate")], ""); // 未定价 → 费用留空,不是 0
   assert.equal(cells[headers.indexOf("price_status")], "unpriced");
   assert.equal(cells[headers.indexOf("context_tier")], "short");
+});
+
+test("export: row caps report truncation instead of silently dropping data", () => {
+  assert.deepEqual(capUsageExportRows([1, 2, 3], 2), {
+    rows: [1, 2],
+    truncated: true,
+  });
+  assert.deepEqual(capUsageExportRows([1, 2], 2), {
+    rows: [1, 2],
+    truncated: false,
+  });
+  assert.equal(USAGE_JSON_EXPORT_ROW_CAP, 100_000);
 });
 
 test("filters: today/24h/粒度推导", () => {

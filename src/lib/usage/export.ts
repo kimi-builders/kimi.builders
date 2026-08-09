@@ -5,6 +5,7 @@
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "../db";
 import type { UsageFilters } from "./filters";
+import { USAGE_JSON_EXPORT_ROW_CAP } from "./filters";
 import type { UsageRecordRow } from "./query";
 
 const FORMULA_PREFIX = /^[=+\-@\t\r]/;
@@ -86,13 +87,27 @@ export function usageCsvFilename(filters: UsageFilters): string {
   return `kimi-builders-usage-${day(filters.from)}-${day(filters.to)}.csv`;
 }
 
-const JSON_ROW_CAP = 100_000;
+export function capUsageExportRows<T>(
+  records: readonly T[],
+  limit: number,
+): { rows: T[]; truncated: boolean } {
+  const safeLimit = Math.max(0, Math.trunc(limit));
+  return {
+    rows: records.slice(0, safeLimit),
+    truncated: records.length > safeLimit,
+  };
+}
 
 export interface UsagePrivateExport {
   format: "kimi-builders/usage-export";
-  version: 2;
+  version: 3;
   exportedAt: string;
   rangeNote: string;
+  limits: { buckets: number; sessions: number };
+  counts: {
+    buckets: { total: number; exported: number };
+    sessions: { total: number; exported: number };
+  };
   settings: Record<string, unknown>;
   devices: Record<string, unknown>[];
   buckets: Record<string, unknown>[];
@@ -104,7 +119,14 @@ export interface UsagePrivateExport {
    不导出:内部自增 id、session_hash、project_hash、API Key、设备授权材料。 */
 export async function exportUsageData(userId: number): Promise<UsagePrivateExport> {
   const pool = getPool();
-  const [settingsRows, deviceRows, bucketRows, sessionRows] = await Promise.all([
+  const [
+    settingsRows,
+    deviceRows,
+    bucketRows,
+    sessionRows,
+    bucketCountRows,
+    sessionCountRows,
+  ] = await Promise.all([
     pool.query<RowDataPacket[]>(
       `SELECT upload_project, upload_device_label, upload_quota, retention_days, updated_at
        FROM usage_settings WHERE user_id = ?`,
@@ -133,7 +155,7 @@ export async function exportUsageData(userId: number): Promise<UsagePrivateExpor
        JOIN usage_devices d ON d.id = b.device_id
        WHERE b.user_id = ?
        ORDER BY b.bucket_start DESC
-       LIMIT ${JSON_ROW_CAP + 1}`,
+       LIMIT ${USAGE_JSON_EXPORT_ROW_CAP}`,
       [userId],
     ),
     pool.query<RowDataPacket[]>(
@@ -145,23 +167,42 @@ export async function exportUsageData(userId: number): Promise<UsagePrivateExpor
        JOIN usage_devices d ON d.id = s.device_id
        WHERE s.user_id = ?
        ORDER BY s.first_message_at DESC
-       LIMIT ${JSON_ROW_CAP + 1}`,
+       LIMIT ${USAGE_JSON_EXPORT_ROW_CAP}`,
+      [userId],
+    ),
+    pool.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS count FROM usage_buckets WHERE user_id = ?",
+      [userId],
+    ),
+    pool.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS count FROM usage_sessions WHERE user_id = ?",
       [userId],
     ),
   ]);
   const buckets = bucketRows[0];
   const sessions = sessionRows[0];
-  const truncated = buckets.length > JSON_ROW_CAP || sessions.length > JSON_ROW_CAP;
+  const bucketTotal = Number(bucketCountRows[0][0]?.count) || 0;
+  const sessionTotal = Number(sessionCountRows[0][0]?.count) || 0;
+  const truncated =
+    bucketTotal > USAGE_JSON_EXPORT_ROW_CAP || sessionTotal > USAGE_JSON_EXPORT_ROW_CAP;
   return {
     format: "kimi-builders/usage-export",
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     rangeNote:
       "Self-reported metrics from your own devices. No conversation content, paths, or credentials are ever uploaded.",
+    limits: {
+      buckets: USAGE_JSON_EXPORT_ROW_CAP,
+      sessions: USAGE_JSON_EXPORT_ROW_CAP,
+    },
+    counts: {
+      buckets: { total: bucketTotal, exported: buckets.length },
+      sessions: { total: sessionTotal, exported: sessions.length },
+    },
     settings: (settingsRows[0][0] as Record<string, unknown> | undefined) ?? {},
     devices: deviceRows[0].map((row) => ({ ...row })),
-    buckets: buckets.slice(0, JSON_ROW_CAP).map((row) => ({ ...row })),
-    sessions: sessions.slice(0, JSON_ROW_CAP).map((row) => ({ ...row })),
+    buckets: buckets.map((row) => ({ ...row })),
+    sessions: sessions.map((row) => ({ ...row })),
     truncated,
   };
 }

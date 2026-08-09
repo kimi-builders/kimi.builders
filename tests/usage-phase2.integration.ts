@@ -13,6 +13,7 @@ import {
   exchangeDeviceCode,
   listUsageDevices,
 } from "../src/lib/usage/device";
+import { exportUsageData } from "../src/lib/usage/export";
 import { parseUsageFilters } from "../src/lib/usage/filters";
 import { ingestUsage } from "../src/lib/usage/ingest";
 import { getUsageDashboard, getUsageOverview } from "../src/lib/usage/query";
@@ -452,6 +453,19 @@ async function main() {
     const devices = await listUsageDevices(userId);
     const publicB = devices.find((device) => device.name === "integration B");
     assert.ok(publicB);
+    assert.equal(publicB.bucketCount, 1);
+    assert.equal(publicB.sessionCount, 0);
+    const publicA = devices.find((device) => device.id === deviceA.deviceId);
+    assert.ok(publicA);
+    assert.ok(publicA.bucketCount > 0);
+    assert.ok(publicA.sessionCount > 0);
+    const privateExport = await exportUsageData(userId);
+    assert.equal(privateExport.version, 3);
+    assert.equal(privateExport.truncated, false);
+    assert.equal(privateExport.counts.buckets.total, privateExport.buckets.length);
+    assert.equal(privateExport.counts.sessions.total, privateExport.sessions.length);
+    assert.equal(privateExport.counts.buckets.exported, privateExport.buckets.length);
+    assert.equal(privateExport.limits.buckets, 100_000);
     const byDevice = await getUsageOverview(userId, filters({ devices: publicB.id }));
     assert.equal(byDevice.totals.totalTokens, 1000);
     assert.equal(byDevice.lifetimeTokens, 1000);

@@ -1,12 +1,18 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { authenticateUsageRequest, usageUnauthorized } from "@/src/lib/usage/auth";
 import {
+  capUsageExportRows,
   exportUsageData,
   recordsToCsv,
   usageCsvFilename,
 } from "@/src/lib/usage/export";
-import { parseUsageFilters, USAGE_EXPORT_MAX_ROWS } from "@/src/lib/usage/filters";
+import {
+  parseUsageFilters,
+  USAGE_EXPORT_MAX_ROWS,
+  USAGE_JSON_EXPORT_ROW_CAP,
+} from "@/src/lib/usage/filters";
 import { noStoreJson } from "@/src/lib/usage/http";
+import { captureUsageOperation } from "@/src/lib/usage/observability";
 import { listUsageRecords } from "@/src/lib/usage/query";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 
@@ -24,13 +30,36 @@ export async function GET(request: Request) {
   const format = url.searchParams.get("format") === "json" ? "json" : "csv";
 
   if (format === "json") {
-    const data = await exportUsageData(userId);
+    const exported = await captureUsageOperation(
+      "usage.export.json",
+      () => exportUsageData(userId),
+      {
+        slowMs: 2_500,
+        summarize: (value) => ({
+          buckets: value.counts.buckets.exported,
+          sessions: value.counts.sessions.exported,
+          truncated: value.truncated,
+        }),
+      },
+    );
+    if (!exported.ok) {
+      return noStoreJson(
+        { ok: false, error: "export_failed", reference: exported.reference },
+        { status: 500 },
+      );
+    }
+    const data = exported.value;
     const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    return new Response(JSON.stringify(data, null, 2), {
+    return new Response(JSON.stringify(data), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Content-Disposition": `attachment; filename="kimi-builders-usage-export-${day}.json"`,
         "Cache-Control": "no-store",
+        "X-Usage-Export-Truncated": String(data.truncated),
+        "X-Usage-Export-Row-Limit": String(USAGE_JSON_EXPORT_ROW_CAP),
+        "X-Usage-Export-Buckets": String(data.counts.buckets.exported),
+        "X-Usage-Export-Sessions": String(data.counts.sessions.exported),
+        "Server-Timing": `usage-export;dur=${exported.durationMs}`,
       },
     });
   }
@@ -44,12 +73,32 @@ export async function GET(request: Request) {
     uploadProject: settings.uploadProject,
     tzOffsetMinutes: url.searchParams.get("tz"),
   });
-  const records = await listUsageRecords(userId, filters, USAGE_EXPORT_MAX_ROWS);
-  return new Response(recordsToCsv(records), {
+  const loaded = await captureUsageOperation(
+    "usage.export.csv",
+    () => listUsageRecords(userId, filters, USAGE_EXPORT_MAX_ROWS + 1),
+    {
+      slowMs: 2_000,
+      metadata: { rangeDays: filters.days },
+      summarize: (value) => ({ rows: value.length }),
+    },
+  );
+  if (!loaded.ok) {
+    return noStoreJson(
+      { ok: false, error: "export_failed", reference: loaded.reference },
+      { status: 500 },
+    );
+  }
+  const records = loaded.value;
+  const { rows: exported, truncated } = capUsageExportRows(records, USAGE_EXPORT_MAX_ROWS);
+  return new Response(recordsToCsv(exported), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${usageCsvFilename(filters)}"`,
       "Cache-Control": "no-store",
+      "X-Usage-Export-Truncated": String(truncated),
+      "X-Usage-Export-Row-Limit": String(USAGE_EXPORT_MAX_ROWS),
+      "X-Usage-Export-Rows": String(exported.length),
+      "Server-Timing": `usage-export;dur=${loaded.durationMs}`,
     },
   });
 }

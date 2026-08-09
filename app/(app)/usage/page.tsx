@@ -8,7 +8,6 @@ import {
   BarChart3,
   Clock3,
   Database,
-  Download,
   Gauge,
   KeyRound,
   Link2,
@@ -17,7 +16,6 @@ import {
   Orbit,
   ShieldCheck,
   Timer,
-  Trash2,
   User,
 } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
@@ -25,11 +23,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
 import { getLocale } from "@/src/lib/i18n-server";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
-import { listUsageDevices, type UsageDeviceSummary } from "@/src/lib/usage/device";
-import {
-  usageDeviceDetail,
-  usageDeviceDisplayName,
-} from "@/src/lib/usage/device-label";
+import { listUsageDevices } from "@/src/lib/usage/device";
 import {
   parseUsageFilters,
   usageFiltersToSearch,
@@ -39,6 +33,7 @@ import {
 } from "@/src/lib/usage/filters";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDetail } from "@/src/lib/usage/model-meta";
+import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
   USAGE_DISPLAY_CURRENCIES,
   USAGE_FX_AS_OF,
@@ -48,21 +43,17 @@ import {
   getUsageOverview,
   type UsageDistribution,
   type UsageDistributionRow,
-  type UsageOverview,
   type UsageRecordRow,
   type UsageTrendDay,
 } from "@/src/lib/usage/query";
 import { getUsageSettings } from "@/src/lib/usage/settings";
-import {
-  deleteAllUsageAction,
-  revokeUsageDeviceAction,
-  updateUsageSettingsAction,
-} from "./actions";
 import CurrencyToggle from "./_components/CurrencyToggle";
-import DeleteDeviceDataForm from "./_components/DeleteDeviceDataForm";
 import RecordsColumnsMenu from "./_components/RecordsColumnsMenu";
 import TzReporter from "./_components/TzReporter";
 import UsageFilterBar from "./_components/UsageFilterBar";
+import UsageExportDialog from "./_components/UsageExportDialog";
+import UsageLoadErrorCard from "./_components/UsageLoadErrorCard";
+import UsageManagementPanels from "./_components/UsageManagementPanels";
 import UsageMethodologyDialog from "./_components/UsageMethodologyDialog";
 import {
   UsageHeatmapGrid,
@@ -408,21 +399,33 @@ export default async function UsagePage({
     tzOffsetMinutes: tz,
   });
 
-  let overview: UsageOverview | null = null;
-  let devices: UsageDeviceSummary[] = [];
-  try {
-    [overview, devices] = await Promise.all([
-      getUsageOverview(user.id, filters),
-      listUsageDevices(user.id),
-    ]);
-  } catch {
-    overview = null;
-    devices = [];
-  }
+  const [overviewLoad, deviceLoad] = await Promise.all([
+    captureUsageOperation("usage.dashboard.overview", () => getUsageOverview(user.id, filters), {
+      slowMs: 1_500,
+      metadata: { rangeDays: filters.days, pageSize: filters.pageSize },
+      summarize: (value) => ({
+        recordGroups: value.records.total,
+        activeDevices: value.activeDevices,
+      }),
+    }),
+    captureUsageOperation("usage.dashboard.devices", () => listUsageDevices(user.id), {
+      slowMs: 750,
+      summarize: (value) => ({ devices: value.length }),
+    }),
+  ]);
+  const overview = overviewLoad.ok ? overviewLoad.value : null;
+  const devices = deviceLoad.ok ? deviceLoad.value : null;
+  const overviewErrorReference = overviewLoad.ok ? undefined : overviewLoad.reference;
+  const deviceErrorReference = deviceLoad.ok ? undefined : deviceLoad.reference;
 
   const query = rawQueryString(raw);
-  const lastSyncAt = overview?.lastSyncAt ?? null;
-  const staleSync = hoursSince(lastSyncAt) > 48;
+  const deviceLastSyncAt = devices?.reduce<Date | null>((latest, device) => {
+    if (!device.lastSeenAt) return latest;
+    const value = new Date(device.lastSeenAt);
+    return !latest || value > latest ? value : latest;
+  }, null) ?? null;
+  const lastSyncAt = overview?.lastSyncAt ?? deviceLastSyncAt;
+  const staleSync = lastSyncAt !== null && hoursSince(lastSyncAt) > 48;
 
   const filterSearch = usageFiltersToSearch(filters);
   const exportSuffix = `tz=${filters.tzOffsetMinutes}${filterSearch ? `&${filterSearch.slice(1)}` : ""}`;
@@ -476,18 +479,15 @@ export default async function UsagePage({
         >
           <Link2 size={14} /> {zh ? "连接设备" : "Connect device"}
         </a>
-        <a
-          href={`/api/usage/export?format=csv&${exportSuffix}`}
-          className="inline-flex items-center gap-1.5 border border-line px-3 py-1.5 font-mono text-[10px] text-paper hover:border-blue"
-        >
-          <Download size={12} /> {zh ? "导出 CSV" : "Export CSV"}
-        </a>
-        <a
-          href={`/api/usage/export?format=json&${exportSuffix}`}
-          className="inline-flex items-center gap-1.5 border border-line px-3 py-1.5 font-mono text-[10px] text-paper hover:border-blue"
-        >
-          <Download size={12} /> {zh ? "导出 JSON" : "Export JSON"}
-        </a>
+        {overview && (
+          <UsageExportDialog
+            csvHref={`/api/usage/export?format=csv&${exportSuffix}`}
+            jsonHref={`/api/usage/export?format=json&${exportSuffix}`}
+            filteredRecordCount={overview.records.total}
+            rangeLabel={overview.range.label}
+            zh={zh}
+          />
+        )}
         {overview && (
           <UsageMethodologyDialog
             zh={zh}
@@ -508,11 +508,15 @@ export default async function UsagePage({
     return (
       <div className="usage-dashboard">
         {header}
-        <section className="mt-6 border border-red-500/40 bg-card p-5 sm:p-6">
-          <p className="text-sm text-grey">
-            {zh ? "数据加载失败，请稍后重试。" : "Failed to load usage data. Please try again later."}
-          </p>
-        </section>
+        <div className="mt-6">
+          <UsageLoadErrorCard reference={overviewErrorReference ?? "usage_unknown"} zh={zh} />
+        </div>
+        <UsageManagementPanels
+          devices={devices}
+          deviceErrorReference={deviceErrorReference}
+          settings={settings}
+          locale={locale}
+        />
         <TzReporter />
       </div>
     );
@@ -547,7 +551,7 @@ export default async function UsagePage({
     filters.projects ||
     filters.devices
   );
-  const showOnboarding = devices.length === 0 || (totalsEmpty && !dimensionFiltersActive);
+  const showOnboarding = (devices?.length ?? 1) === 0 || (totalsEmpty && !dimensionFiltersActive);
   const showRangeEmpty = !showOnboarding && totalsEmpty && dimensionFiltersActive;
   const bucketOnlyFiltersActive = filters.models !== null || filters.efforts !== null;
 
@@ -1361,139 +1365,12 @@ export default async function UsagePage({
         </div>
       </section>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <section className="border border-line bg-card p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {zh ? "设备与 Key" : "DEVICES & KEYS"}
-            </h2>
-            <a href="/usage/device" className="font-mono text-[10px] text-blue hover:underline">
-              + {zh ? "连接" : "Connect"}
-            </a>
-          </div>
-          {devices.length === 0 ? (
-            <p className="mt-5 text-xs text-grey">
-              {zh ? "还没有已授权设备。" : "No authorized devices yet."}
-            </p>
-          ) : (
-            <ul className="mt-4 divide-y divide-line">
-              {devices.map((device) => {
-                const stale = hoursSince(device.lastSeenAt) > 24;
-                const displayName = usageDeviceDisplayName(device);
-                const detail = usageDeviceDetail(device);
-                const agentVersions = Object.entries(device.agentVersions);
-                return (
-                  <li key={device.id} className="py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm text-paper">{displayName}</div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] text-grey">
-                          <span title={detail}>
-                            {detail}
-                            {device.lastSeenAt ? ` · ${relTime(device.lastSeenAt, locale)}` : ""}
-                          </span>
-                          {stale && (
-                            <span className="inline-flex items-center gap-1 text-grey">
-                              <Clock3 size={10} />
-                              {zh ? ">24h 未同步" : "stale >24h"}
-                            </span>
-                          )}
-                        </div>
-                        {agentVersions.length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[9px] text-grey/80">
-                            {agentVersions.map(([source, version]) => (
-                              <span key={source}>
-                                {usageSourceLabel(source)} v{version.replace(/^v/i, "")}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        {device.revokedAt ? (
-                          <span className="border border-line px-2 py-1 font-mono text-[9px] text-grey">
-                            {zh ? "已撤销" : "Revoked"}
-                          </span>
-                        ) : (
-                          <form action={revokeUsageDeviceAction}>
-                            <input type="hidden" name="device_id" value={device.id} />
-                            <button className="flex items-center gap-1 font-mono text-[9px] text-grey hover:text-paper">
-                              <Trash2 size={11} />
-                              {zh ? "撤销" : "Revoke"}
-                            </button>
-                          </form>
-                        )}
-                        <DeleteDeviceDataForm
-                          deviceId={device.id}
-                          deviceName={displayName}
-                          zh={zh}
-                        />
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className="border border-line bg-card p-4 sm:p-5">
-          <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-            {zh ? "隐私设置" : "PRIVACY"}
-          </h2>
-          <form action={updateUsageSettingsAction} className="mt-4">
-            <label className="flex cursor-pointer items-start justify-between gap-4 border-b border-line pb-4">
-              <span>
-                <span className="block text-sm text-paper">
-                  {zh ? "上传项目目录名" : "Upload project names"}
-                </span>
-                <span className="mt-1 block text-[10px] leading-relaxed text-grey">
-                  {zh
-                    ? "仅 basename；关闭后 Collector 的 payload 中不会出现 project 字段。"
-                    : "Basename only; when off, project is absent from collector payloads."}
-                </span>
-              </span>
-              <input
-                type="checkbox"
-                name="upload_project"
-                value="1"
-                defaultChecked={settings.uploadProject}
-                className="mt-1 h-4 w-4 shrink-0 accent-blue"
-              />
-            </label>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <span className="font-mono text-[9px] text-grey">
-                {zh ? `保留 ${settings.retentionDays} 天` : `${settings.retentionDays}-day retention`}
-              </span>
-              <button className="border border-line px-3 py-1.5 font-mono text-[10px] text-paper hover:border-blue">
-                {zh ? "保存" : "Save"}
-              </button>
-            </div>
-          </form>
-          <details className="mt-5 border-t border-line pt-4">
-            <summary className="cursor-pointer font-mono text-[10px] text-grey hover:text-paper">
-              {zh ? "删除全部用量数据" : "Delete all usage data"}
-            </summary>
-            <form action={deleteAllUsageAction} className="mt-3">
-              <p className="text-[10px] leading-relaxed text-grey">
-                {zh
-                  ? "输入 DELETE 后删除所有事实数据和 legacy 数据；设备授权保持不变。"
-                  : "Type DELETE to remove all fact and legacy data. Device authorization remains."}
-              </p>
-              <div className="mt-2 flex gap-2">
-                <input
-                  name="confirmation"
-                  placeholder="DELETE"
-                  className="min-w-0 flex-1 border border-line bg-bg px-2 py-1.5 font-mono text-xs text-paper outline-none focus:border-blue"
-                />
-                <button className="border border-red-500/40 px-3 font-mono text-[10px] text-red-400 hover:border-red-500">
-                  {zh ? "删除" : "Delete"}
-                </button>
-              </div>
-            </form>
-          </details>
-        </section>
-      </div>
+      <UsageManagementPanels
+        devices={devices}
+        deviceErrorReference={deviceErrorReference}
+        settings={settings}
+        locale={locale}
+      />
 
       <div className="mt-5 space-y-2 text-[10px] leading-relaxed text-grey/80">
         <p>

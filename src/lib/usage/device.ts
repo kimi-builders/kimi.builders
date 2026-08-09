@@ -304,6 +304,8 @@ export interface UsageDeviceSummary {
   osVersion: string;
   architecture: string;
   agentVersions: Record<string, string>;
+  bucketCount: number;
+  sessionCount: number;
   lastSeenAt: Date | null;
   revokedAt: Date | null;
   createdAt: Date;
@@ -314,9 +316,13 @@ export async function listUsageDevices(userId: number): Promise<UsageDeviceSumma
     `SELECT public_id, name, platform, surface, client_version, parser_version,
             terminal_name, terminal_version, os_name, os_version, architecture,
             agent_versions,
+            (SELECT COUNT(*) FROM usage_buckets b
+              WHERE b.user_id = d.user_id AND b.device_id = d.id) AS bucket_count,
+            (SELECT COUNT(*) FROM usage_sessions s
+              WHERE s.user_id = d.user_id AND s.device_id = d.id) AS session_count,
             last_seen_at, revoked_at, created_at
-     FROM usage_devices
-     WHERE user_id = ?
+     FROM usage_devices d
+     WHERE d.user_id = ?
      ORDER BY revoked_at IS NULL DESC, COALESCE(last_seen_at, created_at) DESC`,
     [userId],
   );
@@ -343,6 +349,8 @@ export async function listUsageDevices(userId: number): Promise<UsageDeviceSumma
     osVersion: row.os_version === null ? "" : String(row.os_version),
     architecture: row.architecture === null ? "" : String(row.architecture),
     agentVersions: parseUsageAgentVersions(row.agent_versions),
+    bucketCount: Number(row.bucket_count) || 0,
+    sessionCount: Number(row.session_count) || 0,
     lastSeenAt: (row.last_seen_at as Date | null) ?? null,
     revokedAt: (row.revoked_at as Date | null) ?? null,
     createdAt: row.created_at as Date,

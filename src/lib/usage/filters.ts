@@ -42,6 +42,7 @@ export const USAGE_MAX_RANGE_DAYS = 366;
 export const USAGE_MAX_PAGE_SIZE = 100;
 export const USAGE_DEFAULT_PAGE_SIZE = 25;
 export const USAGE_EXPORT_MAX_ROWS = 20000;
+export const USAGE_JSON_EXPORT_ROW_CAP = 100_000;
 const MAX_FILTER_VALUES = 20;
 
 type RawParams = Record<string, string | string[] | undefined>;
