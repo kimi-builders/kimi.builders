@@ -448,10 +448,10 @@ export default async function UsagePage({
           )}
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="grid w-full shrink-0 grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
         <Link
           href="/usage/device"
-          className="inline-flex min-h-11 items-center justify-center gap-2 border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
         >
           <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
         </Link>

@@ -31,7 +31,7 @@ export default function UsageExportDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-haspopup="dialog"
-        className="inline-flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
       >
         <Download size={13} aria-hidden="true" /> {zh ? "导出" : "Export"}
       </button>
@@ -41,9 +41,9 @@ export default function UsageExportDialog({
         onClick={(event) => {
           if (event.target === event.currentTarget) dialogRef.current?.close();
         }}
-        className="fixed inset-0 m-auto w-[min(94vw,38rem)] border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-black/75"
+        className="fixed inset-0 m-auto max-h-[86vh] w-[min(94vw,38rem)] overflow-hidden border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-line bg-moon px-5 py-4">
           <div>
             <h3 id="usage-export-title" className="font-mono text-sm font-semibold">
               {zh ? "导出私人用量数据" : "Export private usage data"}
@@ -63,11 +63,11 @@ export default function UsageExportDialog({
             <X size={17} aria-hidden="true" />
           </button>
         </div>
-        <div className="space-y-3 px-5 py-4">
+        <div className="max-h-[calc(86vh-76px)] space-y-3 overflow-y-auto px-5 py-4">
           <a
             href={csvHref}
             onClick={() => dialogRef.current?.close()}
-            className="flex min-h-20 items-start gap-3 border border-line p-4 hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="flex min-h-20 items-start gap-3 border border-line bg-card p-4 hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <Sheet size={19} className="mt-0.5 shrink-0 text-emerald-400" aria-hidden="true" />
             <span>
@@ -82,7 +82,7 @@ export default function UsageExportDialog({
           <a
             href={jsonHref}
             onClick={() => dialogRef.current?.close()}
-            className="flex min-h-20 items-start gap-3 border border-line p-4 hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="flex min-h-20 items-start gap-3 border border-line bg-card p-4 hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <FileJson2 size={19} className="mt-0.5 shrink-0 text-blue" aria-hidden="true" />
             <span>

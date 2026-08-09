@@ -26,7 +26,7 @@ export default async function AppLayout({
   const profileHref = user ? `/u/${user.handle}` : undefined;
   return (
     <div>
-      <MobileTopBar />
+      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} />
       <div className="mx-auto flex max-w-[1200px] items-start gap-8 px-4 lg:px-6">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>

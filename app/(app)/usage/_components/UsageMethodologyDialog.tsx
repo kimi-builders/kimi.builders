@@ -86,7 +86,7 @@ export default function UsageMethodologyDialog({
         className={
           compact
             ? "inline-flex size-7 shrink-0 items-center justify-center text-grey/70 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-            : "inline-flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            : "inline-flex min-h-11 w-full items-center justify-center gap-1.5 border border-line px-3 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
         }
       >
         {compact ? <CircleHelp size={12} /> : <><Info size={12} />{title}</>}

@@ -17,6 +17,8 @@ const DICT = {
   "nav.soon": { zh: "SOON", en: "SOON" },
   "nav.collapse": { zh: "收起导航", en: "Collapse" },
   "nav.expand": { zh: "展开导航", en: "Expand" },
+  "nav.menu": { zh: "打开功能导航", en: "Open navigation" },
+  "nav.closeMenu": { zh: "关闭功能导航", en: "Close navigation" },
   /* ---- 右栏 ---- */
   "side.browse": { zh: "浏览社区", en: "BROWSE" },
   "side.all": { zh: "全部讨论", en: "All threads" },

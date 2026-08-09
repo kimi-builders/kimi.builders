@@ -29,7 +29,7 @@ export default function CurrencyToggle({
     { id: "cny", text: "¥" },
   ];
   return (
-    <span className="inline-flex items-center border border-line" role="group" aria-label={label}>
+    <span className="inline-flex w-full items-center border border-line sm:w-auto" role="group" aria-label={label}>
       {items.map((item, index) => (
         <button
           key={item.id}
@@ -37,7 +37,7 @@ export default function CurrencyToggle({
           onClick={() => select(item.id)}
           aria-pressed={currency === item.id}
           title={item.id.toUpperCase()}
-          className={`inline-flex min-h-11 min-w-11 items-center justify-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+          className={`inline-flex min-h-11 min-w-11 flex-1 items-center justify-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:flex-none ${
             index > 0 ? "border-l border-line" : ""
           } ${currency === item.id ? "bg-paper text-bg" : "text-grey hover:text-paper"}`}
         >
