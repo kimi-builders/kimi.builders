@@ -93,6 +93,7 @@ async function main() {
   const migration = [
     "../db/migrations/20260809_usage_phase2.sql",
     "../db/migrations/20260809_usage_prices_v2.sql",
+    "../db/migrations/20260810_usage_prices_v3.sql",
   ]
     .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
     .join("\n;\n");
@@ -113,7 +114,17 @@ async function main() {
   const [priceCount] = await pool.query<RowDataPacket[]>(
     "SELECT COUNT(*) AS count FROM usage_model_prices",
   );
-  assert.equal(Number(priceCount[0].count), 35); // v1 24 行 + v2 11 行
+  assert.equal(Number(priceCount[0].count), 36); // v1 24 行 + v2 11 行 + v3 1 行
+  const [correctedPrices] = await pool.query<RowDataPacket[]>(
+    `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok
+       FROM usage_model_prices
+      WHERE model_pattern IN ('gpt-5.5-pro', 'gpt-5.4', 'gemini-3-flash-preview')`,
+  );
+  const priceByModel = new Map(correctedPrices.map((row) => [String(row.model_pattern), row]));
+  assert.equal(Number(priceByModel.get("gpt-5.5-pro")?.output_per_mtok), 180);
+  assert.equal(Number(priceByModel.get("gpt-5.4")?.cache_read_per_mtok), 0.25);
+  assert.equal(Number(priceByModel.get("gemini-3-flash-preview")?.input_per_mtok), 0.5);
+  assert.equal(Number(priceByModel.get("gemini-3-flash-preview")?.output_per_mtok), 3);
 
   const handle = `phase2_${Date.now()}`;
   const [userResult] = await pool.query<ResultSetHeader>(
@@ -167,6 +178,61 @@ async function main() {
     // claude-opus-4: 300×5 + 105×6.25 + 50×0.5 + 30×25 = 2931.25 micros
     // gpt-5-codex: 700×1.25 + 200×0.125 + 80×10 + 40×10 = 2100 micros
     assert.ok(Math.abs(overview.totals.costMicros - (5031.25 + 747)) < 1);
+
+    // —— 新 Collector 精确小时活动:跨日 active/prompt 必须落到各自日期,不能挤在首日 ——
+    const exactSessionHash = "d".repeat(64);
+    await ingestUsage(
+      deviceA.principal,
+      validateUsageIngest(
+        {
+          protocolVersion: 2,
+          client: clientMeta(),
+          buckets: [],
+          sessions: [
+            {
+              source: "codex",
+              sessionHash: exactSessionHash,
+              firstMessageAt: "2026-08-01T23:58:00.000Z",
+              lastMessageAt: "2026-08-02T00:01:00.000Z",
+              durationSeconds: 180,
+              activeSeconds: 120,
+              messageCount: 3,
+              userMessageCount: 1,
+              userPromptHours: Array.from({ length: 24 }, (_, hour) =>
+                hour === 23 ? 1 : 0,
+              ),
+              activityHours: [
+                {
+                  hourStart: "2026-08-01T23:00:00.000Z",
+                  activeSeconds: 60,
+                  userMessageCount: 1,
+                },
+                {
+                  hourStart: "2026-08-02T00:00:00.000Z",
+                  activeSeconds: 60,
+                  userMessageCount: 0,
+                },
+              ],
+            },
+          ],
+        },
+        settings,
+      ),
+    );
+    const exactHeatmap = await getUsageOverview(userId, filters());
+    // 2026-08-01 = 周六(index 5),2026-08-02 = 周日(index 6)
+    assert.equal(exactHeatmap.heatmap.activeSeconds[5][23] - overview.heatmap.activeSeconds[5][23], 60);
+    assert.equal(exactHeatmap.heatmap.activeSeconds[6][0] - overview.heatmap.activeSeconds[6][0], 60);
+    assert.equal(exactHeatmap.heatmap.prompts[5][23] - overview.heatmap.prompts[5][23], 1);
+    assert.equal(exactHeatmap.heatmap.prompts[6][0] - overview.heatmap.prompts[6][0], 0);
+    const activeOn = (value: typeof exactHeatmap, day: string) =>
+      value.trend.find((row) => row.day === day)?.activeSeconds ?? 0;
+    assert.equal(activeOn(exactHeatmap, "2026-08-01") - activeOn(overview, "2026-08-01"), 60);
+    assert.equal(activeOn(exactHeatmap, "2026-08-02") - activeOn(overview, "2026-08-02"), 60);
+    await pool.query(
+      "DELETE FROM usage_sessions WHERE user_id = ? AND session_hash = UNHEX(?)",
+      [userId, exactSessionHash],
+    );
 
     // —— 来源筛选 ——
     const codexOnly = await getUsageOverview(userId, filters({ sources: "codex" }));
@@ -245,12 +311,39 @@ async function main() {
     const windowed = await getUsageOverview(
       userId,
       parseUsageFilters(
-        { from: "2026-08-10", to: "2026-09-20" },
-        { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-10-01T00:00:00Z") },
+        { from: "2026-08-10", to: "2026-10-20" },
+        { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-11-01T00:00:00Z") },
       ),
     );
     // 1M input × $2 + 1M input × $3 = $5 → 5e6 micros
     assert.ok(Math.abs(windowed.totals.costMicros - 5_000_000) < 1);
+    assert.equal(windowed.totals.totalTokens, 2_000_000);
+    assert.equal(windowed.meta.pricedTokens, 2_000_000);
+    assert.equal(windowed.meta.unpricedTokens, 0);
+    assert.equal(windowed.meta.pricingCoverage, 1);
+    assert.equal(
+      windowed.trend.reduce((sum, row) => sum + row.totalTokens, 0),
+      windowed.totals.totalTokens,
+    );
+    assert.equal(
+      windowed.trend.reduce((sum, row) => sum + row.costMicros, 0),
+      windowed.totals.costMicros,
+    );
+    for (const distribution of [
+      windowed.distributions.source,
+      windowed.distributions.model,
+      windowed.distributions.project,
+      windowed.distributions.device,
+    ]) {
+      assert.equal(
+        distribution.rows.reduce((sum, row) => sum + row.tokens, 0),
+        windowed.totals.totalTokens,
+      );
+      assert.equal(
+        distribution.rows.reduce((sum, row) => sum + row.costMicros, 0),
+        windowed.totals.costMicros,
+      );
+    }
 
     // —— 分页 ——
     const page1 = await getUsageOverview(userId, filters({ ps: "2", page: "1" }));

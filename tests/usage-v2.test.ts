@@ -71,6 +71,48 @@ test("v2 contract keeps cache categories disjoint", () => {
   assert.equal(parsed.buckets[0].cacheReadInputTokens, 4);
 });
 
+test("v2 contract accepts exact calendar-hour session activity", () => {
+  const value = payload();
+  const rawSession = value.sessions[0] as typeof value.sessions[0] & {
+    activityHours: Array<{
+      hourStart: string;
+      activeSeconds: number;
+      userMessageCount: number;
+    }>;
+  };
+  rawSession.activityHours = [
+    {
+      hourStart: "2026-08-01T10:00:00.000Z",
+      activeSeconds: 30,
+      userMessageCount: 1,
+    },
+  ];
+  const parsed = validateUsageIngest(value, settings);
+  assert.deepEqual(parsed.sessions[0].activityHours, rawSession.activityHours);
+});
+
+test("v2 contract rejects inconsistent calendar-hour session totals", () => {
+  const value = payload();
+  const rawSession = value.sessions[0] as typeof value.sessions[0] & {
+    activityHours: Array<{
+      hourStart: string;
+      activeSeconds: number;
+      userMessageCount: number;
+    }>;
+  };
+  rawSession.activityHours = [
+    {
+      hourStart: "2026-08-01T10:00:00.000Z",
+      activeSeconds: 29,
+      userMessageCount: 1,
+    },
+  ];
+  assert.throws(
+    () => validateUsageIngest(value, settings),
+    (error) => error instanceof UsageRequestError && error.code === "invalid_payload",
+  );
+});
+
 test("project fields are rejected when project upload is disabled", () => {
   const value = payload();
   value.buckets[0] = { ...value.buckets[0], project: "private-repo" } as typeof value.buckets[0];
@@ -87,4 +129,3 @@ test("usage credentials are compared as fixed-length HMAC digests", () => {
   assert.equal(constantTimeHashEqual(first, same), true);
   assert.equal(constantTimeHashEqual(first, other), false);
 });
-

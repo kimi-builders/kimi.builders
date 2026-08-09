@@ -111,7 +111,11 @@ export async function ingestUsage(
         session.activeSeconds,
         session.messageCount,
         session.userMessageCount,
-        JSON.stringify(session.userPromptHours),
+        JSON.stringify(
+          session.activityHours
+            ? { version: 2, hours: session.activityHours }
+            : session.userPromptHours,
+        ),
         payload.client.syncId,
       ]);
       await connection.query(

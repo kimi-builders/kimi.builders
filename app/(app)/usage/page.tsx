@@ -50,11 +50,11 @@ import {
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import {
   deleteAllUsageAction,
-  deleteDeviceDataAction,
   revokeUsageDeviceAction,
   updateUsageSettingsAction,
 } from "./actions";
 import CurrencyToggle from "./_components/CurrencyToggle";
+import DeleteDeviceDataForm from "./_components/DeleteDeviceDataForm";
 import RecordsColumnsMenu from "./_components/RecordsColumnsMenu";
 import TzReporter from "./_components/TzReporter";
 import UsageFilterBar from "./_components/UsageFilterBar";
@@ -828,17 +828,26 @@ export default async function UsagePage({
 
   const pricingVersions = overview.meta.pricingVersions.join("、");
   const unpricedCount = overview.meta.unpricedModels.length;
+  const partialCount = overview.meta.partialModels.length;
+  const pricingCoverage = `${(overview.meta.pricingCoverage * 100).toFixed(1)}%`;
+  const pricingIncomplete = overview.meta.pricingCoverage < 0.9995;
   const inputWithCacheWrite = totals.inputTokens + totals.cacheWriteInputTokens;
   const prevInputWithCacheWrite = previous.inputTokens + previous.cacheWriteInputTokens;
 
   const kpiRow1: KpiCardSpec[] = [
     {
       icon: Activity,
-      label: zh ? "预估费用" : "EST. COST",
+      label: pricingIncomplete
+        ? zh
+          ? "已定价部分"
+          : "PRICED PORTION"
+        : zh
+          ? "预估费用"
+          : "EST. COST",
       value: fmtCost(totals.costMicros, ccy),
       note: zh
-        ? `价格表 ${pricingVersions || "—"} · ${unpricedCount} 个模型未定价`
-        : `Pricing ${pricingVersions || "—"} · ${unpricedCount} unpriced`,
+        ? `覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价`
+        : `${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial`,
     },
     {
       icon: BarChart3,
@@ -882,9 +891,9 @@ export default async function UsagePage({
     },
     {
       icon: Timer,
-      label: zh ? "总时长" : "TOTAL TIME",
+      label: zh ? "投入时长" : "ENGAGED TIME",
       value: duration(totals.durationSeconds, zh),
-      note: zh ? "会话墙钟" : "session wall-clock",
+      note: zh ? "单次空闲间隔最多计 30 分钟" : "idle gaps capped at 30m",
       cur: totals.durationSeconds,
       prev: previous.durationSeconds,
       sessionNote: true,
@@ -1212,7 +1221,9 @@ export default async function UsagePage({
               {zh ? "分时活跃" : "ACTIVITY HEATMAP"}
             </h2>
             <p className="mt-1 text-[10px] text-grey">
-              {zh ? "星期 × 本地小时" : "Weekday × local hour"}
+              {zh
+                ? "星期 × 本地小时 · 新版 Collector 精确到小时"
+                : "Weekday × local hour · exact hourly facts from current collectors"}
             </p>
           </div>
           <SwitchLinks items={heatSwitch} label={zh ? "热图指标" : "Heatmap metric"} />
@@ -1483,14 +1494,11 @@ export default async function UsagePage({
                             </button>
                           </form>
                         )}
-                        <form action={deleteDeviceDataAction}>
-                          <input type="hidden" name="device_id" value={device.id} />
-                          <input type="hidden" name="confirm_device_data" value="1" />
-                          <button className="flex items-center gap-1 font-mono text-[9px] text-grey hover:text-red-400">
-                            <Trash2 size={11} />
-                            {zh ? "删除数据" : "Delete data"}
-                          </button>
-                        </form>
+                        <DeleteDeviceDataForm
+                          deviceId={device.id}
+                          deviceName={device.name}
+                          zh={zh}
+                        />
                       </div>
                     </div>
                   </li>
@@ -1566,8 +1574,8 @@ export default async function UsagePage({
         </p>
         <p>
           {zh
-            ? `估费为服务端价格表的 API 等价估算(版本 ${pricingVersions || "—"}),不代表订阅账单;未定价模型的 token 照常统计但不计费。`
-            : `Costs are API-equivalent estimates from the server pricing table (version ${pricingVersions || "—"}), not subscription bills. Tokens from unpriced models are counted as usual but never billed.`}
+            ? `估费为服务端价格表的 API 等价估算(版本 ${pricingVersions || "—"}),覆盖 ${pricingCoverage} Token,不代表订阅账单;未定价部分照常统计但不计费。`
+            : `Costs are API-equivalent estimates from the server pricing table (version ${pricingVersions || "—"}), covering ${pricingCoverage} of tokens, not subscription bills. Unpriced usage is counted but excluded from cost.`}
         </p>
         {ccy === "cny" && (
           <p>

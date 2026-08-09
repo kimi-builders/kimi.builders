@@ -6,6 +6,7 @@ import {
   type UsageClientMetaV2,
   type UsageIngestRequestV2,
   type UsageSessionV2,
+  type UsageSessionHourV2,
 } from "../usage-contract";
 import type { UsageSettings } from "./settings";
 
@@ -16,6 +17,7 @@ const MAX_SESSIONS = 2_000;
 const MAX_TOKEN_COUNT = 1_000_000_000_000_000;
 const MAX_COUNT = 1_000_000_000;
 const MAX_SECONDS = 366 * 24 * 60 * 60;
+const MAX_ACTIVITY_HOURS_PER_SESSION = 2_000;
 
 export class UsageRequestError extends Error {
   constructor(
@@ -241,27 +243,99 @@ function session(value: unknown, index: number, settings: UsageSettings): UsageS
       `sessions[${index}].userPromptHours must contain exactly 24 counters.`,
     );
   }
+  const durationSeconds = safeInteger(
+    input.durationSeconds,
+    `sessions[${index}].durationSeconds`,
+    MAX_SECONDS,
+  );
+  const activeSeconds = safeInteger(
+    input.activeSeconds,
+    `sessions[${index}].activeSeconds`,
+    MAX_SECONDS,
+  );
+  const userMessageCount = safeInteger(
+    input.userMessageCount,
+    `sessions[${index}].userMessageCount`,
+    MAX_COUNT,
+  );
+  let activityHours: UsageSessionHourV2[] | undefined;
+  if (input.activityHours !== undefined) {
+    if (
+      !Array.isArray(input.activityHours) ||
+      input.activityHours.length > MAX_ACTIVITY_HOURS_PER_SESSION
+    ) {
+      throw new UsageRequestError(
+        "invalid_payload",
+        `sessions[${index}].activityHours must contain at most ${MAX_ACTIVITY_HOURS_PER_SESSION} items.`,
+      );
+    }
+    const seen = new Set<string>();
+    activityHours = input.activityHours.map((value, hourIndex) => {
+      const item = record(value, `sessions[${index}].activityHours[${hourIndex}]`);
+      const hourStart = timestamp(
+        item.hourStart,
+        `sessions[${index}].activityHours[${hourIndex}].hourStart`,
+      );
+      const date = new Date(hourStart);
+      if (
+        date.getUTCMinutes() !== 0 ||
+        date.getUTCSeconds() !== 0 ||
+        date.getUTCMilliseconds() !== 0 ||
+        seen.has(hourStart)
+      ) {
+        throw new UsageRequestError(
+          "invalid_payload",
+          `sessions[${index}].activityHours must use unique UTC hour boundaries.`,
+        );
+      }
+      seen.add(hourStart);
+      const firstHour = Math.floor(Date.parse(firstMessageAt) / 3_600_000) * 3_600_000;
+      const lastHour = Math.floor(Date.parse(lastMessageAt) / 3_600_000) * 3_600_000;
+      if (date.getTime() < firstHour || date.getTime() > lastHour) {
+        throw new UsageRequestError(
+          "invalid_payload",
+          `sessions[${index}].activityHours must stay inside the session window.`,
+        );
+      }
+      return {
+        hourStart,
+        activeSeconds: safeInteger(
+          item.activeSeconds,
+          `sessions[${index}].activityHours[${hourIndex}].activeSeconds`,
+          3_600,
+        ),
+        userMessageCount: safeInteger(
+          item.userMessageCount,
+          `sessions[${index}].activityHours[${hourIndex}].userMessageCount`,
+          MAX_COUNT,
+        ),
+      };
+    });
+    activityHours.sort((left, right) => left.hourStart.localeCompare(right.hourStart));
+    if (
+      activityHours.reduce((sum, item) => sum + item.activeSeconds, 0) !== activeSeconds ||
+      activityHours.reduce((sum, item) => sum + item.userMessageCount, 0) !== userMessageCount
+    ) {
+      throw new UsageRequestError(
+        "invalid_payload",
+        `sessions[${index}].activityHours totals must match the session counters.`,
+      );
+    }
+  }
   return {
     source,
     sessionHash: sessionHash.toLowerCase(),
     project: project(input.project, `sessions[${index}].project`, settings),
     firstMessageAt,
     lastMessageAt,
-    durationSeconds: safeInteger(
-      input.durationSeconds,
-      `sessions[${index}].durationSeconds`,
-      MAX_SECONDS,
-    ),
-    activeSeconds: safeInteger(input.activeSeconds, `sessions[${index}].activeSeconds`, MAX_SECONDS),
+    durationSeconds,
+    activeSeconds,
     messageCount: safeInteger(input.messageCount, `sessions[${index}].messageCount`, MAX_COUNT),
-    userMessageCount: safeInteger(
-      input.userMessageCount,
-      `sessions[${index}].userMessageCount`,
-      MAX_COUNT,
-    ),
+    userMessageCount,
     userPromptHours: input.userPromptHours.map((count, hour) =>
       safeInteger(count, `sessions[${index}].userPromptHours[${hour}]`, MAX_COUNT),
     ),
+    ...(activityHours === undefined ? {} : { activityHours }),
   };
 }
 

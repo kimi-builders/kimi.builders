@@ -97,6 +97,8 @@ test("pricing: rate fallbacks — cacheWrite→input, reasoning→output, cacheR
   // 1×1 + 1×1(回退 input)+ 1×0.1 + 1×2 + 1×2(回退 output)= 6.1 USD
   assert.equal(full.status, "priced");
   assert.ok(Math.abs(full.micros - 6_100_000) < 1e-6);
+  assert.equal(full.pricedTokens, 5_000_000);
+  assert.equal(full.unpricedTokens, 0);
 
   const noCacheRead = estimateCostMicros(
     { ...zeroTokens(), cacheReadInputTokens: 500 },
@@ -104,10 +106,14 @@ test("pricing: rate fallbacks — cacheWrite→input, reasoning→output, cacheR
   );
   assert.equal(noCacheRead.status, "partial");
   assert.equal(noCacheRead.micros, 0);
+  assert.equal(noCacheRead.pricedTokens, 0);
+  assert.equal(noCacheRead.unpricedTokens, 500);
 
-  const none = estimateCostMicros(zeroTokens(), null);
+  const none = estimateCostMicros({ ...zeroTokens(), inputTokens: 250 }, null);
   assert.equal(none.status, "unpriced");
   assert.equal(none.micros, 0);
+  assert.equal(none.pricedTokens, 0);
+  assert.equal(none.unpricedTokens, 250);
 });
 
 function zeroTokens() {

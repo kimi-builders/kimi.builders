@@ -39,6 +39,10 @@ export interface UsagePriceEstimate {
   micros: number;
   status: UsagePriceStatus;
   version: string | null;
+  /* Token coverage is category-aware: a partial model can have priced input
+     tokens and unpriced cache-read tokens in the same row. */
+  pricedTokens: number;
+  unpricedTokens: number;
 }
 
 function rate(value: unknown): number | null {
@@ -144,7 +148,21 @@ export function estimateCostMicros(
   tokens: UsageTokenBreakdown,
   price: UsageModelPrice | null,
 ): UsagePriceEstimate {
-  if (!price) return { micros: 0, status: "unpriced", version: null };
+  const totalTokens =
+    tokens.inputTokens +
+    tokens.cacheWriteInputTokens +
+    tokens.cacheReadInputTokens +
+    tokens.outputTokens +
+    tokens.reasoningOutputTokens;
+  if (!price) {
+    return {
+      micros: 0,
+      status: "unpriced",
+      version: null,
+      pricedTokens: 0,
+      unpricedTokens: totalTokens,
+    };
+  }
   const legs: Array<[number, number | null]> = [
     [tokens.inputTokens, price.inputPerMtok],
     [tokens.cacheWriteInputTokens, price.cacheWritePerMtok ?? price.inputPerMtok],
@@ -154,24 +172,32 @@ export function estimateCostMicros(
   ];
   let micros = 0;
   let partial = false;
+  let pricedTokens = 0;
+  let unpricedTokens = 0;
   for (const [count, perMtok] of legs) {
     if (count <= 0) continue;
     if (perMtok === null) {
       partial = true;
+      unpricedTokens += count;
       continue;
     }
     micros += count * perMtok;
+    pricedTokens += count;
   }
   return {
     micros,
     status: partial ? "partial" : "priced",
     version: price.version,
+    pricedTokens,
+    unpricedTokens,
   };
 }
 
 /* 聚合辅助:把一条 (model, tokens) 行估费并累计到 priced/unpriced/partial 名册。 */
 export interface PricingLedger {
   micros: number;
+  pricedTokens: number;
+  unpricedTokens: number;
   versions: Set<string>;
   unpricedModels: Set<string>;
   partialModels: Set<string>;
@@ -180,6 +206,8 @@ export interface PricingLedger {
 export function createPricingLedger(): PricingLedger {
   return {
     micros: 0,
+    pricedTokens: 0,
+    unpricedTokens: 0,
     versions: new Set(),
     unpricedModels: new Set(),
     partialModels: new Set(),
@@ -193,10 +221,13 @@ export function priceIntoLedger(
   tokens: UsageTokenBreakdown,
   at: Date,
   source?: string,
-): void {
+): UsagePriceEstimate {
   const estimate = estimateCostMicros(tokens, matchModelPrice(prices, model, at, source));
   ledger.micros += estimate.micros;
+  ledger.pricedTokens += estimate.pricedTokens;
+  ledger.unpricedTokens += estimate.unpricedTokens;
   if (estimate.version) ledger.versions.add(estimate.version);
   if (estimate.status === "unpriced") ledger.unpricedModels.add(model);
   if (estimate.status === "partial") ledger.partialModels.add(model);
+  return estimate;
 }

@@ -93,12 +93,24 @@ export interface UsageSessionV2 {
   project?: string;
   firstMessageAt: string;
   lastMessageAt: string;
+  /* Cross-tool comparable engaged duration: per-event gaps are capped at 30m. */
   durationSeconds: number;
+  /* Assistant/tool activity: per-gap idle cap is 5m. */
   activeSeconds: number;
   messageCount: number;
   userMessageCount: number;
   /* Exactly 24 UTC-hour counters, indices 0 through 23. */
   userPromptHours: readonly number[];
+  /* Additive v2 extension. Sparse exact UTC-hour facts supersede the legacy
+     24-hour histogram for heatmaps while preserving old-client compatibility. */
+  activityHours?: readonly UsageSessionHourV2[];
+}
+
+export interface UsageSessionHourV2 {
+  /* UTC ISO timestamp aligned to the start of an hour. */
+  hourStart: string;
+  activeSeconds: number;
+  userMessageCount: number;
 }
 
 export type UsageQuotaWindow = "five-hour" | "seven-day" | "monthly" | "balance";

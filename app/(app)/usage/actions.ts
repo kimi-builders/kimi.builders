@@ -68,10 +68,11 @@ export async function revokeUsageDeviceAction(formData: FormData): Promise<void>
 export async function deleteDeviceDataAction(formData: FormData): Promise<void> {
   const user = await getSessionUser();
   if (!user) return;
-  if (String(formData.get("confirm_device_data") ?? "") !== "1") return;
+  const deviceId = String(formData.get("device_id") ?? "");
+  if (String(formData.get("confirm_device_data") ?? "") !== `DELETE:${deviceId}`) return;
   await deleteUsageForDeviceByPublicId(
     user.id,
-    String(formData.get("device_id") ?? ""),
+    deviceId,
   );
   revalidatePath("/usage");
 }
@@ -82,4 +83,3 @@ export async function deleteAllUsageAction(formData: FormData): Promise<void> {
   await deleteAllUsage(user.id);
   revalidatePath("/usage");
 }
-

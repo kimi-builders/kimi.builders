@@ -33,11 +33,24 @@ function trendKeyOf(value: unknown, granularity: UsageFilters["granularity"]): s
   if (granularity === "hour") return String(value);
   return utcDay(value);
 }
+
+/* 精确 UTC 小时事实转成本地趋势格;与 trendTimeExpr 的 hour/day/week 口径一致。 */
+function trendKeyFromInstant(value: Date, filters: UsageFilters): string {
+  const local = new Date(value.getTime() + filters.tzOffsetMinutes * 60_000);
+  if (filters.granularity === "hour") {
+    return `${local.toISOString().slice(0, 13)}:00`;
+  }
+  if (filters.granularity === "week") {
+    local.setUTCDate(local.getUTCDate() - ((local.getUTCDay() + 6) % 7));
+  }
+  return local.toISOString().slice(0, 10);
+}
 import {
   createPricingLedger,
   estimateCostMicros,
   loadModelPrices,
   matchModelPrice,
+  priceIntoLedger,
   type UsageTokenBreakdown,
 } from "./pricing";
 
@@ -161,6 +174,9 @@ export interface UsageOverview {
     pricingVersions: string[];
     unpricedModels: string[];
     partialModels: string[];
+    pricedTokens: number;
+    unpricedTokens: number;
+    pricingCoverage: number;
     tzOffsetMinutes: number;
     generatedAt: string;
   };
@@ -370,13 +386,14 @@ export async function getUsageOverview(
   );
   const recordsCountQ = recordsCountQuery(userId, filters);
   const queries: Promise<RowDataPacket[]>[] = [
-    // 0 趋势+总览:本地日 × source × model
+    // 0 趋势+总览:30 分钟 × source × model。先按事实时间取价,
+    // 再在 JS 聚合到小时/日/周,避免价格窗口跨日/跨周时整段套用最早价格。
     pool
       .query<RowDataPacket[]>(
-        `SELECT ${trendBucket} AS day, source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+        `SELECT ${trendBucket} AS day, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY ${trendBucket}, source, model
+         GROUP BY bucket_start, source, model
          ORDER BY day`,
         bucket.params,
       )
@@ -386,7 +403,9 @@ export async function getUsageOverview(
       .query<RowDataPacket[]>(
         `SELECT ${trendSession} AS day,
                 COUNT(*) AS session_count,
-                SUM(active_seconds) AS active_seconds,
+                SUM(CASE WHEN JSON_TYPE(user_prompt_hours) = 'ARRAY'
+                         THEN active_seconds ELSE 0 END) AS trend_active_seconds,
+                SUM(active_seconds) AS total_active_seconds,
                 SUM(duration_seconds) AS duration_seconds,
                 SUM(message_count) AS message_count,
                 SUM(user_message_count) AS user_messages,
@@ -397,26 +416,27 @@ export async function getUsageOverview(
         session.params,
       )
       .then(([rows]) => rows),
-    // 2 热图 token/cost:星期×小时×(source,model)
+    // 2 热图 token/cost:保留 30 分钟事实时间以精确命中价格窗口。
     pool
       .query<RowDataPacket[]>(
         `SELECT ${localWeekdayExpr("bucket_start", filters)} AS weekday,
                 ${localHourExpr("bucket_start", filters)} AS hour,
-                source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+                source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY weekday, hour, source, model`,
+         GROUP BY bucket_start, source, model`,
         bucket.params,
       )
       .then(([rows]) => rows),
-    // 3 热图时长:会话开始时刻落格
+    // 3 旧客户端热图时长 fallback:只有 legacy 24 小时数组按会话开始落格;
+    // 新客户端的精确小时 activeSeconds 在查询 4 的 version=2 JSON 中读取。
     pool
       .query<RowDataPacket[]>(
         `SELECT ${localWeekdayExpr("first_message_at", filters)} AS weekday,
                 ${localHourExpr("first_message_at", filters)} AS hour,
                 SUM(active_seconds) AS active_seconds
          FROM usage_sessions
-         WHERE ${session.where}
+         WHERE ${session.where} AND JSON_TYPE(user_prompt_hours) = 'ARRAY'
          GROUP BY weekday, hour`,
         session.params,
       )
@@ -464,10 +484,10 @@ export async function getUsageOverview(
     // 9 分布:source
     pool
       .query<RowDataPacket[]>(
-        `SELECT source AS k, source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+        `SELECT source AS k, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucket.where}
-         GROUP BY source, model`,
+         GROUP BY bucket_start, source, model`,
         bucket.params,
       )
       .then(([rows]) => rows),
@@ -475,10 +495,10 @@ export async function getUsageOverview(
     filters.projectsEnabled
       ? pool
           .query<RowDataPacket[]>(
-            `SELECT COALESCE(project_label, '') AS k, source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+            `SELECT COALESCE(project_label, '') AS k, source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
              FROM usage_buckets
              WHERE ${bucket.where}
-             GROUP BY k, source, model`,
+             GROUP BY bucket_start, k, source, model`,
             bucket.params,
           )
           .then(([rows]) => rows)
@@ -487,7 +507,7 @@ export async function getUsageOverview(
     pool
       .query<RowDataPacket[]>(
         `SELECT d.public_id AS k, d.name AS device_name, b.source, b.model,
-                MIN(b.bucket_start) AS sample_at,
+                b.bucket_start AS sample_at,
                 SUM(b.input_tokens) AS input_tokens,
                 SUM(b.cache_write_input_tokens) AS cache_write_input_tokens,
                 SUM(b.cache_read_input_tokens) AS cache_read_input_tokens,
@@ -500,7 +520,7 @@ export async function getUsageOverview(
          FROM usage_buckets b
          JOIN usage_devices d ON d.id = b.device_id
          WHERE ${bucketFilterSql(userId, filters, "b").where}
-         GROUP BY d.public_id, d.name, b.source, b.model`,
+         GROUP BY b.bucket_start, d.public_id, d.name, b.source, b.model`,
         bucketFilterSql(userId, filters, "b").params,
       )
       .then(([rows]) => rows),
@@ -548,10 +568,10 @@ export async function getUsageOverview(
     // 18/19 上一等长周期(环比):同筛选,窗口整体前移一个 span
     pool
       .query<RowDataPacket[]>(
-        `SELECT source, model, MIN(bucket_start) AS sample_at, ${TOKEN_SUMS}
+        `SELECT source, model, bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${prevBucket.where}
-         GROUP BY source, model`,
+         GROUP BY bucket_start, source, model`,
         prevBucket.params,
       )
       .then(([rows]) => rows),
@@ -625,23 +645,34 @@ export async function getUsageOverview(
     target.outputTokens += tokens.outputTokens;
     target.reasoningOutputTokens += tokens.reasoningOutputTokens;
   };
-  /* 逐行估费:同时累计当日与全局台账(用 before/after 差值,保证两处一致)。 */
+  const estimateRow = (row: RowDataPacket, tokens: UsageTokenBreakdown) =>
+    estimateCostMicros(
+      tokens,
+      String(row.model) === LEGACY_MODEL
+        ? null
+        : matchModelPrice(
+            prices,
+            String(row.model),
+            new Date(row.sample_at as string),
+            String(row.source),
+          ),
+    );
+
+  /* 逐事实时间估费并累计覆盖率。热图/分布只复用 estimateRow,不得重复污染台账。 */
   const priceRow = (
     row: RowDataPacket,
     tokens: UsageTokenBreakdown,
   ): number => {
     const model = String(row.model);
-    if (model === LEGACY_MODEL) return 0;
-    const before = ledger.micros;
-    const estimate = estimateCostMicros(
+    const estimate = priceIntoLedger(
+      ledger,
+      prices,
+      model,
       tokens,
-      matchModelPrice(prices, model, new Date(row.sample_at as string), String(row.source)),
+      new Date(row.sample_at as string),
+      String(row.source),
     );
-    ledger.micros += estimate.micros;
-    if (estimate.version) ledger.versions.add(estimate.version);
-    if (estimate.status === "unpriced") ledger.unpricedModels.add(model);
-    if (estimate.status === "partial") ledger.partialModels.add(model);
-    return ledger.micros - before;
+    return estimate.micros;
   };
 
   for (const row of bucketRows) {
@@ -663,9 +694,9 @@ export async function getUsageOverview(
   for (const row of sessionDayRows) {
     const item = ensureDay(trendKeyOf(row.day, filters.granularity));
     item.sessions += num(row.session_count);
-    item.activeSeconds += num(row.active_seconds);
+    item.activeSeconds += num(row.trend_active_seconds);
     totals.sessions += num(row.session_count);
-    totals.activeSeconds += num(row.active_seconds);
+    totals.activeSeconds += num(row.total_active_seconds);
     totals.durationSeconds += num(row.duration_seconds);
     totals.messages += num(row.message_count);
     totals.userMessages += num(row.user_messages);
@@ -676,8 +707,6 @@ export async function getUsageOverview(
   totals.activeDevices = new Set(
     [...bucketDeviceRows, ...sessionDeviceRows].map((row) => String(row.device_id)),
   ).size;
-  const trend = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
-
   // —— 上一等长周期(环比);独立台账,不污染当前范围的 unpriced/partial 名册 ——
   const previous = {
     inputTokens: 0,
@@ -694,7 +723,6 @@ export async function getUsageOverview(
     durationSeconds: 0,
     costMicros: 0,
   };
-  const prevLedger = createPricingLedger();
   for (const row of prevBucketRows) {
     const tokens = tokensOf(row);
     previous.inputTokens += tokens.inputTokens;
@@ -733,8 +761,6 @@ export async function getUsageOverview(
     previous.cacheReadInputTokens +
     previous.outputTokens +
     previous.reasoningOutputTokens;
-  void prevLedger;
-
   // —— 热图 ——
   const heatmap = emptyHeatmap();
   const inGrid = (weekday: unknown, hour: unknown): weekday is number =>
@@ -751,7 +777,7 @@ export async function getUsageOverview(
     const tokens = tokensOf(row);
     heatmap.tokens[weekday][hour] += totalOf(tokens);
     heatmap.costMicros[weekday][hour] +=
-      num(row.stored_cost_micros) + priceRow(row, tokens);
+      num(row.stored_cost_micros) + estimateRow(row, tokens).micros;
   }
   for (const row of heatSessionRows) {
     const weekday = num(row.weekday);
@@ -759,20 +785,46 @@ export async function getUsageOverview(
     if (!inGrid(weekday, hour)) continue;
     heatmap.activeSeconds[weekday][hour] += num(row.active_seconds);
   }
-  // 提示热图:user_prompt_hours 是会话级 UTC 小时直方图,
-  // 约定按「会话首日 + 直方图 UTC 小时」换算到本地星期×小时。
+  // 新客户端把稀疏 UTC 小时事实存为 {version:2,hours:[...]};旧客户端仍是
+  // 24 小时数组并按「会话首日 + UTC 小时」降级展示。
   for (const row of promptRows) {
     const firstAt = new Date(row.first_message_at as string);
     if (Number.isNaN(firstAt.getTime())) continue;
-    let hours: number[];
+    let rawHours: unknown;
     try {
       const raw = row.user_prompt_hours as unknown;
-      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (!Array.isArray(parsed) || parsed.length !== 24) continue;
-      hours = parsed.map((value) => num(value));
+      rawHours = typeof raw === "string" ? JSON.parse(raw) : raw;
     } catch {
       continue;
     }
+    if (
+      rawHours &&
+      typeof rawHours === "object" &&
+      !Array.isArray(rawHours) &&
+      num((rawHours as { version?: unknown }).version) === 2 &&
+      Array.isArray((rawHours as { hours?: unknown }).hours)
+    ) {
+      for (const item of (rawHours as { hours: unknown[] }).hours) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+        const hourStart = new Date((item as { hourStart?: unknown }).hourStart as string);
+        if (Number.isNaN(hourStart.getTime())) continue;
+        if (hourStart < filters.from || hourStart >= filters.to) continue;
+        const local = new Date(
+          hourStart.getTime() + filters.tzOffsetMinutes * 60_000,
+        );
+        const weekday = (local.getUTCDay() + 6) % 7;
+        const hour = local.getUTCHours();
+        const activeSeconds = num((item as { activeSeconds?: unknown }).activeSeconds);
+        heatmap.activeSeconds[weekday][hour] += activeSeconds;
+        ensureDay(trendKeyFromInstant(hourStart, filters)).activeSeconds += activeSeconds;
+        heatmap.prompts[weekday][hour] += num(
+          (item as { userMessageCount?: unknown }).userMessageCount,
+        );
+      }
+      continue;
+    }
+    if (!Array.isArray(rawHours) || rawHours.length !== 24) continue;
+    const hours = rawHours.map((value) => num(value));
     const firstUtcDay = Date.UTC(
       firstAt.getUTCFullYear(),
       firstAt.getUTCMonth(),
@@ -786,6 +838,7 @@ export async function getUsageOverview(
       heatmap.prompts[(local.getUTCDay() + 6) % 7][local.getUTCHours()] += count;
     });
   }
+  const trend = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
 
   // —— 分布(token + 估费,Top 6 + 其他) ——
   interface DistInput {
@@ -889,44 +942,11 @@ export async function getUsageOverview(
     ),
     device: buildDistribution(deviceDistRows as unknown as DistInput[], (row) => String(row.device_name)),
   };
-  // model 分布直接由趋势行集派生(少一次查询)
-  {
-    const modelRows = new Map<string, RowDataPacket[]>();
-    for (const row of bucketRows) {
-      const model = String(row.model);
-      if (!modelRows.has(model)) modelRows.set(model, []);
-      modelRows.get(model)!.push(row);
-    }
-    const synthetic: DistInput[] = [];
-    for (const [model, rows] of modelRows) {
-      const merged: DistInput = {
-        k: model,
-        model,
-        source: String(rows[0].source),
-        sample_at: rows[0].sample_at,
-        input_tokens: 0,
-        cache_write_input_tokens: 0,
-        cache_read_input_tokens: 0,
-        output_tokens: 0,
-        reasoning_output_tokens: 0,
-        stored_cost_micros: 0,
-      };
-      for (const row of rows) {
-        merged.input_tokens = num(merged.input_tokens) + num(row.input_tokens);
-        merged.cache_write_input_tokens =
-          num(merged.cache_write_input_tokens) + num(row.cache_write_input_tokens);
-        merged.cache_read_input_tokens =
-          num(merged.cache_read_input_tokens) + num(row.cache_read_input_tokens);
-        merged.output_tokens = num(merged.output_tokens) + num(row.output_tokens);
-        merged.reasoning_output_tokens =
-          num(merged.reasoning_output_tokens) + num(row.reasoning_output_tokens);
-        merged.stored_cost_micros =
-          num(merged.stored_cost_micros) + num(row.stored_cost_micros);
-      }
-      synthetic.push(merged);
-    }
-    distributions.model = buildDistribution(synthetic, (row) => String(row.k));
-  }
+  // model 分布直接由精确时间行集派生;不得先跨价格窗口合并再套用首个价格。
+  distributions.model = buildDistribution(
+    bucketRows.map((row) => ({ ...row, k: String(row.model) })) as unknown as DistInput[],
+    (row) => String(row.k),
+  );
 
   // —— 明细 ——
   const records: UsageRecordRow[] = recordRows.map((row) => mapRecordRow(row, prices));
@@ -971,6 +991,12 @@ export async function getUsageOverview(
       pricingVersions: [...ledger.versions].sort(),
       unpricedModels: [...ledger.unpricedModels].sort(),
       partialModels: [...ledger.partialModels].sort(),
+      pricedTokens: ledger.pricedTokens,
+      unpricedTokens: ledger.unpricedTokens,
+      pricingCoverage:
+        ledger.pricedTokens + ledger.unpricedTokens > 0
+          ? ledger.pricedTokens / (ledger.pricedTokens + ledger.unpricedTokens)
+          : 1,
       tzOffsetMinutes: filters.tzOffsetMinutes,
       generatedAt: new Date().toISOString(),
     },
