@@ -1,24 +1,24 @@
 /* 作品库 /works:成员作品墙(截图卡片,双列网格)+ 提交入口。
    只展示 source=site 的成员作品;推荐的站外项目在 /awesome。
-   卡片渲染与 /awesome 共用 _components/WorkCard。 */
+   卡片渲染与 /awesome 共用 _components/WorkCard,首屏与「加载更多」共用
+   _components/works-page(游标分页,P1-4)。
+   作者已 opt-in 公开用量时,卡片带「已验证构建投入」徽章(见 works-page)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Rocket, SquarePen } from "lucide-react";
+import LoadMore from "@/components/LoadMore";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getWorks } from "@/src/lib/works";
-import WorkCard from "./_components/WorkCard";
+import { loadMoreWorksAction } from "./actions";
+import { loadWorksCards } from "./_components/works-page";
 
 export const metadata: Metadata = { title: "作品库 — kimi.builders" };
 
 export default async function WorksPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  const works = await getWorks();
-  /* admin/mod 在卡片上看到设/撤精选入口(每周精选 v0) */
-  const canFeature = !!user && canModerate(user.role);
+  const page = await loadWorksCards({ awesome: false }, user, locale);
 
   return (
     <div>
@@ -38,7 +38,7 @@ export default async function WorksPage() {
         )}
       </div>
 
-      {works.length === 0 ? (
+      {page.nodes.length === 0 ? (
         <p className="mt-16 text-center text-sm leading-relaxed text-grey">
           {t(locale, "works.empty")}
           {!user && (
@@ -62,15 +62,15 @@ export default async function WorksPage() {
         </p>
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {works.map((w) => (
-            <WorkCard
-              key={w.id}
-              work={w}
-              locale={locale}
-              meId={user?.id ?? null}
-              canFeature={canFeature}
-            />
-          ))}
+          {page.nodes}
+          {/* key 带首屏规模与游标:卡片行内删除触发 refresh 后首屏一变即 remount,
+              已追加的页作废(同 CommentSection 语义) */}
+          <LoadMore
+            key={`works-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
+            initialCursor={page.nextCursor}
+            load={loadMoreWorksAction.bind(null, { awesome: false, agent: null })}
+            locale={locale}
+          />
         </div>
       )}
     </div>

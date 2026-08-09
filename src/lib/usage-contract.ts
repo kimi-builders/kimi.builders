@@ -46,11 +46,14 @@ export function isUsageSourceId(value: string): value is UsageSourceId {
 }
 
 /* Privacy is deny-by-default. `project` and a human-readable device label are
-   omitted from ingest payloads unless the user enables the matching setting. */
+   omitted from ingest payloads unless the user enables the matching setting.
+   showOnLeaderboard 是公开侧开关(P1-1):为 1 才公开周期聚合用量
+   (社区榜/热力图/作品徽章共用),且只公开聚合数字,不含任何明细维度。 */
 export const USAGE_PRIVACY_DEFAULTS = {
   uploadProject: false,
   uploadDeviceLabel: false,
   uploadQuotaSnapshots: false,
+  showOnLeaderboard: false,
   retentionDays: 365,
 } as const;
 

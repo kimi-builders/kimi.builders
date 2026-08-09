@@ -1,0 +1,137 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import type { RowDataPacket } from "mysql2";
+import type { Pool } from "mysql2/promise";
+import {
+  getPublicTokenTotals,
+  getSocialUsageHeatmap,
+  heatmapGridFromRows,
+  isUsagePublic,
+  socialHeatmapQuery,
+  socialOptInQuery,
+  socialTokenTotalsQuery,
+} from "../src/lib/usage/social";
+import { badgeTokensOf } from "../src/lib/works";
+
+interface FakeCall {
+  sql: string;
+  params: unknown[];
+}
+
+/* 最小假 DB(同 usage-retention.test.ts):记录调用,统一返回固定行 */
+function fakeDb(rows: Record<string, unknown>[]) {
+  const calls: FakeCall[] = [];
+  const db = {
+    calls,
+    async query(sql: string, params: unknown[]): Promise<unknown[]> {
+      calls.push({ sql, params });
+      return [rows];
+    },
+  };
+  return db as unknown as Pool & { calls: FakeCall[] };
+}
+
+test("opt-in query reads the shared show_on_leaderboard switch", () => {
+  const { sql, args } = socialOptInQuery(42);
+  assert.match(sql, /FROM usage_settings/);
+  assert.match(sql, /show_on_leaderboard/);
+  assert.deepEqual(args, [42]);
+});
+
+test("isUsagePublic is deny-by-default: missing row or 0 both mean private", async () => {
+  assert.equal(await isUsagePublic(1, fakeDb([{ show_on_leaderboard: 1 }])), true);
+  assert.equal(await isUsagePublic(1, fakeDb([{ show_on_leaderboard: 0 }])), false);
+  /* 没有 usage_settings 行 = 走列默认 0 = 不公开 */
+  assert.equal(await isUsagePublic(1, fakeDb([])), false);
+});
+
+test("heatmap query aggregates weekday x local hour over all-time buckets", () => {
+  const { sql, args } = socialHeatmapQuery(7, 480);
+  /* WEEKDAY() 周一=0,与看板 JS 侧 (getUTCDay()+6)%7 同口径;tz 夹取后内联 */
+  assert.match(sql, /WEEKDAY\(DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\)\) AS wd/);
+  assert.match(sql, /HOUR\(DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\)\) AS hr/);
+  assert.match(sql, /FROM usage_buckets/);
+  assert.match(sql, /GROUP BY wd, hr/);
+  /* token 总量 = 输入+缓存写+缓存读+输出+推理,无其他维度 */
+  assert.match(
+    sql,
+    /SUM\(input_tokens \+ cache_write_input_tokens \+ cache_read_input_tokens\s+\+ output_tokens \+ reasoning_output_tokens\) AS tokens/,
+  );
+  assert.deepEqual(args, [7]);
+});
+
+test("heatmap query clamps tz offset like the dashboard filters", () => {
+  assert.match(socialHeatmapQuery(1, 480).sql, /INTERVAL 480 MINUTE/);
+  assert.match(socialHeatmapQuery(1, 100000).sql, /INTERVAL 840 MINUTE/);
+  assert.match(socialHeatmapQuery(1, -100000).sql, /INTERVAL -720 MINUTE/);
+  assert.match(socialHeatmapQuery(1, Number.NaN).sql, /INTERVAL 0 MINUTE/);
+});
+
+test("heatmapGridFromRows fills a 7x24 grid and drops out-of-range rows", () => {
+  const rows = [
+    { wd: 0, hr: 9, tokens: 100 },
+    { wd: 0, hr: 9, tokens: 50 },
+    { wd: 6, hr: 23, tokens: 7 },
+    { wd: 7, hr: 0, tokens: 999 },
+    { wd: 0, hr: 24, tokens: 999 },
+  ] as RowDataPacket[];
+  const grid = heatmapGridFromRows(rows);
+  assert.equal(grid.length, 7);
+  assert.equal(grid[0].length, 24);
+  assert.equal(grid[0][9], 150);
+  assert.equal(grid[6][23], 7);
+  assert.equal(
+    grid.flat().reduce((s, n) => s + n, 0),
+    157,
+  );
+});
+
+test("getSocialUsageHeatmap runs the aggregate query and maps rows", async () => {
+  const db = fakeDb([{ wd: 2, hr: 14, tokens: 123 }]);
+  const grid = await getSocialUsageHeatmap(9, 0, db);
+  assert.equal(db.calls.length, 1);
+  assert.deepEqual(db.calls[0].params, [9]);
+  assert.equal(grid[2][14], 123);
+});
+
+test("token totals query gates on show_on_leaderboard = 1 in the JOIN itself", () => {
+  const q = socialTokenTotalsQuery([3, 1, 3])!;
+  /* 门禁钉在 SQL 里:未 opt-in 的作者根本不会出现在结果集 */
+  assert.match(q.sql, /JOIN usage_settings s\s+ON s\.user_id = b\.user_id AND s\.show_on_leaderboard = 1/);
+  assert.match(q.sql, /FROM usage_buckets b/);
+  assert.match(q.sql, /WHERE b\.user_id IN \(\?\)/);
+  assert.match(q.sql, /GROUP BY b\.user_id/);
+  /* 只 SUM token 总量,无周期/项目/设备等任何其他维度 */
+  assert.equal(q.sql.includes("bucket_start"), false);
+  /* 入参去重 */
+  assert.deepEqual(q.args, [[3, 1]]);
+});
+
+test("token totals query returns null for an empty or invalid id set", () => {
+  assert.equal(socialTokenTotalsQuery([]), null);
+  assert.equal(socialTokenTotalsQuery([null, 0, -1, Number.NaN]), null);
+});
+
+test("getPublicTokenTotals maps only opted-in authors; others are absent", async () => {
+  const db = fakeDb([{ user_id: 5, total_tokens: 123456 }]);
+  const totals = await getPublicTokenTotals([5, 6], db);
+  assert.equal(totals.get(5), 123456);
+  /* 未 opt-in 的作者不在结果里 —— 调用方拿不到数字,只能不显示 */
+  assert.equal(totals.has(6), false);
+  const empty = await getPublicTokenTotals([], db);
+  assert.equal(empty.size, 0);
+});
+
+test("badgeTokensOf: null means render nothing (no negative marker)", () => {
+  const totals = new Map<number, number>([
+    [1, 2500],
+    [2, 0],
+  ]);
+  /* awesome 外部条目没有站内作者 */
+  assert.equal(badgeTokensOf({ userId: null }, totals), null);
+  /* 未 opt-in / 无数据 */
+  assert.equal(badgeTokensOf({ userId: 9 }, totals), null);
+  /* 0 tokens 的徽章没有意义 */
+  assert.equal(badgeTokensOf({ userId: 2 }, totals), null);
+  assert.equal(badgeTokensOf({ userId: 1 }, totals), 2500);
+});

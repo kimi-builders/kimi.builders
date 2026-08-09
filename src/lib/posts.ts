@@ -64,15 +64,61 @@ function mapFeed(r: RowDataPacket): FeedPost {
   };
 }
 
-/* feed:热门 = (赞 + 评论×2) / (小时+2)^1.5,取前 50;最新按时间。
-   subscriberId 给「订阅」页签用:只看自己订阅过的帖子。
+/* feed 游标分页(P1-4),每页 FEED_PAGE_SIZE 条,多取 1 条判断下一页。
+   三个页签排序键不同,游标各自覆盖:
+   - 热门 = (赞 + 评论×2) / (小时+2)^1.5:排序键是随 NOW() 漂移的计算分,翻页时
+     用页 1 钉住的基准时刻 asOf(FROM_UNIXTIME)重算,同一翻页会话内分值确定;
+     键 = (hot DESC, id DESC),复合游标 "asOf|hot|id"。
+   - 最新/订阅按时间:id 自增随 created_at 单调(同评论分页),游标就是帖子 id。
+   subscriberId 给「订阅」页签用:只看自己订阅过的帖子,按时间倒序。
    viewerId(登录浏览者):私密帖仅作者本人可见;被 viewer 点踩的帖从其 feed 消失。 */
-export async function getFeed(opts: {
+export const FEED_PAGE_SIZE = 50;
+
+export interface FeedCursor {
+  id: number;
+  hot?: number;
+  asOf?: number;
+}
+
+export function encodeFeedCursor(c: FeedCursor): string {
+  return c.hot !== undefined && c.asOf !== undefined
+    ? `${c.asOf}|${c.hot}|${c.id}`
+    : String(c.id);
+}
+
+/* 严格解析;非法游标返回 null(调用方按「没有下一页」处理,不静默回退到首页)。 */
+export function decodeFeedCursor(raw: string, hot: boolean): FeedCursor | null {
+  if (hot) {
+    const m = /^(\d{1,12})\|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\|(\d{1,20})$/.exec(raw);
+    if (!m) return null;
+    const asOf = Number(m[1]);
+    const score = Number(m[2]);
+    const id = Number(m[3]);
+    if (!Number.isSafeInteger(asOf) || asOf <= 0) return null;
+    if (!Number.isFinite(score)) return null;
+    if (!Number.isSafeInteger(id) || id <= 0) return null;
+    return { id, hot: score, asOf };
+  }
+  if (!/^\d{1,20}$/.test(raw)) return null;
+  const id = Number(raw);
+  return Number.isSafeInteger(id) && id > 0 ? { id } : null;
+}
+
+/* comment_count 是 UNSIGNED、score 是有符号:混合运算会被 MySQL 整体提升成
+   UNSIGNED,负分帖直接 ER_DATA_OUT_OF_RANGE(整站 500)—— CAST 成 SIGNED 再算。 */
+function hotExpr(asOf: number): string {
+  return `(p.score + CAST(p.comment_count AS SIGNED) * 2) / POW(TIMESTAMPDIFF(HOUR, p.created_at, FROM_UNIXTIME(${asOf})) + 2, 1.5)`;
+}
+
+export function feedPageQuery(opts: {
   sort: "hot" | "new";
   category?: string;
   subscriberId?: number;
   viewerId?: number;
-}): Promise<FeedPost[]> {
+  cursor?: FeedCursor | null;
+  /* 热门页 1 的基准时刻(unix 秒);翻页页以游标里的 asOf 为准 */
+  asOf?: number;
+}): { sql: string; args: (string | number)[] } {
   const where = ["p.deleted_at IS NULL"];
   const args: (string | number)[] = [];
   let join = "JOIN users u ON u.id = p.user_id";
@@ -94,22 +140,70 @@ export async function getFeed(opts: {
     where.push("p.category = ?");
     args.push(opts.category);
   }
-  /* comment_count 是 UNSIGNED、score 是有符号:混合运算会被 MySQL 整体提升成
-     UNSIGNED,负分帖直接 ER_DATA_OUT_OF_RANGE(整站 500)—— CAST 成 SIGNED 再算。 */
-  const order =
-    opts.sort === "new"
-      ? "p.created_at DESC"
-      : "(p.score + CAST(p.comment_count AS SIGNED) * 2) / POW(TIMESTAMPDIFF(HOUR, p.created_at, NOW()) + 2, 1.5) DESC, p.created_at DESC";
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
+  const hot = opts.sort === "hot" && !opts.subscriberId;
+  let selectHot = "";
+  let order: string;
+  if (hot) {
+    const asOf = opts.cursor?.asOf ?? opts.asOf ?? 0;
+    const expr = hotExpr(asOf);
+    selectHot = `, ${expr} AS hot`;
+    if (opts.cursor?.hot !== undefined) {
+      where.push(`(${expr} < ? OR (${expr} = ? AND p.id < ?))`);
+      args.push(opts.cursor.hot, opts.cursor.hot, opts.cursor.id);
+    }
+    order = "hot DESC, p.id DESC";
+  } else {
+    if (opts.cursor) {
+      where.push("p.id < ?");
+      args.push(opts.cursor.id);
+    }
+    order = "p.created_at DESC, p.id DESC";
+  }
+  return {
+    sql: `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
             p.visibility, p.score, p.comment_count, p.created_at,
-            u.handle, u.name, u.avatar_url
+            u.handle, u.name, u.avatar_url${selectHot}
      FROM posts p ${join}
      WHERE ${where.join(" AND ")}
-     ORDER BY ${order} LIMIT 50`,
+     ORDER BY ${order} LIMIT ${FEED_PAGE_SIZE + 1}`,
     args,
-  );
-  return rows.map(mapFeed);
+  };
+}
+
+export interface FeedPage {
+  posts: FeedPost[];
+  nextCursor: string | null;
+}
+
+export async function getFeedPage(opts: {
+  sort: "hot" | "new";
+  category?: string;
+  subscriberId?: number;
+  viewerId?: number;
+  after?: string;
+}): Promise<FeedPage> {
+  const hot = opts.sort === "hot" && !opts.subscriberId;
+  const cursor = opts.after !== undefined ? decodeFeedCursor(opts.after, hot) : null;
+  if (opts.after !== undefined && cursor === null) {
+    return { posts: [], nextCursor: null };
+  }
+  const asOf = cursor?.asOf ?? Math.floor(Date.now() / 1000);
+  const q = feedPageQuery({ ...opts, cursor, asOf });
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  const kept = rows.length > FEED_PAGE_SIZE ? rows.slice(0, FEED_PAGE_SIZE) : rows;
+  let nextCursor: string | null = null;
+  if (rows.length > FEED_PAGE_SIZE && kept.length > 0) {
+    const last = kept[kept.length - 1];
+    nextCursor = hot
+      ? encodeFeedCursor({
+          asOf,
+          /* hot 为 NULL 只可能是 created_at 远超基准时刻(时钟漂移),按 0 处理 */
+          hot: last.hot === null ? 0 : Number(last.hot),
+          id: Number(last.id),
+        })
+      : encodeFeedCursor({ id: Number(last.id) });
+  }
+  return { posts: kept.map(mapFeed), nextCursor };
 }
 
 export async function getPost(id: number): Promise<PostDetail | null> {

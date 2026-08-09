@@ -66,6 +66,7 @@ export async function updateUsageSettingsAction(
       await updateUsageSettings(user.id, {
         ...current,
         uploadProject: formData.get("upload_project") === "1",
+        showOnLeaderboard: formData.get("show_on_leaderboard") === "1",
       });
     },
     { slowMs: 750 },

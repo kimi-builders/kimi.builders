@@ -22,6 +22,7 @@ import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { enqueueAiReply } from "@/src/lib/ai-reply";
+import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
   CATEGORIES,
   createComment,
@@ -42,14 +43,21 @@ import {
   loadCommentPage,
   type CommentPageData,
 } from "./_components/comment-page";
+import {
+  loadFeedCards,
+  type FeedPageData,
+} from "./_components/feed-page";
 
 export interface PostFormState {
   error?: string;
+  /* 限流(P1-5):超限时带上的等待秒数,客户端可直接展示 error 文案 */
+  retryAfterSeconds?: number;
 }
 
 export interface MutationResult {
   ok: boolean;
   error?: string;
+  retryAfterSeconds?: number;
 }
 
 export async function createPostAction(
@@ -88,6 +96,14 @@ export async function createPostAction(
     if (options.length < 2) return { error: t(locale, "err.pollMin") };
   }
 
+  /* 限流(P1-5):校验通过后、写库前消耗额度——校验失败不烧配额 */
+  const rate = await consumeCommunityRateLimit(user.id, "post");
+  if (!rate.allowed)
+    return {
+      error: t(locale, "err.ratePost", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
+
   const lang = /[一-鿿]/.test(title + body) ? "zh" : "en";
   const postId = await createPost({
     userId: user.id,
@@ -125,6 +141,14 @@ export async function createCommentAction(
     parent = await getCommentForReply(parentId, postId);
     if (!parent) return { ok: false, error: t(locale, "err.generic") };
   }
+  /* 限流(P1-5):parent 校验通过后、写库前消耗额度 */
+  const rate = await consumeCommunityRateLimit(user.id, "comment");
+  if (!rate.allowed)
+    return {
+      ok: false,
+      error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
   const commentId = await createComment(postId, user.id, body, parentId);
   /* 回复了 AI 的评论 → 触发 AI 接话(带对话链上下文)。
      门槛:帖子允许 AI + 回帖人全局允许 AI;链路深度上限在执行侧。 */
@@ -160,23 +184,75 @@ export async function loadMoreCommentsAction(
   return { ok: true, ...data };
 }
 
-/* 顶/踩:乐观更新路径,只落库;同向再点=取消,反向=换边。 */
-export async function setPostReactionAction(formData: FormData): Promise<void> {
+/* feed「加载更多」(P1-4):只读,不落库不作废缓存。返回服务端渲染好的一页卡片
+   (ReactNode 随 RSC 序列化),客户端直接追加;私密/点踩/订阅过滤与首屏同口径
+   (都在 getFeedPage 里),游标非法时拿到空页,按钮自然收起。 */
+export async function loadMorePostsAction(
+  scope: { sort: string; cat: string | null; sub: boolean },
+  after: string,
+): Promise<({ ok: true } & FeedPageData) | { ok: false }> {
+  if (typeof after !== "string" || after.length === 0 || after.length > 64)
+    return { ok: false };
   const user = await getSessionUser();
-  if (!user) return;
-  const postId = Number(formData.get("post_id"));
-  const kind = formData.get("kind") === "down" ? "down" : "up";
-  if (!postId) return;
-  await setPostReaction(user.id, postId, kind);
+  const sort = scope.sort === "new" ? "new" : "hot";
+  const sub = scope.sub && !!user;
+  const locale = await getLocale(user);
+  const data = await loadFeedCards(
+    {
+      sort,
+      category: scope.cat ?? undefined,
+      subscriberId: sub && user ? user.id : undefined,
+      viewerId: user?.id,
+      after,
+    },
+    locale,
+  );
+  return { ok: true, ...data };
 }
 
-export async function setCommentReactionAction(formData: FormData): Promise<void> {
+/* 顶/踩:乐观更新路径,只落库;同向再点=取消,反向=换边。
+   限流(P1-5):post/comment 投票共享 vote 配额;超限返回结构化错误,
+   客户端据 !ok 回滚乐观态并 toast。 */
+export async function setPostReactionAction(
+  formData: FormData,
+): Promise<MutationResult> {
   const user = await getSessionUser();
-  if (!user) return;
+  if (!user) return { ok: false };
+  const postId = Number(formData.get("post_id"));
+  const kind = formData.get("kind") === "down" ? "down" : "up";
+  if (!postId) return { ok: false };
+  const rate = await consumeCommunityRateLimit(user.id, "vote");
+  if (!rate.allowed) {
+    const locale = await getLocale(user);
+    return {
+      ok: false,
+      error: t(locale, "err.rateVote", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
+  }
+  await setPostReaction(user.id, postId, kind);
+  return { ok: true };
+}
+
+export async function setCommentReactionAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
   const commentId = Number(formData.get("comment_id"));
   const kind = formData.get("kind") === "down" ? "down" : "up";
-  if (!commentId) return;
+  if (!commentId) return { ok: false };
+  const rate = await consumeCommunityRateLimit(user.id, "vote");
+  if (!rate.allowed) {
+    const locale = await getLocale(user);
+    return {
+      ok: false,
+      error: t(locale, "err.rateVote", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
+  }
   await setCommentReaction(user.id, commentId, kind);
+  return { ok: true };
 }
 
 /* 订阅:乐观更新路径;作废旧 feed 预取(「订阅」页签内容会变)。 */

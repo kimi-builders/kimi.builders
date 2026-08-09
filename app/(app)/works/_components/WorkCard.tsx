@@ -2,10 +2,13 @@
    截图(无图占位)→ 名称/介绍 → Agent 徽章(lobehub 图标)→ 标签 →
    作者行(站内作者链主页;awesome 条目用 author_label);自己的条目带编辑/删除。
    编辑精选:featured_at 非空的卡片带「编辑精选」蓝芯片;canFeature(admin/mod,
-   由页面用 session role 判断)时底部多一行设/撤精选操作(每周精选 v0)。 */
+   由页面用 session role 判断)时底部多一行设/撤精选操作(每周精选 v0)。
+   用量徽章(S2-2):badgeTokens 非空(作者已自愿公开用量且有数据)时标题旁多一颗
+   「已验证构建投入」芯片;null = 完全不渲染(未 opt-in / 无数据,无负面标记)。 */
 import Link from "next/link";
 import { ExternalLink, Rocket } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
+import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import type { WorkRow } from "@/src/lib/works";
 import AgentIcon from "@/components/AgentIcon";
@@ -17,11 +20,13 @@ export default function WorkCard({
   locale,
   meId,
   canFeature = false,
+  badgeTokens = null,
 }: {
   work: WorkRow;
   locale: Locale;
   meId: number | null;
   canFeature?: boolean;
+  badgeTokens?: number | null;
 }) {
   return (
     <article className="flex flex-col border border-line bg-card transition-colors hover:border-paper/20">
@@ -47,6 +52,14 @@ export default function WorkCard({
               title={w.featuredReason ?? undefined}
             >
               {t(locale, "featured.badge")}
+            </span>
+          )}
+          {badgeTokens !== null && badgeTokens > 0 && (
+            <span
+              className="ml-2 inline-block border border-emerald-400/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-emerald-400"
+              title={t(locale, "works.badgeTitle")}
+            >
+              {t(locale, "works.badge", { n: compactNumber(badgeTokens, locale) })}
             </span>
           )}
         </h2>

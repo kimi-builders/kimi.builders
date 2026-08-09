@@ -45,6 +45,7 @@ async function main() {
         uploadProject: false,
         uploadDeviceLabel: false,
         uploadQuotaSnapshots: false,
+        showOnLeaderboard: false,
         retentionDays: 365,
       },
     }),
@@ -133,6 +134,7 @@ async function main() {
     uploadProject: true,
     uploadDeviceLabel: false,
     uploadQuotaSnapshots: false,
+    showOnLeaderboard: false,
     retentionDays: 365,
   });
   await ingestUsage(principal, {
@@ -144,6 +146,7 @@ async function main() {
     uploadProject: false,
     uploadDeviceLabel: false,
     uploadQuotaSnapshots: false,
+    showOnLeaderboard: false,
     retentionDays: 365,
   });
   await ingestUsage(principal, payload);

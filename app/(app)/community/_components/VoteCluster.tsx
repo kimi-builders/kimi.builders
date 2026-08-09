@@ -63,9 +63,14 @@ export default function VoteCluster({
       const fd = new FormData();
       fd.set(target === "post" ? "post_id" : "comment_id", String(id));
       fd.set("kind", kind);
-      await (target === "post"
+      const res = await (target === "post"
         ? setPostReactionAction(fd)
         : setCommentReactionAction(fd));
+      /* 服务端拒绝(限流/未登录等):回滚乐观态,限流文案带等待秒数 */
+      if (!res.ok) {
+        setState(prev);
+        toast(res.error || t(locale, "toast.failed"));
+      }
     } catch {
       setState(prev);
       toast(t(locale, "toast.failed"));

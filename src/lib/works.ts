@@ -67,28 +67,91 @@ const SELECT_WORKS = `SELECT w.id, w.user_id, w.name, w.tagline, w.url, w.repo_u
        u.handle, u.avatar_url
      FROM works w LEFT JOIN users u ON u.id = w.user_id`;
 
+/* 作品列表分页(P1-4):id 游标 —— id 自增随 created_at 单调(同评论分页的取舍),
+   键唯一且走主键范围扫;ORDER BY w.id DESC 与原 created_at DESC 可见顺序一致。
+   每页多取 1 条判断是否还有下一页。 */
+export const WORKS_PAGE_SIZE = 100;
+export const AWESOME_PAGE_SIZE = 200;
+
+export interface WorksPage {
+  works: WorkRow[];
+  nextCursor: number | null;
+}
+
+export function worksPageQuery(opts: {
+  source: "site" | "all";
+  agent?: string;
+  after?: number;
+}): { sql: string; args: (string | number)[] } {
+  const where: string[] = [];
+  const args: (string | number)[] = [];
+  if (opts.source === "site") where.push("w.source = 'site'");
+  /* agent 非空时按参与 Agent 过滤(JSON 数组成员) */
+  if (opts.agent) {
+    where.push("JSON_CONTAINS(w.agents, JSON_QUOTE(?))");
+    args.push(opts.agent);
+  }
+  if (opts.after !== undefined && Number.isSafeInteger(opts.after) && opts.after > 0) {
+    where.push("w.id < ?");
+    args.push(opts.after);
+  }
+  const size = opts.source === "site" ? WORKS_PAGE_SIZE : AWESOME_PAGE_SIZE;
+  return {
+    sql: `${SELECT_WORKS} ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+     ORDER BY w.id DESC LIMIT ${size + 1}`,
+    args,
+  };
+}
+
+async function runWorksPage(
+  q: { sql: string; args: (string | number)[] },
+  size: number,
+): Promise<WorksPage> {
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  const kept = rows.length > size ? rows.slice(0, size) : rows;
+  return {
+    works: kept.map(mapWork),
+    nextCursor:
+      rows.length > size && kept.length > 0
+        ? Number(kept[kept.length - 1].id)
+        : null,
+  };
+}
+
 /* /works 墙:只看成员自己的作品。 */
-export async function getWorks(): Promise<WorkRow[]> {
+export async function getWorksPage(after?: number): Promise<WorksPage> {
+  return runWorksPage(worksPageQuery({ source: "site", after }), WORKS_PAGE_SIZE);
+}
+
+/* /awesome:全部来源。 */
+export async function getAwesomeWorksPage(
+  agent?: string,
+  after?: number,
+): Promise<WorksPage> {
+  return runWorksPage(
+    worksPageQuery({ source: "all", agent, after }),
+    AWESOME_PAGE_SIZE,
+  );
+}
+
+/* 个人主页「作品」页签:成员自有作品(source=site)。作品本来就公开,访客/本人同视图。 */
+export async function getUserWorks(userId: number): Promise<WorkRow[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORKS} WHERE w.source = 'site' ORDER BY w.created_at DESC LIMIT 100`,
+    `${SELECT_WORKS} WHERE w.source = 'site' AND w.user_id = ? ORDER BY w.created_at DESC LIMIT 50`,
+    [userId],
   );
   return rows.map(mapWork);
 }
 
-/* /awesome:全部来源;agent 非空时按参与 Agent 过滤(JSON 数组成员)。 */
-export async function getAwesomeWorks(agent?: string): Promise<WorkRow[]> {
-  const where: string[] = [];
-  const args: string[] = [];
-  if (agent) {
-    where.push("JSON_CONTAINS(w.agents, JSON_QUOTE(?))");
-    args.push(agent);
-  }
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORKS} ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-     ORDER BY w.created_at DESC LIMIT 200`,
-    args,
-  );
-  return rows.map(mapWork);
+/* 徽章值:作者 opt-in 后的全部时间 token 总量;null = 完全不显示徽章
+   (awesome 外部条目无站内作者 / 未 opt-in / 无数据 —— 均无负面标记)。 */
+export function badgeTokensOf(
+  w: Pick<WorkRow, "userId">,
+  totals: Map<number, number>,
+): number | null {
+  if (w.userId === null) return null;
+  const v = totals.get(w.userId);
+  return v !== undefined && v > 0 ? v : null;
 }
 
 export async function getWork(id: number): Promise<WorkRow | null> {

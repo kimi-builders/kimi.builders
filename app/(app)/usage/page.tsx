@@ -21,6 +21,7 @@ import {
 import AgentIcon from "@/components/AgentIcon";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
+import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { listUsageDevices } from "@/src/lib/usage/device";
@@ -1048,6 +1049,16 @@ export default async function UsagePage({
       />
 
       <div className="mt-5 space-y-2 text-[11px] leading-relaxed text-grey/80">
+        <p>
+          <Link
+            href="/usage/leaderboard"
+            className="text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "lb.entry")}
+          </Link>
+          {" — "}
+          {t(locale, "lb.entryHint")}
+        </p>
         <p>
           {zh
             ? "可信度说明：数据来自用户设备的自报日志，可能不完整或被修改；它用于个人洞察，不是可验证的计量凭证。"

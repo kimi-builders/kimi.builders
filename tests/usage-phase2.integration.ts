@@ -37,6 +37,7 @@ const SETTINGS_ON = {
   uploadProject: true,
   uploadDeviceLabel: false,
   uploadQuotaSnapshots: false,
+  showOnLeaderboard: false,
   retentionDays: 365,
 };
 

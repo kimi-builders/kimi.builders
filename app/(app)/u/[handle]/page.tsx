@@ -1,8 +1,11 @@
 /* 个人主页 /u/[handle]:资料头(头像/显示名/handle/简介/加入时间)+ 三项统计
-   (帖子/评论/获赞)+ 帖子|评论页签。本人视角多一颗「编辑资料」入口(去 /settings),
-   且能看到自己的私密帖(带标);访客只统计/展示公开内容。 */
+   (帖子/评论/获赞)+ 帖子|评论|作品|用量页签(P1-3)。本人视角多一颗「编辑资料」
+   入口(去 /settings),且能看到自己的私密帖(带标);访客只统计/展示公开内容。
+   作品本来就公开,访客与本人同视图;用量热图仅本人或对方自愿公开
+   (usage_settings.show_on_leaderboard=1)时可见,否则页签完全不渲染(无负面标记)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ArrowBigUp, CalendarDays, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
@@ -11,6 +14,13 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
 import { getProfileByHandle, getProfileStats } from "@/src/lib/users";
+import {
+  getSocialUsageHeatmap,
+  isUsagePublic,
+} from "@/src/lib/usage/social";
+import { getUserWorks } from "@/src/lib/works";
+import WorkCard from "../../works/_components/WorkCard";
+import SocialUsageHeatmap from "./_components/SocialUsageHeatmap";
 
 function ymd(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -50,11 +60,24 @@ export default async function ProfilePage({
   }
 
   const self = me?.id === profile.id;
-  const showComments = tab === "comments";
-  const [stats, posts, comments] = await Promise.all([
+  /* 用量热图页签:本人恒可见;访客仅当对方 opt-in 公开。未公开 = 页签不渲染。 */
+  const usageVisible = self || (await isUsagePublic(profile.id));
+  const activeTab =
+    tab === "comments" || tab === "works" || (tab === "usage" && usageVisible)
+      ? tab
+      : "posts";
+  /* 分时热图的「本地」跟浏览器 kb_tz cookie(同用量看板);无 cookie 按 GMT+0 */
+  const store = await cookies();
+  const parsedTz = Number(store.get("kb_tz")?.value);
+  const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
+  const [stats, posts, comments, works, heatmap] = await Promise.all([
     getProfileStats(profile.id, self),
-    showComments ? Promise.resolve([]) : getUserPosts(profile.id, self),
-    showComments ? getUserComments(profile.id, self) : Promise.resolve([]),
+    activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
+    activeTab === "comments" ? getUserComments(profile.id, self) : Promise.resolve([]),
+    activeTab === "works" ? getUserWorks(profile.id) : Promise.resolve([]),
+    activeTab === "usage"
+      ? getSocialUsageHeatmap(profile.id, tz)
+      : Promise.resolve(null),
   ]);
 
   const tabCls = (active: boolean) =>
@@ -124,19 +147,33 @@ export default async function ProfilePage({
 
       {/* 页签 */}
       <div className="mt-6 flex items-center gap-5 border-b border-line font-mono text-sm">
-        <Link href={`/u/${profile.handle}`} className={tabCls(!showComments)}>
+        <Link href={`/u/${profile.handle}`} className={tabCls(activeTab === "posts")}>
           {t(locale, "prof.posts")}
         </Link>
         <Link
           href={`/u/${profile.handle}?tab=comments`}
-          className={tabCls(showComments)}
+          className={tabCls(activeTab === "comments")}
         >
           {t(locale, "prof.comments")}
         </Link>
+        <Link
+          href={`/u/${profile.handle}?tab=works`}
+          className={tabCls(activeTab === "works")}
+        >
+          {t(locale, "prof.works")}
+        </Link>
+        {usageVisible && (
+          <Link
+            href={`/u/${profile.handle}?tab=usage`}
+            className={tabCls(activeTab === "usage")}
+          >
+            {t(locale, "prof.usage")}
+          </Link>
+        )}
       </div>
 
       {/* 帖子页签 */}
-      {!showComments &&
+      {activeTab === "posts" &&
         (posts.length === 0 ? (
           <p className="mt-16 text-center text-sm text-grey">
             {t(locale, "prof.noPosts")}
@@ -211,7 +248,7 @@ export default async function ProfilePage({
         ))}
 
       {/* 评论页签 */}
-      {showComments &&
+      {activeTab === "comments" &&
         (comments.length === 0 ? (
           <p className="mt-16 text-center text-sm text-grey">
             {t(locale, "prof.noComments")}
@@ -248,6 +285,32 @@ export default async function ProfilePage({
             ))}
           </div>
         ))}
+
+      {/* 作品页签:复用作品墙的 WorkCard;作品本来就公开,访客/本人同视图 */}
+      {activeTab === "works" &&
+        (works.length === 0 ? (
+          <p className="mt-16 text-center text-sm text-grey">
+            {t(locale, "prof.noWorks")}
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {works.map((w) => (
+              <WorkCard
+                key={w.id}
+                work={w}
+                locale={locale}
+                meId={me?.id ?? null}
+              />
+            ))}
+          </div>
+        ))}
+
+      {/* 用量页签:星期×小时的 token 热图(仅本人或对方自愿公开时才会走到这里) */}
+      {activeTab === "usage" && heatmap && (
+        <div className="mt-5 border border-line bg-card p-4">
+          <SocialUsageHeatmap grid={heatmap} tzOffsetMinutes={tz} zh={locale === "zh"} />
+        </div>
+      )}
     </div>
   );
 }

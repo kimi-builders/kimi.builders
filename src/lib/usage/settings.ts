@@ -8,6 +8,8 @@ export interface UsageSettings {
   uploadProject: boolean;
   uploadDeviceLabel: boolean;
   uploadQuotaSnapshots: boolean;
+  /* P1-1:自愿公开聚合用量(社区榜/热力图/作品徽章共用);默认 false(deny)。 */
+  showOnLeaderboard: boolean;
   retentionDays: number;
 }
 
@@ -17,7 +19,7 @@ export async function getUsageSettings(
 ): Promise<UsageSettings> {
   await db.query("INSERT IGNORE INTO usage_settings (user_id) VALUES (?)", [userId]);
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT upload_project, upload_device_label, upload_quota, retention_days
+    `SELECT upload_project, upload_device_label, upload_quota, show_on_leaderboard, retention_days
      FROM usage_settings WHERE user_id = ? LIMIT 1`,
     [userId],
   );
@@ -27,6 +29,7 @@ export async function getUsageSettings(
     uploadProject: !!row.upload_project,
     uploadDeviceLabel: !!row.upload_device_label,
     uploadQuotaSnapshots: !!row.upload_quota,
+    showOnLeaderboard: !!row.show_on_leaderboard,
     retentionDays: Number(row.retention_days),
   };
 }
@@ -38,18 +41,20 @@ export async function updateUsageSettings(
 ): Promise<void> {
   await db.query(
     `INSERT INTO usage_settings
-       (user_id, upload_project, upload_device_label, upload_quota, retention_days)
-     VALUES (?, ?, ?, ?, ?)
+       (user_id, upload_project, upload_device_label, upload_quota, show_on_leaderboard, retention_days)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        upload_project = VALUES(upload_project),
        upload_device_label = VALUES(upload_device_label),
        upload_quota = VALUES(upload_quota),
+       show_on_leaderboard = VALUES(show_on_leaderboard),
        retention_days = VALUES(retention_days)`,
     [
       userId,
       settings.uploadProject ? 1 : 0,
       settings.uploadDeviceLabel ? 1 : 0,
       settings.uploadQuotaSnapshots ? 1 : 0,
+      settings.showOnLeaderboard ? 1 : 0,
       settings.retentionDays,
     ],
   );
@@ -67,13 +72,21 @@ export function parseUsageSettings(value: unknown): UsageSettings | null {
   const uploadProject = boolean("uploadProject", false);
   const uploadDeviceLabel = boolean("uploadDeviceLabel", false);
   const uploadQuotaSnapshots = boolean("uploadQuotaSnapshots", false);
+  const showOnLeaderboard = boolean("showOnLeaderboard", false);
   if (
     uploadProject === null ||
     uploadDeviceLabel === null ||
-    uploadQuotaSnapshots === null
+    uploadQuotaSnapshots === null ||
+    showOnLeaderboard === null
   ) {
     return null;
   }
-  return { uploadProject, uploadDeviceLabel, uploadQuotaSnapshots, retentionDays };
+  return {
+    uploadProject,
+    uploadDeviceLabel,
+    uploadQuotaSnapshots,
+    showOnLeaderboard,
+    retentionDays,
+  };
 }
 

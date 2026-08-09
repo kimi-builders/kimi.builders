@@ -6,7 +6,7 @@
    末尾两个精选操作是编辑(admin/mod)定夺,不做归属校验(每周精选 v0)。 */
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { sanitizeAgentIds } from "@/src/lib/agents";
+import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
   canModerate,
@@ -19,6 +19,10 @@ import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { createWork, deleteWork, updateWork } from "@/src/lib/works";
+import {
+  loadWorksCards,
+  type WorksPageData,
+} from "./_components/works-page";
 
 export interface WorkFormState {
   error?: string;
@@ -165,4 +169,27 @@ export async function unfeatureWorkAction(
     revalidatePath("/");
   }
   return { ok };
+}
+
+/* 作品列表「加载更多」(P1-4):只读,不落库不作废缓存。返回服务端渲染好的一页
+   卡片(ReactNode 随 RSC 序列化),客户端直接追加;徽章/精选行与首屏同口径
+   (都在 loadWorksCards 里)。游标 = 上一页最后一个作品的 id。 */
+export async function loadMoreWorksAction(
+  scope: { awesome: boolean; agent: string | null },
+  after: number,
+): Promise<({ ok: true } & WorksPageData) | { ok: false }> {
+  if (!Number.isSafeInteger(after) || after <= 0) return { ok: false };
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  const agent =
+    scope.agent && AGENTS.some((a) => a.id === scope.agent)
+      ? scope.agent
+      : undefined;
+  const data = await loadWorksCards(
+    { awesome: scope.awesome, agent },
+    user,
+    locale,
+    after,
+  );
+  return { ok: true, ...data };
 }

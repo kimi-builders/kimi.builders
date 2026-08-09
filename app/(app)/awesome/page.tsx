@@ -1,16 +1,18 @@
 /* Awesome Kimi:全世界用 Kimi 构建的项目(全部来源:成员作品 + 推荐的站外项目)。
-   顶部 Agent 筛选芯片(?agent=<id>),卡片与 /works 共用 WorkCard。
+   顶部 Agent 筛选芯片(?agent=<id>),卡片与 /works 共用 WorkCard,
+   首屏与「加载更多」共用 ../works/_components/works-page(游标分页,P1-4)。
    收录口径见 awesome.intro(放宽:参与即可)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SquarePen, Star } from "lucide-react";
+import LoadMore from "@/components/LoadMore";
 import { AGENTS } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getAwesomeWorks } from "@/src/lib/works";
 import AgentIcon from "@/components/AgentIcon";
-import WorkCard from "../works/_components/WorkCard";
+import { loadMoreWorksAction } from "../works/actions";
+import { loadWorksCards } from "../works/_components/works-page";
 
 export const metadata: Metadata = { title: "Awesome — kimi.builders" };
 
@@ -23,7 +25,7 @@ export default async function AwesomePage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const active = AGENTS.some((a) => a.id === agent) ? agent : undefined;
-  const works = await getAwesomeWorks(active);
+  const page = await loadWorksCards({ awesome: true, agent: active }, user, locale);
 
   const chipCls = (on: boolean) =>
     `flex items-center gap-1.5 border px-2.5 py-1.5 font-mono text-xs transition-colors ${
@@ -69,15 +71,22 @@ export default async function AwesomePage({
         ))}
       </div>
 
-      {works.length === 0 ? (
+      {page.nodes.length === 0 ? (
         <p className="mt-16 text-center text-sm text-grey">
           {t(locale, "awesome.empty")}
         </p>
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {works.map((w) => (
-            <WorkCard key={w.id} work={w} locale={locale} meId={user?.id ?? null} />
-          ))}
+          {page.nodes}
+          <LoadMore
+            key={`awesome-${active ?? "all"}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
+            initialCursor={page.nextCursor}
+            load={loadMoreWorksAction.bind(null, {
+              awesome: true,
+              agent: active ?? null,
+            })}
+            locale={locale}
+          />
         </div>
       )}
     </div>

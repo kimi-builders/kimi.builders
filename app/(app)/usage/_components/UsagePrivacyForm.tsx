@@ -2,20 +2,25 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { updateUsageSettingsAction } from "../actions";
 
 export default function UsagePrivacyForm({
   uploadProject,
+  showOnLeaderboard,
   retentionDays,
   zh,
 }: {
   uploadProject: boolean;
+  showOnLeaderboard: boolean;
   retentionDays: number;
   zh: boolean;
 }) {
   const router = useRouter();
+  const locale: Locale = zh ? "zh" : "en";
   const [enabled, setEnabled] = useState(uploadProject);
+  const [listed, setListed] = useState(showOnLeaderboard);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -56,6 +61,26 @@ export default function UsagePrivacyForm({
           disabled={pending}
           onChange={(event) => {
             setEnabled(event.target.checked);
+            setError("");
+          }}
+          className="mt-1 size-5 shrink-0 accent-blue"
+        />
+      </label>
+      <label className="mt-4 flex min-h-14 cursor-pointer items-start justify-between gap-4 border-b border-line pb-4">
+        <span>
+          <span className="block text-sm text-paper">{t(locale, "lb.optin")}</span>
+          <span className="mt-1 block text-[11px] leading-relaxed text-grey">
+            {t(locale, "lb.optinHint")}
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          name="show_on_leaderboard"
+          value="1"
+          checked={listed}
+          disabled={pending}
+          onChange={(event) => {
+            setListed(event.target.checked);
             setError("");
           }}
           className="mt-1 size-5 shrink-0 accent-blue"

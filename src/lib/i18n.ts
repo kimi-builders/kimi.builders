@@ -187,6 +187,19 @@ const DICT = {
     zh: "操作失败,请重试",
     en: "Something went wrong — please try again",
   },
+  /* ---- 社区写操作限流(P1-5):{s} = 距窗口重置的等待秒数 ---- */
+  "err.ratePost": {
+    zh: "发帖太频繁了,请 {s} 秒后再试",
+    en: "Posting too fast — try again in {s}s",
+  },
+  "err.rateComment": {
+    zh: "评论太频繁了,请 {s} 秒后再试",
+    en: "Commenting too fast — try again in {s}s",
+  },
+  "err.rateVote": {
+    zh: "投票太频繁了,请 {s} 秒后再试",
+    en: "Voting too fast — try again in {s}s",
+  },
   /* ---- 操作反馈(toast)---- */
   "toast.commented": { zh: "评论已发布", en: "Comment posted" },
   "toast.saved": { zh: "已保存", en: "Saved" },
@@ -460,6 +473,64 @@ const DICT = {
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
   "aria.toDark": { zh: "切换到暗色主题", en: "Switch to dark theme" },
   "aria.lang": { zh: "切换语言 / Switch language", en: "Switch language / 切换语言" },
+  /* ---- 社区用量榜(P1-1;独立分区,降低合并冲突面) ---- */
+  "lb.title": { zh: "社区用量榜", en: "Community leaderboard" },
+  "lb.intro": {
+    zh: "打开了「参与社区榜」开关的成员,其周期聚合用量会出现在这里。",
+    en: "Members who turned on leaderboard sharing have their period aggregates listed here.",
+  },
+  "lb.period7": { zh: "近 7 天", en: "7D" },
+  "lb.period30": { zh: "近 30 天", en: "30D" },
+  "lb.colRank": { zh: "名次", en: "RANK" },
+  "lb.colMember": { zh: "成员", en: "MEMBER" },
+  "lb.colTokens": { zh: "周期 TOKEN", en: "TOKENS" },
+  "lb.colDays": { zh: "活跃天数", en: "ACTIVE DAYS" },
+  "lb.days": { zh: "{n} 天", en: "{n}d" },
+  "lb.trust": {
+    zh: "数据来自成员自愿同步的自报日志,可能不完整;仅含周期聚合数字,作为社区参考,不是可验证的计量凭证。",
+    en: "Self-reported logs synced voluntarily by members and may be incomplete; period aggregates only, as a community reference — not verified metering.",
+  },
+  "lb.scope": {
+    zh: "口径:仅主动 opt-in 的成员 · 只公开聚合 token 与活跃天数 · 不含项目名、设备或时段明细 · 活跃天数按 UTC 自然日计。",
+    en: "Scope: opt-in members only · aggregate tokens and active days only · no project names, devices, or time-of-day detail · active days counted in UTC.",
+  },
+  "lb.empty": { zh: "还没有成员公开用量。", en: "No members are sharing usage yet." },
+  "lb.emptyHint": {
+    zh: "榜单完全自愿:在用量中心的隐私设置里打开「参与社区榜」,你的周期聚合就会出现在这里。",
+    en: "The board is fully opt-in: turn on leaderboard sharing in your usage privacy settings and your period aggregates will appear here.",
+  },
+  "lb.emptyCta": {
+    zh: "去开启「参与社区榜」",
+    en: "Turn on leaderboard sharing",
+  },
+  "lb.loadError": {
+    zh: "榜单加载失败,请稍后重试。",
+    en: "Failed to load the leaderboard. Please try again later.",
+  },
+  "lb.optin": { zh: "参与社区榜", en: "Join the community leaderboard" },
+  "lb.optinHint": {
+    zh: "开启后公开你的周期聚合 token 与活跃天数(社区榜、个人主页热力图、作品徽章共用此开关),不含项目名、设备或时间明细。",
+    en: "Publishes your period aggregate tokens and active days — one switch shared by the leaderboard, profile heatmap, and work badges. Never includes project names, devices, or time detail.",
+  },
+  "lb.entry": { zh: "社区用量榜", en: "Community leaderboard" },
+  "lb.entryHint": {
+    zh: "自愿公开成员的周期聚合排名。",
+    en: "Period aggregates from members who opted in.",
+  },
+  /* ---- S2-2:主页页签 / 作品徽章 / 列表分页(独立分区,降低合并冲突面) ---- */
+  "prof.works": { zh: "作品", en: "Works" },
+  "prof.usage": { zh: "用量", en: "Usage" },
+  "prof.noWorks": { zh: "还没有作品。", en: "No works yet." },
+  "works.badge": {
+    zh: "已验证构建投入 {n} tokens",
+    en: "Verified build effort · {n} tokens",
+  },
+  "works.badgeTitle": {
+    zh: "数据来自作者自愿同步的 Kimi 用量(全部时间 token 总量)",
+    en: "From the author's voluntarily synced Kimi usage (all-time token total)",
+  },
+  "pager.loadMore": { zh: "加载更多", en: "Load more" },
+  "pager.loading": { zh: "加载中…", en: "Loading…" },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

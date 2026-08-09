@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS usage_settings (
   upload_device_label TINYINT(1) NOT NULL DEFAULT 0,
   upload_quota TINYINT(1) NOT NULL DEFAULT 0,
   retention_days SMALLINT UNSIGNED NOT NULL DEFAULT 365,
+  show_on_leaderboard TINYINT(1) NOT NULL DEFAULT 0 COMMENT '自愿公开聚合用量(社区榜/热力图/作品徽章);1=公开,0=不公开(默认)',
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_usage_setting_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

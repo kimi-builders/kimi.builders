@@ -10,6 +10,7 @@ const settings = {
   uploadProject: false,
   uploadDeviceLabel: false,
   uploadQuotaSnapshots: false,
+  showOnLeaderboard: false,
   retentionDays: 365,
 };
 
