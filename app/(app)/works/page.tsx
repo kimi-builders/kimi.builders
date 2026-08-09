@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Rocket, SquarePen } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getWorks } from "@/src/lib/works";
@@ -16,6 +17,8 @@ export default async function WorksPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const works = await getWorks();
+  /* admin/mod 在卡片上看到设/撤精选入口(每周精选 v0) */
+  const canFeature = !!user && canModerate(user.role);
 
   return (
     <div>
@@ -60,7 +63,13 @@ export default async function WorksPage() {
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {works.map((w) => (
-            <WorkCard key={w.id} work={w} locale={locale} meId={user?.id ?? null} />
+            <WorkCard
+              key={w.id}
+              work={w}
+              locale={locale}
+              meId={user?.id ?? null}
+              canFeature={canFeature}
+            />
           ))}
         </div>
       )}

@@ -136,33 +136,109 @@ export async function getPost(id: number): Promise<PostDetail | null> {
   };
 }
 
-/* showAi=false 时过滤 AI 回复(v2 决策 3 的浏览侧开关)。 */
-export async function getComments(
+/* 评论分页:按顶层评论翻页(每页 COMMENT_PAGE_SIZE 条),该页顶层楼下的全部可见
+   回复随根一起带出。游标 = 上一页最后一个顶层评论的 id(id 随 created_at 单调,
+   等价时间游标且键唯一,翻页期间新增评论只追加在末尾,不会顶乱已翻过的页)。
+   「可见根」在 SQL 里算(WITH RECURSIVE 沿 parent 链向上):父被软删或被 AI 过滤
+   (showAi=false,v2 决策 3 的浏览侧开关)时,回复自身升级为顶层 —— 与旧全量拍平
+   的兜底行为一致。子查询多取一个根判断是否还有下一页。 */
+export const COMMENT_PAGE_SIZE = 50;
+
+export interface CommentPageRow extends CommentRow {
+  rootId: number;
+}
+
+export interface CommentPage {
+  comments: CommentPageRow[];
+  /* 可见评论总数:与列表同口径(滤软删;showAi=false 不计 AI),页面计数直接用它 */
+  total: number;
+  nextCursor: number | null;
+}
+
+export function commentPageQuery(
+  postId: number,
+  opts: { showAi: boolean; after: number },
+): { sql: string; args: number[] } {
+  const aiC = opts.showAi ? "" : "AND c.is_ai = 0";
+  const aiP = opts.showAi ? "" : "AND p.is_ai = 0";
+  const sql = `WITH RECURSIVE tree AS (
+       SELECT c.id, c.id AS root_id
+       FROM comments c
+       LEFT JOIN comments p
+         ON p.id = c.parent_id AND p.deleted_at IS NULL ${aiP}
+       WHERE c.post_id = ? AND c.deleted_at IS NULL ${aiC}
+             AND (c.parent_id IS NULL OR p.id IS NULL)
+       UNION ALL
+       SELECT c.id, t.root_id
+       FROM comments c JOIN tree t ON c.parent_id = t.id
+       WHERE c.deleted_at IS NULL ${aiC}
+     )
+     SELECT c.id, c.parent_id, c.user_id, c.is_ai, c.body_md, c.score,
+            c.created_at, c.edited_at, t.root_id,
+            u.handle, u.name, u.avatar_url
+     FROM tree t
+     JOIN comments c ON c.id = t.id
+     LEFT JOIN users u ON u.id = c.user_id
+     WHERE t.root_id IN (
+       SELECT id FROM tree WHERE id = root_id AND id > ?
+       ORDER BY id ASC LIMIT ${COMMENT_PAGE_SIZE + 1}
+     )
+     ORDER BY c.created_at ASC, c.id ASC`;
+  return { sql, args: [postId, opts.after] };
+}
+
+/* 可见评论总数:与 commentPageQuery 同口径,两者必须一起改。 */
+export function commentCountQuery(
   postId: number,
   opts: { showAi: boolean },
-): Promise<CommentRow[]> {
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT c.id, c.parent_id, c.user_id, c.is_ai, c.body_md, c.score,
-            c.created_at, c.edited_at,
-            u.handle, u.name, u.avatar_url
-     FROM comments c LEFT JOIN users u ON u.id = c.user_id
-     WHERE c.post_id = ? AND c.deleted_at IS NULL ${opts.showAi ? "" : "AND c.is_ai = 0"}
-     ORDER BY c.created_at ASC LIMIT 200`,
-    [postId],
-  );
-  return rows.map((r) => ({
-    id: Number(r.id),
-    parentId: r.parent_id === null ? null : Number(r.parent_id),
-    userId: r.user_id === null ? null : Number(r.user_id),
-    isAi: !!r.is_ai,
-    bodyMd: r.body_md,
-    score: Number(r.score),
-    createdAt: r.created_at,
-    editedAt: r.edited_at ?? null,
-    handle: r.handle,
-    name: r.name,
-    avatarUrl: r.avatar_url,
-  }));
+): { sql: string; args: number[] } {
+  return {
+    sql: `SELECT COUNT(*) AS n FROM comments
+          WHERE post_id = ? AND deleted_at IS NULL ${opts.showAi ? "" : "AND is_ai = 0"}`,
+    args: [postId],
+  };
+}
+
+export async function getCommentsPage(
+  postId: number,
+  opts: { showAi: boolean; after?: number },
+): Promise<CommentPage> {
+  const count = commentCountQuery(postId, opts);
+  const page = commentPageQuery(postId, { showAi: opts.showAi, after: opts.after ?? 0 });
+  const pool = getPool();
+  const [countRows, rows] = await Promise.all([
+    pool.query<RowDataPacket[]>(count.sql, count.args).then(([r]) => r),
+    pool.query<RowDataPacket[]>(page.sql, page.args).then(([r]) => r),
+  ]);
+  /* 根按首次出现排序(行已按时间升序,根先于其回复出现);多取的那根连同其回复裁掉 */
+  const rootOrder: number[] = [];
+  for (const r of rows) {
+    const rootId = Number(r.root_id);
+    if (!rootOrder.includes(rootId)) rootOrder.push(rootId);
+  }
+  const hasMore = rootOrder.length > COMMENT_PAGE_SIZE;
+  const kept = new Set(rootOrder.slice(0, COMMENT_PAGE_SIZE));
+  const comments = rows
+    .filter((r) => kept.has(Number(r.root_id)))
+    .map((r) => ({
+      id: Number(r.id),
+      parentId: r.parent_id === null ? null : Number(r.parent_id),
+      userId: r.user_id === null ? null : Number(r.user_id),
+      isAi: !!r.is_ai,
+      bodyMd: r.body_md,
+      score: Number(r.score),
+      createdAt: r.created_at,
+      editedAt: r.edited_at ?? null,
+      handle: r.handle,
+      name: r.name,
+      avatarUrl: r.avatar_url,
+      rootId: Number(r.root_id),
+    }));
+  return {
+    comments,
+    total: Number(countRows[0]?.n ?? 0),
+    nextCursor: hasMore ? rootOrder[COMMENT_PAGE_SIZE - 1] : null,
+  };
 }
 
 export async function createPost(input: {
@@ -476,44 +552,71 @@ export async function getPoll(
 }
 
 /* 右栏 widget 数据:7 日热门 / 社区数据 / 新成员,三条小查询。 */
+export interface HotPost {
+  id: number;
+  title: string;
+  commentCount: number;
+  score: number;
+}
+
+/* 7 日热门(评论×2 + 净分):右栏 widget 与首页精选位的空态回落共用。 */
+export async function getHotPosts(limit = 5): Promise<HotPost[]> {
+  const n = Math.max(1, Math.min(20, Math.floor(limit)));
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT id, title, LEFT(body_md, 200) AS body_excerpt, comment_count, score FROM posts
+     WHERE deleted_at IS NULL AND visibility = 'public' AND created_at > NOW() - INTERVAL 7 DAY
+     ORDER BY CAST(comment_count AS SIGNED) * 2 + score DESC, created_at DESC LIMIT ${n}`,
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    /* 无标题帖回退到正文摘要(标题非强制) */
+    title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
+    commentCount: Number(r.comment_count),
+    score: Number(r.score),
+  }));
+}
+
+export interface CommunityStats {
+  members: number;
+  posts: number;
+  comments: number;
+}
+
+/* 社区总量(成员 / 公开帖 / 评论):右栏「社区数据」与首页数据条共用。 */
+export async function getCommunityStats(): Promise<CommunityStats> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT
+       (SELECT COUNT(*) FROM users) AS members,
+       (SELECT COUNT(*) FROM posts WHERE deleted_at IS NULL AND visibility = 'public') AS posts,
+       (SELECT COUNT(*) FROM comments WHERE deleted_at IS NULL) AS comments`,
+  );
+  const s = rows[0] ?? { members: 0, posts: 0, comments: 0 };
+  return {
+    members: Number(s.members),
+    posts: Number(s.posts),
+    comments: Number(s.comments),
+  };
+}
+
 export interface SidebarData {
-  hot: { id: number; title: string; commentCount: number; score: number }[];
-  stats: { members: number; posts: number; comments: number };
+  hot: HotPost[];
+  stats: CommunityStats;
   newMembers: { handle: string; avatarUrl: string }[];
 }
 
 export async function getSidebarData(): Promise<SidebarData> {
-  const pool = getPool();
-  const [hotRows, statRows, memberRows] = await Promise.all([
-    pool.query<RowDataPacket[]>(
-      `SELECT id, title, LEFT(body_md, 200) AS body_excerpt, comment_count, score FROM posts
-       WHERE deleted_at IS NULL AND visibility = 'public' AND created_at > NOW() - INTERVAL 7 DAY
-       ORDER BY CAST(comment_count AS SIGNED) * 2 + score DESC, created_at DESC LIMIT 5`,
-    ).then(([rows]) => rows),
-    pool.query<RowDataPacket[]>(
-      `SELECT
-         (SELECT COUNT(*) FROM users) AS members,
-         (SELECT COUNT(*) FROM posts WHERE deleted_at IS NULL AND visibility = 'public') AS posts,
-         (SELECT COUNT(*) FROM comments WHERE deleted_at IS NULL) AS comments`,
-    ).then(([rows]) => rows),
-    pool.query<RowDataPacket[]>(
-      "SELECT handle, avatar_url FROM users ORDER BY id DESC LIMIT 5",
-    ).then(([rows]) => rows),
+  const [hot, stats, memberRows] = await Promise.all([
+    getHotPosts(5),
+    getCommunityStats(),
+    getPool()
+      .query<RowDataPacket[]>(
+        "SELECT handle, avatar_url FROM users ORDER BY id DESC LIMIT 5",
+      )
+      .then(([rows]) => rows),
   ]);
-  const s = statRows[0] ?? { members: 0, posts: 0, comments: 0 };
   return {
-    hot: hotRows.map((r) => ({
-      id: Number(r.id),
-      /* 无标题帖回退到正文摘要(标题非强制) */
-      title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
-      commentCount: Number(r.comment_count),
-      score: Number(r.score),
-    })),
-    stats: {
-      members: Number(s.members),
-      posts: Number(s.posts),
-      comments: Number(s.comments),
-    },
+    hot,
+    stats,
     newMembers: memberRows.map((r) => ({
       handle: r.handle,
       avatarUrl: r.avatar_url,

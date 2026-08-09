@@ -39,7 +39,7 @@ export default async function AppLayout({
         <RightSidebar locale={locale} loggedIn={!!user} />
       </div>
       <Suspense fallback={null}>
-        <MobileTabBar locale={locale} unread={unread} profileHref={profileHref} />
+        <MobileTabBar locale={locale} profileHref={profileHref} />
       </Suspense>
     </div>
   );

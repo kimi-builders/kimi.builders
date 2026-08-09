@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/ai-reply-retry",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/usage-retention",
+      "schedule": "17 3 * * *"
+    }
+  ]
+}

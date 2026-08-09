@@ -22,6 +22,9 @@ export interface WorkRow {
   handle: string | null;
   avatarUrl: string | null;
   authorLabel: string;
+  /* 每周精选 v0:featured_at 非空 = 精选态(理由/定夺编辑在 featured.ts 查询) */
+  featuredAt: Date | null;
+  featuredReason: string | null;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -53,11 +56,14 @@ function mapWork(r: RowDataPacket): WorkRow {
     handle: r.handle ?? null,
     avatarUrl: r.avatar_url ?? null,
     authorLabel: r.author_label,
+    featuredAt: r.featured_at ?? null,
+    featuredReason: r.featured_reason ?? null,
   };
 }
 
 const SELECT_WORKS = `SELECT w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.screenshot_url, w.tags, w.agents, w.source, w.author_label, w.created_at,
+       w.featured_at, w.featured_reason,
        u.handle, u.avatar_url
      FROM works w LEFT JOIN users u ON u.id = w.user_id`;
 

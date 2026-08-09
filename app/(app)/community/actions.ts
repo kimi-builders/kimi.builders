@@ -6,11 +6,19 @@
    预取缓存(Next 16:Link 预取会被后续导航复用,只有 revalidate* 能 silently 刷新),
    否则删帖后回 feed 会看到旧卡片。
    顶/踩走纯乐观更新(只落库、不作废路径):分数展示本来就是客户端态,避免每票都刷新全站。 */
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
+import {
+  canModerate,
+  clearPostFeatured,
+  FEATURED_REASON_MAX,
+  normalizeFeaturedReason,
+  setPostFeatured,
+} from "@/src/lib/featured";
+import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { enqueueAiReply } from "@/src/lib/ai-reply";
@@ -30,6 +38,10 @@ import {
   updatePost,
   votePoll,
 } from "@/src/lib/posts";
+import {
+  loadCommentPage,
+  type CommentPageData,
+} from "./_components/comment-page";
 
 export interface PostFormState {
   error?: string;
@@ -123,6 +135,29 @@ export async function createCommentAction(
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community"); /* feed 卡片上的评论数 */
   return { ok: true };
+}
+
+/* 评论「加载更多」:只读,不落库不作废缓存。返回服务端渲染好的一页
+   (ReactNode 随 RSC 序列化),客户端直接追加;私密帖仅作者可翻页(同详情页)。 */
+export async function loadMoreCommentsAction(
+  postId: number,
+  after: number,
+): Promise<({ ok: true } & CommentPageData) | { ok: false }> {
+  const user = await getSessionUser();
+  if (
+    !Number.isInteger(postId) ||
+    postId <= 0 ||
+    !Number.isInteger(after) ||
+    after < 0
+  )
+    return { ok: false };
+  const post = await getPost(postId);
+  if (!post) return { ok: false };
+  if (post.visibility !== "public" && post.userId !== user?.id)
+    return { ok: false };
+  const locale = await getLocale(user);
+  const data = await loadCommentPage(postId, user, locale, after);
+  return { ok: true, ...data };
 }
 
 /* 顶/踩:乐观更新路径,只落库;同向再点=取消,反向=换边。 */
@@ -246,6 +281,51 @@ export async function deleteCommentAction(
   if (ok) {
     revalidatePath("/community/[id]", "page");
     revalidatePath("/community");
+  }
+  return { ok };
+}
+
+/* ---- 编辑精选(admin/mod 定夺,署名到编辑本人;每周精选 v0)---- */
+
+export async function featurePostAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { ok: false, error: t(locale, "err.login") };
+  if (!canModerate(user.role))
+    return { ok: false, error: t(locale, "err.forbidden") };
+  const postId = Number(formData.get("post_id"));
+  if (!postId) return { ok: false, error: t(locale, "err.generic") };
+  const raw = String(formData.get("reason") || "");
+  if (raw.trim().length > FEATURED_REASON_MAX)
+    return { ok: false, error: t(locale, "err.reasonLong") };
+  const reason = normalizeFeaturedReason(raw);
+  if (!reason) return { ok: false, error: t(locale, "err.reasonRequired") };
+  const ok = await setPostFeatured(user.id, postId, reason);
+  if (!ok) return { ok: false, error: t(locale, "err.generic") };
+  /* 首页数据走 tag 缓存(updateTag 即时作废),详情页/首页路径缓存一并清 */
+  updateTag(HOME_CACHE_TAG);
+  revalidatePath(`/community/${postId}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function unfeaturePostAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { ok: false, error: t(locale, "err.login") };
+  if (!canModerate(user.role))
+    return { ok: false, error: t(locale, "err.forbidden") };
+  const postId = Number(formData.get("post_id"));
+  if (!postId) return { ok: false, error: t(locale, "err.generic") };
+  const ok = await clearPostFeatured(postId);
+  if (ok) {
+    updateTag(HOME_CACHE_TAG);
+    revalidatePath(`/community/${postId}`);
+    revalidatePath("/");
   }
   return { ok };
 }

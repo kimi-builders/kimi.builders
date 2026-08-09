@@ -11,11 +11,9 @@ import { t, type Locale } from "@/src/lib/i18n";
 
 export default function MobileTabBar({
   locale,
-  unread = 0,
   profileHref,
 }: {
   locale: Locale;
-  unread?: number;
   profileHref?: string;
 }) {
   const pathname = usePathname();
@@ -29,21 +27,18 @@ export default function MobileTabBar({
         (pathname.startsWith("/community/") &&
           !pathname.startsWith("/community/new") &&
           !pathname.startsWith("/community/notifications")),
-      badge: 0,
     },
     {
       href: "/works",
       icon: Rocket,
       key: "nav.works" as const,
       active: pathname.startsWith("/works"),
-      badge: 0,
     },
     {
       href: "/community/new",
       icon: SquarePen,
       key: "nav.post" as const,
       active: pathname.startsWith("/community/new"),
-      badge: 0,
       primary: true,
     },
     {
@@ -51,14 +46,12 @@ export default function MobileTabBar({
       icon: BarChart3,
       key: "nav.usage" as const,
       active: pathname.startsWith("/usage"),
-      badge: 0,
     },
     {
       href: profileHref ?? "/settings",
       icon: User,
       key: "nav.profile" as const,
       active: pathname.startsWith("/u/") || pathname.startsWith("/settings"),
-      badge: unread,
     },
   ];
   return (
@@ -79,13 +72,8 @@ export default function MobileTabBar({
                     : "text-grey hover:text-paper"
               }`}
             >
-              <span className={`relative flex items-center justify-center ${tab.primary ? "size-8 border border-blue bg-blue text-white" : "size-6"}`}>
+              <span className={`flex items-center justify-center ${tab.primary ? "size-8 border border-blue bg-blue text-white" : "size-6"}`}>
                 <Icon size={tab.primary ? 17 : 18} />
-                {tab.badge > 0 && (
-                  <span className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg">
-                    {tab.badge > 99 ? "99+" : tab.badge}
-                  </span>
-                )}
               </span>
               {t(locale, tab.key)}
             </Link>

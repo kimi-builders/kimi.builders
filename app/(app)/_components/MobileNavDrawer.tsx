@@ -7,7 +7,6 @@ import {
   BarChart3,
   Bell,
   BookOpen,
-  ExternalLink,
   Info,
   Menu,
   MessagesSquare,
@@ -19,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
+import GithubIcon from "./GithubIcon";
 import { LocaleToggle, ThemeToggle } from "./pref-controls";
 
 const SECTIONS = [
@@ -165,7 +165,7 @@ export default function MobileNavDrawer({
             <ThemeToggle withLabel className={`${itemClass(false)} w-full`} />
             <LocaleToggle withLabel className={`${itemClass(false)} w-full`} />
             <a href="https://github.com/kimi-builders" className={itemClass(false)}>
-              <ExternalLink size={17} aria-hidden="true" />
+              <GithubIcon size={17} />
               GitHub
             </a>
             <Link href="/" onClick={close} className={itemClass(false)}>

@@ -1,9 +1,11 @@
-/* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 7 日热门 / 社区数据 /
-   新成员,全部真实数据。用户可整体关掉(留细轨可重开)。
+/* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 编辑精选 / 7 日热门 /
+   社区数据 / 新成员,全部真实数据。用户可整体关掉(留细轨可重开)。
    隐藏/显示纯 CSS 驱动(html[data-sidebar],见 globals.css):两种状态的结构
-   常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。 */
+   常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。
+   编辑精选(每周精选 v0):冷启动没有任何精选时整个 widget 不渲染。 */
 import Link from "next/link";
 import { MessageCircle, UserRound } from "lucide-react";
+import { getFeaturedFeed } from "@/src/lib/featured";
 import { getSidebarData } from "@/src/lib/posts";
 import { t, type Locale } from "@/src/lib/i18n";
 import CategoryNav from "./CategoryNav";
@@ -33,7 +35,10 @@ export default async function RightSidebar({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  const data = await getSidebarData();
+  const [data, featured] = await Promise.all([
+    getSidebarData(),
+    getFeaturedFeed(3),
+  ]);
   return (
     <aside className="rightsidebar sticky top-8 hidden xl:block">
       <div className="sidebar-full w-72 shrink-0 space-y-4">
@@ -60,6 +65,48 @@ export default async function RightSidebar({
             </a>
           </div>
         </Widget>
+
+        {featured.length > 0 && (
+          <Widget title={t(locale, "side.featured")}>
+            <ul className="space-y-3">
+              {featured.map((f) => {
+                const title = f.external ? (
+                  <a
+                    href={f.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate text-xs text-paper transition-colors hover:text-blue"
+                  >
+                    {f.title}
+                  </a>
+                ) : (
+                  <Link
+                    href={f.href}
+                    className="block truncate text-xs text-paper transition-colors hover:text-blue"
+                  >
+                    {f.title}
+                  </Link>
+                );
+                return (
+                  <li key={`${f.kind}-${f.id}`}>
+                    {title}
+                    <p
+                      className="mt-0.5 truncate text-[11px] leading-relaxed text-grey"
+                      title={f.reason}
+                    >
+                      {f.reason}
+                    </p>
+                    {f.editorHandle && (
+                      <p className="mt-0.5 font-mono text-[10px] text-grey">
+                        {t(locale, "featured.by", { handle: f.editorHandle })}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </Widget>
+        )}
 
         <Widget title={t(locale, "side.hot")}>
           {data.hot.length === 0 ? (

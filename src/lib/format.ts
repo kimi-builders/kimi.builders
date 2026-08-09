@@ -38,3 +38,11 @@ export function plainExcerpt(md: string, max = 120): string {
     .trim();
   return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }
+
+/* 大数字紧凑格式(首页数据条):zh 万/亿,en K/M/B。 */
+export function compactNumber(n: number, locale: "zh" | "en" = "zh"): string {
+  return new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n);
+}

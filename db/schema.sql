@@ -51,9 +51,15 @@ CREATE TABLE IF NOT EXISTS posts (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   edited_at DATETIME NULL COMMENT '最后一次编辑时间(正文/标题)',
   deleted_at DATETIME NULL,
+  -- featured_* 由 20260817_featured.sql 引入,已有库执行该迁移
+  featured_at DATETIME NULL COMMENT '精选时间;NULL=未精选(每周精选 v0)',
+  featured_reason VARCHAR(280) NULL COMMENT '精选理由(编辑填写,一句话)',
+  featured_by BIGINT UNSIGNED NULL COMMENT '定夺编辑 users.id(admin/mod)',
   KEY idx_feed (category, created_at),
   KEY idx_user (user_id),
-  CONSTRAINT fk_post_user FOREIGN KEY (user_id) REFERENCES users (id)
+  KEY idx_featured (featured_at),
+  CONSTRAINT fk_post_user FOREIGN KEY (user_id) REFERENCES users (id),
+  CONSTRAINT fk_post_featured FOREIGN KEY (featured_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 投票选项与投票记录
@@ -131,8 +137,14 @@ CREATE TABLE IF NOT EXISTS works (
   source VARCHAR(16) NOT NULL DEFAULT 'site' COMMENT 'site/awesome',
   author_label VARCHAR(120) NOT NULL DEFAULT '' COMMENT 'awesome 条目的外部作者名',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- featured_* 由 20260817_featured.sql 引入,已有库执行该迁移
+  featured_at DATETIME NULL COMMENT '精选时间;NULL=未精选(每周精选 v0)',
+  featured_reason VARCHAR(280) NULL COMMENT '精选理由(编辑填写,一句话)',
+  featured_by BIGINT UNSIGNED NULL COMMENT '定夺编辑 users.id(admin/mod)',
   KEY idx_source (source, created_at),
-  CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id)
+  KEY idx_featured (featured_at),
+  CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),
+  CONSTRAINT fk_work_featured FOREIGN KEY (featured_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Token 用量(本地脚本同步,按天幂等 upsert)
@@ -349,12 +361,15 @@ CREATE TABLE IF NOT EXISTS post_subscriptions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- AI 回帖任务(新帖入库后排队,bot 消费;comment_id 非空 = 回复某条评论)
+-- attempts/last_attempt_at 由 20260816_ai_reply_retry.sql 引入,已有库执行该迁移。
 CREATE TABLE IF NOT EXISTS ai_reply_jobs (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   post_id BIGINT UNSIGNED NOT NULL,
   comment_id BIGINT UNSIGNED NULL COMMENT '触发回复的评论;NULL=回复帖子本身',
   status VARCHAR(16) NOT NULL DEFAULT 'pending' COMMENT 'pending/done/failed/skipped',
   error VARCHAR(500) NOT NULL DEFAULT '',
+  attempts INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '已执行次数(含手动重跑)',
+  last_attempt_at DATETIME NULL COMMENT '最近一次开始执行的时间',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed_at DATETIME NULL,
   KEY idx_status (status, created_at),

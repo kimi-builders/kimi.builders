@@ -186,5 +186,3 @@ export function SidebarToggle({
   );
 }
 
-/* 主题翻转的 no-JS 兜底(与 setLocaleAction 同文件,保持引用一致)。 */
-import { setThemeAction as setThemeActionFallback } from "../community/actions";

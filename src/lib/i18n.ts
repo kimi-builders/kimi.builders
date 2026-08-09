@@ -43,6 +43,7 @@ const DICT = {
     en: "Hide sidebar (a small button stays to reopen)",
   },
   "side.show": { zh: "显示侧栏", en: "Show sidebar" },
+  "side.featured": { zh: "编辑精选", en: "EDITOR'S PICKS" },
   /* ---- feed ---- */
   "feed.hot": { zh: "热门", en: "Hot" },
   "feed.new": { zh: "最新", en: "New" },
@@ -112,6 +113,10 @@ const DICT = {
   "post.dimmed": {
     zh: "被较多人点踩,已淡化显示",
     en: "Heavily downvoted, dimmed",
+  },
+  "post.loadMore": {
+    zh: "加载更多评论(还有 {n} 条)",
+    en: "Load more comments ({n} more)",
   },
   /* ---- 消息通知 ---- */
   "notif.title": { zh: "消息", en: "Notifications" },
@@ -395,6 +400,62 @@ const DICT = {
     en: "Nothing under this filter yet.",
   },
   "awesome.by": { zh: "by {name}", en: "by {name}" },
+  /* ---- 编辑精选(每周精选 v0)---- */
+  "featured.badge": { zh: "编辑精选", en: "EDITOR'S PICK" },
+  "featured.kindPost": { zh: "帖子", en: "POST" },
+  "featured.kindWork": { zh: "作品", en: "WORK" },
+  "featured.by": { zh: "— @{handle} 精选", en: "— picked by @{handle}" },
+  "featured.set": { zh: "设为精选", en: "Feature" },
+  "featured.unset": { zh: "取消精选", en: "Unfeature" },
+  "featured.reasonPh": {
+    zh: "精选理由(必填,280 字以内)",
+    en: "Reason (required, 280 chars max)",
+  },
+  "toast.featured": { zh: "已设为精选", en: "Featured" },
+  "toast.unfeatured": { zh: "已取消精选", en: "Removed from featured" },
+  "err.forbidden": {
+    zh: "需要管理员或编辑权限",
+    en: "Admin or moderator role required",
+  },
+  "err.reasonRequired": {
+    zh: "请填写精选理由",
+    en: "Add a reason for featuring",
+  },
+  "err.reasonLong": {
+    zh: "理由太长了(280 字以内)",
+    en: "Reason too long (280 chars max)",
+  },
+  /* ---- 首页 ---- */
+  "home.logoAlt": {
+    zh: "kimi.builders 标志 —— 月球暗面的一轮纸月,两颗伴星环绕运行",
+    en: "kimi.builders — a paper crescent on the dark side of the moon, with two companion stars in orbit",
+  },
+  "home.heroSub": {
+    zh: "并肩探索,一起构建 —— 社区正在生长。",
+    en: "Explore together, build together — the community is growing.",
+  },
+  "home.cta": { zh: "进入社区", en: "Enter the community" },
+  "home.tokens": { zh: "累计 tokens", en: "total tokens" },
+  "home.featured": { zh: "本周精选", en: "PICKS OF THE WEEK" },
+  "home.featuredSub": {
+    zh: "编辑署名的人为定夺,不是算法。",
+    en: "Signed by human editors — judgment, not algorithm.",
+  },
+  "home.join": { zh: "入群 / 订阅", en: "JOIN & FOLLOW" },
+  "home.joinDisc": {
+    zh: "问答、想法、日常讨论都在 GitHub Discussions,欢迎随时开帖。",
+    en: "Questions, ideas and day-to-day talk live in GitHub Discussions — jump in anytime.",
+  },
+  "home.joinDiscCta": { zh: "参与讨论", en: "Join discussions" },
+  "home.joinAwesome": {
+    zh: "全世界用 Kimi 构建的项目清单,你的作品也值得上榜。",
+    en: "Projects built with Kimi around the world — yours belongs on the list too.",
+  },
+  "home.joinAwesomeCta": { zh: "浏览清单", en: "Browse the list" },
+  "home.joinMail": {
+    zh: "合作、反馈、投稿,或者只是想聊聊,都欢迎写信。",
+    en: "Collaboration, feedback, submissions — or just say hi.",
+  },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
   "aria.toDark": { zh: "切换到暗色主题", en: "Switch to dark theme" },

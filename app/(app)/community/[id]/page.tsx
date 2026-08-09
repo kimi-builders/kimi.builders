@@ -1,5 +1,8 @@
 /* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 动作条(顶踩/评论/订阅/分享/作者操作)+ 评论区。
    评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌瓷砖头像和 AI 标。
+   评论分页:首屏 SSR 第一页(每页 50 条顶层,回复随根带出),「加载更多」由
+   CommentSection 走 server action 追加;动作条与评论区标题的计数都用可见评论总数
+   (与列表同口径,滤软删、随 show_ai_replies 过滤),保证计数与可见数始终吻合。
    楼中楼:parent 链在服务端拍平成「顶层 + 一层回复」,回复层带「回复 @xx」标注。
    标题非强制:无标题帖正文直接当主体。私密帖仅作者可见(外人 404)。
    浏览量只记录不展示:after() 里 +1,不阻塞渲染。 */
@@ -9,27 +12,23 @@ import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { ArrowBigUp, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import { categoryLabel } from "@/src/lib/categories";
+import { canModerate, getPostFeatured } from "@/src/lib/featured";
 import { plainExcerpt, relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
-  getCommentReactions,
-  getComments,
   getPoll,
   getPost,
   getPostReactions,
   incrementViewCount,
   isSubscribed,
-  type CommentRow,
 } from "@/src/lib/posts";
 import Markdown from "@/components/Markdown";
 import ShareButton from "@/components/ShareButton";
-import CommentSection, {
-  type CommentThread,
-  type CommentView,
-} from "../_components/CommentSection";
+import CommentSection from "../_components/CommentSection";
+import { loadCommentPage } from "../_components/comment-page";
+import FeaturedToggle from "../_components/FeaturedToggle";
 import PollVoteForm from "../_components/PollVoteForm";
 import PostOwnerActions from "../_components/PostOwnerActions";
 import SubscribeButton from "../_components/SubscribeButton";
@@ -45,19 +44,6 @@ export async function generateMetadata({
   if (!post) return { title: "kimi.builders" };
   const name = post.title || plainExcerpt(post.bodyMd, 60);
   return { title: `${name} — kimi.builders` };
-}
-
-/* parent 链 → 根评论 id(带环保护;parent 缺失时退化自身为根) */
-function rootIdOf(c: CommentRow, byId: Map<number, CommentRow>): number {
-  let cur = c;
-  const seen = new Set<number>();
-  while (cur.parentId && !seen.has(cur.id)) {
-    seen.add(cur.id);
-    const p = byId.get(cur.parentId);
-    if (!p) break;
-    cur = p;
-  }
-  return cur.id;
 }
 
 export default async function PostPage({
@@ -77,57 +63,17 @@ export default async function PostPage({
   after(() => incrementViewCount(postId));
 
   const locale = await getLocale(user);
-  const [poll, comments, postReactions, subscribed] = await Promise.all([
+  const [poll, commentPage, postReactions, subscribed, postFeatured] = await Promise.all([
     post.type === "poll" ? getPoll(postId, user?.id ?? null) : null,
-    getComments(postId, { showAi: user ? user.showAiReplies : true }),
+    loadCommentPage(postId, user, locale),
     user ? getPostReactions(user.id, [postId]) : { up: new Set<number>(), down: new Set<number>() },
     user ? isSubscribed(user.id, postId) : false,
+    getPostFeatured(postId),
   ]);
-  const commentReactions = user
-    ? await getCommentReactions(user.id, comments.map((c) => c.id))
-    : { up: new Set<number>(), down: new Set<number>() };
   const upVoted = postReactions.up.has(postId);
   const downVoted = postReactions.down.has(postId);
-
-  /* 组装两级楼中楼:顶层按时间升序;任何深度的回复拍平进根的一层列表 */
-  const byId = new Map(comments.map((c) => [c.id, c]));
-  const rootEntries = new Map<number, CommentThread>();
-  const threads: CommentThread[] = [];
-  const view = (
-    c: CommentRow,
-    replyToAuthor: string | null,
-  ): CommentView => ({
-    id: c.id,
-    authorId: c.userId,
-    isAi: c.isAi,
-    author: c.isAi ? BOT_NAME : `@${c.handle}`,
-    handle: c.isAi ? null : c.handle,
-    avatarUrl: c.isAi ? BOT_AVATAR : (c.avatarUrl ?? ""),
-    time: relTime(c.createdAt, locale),
-    edited: !!c.editedAt,
-    score: c.score,
-    replyToAuthor,
-    bodyMd: c.bodyMd,
-    body: <Markdown source={c.bodyMd} />,
-  });
-  for (const c of comments) {
-    const parent = c.parentId ? byId.get(c.parentId) : undefined;
-    if (!c.parentId || !parent) {
-      const entry: CommentThread = { ...view(c, null), replies: [] };
-      threads.push(entry);
-      rootEntries.set(c.id, entry);
-      continue;
-    }
-    const replyToAuthor = parent.isAi ? BOT_NAME : `@${parent.handle}`;
-    const entry = rootEntries.get(rootIdOf(c, byId));
-    if (entry) entry.replies.push(view(c, replyToAuthor));
-    else {
-      /* 兜底:根不在本页(评论被过滤)时按顶层显示 */
-      const fallback: CommentThread = { ...view(c, replyToAuthor), replies: [] };
-      threads.push(fallback);
-      rootEntries.set(c.id, fallback);
-    }
-  }
+  /* 精选操作入口:admin/mod 可见(与是否作者无关),action 层再校验一次 */
+  const canFeature = !!user && canModerate(user.role);
 
   return (
     <div>
@@ -142,6 +88,19 @@ export default async function PostPage({
             title={t(locale, "post.privateHint")}
           >
             {t(locale, "post.private")}
+          </span>
+        )}
+        {/* 编辑精选徽章:理由 + 定夺编辑放在 title(硬边描边芯片,对齐「私密」标) */}
+        {postFeatured && (
+          <span
+            className="border border-blue/60 px-1.5 py-px text-[10px] text-blue"
+            title={`${postFeatured.reason}${
+              postFeatured.editorHandle
+                ? ` ${t(locale, "featured.by", { handle: postFeatured.editorHandle })}`
+                : ""
+            }`}
+          >
+            {t(locale, "featured.badge")}
           </span>
         )}
       </div>
@@ -248,11 +207,11 @@ export default async function PostPage({
         )}
         <a
           href="#comments"
-          title={t(locale, "post.comments", { n: post.commentCount })}
+          title={t(locale, "post.comments", { n: commentPage.total })}
           className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-blue"
         >
           <MessageCircle size={14} />
-          {post.commentCount}
+          {commentPage.total}
         </a>
         {user && (
           <SubscribeButton
@@ -265,6 +224,13 @@ export default async function PostPage({
           <PostOwnerActions
             postId={post.id}
             visibility={post.visibility}
+            locale={locale}
+          />
+        )}
+        {canFeature && (
+          <FeaturedToggle
+            postId={post.id}
+            featured={postFeatured}
             locale={locale}
           />
         )}
@@ -281,10 +247,11 @@ export default async function PostPage({
         postId={post.id}
         locale={locale}
         meId={user?.id ?? null}
-        total={comments.length}
-        threads={threads}
-        upIds={[...commentReactions.up]}
-        downIds={[...commentReactions.down]}
+        total={commentPage.total}
+        threads={commentPage.threads}
+        nextCursor={commentPage.nextCursor}
+        upIds={commentPage.upIds}
+        downIds={commentPage.downIds}
       />
     </div>
   );

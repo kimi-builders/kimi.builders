@@ -1,22 +1,27 @@
 /* 作品卡片:/works(成员作品墙)与 /awesome(全来源)共用。
    截图(无图占位)→ 名称/介绍 → Agent 徽章(lobehub 图标)→ 标签 →
-   作者行(站内作者链主页;awesome 条目用 author_label);自己的条目带编辑/删除。 */
+   作者行(站内作者链主页;awesome 条目用 author_label);自己的条目带编辑/删除。
+   编辑精选:featured_at 非空的卡片带「编辑精选」蓝芯片;canFeature(admin/mod,
+   由页面用 session role 判断)时底部多一行设/撤精选操作(每周精选 v0)。 */
 import Link from "next/link";
 import { ExternalLink, Rocket } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
 import { t, type Locale } from "@/src/lib/i18n";
 import type { WorkRow } from "@/src/lib/works";
 import AgentIcon from "@/components/AgentIcon";
+import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkOwnerActions from "./WorkOwnerActions";
 
 export default function WorkCard({
   work: w,
   locale,
   meId,
+  canFeature = false,
 }: {
   work: WorkRow;
   locale: Locale;
   meId: number | null;
+  canFeature?: boolean;
 }) {
   return (
     <article className="flex flex-col border border-line bg-card transition-colors hover:border-paper/20">
@@ -34,7 +39,17 @@ export default function WorkCard({
         </div>
       )}
       <div className="flex flex-1 flex-col p-4">
-        <h2 className="font-medium leading-snug text-paper">{w.name}</h2>
+        <h2 className="font-medium leading-snug text-paper">
+          {w.name}
+          {w.featuredAt && (
+            <span
+              className="ml-2 inline-block border border-blue/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-blue"
+              title={w.featuredReason ?? undefined}
+            >
+              {t(locale, "featured.badge")}
+            </span>
+          )}
+        </h2>
         {w.tagline && (
           <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
             {w.tagline}
@@ -61,57 +76,66 @@ export default function WorkCard({
             ))}
           </div>
         )}
-        <div className="mt-auto flex items-center gap-3 pt-3 font-mono text-[11px] text-grey">
-          {w.source === "awesome" && w.authorLabel ? (
-            <span className="truncate">
-              {t(locale, "awesome.by", { name: w.authorLabel })}
+        <div className="mt-auto pt-3">
+          <div className="flex items-center gap-3 font-mono text-[11px] text-grey">
+            {w.source === "awesome" && w.authorLabel ? (
+              <span className="truncate">
+                {t(locale, "awesome.by", { name: w.authorLabel })}
+              </span>
+            ) : w.handle ? (
+              <Link
+                href={`/u/${w.handle}`}
+                className="flex min-w-0 items-center gap-1.5 text-grey transition-colors hover:text-blue"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={w.avatarUrl ?? ""}
+                  alt=""
+                  className="h-4 w-4 rounded-full"
+                />
+                <span className="truncate text-paper">@{w.handle}</span>
+              </Link>
+            ) : (
+              <span className="truncate">
+                {t(locale, "awesome.by", { name: w.authorLabel })}
+              </span>
+            )}
+            <span className="ml-auto flex shrink-0 items-center gap-3">
+              {w.url && (
+                <a
+                  href={w.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={t(locale, "works.visit")}
+                  className="inline-flex items-center gap-1 transition-colors hover:text-blue"
+                >
+                  <ExternalLink size={12} />
+                  {t(locale, "works.visit")}
+                </a>
+              )}
+              {w.repoUrl && (
+                <a
+                  href={w.repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={t(locale, "works.repo")}
+                  className="inline-flex items-center gap-1 transition-colors hover:text-blue"
+                >
+                  {t(locale, "works.repo")}
+                </a>
+              )}
+              {meId !== null && w.userId === meId && (
+                <WorkOwnerActions workId={w.id} locale={locale} />
+              )}
             </span>
-          ) : w.handle ? (
-            <Link
-              href={`/u/${w.handle}`}
-              className="flex min-w-0 items-center gap-1.5 text-grey transition-colors hover:text-blue"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={w.avatarUrl ?? ""}
-                alt=""
-                className="h-4 w-4 rounded-full"
-              />
-              <span className="truncate text-paper">@{w.handle}</span>
-            </Link>
-          ) : (
-            <span className="truncate">
-              {t(locale, "awesome.by", { name: w.authorLabel })}
-            </span>
+          </div>
+          {canFeature && (
+            <WorkFeaturedToggle
+              workId={w.id}
+              featuredReason={w.featuredAt ? (w.featuredReason ?? "") : null}
+              locale={locale}
+            />
           )}
-          <span className="ml-auto flex shrink-0 items-center gap-3">
-            {w.url && (
-              <a
-                href={w.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={t(locale, "works.visit")}
-                className="inline-flex items-center gap-1 transition-colors hover:text-blue"
-              >
-                <ExternalLink size={12} />
-                {t(locale, "works.visit")}
-              </a>
-            )}
-            {w.repoUrl && (
-              <a
-                href={w.repoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={t(locale, "works.repo")}
-                className="inline-flex items-center gap-1 transition-colors hover:text-blue"
-              >
-                {t(locale, "works.repo")}
-              </a>
-            )}
-            {meId !== null && w.userId === meId && (
-              <WorkOwnerActions workId={w.id} locale={locale} />
-            )}
-          </span>
         </div>
       </div>
     </article>

@@ -2,11 +2,20 @@
 
 /* 作品库写操作:提交 / 编辑 / 删除(作者自助,归属校验在查询层 WHERE)。
    模式同社区:useActionState 的表单返回 { error? } 后 redirect;
-   删除返回 MutationResult 由客户端 toast + 跳回列表。 */
-import { revalidatePath } from "next/cache";
+   删除返回 MutationResult 由客户端 toast + 跳回列表。
+   末尾两个精选操作是编辑(admin/mod)定夺,不做归属校验(每周精选 v0)。 */
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { sanitizeAgentIds } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
+import {
+  canModerate,
+  clearWorkFeatured,
+  FEATURED_REASON_MAX,
+  normalizeFeaturedReason,
+  setWorkFeatured,
+} from "@/src/lib/featured";
+import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { createWork, deleteWork, updateWork } from "@/src/lib/works";
@@ -107,6 +116,53 @@ export async function deleteWorkAction(
   if (ok) {
     revalidatePath("/works");
     revalidatePath("/awesome");
+  }
+  return { ok };
+}
+
+/* ---- 编辑精选(admin/mod 定夺,署名到编辑本人;每周精选 v0)---- */
+
+export async function featureWorkAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { ok: false, error: t(locale, "err.login") };
+  if (!canModerate(user.role))
+    return { ok: false, error: t(locale, "err.forbidden") };
+  const workId = Number(formData.get("work_id"));
+  if (!workId) return { ok: false, error: t(locale, "err.generic") };
+  const raw = String(formData.get("reason") || "");
+  if (raw.trim().length > FEATURED_REASON_MAX)
+    return { ok: false, error: t(locale, "err.reasonLong") };
+  const reason = normalizeFeaturedReason(raw);
+  if (!reason) return { ok: false, error: t(locale, "err.reasonRequired") };
+  const ok = await setWorkFeatured(user.id, workId, reason);
+  if (!ok) return { ok: false, error: t(locale, "err.generic") };
+  /* 首页数据走 tag 缓存(updateTag 即时作废),列表/首页路径缓存一并清 */
+  updateTag(HOME_CACHE_TAG);
+  revalidatePath("/works");
+  revalidatePath("/awesome");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function unfeatureWorkAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { ok: false, error: t(locale, "err.login") };
+  if (!canModerate(user.role))
+    return { ok: false, error: t(locale, "err.forbidden") };
+  const workId = Number(formData.get("work_id"));
+  if (!workId) return { ok: false, error: t(locale, "err.generic") };
+  const ok = await clearWorkFeatured(workId);
+  if (ok) {
+    updateTag(HOME_CACHE_TAG);
+    revalidatePath("/works");
+    revalidatePath("/awesome");
+    revalidatePath("/");
   }
   return { ok };
 }

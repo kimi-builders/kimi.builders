@@ -5,7 +5,10 @@
    每条评论:VoteCluster 顶/踩(乐观)+ 回复;自己的评论可行内编辑、删除(confirm 后软删)。
    所有 mutation 走「等待态 → toast 反馈 → router.refresh() 换新数据」,操作必有回响。
    净分 ≤ -3 的评论淡化显示。锚点 id=comment-<id> 供消息通知精准定位。
-   列表数据在服务端组装:正文 Markdown 已渲成 ReactNode 随 props 传入。 */
+   列表数据在服务端组装:正文 Markdown 已渲成 ReactNode 随 props 传入。
+   分页:首屏 SSR 第一页(按顶层评论计);「加载更多」走 server action 拿回同样
+   渲染好的后续页直接追加,游标 = 已加载最后一个顶层评论 id。mutation 刷新后
+   已追加的页作废,回到首屏第一页(与刷新前全量重取的行为一致)。 */
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +19,7 @@ import VoteCluster from "./VoteCluster";
 import {
   createCommentAction,
   deleteCommentAction,
+  loadMoreCommentsAction,
   updateCommentAction,
 } from "../actions";
 
@@ -44,6 +48,7 @@ export default function CommentSection({
   meId,
   total,
   threads,
+  nextCursor,
   upIds,
   downIds,
 }: {
@@ -52,6 +57,7 @@ export default function CommentSection({
   meId: number | null;
   total: number;
   threads: CommentThread[];
+  nextCursor: number | null;
   upIds: number[];
   downIds: number[];
 }) {
@@ -61,12 +67,55 @@ export default function CommentSection({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [posting, setPosting] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
+  /* 已追加的后续页;mutation 触发 router.refresh() 后首屏 props 换新,追加页作废 */
+  const [extra, setExtra] = useState<{
+    threads: CommentThread[];
+    upIds: number[];
+    downIds: number[];
+  } | null>(null);
+  const [cursor, setCursor] = useState(nextCursor);
+  const [loadingMore, setLoadingMore] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const loggedIn = meId !== null;
-  const up = new Set(upIds);
-  const down = new Set(downIds);
+
+  /* mutation 后 router.refresh() 会换来新的首屏 props:追加页作废,回到第一页
+     (与刷新前全量重取的行为一致)。渲染期间比对前 props 重置,不走 effect。 */
+  const [prevThreads, setPrevThreads] = useState(threads);
+  if (prevThreads !== threads) {
+    setPrevThreads(threads);
+    setExtra(null);
+    setCursor(nextCursor);
+  }
+
+  const allThreads = extra ? [...threads, ...extra.threads] : threads;
+  const up = new Set([...upIds, ...(extra?.upIds ?? [])]);
+  const down = new Set([...downIds, ...(extra?.downIds ?? [])]);
+  const loaded = allThreads.reduce((n, c) => n + 1 + c.replies.length, 0);
+  const remaining = Math.max(0, total - loaded);
+
+  const loadMore = async () => {
+    if (loadingMore || cursor === null) return;
+    setLoadingMore(true);
+    try {
+      const res = await loadMoreCommentsAction(postId, cursor);
+      if (!res.ok) {
+        toast(t(locale, "toast.failed"));
+        return;
+      }
+      setExtra((prev) => ({
+        threads: [...(prev?.threads ?? []), ...res.threads],
+        upIds: [...(prev?.upIds ?? []), ...res.upIds],
+        downIds: [...(prev?.downIds ?? []), ...res.downIds],
+      }));
+      setCursor(res.nextCursor);
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const startReply = (id: number, author: string) => {
     setReplyTo({ id, author });
@@ -288,7 +337,20 @@ export default function CommentSection({
       <h2 id="comments" className="mt-10 font-mono text-sm text-grey">
         {t(locale, "post.comments", { n: total })}
       </h2>
-      <ul className="mt-6 space-y-6">{threads.map((c) => row(c, false))}</ul>
+      <ul className="mt-6 space-y-6">{allThreads.map((c) => row(c, false))}</ul>
+
+      {cursor !== null && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="mt-8 border border-line px-5 py-1.5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
+        >
+          {loadingMore
+            ? t(locale, "post.submitting")
+            : t(locale, "post.loadMore", { n: remaining })}
+        </button>
+      )}
 
       {loggedIn ? (
         <form ref={formRef} onSubmit={submitComment} className="mt-10 space-y-3">

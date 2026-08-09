@@ -4,6 +4,9 @@
    帖子 ai_reply=0 或作者全局关了 ai_replies_enabled 都跳过。
    评论触发(comment_id 非空)时带对话链上下文接话,链路里 AI 发言超过
    MAX_AI_CHAIN 条就礼貌闭嘴(防无限接龙)。
+   失败恢复:after() 可能被杀,由 /api/cron/ai-reply-retry 周期调用
+   recoverAiReplyJobs 兜底(指数退避、封顶 AI_REPLY_MAX_ATTEMPTS 次);
+   单个任务也可手动 retryAiReplyJob(scripts/ai-reply-retry.ts)。
    after 用动态 import:保持本文件可被 Next 之外的普通 Node 脚本引用
    (如手动重跑任务),顶层静态 import "next/server" 在裸 Node 下解析不了。 */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
@@ -240,4 +243,174 @@ async function callKimi(
 /* 对话链总长兜底(防超长 prompt) */
 function convoGuard(convo: string): string {
   return convo.length > 3000 ? `…${convo.slice(-3000)}` : convo;
+}
+
+/* ---------- 失败恢复(手动重跑 + cron 批量) ---------- */
+
+/* 同一任务最多执行次数(首发 + 重试合计);到顶后保持 failed 终态并保留 error */
+export const AI_REPLY_MAX_ATTEMPTS = 3;
+/* 退避基数:第 n 次重试(n = 已执行次数)至少间隔 10 * 2^n 分钟;
+   n=0 即 pending 卡住 10 分钟未动就接管 */
+export const AI_REPLY_RETRY_BASE_MINUTES = 10;
+
+export function aiReplyRetryDelayMs(attempts: number): number {
+  return AI_REPLY_RETRY_BASE_MINUTES * 2 ** attempts * 60_000;
+}
+
+export interface AiReplyRetryCandidate {
+  status: string;
+  attempts: number;
+  lastAttemptAt: Date | null;
+  createdAt: Date;
+}
+
+/* 任务是否到点该重试:次数到顶(pending 残留 = 执行器认领后崩溃)不再动;
+   其余按指数退避看最近一次尝试(没尝试过就看入队时间)。 */
+export function isAiReplyRetryDue(job: AiReplyRetryCandidate, now: Date): boolean {
+  if (job.status !== "pending" && job.status !== "failed") return false;
+  if (job.attempts >= AI_REPLY_MAX_ATTEMPTS) return false;
+  const reference = job.lastAttemptAt ?? job.createdAt;
+  return now.getTime() - reference.getTime() >= aiReplyRetryDelayMs(job.attempts);
+}
+
+/* 两级开关:帖子 ai_reply + 作者 ai_replies_enabled,都为真才允许回 */
+export function aiReplySwitchesAllow(flags: {
+  aiReply: unknown;
+  aiRepliesEnabled: unknown;
+}): boolean {
+  return Boolean(flags.aiReply) && Boolean(flags.aiRepliesEnabled);
+}
+
+/* 手动重跑单个任务(scripts/ai-reply-retry.ts 是它的薄封装):
+   非 done 重置为 pending、计一次尝试,再走真实 processAiReply,返回最终状态。 */
+export async function retryAiReplyJob(
+  jobId: number,
+): Promise<{ retried: boolean; job: { id: number; status: string; error: string } | null }> {
+  const pool = getPool();
+  const [res] = await pool.query<ResultSetHeader>(
+    `UPDATE ai_reply_jobs
+     SET status = 'pending', error = '', attempts = attempts + 1, last_attempt_at = NOW()
+     WHERE id = ? AND status != 'done'`,
+    [jobId],
+  );
+  if (res.affectedRows > 0) await processAiReply(jobId);
+  const [rows] = await pool.query<RowDataPacket[]>(
+    "SELECT id, status, error FROM ai_reply_jobs WHERE id = ?",
+    [jobId],
+  );
+  const row = rows[0];
+  return {
+    retried: res.affectedRows > 0,
+    job: row
+      ? { id: Number(row.id), status: String(row.status), error: String(row.error) }
+      : null,
+  };
+}
+
+export interface AiReplyRecoveryStats {
+  candidates: number;
+  /* 通过退避判断、本轮该处理的 */
+  due: number;
+  /* 两级开关不满足,直接标记 skipped */
+  skipped: number;
+  /* 实际重跑次数 */
+  retried: number;
+  done: number;
+  failed: number;
+  /* 达到次数上限,保持 failed 终态(error 已在 processAiReply 里保留) */
+  failedTerminal: number;
+}
+
+/* cron 批量恢复(/api/cron/ai-reply-retry):扫 pending 卡住 / failed 未到顶的
+   任务,退避到点的逐个重跑。单批限量,漏掉的下一轮再说。 */
+export async function recoverAiReplyJobs(
+  now: Date = new Date(),
+  batchLimit = 100,
+): Promise<AiReplyRecoveryStats> {
+  const pool = getPool();
+  const stats: AiReplyRecoveryStats = {
+    candidates: 0,
+    due: 0,
+    skipped: 0,
+    retried: 0,
+    done: 0,
+    failed: 0,
+    failedTerminal: 0,
+  };
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT j.id, j.status, j.attempts, j.last_attempt_at, j.created_at,
+            p.ai_reply, u.ai_replies_enabled
+     FROM ai_reply_jobs j
+     JOIN posts p ON p.id = j.post_id
+     JOIN users u ON u.id = p.user_id
+     WHERE j.status = 'pending' OR (j.status = 'failed' AND j.attempts < ?)
+     ORDER BY j.id
+     LIMIT ?`,
+    [AI_REPLY_MAX_ATTEMPTS, batchLimit],
+  );
+  stats.candidates = rows.length;
+  for (const row of rows) {
+    const jobId = Number(row.id);
+    const attempts = Number(row.attempts);
+    if (attempts >= AI_REPLY_MAX_ATTEMPTS) {
+      /* pending 残留(认领后进程被杀)且次数到顶:落 failed 终态,不再扫到 */
+      await pool.query(
+        `UPDATE ai_reply_jobs SET status = 'failed', error = 'attempts exhausted',
+         processed_at = NOW() WHERE id = ? AND status = 'pending'`,
+        [jobId],
+      );
+      stats.failedTerminal += 1;
+      continue;
+    }
+    const due = isAiReplyRetryDue(
+      {
+        status: String(row.status),
+        attempts,
+        lastAttemptAt: row.last_attempt_at ? new Date(row.last_attempt_at) : null,
+        createdAt: new Date(row.created_at),
+      },
+      now,
+    );
+    if (!due) continue;
+    stats.due += 1;
+    if (
+      !aiReplySwitchesAllow({
+        aiReply: row.ai_reply,
+        aiRepliesEnabled: row.ai_replies_enabled,
+      })
+    ) {
+      await pool.query(
+        `UPDATE ai_reply_jobs SET status = 'skipped', error = 'ai reply disabled',
+         processed_at = NOW() WHERE id = ? AND status IN ('pending', 'failed')`,
+        [jobId],
+      );
+      stats.skipped += 1;
+      continue;
+    }
+    /* 认领:计一次尝试并回到 pending(processAiReply 只接 pending);
+       并发下被别的执行器动过就放弃 */
+    const [claim] = await pool.query<ResultSetHeader>(
+      `UPDATE ai_reply_jobs
+       SET status = 'pending', error = '', attempts = attempts + 1, last_attempt_at = NOW()
+       WHERE id = ? AND status IN ('pending', 'failed')`,
+      [jobId],
+    );
+    if (claim.affectedRows === 0) continue;
+    stats.retried += 1;
+    await processAiReply(jobId);
+    const [after] = await pool.query<RowDataPacket[]>(
+      "SELECT status, attempts FROM ai_reply_jobs WHERE id = ?",
+      [jobId],
+    );
+    const finalStatus = after[0] ? String(after[0].status) : "";
+    if (finalStatus === "done") {
+      stats.done += 1;
+    } else if (finalStatus === "skipped") {
+      stats.skipped += 1;
+    } else if (finalStatus === "failed") {
+      if (Number(after[0].attempts) >= AI_REPLY_MAX_ATTEMPTS) stats.failedTerminal += 1;
+      else stats.failed += 1;
+    }
+  }
+  return stats;
 }
