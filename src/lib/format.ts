@@ -46,3 +46,9 @@ export function compactNumber(n: number, locale: "zh" | "en" = "zh"): string {
     maximumFractionDigits: 1,
   }).format(n);
 }
+
+/* 期号感的月份标签(月刊列表/详情头):统一 YYYY-MM,mono 排版下两语言都读得顺。 */
+export function monthLabel(d: Date | string): string {
+  const t = typeof d === "string" ? new Date(d) : d;
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`;
+}

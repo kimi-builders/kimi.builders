@@ -10,6 +10,7 @@ import {
   Info,
   Menu,
   MessagesSquare,
+  Newspaper,
   Rocket,
   Settings,
   SquarePen,
@@ -23,7 +24,8 @@ import { LocaleToggle, ThemeToggle } from "./pref-controls";
 
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false },
-  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: true },
+  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: false },
+  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: false },
   { href: "/works", icon: Rocket, key: "nav.works", soon: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false },

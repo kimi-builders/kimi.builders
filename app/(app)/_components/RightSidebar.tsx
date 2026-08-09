@@ -1,10 +1,14 @@
-/* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 编辑精选 / 7 日热门 /
-   社区数据 / 新成员,全部真实数据。用户可整体关掉(留细轨可重开)。
+/* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 编辑精选 / Demo Night /
+   7 日热门 / 社区数据 / 新成员,全部真实数据。用户可整体关掉(留细轨可重开)。
    隐藏/显示纯 CSS 驱动(html[data-sidebar],见 globals.css):两种状态的结构
    常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。
-   编辑精选(每周精选 v0):冷启动没有任何精选时整个 widget 不渲染。 */
+   编辑精选(每周精选 v0):冷启动没有任何精选时整个 widget 不渲染。
+   Demo Night:无 upcoming 场次时整个 widget 不渲染;报名态走 getSessionUser
+   (React cache 与布局壳去重,不多查库)。 */
 import Link from "next/link";
 import { MessageCircle, UserRound } from "lucide-react";
+import { getSessionUser } from "@/src/lib/auth/session";
+import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
 import { getFeaturedFeed } from "@/src/lib/featured";
 import { getSidebarData } from "@/src/lib/posts";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -35,9 +39,11 @@ export default async function RightSidebar({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  const [data, featured] = await Promise.all([
+  const user = await getSessionUser();
+  const [data, featured, demoNight] = await Promise.all([
     getSidebarData(),
     getFeaturedFeed(3),
+    getUpcomingSummary(user?.id ?? null),
   ]);
   return (
     <aside className="rightsidebar sticky top-8 hidden xl:block">
@@ -105,6 +111,28 @@ export default async function RightSidebar({
                 );
               })}
             </ul>
+          </Widget>
+        )}
+
+        {/* Demo Night:当前场日期 + 报名状态/人数 + 链接;无当前场不渲染 */}
+        {demoNight && (
+          <Widget title={t(locale, "dn.widgetTitle")}>
+            <Link
+              href="/demo-night"
+              className="block truncate text-xs text-paper transition-colors hover:text-blue"
+            >
+              {demoNight.event.title}
+            </Link>
+            <p className="mt-1 font-mono text-[10px] text-blue">
+              {formatEventTime(demoNight.event.startsAt)}
+            </p>
+            <p className="mt-1.5 font-mono text-[10px] text-grey">
+              {t(locale, "dn.rosterCount", { n: demoNight.rsvpCount })}
+              {" · "}
+              {demoNight.rsvped
+                ? t(locale, "dn.widgetRsvped")
+                : t(locale, "dn.widgetCta")}
+            </p>
           </Widget>
         )}
 

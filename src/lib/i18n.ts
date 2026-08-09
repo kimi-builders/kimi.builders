@@ -531,6 +531,115 @@ const DICT = {
   },
   "pager.loadMore": { zh: "加载更多", en: "Load more" },
   "pager.loading": { zh: "加载中…", en: "Loading…" },
+  /* ---- Demo Night(S3,P3 提前;独立分区,降低合并冲突面) ---- */
+  "dn.title": { zh: "Demo Night", en: "Demo Night" },
+  "dn.intro": {
+    zh: "builder 的线上分享夜:有人演示正在做的东西,有人到场见证。身体一次只能在一个地方 —— 到场本身就是稀缺背书,这不是一场划过就算的直播。报名即公开:你的 handle 会署进本页的到场名单,先到场先署名。",
+    en: "An online show-and-tell for builders: someone demos what they're building, others show up to witness it. A body can only be in one place at a time — showing up is itself a scarce endorsement; this is not a stream you scroll past. RSVP is public: your handle joins the attendee list on this page, first come, first signed.",
+  },
+  "dn.upcoming": { zh: "当前场", en: "UPCOMING" },
+  "dn.nextPreparing": {
+    zh: "下一期筹备中 —— 想上台分享?去社区发帖打个招呼。",
+    en: "The next night is in the works — want to present? Say hi in the community.",
+  },
+  "dn.archive": { zh: "往期归档", en: "ARCHIVE" },
+  "dn.archiveEmpty": {
+    zh: "还没有往期场次。第一期正在筹备。",
+    en: "No past nights yet. The first one is in the works.",
+  },
+  "dn.rsvp": { zh: "报名到场", en: "RSVP — I'll be there" },
+  "dn.rsvped": { zh: "已报名", en: "You're in" },
+  "dn.cancelRsvp": { zh: "取消报名", en: "Cancel RSVP" },
+  "dn.rsvpNotice": {
+    zh: "报名即公开:你的 handle 会出现在到场名单中。",
+    en: "RSVP is public: your handle appears on the attendee list.",
+  },
+  "dn.loginToRsvp": { zh: "登录后报名到场:", en: "Log in to RSVP:" },
+  "dn.roster": { zh: "到场名单", en: "ATTENDEES" },
+  "dn.rosterEmpty": {
+    zh: "还没有人报名 —— 第一个署名的位置还空着。",
+    en: "No one yet — the first name on the list is still open.",
+  },
+  "dn.rosterCount": { zh: "{n} 人已报名", en: "{n} in" },
+  "dn.archiveCount": { zh: "{n} 人到场", en: "{n} attended" },
+  "dn.rosterToggle": { zh: "到场名单({n})", en: "Attendees ({n})" },
+  "dn.watchReplay": { zh: "观看回放", en: "Watch replay" },
+  "dn.widgetTitle": { zh: "DEMO NIGHT", en: "DEMO NIGHT" },
+  "dn.widgetRsvped": { zh: "已报名", en: "RSVP'd" },
+  "dn.widgetCta": { zh: "查看与报名", en: "Details & RSVP" },
+  "toast.rsvped": {
+    zh: "已报名 —— 到场名单见",
+    en: "You're on the list — see you there",
+  },
+  "toast.rsvpCancelled": { zh: "已取消报名", en: "RSVP cancelled" },
+  /* ---- S3-1:文章引擎(/blog 月刊 + /learn 策划路径;独立分区,降低合并冲突面) ---- */
+  "nav.blog": { zh: "月刊", en: "Letter" },
+  "blog.title": { zh: "给 Kimi 官方的一封信", en: "A Letter to Team Kimi" },
+  "blog.sub": {
+    zh: "月刊 · 编辑署名定夺,不是算法",
+    en: "Monthly · signed by named editors, not an algorithm",
+  },
+  "blog.empty": {
+    zh: "创刊号筹备中 —— 编辑部正在汇总社区数据观察、用户痛点与精选作品,写好会署名发出,不拿空壳硬撑。",
+    en: "Issue one is in the works — the editors are gathering community data, user pain points and featured builds, and will sign it when it ships. No empty shell in the meantime.",
+  },
+  "blog.new": { zh: "写新一篇", en: "New entry" },
+  "learn.intro": {
+    zh: "策划制学习路径:编辑部拍板的入门长文,按编号顺序读。不做 wiki。",
+    en: "A curated learning path: long-form guides chosen by the editors, read in numbered order. Not a wiki.",
+  },
+  "learn.empty": {
+    zh: "编辑部撰稿中 —— 第一批入门长文正在写,完成后会按顺序排在这里。",
+    en: "The editors are writing — the first guides will line up here in order once ready.",
+  },
+  "art.langZh": { zh: "中文", en: "中文" },
+  "art.langEn": { zh: "EN", en: "EN" },
+  "art.draft": { zh: "草稿", en: "DRAFT" },
+  "artf.newTitle": { zh: "新建文章", en: "New article" },
+  "artf.editTitle": { zh: "编辑文章", en: "Edit article" },
+  "artf.slug": {
+    zh: "Slug(小写字母/数字/连字符)",
+    en: "Slug (lowercase letters, digits, hyphens)",
+  },
+  "artf.kind": { zh: "类型", en: "Kind" },
+  "artf.kindLetter": { zh: "月刊(letter)", en: "Letter (monthly)" },
+  "artf.kindGuide": { zh: "学习路径(guide)", en: "Guide (learn path)" },
+  "artf.locale": { zh: "语言", en: "Language" },
+  "artf.title": { zh: "标题(200 字以内)", en: "Title (200 chars max)" },
+  "artf.summary": {
+    zh: "摘要(列表展示,500 字以内)",
+    en: "Summary (shown in lists, 500 chars max)",
+  },
+  "artf.sortOrder": {
+    zh: "路径顺序(仅 guide,小的在前)",
+    en: "Order (guides only, smaller first)",
+  },
+  "artf.publish": {
+    zh: "发布(不勾 = 存草稿,前台不显示)",
+    en: "Publish (unchecked = draft, hidden from lists)",
+  },
+  "artf.deleteConfirm": {
+    zh: "确定删除这篇文章?删除后不可恢复。",
+    en: "Delete this article? This cannot be undone.",
+  },
+  "err.artSlug": {
+    zh: "slug 只能用小写字母、数字、连字符(160 字以内)",
+    en: "Slug: lowercase letters, digits and hyphens only (160 max)",
+  },
+  "err.artSlugTaken": {
+    zh: "同语言下这个 slug 已被占用",
+    en: "That slug is taken for this language",
+  },
+  "err.artTitle": {
+    zh: "标题必填(200 字以内)",
+    en: "Title required (200 chars max)",
+  },
+  "err.artSummaryLong": {
+    zh: "摘要太长了(500 字以内)",
+    en: "Summary too long (500 chars max)",
+  },
+  "err.artBody": { zh: "正文不能为空", en: "Body cannot be empty" },
+  "err.artMeta": { zh: "类型或语言不合法", en: "Invalid kind or language" },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

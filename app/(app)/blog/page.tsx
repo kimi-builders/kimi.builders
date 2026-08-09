@@ -1,0 +1,89 @@
+/* 月刊《给 Kimi 官方的一封信》(S3-1,战略支柱 1:结构洞收费口):
+   letter 文章列表 —— 大字距 mono 小标签 + 标题 + 摘要 + 「— @handle」编辑署名 + 期号月份。
+   硬边细线风格(无圆角无阴影)。浏览无需登录;
+   语言回落:当前 UI 语言优先,缺失时回落另一语言并在卡片标注实际语言。
+   空态:创刊号筹备中的文案,不做空壳硬撑。 */
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getSessionUser } from "@/src/lib/auth/session";
+import { listArticles } from "@/src/lib/articles";
+import { canModerate } from "@/src/lib/featured";
+import { monthLabel } from "@/src/lib/format";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
+
+export const metadata: Metadata = {
+  title: "给 Kimi 官方的一封信 — kimi.builders",
+};
+
+export default async function BlogPage() {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  const items = await listArticles("letter", locale);
+  /* 编辑入口:admin/mod 可见,action 层再校验一次 */
+  const canEdit = !!user && canModerate(user.role);
+
+  return (
+    <div>
+      <header>
+        <p className="font-mono text-[10px] tracking-[0.25em] text-blue">
+          {t(locale, "blog.sub")}
+        </p>
+        <div className="mt-2 flex items-baseline gap-4">
+          <h1 className="text-2xl font-semibold leading-snug">
+            {t(locale, "blog.title")}
+          </h1>
+          {canEdit && (
+            <Link
+              href="/blog/admin/new"
+              className="ml-auto shrink-0 border border-blue px-3 py-1 font-mono text-[11px] text-blue transition-colors hover:bg-blue hover:text-bg"
+            >
+              {t(locale, "blog.new")}
+            </Link>
+          )}
+        </div>
+      </header>
+
+      {items.length === 0 ? (
+        <p className="mt-10 border border-line bg-card p-6 text-sm leading-relaxed text-grey">
+          {t(locale, "blog.empty")}
+        </p>
+      ) : (
+        <div className="mt-8">
+          {items.map((a) => (
+            <article key={a.slug} className="border-t border-line py-6 first:mt-0">
+              <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-grey">
+                <span>{monthLabel(a.publishedAt)}</span>
+                {a.fallback && (
+                  <span className="border border-line px-1.5 py-px text-paper">
+                    {t(locale, a.locale === "zh" ? "art.langZh" : "art.langEn")}
+                  </span>
+                )}
+              </div>
+              <Link href={`/blog/${a.slug}`} className="group mt-2 block">
+                <h2 className="text-lg font-semibold leading-snug text-paper transition-colors group-hover:text-blue">
+                  {a.title}
+                </h2>
+                {a.summary && (
+                  <p className="mt-2 text-sm leading-relaxed text-grey">
+                    {a.summary}
+                  </p>
+                )}
+              </Link>
+              <p className="mt-3 font-mono text-[11px] text-grey">
+                —{" "}
+                <Link
+                  href={`/u/${a.authorHandle}`}
+                  className="text-paper transition-colors hover:text-blue"
+                >
+                  @{a.authorHandle}
+                </Link>
+              </p>
+            </article>
+          ))}
+          <div className="border-t border-line" />
+        </div>
+      )}
+    </div>
+  );
+}

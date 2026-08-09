@@ -392,3 +392,58 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notif_actor FOREIGN KEY (actor_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_notif_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 文章引擎(S3-1):一张表承载 /blog 月刊(letter)与 /learn 策划路径(guide)。
+-- 双语版本 = 同 slug 两行不同 locale,(slug, locale) 复合唯一;草稿 = published_at NULL;
+-- 软删 deleted_at 风格对齐 posts。已有库执行 db/migrations/20260819_articles.sql。
+CREATE TABLE IF NOT EXISTS articles (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  slug VARCHAR(160) NOT NULL COMMENT 'URL 标识:小写字母/数字/连字符;与 locale 复合唯一',
+  kind VARCHAR(16) NOT NULL DEFAULT 'letter' COMMENT 'letter=月刊 / guide=学习路径长文',
+  locale VARCHAR(8) NOT NULL DEFAULT 'zh' COMMENT 'zh/en;双语版本 = 同 slug 两行',
+  title VARCHAR(200) NOT NULL,
+  summary VARCHAR(500) NOT NULL DEFAULT '' COMMENT '列表摘要',
+  body_md MEDIUMTEXT COMMENT 'Markdown 正文',
+  author_id BIGINT UNSIGNED NOT NULL COMMENT '署名编辑 users.id(admin/mod)',
+  sort_order INT NOT NULL DEFAULT 0 COMMENT 'guide 的策划顺序(小的在前);letter 不用',
+  published_at DATETIME NULL COMMENT '发布时间;NULL=草稿',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  UNIQUE KEY uq_article_slug_locale (slug, locale),
+  KEY idx_articles_list (kind, published_at),
+  CONSTRAINT fk_article_author FOREIGN KEY (author_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
+-- Demo Night v0(第三步,P3 提前):线上报名 + 归档页。
+-- 由 20260820_demo_night.sql 引入,已有库执行该迁移。
+-- 核心语义:到场名单公开 —— 报名即同意公开 handle 进该场到场名单,
+-- 名单按报名时间正序(先到场先署名),到场本身就是稀缺背书。
+-- events 创建 / 改状态 / 回填回放链接在 v0 直接 SQL 运维,无站内后台;
+-- starts_at 按 UTC 存储与展示。
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS demo_events (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(120) NOT NULL,
+  starts_at DATETIME NOT NULL COMMENT '开场时间(UTC,页面原样展示并标注)',
+  description TEXT COMMENT 'Markdown 短文本(议程 / 分享人 / 玩法)',
+  location_note VARCHAR(200) NOT NULL DEFAULT '' COMMENT '如「线上 · 会议链接报名后可见」',
+  stream_url VARCHAR(500) NULL COMMENT '直播/回放链接;NULL=未公开',
+  status VARCHAR(16) NOT NULL DEFAULT 'upcoming' COMMENT 'upcoming/done(手工切换)',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_demo_event_status_time (status, starts_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 报名记录:复合主键天然幂等(重复报名 INSERT IGNORE 不报错、不重复署名)。
+-- 无软删:取消报名即物理删除,名单只反映当前在场的人。
+CREATE TABLE IF NOT EXISTS demo_rsvps (
+  event_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '报名时间 = 署名顺序',
+  PRIMARY KEY (event_id, user_id),
+  KEY idx_demo_rsvp_user (user_id),
+  CONSTRAINT fk_demo_rsvp_event FOREIGN KEY (event_id) REFERENCES demo_events (id) ON DELETE CASCADE,
+  CONSTRAINT fk_demo_rsvp_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
