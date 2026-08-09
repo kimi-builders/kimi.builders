@@ -111,6 +111,19 @@ async function main() {
   );
   await ingestUsage(principal, payload);
   await ingestUsage(principal, payload);
+  const smallerResult = await ingestUsage(principal, {
+    ...payload,
+    buckets: payload.buckets.map((bucket) => ({
+      ...bucket,
+      inputTokens: 1,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 0,
+      outputTokens: 1,
+      reasoningOutputTokens: 0,
+    })),
+  });
+  assert.equal(smallerResult.buckets, 0);
+  assert.equal(smallerResult.protectedBuckets, 1);
   const dashboard = await getUsageDashboard(userId, 7);
   assert.equal(dashboard.totals.totalTokens, 20);
   assert.equal(dashboard.totals.sessions, 1);

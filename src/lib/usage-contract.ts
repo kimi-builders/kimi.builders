@@ -155,6 +155,12 @@ export interface UsageIngestResponseV2 {
     sessions: number;
     quotaSnapshots: number;
   };
+  /* A client can temporarily observe less history than an earlier snapshot
+     (permissions, live files, parser fallback). The server preserves larger
+     existing buckets and reports how many incoming rows it ignored. */
+  protected?: {
+    buckets: number;
+  };
   unknownModels?: readonly string[];
 }
 

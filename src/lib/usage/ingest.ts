@@ -1,17 +1,111 @@
 import type { UsageIngestRequestV2 } from "../usage-contract";
+import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
 import { projectLabelHash } from "./crypto";
 import type { UsageKeyPrincipal } from "./auth";
 
+interface ExistingBucketRow extends RowDataPacket {
+  source: string;
+  model: string;
+  project_hash: string;
+  bucket_start: Date;
+  input_tokens: number | string;
+  cache_write_input_tokens: number | string;
+  cache_read_input_tokens: number | string;
+  output_tokens: number | string;
+  reasoning_output_tokens: number | string;
+}
+
+function incomingBucketKey(
+  bucket: UsageIngestRequestV2["buckets"][number],
+  projectHash = projectLabelHash(bucket.project),
+): string {
+  return [
+    bucket.source.toLowerCase(),
+    bucket.model.toLowerCase(),
+    projectHash.toString("hex"),
+    bucket.bucketStart,
+  ].join("\u0000");
+}
+
+function existingBucketKey(row: ExistingBucketRow): string {
+  return [
+    row.source.toLowerCase(),
+    row.model.toLowerCase(),
+    String(row.project_hash).toLowerCase(),
+    row.bucket_start.toISOString(),
+  ].join("\u0000");
+}
+
+function incomingTokenTotal(bucket: UsageIngestRequestV2["buckets"][number]): number {
+  return bucket.inputTokens
+    + bucket.cacheWriteInputTokens
+    + bucket.cacheReadInputTokens
+    + bucket.outputTokens
+    + bucket.reasoningOutputTokens;
+}
+
+function existingTokenTotal(row: ExistingBucketRow): number {
+  return Number(row.input_tokens)
+    + Number(row.cache_write_input_tokens)
+    + Number(row.cache_read_input_tokens)
+    + Number(row.output_tokens)
+    + Number(row.reasoning_output_tokens);
+}
+
+async function protectLargerExistingBuckets(
+  connection: PoolConnection,
+  principal: UsageKeyPrincipal,
+  buckets: UsageIngestRequestV2["buckets"],
+) {
+  if (buckets.length === 0) return { accepted: [], protectedCount: 0 };
+  const hashes = buckets.map((bucket) => projectLabelHash(bucket.project));
+  const tuples = buckets.map(() => "(?, ?, ?, ?)").join(", ");
+  const parameters = buckets.flatMap((bucket, index) => [
+    bucket.source,
+    bucket.model,
+    hashes[index],
+    new Date(bucket.bucketStart),
+  ]);
+  const [rows] = await connection.query<ExistingBucketRow[]>(
+    `SELECT source, model, HEX(project_hash) AS project_hash, bucket_start,
+            input_tokens, cache_write_input_tokens, cache_read_input_tokens,
+            output_tokens, reasoning_output_tokens
+       FROM usage_buckets
+      WHERE user_id = ? AND device_id = ?
+        AND (source, model, project_hash, bucket_start) IN (${tuples})
+      FOR UPDATE`,
+    [principal.userId, principal.deviceId, ...parameters],
+  );
+  const existingTotals = new Map(
+    rows.map((row) => [existingBucketKey(row), existingTokenTotal(row)]),
+  );
+  const accepted = buckets.filter((bucket, index) => {
+    const existing = existingTotals.get(incomingBucketKey(bucket, hashes[index]));
+    return existing === undefined || existing <= incomingTokenTotal(bucket);
+  });
+  return { accepted, protectedCount: buckets.length - accepted.length };
+}
+
 export async function ingestUsage(
   principal: UsageKeyPrincipal,
   payload: UsageIngestRequestV2,
-): Promise<{ buckets: number; sessions: number; quotaSnapshots: number }> {
+): Promise<{
+  buckets: number;
+  sessions: number;
+  quotaSnapshots: number;
+  protectedBuckets: number;
+}> {
   const connection = await getPool().getConnection();
   try {
     await connection.beginTransaction();
-    if (payload.buckets.length > 0) {
-      const rows = payload.buckets.map((bucket) => [
+    const protectedBuckets = await protectLargerExistingBuckets(
+      connection,
+      principal,
+      payload.buckets,
+    );
+    if (protectedBuckets.accepted.length > 0) {
+      const rows = protectedBuckets.accepted.map((bucket) => [
         principal.userId,
         principal.deviceId,
         bucket.source,
@@ -50,8 +144,8 @@ export async function ingestUsage(
         [rows],
       );
       const hiddenHash = projectLabelHash(undefined);
-      const allHidden = payload.buckets.every((bucket) => bucket.project === undefined);
-      const allNamed = payload.buckets.every((bucket) => bucket.project !== undefined);
+      const allHidden = protectedBuckets.accepted.every((bucket) => bucket.project === undefined);
+      const allNamed = protectedBuckets.accepted.every((bucket) => bucket.project !== undefined);
       if (allHidden) {
         /* A privacy toggle changes the bucket natural key. Remove the former
            named variant only after its hidden replacement has landed, or the
@@ -154,9 +248,10 @@ export async function ingestUsage(
     );
     await connection.commit();
     return {
-      buckets: payload.buckets.length,
+      buckets: protectedBuckets.accepted.length,
       sessions: payload.sessions.length,
       quotaSnapshots: 0,
+      protectedBuckets: protectedBuckets.protectedCount,
     };
   } catch (error) {
     await connection.rollback();

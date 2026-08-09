@@ -100,7 +100,10 @@ function text(value: unknown, field: string, maxLength: number): string {
 
 function safeInteger(value: unknown, field: string, max = MAX_TOKEN_COUNT): number {
   if (!Number.isSafeInteger(value) || Number(value) < 0 || Number(value) > max) {
-    throw new UsageRequestError("invalid_payload", `${field} must be a non-negative safe integer.`);
+    throw new UsageRequestError(
+      "invalid_payload",
+      `${field} must be a non-negative safe integer no greater than ${max}.`,
+    );
   }
   return Number(value);
 }

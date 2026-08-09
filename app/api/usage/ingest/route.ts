@@ -16,11 +16,13 @@ export async function POST(request: Request) {
     if (!principal) return usageUnauthorized();
     const settings = await getUsageSettings(principal.userId);
     const payload = validateUsageIngest(await readUsageJson(request), settings);
-    const ingested = await ingestUsage(principal, payload);
+    const result = await ingestUsage(principal, payload);
+    const { protectedBuckets, ...ingested } = result;
     return noStoreJson({
       ok: true,
       protocolVersion: USAGE_INGEST_PROTOCOL_VERSION,
       ingested,
+      protected: { buckets: protectedBuckets },
     });
   } catch (error) {
     return usageErrorResponse(error);
@@ -37,4 +39,3 @@ export async function DELETE(request: Request) {
     return usageErrorResponse(error);
   }
 }
-
