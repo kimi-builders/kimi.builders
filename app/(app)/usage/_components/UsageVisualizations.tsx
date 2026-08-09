@@ -386,7 +386,9 @@ function heatValueText(
 ): string {
   if (metric === "cost") return fmtCost(value, currency);
   if (metric === "duration") return duration(value, zh);
-  if (metric === "prompts") return zh ? `${compact(value)} 次提示` : `${compact(value)} prompts`;
+  if (metric === "prompts") {
+    return zh ? `${compact(value)} 条用户消息` : `${compact(value)} user messages`;
+  }
   return `${compact(value)} tokens`;
 }
 
@@ -483,7 +485,8 @@ export function UsageHeatmapGrid({
           <div className="mt-2 border-t border-line pt-2 font-mono text-[9px] text-grey">
             {zh ? "估费" : "Cost"} {fmtCost(heatmap.costMicros[hovered.weekday][hovered.hour], currency)} ·{" "}
             {zh ? "活跃" : "Active"} {duration(heatmap.activeSeconds[hovered.weekday][hovered.hour], zh)} ·{" "}
-            {compact(heatmap.prompts[hovered.weekday][hovered.hour])} {zh ? "次提示" : "prompts"}
+            {compact(heatmap.prompts[hovered.weekday][hovered.hour])}{" "}
+            {zh ? "条用户消息" : "user messages"}
           </div>
         </div>
       )}

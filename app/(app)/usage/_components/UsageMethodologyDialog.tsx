@@ -128,7 +128,9 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
                 <div className="border border-line bg-card p-3">
-                  <div className="font-mono text-[10px] text-paper">LIFETIME TOKENS</div>
+                  <div className="font-mono text-[10px] text-paper">
+                    {zh ? "累计 TOKEN" : "LIFETIME TOKENS"}
+                  </div>
                   <p className="mt-1.5">
                     {zh
                       ? "全部已同步历史，不受今天/7D/30D 等日期范围影响；工具、模型、项目和设备筛选仍然生效。"

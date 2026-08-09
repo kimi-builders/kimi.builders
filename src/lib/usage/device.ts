@@ -11,6 +11,7 @@ import {
 } from "./crypto";
 import type { UsageSettings } from "./settings";
 import { updateUsageSettings } from "./settings";
+import { usageDeviceDisplayName } from "./device-label";
 
 const DEVICE_CODE_TTL_SECONDS = 10 * 60;
 const DEVICE_POLL_INTERVAL_SECONDS = 5;
@@ -49,11 +50,13 @@ export async function createDeviceAuthorization(input: Record<string, unknown>):
   expiresIn: number;
   interval: number;
 }> {
+  const platform = cleanEnum(input.platform, VALID_PLATFORMS, "unknown");
+  const surface = cleanEnum(input.surface, VALID_SURFACES, "cli");
   const request: DeviceAuthorizationRequest = {
     clientName: cleanLabel(input.clientName, "Kimi Builders Usage"),
-    deviceName: cleanLabel(input.deviceName, "Kimi Code CLI"),
-    platform: cleanEnum(input.platform, VALID_PLATFORMS, "unknown"),
-    surface: cleanEnum(input.surface, VALID_SURFACES, "cli"),
+    deviceName: cleanLabel(input.deviceName, usageDeviceDisplayName({ platform, surface })),
+    platform,
+    surface,
   };
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -311,11 +314,16 @@ export async function listUsageDevices(userId: number): Promise<UsageDeviceSumma
   );
   return rows.map((row) => ({
     id: String(row.public_id),
-    name: String(row.name),
+    name: usageDeviceDisplayName({
+      name: row.name,
+      platform: row.platform,
+      surface: row.surface,
+      clientVersion: row.client_version,
+    }),
     platform: String(row.platform),
     surface: String(row.surface),
-    clientVersion: String(row.client_version),
-    parserVersion: String(row.parser_version),
+    clientVersion: row.client_version === null ? "" : String(row.client_version),
+    parserVersion: row.parser_version === null ? "" : String(row.parser_version),
     lastSeenAt: (row.last_seen_at as Date | null) ?? null,
     revokedAt: (row.revoked_at as Date | null) ?? null,
     createdAt: row.created_at as Date,
@@ -448,4 +456,3 @@ export async function deleteAllUsage(userId: number): Promise<number> {
     connection.release();
   }
 }
-

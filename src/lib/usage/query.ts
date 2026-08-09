@@ -15,6 +15,7 @@ import {
   type UsageFilters,
   type UsageMetric,
 } from "./filters";
+import { usageDeviceDisplayName } from "./device-label";
 
 /* 趋势时间格表达式:hour → 'YYYY-MM-DD HH:00'(本地);week → 本地周一日;day → 本地日。 */
 function trendTimeExpr(column: string, filters: UsageFilters): string {
@@ -275,6 +276,8 @@ function recordsQuery(
             ${fine ? "b.bucket_start AS bucket_time," : "NULL AS bucket_time,"}
             b.source, b.model, b.project_label,
             d.public_id AS device_public_id, d.name AS device_name,
+            d.platform AS device_platform, d.surface AS device_surface,
+            d.client_version AS device_client_version,
             MIN(b.bucket_start) AS sample_at,
             MAX(b.measurement) AS measurement,
             SUM(b.input_tokens) AS input_tokens,
@@ -289,7 +292,8 @@ function recordsQuery(
      FROM usage_buckets b
      JOIN usage_devices d ON d.id = b.device_id
      WHERE ${filtered.where}
-     GROUP BY day, ${fine ? "b.bucket_start, " : ""}b.source, b.model, b.project_label, d.public_id, d.name
+     GROUP BY day, ${fine ? "b.bucket_start, " : ""}b.source, b.model, b.project_label,
+              d.public_id, d.name, d.platform, d.surface, d.client_version
      ORDER BY ${fine ? "b.bucket_start" : "day"} DESC, total_tokens DESC
      LIMIT ? OFFSET ?`,
     params: [...filtered.params, limit, offset],
@@ -341,7 +345,12 @@ function mapRecordRow(
     model: String(row.model),
     project: row.project_label === null ? null : String(row.project_label),
     deviceId: String(row.device_public_id),
-    deviceName: String(row.device_name),
+    deviceName: usageDeviceDisplayName({
+      name: row.device_name,
+      platform: row.device_platform,
+      surface: row.device_surface,
+      clientVersion: row.device_client_version,
+    }),
     ...tokens,
     totalTokens: totalOf(tokens),
     requests: num(row.request_count),
@@ -510,7 +519,7 @@ export async function getUsageOverview(
         session.params,
       )
       .then(([rows]) => rows),
-    // 4 提示热图直方图
+    // 4 用户消息热图直方图
     pool
       .query<RowDataPacket[]>(
         `SELECT first_message_at, user_prompt_hours
@@ -575,7 +584,9 @@ export async function getUsageOverview(
     // 11 分布:device
     pool
       .query<RowDataPacket[]>(
-        `SELECT d.public_id AS k, d.name AS device_name, b.source, b.model,
+        `SELECT d.public_id AS k, d.name AS device_name,
+                d.platform AS device_platform, d.surface AS device_surface,
+                d.client_version AS device_client_version, b.source, b.model,
                 b.bucket_start AS sample_at,
                 SUM(b.input_tokens) AS input_tokens,
                 SUM(b.cache_write_input_tokens) AS cache_write_input_tokens,
@@ -589,7 +600,8 @@ export async function getUsageOverview(
          FROM usage_buckets b
          JOIN usage_devices d ON d.id = b.device_id
          WHERE ${bucketFilterSql(userId, filters, "b").where}
-         GROUP BY b.bucket_start, d.public_id, d.name, b.source, b.model`,
+         GROUP BY b.bucket_start, d.public_id, d.name, d.platform, d.surface,
+                  d.client_version, b.source, b.model`,
         bucketFilterSql(userId, filters, "b").params,
       )
       .then(([rows]) => rows),
@@ -629,7 +641,7 @@ export async function getUsageOverview(
       : Promise.resolve([]),
     pool
       .query<RowDataPacket[]>(
-        `SELECT public_id, name FROM usage_devices
+        `SELECT public_id, name, platform, surface, client_version FROM usage_devices
          WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at`,
         [userId],
       )
@@ -1027,6 +1039,9 @@ export async function getUsageOverview(
     reasoning_output_tokens: unknown;
     stored_cost_micros: unknown;
     device_name?: unknown;
+    device_platform?: unknown;
+    device_surface?: unknown;
+    device_client_version?: unknown;
   }
   const distTokens = (row: DistInput): UsageTokenBreakdown => ({
     inputTokens: num(row.input_tokens),
@@ -1114,7 +1129,14 @@ export async function getUsageOverview(
     project: buildDistribution(projectDistRows as unknown as DistInput[], (row) =>
       row.k === "" ? "" : String(row.k),
     ),
-    device: buildDistribution(deviceDistRows as unknown as DistInput[], (row) => String(row.device_name)),
+    device: buildDistribution(deviceDistRows as unknown as DistInput[], (row) =>
+      usageDeviceDisplayName({
+        name: row.device_name,
+        platform: row.device_platform,
+        surface: row.device_surface,
+        clientVersion: row.device_client_version,
+      }),
+    ),
   };
   // model 分布直接由精确时间行集派生;不得先跨价格窗口合并再套用首个价格。
   distributions.model = buildDistribution(
@@ -1162,7 +1184,12 @@ export async function getUsageOverview(
       projects: optionProjectRows.map((row) => String(row.project_label)),
       devices: optionDeviceRows.map((row) => ({
         id: String(row.public_id),
-        name: String(row.name),
+        name: usageDeviceDisplayName({
+          name: row.name,
+          platform: row.platform,
+          surface: row.surface,
+          clientVersion: row.client_version,
+        }),
       })),
     },
     activeDevices: num(linkedDeviceRows[0]?.count),

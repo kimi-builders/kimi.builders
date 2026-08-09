@@ -3,6 +3,11 @@ import { Database, MonitorCheck, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getDeviceAuthorizationPreview } from "@/src/lib/usage/device";
+import {
+  usageDeviceDisplayName,
+  usagePlatformLabel,
+  usageSurfaceLabel,
+} from "@/src/lib/usage/device-label";
 import { normalizeUserCode } from "@/src/lib/usage/crypto";
 import DeviceApprovalForm from "../_components/DeviceApprovalForm";
 
@@ -19,6 +24,7 @@ export default async function UsageDevicePage({
   const rawCode = (await searchParams).code;
   const code = normalizeUserCode(Array.isArray(rawCode) ? rawCode[0] ?? "" : rawCode ?? "");
   const preview = code ? await getDeviceAuthorizationPreview(code) : null;
+  const suggestedDeviceName = preview ? usageDeviceDisplayName(preview) : "";
   const returnTo = `/usage/device${code ? `?code=${encodeURIComponent(code)}` : ""}`;
 
   return (
@@ -78,7 +84,7 @@ export default async function UsageDevicePage({
                 </div>
               </div>
               <span className="border border-line px-2 py-1 font-mono text-[10px] text-grey">
-                {preview.platform} · {preview.surface}
+                {usageSurfaceLabel(preview.surface)} · {usagePlatformLabel(preview.platform)}
               </span>
             </div>
             <dl className="mt-4 grid gap-3 border-t border-line pt-4 text-xs sm:grid-cols-2">
@@ -88,7 +94,7 @@ export default async function UsageDevicePage({
               </div>
               <div>
                 <dt className="text-grey">{zh ? "建议设备名" : "Suggested device"}</dt>
-                <dd className="mt-1 text-paper">{preview.deviceName}</dd>
+                <dd className="mt-1 text-paper">{suggestedDeviceName}</dd>
               </div>
             </dl>
           </section>
@@ -153,7 +159,7 @@ export default async function UsageDevicePage({
           ) : preview.status === "pending" ? (
             <DeviceApprovalForm
               userCode={code!}
-              suggestedName={preview.deviceName}
+              suggestedName={suggestedDeviceName}
               locale={locale}
             />
           ) : (

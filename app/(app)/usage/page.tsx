@@ -27,6 +27,11 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { listUsageDevices, type UsageDeviceSummary } from "@/src/lib/usage/device";
 import {
+  usageDeviceDisplayName,
+  usagePlatformLabel,
+  usageSurfaceLabel,
+} from "@/src/lib/usage/device-label";
+import {
   parseUsageFilters,
   usageFiltersToSearch,
   type UsageGranularity,
@@ -557,7 +562,7 @@ export default async function UsagePage({
       { key: "tokens" as UsageHeatMetric, label: "Token" },
       { key: "cost" as UsageHeatMetric, label: zh ? "费用" : "Cost" },
       { key: "duration" as UsageHeatMetric, label: zh ? "时长" : "Time" },
-      { key: "prompts" as UsageHeatMetric, label: zh ? "提示" : "Prompts" },
+      { key: "prompts" as UsageHeatMetric, label: zh ? "用户消息" : "User messages" },
     ] as const
   ).map((item) => ({
     key: item.key,
@@ -643,7 +648,7 @@ export default async function UsagePage({
     },
     {
       icon: Orbit,
-      label: "LIFETIME TOKENS",
+      label: zh ? "累计 TOKEN" : "LIFETIME TOKENS",
       value: compact(overview.lifetimeTokens),
       note: zh ? "全部已同步历史 · 保留维度筛选" : "all synced history · dimension filters apply",
     },
@@ -1290,14 +1295,18 @@ export default async function UsagePage({
             <ul className="mt-4 divide-y divide-line">
               {devices.map((device) => {
                 const stale = hoursSince(device.lastSeenAt) > 24;
+                const displayName = usageDeviceDisplayName(device);
                 return (
                   <li key={device.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-sm text-paper">{device.name}</div>
+                        <div className="truncate text-sm text-paper">{displayName}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] text-grey">
                           <span>
-                            {device.platform} · {device.surface}
+                            {usageSurfaceLabel(device.surface)} · {usagePlatformLabel(device.platform)}
+                            {device.clientVersion && device.clientVersion !== "0.0.0"
+                              ? ` · Collector v${device.clientVersion.replace(/^v/i, "")}`
+                              : ""}
                             {device.lastSeenAt ? ` · ${relTime(device.lastSeenAt, locale)}` : ""}
                           </span>
                           {stale && (
@@ -1324,7 +1333,7 @@ export default async function UsagePage({
                         )}
                         <DeleteDeviceDataForm
                           deviceId={device.id}
-                          deviceName={device.name}
+                          deviceName={displayName}
                           zh={zh}
                         />
                       </div>
