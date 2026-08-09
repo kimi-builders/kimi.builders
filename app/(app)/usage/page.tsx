@@ -57,6 +57,7 @@ import UsageLoadErrorCard from "./_components/UsageLoadErrorCard";
 import UsageManagementPanels from "./_components/UsageManagementPanels";
 import UsageMethodologyDialog from "./_components/UsageMethodologyDialog";
 import UsageRecordsSection from "./_components/UsageRecordsSection";
+import UsageShareDialog from "./_components/UsageShareDialog";
 import {
   UsageHeatmapGrid,
   UsageTrendChart,
@@ -455,6 +456,9 @@ export default async function UsagePage({
         >
           <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
         </Link>
+        {overview && hasUsageHistory && (
+          <UsageShareDialog zh={zh} tzOffsetMinutes={filters.tzOffsetMinutes} />
+        )}
         {overview && hasUsageHistory && (
           <UsageExportDialog
             csvHref={`/api/usage/export?format=csv&${exportSuffix}`}

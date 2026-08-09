@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lobehub/icons": "^5.15.0",
+    "@rc-component/qrcode": "2.0.0",
     "lucide-react": "^1.30.0",
     "mysql2": "^3.23.1",
     "next": "^16.2.10",
