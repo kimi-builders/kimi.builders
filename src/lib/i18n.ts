@@ -756,6 +756,14 @@ const DICT = {
     en: "Nothing else in this board yet.",
   },
   "rail.workMeta": { zh: "作品信息", en: "WORK INFO" },
+  "rail.worksAbout": { zh: "作品墙", en: "THE GALLERY" },
+  "rail.worksAboutBody": {
+    zh: "社区成员用 Kimi 构建的真实作品。构建投入徽章为作者声明制:作者自报、系统按可验证总量封顶。",
+    en: "Real projects members built with Kimi. Token badges are author-claimed, capped by verifiable totals.",
+  },
+  "rail.worksSubmit": { zh: "提交作品", en: "Submit your work" },
+  "rail.worksTop": { zh: "热门作品", en: "TOP WORKS" },
+  "rail.worksTopEmpty": { zh: "还没有作品,来提交第一个。", en: "No works yet — submit the first." },
   "rail.relatedWorks": { zh: "相关作品", en: "RELATED WORKS" },
   "rail.relatedWorksEmpty": {
     zh: "还没有同作者或同 Agent 的其他作品。",

@@ -8,10 +8,10 @@ import { awesomeSourceStatsQuery, relatedWorksQuery } from "../src/lib/works";
 
 test("railFor: community feed and unlisted routes fall back to community rail", () => {
   assert.deepEqual(railFor("/community"), { kind: "community", id: null, wide: false });
-  /* 未列出路由(/settings、/demo-night、/works 列表、/community 子页)同改版前 */
+  /* 未列出路由(/settings、/demo-night、/community 子页)同改版前;/works 有专属 rail */
   assert.deepEqual(railFor("/settings"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/demo-night"), { kind: "community", id: null, wide: false });
-  assert.deepEqual(railFor("/works"), { kind: "community", id: null, wide: false });
+  assert.deepEqual(railFor("/works"), { kind: "works", id: null, wide: false });
   assert.deepEqual(railFor("/community/new"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/community/notifications"), { kind: "community", id: null, wide: false });
   /* 头缺失时 layout 传 "/" */

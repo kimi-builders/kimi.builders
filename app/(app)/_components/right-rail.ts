@@ -3,12 +3,13 @@
    railFor 是纯函数,单测直接测(tests/right-rail.test.ts);
    pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/template.tsx 读表渲染(每次导航重估)。
    kind=none → 不渲染右栏;wide → 主列 max-w 放宽到 1120(分析画布)。
-   未列出的路由(/settings、/demo-night、/works 列表、/community 子页等)回落
+   未列出的路由(/settings、/demo-night、/community 子页等)回落
    community —— 与改版前「全站同一份 widget」的行为一致。 */
 export type RailKind =
   | "community"
   | "post"
   | "work"
+  | "works"
   | "awesome"
   | "blog"
   | "learn"
@@ -42,6 +43,9 @@ export function railFor(pathname: string): RailDecision {
   if (post) return decision("post", { id: Number(post[1]) });
   const work = /^\/works\/(\d+)$/.exec(p);
   if (work) return decision("work", { id: Number(work[1]) });
+
+  /* 作品列表:/works 有专属 rail(提交入口 + 热门作品 + 声明制说明) */
+  if (p === "/works") return decision("works");
 
   if (p === "/awesome") return decision("awesome");
   /* 月刊区:列表与文章详情同 rail;admin 编辑页回落默认 */

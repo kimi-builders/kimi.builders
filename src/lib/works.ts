@@ -477,6 +477,15 @@ export async function getRelatedWorks(
 }
 
 /* /awesome 右栏来源统计:站内成员作品 vs 站外推荐条目数。 */
+/* /works 列表右栏:按支持数的热门站内作品(精选与否不参与排序,徽章只是编辑意志) */
+export async function getTopWorks(limit = 5): Promise<WorkRow[]> {
+  const n = Math.max(1, Math.min(20, Math.floor(limit)));
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `${SELECT_WORKS} WHERE w.source = 'site' ORDER BY w.vote_count DESC, w.id DESC LIMIT ${n}`,
+  );
+  return rows.map(mapWork);
+}
+
 export function awesomeSourceStatsQuery(): { sql: string; args: string[] } {
   return {
     sql: "SELECT w.source, COUNT(*) AS n FROM works w GROUP BY w.source",

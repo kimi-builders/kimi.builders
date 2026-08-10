@@ -12,6 +12,7 @@ import CommunityWidgets from "./rail/CommunityWidgets";
 import LearnRail from "./rail/LearnRail";
 import PostRail from "./rail/PostRail";
 import WorkRail from "./rail/WorkRail";
+import WorksRail from "./rail/WorksRail";
 
 export default function RightSidebar({
   locale,
@@ -29,6 +30,8 @@ export default function RightSidebar({
           <PostRail id={decision.id} locale={locale} />
         ) : decision.kind === "work" && decision.id !== null ? (
           <WorkRail id={decision.id} locale={locale} />
+        ) : decision.kind === "works" ? (
+          <WorksRail locale={locale} loggedIn={loggedIn} />
         ) : decision.kind === "awesome" ? (
           <AwesomeRail locale={locale} loggedIn={loggedIn} />
         ) : decision.kind === "blog" ? (
