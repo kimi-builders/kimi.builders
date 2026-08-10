@@ -700,7 +700,7 @@ export default async function ProfilePage({
                             {compact(tool.tokens)} · {Math.round(pct)}%
                           </span>
                         </div>
-                        <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
+                        <div className="mt-1.5 h-1.5 rounded-full bg-paper/[0.06]">
                           <div
                             className={`h-full rounded-full ${
                               index === 0 ? "bg-gradient-to-r from-blue to-blue/40" : "bg-blue/70"

@@ -101,7 +101,7 @@ export default function UsageShareDialog({
         onClick={(event) => {
           if (event.target === event.currentTarget) dialogRef.current?.close();
         }}
-        className="fixed inset-0 m-auto max-h-[92vh] w-[min(95vw,68rem)] overflow-hidden border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/80"
+        className="fixed inset-0 m-auto max-h-[92vh] w-[min(95vw,68rem)] overflow-hidden rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/80"
       >
         <div className="flex items-start justify-between gap-4 border-b border-line bg-moon px-4 py-4 sm:px-5">
           <div>
@@ -142,7 +142,7 @@ export default function UsageShareDialog({
                       setError(false);
                       setLoaded(false);
                     }}
-                    className="mt-4 min-h-11 border border-line px-4 text-paper hover:border-blue"
+                    className="mt-4 min-h-11 rounded-lg border border-line px-4 text-paper hover:border-blue"
                   >
                     {zh ? "重试" : "Retry"}
                   </button>
@@ -222,7 +222,7 @@ export default function UsageShareDialog({
                 type="button"
                 onClick={downloadPoster}
                 disabled={sharing || error}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 border border-line px-4 font-mono text-xs text-paper hover:border-blue disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={15} aria-hidden="true" /> {zh ? "下载 PNG" : "Download PNG"}
               </button>

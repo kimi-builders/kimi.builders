@@ -170,7 +170,7 @@ function DimensionDropdown({
                 onApply(dimension.key, draft);
                 onOpenChange(null);
               }}
-              className="min-h-11 border border-blue px-3 font-mono text-[11px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-11 rounded-lg border border-blue px-3 font-mono text-[11px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
             >
               {zh ? "应用" : "Apply"}
             </button>
@@ -463,7 +463,7 @@ export default function UsageFilterBar({
           <button
             type="submit"
             disabled={pending}
-            className="min-h-11 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+            className="min-h-11 rounded-lg border border-blue px-3 font-mono text-[11px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
           >
             {zh ? "应用" : "Apply"}
           </button>

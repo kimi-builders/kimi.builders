@@ -21,7 +21,7 @@ export function UsageFirstRun({
     : "npx @kimi-builders/usage init";
 
   return (
-    <section className="mt-6 border border-blue/35 bg-blue/5 p-5 sm:p-6" aria-labelledby="usage-first-run-title">
+    <section className="mt-6 rounded-2xl border border-blue/35 bg-blue/5 p-5 sm:p-6" aria-labelledby="usage-first-run-title">
       <div className="flex items-start gap-3">
         <KeyRound size={19} className="mt-0.5 shrink-0 text-blue" aria-hidden="true" />
         <div className="min-w-0 flex-1">
@@ -39,7 +39,7 @@ export function UsageFirstRun({
               : "The Collector reads statistical logs from Kimi Code, Claude Code, Codex, and other tools locally. You preview the fields before upload; conversations, full paths, and provider credentials never leave the device."}
           </p>
 
-          <div className="mt-5 flex min-w-0 items-stretch border border-line bg-bg">
+          <div className="mt-5 flex min-w-0 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
             <code className="min-w-0 flex-1 overflow-x-auto px-4 py-3 font-mono text-xs text-paper">
               {command}
             </code>
@@ -64,7 +64,7 @@ export function UsageFirstRun({
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
             <Link
               href="/usage/device"
-              className="inline-flex min-h-11 items-center border border-blue px-4 font-mono text-[11px] font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-[11px] font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "输入设备授权码" : "Enter device code"}
             </Link>
@@ -105,7 +105,7 @@ export function UsageRangeEmpty({
   zh: boolean;
 }) {
   return (
-    <section className="mt-4 border border-line bg-card p-6 text-center sm:p-8" aria-labelledby="usage-range-empty-title">
+    <section className="mt-4 rounded-2xl border border-line bg-card p-6 text-center sm:p-8" aria-labelledby="usage-range-empty-title">
       <SearchX size={24} className="mx-auto text-grey" aria-hidden="true" />
       <h2 id="usage-range-empty-title" className="mt-3 font-mono text-sm font-semibold text-paper">
         {zh ? "当前范围没有匹配数据" : "No matching data in this range"}
@@ -121,14 +121,14 @@ export function UsageRangeEmpty({
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
         {filtersActive && (
-          <Link href={clearHref} scroll={false} className="inline-flex min-h-11 items-center border border-blue px-4 font-mono text-[11px] font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          <Link href={clearHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-[11px] font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
             {zh ? "清除维度筛选" : "Clear dimension filters"}
           </Link>
         )}
-        <Link href={range30Href} scroll={false} className="inline-flex min-h-11 items-center gap-2 border border-line px-4 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+        <Link href={range30Href} scroll={false} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line px-4 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           <CalendarRange size={14} aria-hidden="true" /> 30D
         </Link>
-        <Link href={range90Href} scroll={false} className="inline-flex min-h-11 items-center gap-2 border border-line px-4 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+        <Link href={range90Href} scroll={false} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line px-4 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           <CalendarRange size={14} aria-hidden="true" /> 90D
         </Link>
       </div>

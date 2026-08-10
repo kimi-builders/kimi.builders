@@ -75,7 +75,7 @@ export default function DeleteAllUsageDialog({
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
-        className="fixed inset-0 m-auto w-[min(94vw,36rem)] border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-black/75"
+        className="fixed inset-0 m-auto w-[min(94vw,36rem)] rounded-2xl border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-black/75"
       >
         <div className="border-b border-line px-5 py-4">
           <div className="flex items-start justify-between gap-4">
@@ -134,7 +134,7 @@ export default function DeleteAllUsageDialog({
               type="button"
               disabled={pending}
               onClick={close}
-              className="min-h-11 border border-line px-4 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="min-h-11 rounded-lg border border-line px-4 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               {zh ? "取消" : "Cancel"}
             </button>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
-import { BarChart3, Clock3, Link2, ShieldCheck } from "lucide-react";
+import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
@@ -223,16 +223,18 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   );
 }
 
-/* Hero 卡右上角的环比 pill(中性色,▲/▼ 方向箭头);上一周期为零不显示。 */
+/* Hero 卡右上角的环比 pill(中性色,TrendingUp/Down 表方向);上一周期为零不显示。 */
 function DeltaPill({ cur, prev, zh }: { cur: number; prev: number; zh: boolean }) {
   if (prev <= 0) return null;
   const pct = ((cur - prev) / prev) * 100;
+  const Icon = pct >= 0 ? TrendingUp : TrendingDown;
   return (
     <span
-      className="absolute right-4 top-4 rounded-full bg-paper/[0.07] px-2 py-0.5 font-mono text-[11px] font-semibold text-paper/80"
+      className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-paper/[0.07] px-2 py-0.5 font-mono text-[11px] font-semibold text-paper/80"
       title={zh ? "环比上一等长周期" : "vs the previous equal-length period"}
     >
-      {pct >= 0 ? "▲" : "▼"} {Math.abs(pct).toFixed(1)}%
+      <Icon size={11} aria-hidden="true" />
+      {Math.abs(pct).toFixed(1)}%
     </span>
   );
 }
@@ -390,7 +392,7 @@ function DistributionCard({
                     )}
                   </span>
                 </div>
-                <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
+                <div className="mt-1.5 h-1.5 rounded-full bg-paper/[0.06]">
                   <div
                     className={`h-full rounded-full ${
                       index === 0 ? "bg-gradient-to-r from-blue to-blue/40" : "bg-blue/70"
@@ -1070,7 +1072,7 @@ export default async function UsagePage({
                       {heatMetricText(heatMetric, slot.value, zh, currency)}
                     </span>
                   </div>
-                  <div className="mt-1.5 h-[3px] rounded-full bg-paper/[0.06]">
+                  <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-blue to-blue/40"
                       style={{ width: `${Math.max((slot.value / topSlots[0].value) * 100, 2)}%` }}

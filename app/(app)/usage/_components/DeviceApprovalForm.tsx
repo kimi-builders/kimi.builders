@@ -105,7 +105,7 @@ export default function DeviceApprovalForm({
           name="decision"
           value="deny"
           disabled={pending}
-          className="min-h-11 border border-line px-5 font-mono text-xs text-grey hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+          className="min-h-11 rounded-lg border border-line px-5 font-mono text-xs text-grey hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
         >
           {zh ? "拒绝" : "Deny"}
         </button>

@@ -31,7 +31,7 @@ export default function RouteModal({
       onClick={(event) => {
         if (event.target === event.currentTarget) dialogRef.current?.close();
       }}
-      className="fixed inset-0 m-auto max-h-[86vh] w-[min(94vw,46rem)] overflow-hidden border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75"
+      className="fixed inset-0 m-auto max-h-[86vh] w-[min(94vw,46rem)] overflow-hidden rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75"
     >
       <div className="flex items-center justify-between border-b border-line bg-card px-5 py-4">
         <h2 className="font-mono text-sm font-semibold tracking-[0.06em]">{title}</h2>
