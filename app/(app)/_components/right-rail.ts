@@ -1,7 +1,7 @@
 /* 右栏注册表(docs/shell-and-ai-native.md B 节):按路由段分发右栏上下文,
    同时给出主内容列宽(usage 的 :has 加宽 hack 收编到这里,个人主页同样加宽)。
    railFor 是纯函数,单测直接测(tests/right-rail.test.ts);
-   pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/layout.tsx 读表渲染。
+   pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/template.tsx 读表渲染(每次导航重估)。
    kind=none → 不渲染右栏;wide → 主列 max-w 放宽到 1120(分析画布)。
    未列出的路由(/settings、/demo-night、/works 列表、/community 子页等)回落
    community —— 与改版前「全站同一份 widget」的行为一致。 */

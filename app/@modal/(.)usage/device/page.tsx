@@ -4,8 +4,8 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import RouteModal from "../../../_components/RouteModal";
-import UsageDeviceContent from "../../../usage/device/_components/UsageDeviceContent";
+import RouteModal from "@/app/(app)/_components/RouteModal";
+import UsageDeviceContent from "@/app/(app)/usage/device/_components/UsageDeviceContent";
 
 export default async function UsageDeviceModalPage({
   searchParams,

@@ -4,8 +4,8 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import RouteModal from "../../../../_components/RouteModal";
-import EditPostContent from "../../../../community/[id]/edit/_components/EditPostContent";
+import RouteModal from "@/app/(app)/_components/RouteModal";
+import EditPostContent from "@/app/(app)/community/[id]/edit/_components/EditPostContent";
 
 export default async function EditPostModalPage({
   params,

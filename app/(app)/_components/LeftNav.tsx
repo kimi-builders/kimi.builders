@@ -51,7 +51,7 @@ export default function LeftNav({
 
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
-      <Link
+      <Link prefetch={false}
         href="/community/new"
         title={t(locale, "nav.post")}
         className="nav-item flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
@@ -64,7 +64,7 @@ export default function LeftNav({
         {SECTIONS.map((s) => {
           const Icon = s.icon;
           return (
-            <Link
+            <Link prefetch={false}
               key={s.href}
               href={s.href}
               title={t(locale, s.key)}
@@ -83,7 +83,7 @@ export default function LeftNav({
           );
         })}
         {profileHref && (
-          <Link
+          <Link prefetch={false}
             href={profileHref}
             title={t(locale, "nav.profile")}
             className={itemCls(pathname.startsWith("/u/"))}
@@ -95,7 +95,7 @@ export default function LeftNav({
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
-        <Link
+        <Link prefetch={false}
           href="/settings"
           title={t(locale, "nav.settings")}
           className={itemCls(pathname.startsWith("/settings"))}
@@ -111,7 +111,7 @@ export default function LeftNav({
           <GithubIcon size={15} />
           <span className="nav-label">GitHub</span>
         </a>
-        <Link href="/" title={t(locale, "nav.about")} className={itemCls(false)}>
+        <Link prefetch={false} href="/" title={t(locale, "nav.about")} className={itemCls(false)}>
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>

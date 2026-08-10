@@ -4,8 +4,8 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import RouteModal from "../../../../_components/RouteModal";
-import EditWorkContent from "../../../../works/[id]/edit/_components/EditWorkContent";
+import RouteModal from "@/app/(app)/_components/RouteModal";
+import EditWorkContent from "@/app/(app)/works/[id]/edit/_components/EditWorkContent";
 
 export default async function EditWorkModalPage({
   params,

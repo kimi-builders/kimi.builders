@@ -1,9 +1,10 @@
 /* 功能区分区外壳:固定顶栏(≥lg,全局:品牌/通知/主题/语言/登录态)
-   + 左栏(贴视口左缘的功能菜单)+ 内容列 + 右栏(路由上下文,注册表分发)。
+   + 左栏(功能菜单)+ 内容列 + 右栏(路由上下文,注册表分发)。
    作用于 (app) 路由组内所有分区;首页门面不在组内,保持独立暗色海报。
    右栏上下文与主列宽度由 railFor(pathname) 决定(right-rail.ts;
-   pathname 由根 proxy.ts 写进 x-kb-path 请求头)——usage/个人主页无右栏且加宽,
-   原先的 :has(> .usage-dashboard) hack 收编进注册表。
+   pathname 由根 proxy.ts 写进 x-kb-path 请求头)。
+   注意:布局在软导航时不重渲染,所以 <RailRefresher/> 监听 pathname 变化
+   调 router.refresh(),让本布局按新 URL 重新求值(右栏/列宽随页面切换)。
    三栏的收起/隐藏状态走 <html> data-* + CSS(root layout 直出),
    壳组件不接收状态 prop,切换零网络。 */
 import { Suspense } from "react";
@@ -14,16 +15,15 @@ import { getUnreadNotificationCount } from "@/src/lib/posts";
 import LeftNav from "./_components/LeftNav";
 import MobileTabBar from "./_components/MobileTabBar";
 import MobileTopBar from "./_components/MobileTopBar";
+import RailRefresher from "./_components/RailRefresher";
 import RightSidebar from "./_components/RightSidebar";
 import TopBar from "./_components/TopBar";
 import { railFor } from "./_components/right-rail";
 
 export default async function AppLayout({
   children,
-  modal,
 }: {
   children: React.ReactNode;
-  modal?: React.ReactNode;
 }) {
   const user = await getSessionUser();
   const [locale, unread, headerStore] = await Promise.all([
@@ -62,8 +62,8 @@ export default async function AppLayout({
       <Suspense fallback={null}>
         <MobileTabBar locale={locale} profileHref={profileHref} />
       </Suspense>
-      {/* 拦截路由弹窗槽(如 /settings 在应用内点击时) */}
-      {modal}
+      {/* 软导航后让布局按新 URL 重估右栏/列宽(布局本身不随导航重渲染) */}
+      <RailRefresher />
     </div>
   );
 }

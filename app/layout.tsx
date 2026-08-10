@@ -28,7 +28,8 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  modal,
+}: Readonly<{ children: React.ReactNode; modal?: React.ReactNode }>) {
   const user = await getSessionUser();
   const [locale, prefs] = await Promise.all([getLocale(user), getUiPrefs()]);
   return (
@@ -43,6 +44,8 @@ export default async function RootLayout({
     >
       <body suppressHydrationWarning>
         {children}
+        {/* 拦截路由弹窗槽(@modal 在根级:避开 (app)/template 对并行槽的包裹) */}
+        {modal}
         <Toaster />
       </body>
     </html>

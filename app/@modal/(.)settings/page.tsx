@@ -3,8 +3,8 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import RouteModal from "../../_components/RouteModal";
-import SettingsContent from "../../settings/_components/SettingsContent";
+import RouteModal from "@/app/(app)/_components/RouteModal";
+import SettingsContent from "@/app/(app)/settings/_components/SettingsContent";
 
 export default async function SettingsModalPage() {
   const user = await getSessionUser();

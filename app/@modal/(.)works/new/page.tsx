@@ -3,8 +3,8 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import RouteModal from "../../../_components/RouteModal";
-import NewWorkContent from "../../../works/new/_components/NewWorkContent";
+import RouteModal from "@/app/(app)/_components/RouteModal";
+import NewWorkContent from "@/app/(app)/works/new/_components/NewWorkContent";
 
 export default async function NewWorkModalPage() {
   const user = await getSessionUser();
