@@ -162,6 +162,7 @@ const DICT = {
   "auth.login": { zh: "登录", en: "Log in" },
   "auth.logout": { zh: "退出", en: "Log out" },
   "auth.email": { zh: "邮箱", en: "Email" },
+  "modal.close": { zh: "关闭", en: "Close" },
   /* ---- 表单错误 ---- */
   "err.login": { zh: "请先登录", en: "Please log in first" },
   "err.unknownType": { zh: "未知帖子类型", en: "Unknown post type" },
@@ -253,6 +254,7 @@ const DICT = {
   "set.saved": { zh: "已保存", en: "Saved" },
   "set.saving": { zh: "保存中…", en: "Saving…" },
   "set.prefs": { zh: "偏好", en: "PREFERENCES" },
+  "set.privacy": { zh: "隐私与公开", en: "PRIVACY & VISIBILITY" },
   "set.aiMine": {
     zh: "允许 Kimi 小筑(AI)回复我的帖子和评论",
     en: "Allow Kimi bot (AI) to reply to my posts and comments",
@@ -677,6 +679,8 @@ const DICT = {
   "err.artMeta": { zh: "类型或语言不合法", en: "Invalid kind or language" },
   /* ---- S2-3:个人主页年度构建足迹(独立分区,降低合并冲突面) ---- */
   "prof.footprint": { zh: "构建足迹", en: "BUILD FOOTPRINT" },
+  "prof.privacy": { zh: "隐私与公开", en: "PRIVACY & VISIBILITY" },
+  "prof.privacySelf": { zh: "仅自己可见;保存后全站生效", en: "Only you see this; applies site-wide" },
   "prof.footprintHint": {
     zh: "最近 12 个月 · 每日 token 总量",
     en: "Last 12 months · daily token totals",

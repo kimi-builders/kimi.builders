@@ -20,8 +20,10 @@ import { railFor } from "./_components/right-rail";
 
 export default async function AppLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal?: React.ReactNode;
 }) {
   const user = await getSessionUser();
   const [locale, unread, headerStore] = await Promise.all([
@@ -60,6 +62,8 @@ export default async function AppLayout({
       <Suspense fallback={null}>
         <MobileTabBar locale={locale} profileHref={profileHref} />
       </Suspense>
+      {/* 拦截路由弹窗槽(如 /settings 在应用内点击时) */}
+      {modal}
     </div>
   );
 }

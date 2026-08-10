@@ -74,7 +74,10 @@ export async function updateUsageSettingsAction(
   if (!operation.ok) {
     return { ok: false, code: "failed", reference: operation.reference };
   }
+  /* 同一 usage_settings 行,多处挂载(用量/设置/个人主页)——全部重验证 */
   revalidatePath("/usage");
+  revalidatePath("/settings");
+  revalidatePath(`/u/${user.handle}`);
   return { ok: true };
 }
 
