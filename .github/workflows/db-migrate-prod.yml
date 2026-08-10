@@ -1,0 +1,33 @@
+name: db-migrate-prod
+
+# 生产迁移:手动触发 + production 环境保护(必需审批)。
+# 在仓库 Settings → Environments → production 中配置 required reviewers 后启用。
+# 前置:Secrets 里配置 PROD_DATABASE_URL(mysql://user:pass@host:3306/dbname)。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Apply pending migrations
+        run: |
+          node scripts/db-migrate.mjs status
+          node scripts/db-migrate.mjs migrate
+          node scripts/db-migrate.mjs status
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}

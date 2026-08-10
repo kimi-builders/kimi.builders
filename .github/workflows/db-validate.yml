@@ -1,0 +1,114 @@
+name: db-validate
+
+# 数据库迁移验证:schema.sql 新装链路 + PR 增量迁移链路 + 全部测试。
+# 任何 migration 语法错误、幂等缺陷或与测试期望冲突,合并前拦截。
+
+on:
+  pull_request:
+    paths:
+      - "db/**"
+      - "scripts/db-migrate.mjs"
+      - "tests/**"
+  push:
+    branches: [main]
+    paths:
+      - "db/**"
+      - "scripts/db-migrate.mjs"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-install:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:9
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+          MYSQL_DATABASE: kbu-mysql
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h127.0.0.1 -uroot"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Fresh install — schema.sql + ledger init
+        run: |
+          mysql -h127.0.0.1 -uroot kbu-mysql < db/schema.sql
+          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql' \
+            node scripts/db-migrate.mjs init-ledger
+          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql' \
+            node scripts/db-migrate.mjs status
+
+      - name: Tests
+        run: |
+          npm test
+          npm run test:usage-db
+        env:
+          DATABASE_URL: mysql://root@127.0.0.1:3306/kbu-mysql
+          USAGE_KEY_PEPPER: ci-only-usage-pepper-at-least-32-characters
+
+  upgrade-path:
+    # 在「上一版 schema」上应用本 PR/本次 push 新增的迁移文件,验证升级链路。
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:9
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+          MYSQL_DATABASE: kbu-mysql-upgrade
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h127.0.0.1 -uroot"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Resolve base ref
+        id: base
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=HEAD~1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build previous-shape database
+        run: |
+          git show "${{ steps.base.outputs.ref }}:db/schema.sql" > /tmp/base-schema.sql
+          git ls-tree -r --name-only "${{ steps.base.outputs.ref }}" db/migrations > /tmp/base-files.txt
+          mysql -h127.0.0.1 -uroot kbu-mysql-upgrade < /tmp/base-schema.sql
+          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-upgrade' \
+            node scripts/db-migrate.mjs init-ledger --files-from /tmp/base-files.txt
+
+      - name: Apply pending migrations from this change
+        run: |
+          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-upgrade' \
+            node scripts/db-migrate.mjs migrate
+          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-upgrade' \
+            node scripts/db-migrate.mjs status

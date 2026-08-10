@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
-    "test:usage-db": "tsx tests/usage-db.integration.ts && tsx tests/usage-phase2.integration.ts"
+    "test:usage-db": "tsx tests/usage-db.integration.ts && tsx tests/usage-phase2.integration.ts",
+    "db:migrate": "node scripts/db-migrate.mjs migrate",
+    "db:status": "node scripts/db-migrate.mjs status"
   },
   "dependencies": {
     "@lobehub/icons": "^5.15.0",
