@@ -1,6 +1,8 @@
-/* 社区 feed 右栏:浏览社区(全部/订阅/板块)+ 关于 / 编辑精选 / Demo Night /
-   7 日热门 / 社区数据 / 新成员,全部真实数据 —— 原 RightSidebar 写死的那套,
-   注册表里它是 community kind,也是未列出路由的回落(见 right-rail.ts)。
+/* 社区 feed 右栏:关于 / 用量排行预览 / 编辑精选 / Demo Night / 7 日热门 /
+   社区数据 / 新成员,全部真实数据。「浏览社区」分类导航已收编进 feedbar
+   (排序 seg + 话题 pills),右栏不再重复。
+   用量排行预览:30d 总榜 TOP4 + 当前用户行(不在 TOP4 时追加,蓝 tint 高亮);
+   opt-in 门禁在榜单 SQL 里(未公开的用户天然不在结果集)。冷启动空榜整个不渲染。
    编辑精选(每周精选 v0):冷启动没有任何精选时整个 widget 不渲染。
    Demo Night:无 upcoming 场次时整个 widget 不渲染;报名态走 getSessionUser
    (React cache 与布局壳去重,不多查库)。 */
@@ -11,29 +13,37 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
 import { getFeaturedFeed } from "@/src/lib/featured";
 import { getSidebarData } from "@/src/lib/posts";
+import { getUsageLeaderboard } from "@/src/lib/usage/leaderboard";
 import { t, type Locale } from "@/src/lib/i18n";
-import CategoryNav from "../CategoryNav";
 import Widget from "./Widget";
+
+/* 与用量中心同一套 B/M/k 紧凑格式。 */
+function compact(value: number): string {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
+  return value.toLocaleString("en-US");
+}
 
 export default async function CommunityWidgets({
   locale,
-  loggedIn,
 }: {
   locale: Locale;
-  loggedIn: boolean;
 }) {
   const user = await getSessionUser();
-  const [data, featured, demoNight] = await Promise.all([
+  const [data, featured, demoNight, lbEntries] = await Promise.all([
     getSidebarData(),
     getFeaturedFeed(3),
     getUpcomingSummary(user?.id ?? null),
+    getUsageLeaderboard("30d"),
   ]);
+  const lbTop = lbEntries.slice(0, 4);
+  const lbMe =
+    user && !lbTop.some((e) => e.userId === user.id)
+      ? (lbEntries.find((e) => e.userId === user.id) ?? null)
+      : null;
   return (
     <>
-      <Widget title={t(locale, "side.browse")}>
-        <CategoryNav loggedIn={loggedIn} locale={locale} />
-      </Widget>
-
       <Widget title={t(locale, "side.about")}>
         <p className="text-xs leading-relaxed text-grey">
           {t(locale, "side.aboutBody")}
@@ -53,6 +63,64 @@ export default async function CommunityWidgets({
           </a>
         </div>
       </Widget>
+
+      {(lbTop.length > 0 || lbMe) && (
+        <Widget
+          title={t(locale, "side.lbPreview")}
+          note={t(locale, "side.lbPreviewNote")}
+          action={
+            <Link
+              href="/usage/leaderboard"
+              className="font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              {t(locale, "side.lbFull")}
+            </Link>
+          }
+        >
+          <ul>
+            {lbTop.map((e) => (
+              <li key={e.userId} className="flex items-center gap-2.5 border-b border-line py-2 last:border-b-0">
+                <span
+                  className={`w-4 shrink-0 font-mono text-[11px] font-bold ${
+                    e.rank === 1 ? "text-amber-400" : "text-grey/70"
+                  }`}
+                >
+                  {String(e.rank).padStart(2, "0")}
+                </span>
+                <Link href={`/u/${e.handle}`} className="shrink-0">
+                  <Avatar url={e.avatarUrl} handle={e.handle} size={24} />
+                </Link>
+                <Link
+                  href={`/u/${e.handle}`}
+                  className="min-w-0 flex-1 truncate text-xs text-paper transition-colors hover:text-blue"
+                >
+                  {e.name || e.handle}
+                </Link>
+                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-emerald-400">
+                  {compact(e.totalTokens)}
+                </span>
+              </li>
+            ))}
+            {lbMe && (
+              <li className="-mx-4 flex items-center gap-2.5 border-y border-blue/25 bg-blue/[0.07] px-4 py-2">
+                <span className="w-4 shrink-0 font-mono text-[11px] font-bold text-grey">
+                  {String(lbMe.rank).padStart(2, "0")}
+                </span>
+                <Link href={`/u/${lbMe.handle}`} className="shrink-0">
+                  <Avatar url={lbMe.avatarUrl} handle={lbMe.handle} size={24} />
+                </Link>
+                <span className="min-w-0 flex-1 truncate text-xs text-paper">
+                  {lbMe.name || lbMe.handle}{" "}
+                  <span className="font-mono text-[10px] text-grey">{t(locale, "side.lbYou")}</span>
+                </span>
+                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-blue">
+                  {compact(lbMe.totalTokens)}
+                </span>
+              </li>
+            )}
+          </ul>
+        </Widget>
+      )}
 
       {featured.length > 0 && (
         <Widget title={t(locale, "side.featured")}>

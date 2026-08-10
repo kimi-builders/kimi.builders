@@ -17,6 +17,8 @@ export interface FeedPost {
   category: string;
   title: string;
   excerpt: string;
+  /* 原始 markdown 前缀(LEFT(body_md,500) 截到完整行):feed 卡格式化摘要专用。 */
+  bodyMd: string;
   visibility: string;
   score: number;
   commentCount: number;
@@ -24,6 +26,9 @@ export interface FeedPost {
   handle: string;
   name: string;
   avatarUrl: string;
+  /* 作者角色(官方标记用);feed 卡不做权限判断,仅展示。 */
+  role: string;
+  aiReply: boolean;
 }
 
 export interface PostDetail extends FeedPost {
@@ -50,6 +55,14 @@ export interface CommentRow {
   avatarUrl: string | null;
 }
 
+/* 500 字符前缀截到最后一个完整行,避免半截 markdown 语法;单行长帖原样保留。 */
+function mdPrefix(raw: unknown): string {
+  const text = typeof raw === "string" ? raw : "";
+  if (text.length < 500) return text;
+  const cut = text.lastIndexOf("\n");
+  return cut > 200 ? text.slice(0, cut) : text;
+}
+
 function mapFeed(r: RowDataPacket): FeedPost {
   return {
     id: Number(r.id),
@@ -57,6 +70,7 @@ function mapFeed(r: RowDataPacket): FeedPost {
     category: r.category,
     title: r.title,
     excerpt: r.body_excerpt ? plainExcerpt(r.body_excerpt) : "",
+    bodyMd: mdPrefix(r.body_excerpt),
     visibility: r.visibility,
     score: Number(r.score),
     commentCount: Number(r.comment_count),
@@ -64,6 +78,8 @@ function mapFeed(r: RowDataPacket): FeedPost {
     handle: r.handle,
     name: r.name,
     avatarUrl: r.avatar_url,
+    role: r.role ?? "member",
+    aiReply: !!r.ai_reply,
   };
 }
 
@@ -164,8 +180,8 @@ export function feedPageQuery(opts: {
   }
   return {
     sql: `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
-            p.visibility, p.score, p.comment_count, p.created_at,
-            u.handle, u.name, u.avatar_url${selectHot}
+            p.visibility, p.score, p.comment_count, p.created_at, p.ai_reply,
+            u.handle, u.name, u.avatar_url, u.role${selectHot}
      FROM posts p ${join}
      WHERE ${where.join(" AND ")}
      ORDER BY ${order} LIMIT ${FEED_PAGE_SIZE + 1}`,
@@ -214,7 +230,7 @@ export const getPost = cache(async (id: number): Promise<PostDetail | null> => {
     `SELECT p.id, p.user_id, p.type, p.category, p.title, p.body_md, p.link_url,
             p.lang, p.ai_reply, p.visibility, p.score, p.comment_count,
             p.view_count, p.created_at, p.edited_at,
-            u.handle, u.name, u.avatar_url
+            u.handle, u.name, u.avatar_url, u.role
      FROM posts p JOIN users u ON u.id = p.user_id
      WHERE p.id = ? AND p.deleted_at IS NULL LIMIT 1`,
     [id],
@@ -808,15 +824,16 @@ export async function votePoll(
 export async function updatePost(
   userId: number,
   postId: number,
-  fields: { title: string; bodyMd: string; linkUrl: string },
+  fields: { title: string; bodyMd: string; linkUrl: string; category: string },
 ): Promise<boolean> {
   const [res] = await getPool().query<ResultSetHeader>(
-    `UPDATE posts SET title = ?, body_md = ?, link_url = ?, edited_at = NOW()
+    `UPDATE posts SET title = ?, body_md = ?, link_url = ?, category = ?, edited_at = NOW()
      WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
     [
       fields.title.slice(0, 200),
       fields.bodyMd,
       fields.linkUrl.slice(0, 500),
+      fields.category,
       postId,
       userId,
     ],
@@ -947,8 +964,8 @@ export async function getUserPosts(
 ): Promise<FeedPost[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
-            p.visibility, p.score, p.comment_count, p.created_at,
-            u.handle, u.name, u.avatar_url
+            p.visibility, p.score, p.comment_count, p.created_at, p.ai_reply,
+            u.handle, u.name, u.avatar_url, u.role
      FROM posts p JOIN users u ON u.id = p.user_id
      WHERE p.user_id = ? AND p.deleted_at IS NULL ${self ? "" : "AND p.visibility = 'public'"}
      ORDER BY p.created_at DESC LIMIT 50`,

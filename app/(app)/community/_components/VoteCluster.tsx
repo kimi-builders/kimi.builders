@@ -82,19 +82,23 @@ export default function VoteCluster({
   const upLabel = t(locale, state.up ? "post.unup" : "post.up");
   const downLabel = t(locale, state.down ? "post.undown" : "post.down");
   return (
-    <span className="inline-flex items-center gap-2.5">
+    <span className="inline-flex items-center gap-0.5">
       <button
         type="button"
         onClick={() => vote("up")}
         aria-label={upLabel}
         title={upLabel}
-        className={`transition-all active:scale-125 ${
-          state.up ? "text-blue" : "text-grey hover:text-blue"
+        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-all active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+          state.up ? "text-blue" : "text-grey hover:bg-paper/[0.05] hover:text-blue"
         }`}
       >
         <ArrowBigUp size={size} fill={state.up ? "currentColor" : "none"} />
       </button>
-      <span className="min-w-3 text-center font-mono text-[11px]">
+      <span
+        className={`min-w-4 text-center font-mono text-[11px] font-semibold ${
+          state.up ? "text-blue" : state.down ? "text-paper" : "text-grey"
+        }`}
+      >
         {state.score}
       </span>
       <button
@@ -102,8 +106,8 @@ export default function VoteCluster({
         onClick={() => vote("down")}
         aria-label={downLabel}
         title={downLabel}
-        className={`transition-all active:scale-125 ${
-          state.down ? "text-paper" : "text-grey hover:text-paper"
+        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-all active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+          state.down ? "text-paper" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
         }`}
       >
         <ArrowBigDown size={size} fill={state.down ? "currentColor" : "none"} />

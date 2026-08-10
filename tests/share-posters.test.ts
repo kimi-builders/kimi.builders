@@ -31,6 +31,7 @@ function postDetail(overrides: Partial<PostDetail> = {}): PostDetail {
     handle: "aklman",
     name: "Aklman Zhapar",
     avatarUrl: "",
+    role: "member",
     userId: 3,
     bodyMd: "正文 **加粗** 还有 `代码` 和 [链接](https://example.com)。",
     linkUrl: "",

@@ -12,7 +12,7 @@ import {
   SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
   SEG_WRAP,
-} from "./seg-classes";
+} from "@/components/seg-classes";
 
 interface AppliedFilters {
   range: string;

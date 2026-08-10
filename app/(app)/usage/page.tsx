@@ -49,7 +49,7 @@ import {
   SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
   SEG_WRAP,
-} from "./_components/seg-classes";
+} from "@/components/seg-classes";
 import { UsageFirstRun, UsageRangeEmpty } from "./_components/UsageEmptyStates";
 import UsageFilterBar from "./_components/UsageFilterBar";
 import UsageExportDialog from "./_components/UsageExportDialog";

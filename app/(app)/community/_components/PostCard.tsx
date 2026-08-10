@@ -1,14 +1,36 @@
-/* feed 帖子卡片:社区页首屏(SSR)与「加载更多」server action 共用同一份渲染,
-   两种入口输出一致(同 comment-page.tsx 的模式)。
-   标题非强制:无标题帖正文摘要占主链接位(X 式卡片)。 */
+/* feed 帖子卡片(Kimi Design 改造):社区页首屏(SSR)与「加载更多」server action
+   共用同一份渲染,两种入口输出一致(同 comment-page.tsx 的模式)。
+   头行 = 头像 + @handle(官方带 BadgeCheck)+ 时间 + #话题 chip + 私密标;
+   正文摘要为格式化渲染(react-markdown,.md-feed 紧凑截断,图片位已预留);
+   动作行 = 顶/踩 pill + 评论 + 分享 + 小筑标记。标题非强制:无标题帖由摘要 + 阅读全文承接。 */
 import Link from "next/link";
-import { ArrowBigUp, MessageCircle } from "lucide-react";
+import { ArrowBigUp, BadgeCheck, Bot, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import Markdown from "@/components/Markdown";
 import { categoryLabel } from "@/src/lib/categories";
 import { relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import type { FeedPost } from "@/src/lib/posts";
+import FeedShareButton from "./FeedShareButton";
 import VoteCluster from "./VoteCluster";
+
+/* 分类 chip 配色(tint 底 + 彩字);feedbar 话题 pill 的激活态同款。 */
+export const CATEGORY_TINT: Record<string, string> = {
+  chat: "bg-blue/10 text-blue",
+  showcase: "bg-emerald-400/10 text-emerald-400",
+  help: "bg-amber-400/10 text-amber-400",
+  feedback: "bg-red-400/10 text-red-400",
+  announcement: "bg-paper/[0.07] text-grey",
+};
+
+/* 话题 pill 的色点(与 chip tint 同 hue)。 */
+export const CATEGORY_DOT: Record<string, string> = {
+  chat: "bg-blue",
+  showcase: "bg-emerald-400",
+  help: "bg-amber-400",
+  feedback: "bg-red-400",
+  announcement: "bg-grey",
+};
 
 export default function PostCard({
   post: p,
@@ -23,94 +45,115 @@ export default function PostCard({
   up: boolean;
   down: boolean;
 }) {
+  const official = p.role === "admin" || p.role === "moderator";
+  /* 前缀基本用满 ≈ 正文被截断;无标题帖始终给「阅读全文」主链接位 */
+  const truncated = p.bodyMd.length >= 499;
   return (
-    <article className="border border-line bg-card p-4 transition-colors hover:border-paper/20">
-      <div className="flex gap-3">
+    <article className="rounded-2xl border border-line bg-card px-5 pb-4 pt-5 transition-colors hover:border-paper/20">
+      <div className="flex items-center gap-2.5">
         <Link href={`/u/${p.handle}`} className="shrink-0">
-          <Avatar url={p.avatarUrl} handle={p.handle} size={36} />
+          <Avatar url={p.avatarUrl} handle={p.handle} size={34} />
         </Link>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
-            <Link
-              href={`/u/${p.handle}`}
-              className="text-paper transition-colors hover:text-blue"
-            >
-              @{p.handle}
-            </Link>
-            <span>·</span>
-            <span>{relTime(p.createdAt, locale)}</span>
-            <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">
-              {p.visibility === "private" && (
-                <span className="border border-line px-1 py-px text-[10px] text-paper">
-                  {t(locale, "post.private")}
-                </span>
-              )}
-              {categoryLabel(locale, p.category)}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <Link
+            href={`/u/${p.handle}`}
+            className="flex items-center gap-1 text-[13px] font-semibold text-paper transition-colors hover:text-blue"
+          >
+            @{p.handle}
+            {official && (
+              <BadgeCheck
+                size={13}
+                className="text-blue"
+                aria-label={t(locale, "post.official")}
+                role="img"
+              />
+            )}
+          </Link>
+          <span className="text-[11.5px] text-grey/80">· {relTime(p.createdAt, locale)}</span>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {p.visibility === "private" && (
+            <span className="rounded-md border border-line px-1.5 py-px font-mono text-[10px] text-paper">
+              {t(locale, "post.private")}
             </span>
+          )}
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${CATEGORY_TINT[p.category] ?? CATEGORY_TINT.chat}`}
+          >
+            # {categoryLabel(locale, p.category)}
+          </span>
+        </div>
+      </div>
+
+      {p.title && (
+        <Link
+          href={`/community/${p.id}`}
+          className="mt-3 block text-[16px] font-semibold leading-snug text-paper transition-colors hover:text-blue"
+        >
+          {p.title}
+          {p.type !== "text" && (
+            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
+              {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
+            </span>
+          )}
+        </Link>
+      )}
+
+      {p.bodyMd && (
+        <div className="mt-1.5">
+          <div className="md-feed md-feed-clamp">
+            <Markdown source={p.bodyMd} />
           </div>
-          {/* 标题非强制:无标题帖用正文摘要占主链接位(X 式卡片) */}
-          {p.title ? (
-            <>
-              <Link
-                href={`/community/${p.id}`}
-                className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
-              >
-                {p.title}
-                {p.type !== "text" && (
-                  <span className="ml-2 border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
-                    {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
-                  </span>
-                )}
-              </Link>
-              {p.excerpt && (
-                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
-                  {p.excerpt}
-                </p>
-              )}
-            </>
-          ) : (
+          {(truncated || !p.title) && (
             <Link
               href={`/community/${p.id}`}
-              className="mt-1 block text-[15px] leading-relaxed text-paper transition-colors hover:text-blue"
+              className="mt-1 inline-block font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
-              <span className="line-clamp-3">{p.excerpt}</span>
-              {p.type !== "text" && (
-                <span className="ml-2 border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
-                  {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
-                </span>
-              )}
+              {t(locale, "feed.readMore")}
             </Link>
           )}
-          <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
-            {loggedIn ? (
-              <VoteCluster
-                target="post"
-                id={p.id}
-                score={p.score}
-                up={up}
-                down={down}
-                locale={locale}
-                size={14}
-              />
-            ) : (
-              <span
-                className="inline-flex items-center gap-1"
-                title={t(locale, "post.loginToUpvote")}
-              >
-                <ArrowBigUp size={14} />
-                {p.score}
-              </span>
-            )}
-            <Link
-              href={`/community/${p.id}#comments`}
-              title={t(locale, "post.comments", { n: p.commentCount })}
-              className="inline-flex items-center gap-1 transition-colors hover:text-blue"
-            >
-              <MessageCircle size={13} />
-              {p.commentCount}
-            </Link>
-          </div>
         </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-1">
+        {loggedIn ? (
+          <VoteCluster
+            target="post"
+            id={p.id}
+            score={p.score}
+            up={up}
+            down={down}
+            locale={locale}
+            size={14}
+          />
+        ) : (
+          <span
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-grey"
+            title={t(locale, "post.loginToUpvote")}
+          >
+            <ArrowBigUp size={14} />
+            {p.score}
+          </span>
+        )}
+        <Link
+          href={`/community/${p.id}#comments`}
+          title={t(locale, "post.comments", { n: p.commentCount })}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-grey transition-colors hover:bg-paper/[0.05] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        >
+          <MessageCircle size={13} />
+          {p.commentCount}
+        </Link>
+        <FeedShareButton
+          id={p.id}
+          label={t(locale, "post.share")}
+          copiedLabel={t(locale, "post.copied")}
+        />
+        {p.aiReply && (
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-blue/30 bg-blue/10 px-2.5 py-1 text-[11px] text-blue">
+            <Bot size={12} aria-hidden="true" />
+            {t(locale, "post.aiJoin")}
+          </span>
+        )}
       </div>
     </article>
   );

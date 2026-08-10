@@ -39,7 +39,7 @@ export default function RightSidebar({
         ) : decision.kind === "learn" ? (
           <LearnRail locale={locale} />
         ) : (
-          <CommunityWidgets locale={locale} loggedIn={loggedIn} />
+          <CommunityWidgets locale={locale} />
         )}
         <SidebarToggle variant="full" locale={locale} />
       </div>

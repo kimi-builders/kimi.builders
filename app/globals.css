@@ -269,3 +269,60 @@ html[data-sidebar="0"] .rightsidebar .sidebar-rail {
     animation: none;
   }
 }
+
+/* ---- feed 卡格式化摘要(.md 的紧凑降档位,~5 行截断 + 底部渐隐)---- */
+.md-feed .md {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--color-grey);
+}
+.md-feed .md h1,
+.md-feed .md h2,
+.md-feed .md h3,
+.md-feed .md h4 {
+  margin: 0.6em 0 0.3em;
+  font-size: 13px;
+  color: var(--color-paper);
+}
+.md-feed .md p,
+.md-feed .md ul,
+.md-feed .md ol,
+.md-feed .md blockquote,
+.md-feed .md pre,
+.md-feed .md table {
+  margin: 0 0 0.55em;
+}
+.md-feed .md pre {
+  max-height: 8em;
+  overflow: hidden;
+  font-size: 12px;
+}
+.md-feed .md strong {
+  color: var(--color-paper);
+}
+/* 图片位预留:外链图现在就能渲染(限高圆角);对象存储就绪后只补上传,版式不动。 */
+.md-feed .md img {
+  max-height: 160px;
+  border-radius: 10px;
+  border: 1px solid var(--color-line);
+}
+.md-feed-clamp {
+  position: relative;
+  max-height: 9.6em;
+  overflow: hidden;
+}
+.md-feed-clamp::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2.6em;
+  pointer-events: none;
+  /* 渐隐到卡片合成底色(paper 5% 叠在 bg 上) */
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--color-paper) 5%, var(--color-bg))
+  );
+}

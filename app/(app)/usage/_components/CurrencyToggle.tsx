@@ -7,7 +7,7 @@ import {
   SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
   SEG_WRAP,
-} from "./seg-classes";
+} from "@/components/seg-classes";
 
 /* 展示币种切换:写 kb_usage_ccy cookie 后整页 refresh(服务端按 cookie 重渲染)。
    已选中的币种下再点是 no-op,避免无谓的往返。 */

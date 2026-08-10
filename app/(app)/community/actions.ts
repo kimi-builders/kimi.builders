@@ -291,12 +291,15 @@ export async function updatePostAction(
   const title = String(formData.get("title") || "").trim();
   const body = String(formData.get("body") || "").trim();
   const linkUrl = String(formData.get("link_url") || "").trim();
+  const category = String(formData.get("category") || "chat");
   if (!postId) return { error: t(locale, "err.unknownType") };
   if (!title && !body) return { error: t(locale, "err.empty") };
   if (title.length > 200) return { error: t(locale, "err.titleLong") };
   if (linkUrl && !/^https?:\/\/.+/.test(linkUrl))
     return { error: t(locale, "err.linkInvalid") };
-  const ok = await updatePost(user.id, postId, { title, bodyMd: body, linkUrl });
+  if (!CATEGORIES.some((c) => c.id === category))
+    return { error: t(locale, "err.unknownCat") };
+  const ok = await updatePost(user.id, postId, { title, bodyMd: body, linkUrl, category });
   if (!ok) return { error: t(locale, "err.notOwner") };
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community");

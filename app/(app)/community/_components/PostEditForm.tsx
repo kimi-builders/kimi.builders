@@ -1,17 +1,22 @@
 "use client";
 
-/* 编辑帖子表单(作者):标题/正文/链接可改;保存走 server action,成功回详情页。 */
+/* 编辑帖子表单(作者):板块/标题/正文/链接可改(类型与投票选项不改——类型决定
+   帖子结构,保持简单);保存走 server action,成功回详情页。
+   视觉与发帖表单(PostForm)同套语言:标签 + rounded-lg 输入 + 自绘 chevron 下拉。 */
 import Link from "next/link";
 import { useActionState } from "react";
-import { updatePostAction, type PostFormState } from "../actions";
+import { CATEGORIES } from "@/src/lib/categories";
 import { t, type Locale } from "@/src/lib/i18n";
+import { updatePostAction, type PostFormState } from "../actions";
 
 const inputCls =
-  "w-full border border-line bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:shadow-[0_0_0_3px_rgb(26_136_255/0.15)]";
+const labelCls = "mb-1.5 block text-[11.5px] text-grey";
 
 export default function PostEditForm({
   postId,
   type,
+  initialCategory,
   initialTitle,
   initialBody,
   initialLinkUrl,
@@ -19,6 +24,7 @@ export default function PostEditForm({
 }: {
   postId: number;
   type: string;
+  initialCategory: string;
   initialTitle: string;
   initialBody: string;
   initialLinkUrl: string;
@@ -30,48 +36,99 @@ export default function PostEditForm({
   >(updatePostAction, null);
 
   return (
-    <form action={formAction} className="mt-6 space-y-5">
+    <form action={formAction} className="mt-5 space-y-4">
       <input type="hidden" name="post_id" value={postId} />
-      <input
-        name="title"
-        defaultValue={initialTitle}
-        placeholder={t(locale, "form.title")}
-        maxLength={200}
-        className={inputCls}
-      />
+
+      <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
+        <div>
+          <label htmlFor="edit-category" className={labelCls}>
+            {t(locale, "form.topic")} <span className="text-blue">*</span>
+          </label>
+          <select
+            id="edit-category"
+            name="category"
+            defaultValue={initialCategory}
+            className={`${inputCls} cursor-pointer appearance-none bg-[position:right_12px_center] bg-no-repeat pr-8`}
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239AA1AE' fill='none' stroke-width='1.5'/%3E%3C/svg%3E\")",
+            }}
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c.id} value={c.id} className="bg-bg">
+                {locale === "zh" ? c.zh : c.en}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="edit-title" className={labelCls}>
+            {t(locale, "form.titleLabel")}{" "}
+            <span className="text-grey/70">{t(locale, "form.optional")}</span>
+          </label>
+          <input
+            id="edit-title"
+            name="title"
+            defaultValue={initialTitle}
+            placeholder={t(locale, "form.title")}
+            maxLength={200}
+            className={inputCls}
+          />
+        </div>
+      </div>
+
       {type === "link" && (
-        <input
-          name="link_url"
-          type="url"
-          defaultValue={initialLinkUrl}
-          placeholder="https://…"
-          className={`${inputCls} font-mono`}
+        <div>
+          <label htmlFor="edit-link" className={labelCls}>
+            {t(locale, "form.link")} URL <span className="text-blue">*</span>
+          </label>
+          <input
+            id="edit-link"
+            name="link_url"
+            type="url"
+            defaultValue={initialLinkUrl}
+            placeholder="https://…"
+            className={`${inputCls} font-mono`}
+          />
+        </div>
+      )}
+
+      <div>
+        <label htmlFor="edit-body" className={labelCls}>
+          {t(locale, "form.bodyLabel")}
+        </label>
+        <textarea
+          id="edit-body"
+          name="body"
+          rows={10}
+          defaultValue={initialBody}
+          placeholder={t(locale, "form.bodyText")}
+          className={`${inputCls} resize-y`}
         />
-      )}
-      <textarea
-        name="body"
-        rows={10}
-        defaultValue={initialBody}
-        placeholder={t(locale, "form.bodyText")}
-        className={inputCls}
-      />
+        <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
+          <span>**粗体** `代码` # 标题 - 列表</span>
+          <span>{t(locale, "form.mdSupport")}</span>
+        </div>
+      </div>
+
       {state?.error && (
-        <p className="font-mono text-xs text-blue">{state.error}</p>
+        <p role="alert" className="text-xs text-red-400">{state.error}</p>
       )}
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          disabled={pending}
-          className="border border-blue px-6 py-2 font-mono text-sm text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
-        >
-          {pending ? t(locale, "form.posting") : t(locale, "post.save")}
-        </button>
+
+      <div className="flex items-center gap-3 border-t border-line pt-4">
         <Link
           href={`/community/${postId}`}
-          className="font-mono text-xs text-grey transition-colors hover:text-paper"
+          className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           {t(locale, "post.cancel")}
         </Link>
+        <button
+          type="submit"
+          disabled={pending}
+          className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+        >
+          {pending ? t(locale, "form.posting") : t(locale, "post.save")}
+        </button>
       </div>
     </form>
   );

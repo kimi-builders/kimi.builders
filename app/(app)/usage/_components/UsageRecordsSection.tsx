@@ -19,7 +19,7 @@ import {
   SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
   SEG_WRAP,
-} from "./seg-classes";
+} from "@/components/seg-classes";
 
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
