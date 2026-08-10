@@ -245,7 +245,7 @@ test("profile snapshot: usage line gated and sanitized", () => {
     ...base,
     usage: { totalTokens: 1_000_000, activeDays: 12 },
   });
-  assert.deepEqual(withUsage.usage, { totalTokens: 1_000_000, activeDays: 12 });
+  assert.deepEqual(withUsage.usage, { totalTokens: 1_000_000, activeDays: 12, activity: {} });
 });
 
 test("profile snapshot: stats include works count, joined is YYYY-MM", () => {

@@ -25,7 +25,7 @@ export const POSTER_FONT_FAMILY = "'JetBrains Mono', geist, monospace";
 /* 三种海报里全部静态中文标签,供 CJK 粗体子集抓取(漏字会回退动态 400)。
    「声明者按可总量封」为声明制(20260822_work_claims)作品海报 hero 小字新增。 */
 export const POSTER_STATIC_TEXT =
-  "顶评论发布支持获赞帖子作品票共还有个选项已验证构建投入累计活跃天数加入声明者按可总量封";
+  "顶评论发布支持获赞帖子作品票共还有个选项已验证构建投入累计活跃天数加入声明者按可总量封近周";
 
 /* 大数字紧凑格式(同用量海报):K/M/B,千位以下原样。 */
 export function compact(value: number): string {

@@ -210,8 +210,13 @@ export interface ProfileShareSnapshot {
   bio: string;
   joinedAt: string;
   stats: { posts: number; comments: number; likes: number; works: number };
-  /* 累计 tokens + 活跃天数(仅 opt-in 公开用量时非空);null = 不渲染该行 */
-  usage: { totalTokens: number; activeDays: number } | null;
+  /* 累计 tokens + 活跃天数 + 日粒度活动图(仅 opt-in 公开用量时非空);null = 不渲染 */
+  usage: {
+    totalTokens: number;
+    activeDays: number;
+    /* 近 371 天 day(YYYY-MM-DD, UTC)→ tokens;无产出的日子缺席 */
+    activity: Record<string, number>;
+  } | null;
   path: string;
   url: string;
 }
@@ -228,7 +233,7 @@ export function buildProfileShareSnapshot(input: {
   profile: UserProfile;
   stats: ProfileStats;
   works: number;
-  usage: { totalTokens: number; activeDays: number } | null;
+  usage: { totalTokens: number; activeDays: number; activity?: Record<string, number> } | null;
 }): ProfileShareSnapshot {
   const { profile, stats } = input;
   return {
@@ -245,7 +250,11 @@ export function buildProfileShareSnapshot(input: {
     },
     usage:
       input.usage && input.usage.totalTokens > 0
-        ? { totalTokens: input.usage.totalTokens, activeDays: Math.max(0, input.usage.activeDays) }
+        ? {
+            totalTokens: input.usage.totalTokens,
+            activeDays: Math.max(0, input.usage.activeDays),
+            activity: input.usage.activity ?? {},
+          }
         : null,
     path: `/u/${profile.handle}`,
     url: `${POSTER_SITE_ORIGIN}/u/${profile.handle}`,
@@ -265,13 +274,13 @@ export async function getProfileShareSnapshot(handle: string): Promise<ProfileSh
   /* 活跃天数:近 371 天有 token 产出的天数(getSocialDailyActivity 日粒度映射);
      只在 opt-in 有总量时才取,未公开不做多余查询。tz 固定 0(UTC)——海报是
      公共缓存快照,不随浏览者时区漂移。 */
+  const dailyActivity = totalTokens > 0 ? await getSocialDailyActivity(profile.id, 0) : {};
   const usage =
     totalTokens > 0
       ? {
           totalTokens,
-          activeDays: Object.values(await getSocialDailyActivity(profile.id, 0)).filter(
-            (v) => v > 0,
-          ).length,
+          activeDays: Object.values(dailyActivity).filter((v) => v > 0).length,
+          activity: dailyActivity,
         }
       : null;
   return buildProfileShareSnapshot({
@@ -329,15 +338,27 @@ export function mockWorkShareSnapshot(): WorkShareSnapshot {
   };
 }
 
-export function mockProfileShareSnapshot(): ProfileShareSnapshot {
-  return {
+/* mock 热力图:近 180 天的确定性伪随机活动 */
+function mockActivity(): Record<string, number> {
+  const activity: Record<string, number> = {};
+  const today = new Date();
+  for (let back = 0; back < 180; back += 1) {
+    const wave = Math.sin(back * 0.9) * Math.cos(back * 0.23);
+    if (wave < 0.15) continue;
+    const day = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - back));
+    activity[day.toISOString().slice(0, 10)] = Math.round(20_000_000 + wave * 90_000_000);
+  }
+  return activity;
+}
+
+export function mockProfileShareSnapshot(): ProfileShareSnapshot {  return {
     handle: "aklman",
     name: "Aklman Zhapar",
     initials: "AZ",
     bio: "独立开发者,白天写代码晚上写提示词。正在用 Kimi 构建一人公司全家桶,记录每一次人机协作的实验。",
     joinedAt: "2025-12",
     stats: { posts: 47, comments: 231, likes: 1_280, works: 6 },
-    usage: { totalTokens: 10_800_000_000, activeDays: 87 },
+    usage: { totalTokens: 10_800_000_000, activeDays: 87, activity: mockActivity() },
     path: "/u/aklman",
     url: `${POSTER_SITE_ORIGIN}/u/aklman`,
   };
