@@ -194,18 +194,11 @@ html:not([data-nav="1"]) .only-nav-collapsed {
   display: none !important;
 }
 
-/* 右栏隐藏:完整 widget 与细轨按钮都渲染,CSS 二选一 */
+/* 右栏隐藏:完整 widget 与细轨按钮都渲染,CSS 二选一。
+   哪些路由有右栏、主列多宽,由右栏注册表决定(app/(app)/_components/right-rail.ts
+   的 railFor;usage/个人主页无右栏且主列放宽到 1120)——原 :has(> .usage-dashboard)
+   加宽 hack 已收编进注册表,布局壳不再靠内容嗅探。 */
 .rightsidebar .sidebar-rail {
-  display: none;
-}
-
-/* Usage is the one app route that needs a wide analytical canvas. :has keeps
-   the shared shell server-rendered while widening only this route and removing
-   the community sidebar that would otherwise compete with the dashboard. */
-main:has(> .usage-dashboard) {
-  max-width: 1120px;
-}
-main:has(> .usage-dashboard) + .rightsidebar {
   display: none;
 }
 html[data-sidebar="0"] .rightsidebar .sidebar-full {

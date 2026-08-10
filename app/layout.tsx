@@ -38,8 +38,10 @@ export default async function RootLayout({
       data-nav={prefs.navCollapsed ? "1" : "0"}
       data-sidebar={prefs.sidebarHidden ? "0" : "1"}
       className={jetbrains.variable}
+      // 浏览器扩展会在水合前往 <html>/<body> 注入属性（如 data-redeviation-bs-uid）,属外部干扰,抑制告警
+      suppressHydrationWarning
     >
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Toaster />
       </body>

@@ -1,215 +1,48 @@
-/* 社区右栏(仅 ≥xl):浏览社区(全部/订阅/板块)+ 关于 / 编辑精选 / Demo Night /
-   7 日热门 / 社区数据 / 新成员,全部真实数据。用户可整体关掉(留细轨可重开)。
+/* 右栏容器 + 注册表分发(仅 ≥xl):渲染哪种上下文由 railFor(pathname) 决定
+   (right-rail.ts;pathname 来自 proxy.ts 写入的 x-kb-path,layout 统一读表),
+   容器只负责 sticky 布局、w-72 与「隐藏/细轨重开」偏好。
    隐藏/显示纯 CSS 驱动(html[data-sidebar],见 globals.css):两种状态的结构
-   常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。
-   编辑精选(每周精选 v0):冷启动没有任何精选时整个 widget 不渲染。
-   Demo Night:无 upcoming 场次时整个 widget 不渲染;报名态走 getSessionUser
-   (React cache 与布局壳去重,不多查库)。 */
-import Link from "next/link";
-import { MessageCircle, UserRound } from "lucide-react";
-import { getSessionUser } from "@/src/lib/auth/session";
-import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
-import { getFeaturedFeed } from "@/src/lib/featured";
-import { getSidebarData } from "@/src/lib/posts";
-import { t, type Locale } from "@/src/lib/i18n";
-import CategoryNav from "./CategoryNav";
+   常渲染,切换零网络;SSR 首屏按 cookie 直出同一状态。 */
+import type { Locale } from "@/src/lib/i18n";
 import { SidebarToggle } from "./pref-controls";
+import type { RailDecision } from "./right-rail";
+import AwesomeRail from "./rail/AwesomeRail";
+import BlogRail from "./rail/BlogRail";
+import CommunityWidgets from "./rail/CommunityWidgets";
+import LearnRail from "./rail/LearnRail";
+import PostRail from "./rail/PostRail";
+import WorkRail from "./rail/WorkRail";
 
-function Widget({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="border border-line bg-card p-4">
-      <h3 className="font-mono text-[10px] tracking-[0.25em] text-grey">
-        {title}
-      </h3>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-export default async function RightSidebar({
+export default function RightSidebar({
   locale,
   loggedIn,
+  decision,
 }: {
   locale: Locale;
   loggedIn: boolean;
+  decision: RailDecision;
 }) {
-  const user = await getSessionUser();
-  const [data, featured, demoNight] = await Promise.all([
-    getSidebarData(),
-    getFeaturedFeed(3),
-    getUpcomingSummary(user?.id ?? null),
-  ]);
   return (
-    <aside className="rightsidebar sticky top-8 hidden xl:block">
+    <aside className="rightsidebar sticky top-14 hidden shrink-0 py-8 xl:block">
       <div className="sidebar-full w-72 shrink-0 space-y-4">
-        <Widget title={t(locale, "side.browse")}>
-          <CategoryNav loggedIn={loggedIn} locale={locale} />
-        </Widget>
-
-        <Widget title={t(locale, "side.about")}>
-          <p className="text-xs leading-relaxed text-grey">
-            {t(locale, "side.aboutBody")}
-          </p>
-          <div className="mt-3 flex gap-4 font-mono text-[11px]">
-            <a
-              href="https://github.com/kimi-builders"
-              className="text-grey underline decoration-blue/50 underline-offset-4 hover:text-blue"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://github.com/kimi-builders/awesome-kimi-builders"
-              className="text-grey underline decoration-blue/50 underline-offset-4 hover:text-blue"
-            >
-              Awesome
-            </a>
-          </div>
-        </Widget>
-
-        {featured.length > 0 && (
-          <Widget title={t(locale, "side.featured")}>
-            <ul className="space-y-3">
-              {featured.map((f) => {
-                const title = f.external ? (
-                  <a
-                    href={f.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block truncate text-xs text-paper transition-colors hover:text-blue"
-                  >
-                    {f.title}
-                  </a>
-                ) : (
-                  <Link
-                    href={f.href}
-                    className="block truncate text-xs text-paper transition-colors hover:text-blue"
-                  >
-                    {f.title}
-                  </Link>
-                );
-                return (
-                  <li key={`${f.kind}-${f.id}`}>
-                    {title}
-                    <p
-                      className="mt-0.5 truncate text-[11px] leading-relaxed text-grey"
-                      title={f.reason}
-                    >
-                      {f.reason}
-                    </p>
-                    {f.editorHandle && (
-                      <p className="mt-0.5 font-mono text-[10px] text-grey">
-                        {t(locale, "featured.by", { handle: f.editorHandle })}
-                      </p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </Widget>
+        {decision.kind === "post" && decision.id !== null ? (
+          <PostRail id={decision.id} locale={locale} />
+        ) : decision.kind === "work" && decision.id !== null ? (
+          <WorkRail id={decision.id} locale={locale} />
+        ) : decision.kind === "awesome" ? (
+          <AwesomeRail locale={locale} loggedIn={loggedIn} />
+        ) : decision.kind === "blog" ? (
+          <BlogRail locale={locale} />
+        ) : decision.kind === "learn" ? (
+          <LearnRail locale={locale} />
+        ) : (
+          <CommunityWidgets locale={locale} loggedIn={loggedIn} />
         )}
-
-        {/* Demo Night:当前场日期 + 报名状态/人数 + 链接;无当前场不渲染 */}
-        {demoNight && (
-          <Widget title={t(locale, "dn.widgetTitle")}>
-            <Link
-              href="/demo-night"
-              className="block truncate text-xs text-paper transition-colors hover:text-blue"
-            >
-              {demoNight.event.title}
-            </Link>
-            <p className="mt-1 font-mono text-[10px] text-blue">
-              {formatEventTime(demoNight.event.startsAt)}
-            </p>
-            <p className="mt-1.5 font-mono text-[10px] text-grey">
-              {t(locale, "dn.rosterCount", { n: demoNight.rsvpCount })}
-              {" · "}
-              {demoNight.rsvped
-                ? t(locale, "dn.widgetRsvped")
-                : t(locale, "dn.widgetCta")}
-            </p>
-          </Widget>
-        )}
-
-        <Widget title={t(locale, "side.hot")}>
-          {data.hot.length === 0 ? (
-            <p className="text-xs text-grey">{t(locale, "side.hotEmpty")}</p>
-          ) : (
-            <ul className="space-y-2.5">
-              {data.hot.map((h, i) => (
-                <li key={h.id} className="flex items-baseline gap-2 text-xs">
-                  <span className="shrink-0 font-mono text-[10px] text-grey">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <Link
-                    href={`/community/${h.id}`}
-                    className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-blue"
-                  >
-                    {h.title}
-                  </Link>
-                  <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-grey">
-                    <MessageCircle size={11} />
-                    {h.commentCount}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Widget>
-
-        <Widget title={t(locale, "side.stats")}>
-          <div className="flex justify-between">
-            {[
-              { n: data.stats.members, l: t(locale, "side.members") },
-              { n: data.stats.posts, l: t(locale, "side.posts") },
-              { n: data.stats.comments, l: t(locale, "side.comments") },
-            ].map((s) => (
-              <div key={s.l}>
-                <div className="font-mono text-lg font-semibold text-paper">
-                  {s.n}
-                </div>
-                <div className="mt-0.5 font-mono text-[10px] text-grey">
-                  {s.l}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Widget>
-
-        <Widget title={t(locale, "side.newMembers")}>
-          <div className="flex gap-2">
-            {data.newMembers.map((m) => (
-              <Link key={m.handle} href={`/u/${m.handle}`} title={`@${m.handle}`}>
-                {m.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={m.avatarUrl}
-                    alt={`@${m.handle}`}
-                    className="h-7 w-7 rounded-full border border-paper/10 transition-colors hover:border-blue"
-                  />
-                ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-paper/10 text-grey transition-colors hover:border-blue hover:text-blue">
-                    <UserRound size={13} aria-label={`@${m.handle}`} />
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-          <p className="mt-2 font-mono text-[10px] leading-relaxed text-grey">
-            {data.newMembers.map((m) => `@${m.handle}`).join(" ")}
-          </p>
-        </Widget>
-
         <SidebarToggle variant="full" locale={locale} />
       </div>
 
       {/* 隐藏后留下的细轨重开按钮(CSS 按 html[data-sidebar] 二选一显示) */}
-      <div className="sidebar-rail">
+      <div className="sidebar-rail pt-8">
         <SidebarToggle variant="rail" locale={locale} />
       </div>
     </aside>

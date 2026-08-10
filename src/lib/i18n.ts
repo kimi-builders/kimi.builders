@@ -741,6 +741,42 @@ const DICT = {
     zh: "超出剩余可声明额度(剩余 {n} tokens)",
     en: "Exceeds your remaining claimable allowance ({n} tokens left)",
   },
+  /* ---- 壳层改版:固定顶栏 + 右栏上下文化(2026-08-10;独立分区,降低合并冲突面) ---- */
+  "topbar.notif": { zh: "消息通知", en: "Notifications" },
+  "rail.postMeta": { zh: "帖子信息", en: "POST INFO" },
+  "rail.board": { zh: "板块", en: "Board" },
+  "rail.relatedPosts": { zh: "相关帖子", en: "RELATED POSTS" },
+  "rail.relatedPostsEmpty": {
+    zh: "这个板块还没有其他帖子。",
+    en: "Nothing else in this board yet.",
+  },
+  "rail.workMeta": { zh: "作品信息", en: "WORK INFO" },
+  "rail.relatedWorks": { zh: "相关作品", en: "RELATED WORKS" },
+  "rail.relatedWorksEmpty": {
+    zh: "还没有同作者或同 Agent 的其他作品。",
+    en: "No other works by this author or agent yet.",
+  },
+  "rail.aiSummon": { zh: "召唤 Kimi 分析", en: "SUMMON KIMI" },
+  "rail.aiSummonHint": {
+    zh: "让 Kimi 读一遍这个帖子,给出结构化分析。",
+    en: "Ask Kimi to read this thread and give a structured analysis.",
+  },
+  "rail.awesomeAbout": { zh: "收录说明", en: "ABOUT THE LIST" },
+  "rail.awesomeStats": { zh: "来源统计", en: "SOURCES" },
+  "rail.sourceSite": { zh: "站内作品", en: "member works" },
+  "rail.sourceAwesome": { zh: "站外收录", en: "external picks" },
+  "rail.blogArchive": { zh: "期号归档", en: "ARCHIVE" },
+  "rail.blogEditors": { zh: "编辑部", en: "EDITORS" },
+  "rail.blogSubscribe": { zh: "订阅说明", en: "FOLLOW THE LETTER" },
+  "rail.blogSubscribeBody": {
+    zh: "新期发布会在社区同步开帖,跟紧社区即可第一时间读到。",
+    en: "New issues are announced in the community — follow along there to catch each one.",
+  },
+  "rail.learnPath": { zh: "学习路径", en: "LEARNING PATH" },
+  "rail.learnBody": {
+    zh: "策划制长文路径:按编号顺序读,每篇解决一个上手阶段的问题,不追热点。",
+    en: "A curated path of long-form guides — read in numbered order; each one covers one onboarding stage. No hot takes.",
+  },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

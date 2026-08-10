@@ -1,7 +1,8 @@
 "use client";
 
-/* 全站左栏(X 风格顶级导航):品牌 + 发帖 CTA + 分区导航(社区在用,其余 SOON)
-   + 底部工具(主题/语言/GitHub/关于/收起)。板块级导航在右栏「浏览社区」。
+/* 全站左栏(功能菜单):发帖 CTA + 分区导航 + 底部工具(设置/GitHub/关于/收起)。
+   品牌块与通知/主题/语言已移出到桌面顶栏(TopBar);板块级导航在右栏「浏览社区」。
+   贴视口左缘:壳不再整体居中留白边(layout 的 flex 首列,无容器 padding)。
    客户端组件:usePathname 做激活态(蓝边 rail)。
    收起态纯 CSS 驱动(html[data-nav] + .nav-label,见 globals.css),
    切换零网络;结构对两种状态常渲染。 */
@@ -9,7 +10,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
-  Bell,
   BookOpen,
   Info,
   MessagesSquare,
@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import GithubIcon from "./GithubIcon";
-import { LocaleToggle, NavToggle, ThemeToggle } from "./pref-controls";
+import { NavToggle } from "./pref-controls";
 
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false },
@@ -35,11 +35,9 @@ const SECTIONS = [
 
 export default function LeftNav({
   locale,
-  unread = 0,
   profileHref,
 }: {
   locale: Locale;
-  unread?: number;
   profileHref?: string;
 }) {
   const pathname = usePathname();
@@ -52,24 +50,11 @@ export default function LeftNav({
     }`;
 
   return (
-    <aside className="leftnav sticky top-0 hidden h-screen shrink-0 flex-col overflow-y-auto py-6 lg:flex">
-      <Link
-        href="/"
-        title="kimi.builders"
-        className="nav-item flex items-center gap-2 px-3 font-mono text-sm font-semibold tracking-wide"
-      >
-        {/* 小尺寸瓷砖标(月牙+双星放大版):暗色主题下边缘清晰、双星可辨 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
-        <span className="nav-label">
-          kimi<span className="text-blue">.</span>builders
-        </span>
-      </Link>
-
+    <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
       <Link
         href="/community/new"
         title={t(locale, "nav.post")}
-        className="nav-item mt-6 flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+        className="nav-item flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
       >
         <SquarePen size={14} className="shrink-0" />
         <span className="nav-label">{t(locale, "nav.post")}</span>
@@ -110,23 +95,6 @@ export default function LeftNav({
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
-        <Link
-          href="/community/notifications"
-          title={t(locale, "notif.title")}
-          className={itemCls(pathname.startsWith("/community/notifications"))}
-        >
-          <span className="relative shrink-0">
-            <Bell size={15} />
-            {unread > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg">
-                {unread > 99 ? "99+" : unread}
-              </span>
-            )}
-          </span>
-          <span className="nav-label">{t(locale, "notif.title")}</span>
-        </Link>
-        <ThemeToggle withLabel className={`${itemCls(false)} w-full`} />
-        <LocaleToggle withLabel className={`${itemCls(false)} w-full`} />
         <Link
           href="/settings"
           title={t(locale, "nav.settings")}

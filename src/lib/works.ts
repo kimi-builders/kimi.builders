@@ -2,7 +2,10 @@
    source=site → 成员作品,上 /works 墙;source=awesome → 推荐的站外项目
    (author_label 是外部作者名),只上 /awesome。/awesome 展示全部来源。
    agents = 参与构建的 Agent 品牌键(注册表 src/lib/agents.ts)。
-   作者自助增改删,归属校验钉在 SQL WHERE 里(同帖子)。 */
+   作者自助增改删,归属校验钉在 SQL WHERE 里(同帖子)。
+   getWorkDetail / getAuthorClaimContext 走 React cache:详情页与右栏元数据卡
+   同一请求共享查询(无 dispatcher 的环境自动退化为普通调用)。 */
+import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
 import { getPool } from "./db";
@@ -405,13 +408,95 @@ export interface WorkDetail extends WorkRow {
   editorHandle: string | null;
 }
 
-export async function getWorkDetail(id: number): Promise<WorkDetail | null> {
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORK_DETAIL} WHERE w.id = ? LIMIT 1`,
-    [id],
-  );
-  const r = rows[0];
-  return r ? { ...mapWork(r), editorHandle: r.editor_handle ?? null } : null;
+export const getWorkDetail = cache(
+  async (id: number): Promise<WorkDetail | null> => {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `${SELECT_WORK_DETAIL} WHERE w.id = ? LIMIT 1`,
+      [id],
+    );
+    const r = rows[0];
+    return r ? { ...mapWork(r), editorHandle: r.editor_handle ?? null } : null;
+  },
+);
+
+/* 声明徽章上下文(作者可验证总量 + Σ声明):作品详情页与右栏元数据卡共用,
+   React cache 按请求去重(getVerifiableTokenTotals/getWorkClaimSums 的入参是数组,
+   直接 cache 去重不了,这里收敛成标量 userId 入口)。 */
+export const getAuthorClaimContext = cache(
+  async (userId: number): Promise<{ total: number; claimSum: number }> => {
+    const [totals, sums] = await Promise.all([
+      getVerifiableTokenTotals([userId]),
+      getWorkClaimSums([userId]),
+    ]);
+    return {
+      total: totals.get(userId) ?? 0,
+      claimSum: sums.get(userId) ?? 0,
+    };
+  },
+);
+
+/* 作品详情右栏「相关作品」:同作者或同 Agent(任一交集),同作者优先,其余按新到旧。
+   站内作者与 agents 都没有(理论上的空条目)时不构成任何条件 → null,调用方不查库。 */
+export function relatedWorksQuery(
+  work: { id: number; userId: number | null; agents: string[] },
+  limit = 5,
+): { sql: string; args: (string | number)[] } | null {
+  const conds: string[] = [];
+  const args: (string | number)[] = [work.id];
+  if (work.userId !== null) {
+    conds.push("w.user_id = ?");
+    args.push(work.userId);
+  }
+  if (work.agents.length > 0) {
+    conds.push("JSON_OVERLAPS(w.agents, ?)");
+    args.push(JSON.stringify(work.agents.slice(0, 10)));
+  }
+  if (conds.length === 0) return null;
+  const n = Math.max(1, Math.min(20, Math.floor(limit)));
+  let order = "w.id DESC";
+  if (work.userId !== null) {
+    /* 同作者的排前面;order 部分的 ? 跟在 where 之后(位置参数按序绑定) */
+    order = "(w.user_id = ?) DESC, w.id DESC";
+    args.push(work.userId);
+  }
+  return {
+    sql: `${SELECT_WORKS} WHERE w.id <> ? AND (${conds.join(" OR ")})
+     ORDER BY ${order} LIMIT ${n}`,
+    args,
+  };
+}
+
+export async function getRelatedWorks(
+  work: { id: number; userId: number | null; agents: string[] },
+  limit = 5,
+): Promise<WorkRow[]> {
+  const q = relatedWorksQuery(work, limit);
+  if (!q) return [];
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  return rows.map(mapWork);
+}
+
+/* /awesome 右栏来源统计:站内成员作品 vs 站外推荐条目数。 */
+export function awesomeSourceStatsQuery(): { sql: string; args: string[] } {
+  return {
+    sql: "SELECT w.source, COUNT(*) AS n FROM works w GROUP BY w.source",
+    args: [],
+  };
+}
+
+export async function getAwesomeSourceStats(): Promise<{
+  site: number;
+  awesome: number;
+}> {
+  const q = awesomeSourceStatsQuery();
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  let site = 0;
+  let awesome = 0;
+  for (const r of rows) {
+    if (r.source === "site") site = Number(r.n);
+    else if (r.source === "awesome") awesome = Number(r.n);
+  }
+  return { site, awesome };
 }
 
 /* 浏览者是否已支持(详情页支持按钮初态)。 */

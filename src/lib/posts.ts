@@ -1,5 +1,8 @@
 /* 社区帖子的查询与变更。所有时间落库即 UTC(见 db.ts)。
-   列表只取展示字段;正文只在详情页取。 */
+   列表只取展示字段;正文只在详情页取。
+   getPost 走 React cache:详情页与右栏元数据卡同一请求共享一次查询
+   (无 dispatcher 的环境 —— 单测/server action —— 自动退化为普通调用)。 */
+import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 import { CATEGORIES, type CategoryId } from "./categories";
@@ -206,7 +209,7 @@ export async function getFeedPage(opts: {
   return { posts: kept.map(mapFeed), nextCursor };
 }
 
-export async function getPost(id: number): Promise<PostDetail | null> {
+export const getPost = cache(async (id: number): Promise<PostDetail | null> => {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.user_id, p.type, p.category, p.title, p.body_md, p.link_url,
             p.lang, p.ai_reply, p.visibility, p.score, p.comment_count,
@@ -228,6 +231,50 @@ export async function getPost(id: number): Promise<PostDetail | null> {
     editedAt: r.edited_at ?? null,
     viewCount: Number(r.view_count),
   };
+});
+
+/* 帖子详情右栏「相关帖子」:同板块近期公开帖(排除本帖)。
+   右栏是公共上下文,只取 public —— 别人的私密帖不能借右栏漏出。 */
+export interface RelatedPost {
+  id: number;
+  title: string;
+  commentCount: number;
+  score: number;
+  createdAt: Date;
+}
+
+export function relatedPostsQuery(
+  postId: number,
+  category: string,
+  limit = 5,
+): { sql: string; args: (string | number)[] } {
+  const n = Math.max(1, Math.min(20, Math.floor(limit)));
+  return {
+    sql: `SELECT p.id, p.title, LEFT(p.body_md, 200) AS body_excerpt,
+            p.comment_count, p.score, p.created_at
+     FROM posts p
+     WHERE p.deleted_at IS NULL AND p.visibility = 'public'
+           AND p.category = ? AND p.id <> ?
+     ORDER BY p.created_at DESC, p.id DESC LIMIT ${n}`,
+    args: [category, postId],
+  };
+}
+
+export async function getRelatedPosts(
+  postId: number,
+  category: string,
+  limit = 5,
+): Promise<RelatedPost[]> {
+  const q = relatedPostsQuery(postId, category, limit);
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  return rows.map((r) => ({
+    id: Number(r.id),
+    /* 无标题帖回退到正文摘要(同 getHotPosts) */
+    title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
+    commentCount: Number(r.comment_count),
+    score: Number(r.score),
+    createdAt: r.created_at,
+  }));
 }
 
 /* 评论分页:按顶层评论翻页(每页 COMMENT_PAGE_SIZE 条),该页顶层楼下的全部可见
@@ -274,8 +321,12 @@ export function commentPageQuery(
      JOIN comments c ON c.id = t.id
      LEFT JOIN users u ON u.id = c.user_id
      WHERE t.root_id IN (
-       SELECT id FROM tree WHERE id = root_id AND id > ?
-       ORDER BY id ASC LIMIT ${COMMENT_PAGE_SIZE + 1}
+       /* 派生表包裹:MySQL 不允许 IN/ALL/ANY 子查询里直接带 LIMIT(ER_NOT_SUPPORTED_YET),
+          先物化出本页根再 IN */
+       SELECT id FROM (
+         SELECT id FROM tree WHERE id = root_id AND id > ?
+         ORDER BY id ASC LIMIT ${COMMENT_PAGE_SIZE + 1}
+       ) AS page_roots
      )
      ORDER BY c.created_at ASC, c.id ASC`;
   return { sql, args: [postId, opts.after] };

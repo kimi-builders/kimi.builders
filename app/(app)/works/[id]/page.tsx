@@ -1,6 +1,7 @@
 /* 作品详情(P1-2):面包屑 + 标题(精选芯片)+ 大截图 + 「体验作品/支持/分享」按钮行
-   + 长描述(works 无独立长描述字段,tagline 按 Markdown 渲染)+ 右侧信息栏
-   (作者卡/链接/agents/发布时间/支持数,窄屏折行)+ 底部单层评论区。
+   + 长描述(works 无独立长描述字段,tagline 按 Markdown 渲染)+ 元数据
+   (<xl 正文内联侧栏:作者卡/链接/agents/发布时间/支持数;≥xl 由右栏元数据卡取代,
+   见右栏注册表 work kind)+ 底部单层评论区。
    浏览无需登录;支持/评论需登录(comment/vote 配额限流)。AI 不介入作品评论。
    不存在/已删作品给友好文案,不 404 硬错。 */
 import type { Metadata } from "next";
@@ -15,11 +16,10 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getVerifiableTokenTotals } from "@/src/lib/usage/verifiable";
 import {
   claimBadgeOf,
+  getAuthorClaimContext,
   getWork,
-  getWorkClaimSums,
   getWorkDetail,
   hasWorkVote,
 } from "@/src/lib/works";
@@ -70,14 +70,23 @@ export default async function WorkPage({
   const work = await getWorkDetail(workId);
   if (!work) return <WorkGone locale={locale} />;
 
-  const [voted, badgeTotals, claimSums, comments] = await Promise.all([
+  const [voted, claimCtx, comments] = await Promise.all([
     user ? hasWorkVote(user.id, workId) : false,
-    /* 声明徽章(声明制):作者可验证总量 + 其全部作品 Σ声明(内部口径,不做 opt-in 门禁) */
-    getVerifiableTokenTotals([work.userId]),
-    getWorkClaimSums([work.userId]),
+    /* 声明徽章(声明制):作者可验证总量 + 其全部作品 Σ声明(内部口径,不做 opt-in 门禁);
+       与右栏元数据卡共用同一请求级缓存(getAuthorClaimContext,不多查库) */
+    work.userId !== null
+      ? getAuthorClaimContext(work.userId)
+      : Promise.resolve(null),
     loadWorkComments(workId, work.userId, user, locale),
   ]);
-  const claimBadge = claimBadgeOf(work, badgeTotals, claimSums);
+  const claimBadge =
+    work.userId !== null && claimCtx
+      ? claimBadgeOf(
+          work,
+          new Map([[work.userId, claimCtx.total]]),
+          new Map([[work.userId, claimCtx.claimSum]]),
+        )
+      : null;
 
   return (
     <div>
@@ -168,8 +177,9 @@ export default async function WorkPage({
         </span>
       </div>
 
-      {/* 正文 + 右侧信息栏(窄屏折行) */}
-      <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_180px]">
+      {/* 正文 + 右侧信息栏:<xl 内联显示(窄屏折行);≥xl 由右栏元数据卡取代
+          (右栏注册表 work kind),正文占满正常阅读列宽 */}
+      <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_180px] xl:grid-cols-1">
         <div>
           {work.tagline && <Markdown source={work.tagline} />}
           {work.tags.length > 0 && (
@@ -186,7 +196,7 @@ export default async function WorkPage({
           )}
         </div>
 
-        <aside className="space-y-6 border-t border-line pt-6 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+        <aside className="space-y-6 border-t border-line pt-6 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 xl:hidden">
           <div>
             <h3 className="font-mono text-[11px] tracking-wider text-grey">
               {t(locale, "works.sideAuthor")}
