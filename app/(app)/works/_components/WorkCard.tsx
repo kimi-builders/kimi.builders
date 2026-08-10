@@ -4,8 +4,10 @@
    整卡链到详情页(P1-2,absolute 覆盖链接);作者/访问/源码/操作行抬 z-10 保持独立跳转。
    编辑精选:featured_at 非空的卡片带「编辑精选」蓝芯片;canFeature(admin/mod,
    由页面用 session role 判断)时底部多一行设/撤精选操作(每周精选 v0)。
-   用量徽章(S2-2):badgeTokens 非空(作者已自愿公开用量且有数据)时标题旁多一颗
-   「已验证构建投入」芯片;null = 完全不渲染(未 opt-in / 无数据,无负面标记)。 */
+   用量徽章(声明制,20260822_work_claims):claimBadge 非空(本作品已声明且
+   作者 Σ声明 ≤ 可验证总量,不变式由组装层 claimBadgeOf 判定)时标题旁多一颗
+   「声明构建投入」芯片;null = 完全不渲染(未声明/超额暂停,无负面标记)。
+   claimPaused(仅作者本人为 true)时作者在自己的卡片上看到重新分配提示。 */
 import Link from "next/link";
 import { ExternalLink, Heart, Rocket } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
@@ -21,13 +23,15 @@ export default function WorkCard({
   locale,
   meId,
   canFeature = false,
-  badgeTokens = null,
+  claimBadge = null,
+  claimPaused = false,
 }: {
   work: WorkRow;
   locale: Locale;
   meId: number | null;
   canFeature?: boolean;
-  badgeTokens?: number | null;
+  claimBadge?: number | null;
+  claimPaused?: boolean;
 }) {
   return (
     <article className="relative flex flex-col border border-line bg-card transition-colors hover:border-paper/20">
@@ -61,12 +65,12 @@ export default function WorkCard({
               {t(locale, "featured.badge")}
             </span>
           )}
-          {badgeTokens !== null && badgeTokens > 0 && (
+          {claimBadge !== null && claimBadge > 0 && (
             <span
               className="ml-2 inline-block border border-emerald-400/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-emerald-400"
               title={t(locale, "works.badgeTitle")}
             >
-              {t(locale, "works.badge", { n: compactNumber(badgeTokens, locale) })}
+              {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
             </span>
           )}
         </h2>
@@ -157,6 +161,12 @@ export default function WorkCard({
               )}
             </span>
           </div>
+          {/* 声明超额提示(声明制):仅作者本人可见,引导去编辑页重新分配 */}
+          {claimPaused && meId !== null && w.userId === meId && (
+            <p className="relative z-10 mt-2 font-mono text-[10px] leading-relaxed text-amber-400/90">
+              {t(locale, "works.claimPaused")}
+            </p>
+          )}
           {canFeature && (
             <div className="relative z-10">
               <WorkFeaturedToggle

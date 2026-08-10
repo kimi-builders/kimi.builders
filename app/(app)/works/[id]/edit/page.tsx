@@ -1,9 +1,18 @@
-/* 编辑作品(仅作者):加载后服务端先验归属,不是自己的直接给错误提示。 */
+/* 编辑作品(仅作者):加载后服务端先验归属,不是自己的直接给错误提示。
+   声明制(20260822_work_claims):声明字段上下文 = 可验证总量 − 其他作品已声明
+   (排除本作品);作者开了 upload_project 且项目 label 与作品名匹配时给建议
+   预填值(纯省事)。总量缩水使 Σ声明 > 总量时,作者在此看到重新分配提示。 */
 import type { Metadata } from "next";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getWork } from "@/src/lib/works";
+import { getSuggestedClaimProjects } from "@/src/lib/usage/verifiable";
+import {
+  claimsPaused,
+  getClaimAllowance,
+  getWork,
+  matchSuggestedClaim,
+} from "@/src/lib/works";
 import { updateWorkAction } from "../../actions";
 import WorkForm from "../../_components/WorkForm";
 
@@ -27,11 +36,28 @@ export default async function EditWorkPage({
     );
   }
 
+  const allowance = await getClaimAllowance(user.id, work.id);
+  /* 超额提示按含本作品的完整 Σ声明 判定(allowance.claimed 已排除本作品) */
+  const paused = claimsPaused(
+    allowance.total,
+    allowance.claimed + (work.claimedTokens ?? 0),
+  );
+  /* 建议预填:已有声明的作品不再给建议(声明值本身就是作者定夺) */
+  const suggested =
+    work.claimedTokens === null && allowance.total > 0
+      ? matchSuggestedClaim(work.name, await getSuggestedClaimProjects(user.id))
+      : null;
+
   return (
     <div>
       <h1 className="font-mono text-lg font-semibold">
         {t(locale, "works.editTitle")}
       </h1>
+      {paused && (
+        <p className="mt-4 border border-amber-400/40 px-3 py-2 font-mono text-[11px] leading-relaxed text-amber-400/90">
+          {t(locale, "works.claimPaused")}
+        </p>
+      )}
       <WorkForm
         action={updateWorkAction}
         locale={locale}
@@ -45,6 +71,12 @@ export default async function EditWorkPage({
           tags: work.tags,
           agents: work.agents,
           authorLabel: work.authorLabel,
+        }}
+        claim={{
+          initial: work.claimedTokens,
+          hasUsage: allowance.total > 0,
+          remaining: allowance.remaining,
+          suggested,
         }}
       />
     </div>

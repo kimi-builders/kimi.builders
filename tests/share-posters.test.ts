@@ -172,33 +172,47 @@ function workRow(overrides: Partial<WorkRow> = {}): WorkRow {
     featuredReason: null,
     voteCount: 10,
     commentCount: 2,
+    claimedTokens: null,
     ...overrides,
   };
 }
 
-test("work snapshot: verified tokens gated by opt-in totals map", () => {
-  /* 未 opt-in:getPublicTokenTotals 的 SQL JOIN 不会返回该作者 → 无徽章 */
-  const noBadge = buildWorkShareSnapshot(workRow(), new Map());
-  assert.equal(noBadge.verifiedTokens, null);
-  const zero = buildWorkShareSnapshot(workRow(), new Map([[3, 0]]));
-  assert.equal(zero.verifiedTokens, null);
-  const withBadge = buildWorkShareSnapshot(workRow(), new Map([[3, 5_000_000]]));
-  assert.equal(withBadge.verifiedTokens, 5_000_000);
+test("work snapshot: claimed tokens gated by the display invariant", () => {
+  /* 声明制(20260822_work_claims):hero 数字 = 本作品 claimed_tokens,
+     且作者 Σ声明 ≤ 可验证总量;未声明 → 无 hero */
+  const noClaim = buildWorkShareSnapshot(workRow(), new Map([[3, 5_000_000]]), new Map());
+  assert.equal(noClaim.claimedTokens, null);
+  /* 已声明且不变式满足(Σ300万 ≤ 总量500万)→ hero 带声明值 */
+  const withClaim = buildWorkShareSnapshot(
+    workRow({ claimedTokens: 2_000_000 }),
+    new Map([[3, 5_000_000]]),
+    new Map([[3, 3_000_000]]),
+  );
+  assert.equal(withClaim.claimedTokens, 2_000_000);
+  /* 总量缩水:Σ声明 > 可验证总量 → 不渲染(无负面标记) */
+  const over = buildWorkShareSnapshot(
+    workRow({ claimedTokens: 2_000_000 }),
+    new Map([[3, 1_000_000]]),
+    new Map([[3, 3_000_000]]),
+  );
+  assert.equal(over.claimedTokens, null);
 });
 
 test("work snapshot: awesome entry falls back to author label without handle", () => {
   const s = buildWorkShareSnapshot(
     workRow({ source: "awesome", userId: null, handle: null, authorLabel: "外部作者" }),
     new Map(),
+    new Map(),
   );
   assert.equal(s.author.handle, "");
   assert.equal(s.author.name, "外部作者");
-  assert.equal(s.verifiedTokens, null);
+  assert.equal(s.claimedTokens, null);
 });
 
 test("work snapshot: agents mapped to display names and capped", () => {
   const s = buildWorkShareSnapshot(
     workRow({ agents: ["kimi", "claude-code", "codex", "cursor", "copilot", "windsurf"] }),
+    new Map(),
     new Map(),
   );
   assert.deepEqual(s.agents, ["Kimi", "Claude Code", "Codex", "Cursor", "GitHub Copilot"]);

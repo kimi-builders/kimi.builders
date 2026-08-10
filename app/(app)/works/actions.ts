@@ -15,16 +15,20 @@ import {
   normalizeFeaturedReason,
   setWorkFeatured,
 } from "@/src/lib/featured";
+import { compactNumber } from "@/src/lib/format";
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
+  checkClaimAllowance,
   createWork,
   createWorkComment,
   deleteWork,
   deleteWorkComment,
+  getClaimAllowance,
   getWork,
+  parseClaimInput,
   toggleWorkVote,
   updateWork,
 } from "@/src/lib/works";
@@ -89,6 +93,30 @@ function validate(
   return null;
 }
 
+/* 构建投入声明(声明制):解析紧凑输入 → 额度校验(Σ声明 ≤ 可验证总量,
+   编辑时 excludeWorkId 排除本作品)。awesome 推荐条目不适用声明,强制 null。
+   写时校验是 UX 兜底(并发越过校验时,展示侧不变式仍会隐藏超额徽章)。 */
+async function resolveClaim(
+  userId: number,
+  locale: "zh" | "en",
+  formData: FormData,
+  opts: { awesome: boolean; excludeWorkId?: number },
+): Promise<{ claimed: number | null } | { error: string }> {
+  if (opts.awesome) return { claimed: null };
+  const parsed = parseClaimInput(String(formData.get("claimed_tokens") || ""));
+  if (parsed.kind === "invalid") return { error: t(locale, "err.workClaimInvalid") };
+  if (parsed.kind === "none") return { claimed: null };
+  const allowance = await getClaimAllowance(userId, opts.excludeWorkId);
+  const check = checkClaimAllowance(parsed.value, allowance.remaining);
+  if (!check.ok)
+    return {
+      error: t(locale, "err.workClaimExceeds", {
+        n: compactNumber(check.remaining, locale),
+      }),
+    };
+  return { claimed: parsed.value };
+}
+
 export async function createWorkAction(
   _prev: WorkFormState | null,
   formData: FormData,
@@ -99,7 +127,11 @@ export async function createWorkAction(
   const f = readFields(formData);
   const err = validate(locale, f);
   if (err) return { error: err };
-  await createWork(user.id, f);
+  const claim = await resolveClaim(user.id, locale, formData, {
+    awesome: !!f.authorLabel,
+  });
+  if ("error" in claim) return { error: claim.error };
+  await createWork(user.id, { ...f, claimedTokens: claim.claimed });
   revalidatePath("/works");
   revalidatePath("/awesome");
   redirect(f.authorLabel ? "/awesome" : "/works");
@@ -117,7 +149,15 @@ export async function updateWorkAction(
   const f = readFields(formData);
   const err = validate(locale, f);
   if (err) return { error: err };
-  const ok = await updateWork(user.id, workId, f);
+  const claim = await resolveClaim(user.id, locale, formData, {
+    awesome: !!f.authorLabel,
+    excludeWorkId: workId,
+  });
+  if ("error" in claim) return { error: claim.error };
+  const ok = await updateWork(user.id, workId, {
+    ...f,
+    claimedTokens: claim.claimed,
+  });
   if (!ok) return { error: t(locale, "err.notOwnerWork") };
   revalidatePath("/works");
   revalidatePath("/awesome");

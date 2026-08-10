@@ -144,6 +144,8 @@ CREATE TABLE IF NOT EXISTS works (
   -- vote_count/comment_count 由 20260821_work_interactions.sql 引入,已有库执行该迁移
   vote_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '支持数(冗余;写路径随 work_votes 维护)',
   comment_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '可见评论数(冗余;软删即减)',
+  -- claimed_tokens 由 20260822_work_claims.sql 引入,已有库执行该迁移
+  claimed_tokens BIGINT UNSIGNED NULL COMMENT '作者声明的该作品构建投入 tokens;NULL=未声明(声明制:同作者 Σ声明 ≤ 可验证总量)',
   KEY idx_source (source, created_at),
   KEY idx_featured (featured_at),
   CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),

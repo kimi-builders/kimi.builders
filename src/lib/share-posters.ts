@@ -4,9 +4,12 @@
    隐私口径:
    - 私密帖 / 已删帖 → 快照 null,路由 404 不渲染(deleted 由 getPost 滤掉);
    - 主页统计用访客口径(getProfileStats self=false,不泄露私密量);
-   - 用量徽章 / 用量行仅作者自愿公开(usage_settings.show_on_leaderboard=1)才带数字,
+   - 个人主页用量行仅作者自愿公开(usage_settings.show_on_leaderboard=1)才带数字,
      门禁复用 usage/social.ts 的 getPublicTokenTotals(SQL JOIN 钉死),未公开 = null
-     = 海报完全不渲染该行(无负面标记原则,同作品墙徽章)。 */
+     = 海报完全不渲染该行(无负面标记原则);
+   - 作品构建投入为声明制(20260822_work_claims):数字 = 本作品 claimed_tokens,
+     作者声明即公开授权,不做 opt-in 门禁;展示不变式(作者 Σ声明 ≤ 可验证总量,
+     usage/verifiable.ts 内部口径)不满足 = null = 不渲染该 hero。 */
 import type { RowDataPacket } from "mysql2";
 import { agentName } from "./agents";
 import { categoryLabel } from "./categories";
@@ -14,8 +17,14 @@ import { getPool } from "./db";
 import { plainExcerpt } from "./format";
 import { getPoll, getPost, type PollData, type PostDetail } from "./posts";
 import { getPublicTokenTotals, getSocialDailyActivity } from "./usage/social";
+import { getVerifiableTokenTotals } from "./usage/verifiable";
 import { getProfileByHandle, getProfileStats, type ProfileStats, type UserProfile } from "./users";
-import { badgeTokensOf, getWork, type WorkRow } from "./works";
+import {
+  claimBadgeOf,
+  getWork,
+  getWorkClaimSums,
+  type WorkRow,
+} from "./works";
 
 /* 海报落点统一用主站绝对地址(QR 与页脚 URL 行共用)。 */
 export const POSTER_SITE_ORIGIN = "https://kimi.builders";
@@ -149,15 +158,16 @@ export interface WorkShareSnapshot {
   voteCount: number;
   commentCount: number;
   publishedAt: string;
-  /* 已验证构建投入(作者 opt-in 公开用量);null = 不渲染该行 */
-  verifiedTokens: number | null;
+  /* 声明构建投入(声明制:本作品 claimed_tokens,不变式满足才非空);null = 不渲染该 hero */
+  claimedTokens: number | null;
   path: string;
   url: string;
 }
 
 export function buildWorkShareSnapshot(
   work: WorkRow,
-  tokenTotals: Map<number, number>,
+  verifiableTotals: Map<number, number>,
+  claimSums: Map<number, number>,
 ): WorkShareSnapshot {
   /* awesome 外部条目无站内作者:作者行落 authorLabel,handle 置空 */
   const authorName = work.handle ?? work.authorLabel;
@@ -175,7 +185,7 @@ export function buildWorkShareSnapshot(
     voteCount: work.voteCount,
     commentCount: work.commentCount,
     publishedAt: posterYmd(work.createdAt),
-    verifiedTokens: badgeTokensOf(work, tokenTotals),
+    claimedTokens: claimBadgeOf(work, verifiableTotals, claimSums),
     path: `/works/${work.id}`,
     url: `${POSTER_SITE_ORIGIN}/works/${work.id}`,
   };
@@ -184,8 +194,11 @@ export function buildWorkShareSnapshot(
 export async function getWorkShareSnapshot(id: number): Promise<WorkShareSnapshot | null> {
   const work = await getWork(id);
   if (!work) return null;
-  const totals = await getPublicTokenTotals([work.userId]);
-  return buildWorkShareSnapshot(work, totals);
+  const [totals, claimSums] = await Promise.all([
+    getVerifiableTokenTotals([work.userId]),
+    getWorkClaimSums([work.userId]),
+  ]);
+  return buildWorkShareSnapshot(work, totals, claimSums);
 }
 
 /* ---- 个人主页海报 ---- */
@@ -310,7 +323,7 @@ export function mockWorkShareSnapshot(): WorkShareSnapshot {
     voteCount: 96,
     commentCount: 23,
     publishedAt: "2026-07-28",
-    verifiedTokens: 3_800_000_000,
+    claimedTokens: 3_800_000_000,
     path: "/works/42",
     url: `${POSTER_SITE_ORIGIN}/works/42`,
   };

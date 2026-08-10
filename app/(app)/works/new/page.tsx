@@ -1,9 +1,12 @@
-/* 提交作品(需登录):表单字段与校验见 _components/WorkForm 与 actions。 */
+/* 提交作品(需登录):表单字段与校验见 _components/WorkForm 与 actions。
+   声明制(20260822_work_claims):声明字段上下文 = 作者可验证总量 − 已声明合计;
+   新作品尚无名字可匹配,建议预填值留空(编辑页按作品名匹配项目分布)。 */
 import type { Metadata } from "next";
 import { SquarePen } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { getClaimAllowance } from "@/src/lib/works";
 import { createWorkAction } from "../actions";
 import WorkForm from "../_components/WorkForm";
 
@@ -38,13 +41,24 @@ export default async function NewWorkPage() {
     );
   }
 
+  const allowance = await getClaimAllowance(user.id);
+
   return (
     <div>
       <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
         <SquarePen size={17} />
         {t(locale, "works.newTitle")}
       </h1>
-      <WorkForm action={createWorkAction} locale={locale} />
+      <WorkForm
+        action={createWorkAction}
+        locale={locale}
+        claim={{
+          initial: null,
+          hasUsage: allowance.total > 0,
+          remaining: allowance.remaining,
+          suggested: null,
+        }}
+      />
     </div>
   );
 }

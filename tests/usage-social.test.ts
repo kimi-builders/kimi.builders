@@ -13,7 +13,9 @@ import {
   socialOptInQuery,
   socialTokenTotalsQuery,
 } from "../src/lib/usage/social";
-import { badgeTokensOf } from "../src/lib/works";
+
+/* 注:作品徽章已改声明制(20260822_work_claims),原 badgeTokensOf 移除;
+   新徽章逻辑 claimBadgeOf 的用例见 tests/work-claims.test.ts。 */
 
 interface FakeCall {
   sql: string;
@@ -122,20 +124,6 @@ test("getPublicTokenTotals maps only opted-in authors; others are absent", async
   assert.equal(totals.has(6), false);
   const empty = await getPublicTokenTotals([], db);
   assert.equal(empty.size, 0);
-});
-
-test("badgeTokensOf: null means render nothing (no negative marker)", () => {
-  const totals = new Map<number, number>([
-    [1, 2500],
-    [2, 0],
-  ]);
-  /* awesome 外部条目没有站内作者 */
-  assert.equal(badgeTokensOf({ userId: null }, totals), null);
-  /* 未 opt-in / 无数据 */
-  assert.equal(badgeTokensOf({ userId: 9 }, totals), null);
-  /* 0 tokens 的徽章没有意义 */
-  assert.equal(badgeTokensOf({ userId: 2 }, totals), null);
-  assert.equal(badgeTokensOf({ userId: 1 }, totals), 2500);
 });
 
 test("daily activity query aggregates tokens per local calendar day over 371 days", () => {

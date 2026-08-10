@@ -15,10 +15,11 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getPublicTokenTotals } from "@/src/lib/usage/social";
+import { getVerifiableTokenTotals } from "@/src/lib/usage/verifiable";
 import {
-  badgeTokensOf,
+  claimBadgeOf,
   getWork,
+  getWorkClaimSums,
   getWorkDetail,
   hasWorkVote,
 } from "@/src/lib/works";
@@ -69,13 +70,14 @@ export default async function WorkPage({
   const work = await getWorkDetail(workId);
   if (!work) return <WorkGone locale={locale} />;
 
-  const [voted, badgeTotals, comments] = await Promise.all([
+  const [voted, badgeTotals, claimSums, comments] = await Promise.all([
     user ? hasWorkVote(user.id, workId) : false,
-    /* 作者用量徽章:门禁在 SQL JOIN(show_on_leaderboard),未 opt-in 即无数据 */
-    getPublicTokenTotals([work.userId]),
+    /* 声明徽章(声明制):作者可验证总量 + 其全部作品 Σ声明(内部口径,不做 opt-in 门禁) */
+    getVerifiableTokenTotals([work.userId]),
+    getWorkClaimSums([work.userId]),
     loadWorkComments(workId, work.userId, user, locale),
   ]);
-  const badgeTokens = badgeTokensOf(work, badgeTotals);
+  const claimBadge = claimBadgeOf(work, badgeTotals, claimSums);
 
   return (
     <div>
@@ -204,13 +206,13 @@ export default async function WorkPage({
                   <span className="block truncate text-sm text-paper">
                     @{work.handle}
                   </span>
-                  {badgeTokens !== null && (
+                  {claimBadge !== null && (
                     <span
                       className="mt-1 inline-block border border-emerald-400/60 px-1.5 py-px font-mono text-[10px] text-emerald-400"
                       title={t(locale, "works.badgeTitle")}
                     >
                       {t(locale, "works.badge", {
-                        n: compactNumber(badgeTokens, locale),
+                        n: compactNumber(claimBadge, locale),
                       })}
                     </span>
                   )}

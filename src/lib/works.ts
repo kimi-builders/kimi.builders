@@ -4,7 +4,11 @@
    agents = 参与构建的 Agent 品牌键(注册表 src/lib/agents.ts)。
    作者自助增改删,归属校验钉在 SQL WHERE 里(同帖子)。 */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { Pool, PoolConnection } from "mysql2/promise";
 import { getPool } from "./db";
+import { getVerifiableTokenTotals, type ClaimProjectTotal } from "./usage/verifiable";
+
+type Queryable = Pool | PoolConnection;
 
 export interface WorkRow {
   id: number;
@@ -28,6 +32,8 @@ export interface WorkRow {
   /* 冗余计数(P1-2,随 work_votes / work_comments 写路径维护) */
   voteCount: number;
   commentCount: number;
+  /* 用量声明制:作者声明的该作品构建投入 tokens;null = 未声明(无徽章) */
+  claimedTokens: number | null;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -63,12 +69,13 @@ function mapWork(r: RowDataPacket): WorkRow {
     featuredReason: r.featured_reason ?? null,
     voteCount: Number(r.vote_count ?? 0),
     commentCount: Number(r.comment_count ?? 0),
+    claimedTokens: r.claimed_tokens === null ? null : Number(r.claimed_tokens),
   };
 }
 
 const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.screenshot_url, w.tags, w.agents, w.source, w.author_label, w.created_at,
-       w.featured_at, w.featured_reason, w.vote_count, w.comment_count`;
+       w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens`;
 
 const SELECT_WORKS = `SELECT ${WORK_COLUMNS},
        u.handle, u.avatar_url
@@ -156,15 +163,149 @@ export async function getUserWorks(userId: number): Promise<WorkRow[]> {
   return rows.map(mapWork);
 }
 
-/* 徽章值:作者 opt-in 后的全部时间 token 总量;null = 完全不显示徽章
-   (awesome 外部条目无站内作者 / 未 opt-in / 无数据 —— 均无负面标记)。 */
-export function badgeTokensOf(
-  w: Pick<WorkRow, "userId">,
+/* ---- 作品用量声明制(20260822_work_claims)----
+   徽章语义(替换旧的「作者总量」徽章,原 badgeTokensOf 已移除):
+   作者为自己的每个作品声明一个构建投入 token 数(claimed_tokens),
+   同一作者全部未删作品 Σ声明 ≤ 该作者可验证总量(usage/social 同口径的
+   usage_buckets 全时间 SUM,但走 usage/verifiable.ts 的内部查询,
+   不做 show_on_leaderboard 门禁 —— 声明行为本身即公开授权,总量数字不公开展示)。
+   展示时兜底:总量缩水(删数据/retention)使 Σ声明 > 总量 → 该作者所有作品
+   徽章整体不渲染(无负面标记),作者在列表/编辑页看到重新分配提示。
+   作品物理删除,声明随删除自然释放额度。 */
+
+/* 紧凑数字解析:「612M」「1.5M」「2k」「1.2B」「10,000」→ 整 tokens。
+   空串 = 未声明(none);非空但解析不出/非正整数/超安全整数 → invalid。 */
+export type ClaimInputParse =
+  | { kind: "none" }
+  | { kind: "ok"; value: number }
+  | { kind: "invalid" };
+
+const CLAIM_UNITS: Record<string, number> = { k: 1e3, m: 1e6, b: 1e9 };
+
+export function parseClaimInput(raw: string): ClaimInputParse {
+  const s = raw.trim().toLowerCase().replace(/[,_\s]+/g, "");
+  if (!s) return { kind: "none" };
+  const m = /^(\d+(?:\.\d+)?)([kmb])?$/.exec(s);
+  if (!m) return { kind: "invalid" };
+  const value = Number(m[1]) * (m[2] ? CLAIM_UNITS[m[2]] : 1);
+  if (!Number.isSafeInteger(value) || value <= 0) return { kind: "invalid" };
+  return { kind: "ok", value };
+}
+
+/* 写时校验(纯函数):声明值 ≤ 剩余可声明额度才放行(等于剩余放行,超 1 拒绝);
+   null(撤销声明)永远放行。remaining = 可验证总量 − 其他作品已声明合计。 */
+export type ClaimCheck = { ok: true } | { ok: false; remaining: number };
+
+export function checkClaimAllowance(
+  claim: number | null,
+  remaining: number,
+): ClaimCheck {
+  if (claim === null) return { ok: true };
+  return claim <= remaining ? { ok: true } : { ok: false, remaining };
+}
+
+/* 展示不变式(纯函数):本作品的徽章值;null = 不渲染(无负面标记)。
+   隐藏条件:awesome 外部条目 / 无站内作者 / 未声明 / 声明 ≤ 0 /
+   作者无可验证数据(总量 ≤ 0)/ Σ声明 > 可验证总量(总量缩水 → 全部徽章暂停)。 */
+export function claimBadgeOf(
+  w: Pick<WorkRow, "userId" | "source" | "claimedTokens">,
   totals: Map<number, number>,
+  claimSums: Map<number, number>,
 ): number | null {
-  if (w.userId === null) return null;
-  const v = totals.get(w.userId);
-  return v !== undefined && v > 0 ? v : null;
+  if (w.userId === null || w.source !== "site") return null;
+  const claim = w.claimedTokens;
+  if (claim === null || claim <= 0) return null;
+  const total = totals.get(w.userId) ?? 0;
+  if (total <= 0) return null;
+  const sum = claimSums.get(w.userId) ?? 0;
+  if (sum > total) return null;
+  return claim;
+}
+
+/* 作者视角提示(纯函数):声明总额是否已超出可验证总量(徽章暂停,需重新分配)。 */
+export function claimsPaused(total: number, claimSum: number): boolean {
+  return claimSum > 0 && claimSum > total;
+}
+
+/* 建议预填匹配(纯函数):作品名与项目 label 大小写不敏感精确匹配优先,
+   其次互为子串;都没有 → null。projects 上游已按 tokens 降序。 */
+export function matchSuggestedClaim(
+  workName: string,
+  projects: ClaimProjectTotal[],
+): ClaimProjectTotal | null {
+  const n = workName.trim().toLowerCase();
+  if (!n) return null;
+  const norm = (s: string) => s.trim().toLowerCase();
+  return (
+    projects.find((p) => norm(p.label) === n) ??
+    projects.find((p) => {
+      const l = norm(p.label);
+      return l !== "" && (l.includes(n) || n.includes(l));
+    }) ??
+    null
+  );
+}
+
+/* 一批作者 → 各自全部作品(物理删除,无软删过滤)的 Σclaimed_tokens。
+   批量一条 IN 查询,与徽章总量查询配对(展示时不变式的两侧)。 */
+export function workClaimSumsQuery(
+  userIds: (number | null)[],
+): { sql: string; args: unknown[] } | null {
+  const ids = [
+    ...new Set(
+      userIds.filter((id): id is number => Number.isSafeInteger(id) && (id as number) > 0),
+    ),
+  ];
+  if (ids.length === 0) return null;
+  return {
+    sql: `SELECT user_id, SUM(claimed_tokens) AS claimed
+          FROM works WHERE user_id IN (?) GROUP BY user_id`,
+    args: [ids],
+  };
+}
+
+export async function getWorkClaimSums(
+  userIds: (number | null)[],
+  db: Queryable = getPool(),
+): Promise<Map<number, number>> {
+  const map = new Map<number, number>();
+  const q = workClaimSumsQuery(userIds);
+  if (!q) return map;
+  const [rows] = await db.query<RowDataPacket[]>(q.sql, q.args);
+  for (const r of rows) map.set(Number(r.user_id), Number(r.claimed) || 0);
+  return map;
+}
+
+export interface ClaimAllowance {
+  /* 作者可验证总量(内部口径,不公开渲染) */
+  total: number;
+  /* 其他作品已声明合计(编辑时排除本作品);删除作品后自然回落 = 释放额度 */
+  claimed: number;
+  /* 剩余可声明额度 = max(0, total − claimed) */
+  remaining: number;
+}
+
+/* 写时/表单侧的额度口径:总量(内部验证)+ 已声明合计(可排除本作品)。 */
+export async function getClaimAllowance(
+  userId: number,
+  excludeWorkId?: number,
+  db: Queryable = getPool(),
+): Promise<ClaimAllowance> {
+  const exclude =
+    excludeWorkId !== undefined &&
+    Number.isSafeInteger(excludeWorkId) &&
+    excludeWorkId > 0;
+  const [totals, [rows]] = await Promise.all([
+    getVerifiableTokenTotals([userId], db),
+    db.query<RowDataPacket[]>(
+      `SELECT COALESCE(SUM(claimed_tokens), 0) AS claimed
+       FROM works WHERE user_id = ?${exclude ? " AND id <> ?" : ""}`,
+      exclude ? [userId, excludeWorkId] : [userId],
+    ),
+  ]);
+  const total = totals.get(userId) ?? 0;
+  const claimed = Number(rows[0]?.claimed ?? 0) || 0;
+  return { total, claimed, remaining: Math.max(0, total - claimed) };
 }
 
 export async function getWork(id: number): Promise<WorkRow | null> {
@@ -184,6 +325,8 @@ export interface WorkFields {
   tags: string[];
   agents: string[];
   authorLabel: string; // 非空 → source=awesome(推荐站外项目)
+  /* 构建投入声明(声明制);null = 未声明。额度校验在 action 层(checkClaimAllowance) */
+  claimedTokens: number | null;
 }
 
 export async function createWork(
@@ -192,8 +335,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label, claimed_tokens)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -205,6 +348,7 @@ export async function createWork(
       JSON.stringify(f.agents.slice(0, 10)),
       source,
       f.authorLabel.slice(0, 120),
+      f.claimedTokens,
     ],
   );
   return Number(res.insertId);
@@ -218,7 +362,7 @@ export async function updateWork(
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
-       tags = ?, agents = ?, source = ?, author_label = ?
+       tags = ?, agents = ?, source = ?, author_label = ?, claimed_tokens = ?
      WHERE id = ? AND user_id = ?`,
     [
       f.name.slice(0, 120),
@@ -230,6 +374,7 @@ export async function updateWork(
       JSON.stringify(f.agents.slice(0, 10)),
       source,
       f.authorLabel.slice(0, 120),
+      f.claimedTokens,
       workId,
       userId,
     ],

@@ -511,8 +511,8 @@ const DICT = {
   },
   "lb.optin": { zh: "参与社区榜", en: "Join the community leaderboard" },
   "lb.optinHint": {
-    zh: "开启后公开你的周期聚合 token 与活跃天数(社区榜、个人主页热力图、作品徽章共用此开关),不含项目名、设备或时间明细。",
-    en: "Publishes your period aggregate tokens and active days — one switch shared by the leaderboard, profile heatmap, and work badges. Never includes project names, devices, or time detail.",
+    zh: "开启后公开你的周期聚合 token 与活跃天数(社区榜、个人主页热力图共用此开关),不含项目名、设备或时间明细。作品徽章为声明制,不受此开关影响。",
+    en: "Publishes your period aggregate tokens and active days — one switch shared by the leaderboard and profile heatmap. Never includes project names, devices, or time detail. Work badges are claim-based and not affected by this switch.",
   },
   "lb.entry": { zh: "社区用量榜", en: "Community leaderboard" },
   "lb.entryHint": {
@@ -550,17 +550,18 @@ const DICT = {
     zh: "估费口径:服务端版本化价格表的 API 等价估算(USD),不代表订阅账单;未定价部分照常统计但不计费。",
     en: "Costs are API-equivalent estimates (USD) from the server versioned pricing table, not subscription bills; unpriced usage is counted but never billed.",
   },
-  /* ---- S2-2:主页页签 / 作品徽章 / 列表分页(独立分区,降低合并冲突面) ---- */
+  /* ---- S2-2:主页页签 / 作品徽章 / 列表分页(独立分区,降低合并冲突面) ----
+     注:works.badge / works.badgeTitle 已随声明制(20260822_work_claims)改口径。 */
   "prof.works": { zh: "作品", en: "Works" },
   "prof.usage": { zh: "用量", en: "Usage" },
   "prof.noWorks": { zh: "还没有作品。", en: "No works yet." },
   "works.badge": {
-    zh: "已验证构建投入 {n} tokens",
-    en: "Verified build effort · {n} tokens",
+    zh: "声明构建投入 {n} tokens",
+    en: "Declared build effort · {n} tokens",
   },
   "works.badgeTitle": {
-    zh: "数据来自作者自愿同步的 Kimi 用量(全部时间 token 总量)",
-    en: "From the author's voluntarily synced Kimi usage (all-time token total)",
+    zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
+    en: "Declared by the author, capped by their verifiable total — not precise metering",
   },
   "pager.loadMore": { zh: "加载更多", en: "Load more" },
   "pager.loading": { zh: "加载中…", en: "Loading…" },
@@ -705,6 +706,41 @@ const DICT = {
   "works.sideLinks": { zh: "链接", en: "LINKS" },
   "works.sideInfo": { zh: "信息", en: "INFO" },
   "works.published": { zh: "发布时间", en: "Published" },
+  /* ---- 作品用量声明制(20260822_work_claims;独立分区,降低合并冲突面) ---- */
+  "works.claim": {
+    zh: "构建投入声明(可选)",
+    en: "Claimed build effort (optional)",
+  },
+  "works.claimPh": { zh: "如 612M、1.2B", en: "e.g. 612M, 1.2B" },
+  "works.claimHint": {
+    zh: "由你声明,系统按你的可验证用量总量封顶;留空 = 不展示徽章。仅自己的作品可声明(推荐站外项目不适用)。",
+    en: "Declared by you and capped by your verifiable usage total; leave empty for no badge. Only your own works can carry a claim (not external recommendations).",
+  },
+  "works.claimRemaining": {
+    zh: "剩余可声明额度 {n} tokens",
+    en: "Remaining claimable: {n} tokens",
+  },
+  "works.claimSuggest": {
+    zh: "按项目「{label}」的用量数据,建议 {n}",
+    en: "Suggested from your project “{label}”: {n}",
+  },
+  "works.claimNoUsage": {
+    zh: "想戴徽章,先接数据 —— 同步用量后才能声明构建投入。",
+    en: "To wear a badge, connect your data first — sync usage before declaring build effort.",
+  },
+  "works.claimNoUsageCta": { zh: "去用量中心同步", en: "Go to Usage sync" },
+  "works.claimPaused": {
+    zh: "声明总额超出可验证总量,徽章已暂停展示,请重新分配。",
+    en: "Your claimed total exceeds the verifiable total — badges are paused; please reallocate.",
+  },
+  "err.workClaimInvalid": {
+    zh: "声明数字无法识别(支持如 612M 的紧凑写法)",
+    en: "Unrecognized claim number (compact forms like 612M are fine)",
+  },
+  "err.workClaimExceeds": {
+    zh: "超出剩余可声明额度(剩余 {n} tokens)",
+    en: "Exceeds your remaining claimable allowance ({n} tokens left)",
+  },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

@@ -1,5 +1,7 @@
 /* 作品分享海报:品牌行 → 作品名 → tagline → agents 细线 chip
-   → (opt-in)已验证构建投入 → 作者行 → 指标带(支持/评论/发布)→ QR 页脚。
+   → (已声明且不变式满足)声明构建投入 hero → 作者行 → 指标带(支持/评论/发布)→ QR 页脚。
+   hero 为声明制(20260822_work_claims):数字 = 作者声明的本作品构建投入,
+   小字口径 = 作者声明、系统按可验证总量封顶;未声明/超额 = 不渲染。
    lobehub 图标在 Satori 里不可依赖,agents 统一细线描边 mono chip(名字即可)。 */
 import type { WorkShareSnapshot } from "@/src/lib/share-posters";
 import {
@@ -48,14 +50,14 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
             {s.agentsMore > 0 && <OutlineChip text={`+${s.agentsMore}`} />}
           </div>
         )}
-        {s.verifiedTokens !== null && (
+        {s.claimedTokens !== null && (
           <div style={{ display: "flex", marginTop: 36, alignItems: "flex-end" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", fontSize: 96, lineHeight: 0.9, fontWeight: 800, letterSpacing: -3, color: palette.green }}>
-                {compact(s.verifiedTokens)}
+                {compact(s.claimedTokens)}
               </div>
               <div style={{ display: "flex", marginTop: 16, color: palette.muted, fontSize: 22, fontWeight: 700, letterSpacing: 3 }}>
-                已验证构建投入 TOKENS
+                声明构建投入 TOKENS · 作者声明按可验证总量封顶
               </div>
             </div>
           </div>

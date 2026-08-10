@@ -1,17 +1,21 @@
-/* 作品列表一页的服务端组装:游标分页 + 徽章总量(批量一条 IN 查询,避免 N+1)
+/* 作品列表一页的服务端组装:游标分页 + 声明徽章数据(批量两条 IN 查询,避免 N+1)
    + 卡片渲染。/works、/awesome 首屏与「加载更多」server action 共用,
    保证两种入口输出一致(同 comment-page.tsx 的模式)。
-   徽章(S2-2):只在 /works 成员作品墙带;/awesome 不查不带。
-   门禁钉在 SQL 里(JOIN usage_settings show_on_leaderboard = 1):
-   未 opt-in 的作者不进结果集,badgeTokensOf 得 null → 完全不渲染(无负面标记)。 */
+   徽章(声明制,20260822_work_claims):只在 /works 成员作品墙带;/awesome 不查不带。
+   口径:本作品 claimed_tokens,且作者全部作品 Σ声明 ≤ 作者可验证总量
+   (usage/verifiable.ts 内部查询,不做 opt-in 门禁;总量数字不公开展示)。
+   不变式被破坏(总量缩水)→ 该作者所有卡片无徽章,作者本人多看到一行
+   重新分配提示(claimPaused,仅作者可见,无负面标记对外)。 */
 import type { ReactNode } from "react";
 import type { SessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import type { Locale } from "@/src/lib/i18n";
-import { getPublicTokenTotals } from "@/src/lib/usage/social";
+import { getVerifiableTokenTotals } from "@/src/lib/usage/verifiable";
 import {
-  badgeTokensOf,
+  claimBadgeOf,
+  claimsPaused,
   getAwesomeWorksPage,
+  getWorkClaimSums,
   getWorksPage,
 } from "@/src/lib/works";
 import WorkCard from "./WorkCard";
@@ -30,11 +34,19 @@ export async function loadWorksCards(
   const page = scope.awesome
     ? await getAwesomeWorksPage(scope.agent, after)
     : await getWorksPage(after);
-  const totals = scope.awesome
-    ? new Map<number, number>()
-    : await getPublicTokenTotals(page.works.map((w) => w.userId));
+  const authorIds = page.works.map((w) => w.userId);
+  const [totals, claimSums] = scope.awesome
+    ? [new Map<number, number>(), new Map<number, number>()]
+    : await Promise.all([
+        getVerifiableTokenTotals(authorIds),
+        getWorkClaimSums(authorIds),
+      ]);
   /* admin/mod 在 /works 卡片上看到设/撤精选入口(每周精选 v0);/awesome 原口径不带 */
   const canFeature = !scope.awesome && !!user && canModerate(user.role);
+  /* 作者本人的声明超额态(仅作者可见的重新分配提示;徽章隐藏由 claimBadgeOf 保证) */
+  const myPaused = user
+    ? claimsPaused(totals.get(user.id) ?? 0, claimSums.get(user.id) ?? 0)
+    : false;
   return {
     nodes: page.works.map((w) => (
       <WorkCard
@@ -43,7 +55,8 @@ export async function loadWorksCards(
         locale={locale}
         meId={user?.id ?? null}
         canFeature={canFeature}
-        badgeTokens={badgeTokensOf(w, totals)}
+        claimBadge={claimBadgeOf(w, totals, claimSums)}
+        claimPaused={myPaused}
       />
     )),
     nextCursor: page.nextCursor,
