@@ -522,12 +522,13 @@ export function UsageHeatmapGrid({
 
   return (
     <div className="relative" onMouseLeave={() => setHovered(null)}>
-      <div className="overflow-x-auto pb-1">
-        <div className="min-w-[620px]">
+      {/* 格子随列宽自适应缩小,不强制最小宽度——标准页面不再横向滚动。 */}
+      <div className="pb-1">
+        <div>
           <div className="space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-6 shrink-0 text-center font-mono text-[10px] text-grey">
+                <span className="w-5 shrink-0 text-center font-mono text-[10px] text-grey">
                   {shortNames[weekday]}
                 </span>
                 <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
@@ -566,7 +567,7 @@ export function UsageHeatmapGrid({
             ))}
           </div>
           <div className="mt-[3px] flex items-center gap-1.5">
-            <span className="w-6 shrink-0" />
+            <span className="w-5 shrink-0" />
             <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
               {Array.from({ length: 24 }, (_, hour) => (
                 <span key={hour} className="text-center font-mono text-[9px] text-grey">

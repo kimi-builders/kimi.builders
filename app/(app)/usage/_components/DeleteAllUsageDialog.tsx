@@ -60,7 +60,7 @@ export default function DeleteAllUsageDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-haspopup="dialog"
-        className="inline-flex min-h-11 items-center gap-2 border border-red-500/35 px-3 font-mono text-[11px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-500/35 px-3 font-mono text-[11px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <Trash2 size={13} aria-hidden="true" />
         {zh ? "删除全部用量数据" : "Delete all usage data"}

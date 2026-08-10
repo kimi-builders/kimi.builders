@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
@@ -426,24 +427,40 @@ export default function UsageRecordsSection({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
         {previousHref ? (
-          <Link href={previousHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
-            {zh ? "上一页" : "Prev"}
+          <Link
+            href={previousHref}
+            scroll={false}
+            aria-label={zh ? "上一页" : "Previous page"}
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            <ChevronLeft size={14} aria-hidden="true" />
           </Link>
         ) : (
-          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey/40">
-            {zh ? "上一页" : "Prev"}
+          <span
+            aria-disabled="true"
+            className="inline-flex size-9 cursor-not-allowed items-center justify-center rounded-lg border border-line text-grey/40"
+          >
+            <ChevronLeft size={14} aria-hidden="true" />
           </span>
         )}
         <span className="font-mono text-[11px] text-grey" aria-live="polite">
           {zh ? `第 ${records.page} / ${totalPages} 页` : `Page ${records.page} / ${totalPages}`}
         </span>
         {nextHref ? (
-          <Link href={nextHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
-            {zh ? "下一页" : "Next"}
+          <Link
+            href={nextHref}
+            scroll={false}
+            aria-label={zh ? "下一页" : "Next page"}
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            <ChevronRight size={14} aria-hidden="true" />
           </Link>
         ) : (
-          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey/40">
-            {zh ? "下一页" : "Next"}
+          <span
+            aria-disabled="true"
+            className="inline-flex size-9 cursor-not-allowed items-center justify-center rounded-lg border border-line text-grey/40"
+          >
+            <ChevronRight size={14} aria-hidden="true" />
           </span>
         )}
       </div>

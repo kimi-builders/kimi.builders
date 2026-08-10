@@ -62,14 +62,14 @@ export default function RecordsColumnsMenu({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-card px-3 font-mono text-[11px] text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9"
       >
         {zh ? "列" : "Columns"}
         {enabled.length > 0 ? ` · ${enabled.length}` : ""}
         <ChevronDown size={11} className="text-grey" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-44 border border-line bg-moon">
+        <div className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-lg border border-line bg-moon shadow-xl">
           {OPTIONAL_RECORD_COLUMNS.map((column) => (
             <label
               key={column.id}

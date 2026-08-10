@@ -33,10 +33,10 @@ export default function UsageManagementPanels({
 
   return (
     <div id="usage-management" className="mt-4 grid scroll-mt-4 gap-4 lg:grid-cols-2">
-      <section className="border border-line bg-card p-4 sm:p-5" aria-labelledby="usage-devices-title">
+      <section className="rounded-2xl border border-line bg-card p-4 sm:p-5" aria-labelledby="usage-devices-title">
         <div className="flex items-center justify-between gap-3">
-          <h2 id="usage-devices-title" className="font-mono text-xs font-semibold tracking-[0.14em] text-paper">
-            {zh ? "设备与 Key" : "DEVICES & KEYS"}
+          <h2 id="usage-devices-title" className="text-[13px] font-semibold text-paper">
+            {zh ? "设备与 Key" : "Devices & keys"}
           </h2>
           <a
             href="/usage/device"
@@ -89,7 +89,7 @@ export default function UsageManagementPanels({
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {device.revokedAt ? (
-                        <span className="border border-line px-2 py-1 font-mono text-[10px] text-grey">
+                        <span className="rounded-md border border-line px-2 py-1 font-mono text-[10px] text-grey">
                           {zh ? "已撤销" : "Revoked"}
                         </span>
                       ) : null}
@@ -111,9 +111,9 @@ export default function UsageManagementPanels({
         )}
       </section>
 
-      <section className="border border-line bg-card p-4 sm:p-5" aria-labelledby="usage-privacy-title">
-        <h2 id="usage-privacy-title" className="font-mono text-xs font-semibold tracking-[0.14em] text-paper">
-          {zh ? "隐私设置" : "PRIVACY"}
+      <section className="rounded-2xl border border-line bg-card p-4 sm:p-5" aria-labelledby="usage-privacy-title">
+        <h2 id="usage-privacy-title" className="text-[13px] font-semibold text-paper">
+          {zh ? "隐私设置" : "Privacy"}
         </h2>
         <UsagePrivacyForm
           uploadProject={settings.uploadProject}
