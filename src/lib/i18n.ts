@@ -80,6 +80,8 @@ const DICT = {
   "post.share": { zh: "分享", en: "Share" },
   "post.copied": { zh: "已复制", en: "Copied" },
   "post.shareAria": { zh: "分享(复制链接)", en: "Share (copy link)" },
+  "post.poster": { zh: "海报", en: "Poster" },
+  "post.posterAria": { zh: "下载分享海报图片", en: "Download share poster image" },
   "post.vote": { zh: "投票", en: "Vote" },
   "post.votesTotal": { zh: "共 {n} 票", en: "{n} votes" },
   "post.loginToVote": { zh: "登录后可投票", en: "Log in to vote" },

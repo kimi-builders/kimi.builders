@@ -239,6 +239,8 @@ export default async function PostPage({
             path={`/community/${post.id}`}
             title={post.title || plainExcerpt(post.bodyMd, 60)}
             locale={locale}
+            /* 私密帖海报路由 404 不渲染,按钮也不给 */
+            posterHref={post.visibility === "public" ? `/api/share/post/${post.id}` : undefined}
           />
         </span>
       </div>

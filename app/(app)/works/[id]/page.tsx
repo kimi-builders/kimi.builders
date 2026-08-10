@@ -161,6 +161,7 @@ export default async function WorkPage({
             path={`/works/${work.id}`}
             title={work.name}
             locale={locale}
+            posterHref={`/api/share/work/${work.id}`}
           />
         </span>
       </div>

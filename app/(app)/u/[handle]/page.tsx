@@ -23,6 +23,7 @@ import {
 import { buildYearGrid, localTodayYmd } from "@/src/lib/usage/year-grid";
 import { getUserWorks } from "@/src/lib/works";
 import WorkCard from "../../works/_components/WorkCard";
+import ShareButton from "@/components/ShareButton";
 import SocialUsageHeatmap from "./_components/SocialUsageHeatmap";
 import YearFootprint from "./_components/YearFootprint";
 
@@ -122,14 +123,23 @@ export default async function ProfilePage({
               {t(locale, "prof.joined", { d: ymd(profile.createdAt) })}
             </p>
           </div>
-          {self && (
-            <Link
-              href="/settings"
-              className="shrink-0 border border-line px-3 py-1.5 font-mono text-xs text-paper transition-colors hover:border-blue hover:text-blue"
-            >
-              {t(locale, "prof.edit")}
-            </Link>
-          )}
+          <div className="flex shrink-0 items-center gap-4">
+            {/* 分享(复制链接 + 海报):本人和访客都可见 */}
+            <ShareButton
+              path={`/u/${profile.handle}`}
+              title={profile.name || profile.handle}
+              locale={locale}
+              posterHref={`/api/share/u/${profile.handle}`}
+            />
+            {self && (
+              <Link
+                href="/settings"
+                className="border border-line px-3 py-1.5 font-mono text-xs text-paper transition-colors hover:border-blue hover:text-blue"
+              >
+                {t(locale, "prof.edit")}
+              </Link>
+            )}
+          </div>
         </div>
         {profile.bio && (
           <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
