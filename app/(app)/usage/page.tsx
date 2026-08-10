@@ -19,6 +19,7 @@ import {
 import {
   heatMetricText,
   heatTopSlots,
+  USAGE_TREND_LEGEND,
   USAGE_WEEKDAYS_EN,
   USAGE_WEEKDAYS_ZH,
   type UsageHeatMetric,
@@ -277,13 +278,8 @@ function SegLinks({
   );
 }
 
-/* 趋势卡头图例:与 UsageVisualizations 的 FILL_* 柱子填充一一对应(改色两边同步)。 */
-const USAGE_TREND_LEGEND = [
-  { key: "input", zh: "输入(含缓存写)", en: "Input (incl. cache write)", chip: "bg-blue" },
-  { key: "cache", zh: "缓存读", en: "Cache read", chip: "bg-emerald-400/80" },
-  { key: "output", zh: "输出", en: "Output", chip: "bg-paper/75" },
-  { key: "reasoning", zh: "推理", en: "Reasoning", chip: "bg-amber-400" },
-] as const;
+/* 趋势卡头图例:USAGE_TREND_LEGEND 已收进 src/lib/usage/heatmap.ts(两页共用),
+   与 UsageVisualizations 的 FILL_* 柱子填充一一对应(改色两边同步)。 */
 
 function HeroCard({
   label,

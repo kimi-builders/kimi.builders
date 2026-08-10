@@ -7,6 +7,7 @@
    按 filters.ts 的约定夹取后内联进 SQL(MySQL 预备语句对 INTERVAL ? 支持不稳)。 */
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
+import { usageDeviceDisplayName } from "./device-label";
 
 type Queryable = Pool | PoolConnection;
 
@@ -167,4 +168,49 @@ export async function getPublicTokenTotals(
   const [rows] = await db.query<RowDataPacket[]>(q.sql, q.args);
   for (const r of rows) map.set(Number(r.user_id), Number(r.total_tokens) || 0);
   return map;
+}
+
+/* ---- 个人主页「构建偏好」:全部时间 tokens 最多的设备与项目 ----
+   可见性门禁在页面侧(仅本人或 opt-in);项目只在用户开过「上传项目目录名」
+   才有数据,无数据返回 null,调用方省略该行(无负面标记)。 */
+
+export async function getSocialTopDimensions(
+  userId: number,
+  db: Queryable = getPool(),
+): Promise<{ topDevice: string | null; topProject: string | null }> {
+  const tokenSum = `SUM(input_tokens + cache_write_input_tokens + cache_read_input_tokens
+                     + output_tokens + reasoning_output_tokens)`;
+  const [deviceRows] = await db.query<RowDataPacket[]>(
+    `SELECT d.name, d.terminal_name, d.os_name, d.surface, d.platform,
+            ${tokenSum} AS tokens
+     FROM usage_buckets b
+     JOIN usage_devices d ON d.id = b.device_id
+     WHERE b.user_id = ?
+     GROUP BY b.device_id
+     ORDER BY tokens DESC
+     LIMIT 1`,
+    [userId],
+  );
+  const [projectRows] = await db.query<RowDataPacket[]>(
+    `SELECT project_label AS project, ${tokenSum} AS tokens
+     FROM usage_buckets
+     WHERE user_id = ? AND project_label IS NOT NULL AND project_label <> ''
+     GROUP BY project_label
+     ORDER BY tokens DESC
+     LIMIT 1`,
+    [userId],
+  );
+  const device = deviceRows[0];
+  return {
+    topDevice: device
+      ? usageDeviceDisplayName({
+          name: device.name,
+          terminalName: device.terminal_name,
+          osName: device.os_name,
+          surface: device.surface,
+          platform: device.platform,
+        })
+      : null,
+    topProject: projectRows[0]?.project ? String(projectRows[0].project) : null,
+  };
 }

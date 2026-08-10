@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -35,10 +35,13 @@ export default function MobileNavDrawer({
   locale,
   unread = 0,
   profileHref,
+  account,
 }: {
   locale: Locale;
   unread?: number;
   profileHref?: string;
+  /* 登录态块(头像 + @handle + 退出 / 登录入口),由服务端父组件组合进来。 */
+  account?: ReactNode;
 }) {
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -93,6 +96,12 @@ export default function MobileNavDrawer({
           </div>
 
           <div className="flex-1 overflow-y-auto py-4">
+            {/* 登录态块:头像 + @handle + 退出(未登录 = 登录入口),顶栏迁入 */}
+            {account && (
+              <div className="mx-4 mb-4 flex items-center gap-3 border border-line bg-card px-3 py-2.5 font-mono text-sm [&>a:last-child]:ml-auto">
+                {account}
+              </div>
+            )}
             <Link
               href="/community/new"
               onClick={close}

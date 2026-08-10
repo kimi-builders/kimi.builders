@@ -42,13 +42,15 @@ export default function SocialUsageHeatmap({
   const max = Math.max(0, ...grid.flat());
   const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
   const shortNames = zh ? WEEKDAY_SHORT_ZH : WEEKDAY_SHORT_EN;
+  /* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值 */
   const stepClass = (value: number): string => {
-    if (value <= 0 || max <= 0) return "bg-card";
+    if (value <= 0 || max <= 0) return "bg-paper/[0.05]";
     const ratio = value / max;
-    if (ratio <= 0.25) return "bg-blue/25";
-    if (ratio <= 0.45) return "bg-blue/45";
-    if (ratio <= 0.65) return "bg-blue/65";
-    if (ratio <= 0.85) return "bg-blue/85";
+    if (ratio <= 0.16) return "bg-blue/15";
+    if (ratio <= 0.32) return "bg-blue/30";
+    if (ratio <= 0.48) return "bg-blue/45";
+    if (ratio <= 0.64) return "bg-blue/60";
+    if (ratio <= 0.82) return "bg-blue/80";
     return "bg-blue";
   };
   const top = grid
@@ -59,10 +61,12 @@ export default function SocialUsageHeatmap({
 
   return (
     <div className="relative" onMouseLeave={() => setHovered(null)}>
-      <div className="overflow-x-auto pb-1">
-        <div className="min-w-[620px]">
+      {/* 格子随列宽自适应,但设最大宽度:超宽容器里格子不再被拉成 chunky 大块,
+          与用量中心热图保持同一视觉密度。 */}
+      <div className="pb-1">
+        <div className="max-w-[620px]">
           <div className="flex items-center gap-1.5">
-            <span className="w-6 shrink-0" />
+            <span className="w-5 shrink-0" />
             <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
               {Array.from({ length: 24 }, (_, hour) => (
                 <span key={hour} className="text-center font-mono text-[9px] text-grey">
@@ -74,7 +78,7 @@ export default function SocialUsageHeatmap({
           <div className="mt-1 space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-6 shrink-0 font-mono text-[10px] text-grey">
+                <span className="w-5 shrink-0 text-center font-mono text-[10px] text-grey">
                   {shortNames[weekday]}
                 </span>
                 <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
@@ -83,7 +87,7 @@ export default function SocialUsageHeatmap({
                       key={hour}
                       type="button"
                       aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${compact(value)} tokens`}
-                      className={`aspect-square transition-transform hover:scale-110 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
+                      className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
                       onMouseEnter={() => setHovered({ weekday, hour })}
                       onFocus={() => setHovered({ weekday, hour })}
                       onBlur={() => setHovered(null)}
@@ -99,7 +103,7 @@ export default function SocialUsageHeatmap({
       {hovered && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute right-1 top-5 z-20 border border-line bg-moon p-3 shadow-2xl"
+          className="pointer-events-none absolute right-1 top-5 z-20 rounded-lg border border-line bg-moon p-3 shadow-2xl"
         >
           <div className="font-mono text-[11px] font-semibold text-paper">
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00

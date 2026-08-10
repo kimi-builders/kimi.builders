@@ -323,7 +323,9 @@ function effortLabel(value: string): string {
 }
 
 export async function getUsageShareSnapshot(input: {
-  user: SessionUser;
+  /* 只用 id/handle/name(已 grep 确认):收窄到 Pick,个人主页访客视角
+     才能用公开用户的资料构造调用(门禁在调用方)。 */
+  user: Pick<SessionUser, "id" | "handle" | "name">;
   range: UsageShareRange;
   tzOffsetMinutes: number;
   uploadProject: boolean;

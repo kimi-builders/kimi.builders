@@ -522,9 +522,9 @@ export function UsageHeatmapGrid({
 
   return (
     <div className="relative" onMouseLeave={() => setHovered(null)}>
-      {/* 格子随列宽自适应缩小,不强制最小宽度——标准页面不再横向滚动。 */}
+      {/* 格子随列宽自适应,但设最大宽度:超宽容器里格子不被拉大,视觉密度恒定。 */}
       <div className="pb-1">
-        <div>
+        <div className="max-w-[620px]">
           <div className="space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">

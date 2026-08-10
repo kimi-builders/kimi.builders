@@ -87,3 +87,64 @@ export function buildYearGrid(
   }
   return { weeks, monthLabels };
 }
+
+/* ---- 足迹汇总:近一年总量 / 活跃天数 / 单日峰值 / 连续天数 ----
+   连续口径与 share.ts dailyStreak 一致:最新活跃日早于「昨天」→ current 0,
+   今天暂无产出不算断签。 */
+
+export interface FootprintSummary {
+  totalTokens: number;
+  activeDays: number;
+  peakTokens: number;
+  peakDay: string | null;
+  streak: { current: number; longest: number };
+}
+
+export function footprintSummary(
+  days: Record<string, number>,
+  today: string,
+): FootprintSummary {
+  const active = Object.entries(days)
+    .filter(([, tokens]) => tokens > 0)
+    .map(([day]) => day)
+    .sort();
+  let totalTokens = 0;
+  let peakTokens = 0;
+  let peakDay: string | null = null;
+  for (const [day, tokens] of Object.entries(days)) {
+    if (tokens <= 0) continue;
+    totalTokens += tokens;
+    if (tokens > peakTokens) {
+      peakTokens = tokens;
+      peakDay = day;
+    }
+  }
+
+  const nextDay = (day: string) => toYmd(parseYmd(day) + DAY_MS);
+  let longest = 0;
+  let run = 0;
+  let previous: string | null = null;
+  for (const day of active) {
+    run = previous && nextDay(previous) === day ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    previous = day;
+  }
+  const latest = active.at(-1);
+  /* latest 早于昨天(toYmd(today-1d) 之后没有活跃日)→ 当前连续归零 */
+  const yesterday = toYmd(parseYmd(today) - DAY_MS);
+  let current = 0;
+  if (latest && latest >= yesterday) {
+    current = 1;
+    for (let index = active.length - 2; index >= 0; index -= 1) {
+      if (nextDay(active[index]) !== active[index + 1]) break;
+      current += 1;
+    }
+  }
+  return {
+    totalTokens,
+    activeDays: active.length,
+    peakTokens,
+    peakDay,
+    streak: { current, longest },
+  };
+}

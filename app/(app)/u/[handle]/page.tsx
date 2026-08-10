@@ -1,30 +1,50 @@
-/* 个人主页 /u/[handle]:资料头(头像/显示名/handle/简介/加入时间)+ 三项统计
-   (帖子/评论/获赞)+ 年度构建足迹(53 周每日 token 贡献图,S2-3)
-   + 帖子|评论|作品|用量页签(P1-3)。本人视角多一颗「编辑资料」
-   入口(去 /settings),且能看到自己的私密帖(带标);访客只统计/展示公开内容。
-   作品本来就公开,访客与本人同视图;构建足迹与用量热图仅本人或对方自愿公开
-   (usage_settings.show_on_leaderboard=1)时可见,否则整块完全不渲染(无负面标记)。 */
+/* 个人主页 /u/[handle](Kimi Design 改造):身份 Hero(头像/统计带)+ 构建足迹
+   (通栏 53 周贡献图)+ 动态 Tab 卡(帖子/评论/作品 + 用量/工具/偏好)。
+   本人视角多「编辑资料」入口,且能看到自己的私密帖(带标);访客只统计/展示公开内容。
+   用量相关块(统计带/足迹/用量·工具·偏好 tab)仅本人或对方自愿公开
+   (usage_settings.show_on_leaderboard=1)时渲染,否则整块缺席(无负面标记)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ArrowBigUp, CalendarDays, MessageCircle } from "lucide-react";
+import {
+  ArrowBigUp,
+  CalendarDays,
+  MessageCircle,
+  MessagesSquare,
+  Package,
+  PenLine,
+} from "lucide-react";
+import AgentIcon from "@/components/AgentIcon";
+import Avatar from "@/components/Avatar";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
+import { getPool } from "@/src/lib/db";
 import { relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
 import { getProfileByHandle, getProfileStats } from "@/src/lib/users";
+import { userWorksCountQuery } from "@/src/lib/share-posters";
+import { USAGE_TREND_LEGEND, USAGE_WEEKDAYS_EN, USAGE_WEEKDAYS_ZH } from "@/src/lib/usage/heatmap";
+import { USAGE_DISPLAY_CURRENCIES } from "@/src/lib/usage/pricing";
+import type { UsageTrendDay } from "@/src/lib/usage/query";
+import { getUsageSettings } from "@/src/lib/usage/settings";
+import { getUsageShareSnapshot, type UsageShareSnapshot } from "@/src/lib/usage/share";
 import {
   getSocialDailyActivity,
+  getSocialTopDimensions,
   getSocialUsageHeatmap,
   isUsagePublic,
 } from "@/src/lib/usage/social";
-import { buildYearGrid, localTodayYmd } from "@/src/lib/usage/year-grid";
+import {
+  buildYearGrid,
+  footprintSummary,
+  localTodayYmd,
+} from "@/src/lib/usage/year-grid";
 import { getUserWorks } from "@/src/lib/works";
 import WorkCard from "../../works/_components/WorkCard";
-import Avatar from "@/components/Avatar";
-import ShareButton from "@/components/ShareButton";
+import { UsageTrendChart } from "../../usage/_components/UsageVisualizations";
+import ProfileShareButtons from "./_components/ProfileShareButtons";
 import SocialUsageHeatmap from "./_components/SocialUsageHeatmap";
 import YearFootprint from "./_components/YearFootprint";
 
@@ -32,6 +52,27 @@ function ymd(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 }
+
+function durationText(seconds: number, zh: boolean): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+  if (hours > 0) return zh ? `${hours}时 ${minutes}分` : `${hours}h ${minutes}m`;
+  return zh ? `${minutes} 分钟` : `${minutes}m`;
+}
+
+/* 与用量中心同一套 B/M/k 紧凑格式(同一数字两个页面读法一致)。 */
+function compact(value: number): string {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
+  return value.toLocaleString("en-US");
+}
+
+/* 统计带分隔线:2/3/5 列响应式,与用量中心指标带同一套 nth-child 规则。 */
+const STRIP_CELL =
+  "border-line px-4 py-3 [&:nth-child(n+3)]:border-t sm:[&:nth-child(-n+3)]:border-t-0 sm:[&:nth-child(n+4)]:border-t lg:[&:nth-child(-n+5)]:border-t-0 lg:[&:not(:nth-child(5n+1))]:border-l";
+
+const SITE_HOST = "kimi.builders";
 
 export async function generateMetadata({
   params,
@@ -42,6 +83,39 @@ export async function generateMetadata({
   const p = await getProfileByHandle(handle);
   if (!p) return { title: "kimi.builders" };
   return { title: `${p.name || p.handle} (@${p.handle}) — kimi.builders` };
+}
+
+/* Tab 空态:虚线图标 tile + 标题 + 说明 + CTA(CTA 仅本人)。 */
+function EmptyPane({
+  icon: Icon,
+  title,
+  text,
+  ctaHref,
+  ctaLabel,
+}: {
+  icon: typeof PenLine;
+  title: string;
+  text: string;
+  ctaHref?: string;
+  ctaLabel?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center px-5 py-10 text-center">
+      <div className="grid size-14 place-items-center rounded-2xl border border-dashed border-line bg-paper/[0.03] text-grey">
+        <Icon size={20} aria-hidden="true" />
+      </div>
+      <h4 className="mt-4 text-sm font-semibold text-paper">{title}</h4>
+      <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-grey">{text}</p>
+      {ctaHref && ctaLabel && (
+        <Link
+          href={ctaHref}
+          className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        >
+          {ctaLabel}
+        </Link>
+      )}
+    </div>
+  );
 }
 
 export default async function ProfilePage({
@@ -55,6 +129,7 @@ export default async function ProfilePage({
   const { tab } = await searchParams;
   const me = await getSessionUser();
   const locale = await getLocale(me);
+  const zh = locale === "zh";
   const profile = await getProfileByHandle(handle);
 
   if (!profile) {
@@ -66,287 +141,623 @@ export default async function ProfilePage({
   }
 
   const self = me?.id === profile.id;
-  /* 用量热图页签:本人恒可见;访客仅当对方 opt-in 公开。未公开 = 页签不渲染。 */
+  /* 用量块门禁:本人恒可见;访客仅当对方 opt-in 公开。 */
   const usageVisible = self || (await isUsagePublic(profile.id));
+  /* 用量/工具/偏好三个 tab 同属隐私聚合,共用 usageVisible 门禁 */
   const activeTab =
-    tab === "comments" || tab === "works" || (tab === "usage" && usageVisible)
+    tab === "comments" || tab === "works"
       ? tab
-      : "posts";
-  /* 分时热图的「本地」跟浏览器 kb_tz cookie(同用量看板);无 cookie 按 GMT+0 */
+      : usageVisible && (tab === "usage" || tab === "tools" || tab === "prefs")
+        ? tab
+        : "posts";
+  /* 分时热图/足迹的「本地」跟浏览器 kb_tz cookie(同用量看板);无 cookie 按 GMT+0 */
   const store = await cookies();
   const parsedTz = Number(store.get("kb_tz")?.value);
   const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
-  const [stats, posts, comments, works, heatmap, daily] = await Promise.all([
-    getProfileStats(profile.id, self),
-    activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
-    activeTab === "comments" ? getUserComments(profile.id, self) : Promise.resolve([]),
-    activeTab === "works" ? getUserWorks(profile.id) : Promise.resolve([]),
-    activeTab === "usage"
-      ? getSocialUsageHeatmap(profile.id, tz)
-      : Promise.resolve(null),
-    /* 年度构建足迹:门禁同分时热图(仅本人或对方 opt-in),与页签无关恒取 */
-    usageVisible ? getSocialDailyActivity(profile.id, tz) : Promise.resolve(null),
-  ]);
-  const footprint = daily ? buildYearGrid(daily, localTodayYmd(tz)) : null;
 
-  const tabCls = (active: boolean) =>
-    `pb-2 transition-colors ${
-      active
-        ? "text-paper underline decoration-blue underline-offset-8"
-        : "text-grey hover:text-paper"
-    }`;
+  const ownerSettings = usageVisible ? await getUsageSettings(profile.id) : null;
+  const worksCountQ = userWorksCountQuery(profile.id);
+  const [stats, posts, comments, works, heatmap, daily, topDims, snapshotAll, worksCountRows] =
+    await Promise.all([
+      getProfileStats(profile.id, self),
+      activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
+      activeTab === "comments" ? getUserComments(profile.id, self) : Promise.resolve([]),
+      activeTab === "works" ? getUserWorks(profile.id) : Promise.resolve([]),
+      usageVisible ? getSocialUsageHeatmap(profile.id, tz) : Promise.resolve(null),
+      usageVisible ? getSocialDailyActivity(profile.id, tz) : Promise.resolve(null),
+      usageVisible ? getSocialTopDimensions(profile.id) : Promise.resolve(null),
+      usageVisible && ownerSettings
+        ? getUsageShareSnapshot({
+            user: profile,
+            range: "all",
+            tzOffsetMinutes: tz,
+            uploadProject: ownerSettings.uploadProject,
+            retentionDays: ownerSettings.retentionDays,
+          })
+        : Promise.resolve(null),
+      getPool().query(worksCountQ.sql, worksCountQ.args).then(([rows]) => rows),
+    ]);
+  /* 用量 tab 的「近 30 天」迷你面板只在激活时取数 */
+  const snapshot30: UsageShareSnapshot | null =
+    activeTab === "usage" && usageVisible && ownerSettings
+      ? await getUsageShareSnapshot({
+          user: profile,
+          range: "30d",
+          tzOffsetMinutes: tz,
+          uploadProject: ownerSettings.uploadProject,
+          retentionDays: ownerSettings.retentionDays,
+        })
+      : null;
+
+  const today = localTodayYmd(tz);
+  const footprint = daily ? buildYearGrid(daily, today) : null;
+  const fsum = daily ? footprintSummary(daily, today) : null;
+  /* 用量 tab 的 30 天日序列:snapshot 的 stacked cells → UsageTrendDay
+     (输入含缓存写 / 缓存读 / 输出含推理;请求/会话等维度日粒度没有,置 0)。 */
+  const trend30: UsageTrendDay[] = snapshot30
+    ? snapshot30.main.cells.map((c) => ({
+        day: c.key,
+        inputTokens: c.inputTokens ?? 0,
+        cacheWriteInputTokens: 0,
+        cacheReadInputTokens: c.cacheTokens ?? 0,
+        outputTokens: c.outputTokens ?? 0,
+        reasoningOutputTokens: 0,
+        totalTokens: c.tokens,
+        requests: 0,
+        sessions: 0,
+        activeSeconds: 0,
+        costMicros: 0,
+      }))
+    : [];
+  const worksCount = Number(
+    (worksCountRows as { n?: number }[])[0]?.n ?? 0,
+  );
+  const weekdayNames = zh ? USAGE_WEEKDAYS_ZH : USAGE_WEEKDAYS_EN;
+  const busiest = heatmap
+    ? (heatmap
+        .flatMap((row, weekday) => row.map((value, hour) => ({ weekday, hour, value })))
+        .sort((a, b) => b.value - a.value)[0] ?? null)
+    : null;
+  const busiestSlot = busiest && busiest.value > 0 ? busiest : null;
+  const profilePath = `/u/${profile.handle}`;
+  const posterHref = `/api/share/u/${profile.handle}`;
+  const usageStatsReady = usageVisible && snapshotAll !== null && fsum !== null;
+
+  const tabs = [
+    { key: "posts", label: t(locale, "prof.posts"), href: profilePath, count: stats.posts },
+    {
+      key: "comments",
+      label: t(locale, "prof.comments"),
+      href: `${profilePath}?tab=comments`,
+      count: stats.comments,
+    },
+    {
+      key: "works",
+      label: t(locale, "prof.works"),
+      href: `${profilePath}?tab=works`,
+      count: worksCount,
+    },
+    ...(usageVisible
+      ? [
+          { key: "usage", label: t(locale, "prof.usage"), href: `${profilePath}?tab=usage`, count: null },
+          { key: "tools", label: t(locale, "prof.tools"), href: `${profilePath}?tab=tools`, count: null },
+          { key: "prefs", label: t(locale, "prof.prefs"), href: `${profilePath}?tab=prefs`, count: null },
+        ]
+      : []),
+  ];
 
   return (
     <div>
-      {/* 资料头 */}
-      <header className="border border-line bg-card p-5">
-        <div className="flex items-start gap-4">
-          <Avatar
-            url={profile.avatarUrl}
-            handle={profile.handle}
-            size={64}
-            className="shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-semibold text-paper">
+      {/* ===== 身份 Hero ===== */}
+      <header className="usage-hero rounded-2xl border border-line p-5 sm:p-6">
+        {/* L1:头像 + 名称/ID/加入时间/主页地址 一块 */}
+        <div className="relative z-[1] flex flex-wrap items-center gap-4 sm:gap-5">
+          <div className="shrink-0 rounded-full shadow-[0_0_0_2px_var(--color-card),0_0_0_4px_color-mix(in_srgb,var(--color-blue)_50%,transparent),0_0_26px_color-mix(in_srgb,var(--color-blue)_22%,transparent)]">
+            <Avatar url={profile.avatarUrl} handle={profile.handle} size={74} />
+          </div>
+          <div className="min-w-0">
+            <h1 className="flex flex-wrap items-center gap-2.5 text-[21px] font-semibold tracking-[0.2px] text-paper">
               {profile.name || profile.handle}
-            </h1>
-            <p className="font-mono text-xs text-grey">
-              @{profile.handle}
+              <span className="rounded-full border border-line bg-paper/[0.05] px-2.5 py-0.5 font-mono text-[11px] font-medium text-grey">
+                @{profile.handle}
+              </span>
               {profile.role !== "member" && (
-                <span className="ml-2 border border-blue px-1 py-px text-[9px] tracking-wider text-blue">
+                <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-[0.16em] text-blue">
                   {profile.role.toUpperCase()}
                 </span>
               )}
-            </p>
-            <p className="mt-1.5 flex items-center gap-1.5 font-mono text-[11px] text-grey">
-              <CalendarDays size={12} />
-              {t(locale, "prof.joined", { d: ymd(profile.createdAt) })}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-4">
-            {/* 分享(复制链接 + 海报):本人和访客都可见 */}
-            <ShareButton
-              path={`/u/${profile.handle}`}
-              title={profile.name || profile.handle}
-              locale={locale}
-              posterHref={`/api/share/u/${profile.handle}`}
-            />
-            {self && (
-              <Link
-                href="/settings"
-                className="border border-line px-3 py-1.5 font-mono text-xs text-paper transition-colors hover:border-blue hover:text-blue"
-              >
-                {t(locale, "prof.edit")}
-              </Link>
-            )}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-grey">
+              <span className="flex items-center gap-1.5">
+                <CalendarDays size={12} aria-hidden="true" />
+                {t(locale, "prof.joined", { d: ymd(profile.createdAt) })}
+              </span>
+              <span className="font-mono text-[11px] text-blue">
+                {SITE_HOST}{profilePath}
+              </span>
+            </div>
           </div>
         </div>
-        {profile.bio && (
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
-            {profile.bio}
-          </p>
-        )}
-        <div className="mt-4 flex gap-6 border-t border-line pt-3">
+        {/* L2:社交统计(帖子/评论/获赞) */}
+        <div className="relative z-[1] mt-4 flex flex-wrap gap-x-6 gap-y-1">
           {[
             { n: stats.posts, l: t(locale, "prof.posts") },
             { n: stats.comments, l: t(locale, "prof.comments") },
             { n: stats.likes, l: t(locale, "prof.likes") },
           ].map((s) => (
             <div key={s.l} className="flex items-baseline gap-1.5">
-              <span className="font-mono text-sm font-semibold text-paper">
-                {s.n}
-              </span>
+              <span className="font-mono text-sm font-semibold text-paper">{s.n}</span>
               <span className="font-mono text-[11px] text-grey">{s.l}</span>
             </div>
           ))}
         </div>
+        {/* L3:操作(分享主页/生成海报/编辑资料) */}
+        <div className="relative z-[1] mt-4 flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-flow-col max-sm:auto-cols-fr">
+          <ProfileShareButtons
+            path={profilePath}
+            label={t(locale, "prof.share")}
+            copiedLabel={t(locale, "post.copied")}
+          />
+          <a
+            href={posterHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "prof.poster")}
+          </a>
+          {self && (
+            <Link
+              href="/settings"
+              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-3.5 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              {t(locale, "prof.edit")}
+            </Link>
+          )}
+        </div>
+        {profile.bio && (
+          <p className="relative z-[1] mt-4 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
+            {profile.bio}
+          </p>
+        )}
+        {/* 统计带:opt-in 公开用量 → 5 格用量统计;否则回退社交三格 */}
+        <div className="relative z-[1] mt-5 grid grid-cols-2 border-t border-line sm:grid-cols-3 lg:grid-cols-5">
+          {usageStatsReady ? (
+            <>
+              <div className={`${STRIP_CELL} lg:!pl-0`}>
+                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                  {t(locale, "prof.statTotal")}
+                </div>
+                <div className="mt-1.5 font-mono text-[25px] font-semibold leading-none tracking-[-0.5px] text-blue">
+                  {compact(snapshotAll.lifetimeTokens)}
+                </div>
+                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                  {t(locale, "prof.statTotalSub", {
+                    v: `$${(snapshotAll.costMicros / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                  })}
+                </div>
+              </div>
+              <div className={STRIP_CELL}>
+                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                  {t(locale, "prof.statActiveDays")}
+                </div>
+                <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
+                  {fsum.activeDays} <span className="text-[11px] font-medium text-grey">{zh ? "天" : "days"}</span>
+                </div>
+                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                  {t(locale, "prof.statActiveDaysSub")}
+                </div>
+              </div>
+              <div className={STRIP_CELL}>
+                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                  {t(locale, "prof.statStreak")}
+                </div>
+                <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
+                  {fsum.streak.current} <span className="text-[11px] font-medium text-grey">{zh ? "天" : "days"}</span>
+                </div>
+                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                  {t(locale, "prof.statStreakSub", {
+                    n: snapshotAll.streakWeeks.current || snapshotAll.streakWeeks.longest,
+                  })}
+                </div>
+              </div>
+              <div className={STRIP_CELL}>
+                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                  {t(locale, "prof.statHitRate")}
+                </div>
+                <div className="mt-1.5 font-mono text-lg font-semibold text-emerald-400">
+                  {snapshotAll.cacheHitRate === null
+                    ? "—"
+                    : `${(snapshotAll.cacheHitRate * 100).toFixed(1)}%`}
+                </div>
+                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                  {t(locale, "prof.statHitRateSub", { v: compact(snapshotAll.flow.cacheReadTokens) })}
+                </div>
+              </div>
+              <div className={STRIP_CELL}>
+                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                  {t(locale, "prof.statRequests")}
+                </div>
+                <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
+                  {snapshotAll.requests.toLocaleString("en-US")}
+                </div>
+                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                  {t(locale, "prof.statRequestsSub", { n: snapshotAll.sessions.toLocaleString("en-US") })}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {[
+                { n: stats.posts, l: t(locale, "prof.posts") },
+                { n: stats.comments, l: t(locale, "prof.comments") },
+                { n: stats.likes, l: t(locale, "prof.likes") },
+              ].map((s) => (
+                <div key={s.l} className={STRIP_CELL}>
+                  <div className="text-[10px] tracking-[0.05em] text-grey/80">{s.l}</div>
+                  <div className="mt-1.5 font-mono text-lg font-semibold text-paper">{s.n}</div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
       </header>
 
-      {/* 年度构建足迹:53 周 × 7 天每日 token 贡献图;门禁同用量页签
-          (仅本人或对方 opt-in),未公开整区块不渲染(无负面标记) */}
-      {footprint && (
-        <section className="mt-6 border border-line bg-card p-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-mono text-xs tracking-[0.25em] text-grey">
-              {t(locale, "prof.footprint")}
-            </h2>
-            <span className="font-mono text-[10px] text-grey">
-              {t(locale, "prof.footprintHint")}
-            </span>
-          </div>
-          <div className="mt-3">
-            <YearFootprint grid={footprint} zh={locale === "zh"} />
-          </div>
-        </section>
-      )}
+      {/* ===== 主区:构建足迹(通栏)+ 动态 Tab 卡 ===== */}
+      <div className="mt-4 flex flex-col gap-4">
+          {/* 构建足迹(门禁同用量:仅本人或对方 opt-in) */}
+          {footprint && fsum && (
+            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-[13px] font-semibold text-paper">
+                  {t(locale, "prof.footprint")}
+                </h2>
+                <span className="font-mono text-[10px] text-grey/80">
+                  {t(locale, "prof.footprintHint")}
+                </span>
+              </div>
+              <div className="mt-3">
+                <YearFootprint grid={footprint} summary={fsum} zh={zh} />
+              </div>
+            </section>
+          )}
 
-      {/* 页签 */}
-      <div className="mt-6 flex items-center gap-5 border-b border-line font-mono text-sm">
-        <Link href={`/u/${profile.handle}`} className={tabCls(activeTab === "posts")}>
-          {t(locale, "prof.posts")}
-        </Link>
-        <Link
-          href={`/u/${profile.handle}?tab=comments`}
-          className={tabCls(activeTab === "comments")}
-        >
-          {t(locale, "prof.comments")}
-        </Link>
-        <Link
-          href={`/u/${profile.handle}?tab=works`}
-          className={tabCls(activeTab === "works")}
-        >
-          {t(locale, "prof.works")}
-        </Link>
-        {usageVisible && (
-          <Link
-            href={`/u/${profile.handle}?tab=usage`}
-            className={tabCls(activeTab === "usage")}
-          >
-            {t(locale, "prof.usage")}
-          </Link>
-        )}
-      </div>
-
-      {/* 帖子页签 */}
-      {activeTab === "posts" &&
-        (posts.length === 0 ? (
-          <p className="mt-16 text-center text-sm text-grey">
-            {t(locale, "prof.noPosts")}
-          </p>
-        ) : (
-          <div className="mt-5 space-y-4">
-            {posts.map((p) => (
-              <article
-                key={p.id}
-                className="border border-line bg-card p-4 transition-colors hover:border-paper/20"
-              >
-                <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
-                  <span>{relTime(p.createdAt, locale)}</span>
-                  <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">
-                    {p.visibility === "private" && (
-                      <span className="border border-line px-1 py-px text-[10px] text-paper">
-                        {t(locale, "post.private")}
+          {/* 动态 Tab 卡 */}
+          <section className="overflow-hidden rounded-2xl border border-line bg-card">
+            <nav
+              className="flex flex-nowrap gap-1 overflow-x-auto border-b border-line px-3 pt-2"
+              aria-label={zh ? "主页分区" : "Profile sections"}
+            >
+              {tabs.map((item) => {
+                const active = activeTab === item.key;
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    scroll={false}
+                    aria-current={active ? "page" : undefined}
+                    className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1.5 text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                      active
+                        ? "border-blue text-paper"
+                        : "border-transparent text-grey hover:text-paper"
+                    }`}
+                  >
+                    {item.label}
+                    {item.count !== null && (
+                      <span
+                        className={`rounded-full border px-1.5 py-0.5 font-mono text-[10px] ${
+                          active
+                            ? "border-blue/40 bg-blue/10 text-blue"
+                            : "border-line bg-paper/[0.04] text-grey"
+                        }`}
+                      >
+                        {item.count}
                       </span>
                     )}
-                    {categoryLabel(locale, p.category)}
-                  </span>
-                </div>
-                {p.title ? (
-                  <>
-                    <Link
-                      href={`/community/${p.id}`}
-                      className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
-                    >
-                      {p.title}
-                      {p.type !== "text" && (
-                        <span className="ml-2 border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
-                          {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* 帖子 */}
+            {activeTab === "posts" &&
+              (posts.length === 0 ? (
+                <EmptyPane
+                  icon={PenLine}
+                  title={t(locale, "prof.emptyPostsTitle")}
+                  text={self ? t(locale, "prof.emptyPostsText") : t(locale, "prof.noPosts")}
+                  ctaHref={self ? "/community/new" : undefined}
+                  ctaLabel={self ? t(locale, "prof.emptyPostsCta") : undefined}
+                />
+              ) : (
+                <div className="px-4 sm:px-5">
+                  {posts.map((p) => (
+                    <article key={p.id} className="border-b border-line py-4 last:border-b-0">
+                      <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
+                        <span>{relTime(p.createdAt, locale)}</span>
+                        <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">
+                          {p.visibility === "private" && (
+                            <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
+                              {t(locale, "post.private")}
+                            </span>
+                          )}
+                          {categoryLabel(locale, p.category)}
                         </span>
+                      </div>
+                      {p.title ? (
+                        <>
+                          <Link
+                            href={`/community/${p.id}`}
+                            className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
+                          >
+                            {p.title}
+                            {p.type !== "text" && (
+                              <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
+                                {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
+                              </span>
+                            )}
+                          </Link>
+                          {p.excerpt && (
+                            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
+                              {p.excerpt}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <Link
+                          href={`/community/${p.id}`}
+                          className="mt-1 block text-[15px] leading-relaxed text-paper transition-colors hover:text-blue"
+                        >
+                          <span className="line-clamp-3">{p.excerpt}</span>
+                          {p.type !== "text" && (
+                            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] text-grey">
+                              {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
+                            </span>
+                          )}
+                        </Link>
                       )}
-                    </Link>
-                    {p.excerpt && (
-                      <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
-                        {p.excerpt}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <Link
-                    href={`/community/${p.id}`}
-                    className="mt-1 block text-[15px] leading-relaxed text-paper transition-colors hover:text-blue"
-                  >
-                    <span className="line-clamp-3">{p.excerpt}</span>
-                    {p.type !== "text" && (
-                      <span className="ml-2 border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] text-grey">
-                        {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
-                      </span>
-                    )}
-                  </Link>
+                      <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
+                        <span className="inline-flex items-center gap-1">
+                          <ArrowBigUp size={14} />
+                          {p.score}
+                        </span>
+                        <Link
+                          href={`/community/${p.id}#comments`}
+                          title={t(locale, "post.comments", { n: p.commentCount })}
+                          className="inline-flex items-center gap-1 transition-colors hover:text-blue"
+                        >
+                          <MessageCircle size={13} />
+                          {p.commentCount}
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ))}
+
+            {/* 评论 */}
+            {activeTab === "comments" &&
+              (comments.length === 0 ? (
+                <EmptyPane
+                  icon={MessagesSquare}
+                  title={t(locale, "prof.emptyCommentsTitle")}
+                  text={self ? t(locale, "prof.emptyCommentsText") : t(locale, "prof.noComments")}
+                  ctaHref={self ? "/community" : undefined}
+                  ctaLabel={self ? t(locale, "prof.emptyCommentsCta") : undefined}
+                />
+              ) : (
+                <div className="px-4 sm:px-5">
+                  {comments.map((c) => (
+                    <article key={c.id} className="border-b border-line py-4 last:border-b-0">
+                      <div className="font-mono text-[11px] text-grey">
+                        {t(locale, "prof.commentedOn")}{" "}
+                        <Link
+                          href={`/community/${c.postId}#comment-${c.id}`}
+                          className="text-paper transition-colors hover:text-blue"
+                        >
+                          {c.postTitle}
+                        </Link>
+                        <span className="mx-2">·</span>
+                        {relTime(c.createdAt, locale)}
+                      </div>
+                      <Link
+                        href={`/community/${c.postId}#comment-${c.id}`}
+                        className="mt-1.5 block text-sm leading-relaxed text-paper/90 transition-colors hover:text-blue"
+                      >
+                        <span className="line-clamp-2">{c.excerpt}</span>
+                      </Link>
+                      <div className="mt-2 flex items-center gap-1 font-mono text-[11px] text-grey">
+                        <ArrowBigUp size={13} />
+                        {c.score}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ))}
+
+            {/* 作品:复用作品墙的 WorkCard;作品本来就公开,访客/本人同视图 */}
+            {activeTab === "works" &&
+              (works.length === 0 ? (
+                <EmptyPane
+                  icon={Package}
+                  title={t(locale, "prof.emptyWorksTitle")}
+                  text={self ? t(locale, "prof.emptyWorksText") : t(locale, "prof.noWorks")}
+                  ctaHref={self ? "/works/new" : undefined}
+                  ctaLabel={self ? t(locale, "prof.emptyWorksCta") : undefined}
+                />
+              ) : (
+                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+                  {works.map((w) => (
+                    <WorkCard key={w.id} work={w} locale={locale} meId={me?.id ?? null} />
+                  ))}
+                </div>
+              ))}
+
+            {/* 用量:近 30 天迷你面板 + 全部时间分时热图 */}
+            {activeTab === "usage" && usageVisible && (
+              <div className="p-4 sm:p-5">
+                {snapshot30 && (
+                  <div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-line bg-bg p-3.5">
+                        <div className="text-[10px] text-grey/80">{t(locale, "prof.usage30")}</div>
+                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
+                          {compact(snapshot30.totalTokens)}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-line bg-bg p-3.5">
+                        <div className="text-[10px] text-grey/80">{t(locale, "prof.usageHit")}</div>
+                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-emerald-400">
+                          {snapshot30.cacheHitRate === null
+                            ? "—"
+                            : `${(snapshot30.cacheHitRate * 100).toFixed(1)}%`}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-line bg-bg p-3.5">
+                        <div className="text-[10px] text-grey/80">{t(locale, "prof.usageActive")}</div>
+                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
+                          {durationText(snapshot30.activeSeconds, zh)}
+                        </div>
+                      </div>
+                    </div>
+                    {/* 近 30 天每日趋势:直接复用用量中心的 SVG 堆叠柱图(同一渲染器) */}
+                    <div className="mt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-[13px] font-semibold text-paper">
+                          {t(locale, "prof.dailyTrend")}
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {USAGE_TREND_LEGEND.map((item) => (
+                            <span
+                              key={item.key}
+                              className="flex items-center gap-1.5 text-[11px] text-grey"
+                            >
+                              <i className={`h-2 w-2 rounded-[2px] ${item.chip}`} />
+                              {zh ? item.zh : item.en}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <UsageTrendChart
+                          trend={trend30}
+                          metric="tokens"
+                          granularity="day"
+                          rangeLabel="30d"
+                          zh={zh}
+                          currency={USAGE_DISPLAY_CURRENCIES.usd}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] text-grey">
+                      <span>{t(locale, "prof.usageNote")}</span>
+                      {self && (
+                        <Link
+                          href="/usage"
+                          className="ml-auto font-semibold text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                        >
+                          {t(locale, "prof.usageGo")}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                 )}
-                <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
-                  <span className="inline-flex items-center gap-1">
-                    <ArrowBigUp size={14} />
-                    {p.score}
-                  </span>
-                  <Link
-                    href={`/community/${p.id}#comments`}
-                    title={t(locale, "post.comments", { n: p.commentCount })}
-                    className="inline-flex items-center gap-1 transition-colors hover:text-blue"
-                  >
-                    <MessageCircle size={13} />
-                    {p.commentCount}
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        ))}
+                {heatmap && (
+                  <div className={snapshot30 ? "mt-5 border-t border-line pt-4" : undefined}>
+                    <p className="mb-3 font-mono text-[10px] text-grey/80">
+                      {zh ? "星期 × 本地小时 · 全部时间" : "Weekday × local hour · all time"}
+                    </p>
+                    <SocialUsageHeatmap grid={heatmap} tzOffsetMinutes={tz} zh={zh} />
+                  </div>
+                )}
+              </div>
+            )}
 
-      {/* 评论页签 */}
-      {activeTab === "comments" &&
-        (comments.length === 0 ? (
-          <p className="mt-16 text-center text-sm text-grey">
-            {t(locale, "prof.noComments")}
-          </p>
-        ) : (
-          <div className="mt-5 space-y-4">
-            {comments.map((c) => (
-              <article
-                key={c.id}
-                className="border border-line bg-card p-4 transition-colors hover:border-paper/20"
-              >
-                <div className="font-mono text-[11px] text-grey">
-                  {t(locale, "prof.commentedOn")}{" "}
-                  <Link
-                    href={`/community/${c.postId}#comment-${c.id}`}
-                    className="text-paper transition-colors hover:text-blue"
-                  >
-                    {c.postTitle}
-                  </Link>
-                  <span className="mx-2">·</span>
-                  {relTime(c.createdAt, locale)}
-                </div>
-                <Link
-                  href={`/community/${c.postId}#comment-${c.id}`}
-                  className="mt-1.5 block text-sm leading-relaxed text-paper/90 transition-colors hover:text-blue"
-                >
-                  <span className="line-clamp-2">{c.excerpt}</span>
-                </Link>
-                <div className="mt-2 flex items-center gap-1 font-mono text-[11px] text-grey">
-                  <ArrowBigUp size={13} />
-                  {c.score}
-                </div>
-              </article>
-            ))}
-          </div>
-        ))}
+            {/* 常用工具(门禁同用量 tab,用量中心分布卡的行式版本) */}
+            {activeTab === "tools" && usageVisible && snapshotAll &&
+              (snapshotAll.topTools.length === 0 ? (
+                <p className="px-5 py-10 text-center text-sm text-grey">
+                  {t(locale, "prof.toolsEmpty")}
+                </p>
+              ) : (
+                <ul className="px-4 sm:px-5">
+                  {snapshotAll.topTools.map((tool, index) => {
+                    const pct =
+                      snapshotAll.lifetimeTokens > 0
+                        ? (tool.tokens / snapshotAll.lifetimeTokens) * 100
+                        : 0;
+                    const topTokens = Math.max(1, snapshotAll.topTools[0]?.tokens ?? 1);
+                    return (
+                      <li key={tool.id} className="border-b border-line py-3 last:border-b-0">
+                        <div className="flex items-center gap-3">
+                          <span className="flex min-w-0 items-center gap-2 text-xs text-paper">
+                            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-line bg-paper/[0.04]">
+                              <AgentIcon id={tool.id} size={12} />
+                            </span>
+                            <span className="truncate">{tool.label}</span>
+                          </span>
+                          <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
+                            {compact(tool.tokens)} · {Math.round(pct)}%
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
+                          <div
+                            className={`h-full rounded-full ${
+                              index === 0 ? "bg-gradient-to-r from-blue to-blue/40" : "bg-blue/70"
+                            }`}
+                            style={{ width: `${Math.max((tool.tokens / topTokens) * 100, 2)}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ))}
 
-      {/* 作品页签:复用作品墙的 WorkCard;作品本来就公开,访客/本人同视图 */}
-      {activeTab === "works" &&
-        (works.length === 0 ? (
-          <p className="mt-16 text-center text-sm text-grey">
-            {t(locale, "prof.noWorks")}
-          </p>
-        ) : (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {works.map((w) => (
-              <WorkCard
-                key={w.id}
-                work={w}
-                locale={locale}
-                meId={me?.id ?? null}
-              />
-            ))}
-          </div>
-        ))}
-
-      {/* 用量页签:星期×小时的 token 热图(仅本人或对方自愿公开时才会走到这里) */}
-      {activeTab === "usage" && heatmap && (
-        <div className="mt-5 border border-line bg-card p-4">
-          <SocialUsageHeatmap grid={heatmap} tzOffsetMinutes={tz} zh={locale === "zh"} />
-        </div>
-      )}
+            {/* 构建偏好(无数据的行自动省略,无负面标记) */}
+            {activeTab === "prefs" && usageVisible && snapshotAll && (
+              <dl className="divide-y divide-line px-4 sm:px-5">
+                {busiestSlot && (
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <dt className="text-xs text-grey">{t(locale, "prof.prefPeak")}</dt>
+                    <dd className="font-mono text-[11.5px] text-paper">
+                      {weekdayNames[busiestSlot.weekday]} {String(busiestSlot.hour).padStart(2, "0")}:00
+                    </dd>
+                  </div>
+                )}
+                {snapshotAll.topModel && (
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <dt className="text-xs text-grey">{t(locale, "prof.prefModel")}</dt>
+                    <dd className="max-w-[240px] truncate font-mono text-[11.5px] text-paper" title={snapshotAll.topModel}>
+                      {snapshotAll.topModel}
+                    </dd>
+                  </div>
+                )}
+                {topDims?.topDevice && (
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <dt className="text-xs text-grey">{t(locale, "prof.prefDevice")}</dt>
+                    <dd className="max-w-[240px] truncate font-mono text-[11.5px] text-paper" title={topDims.topDevice}>
+                      {topDims.topDevice}
+                    </dd>
+                  </div>
+                )}
+                {topDims?.topProject && (
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <dt className="text-xs text-grey">{t(locale, "prof.prefProject")}</dt>
+                    <dd className="max-w-[240px] truncate font-mono text-[11.5px] text-paper" title={topDims.topProject}>
+                      {topDims.topProject}
+                    </dd>
+                  </div>
+                )}
+                {!busiestSlot && !snapshotAll.topModel && !topDims?.topDevice && !topDims?.topProject && (
+                  <p className="py-10 text-center text-sm text-grey">
+                    {t(locale, "prof.toolsEmpty")}
+                  </p>
+                )}
+              </dl>
+            )}
+          </section>
+      </div>
     </div>
   );
 }
