@@ -53,12 +53,12 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
       >
         Google
       </a>
-      <a
+      <Link
         href="/login"
         className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
       >
         {t(locale, "auth.email")}
-      </a>
+      </Link>
     </>
   );
 }
