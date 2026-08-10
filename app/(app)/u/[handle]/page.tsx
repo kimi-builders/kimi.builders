@@ -23,6 +23,7 @@ import {
 import { buildYearGrid, localTodayYmd } from "@/src/lib/usage/year-grid";
 import { getUserWorks } from "@/src/lib/works";
 import WorkCard from "../../works/_components/WorkCard";
+import Avatar from "@/components/Avatar";
 import ShareButton from "@/components/ShareButton";
 import SocialUsageHeatmap from "./_components/SocialUsageHeatmap";
 import YearFootprint from "./_components/YearFootprint";
@@ -100,11 +101,11 @@ export default async function ProfilePage({
       {/* 资料头 */}
       <header className="border border-line bg-card p-5">
         <div className="flex items-start gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={profile.avatarUrl}
-            alt=""
-            className="h-16 w-16 shrink-0 rounded-full border border-paper/15"
+          <Avatar
+            url={profile.avatarUrl}
+            handle={profile.handle}
+            size={64}
+            className="shrink-0"
           />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-semibold text-paper">

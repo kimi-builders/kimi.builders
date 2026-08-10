@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink, Heart } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import Markdown from "@/components/Markdown";
@@ -119,8 +120,7 @@ export default async function WorkPage({
       <div className="mt-3 flex items-center gap-3 font-mono text-[11px] text-grey">
         {work.handle ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={work.avatarUrl ?? ""} alt="" className="h-5 w-5 rounded-full" />
+            <Avatar url={work.avatarUrl} handle={work.handle} size={20} />
             <Link
               href={`/u/${work.handle}`}
               className="text-paper transition-colors hover:text-blue"
@@ -206,11 +206,11 @@ export default async function WorkPage({
                 href={`/u/${work.handle}`}
                 className="mt-3 flex items-center gap-3 border border-line p-3 transition-colors hover:border-blue"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={work.avatarUrl ?? ""}
-                  alt=""
-                  className="h-8 w-8 shrink-0 rounded-full"
+                <Avatar
+                  url={work.avatarUrl}
+                  handle={work.handle}
+                  size={32}
+                  className="shrink-0"
                 />
                 <span className="min-w-0">
                   <span className="block truncate text-sm text-paper">

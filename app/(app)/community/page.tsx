@@ -7,6 +7,7 @@
    卡片渲染抽在 _components/PostCard,首屏与追加共用 _components/feed-page。 */
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import LoadMore from "@/components/LoadMore";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
@@ -50,12 +51,7 @@ export default async function CommunityPage({
           href="/community/new"
           className="mb-6 flex items-center gap-3 border border-line bg-card p-3.5 transition-colors hover:border-paper/25"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={user.avatarUrl}
-            alt=""
-            className="h-8 w-8 rounded-full border border-paper/10"
-          />
+          <Avatar url={user.avatarUrl} handle={user.handle} size={32} />
           <span className="text-sm text-grey">{t(locale, "feed.quickPost")}</span>
           <SquarePen size={15} className="ml-auto text-grey" />
         </Link>

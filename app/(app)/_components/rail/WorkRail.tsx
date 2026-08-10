@@ -4,6 +4,7 @@
    React cache,同一请求去重);作品不存在时页面给友好文案,右栏整个不渲染。 */
 import Link from "next/link";
 import { ExternalLink, Heart, MessageCircle } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber, relTime } from "@/src/lib/format";
@@ -50,11 +51,11 @@ export default async function WorkRail({
             href={`/u/${work.handle}`}
             className="flex items-center gap-2.5 transition-colors hover:text-blue"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={work.avatarUrl ?? ""}
-              alt=""
-              className="h-7 w-7 shrink-0 rounded-full border border-paper/10"
+            <Avatar
+              url={work.avatarUrl}
+              handle={work.handle}
+              size={28}
+              className="shrink-0"
             />
             <span className="min-w-0">
               <span className="block truncate text-xs text-paper">

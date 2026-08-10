@@ -5,6 +5,7 @@
    不能借右栏把私密帖元数据漏给外人)。 */
 import Link from "next/link";
 import { ArrowBigUp, MessageCircle } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { relTime } from "@/src/lib/format";
@@ -35,11 +36,11 @@ export default async function PostRail({
           href={`/u/${post.handle}`}
           className="flex items-center gap-2.5 transition-colors hover:text-blue"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.avatarUrl}
-            alt=""
-            className="h-7 w-7 shrink-0 rounded-full border border-paper/10"
+          <Avatar
+            url={post.avatarUrl}
+            handle={post.handle}
+            size={28}
+            className="shrink-0"
           />
           <span className="min-w-0">
             <span className="block truncate text-xs text-paper">

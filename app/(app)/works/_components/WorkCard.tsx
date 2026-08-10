@@ -14,6 +14,7 @@ import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import type { WorkRow } from "@/src/lib/works";
+import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkOwnerActions from "./WorkOwnerActions";
@@ -111,12 +112,7 @@ export default function WorkCard({
                 href={`/u/${w.handle}`}
                 className="relative z-10 flex min-w-0 items-center gap-1.5 text-grey transition-colors hover:text-blue"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={w.avatarUrl ?? ""}
-                  alt=""
-                  className="h-4 w-4 rounded-full"
-                />
+                <Avatar url={w.avatarUrl} handle={w.handle} size={16} />
                 <span className="truncate text-paper">@{w.handle}</span>
               </Link>
             ) : (

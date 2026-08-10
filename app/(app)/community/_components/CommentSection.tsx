@@ -11,6 +11,7 @@
    已追加的页作废,回到首屏第一页(与刷新前全量重取的行为一致)。 */
 import { useRef, useState } from "react";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 import { useRouter } from "next/navigation";
 import { ArrowBigUp } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -195,11 +196,12 @@ export default function CommentSection({
 
   const head = (c: CommentView) => (
     <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={c.avatarUrl}
-        alt=""
-        className={`h-5 w-5 ${c.isAi ? "rounded" : "rounded-full"}`}
+      <Avatar
+        url={c.avatarUrl}
+        handle={c.handle ?? c.author}
+        size={20}
+        square={c.isAi}
+        className="h-5 w-5"
       />
       {c.handle ? (
         <Link

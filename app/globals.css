@@ -173,7 +173,7 @@ html[lang="en"] .only-zh {
 /* 左栏收起:结构常渲染、纯 CSS 收束,切换不等网络。
    未加 layer,优先于 Tailwind utilities 层。 */
 .leftnav {
-  width: 13rem; /* w-52 */
+  width: 14rem; /* w-56,与三栏居中容器的栏宽数学一致 */
 }
 html[data-nav="1"] .leftnav {
   width: 3.5rem; /* w-14 */

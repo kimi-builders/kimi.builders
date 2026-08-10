@@ -37,16 +37,18 @@ export default async function AppLayout({
       <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} />
       {/* 桌面固定顶栏(≥lg);内容区 lg:pt-14 让位 */}
       <TopBar locale={locale} unread={unread} loggedIn={!!user} />
-      <div className="flex items-start gap-8 lg:pt-14 lg:pr-6">
+      {/* 三栏统一收进 1320 居中容器:栏间距固定,宽屏只剩两侧等宽留白,
+          左栏不再贴视口缘;主列 ≥lg 带竖向 hairline 缝合版面 */}
+      <div className="mx-auto flex w-full max-w-[1320px] items-start gap-6 lg:pt-14">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
           <LeftNav locale={locale} profileHref={profileHref} />
         </Suspense>
-        {/* 主列居中于剩余空间;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
-            wide(usage / 个人主页)放宽到 1120 分析画布,其余 680 阅读列 */}
+        {/* 主列在容器内靠左;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
+            wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding) */}
         <main
-          className={`mx-auto w-full min-w-0 flex-1 px-4 py-6 pb-24 lg:px-0 lg:py-8 ${
-            rail.wide ? "max-w-[1120px]" : "max-w-[680px]"
+          className={`w-full min-w-0 flex-1 px-4 py-6 pb-24 lg:border-x lg:border-line lg:px-6 lg:py-8 ${
+            rail.wide ? "lg:max-w-[1000px]" : "lg:max-w-[720px]"
           }`}
         >
           {children}

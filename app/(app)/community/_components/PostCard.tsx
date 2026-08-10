@@ -3,6 +3,7 @@
    标题非强制:无标题帖正文摘要占主链接位(X 式卡片)。 */
 import Link from "next/link";
 import { ArrowBigUp, MessageCircle } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import { categoryLabel } from "@/src/lib/categories";
 import { relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -26,12 +27,7 @@ export default function PostCard({
     <article className="border border-line bg-card p-4 transition-colors hover:border-paper/20">
       <div className="flex gap-3">
         <Link href={`/u/${p.handle}`} className="shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={p.avatarUrl}
-            alt={`@${p.handle}`}
-            className="h-9 w-9 rounded-full border border-paper/10"
-          />
+          <Avatar url={p.avatarUrl} handle={p.handle} size={36} />
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 font-mono text-[11px] text-grey">

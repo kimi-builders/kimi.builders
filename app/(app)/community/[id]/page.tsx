@@ -24,6 +24,7 @@ import {
   incrementViewCount,
   isSubscribed,
 } from "@/src/lib/posts";
+import Avatar from "@/components/Avatar";
 import Markdown from "@/components/Markdown";
 import ShareButton from "@/components/ShareButton";
 import CommentSection from "../_components/CommentSection";
@@ -113,8 +114,7 @@ export default async function PostPage({
           post.title ? "mt-3" : "mt-4"
         }`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={post.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+        <Avatar url={post.avatarUrl} handle={post.handle} size={20} />
         <Link
           href={`/u/${post.handle}`}
           className="text-paper transition-colors hover:text-blue"

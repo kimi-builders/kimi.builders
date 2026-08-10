@@ -6,7 +6,8 @@
    视觉:硬边细线、mono 大字距小标签、无圆角无阴影(头像沿用全站圆形惯例)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MonitorPlay, Presentation, UserRound } from "lucide-react";
+import { MonitorPlay, Presentation } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import Markdown from "@/components/Markdown";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
@@ -23,29 +24,6 @@ import { getLocale } from "@/src/lib/i18n-server";
 import RsvpButton from "./_components/RsvpButton";
 
 export const metadata: Metadata = { title: "Demo Night — kimi.builders" };
-
-/* 头像(无头像落 UserRound 占位,同右栏新成员 widget 惯例)。 */
-function Avatar({ entry, size }: { entry: RosterEntry; size: number }) {
-  if (entry.avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={entry.avatarUrl}
-        alt={`@${entry.handle}`}
-        style={{ width: size, height: size }}
-        className="rounded-full border border-paper/10"
-      />
-    );
-  }
-  return (
-    <span
-      style={{ width: size, height: size }}
-      className="flex items-center justify-center rounded-full border border-paper/10 text-grey"
-    >
-      <UserRound size={size * 0.55} aria-label={`@${entry.handle}`} />
-    </span>
-  );
-}
 
 /* 当前场到场名单:横排头像 + handle,先到场先署名(服务端已按报名时间排序)。 */
 function RosterList({
@@ -66,7 +44,7 @@ function RosterList({
             href={`/u/${r.handle}`}
             className="flex items-center gap-2 font-mono text-xs text-paper transition-colors hover:text-blue"
           >
-            <Avatar entry={r} size={24} />
+            <Avatar url={r.avatarUrl} handle={r.handle} size={24} />
             @{r.handle}
           </Link>
         </li>
@@ -204,7 +182,7 @@ export default async function DemoNightPage() {
                             href={`/u/${r.handle}`}
                             title={`@${r.handle}`}
                           >
-                            <Avatar entry={r} size={28} />
+                            <Avatar url={r.avatarUrl} handle={r.handle} size={28} />
                           </Link>
                         ))}
                       </div>

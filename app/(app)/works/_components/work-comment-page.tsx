@@ -6,6 +6,7 @@
    AI 不介入作品评论:无 is_ai 态,也不触发 ai_reply_jobs。 */
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 import Markdown from "@/components/Markdown";
 import type { SessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
@@ -39,12 +40,7 @@ export async function loadWorkComments(
           <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
             {c.handle ? (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={c.avatarUrl ?? ""}
-                  alt=""
-                  className="h-5 w-5 rounded-full"
-                />
+                <Avatar url={c.avatarUrl} handle={c.handle} size={20} />
                 <Link
                   href={`/u/${c.handle}`}
                   className="text-paper transition-colors hover:text-blue"

@@ -3,6 +3,7 @@
    actor 为空 = Kimi 小筑(AI),用 bot 头像和名字展示。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 import { Bell } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
@@ -63,11 +64,12 @@ export default async function NotificationsPage() {
                 href={`/community/${n.postId}#comment-${n.commentId}`}
                 className="flex items-start gap-3 border border-line bg-card p-3.5 transition-colors hover:border-paper/20"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={n.actorHandle ? (n.actorAvatar ?? "") : BOT_AVATAR}
-                  alt=""
-                  className={`h-7 w-7 shrink-0 ${n.actorHandle ? "rounded-full" : "rounded"}`}
+                <Avatar
+                  url={n.actorHandle ? n.actorAvatar : BOT_AVATAR}
+                  handle={n.actorHandle ?? BOT_NAME}
+                  size={28}
+                  square={!n.actorHandle}
+                  className="h-7 w-7 shrink-0"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-paper">

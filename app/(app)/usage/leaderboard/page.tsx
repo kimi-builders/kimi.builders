@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Trophy } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import ShareButton from "@/components/ShareButton";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -73,14 +74,12 @@ function LeaderboardRow({
         {entry.rank}
       </span>
       <span className="flex min-w-0 items-center gap-2.5">
-        {entry.avatarUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={entry.avatarUrl}
-            alt=""
-            className="h-7 w-7 shrink-0 rounded-full border border-paper/10"
-          />
-        ) : null}
+        <Avatar
+          url={entry.avatarUrl}
+          handle={entry.handle}
+          size={28}
+          className="shrink-0"
+        />
         <span className="min-w-0">
           <Link
             href={`/u/${entry.handle}`}

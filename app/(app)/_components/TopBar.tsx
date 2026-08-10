@@ -22,7 +22,9 @@ export default function TopBar({
   const iconBtn =
     "flex h-9 w-9 items-center justify-center text-grey transition-colors hover:text-paper";
   return (
-    <header className="fixed inset-x-0 top-0 z-20 hidden h-14 items-center border-b border-line bg-bg/95 px-4 backdrop-blur lg:flex lg:px-6">
+    <header className="fixed inset-x-0 top-0 z-20 hidden h-14 border-b border-line bg-bg/95 backdrop-blur lg:block">
+      {/* 内容与下方三栏共用 1320 居中容器:品牌与左栏左边线、登录态与右栏右边线对齐 */}
+      <div className="mx-auto flex h-full w-full max-w-[1320px] items-center px-4">
       <Link
         href="/"
         title="kimi.builders"
@@ -57,6 +59,7 @@ export default function TopBar({
         <span className="ml-1.5 flex items-center gap-3">
           <AuthChip />
         </span>
+      </div>
       </div>
     </header>
   );

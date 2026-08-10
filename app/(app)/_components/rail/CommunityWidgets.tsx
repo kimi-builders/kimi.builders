@@ -5,7 +5,8 @@
    Demo Night:无 upcoming 场次时整个 widget 不渲染;报名态走 getSessionUser
    (React cache 与布局壳去重,不多查库)。 */
 import Link from "next/link";
-import { MessageCircle, UserRound } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import Avatar from "@/components/Avatar";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
 import { getFeaturedFeed } from "@/src/lib/featured";
@@ -166,18 +167,12 @@ export default async function CommunityWidgets({
         <div className="flex gap-2">
           {data.newMembers.map((m) => (
             <Link key={m.handle} href={`/u/${m.handle}`} title={`@${m.handle}`}>
-              {m.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.avatarUrl}
-                  alt={`@${m.handle}`}
-                  className="h-7 w-7 rounded-full border border-paper/10 transition-colors hover:border-blue"
-                />
-              ) : (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-paper/10 text-grey transition-colors hover:border-blue hover:text-blue">
-                  <UserRound size={13} aria-label={`@${m.handle}`} />
-                </span>
-              )}
+              <Avatar
+                url={m.avatarUrl}
+                handle={m.handle}
+                size={28}
+                className="transition-colors hover:border-blue hover:text-blue"
+              />
             </Link>
           ))}
         </div>

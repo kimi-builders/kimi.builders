@@ -23,8 +23,8 @@ export default function RightSidebar({
   decision: RailDecision;
 }) {
   return (
-    <aside className="rightsidebar sticky top-14 hidden shrink-0 py-8 xl:block">
-      <div className="sidebar-full w-72 shrink-0 space-y-4">
+    <aside className="rightsidebar sticky top-14 hidden shrink-0 py-8 lg:ml-2 xl:block">
+      <div className="sidebar-full w-80 shrink-0 space-y-4">
         {decision.kind === "post" && decision.id !== null ? (
           <PostRail id={decision.id} locale={locale} />
         ) : decision.kind === "work" && decision.id !== null ? (
