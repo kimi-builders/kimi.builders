@@ -2,11 +2,17 @@
 
 import { ChevronDown, LoaderCircle, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import AgentIcon from "@/components/AgentIcon";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
 import type { UsageFilterOptions } from "@/src/lib/usage/query";
+import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "./seg-classes";
 
 interface AppliedFilters {
   range: string;
@@ -100,7 +106,7 @@ function DimensionDropdown({
         }}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 w-full items-center justify-between gap-2 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto sm:min-w-28"
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-[11px] text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9 sm:w-auto sm:min-w-28"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 text-grey">{dimension.label}</span>
@@ -111,7 +117,7 @@ function DimensionDropdown({
         <ChevronDown size={11} className="shrink-0 text-grey" />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-full border border-line bg-moon shadow-xl sm:w-64">
+        <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-lg border border-line bg-moon shadow-xl sm:w-64">
           <div className="flex items-center justify-between border-b border-line px-3 py-1.5">
             <span className="font-mono text-[10px] text-grey">
               {zh ? "不勾选表示不限" : "No selection means any"}
@@ -175,20 +181,23 @@ function DimensionDropdown({
   );
 }
 
-/* 筛选栏:范围 chips(含自定义日期)+ 维度多选下拉。所有状态都在 URL 上
-   (可分享/可刷新);任何筛选变化把 page 重置回 1,metric/hm/ps 等原样保留。 */
+/* 筛选栏:时间分段 + 维度多选下拉(主:工具/模型/项目;次:推理强度/Agent 版本/设备,
+   收进「更多筛选」虚线 chip)。所有状态都在 URL 上(可分享/可刷新);任何筛选变化把
+   page 重置回 1,metric/hm/ps 等原样保留。trailing 渲染在行右端(币种切换)。 */
 export default function UsageFilterBar({
   options,
   applied,
   projectsEnabled,
   zh,
   preservedQuery,
+  trailing,
 }: {
   options: UsageFilterOptions;
   applied: AppliedFilters;
   projectsEnabled: boolean;
   zh: boolean;
   preservedQuery: string;
+  trailing?: ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -196,6 +205,14 @@ export default function UsageFilterBar({
   const [customOpen, setCustomOpen] = useState(applied.range === "custom");
   const [customError, setCustomError] = useState(false);
   const [pending, startTransition] = useTransition();
+  /* 次级维度(推理强度/Agent 版本/设备)默认收起;已有激活选择时首渲染即展开。 */
+  const [moreOpen, setMoreOpen] = useState(
+    () =>
+      parseCsv(applied.efforts).length +
+        parseCsv(applied.agentVersions).length +
+        parseCsv(applied.devices).length >
+        0,
+  );
 
   const handleOpenChange = useCallback((id: string | null) => setOpenMenu(id), []);
 
@@ -274,6 +291,29 @@ export default function UsageFilterBar({
     .filter((item) => item.selected.length > 0);
   const activeCount = activeSelections.reduce((sum, item) => sum + item.selected.length, 0);
 
+  /* 主维度常显,次维度收进「更多筛选」虚线 chip。 */
+  const PRIMARY_KEYS: Dimension["key"][] = ["sources", "models", "projects"];
+  const primaryDimensions = dimensions.filter((d) => PRIMARY_KEYS.includes(d.key));
+  const secondaryDimensions = dimensions.filter((d) => !PRIMARY_KEYS.includes(d.key));
+  const secondaryActiveCount = secondaryDimensions.reduce(
+    (sum, d) => sum + parseCsv(appliedCsv[d.key]).length,
+    0,
+  );
+  const renderDropdown = (dimension: Dimension) => (
+    <DimensionDropdown
+      key={dimension.key}
+      dimension={dimension}
+      selected={parseCsv(appliedCsv[dimension.key])}
+      open={openMenu === dimension.key}
+      onOpenChange={handleOpenChange}
+      onApply={(key, values) =>
+        pushParams({ [key]: values.length > 0 ? values.join(",") : null })
+      }
+      pending={pending}
+      zh={zh}
+    />
+  );
+
   /* 日期输入是非受控的:键入只动 DOM,提交时经 FormData 读取;
      key 绑定已应用的 URL 值,导航后自动重挂载预填。 */
   const applyCustomRange = (event: React.FormEvent<HTMLFormElement>) => {
@@ -296,12 +336,15 @@ export default function UsageFilterBar({
   };
 
   const dateInputClass =
-    "min-h-11 border border-line bg-bg px-2 font-mono text-[11px] text-paper outline-none focus:border-blue [color-scheme:dark] [html[data-theme=light]_&]:[color-scheme:light]";
+    "min-h-11 rounded-lg border border-line bg-bg px-2 font-mono text-[11px] text-paper outline-none focus:border-blue [color-scheme:dark] [html[data-theme=light]_&]:[color-scheme:light]";
 
   return (
     <div className="mt-5 border-b border-line pb-4">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <nav aria-label={zh ? "时间范围" : "Date range"} className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
+        <nav
+          aria-label={zh ? "时间范围" : "Date range"}
+          className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
+        >
           {RANGE_CHIPS.map((chip) => {
             const isActive = applied.range === chip.id;
             return (
@@ -311,8 +354,8 @@ export default function UsageFilterBar({
                 disabled={pending}
                 onClick={() => pushParams({ range: chip.id, from: null, to: null, days: null })}
                 aria-current={isActive ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
-                  isActive ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
+                className={`${SEG_ITEM} disabled:opacity-50 ${
+                  isActive ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE
                 }`}
               >
                 {zh ? chip.zh : chip.en}
@@ -324,10 +367,8 @@ export default function UsageFilterBar({
             disabled={pending}
             onClick={() => setCustomOpen((value) => !value)}
             aria-expanded={customOpen}
-            className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${
-              applied.range === "custom"
-                ? "bg-paper text-bg"
-                : "text-grey hover:bg-card hover:text-paper"
+            className={`${SEG_ITEM} disabled:opacity-50 ${
+              applied.range === "custom" ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE
             }`}
           >
             {zh ? "自定义" : "Custom"}
@@ -338,7 +379,7 @@ export default function UsageFilterBar({
           disabled={pending}
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
-          className="flex min-h-11 items-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:hidden"
+          className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:hidden"
         >
           <SlidersHorizontal size={11} />
           {zh ? "筛选" : "Filters"}
@@ -347,22 +388,30 @@ export default function UsageFilterBar({
         <div
           className={`${
             open ? "flex" : "hidden"
-          } w-full flex-col gap-2 pt-1 sm:flex sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2 sm:pt-0`}
+          } w-full flex-col gap-2 pt-1 sm:flex sm:w-auto sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2.5 sm:gap-y-2 sm:pt-0`}
         >
-          {dimensions.map((dimension) => (
-            <DimensionDropdown
-              key={dimension.key}
-              dimension={dimension}
-              selected={parseCsv(appliedCsv[dimension.key])}
-              open={openMenu === dimension.key}
-              onOpenChange={handleOpenChange}
-              onApply={(key, values) =>
-                pushParams({ [key]: values.length > 0 ? values.join(",") : null })
-              }
-              pending={pending}
-              zh={zh}
-            />
-          ))}
+          {primaryDimensions.map(renderDropdown)}
+          {secondaryDimensions.length > 0 && (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setMoreOpen((value) => !value)}
+              aria-expanded={moreOpen}
+              className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line px-3 font-mono text-[11px] text-grey/80 transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9 sm:w-auto"
+            >
+              {moreOpen
+                ? zh
+                  ? "收起筛选"
+                  : "Fewer filters"
+                : zh
+                  ? `更多筛选 +${secondaryDimensions.length}`
+                  : `More filters +${secondaryDimensions.length}`}
+              {secondaryActiveCount > 0 && (
+                <span className="text-blue">· {secondaryActiveCount}</span>
+              )}
+            </button>
+          )}
+          {moreOpen && secondaryDimensions.map(renderDropdown)}
           {activeCount > 0 && (
             <button
               type="button"
@@ -375,18 +424,21 @@ export default function UsageFilterBar({
                 projects: null,
                 devices: null,
               })}
-              className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9"
             >
               {zh ? "清除筛选" : "Clear filters"}
             </button>
           )}
           {pending && (
-            <span role="status" className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[11px] text-grey">
+            <span role="status" className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[11px] text-grey sm:min-h-9">
               <LoaderCircle size={12} className="motion-safe:animate-spin" aria-hidden="true" />
               {zh ? "正在更新…" : "Updating…"}
             </span>
           )}
         </div>
+        {trailing && (
+          <div className="flex items-center max-sm:w-full sm:ml-auto">{trailing}</div>
+        )}
       </div>
 
       {customOpen && (
@@ -430,7 +482,7 @@ export default function UsageFilterBar({
               return (
                 <span
                   key={dimension.key}
-                  className="flex max-w-full items-center gap-1.5 border border-line px-2 py-1 font-mono text-[10px] text-paper"
+                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-paper"
                 >
                   <span className="shrink-0 text-grey">{dimension.label}</span>
                   <span>×{selected.length}</span>
@@ -451,7 +503,7 @@ export default function UsageFilterBar({
               return (
                 <span
                   key={`${dimension.key}-${value}`}
-                  className="flex max-w-full items-center gap-1.5 border border-line px-2 py-1 font-mono text-[10px] text-paper"
+                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-paper"
                 >
                   <span className="shrink-0 text-grey">{dimension.label}</span>
                   <span className="max-w-40 truncate">{chipLabel(dimension, value)}</span>

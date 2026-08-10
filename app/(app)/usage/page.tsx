@@ -2,22 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
-import {
-  Activity,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  BarChart3,
-  Clock3,
-  Database,
-  Gauge,
-  Link2,
-  MessageSquare,
-  MessagesSquare,
-  Orbit,
-  ShieldCheck,
-  Timer,
-  User,
-} from "lucide-react";
+import { BarChart3, Clock3, Link2, ShieldCheck } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
@@ -31,6 +16,13 @@ import {
   type UsageGranularity,
   type UsageMetric,
 } from "@/src/lib/usage/filters";
+import {
+  heatMetricText,
+  heatTopSlots,
+  USAGE_WEEKDAYS_EN,
+  USAGE_WEEKDAYS_ZH,
+  type UsageHeatMetric,
+} from "@/src/lib/usage/heatmap";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
@@ -51,6 +43,12 @@ import {
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import CurrencyToggle from "./_components/CurrencyToggle";
 import TzReporter from "./_components/TzReporter";
+import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "./_components/seg-classes";
 import { UsageFirstRun, UsageRangeEmpty } from "./_components/UsageEmptyStates";
 import UsageFilterBar from "./_components/UsageFilterBar";
 import UsageExportDialog from "./_components/UsageExportDialog";
@@ -63,7 +61,6 @@ import {
   UsageHeatmapGrid,
   UsageTrendChart,
   UsageWeeklyTrend,
-  type UsageHeatMetric,
 } from "./_components/UsageVisualizations";
 
 export const metadata: Metadata = { title: "用量 — kimi.builders" };
@@ -209,7 +206,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const title = zh ? "环比上一等长周期" : "vs the previous equal-length period";
   if (prev <= 0) {
     return (
-      <span className="font-mono text-[11px] text-grey" title={title}>
+      <span className="font-mono text-[10px] text-grey" title={title}>
         —
       </span>
     );
@@ -217,7 +214,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const pct = ((cur - prev) / prev) * 100;
   return (
     <span
-      className={`font-mono text-[11px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
+      className={`font-mono text-[10px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
       title={title}
     >
       {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
@@ -225,7 +222,38 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   );
 }
 
-function SwitchLinks({
+/* Hero 卡右上角的环比 pill(中性色,▲/▼ 方向箭头);上一周期为零不显示。 */
+function DeltaPill({ cur, prev, zh }: { cur: number; prev: number; zh: boolean }) {
+  if (prev <= 0) return null;
+  const pct = ((cur - prev) / prev) * 100;
+  return (
+    <span
+      className="absolute right-4 top-4 rounded-full bg-paper/[0.07] px-2 py-0.5 font-mono text-[11px] font-semibold text-paper/80"
+      title={zh ? "环比上一等长周期" : "vs the previous equal-length period"}
+    >
+      {pct >= 0 ? "▲" : "▼"} {Math.abs(pct).toFixed(1)}%
+    </span>
+  );
+}
+
+/* 命中率状态 pill:>=85% 良好(mint)/ 60–85% 一般(amber)/ <60% 偏低(red)。 */
+function HitRatePill({ rate, zh }: { rate: number; zh: boolean }) {
+  const tone =
+    rate >= 0.85
+      ? { text: zh ? "● 良好" : "● Good", cls: "bg-emerald-400/10 text-emerald-400" }
+      : rate >= 0.6
+        ? { text: zh ? "● 一般" : "● Fair", cls: "bg-amber-400/10 text-amber-400" }
+        : { text: zh ? "● 偏低" : "● Low", cls: "bg-red-400/10 text-red-400" };
+  return (
+    <span className={`absolute right-4 top-4 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${tone.cls}`}>
+      {tone.text}
+    </span>
+  );
+}
+
+/* 分段切换(趋势/热图指标):样式常量在 seg-classes.ts,与筛选栏时间分段、
+   明细粒度、币种切换共用同一套容器+激活态。 */
+function SegLinks({
   items,
   label,
 }: {
@@ -233,22 +261,74 @@ function SwitchLinks({
   label: string;
 }) {
   return (
-    <nav aria-label={label} className="flex items-center gap-1">
+    <nav aria-label={label} className={SEG_WRAP}>
       {items.map((item) => (
         <Link
           key={item.key}
           href={item.href}
           scroll={false}
           aria-current={item.active ? "page" : undefined}
-          className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-            item.active ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
-          }`}
+          className={`${SEG_ITEM} ${item.active ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
         >
           {item.label}
         </Link>
       ))}
     </nav>
   );
+}
+
+/* 趋势卡头图例:与 UsageVisualizations 的 FILL_* 柱子填充一一对应(改色两边同步)。 */
+const USAGE_TREND_LEGEND = [
+  { key: "input", zh: "输入(含缓存写)", en: "Input (incl. cache write)", chip: "bg-blue" },
+  { key: "cache", zh: "缓存读", en: "Cache read", chip: "bg-emerald-400/80" },
+  { key: "output", zh: "输出", en: "Output", chip: "bg-paper/75" },
+  { key: "reasoning", zh: "推理", en: "Reasoning", chip: "bg-amber-400" },
+] as const;
+
+function HeroCard({
+  label,
+  help,
+  value,
+  valueClass,
+  pill,
+  caption,
+}: {
+  label: string;
+  help?: ReactNode;
+  value: string;
+  valueClass?: string;
+  pill?: ReactNode;
+  caption: ReactNode;
+}) {
+  return (
+    <article className="usage-hero rounded-2xl border border-line p-5">
+      <div className="flex items-center gap-0.5 text-xs text-grey">
+        <span className="truncate">{label}</span>
+        {help}
+      </div>
+      <div
+        className={`mt-3 font-mono text-[28px] font-semibold leading-none tracking-[-0.5px] ${valueClass ?? "text-paper"}`}
+      >
+        {value}
+      </div>
+      {pill}
+      <p className="mt-3 text-[11px] leading-relaxed text-grey">{caption}</p>
+    </article>
+  );
+}
+
+/* 指标带格子:2/3/5 列响应式,行间发丝线 + 桌面列间分隔线。 */
+const STRIP_CELL =
+  "border-line px-4 py-3 [&:nth-child(n+3)]:border-t sm:[&:nth-child(-n+3)]:border-t-0 sm:[&:nth-child(n+4)]:border-t lg:[&:nth-child(-n+5)]:border-t-0 lg:[&:not(:nth-child(5n+1))]:border-l";
+
+interface StripCellSpec {
+  label: string;
+  value: string;
+  note?: string;
+  title?: string;
+  cur?: number;
+  prev?: number;
+  help?: "duration";
 }
 
 function DistributionCard({
@@ -273,10 +353,10 @@ function DistributionCard({
   const byCost = metric === "cost";
   const denom = byCost ? dist.totalCostMicros : dist.totalTokens;
   return (
-    <section className="border border-line bg-card p-4 sm:p-5">
+    <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">{title}</h3>
-        <span className="font-mono text-[10px] text-grey">
+        <h3 className="text-[13px] font-semibold text-paper">{title}</h3>
+        <span className="font-mono text-[10px] text-grey/80">
           {byCost ? (zh ? "按估费" : "by cost") : zh ? "按 Token" : "by tokens"}
         </span>
       </div>
@@ -285,31 +365,42 @@ function DistributionCard({
           {emptyText ?? (zh ? "该范围内暂无数据" : "No data in this range")}
         </p>
       ) : (
-        <ul className="mt-3 space-y-1">
-          {dist.rows.map((row) => {
+        <ul className="mt-2">
+          {dist.rows.map((row, index) => {
             const basis = byCost ? row.costMicros : row.tokens;
             const pct = denom > 0 ? (basis / denom) * 100 : 0;
             const label = labelOf(row);
             return (
-              <li key={row.key === "" ? "__empty__" : row.key} className="-mx-2 px-2 py-2 hover:bg-card">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
-                    {iconOf?.(row)}
+              <li key={row.key === "" ? "__empty__" : row.key} className="py-2">
+                <div className="flex items-center gap-3">
+                  <span className="flex min-w-0 items-center gap-2 text-xs text-paper">
+                    {iconOf && (
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-line bg-paper/[0.04]">
+                        {iconOf(row)}
+                      </span>
+                    )}
                     <span className="truncate" title={label}>
                       {label}
                     </span>
                   </span>
-                  <span className="shrink-0 font-mono text-[11px] text-grey">
-                    {compact(row.tokens)} · {Math.round(pct)}% ·{" "}
+                  <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
+                    {compact(row.tokens)} · {Math.round(pct)}%
+                  </span>
+                  <span className="w-[86px] shrink-0 text-right font-mono text-[11px] text-grey">
                     {row.hasUnpriced && row.costMicros === 0 ? (
-                      <span className="text-grey">{zh ? "未定价" : "unpriced"}</span>
+                      zh ? "未定价" : "unpriced"
                     ) : (
                       fmtCost(row.costMicros, ccy)
                     )}
                   </span>
                 </div>
-                <div className="mt-1 h-1.5 bg-bg">
-                  <div className="h-full bg-blue/70" style={{ width: `${pct}%` }} />
+                <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
+                  <div
+                    className={`h-full rounded-full ${
+                      index === 0 ? "bg-gradient-to-r from-blue to-blue/40" : "bg-blue/70"
+                    }`}
+                    style={{ width: `${Math.max(pct, 1.5)}%` }}
+                  />
                 </div>
               </li>
             );
@@ -318,17 +409,6 @@ function DistributionCard({
       )}
     </section>
   );
-}
-
-interface KpiCardSpec {
-  icon: typeof Activity;
-  label: string;
-  value: string;
-  note?: string;
-  cur?: number;
-  prev?: number;
-  sessionNote?: boolean;
-  help?: "pricing" | "tokens" | "duration";
 }
 
 export default async function UsagePage({
@@ -343,8 +423,8 @@ export default async function UsagePage({
   if (!user) {
     return (
       <div>
-        <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
-          <BarChart3 size={17} aria-hidden="true" /> {zh ? "用量" : "Usage"}
+        <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+          <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量" : "Usage"}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-grey">
           {zh
@@ -354,8 +434,8 @@ export default async function UsagePage({
         <div className="mt-8">
           <p className="text-sm text-grey">{zh ? "登录后连接设备：" : "Sign in to connect a device:"}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <a href="/api/auth/github?next=%2Fusage" className="inline-flex min-h-11 items-center border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">GitHub</a>
-            <a href="/api/auth/google?next=%2Fusage" className="inline-flex min-h-11 items-center border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">Google</a>
+            <a href="/api/auth/github?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">GitHub</a>
+            <a href="/api/auth/google?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">Google</a>
           </div>
         </div>
       </div>
@@ -420,21 +500,22 @@ export default async function UsagePage({
   const header = (
     <header className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
-          <BarChart3 size={18} /> {zh ? "用量中心" : "Usage center"}
+        <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+          <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量中心" : "Usage center"}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
+        <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
           {zh
             ? "Kimi-first，多工具兼容。这里只接收 token、时间与计数，不接收对话内容、完整路径或供应商凭据。"
             : "Kimi-first and multi-tool ready. Only token, timing, and count metrics are accepted—never conversations, full paths, or provider credentials."}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-3 font-mono text-[11px] text-grey" role="status" aria-live="polite">
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey" role="status" aria-live="polite">
           <span className="flex items-center gap-1.5">
-            <ShieldCheck size={13} className="text-blue" aria-hidden="true" />
+            <ShieldCheck size={13} className="text-emerald-400" aria-hidden="true" />
             {zh ? "默认私有" : "Private by default"}
           </span>
-          <span>·</span>
-          <span>
+          <span aria-hidden="true">·</span>
+          <span className="flex items-center gap-1.5">
+            <i className="usage-pulse-dot shrink-0" aria-hidden="true" />
             {lastSyncAt
               ? zh
                 ? `最近同步 ${relTime(lastSyncAt, locale)}`
@@ -444,31 +525,13 @@ export default async function UsagePage({
                 : "Not synced yet"}
           </span>
           {staleSync && (
-            <span className="border border-amber-500/40 px-1.5 py-0.5 text-amber-400">
+            <span className="rounded-md border border-amber-500/40 px-1.5 py-0.5 text-amber-400">
               {zh ? `超过 ${USAGE_STALE_AFTER_HOURS} 小时未同步` : `Not synced for ${USAGE_STALE_AFTER_HOURS}+ hours`}
             </span>
           )}
         </div>
       </div>
       <div className="grid w-full shrink-0 grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
-        <Link
-          href="/usage/device"
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
-        >
-          <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
-        </Link>
-        {overview && hasUsageHistory && (
-          <UsageShareDialog zh={zh} tzOffsetMinutes={filters.tzOffsetMinutes} />
-        )}
-        {overview && hasUsageHistory && (
-          <UsageExportDialog
-            csvHref={`/api/usage/export?format=csv&${exportSuffix}`}
-            jsonHref={`/api/usage/export?format=json&${exportSuffix}`}
-            filteredRecordCount={overview.records.total}
-            rangeLabel={overview.range.label}
-            zh={zh}
-          />
-        )}
         {overview && hasUsageHistory && (
           <UsageMethodologyDialog
             zh={zh}
@@ -481,9 +544,24 @@ export default async function UsagePage({
             tzOffsetMinutes={overview.meta.tzOffsetMinutes}
           />
         )}
-        {hasUsageHistory && (
-          <CurrencyToggle currency={ccy} label={zh ? "展示币种" : "Display currency"} />
+        {overview && hasUsageHistory && (
+          <UsageExportDialog
+            csvHref={`/api/usage/export?format=csv&${exportSuffix}`}
+            jsonHref={`/api/usage/export?format=json&${exportSuffix}`}
+            filteredRecordCount={overview.records.total}
+            rangeLabel={overview.range.label}
+            zh={zh}
+          />
         )}
+        {overview && hasUsageHistory && (
+          <UsageShareDialog zh={zh} tzOffsetMinutes={filters.tzOffsetMinutes} />
+        )}
+        <Link
+          href="/usage/device"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
+        >
+          <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
+        </Link>
       </div>
     </header>
   );
@@ -602,14 +680,14 @@ export default async function UsagePage({
     filters.granularity === "hour"
       ? zh
         ? "每小时趋势"
-        : "HOURLY TREND"
+        : "Hourly trend"
       : filters.granularity === "week"
         ? zh
           ? "每周趋势"
-          : "WEEKLY TREND"
+          : "Weekly trend"
         : zh
           ? "每日趋势"
-          : "DAILY TREND";
+          : "Daily trend";
 
   const pricingVersions = overview.meta.pricingVersions.join("、");
   const unpricedCount = overview.meta.unpricedModels.length;
@@ -617,19 +695,13 @@ export default async function UsagePage({
   const pricingCoverage = `${(overview.meta.pricingCoverage * 100).toFixed(1)}%`;
   const pricingIncomplete = overview.meta.pricingCoverage < 0.9995;
   const inputWithCacheWrite = totals.inputTokens + totals.cacheWriteInputTokens;
-  const prevInputWithCacheWrite = previous.inputTokens + previous.cacheWriteInputTokens;
   const methodologyProps = {
     zh,
     currentRange: overview.range,
     tzLabel: gmtLabel(overview.meta.tzOffsetMinutes),
     tzOffsetMinutes: overview.meta.tzOffsetMinutes,
   };
-  const pricingMethodologyProps = {
-    pricingMatches: overview.meta.pricingMatches,
-    pricingCoverage,
-    pricingVersions,
-    assumedTokens: overview.meta.assumedTokens,
-  };
+  const hitRate = usageCacheHitRate(totals);
   const peakNote = peak
     ? `${peak.day} · ${
         filters.granularity === "hour"
@@ -648,150 +720,6 @@ export default async function UsagePage({
       ? "当前范围无数据"
       : "No data in range";
 
-  const kpiRow1: KpiCardSpec[] = [
-    {
-      icon: Activity,
-      label: pricingIncomplete
-        ? zh
-          ? "已定价部分"
-          : "PRICED PORTION"
-        : zh
-          ? "预估费用"
-          : "EST. COST",
-      value: fmtCost(totals.costMicros, ccy),
-      note: zh
-        ? `覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} 使用估算假设` : ""}`
-        : `${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} assumed` : ""}`,
-      cur: totals.costMicros,
-      prev: previous.costMicros,
-      help: "pricing",
-    },
-    {
-      icon: BarChart3,
-      label: zh ? "总 TOKEN" : "TOTAL TOKENS",
-      value: compact(totals.totalTokens),
-      cur: totals.totalTokens,
-      prev: previous.totalTokens,
-      help: "tokens",
-    },
-    {
-      icon: Orbit,
-      label: zh ? "累计 TOKEN" : "LIFETIME TOKENS",
-      value: compact(overview.lifetimeTokens),
-      note: zh ? "全部已同步历史 · 保留维度筛选" : "all synced history · dimension filters apply",
-    },
-    {
-      icon: ArrowDownToLine,
-      label: zh ? "输入 TOKEN" : "INPUT TOKENS",
-      value: compact(inputWithCacheWrite),
-      note: zh ? "含缓存写" : "incl. cache write",
-      cur: inputWithCacheWrite,
-      prev: prevInputWithCacheWrite,
-    },
-    {
-      icon: ArrowUpFromLine,
-      label: zh ? "输出 TOKEN" : "OUTPUT TOKENS",
-      value: compact(totals.outputTokens),
-      cur: totals.outputTokens,
-      prev: previous.outputTokens,
-    },
-    {
-      icon: Database,
-      label: zh ? "缓存 TOKEN" : "CACHE TOKENS",
-      value: compact(totals.cacheReadInputTokens),
-      note: zh ? "缓存读" : "cache read",
-      cur: totals.cacheReadInputTokens,
-      prev: previous.cacheReadInputTokens,
-    },
-  ];
-  const kpiRow2: KpiCardSpec[] = [
-    {
-      icon: Gauge,
-      label: zh ? "峰值 TOKEN" : "PEAK TOKENS",
-      value: compact(peak?.totalTokens ?? 0),
-      note: peakNote,
-    },
-    {
-      icon: Clock3,
-      label: zh ? "活跃时长" : "ACTIVE TIME",
-      value: duration(totals.activeSeconds, zh),
-      cur: totals.activeSeconds,
-      prev: previous.activeSeconds,
-      sessionNote: true,
-      help: "duration",
-    },
-    {
-      icon: Timer,
-      label: zh ? "投入时长" : "ENGAGED TIME",
-      value: duration(totals.durationSeconds, zh),
-      note: zh ? "单次空闲间隔最多计 30 分钟" : "idle gaps capped at 30m",
-      cur: totals.durationSeconds,
-      prev: previous.durationSeconds,
-      sessionNote: true,
-      help: "duration",
-    },
-    {
-      icon: MessagesSquare,
-      label: zh ? "会话数" : "SESSIONS",
-      value: compact(totals.sessions),
-      note: `${totals.activeDevices} ${zh ? "台活跃设备" : "active devices"}`,
-      cur: totals.sessions,
-      prev: previous.sessions,
-      sessionNote: true,
-    },
-    {
-      icon: MessageSquare,
-      label: zh ? "总消息数" : "MESSAGES",
-      value: compact(totals.messages),
-      cur: totals.messages,
-      prev: previous.messages,
-      sessionNote: true,
-    },
-    {
-      icon: User,
-      label: zh ? "用户消息数" : "USER MSGS",
-      value: compact(totals.userMessages),
-      cur: totals.userMessages,
-      prev: previous.userMessages,
-      sessionNote: true,
-    },
-  ];
-
-  const renderKpiRow = (cards: KpiCardSpec[]) => (
-    <section className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {cards.map(({ icon: Icon, label, value, note, cur, prev, sessionNote, help }) => (
-        <article key={label} className="border border-line bg-card p-4">
-          <div className="flex items-center justify-between gap-2 text-grey">
-            <span className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-mono text-[11px] tracking-[0.14em]">{label}</span>
-              {help && (
-                <UsageMethodologyDialog
-                  kind={help}
-                  compact
-                  {...methodologyProps}
-                  {...(help === "pricing" ? pricingMethodologyProps : {})}
-                />
-              )}
-            </span>
-            <Icon size={14} className="shrink-0" aria-hidden="true" />
-          </div>
-          <div className="mt-4 font-mono text-xl font-semibold text-paper">{value}</div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-grey">
-            {note && <span>{note}</span>}
-            {cur !== undefined && prev !== undefined && deltaNote(cur, prev, zh)}
-          </div>
-          {bucketOnlyFiltersActive && sessionNote && (
-            <div className="mt-1 text-[10px] text-grey/80">
-              {zh
-                ? "会话指标不按模型或推理强度拆分"
-                : "Session metrics are not split by model or effort"}
-            </div>
-          )}
-        </article>
-      ))}
-    </section>
-  );
-
   const avgActiveMs =
     totals.requests > 0 ? (totals.activeSeconds / totals.requests) * 1000 : null;
   const avgActiveLabel =
@@ -800,19 +728,63 @@ export default async function UsagePage({
       : avgActiveMs >= 1000
         ? `${(avgActiveMs / 1000).toFixed(1)}s`
         : `${Math.round(avgActiveMs)}ms`;
-  const stripStats: { label: string; value: string; title?: string }[] = [
-    { label: zh ? "缓存写" : "CACHE WRITE", value: compact(totals.cacheWriteInputTokens) },
-    { label: zh ? "推理" : "REASONING", value: compact(totals.reasoningOutputTokens) },
-    { label: zh ? "请求数" : "REQUESTS", value: compact(totals.requests) },
+
+  const stripCells: StripCellSpec[] = [
+    {
+      label: zh ? "峰值 TOKEN" : "PEAK TOKENS",
+      value: compact(peak?.totalTokens ?? 0),
+      note: peakNote,
+    },
+    {
+      label: zh ? "活跃时长" : "ACTIVE TIME",
+      value: duration(totals.activeSeconds, zh),
+      cur: totals.activeSeconds,
+      prev: previous.activeSeconds,
+      help: "duration",
+    },
+    {
+      label: zh ? "投入时长" : "ENGAGED TIME",
+      value: duration(totals.durationSeconds, zh),
+      note: zh ? "单次空闲间隔最多计 30 分钟" : "idle gaps capped at 30m",
+      cur: totals.durationSeconds,
+      prev: previous.durationSeconds,
+    },
+    {
+      label: zh ? "会话数" : "SESSIONS",
+      value: compact(totals.sessions),
+      note: `${totals.activeDevices} ${zh ? "台活跃设备" : "active devices"}`,
+      cur: totals.sessions,
+      prev: previous.sessions,
+    },
+    {
+      label: zh ? "总消息数" : "MESSAGES",
+      value: compact(totals.messages),
+      cur: totals.messages,
+      prev: previous.messages,
+    },
+    {
+      label: zh ? "用户消息" : "USER MSGS",
+      value: compact(totals.userMessages),
+      cur: totals.userMessages,
+      prev: previous.userMessages,
+    },
     {
       label: zh ? "平均耗时" : "AVG ACTIVE",
       value: avgActiveLabel,
       title: zh ? "≈ 活跃时长 ÷ 请求数" : "≈ active time ÷ requests",
     },
     {
-      label: zh ? "缓存命中率" : "CACHE HIT",
-      value: fmtHitRate(usageCacheHitRate(totals)),
-      title: zh ? "缓存读 ÷(输入+缓存写+缓存读)" : "cache read ÷ (input + cache write + cache read)",
+      label: zh ? "请求数" : "REQUESTS",
+      value: compact(totals.requests),
+    },
+    {
+      label: zh ? "累计 TOKEN" : "LIFETIME TOKENS",
+      value: compact(overview.lifetimeTokens),
+      note: zh ? "全部已同步历史 · 保留维度筛选" : "all synced history · dimension filters apply",
+    },
+    {
+      label: zh ? "推理" : "REASONING",
+      value: compact(totals.reasoningOutputTokens),
     },
   ];
 
@@ -838,10 +810,15 @@ export default async function UsagePage({
       projectsEnabled={filters.projectsEnabled}
       zh={zh}
       preservedQuery={query}
+      trailing={
+        hasUsageHistory ? (
+          <CurrencyToggle currency={ccy} label={zh ? "展示币种" : "Display currency"} />
+        ) : undefined
+      }
     />
   );
   const staleNotice = staleSync ? (
-    <aside className="mt-4 flex flex-col gap-3 border border-amber-400/35 bg-amber-400/5 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+    <aside className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-400/35 bg-amber-400/5 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
       <div className="flex items-start gap-2">
         <Clock3 size={16} className="mt-0.5 shrink-0 text-amber-300" aria-hidden="true" />
         <div>
@@ -855,7 +832,7 @@ export default async function UsagePage({
           </p>
         </div>
       </div>
-      <code className="shrink-0 border border-line bg-bg px-3 py-2 font-mono text-[11px] text-paper">
+      <code className="shrink-0 rounded-lg border border-line bg-bg px-3 py-2 font-mono text-[11px] text-paper">
         npx @kimi-builders/usage sync
       </code>
     </aside>
@@ -892,6 +869,10 @@ export default async function UsagePage({
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+  const currency = USAGE_DISPLAY_CURRENCIES[ccy];
+  const topSlots = heatTopSlots(overview.heatmap, heatMetric, 5);
+  const weekdayNames = zh ? USAGE_WEEKDAYS_ZH : USAGE_WEEKDAYS_EN;
+  const pad2 = (value: number) => String(value).padStart(2, "0");
 
   return (
     <div className="usage-dashboard">
@@ -899,51 +880,134 @@ export default async function UsagePage({
       {usageFilterBar}
       {staleNotice}
 
-      {renderKpiRow(kpiRow1)}
-      {renderKpiRow(kpiRow2)}
-
-      <section className="mt-3 border border-line bg-card p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {stripStats.map((stat) => (
-            <div key={stat.label} title={stat.title}>
-              <div className="font-mono text-[10px] tracking-[0.14em] text-grey">{stat.label}</div>
-              <div className="mt-1.5 font-mono text-sm font-semibold text-paper">{stat.value}</div>
-            </div>
-          ))}
-        </div>
+      {/* Hero 三卡:费用 / 总 Token / 缓存命中率 */}
+      <section className="mt-5 grid gap-3 sm:grid-cols-3">
+        <HeroCard
+          label={pricingIncomplete ? (zh ? "已定价部分" : "Priced portion") : zh ? "预估费用" : "Est. cost"}
+          help={
+            <UsageMethodologyDialog
+              kind="pricing"
+              compact
+              {...methodologyProps}
+              pricingMatches={overview.meta.pricingMatches}
+              pricingCoverage={pricingCoverage}
+              pricingVersions={pricingVersions}
+              assumedTokens={overview.meta.assumedTokens}
+            />
+          }
+          value={fmtCost(totals.costMicros, ccy)}
+          pill={<DeltaPill cur={totals.costMicros} prev={previous.costMicros} zh={zh} />}
+          caption={
+            zh
+              ? `vs 上一周期 · 覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} 使用估算假设` : ""}`
+              : `vs previous period · ${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} assumed` : ""}`
+          }
+        />
+        <HeroCard
+          label={zh ? "总 Token" : "Total tokens"}
+          help={<UsageMethodologyDialog kind="tokens" compact {...methodologyProps} />}
+          value={compact(totals.totalTokens)}
+          pill={<DeltaPill cur={totals.totalTokens} prev={previous.totalTokens} zh={zh} />}
+          caption={
+            zh
+              ? `输入 ${compact(inputWithCacheWrite)} · 输出 ${compact(totals.outputTokens)} · 缓存读 ${compact(totals.cacheReadInputTokens)}`
+              : `Input ${compact(inputWithCacheWrite)} · output ${compact(totals.outputTokens)} · cache read ${compact(totals.cacheReadInputTokens)}`
+          }
+        />
+        <HeroCard
+          label={zh ? "缓存命中率" : "Cache hit rate"}
+          value={fmtHitRate(hitRate)}
+          valueClass={hitRate !== null && hitRate >= 0.85 ? "text-emerald-400" : undefined}
+          pill={hitRate !== null ? <HitRatePill rate={hitRate} zh={zh} /> : undefined}
+          caption={
+            zh
+              ? `缓存写 ${compact(totals.cacheWriteInputTokens)} · 命中率越高，费用越低`
+              : `Cache write ${compact(totals.cacheWriteInputTokens)} · higher hit rate, lower cost`
+          }
+        />
       </section>
 
-      <section className="mt-4 border border-line bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* 指标带:10 格 */}
+      <section className="mt-3 grid grid-cols-2 rounded-2xl border border-line bg-card sm:grid-cols-3 lg:grid-cols-5">
+        {stripCells.map((cellItem) => (
+          <div key={cellItem.label} title={cellItem.title} className={STRIP_CELL}>
+            <div className="flex items-center gap-0.5 text-[10px] tracking-[0.08em] text-grey/80">
+              <span className="truncate">{cellItem.label}</span>
+              {cellItem.help === "duration" && (
+                <UsageMethodologyDialog kind="duration" compact {...methodologyProps} />
+              )}
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="whitespace-nowrap font-mono text-sm font-semibold text-paper">
+                {cellItem.value}
+              </span>
+              {cellItem.cur !== undefined &&
+                cellItem.prev !== undefined &&
+                deltaNote(cellItem.cur, cellItem.prev, zh)}
+            </div>
+            {cellItem.note && (
+              <div className="mt-0.5 truncate font-mono text-[9.5px] text-grey/70" title={cellItem.note}>
+                {cellItem.note}
+              </div>
+            )}
+          </div>
+        ))}
+      </section>
+      {bucketOnlyFiltersActive && (
+        <p className="mt-2 text-[10px] text-grey/80">
+          {zh
+            ? "会话指标不按模型或推理强度拆分"
+            : "Session metrics are not split by model or effort"}
+        </p>
+      )}
+
+      {/* 趋势 */}
+      <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {trendTitle}
-            </h2>
+            <h2 className="text-[13px] font-semibold text-paper">{trendTitle}</h2>
             <p className="mt-1 text-[11px] text-grey">
               {zh
                 ? `${gmtLabel(filters.tzOffsetMinutes)} · 30 分钟事实桶聚合`
                 : `${gmtLabel(filters.tzOffsetMinutes)} · 30-minute buckets`}
             </p>
           </div>
-          <SwitchLinks items={trendSwitch} label={zh ? "趋势指标" : "Trend metric"} />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {filters.metric === "tokens" && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                {USAGE_TREND_LEGEND.map((item) => (
+                  <span key={item.key} className="flex items-center gap-1.5 text-[11px] text-grey">
+                    <i className={`h-2 w-2 rounded-[2px] ${item.chip}`} />
+                    {zh ? item.zh : item.en}
+                  </span>
+                ))}
+              </div>
+            )}
+            <span className="flex items-center gap-1.5 text-[11px] text-grey">
+              <i className="h-0 w-3.5 border-t-2 border-dashed border-grey/70" />
+              {zh ? "7 日均值" : "7-slot avg"}
+            </span>
+            <SegLinks items={trendSwitch} label={zh ? "趋势指标" : "Trend metric"} />
+          </div>
         </div>
-        <div className="mt-6">
+        <div className="mt-4">
           <UsageTrendChart
             trend={trend}
             metric={filters.metric}
             granularity={filters.granularity}
             rangeLabel={filters.rangeLabel}
             zh={zh}
-            currency={USAGE_DISPLAY_CURRENCIES[ccy]}
+            currency={currency}
           />
         </div>
       </section>
 
-      <section className="mt-4 border border-line bg-card p-4 sm:p-5">
+      {/* 自然周趋势 */}
+      <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {zh ? "自然周趋势" : "NATURAL-WEEK TREND"}
+            <h2 className="text-[13px] font-semibold text-paper">
+              {zh ? "自然周趋势" : "Natural-week trend"}
             </h2>
             <p className="mt-1 text-[11px] text-grey">
               {zh
@@ -953,39 +1017,89 @@ export default async function UsagePage({
           </div>
           <UsageMethodologyDialog kind="changes" compact {...methodologyProps} />
         </div>
-        <div className="mt-5">
-          <UsageWeeklyTrend trend={weeklyTrend} zh={zh} />
+        <div className="mt-4">
+          <UsageWeeklyTrend trend={weeklyTrend} zh={zh} currency={currency} />
         </div>
       </section>
 
-      <section className="mt-4 border border-line bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-              {zh ? "分时活跃" : "ACTIVITY HEATMAP"}
-            </h2>
-            <p className="mt-1 text-[11px] text-grey">
-              {zh
-                ? "星期 × 本地小时 · 新版 Collector 精确到小时"
-                : "Weekday × local hour · exact hourly facts from current collectors"}
-            </p>
+      {/* 分时活跃 + 最活跃时段 */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.9fr_1fr]">
+        <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-[13px] font-semibold text-paper">
+                {zh ? "分时活跃" : "Activity heatmap"}
+              </h2>
+              <p className="mt-1 text-[11px] text-grey">
+                {zh
+                  ? "星期 × 本地小时 · 新版 Collector 精确到小时"
+                  : "Weekday × local hour · exact hourly facts from current collectors"}
+              </p>
+            </div>
+            <SegLinks items={heatSwitch} label={zh ? "热图指标" : "Heatmap metric"} />
           </div>
-          <SwitchLinks items={heatSwitch} label={zh ? "热图指标" : "Heatmap metric"} />
-        </div>
-        <div className="mt-5">
-          <UsageHeatmapGrid
-            heatmap={overview.heatmap}
-            metric={heatMetric}
-            tzLabel={gmtLabel(filters.tzOffsetMinutes)}
-            zh={zh}
-            currency={USAGE_DISPLAY_CURRENCIES[ccy]}
-          />
-        </div>
-      </section>
+          <div className="mt-4">
+            <UsageHeatmapGrid
+              heatmap={overview.heatmap}
+              metric={heatMetric}
+              tzLabel={gmtLabel(filters.tzOffsetMinutes)}
+              zh={zh}
+              currency={currency}
+            />
+          </div>
+        </section>
+        <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
+          <h2 className="text-[13px] font-semibold text-paper">
+            {zh ? "最活跃时段" : "Busiest slots"}
+          </h2>
+          <p className="mt-1 text-[11px] text-grey">
+            {zh ? "TOP 5 · 所选范围 · 随热图指标联动" : "TOP 5 · selected range · follows heatmap metric"}
+          </p>
+          {topSlots.length === 0 ? (
+            <p className="mt-4 text-xs text-grey">
+              {zh ? "该范围内暂无数据" : "No data in this range"}
+            </p>
+          ) : (
+            <ol className="mt-2">
+              {topSlots.map((slot, index) => (
+                <li key={`${slot.weekday}-${slot.hour}`} className="border-b border-line py-2.5 last:border-b-0">
+                  <div className="flex items-baseline gap-3">
+                    <span className="w-5 shrink-0 font-mono text-[11px] text-grey/70">{`0${index + 1}`}</span>
+                    <span className="text-xs text-paper">
+                      {weekdayNames[slot.weekday]} {pad2(slot.hour)}:00
+                    </span>
+                    <span
+                      className={`ml-auto font-mono text-[13px] font-semibold ${index === 0 ? "text-blue" : "text-paper"}`}
+                    >
+                      {heatMetricText(heatMetric, slot.value, zh, currency)}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-[3px] rounded-full bg-paper/[0.06]">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue to-blue/40"
+                      style={{ width: `${Math.max((slot.value / topSlots[0].value) * 100, 2)}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      {/* 分布 */}
+      <p className="mt-6 font-mono text-[11px] tracking-[0.14em] text-grey/70">
+        {filters.metric === "cost"
+          ? zh
+            ? "分布 · 按估费"
+            : "BREAKDOWN · BY COST"
+          : zh
+            ? "分布 · 按 TOKEN"
+            : "BREAKDOWN · BY TOKENS"}
+      </p>
+      <div className="mt-3 grid gap-4 lg:grid-cols-2">
         <DistributionCard
-          title={zh ? "工具" : "TOOLS"}
+          title={zh ? "工具" : "Tools"}
           dist={overview.distributions.source}
           metric={filters.metric}
           zh={zh}
@@ -996,7 +1110,7 @@ export default async function UsagePage({
           }
         />
         <DistributionCard
-          title={zh ? "模型" : "MODELS"}
+          title={zh ? "模型" : "Models"}
           dist={overview.distributions.model}
           metric={filters.metric}
           zh={zh}
@@ -1004,7 +1118,7 @@ export default async function UsagePage({
           labelOf={(row) => (row.key === "__other__" ? otherLabel : row.label)}
         />
         <DistributionCard
-          title={zh ? "项目" : "PROJECTS"}
+          title={zh ? "项目" : "Projects"}
           dist={overview.distributions.project}
           metric={filters.metric}
           zh={zh}
@@ -1021,7 +1135,7 @@ export default async function UsagePage({
           }
         />
         <DistributionCard
-          title={zh ? "设备" : "DEVICES"}
+          title={zh ? "设备" : "Devices"}
           dist={overview.distributions.device}
           metric={filters.metric}
           zh={zh}
@@ -1037,7 +1151,7 @@ export default async function UsagePage({
         initialEnabledColumns={initialEnabledColumns}
         preservedQuery={query}
         tzOffsetMinutes={filters.tzOffsetMinutes}
-        currency={USAGE_DISPLAY_CURRENCIES[ccy]}
+        currency={currency}
         zh={zh}
       />
 

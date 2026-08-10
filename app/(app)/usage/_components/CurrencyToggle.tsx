@@ -2,6 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import type { UsageDisplayCurrency } from "@/src/lib/usage/pricing";
+import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "./seg-classes";
 
 /* 展示币种切换:写 kb_usage_ccy cookie 后整页 refresh(服务端按 cookie 重渲染)。
    已选中的币种下再点是 no-op,避免无谓的往返。 */
@@ -29,17 +35,17 @@ export default function CurrencyToggle({
     { id: "cny", text: "¥" },
   ];
   return (
-    <span className="inline-flex w-full items-center border border-line sm:w-auto" role="group" aria-label={label}>
-      {items.map((item, index) => (
+    <span className={`${SEG_WRAP} max-sm:w-full`} role="group" aria-label={label}>
+      {items.map((item) => (
         <button
           key={item.id}
           type="button"
           onClick={() => select(item.id)}
           aria-pressed={currency === item.id}
           title={item.id.toUpperCase()}
-          className={`inline-flex min-h-11 min-w-11 flex-1 items-center justify-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:flex-none ${
-            index > 0 ? "border-l border-line" : ""
-          } ${currency === item.id ? "bg-paper text-bg" : "text-grey hover:text-paper"}`}
+          className={`${SEG_ITEM} min-w-9 justify-center max-sm:flex-1 ${
+            currency === item.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE
+          }`}
         >
           {item.text}
         </button>

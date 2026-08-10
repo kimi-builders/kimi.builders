@@ -33,6 +33,8 @@ export interface UsageHeatmap {
   costMicros: number[][];
   activeSeconds: number[][];
   prompts: number[][];
+  /* 该格是否有任何采集事实落入:false = 采集缺口(区别于「有采集但零用量」)。 */
+  hasData: boolean[][];
 }
 
 export interface UsagePricingMatch {

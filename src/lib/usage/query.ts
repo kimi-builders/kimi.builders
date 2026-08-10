@@ -835,6 +835,7 @@ export async function getUsageOverview(
     const hour = local.getUTCHours();
     if (!inGrid(weekday, hour)) continue;
     const tokens = tokensOf(row);
+    heatmap.hasData[weekday][hour] = true;
     heatmap.tokens[weekday][hour] += totalOf(tokens);
     heatmap.inputTokens[weekday][hour] += tokens.inputTokens;
     heatmap.cacheWriteInputTokens[weekday][hour] += tokens.cacheWriteInputTokens;

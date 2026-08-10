@@ -1,20 +1,29 @@
 "use client";
 
-import { useRef, useState, type FocusEvent, type MouseEvent } from "react";
+import { useRef, useState, type FocusEvent, type MouseEvent, type ReactNode } from "react";
 import type { UsageGranularity, UsageMetric, UsageRangeLabel } from "@/src/lib/usage/filters";
+import {
+  heatGridFor,
+  heatMetricText,
+  heatPeakSlot,
+  type UsageCurrencySpec,
+  type UsageHeatMetric,
+} from "@/src/lib/usage/heatmap";
 import type { UsageHeatmap, UsageTrendDay } from "@/src/lib/usage/query";
-
-export type UsageHeatMetric = UsageMetric | "prompts";
-
-interface CurrencySpec {
-  rate: number;
-  symbol: string;
-}
 
 const WEEKDAY_LONG_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WEEKDAY_LONG_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAY_SHORT_ZH = ["一", "二", "三", "四", "五", "六", "日"];
 const WEEKDAY_SHORT_EN = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+/* 堆叠序列的配色单一事实源:SVG 柱子用下面的 FILL_*(inline style,Tailwind 不管 SVG 填充),
+   page.tsx 的卡头图例用 USAGE_TREND_LEGEND 的 bg-* class。两套值必须同 hue,改色两边同步。 */
+const FILL_INPUT = "var(--color-blue)";
+const FILL_CACHE = "rgb(52 211 153 / 0.8)"; // emerald-400/80
+const FILL_OUTPUT = "color-mix(in srgb, var(--color-paper) 75%, transparent)";
+const FILL_REASONING = "#fbbf24"; // amber-400
+const FILL_COST = "var(--color-blue)";
+const FILL_DURATION = "color-mix(in srgb, var(--color-blue) 70%, transparent)";
 
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
@@ -30,7 +39,7 @@ function duration(seconds: number, zh: boolean): string {
   return zh ? `${minutes} 分钟` : `${minutes}m`;
 }
 
-function fmtCost(micros: number, currency: CurrencySpec): string {
+function fmtCost(micros: number, currency: UsageCurrencySpec): string {
   const value = (micros / 1e6) * currency.rate;
   return `${currency.symbol}${value >= 0.01 ? value.toFixed(2) : value.toFixed(4)}`;
 }
@@ -50,11 +59,26 @@ function metricText(
   item: UsageTrendDay,
   metric: UsageMetric,
   zh: boolean,
-  currency: CurrencySpec,
+  currency: UsageCurrencySpec,
 ): string {
   if (metric === "cost") return fmtCost(item.costMicros, currency);
   if (metric === "duration") return duration(item.activeSeconds, zh);
   return `${compact(item.totalTokens)} tokens`;
+}
+
+function axisTickText(
+  metric: UsageMetric,
+  value: number,
+  zh: boolean,
+  currency: UsageCurrencySpec,
+): string {
+  if (value === 0) return "0";
+  if (metric === "cost") return fmtCost(value, currency);
+  if (metric === "duration") {
+    const hours = value / 3600;
+    return hours >= 1 ? `${hours >= 10 ? Math.round(hours) : hours.toFixed(1)}h` : `${Math.round(value / 60)}m`;
+  }
+  return compact(value);
 }
 
 function trendAxisLabel(
@@ -102,35 +126,6 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
   );
 }
 
-function TokenStack({ item, heightPx }: { item: UsageTrendDay; heightPx: number }) {
-  const segments = [
-    { value: item.inputTokens + item.cacheWriteInputTokens, color: "bg-blue" },
-    { value: item.cacheReadInputTokens, color: "bg-emerald-400/80" },
-    { value: item.outputTokens, color: "bg-paper/75" },
-    { value: item.reasoningOutputTokens, color: "bg-amber-400" },
-  ];
-  const nonZero = segments.filter((segment) => segment.value > 0).length;
-  const visibleHeight = item.totalTokens <= 0 ? 1 : Math.max(heightPx, nonZero * 2);
-  return (
-    <span
-      className="flex w-full flex-col-reverse overflow-hidden bg-card transition-opacity group-hover:opacity-80 group-focus-visible:outline group-focus-visible:outline-1 group-focus-visible:outline-blue"
-      style={{ height: `${visibleHeight}px` }}
-    >
-      {segments.map((segment, index) => (
-        <i
-          key={index}
-          className={`block ${segment.color}`}
-          style={{
-            flexBasis: 0,
-            flexGrow: segment.value,
-            minHeight: segment.value > 0 ? "2px" : 0,
-          }}
-        />
-      ))}
-    </span>
-  );
-}
-
 function tooltipLeft(
   event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>,
   viewport: HTMLDivElement | null,
@@ -141,6 +136,257 @@ function tooltipLeft(
   const center = targetRect.left + targetRect.width / 2 - viewportRect.left;
   const width = 244;
   return Math.max(8, Math.min(viewportRect.width - width - 8, center - width / 2));
+}
+
+/* 趋势图核心:SVG 堆叠柱(+可选均线)+ Y 网格线 + HTML 透明热区(保键盘可达)。
+   视觉层全 SVG,交互层叠绝对定位的 button 行,两者用同一组 slot 几何对齐。 */
+function TrendCore({
+  trend,
+  metric,
+  zh,
+  currency,
+  granularity,
+  rangeLabel,
+  maWindow,
+  plotHeight = 192,
+  tooltipTitle,
+  tooltipNote,
+}: {
+  trend: UsageTrendDay[];
+  metric: UsageMetric;
+  zh: boolean;
+  currency: UsageCurrencySpec;
+  granularity: UsageGranularity;
+  rangeLabel: UsageRangeLabel;
+  maWindow?: number;
+  plotHeight?: number;
+  tooltipTitle?: (item: UsageTrendDay) => string;
+  tooltipNote?: (item: UsageTrendDay, index: number) => ReactNode;
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState<{ index: number; left: number } | null>(null);
+  const max = Math.max(0, ...trend.map((item) => metricValue(item, metric)));
+  if (max <= 0) {
+    return (
+      <div className="flex h-52 items-center justify-center text-xs text-grey">
+        {zh ? "该范围内暂无数据" : "No data in this range"}
+      </div>
+    );
+  }
+
+  const n = trend.length;
+  const padL = 46;
+  const padR = 10;
+  const padT = 12;
+  const padB = 22;
+  /* slot 宽度按目标总宽自适应:少数几根柱子(如 12 周)更粗,30 天则紧凑。 */
+  const slot = Math.max(22, Math.min(64, Math.floor((980 - padL - padR) / Math.max(1, n))));
+  const plotW = n * slot;
+  const width = padL + plotW + padR;
+  const height = padT + plotHeight + padB;
+  const barW = slot * 0.62;
+  const y = (value: number) => padT + plotHeight - (value / max) * plotHeight;
+
+  const ticks = [0, 1, 2, 3, 4].map((step) => (max * step) / 4);
+  const labels = labelIndexes(n);
+  const monoFont = "var(--font-jetbrains), ui-monospace, monospace";
+
+  let maPath: string | null = null;
+  if (maWindow && n > 1) {
+    const points = trend.map((_, index) => {
+      const from = Math.max(0, index - maWindow + 1);
+      const windowItems = trend.slice(from, index + 1);
+      const mean = windowItems.reduce((sum, item) => sum + metricValue(item, metric), 0) / windowItems.length;
+      return [padL + index * slot + slot / 2, y(mean)] as const;
+    });
+    maPath = `M${points[0][0].toFixed(1)},${points[0][1].toFixed(1)}`;
+    for (let index = 1; index < points.length; index += 1) {
+      const [x1, y1] = points[index - 1];
+      const [x2, y2] = points[index];
+      const midX = (x1 + x2) / 2;
+      maPath += ` C${midX.toFixed(1)},${y1.toFixed(1)} ${midX.toFixed(1)},${y2.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
+    }
+  }
+
+  const active = hovered ? trend[hovered.index] : null;
+
+  return (
+    <div ref={viewportRef} className="relative" onMouseLeave={() => setHovered(null)}>
+      <div className="overflow-x-auto pb-1">
+        {/* 容器窄于 viewBox 时整体等比缩放(width:100% + viewBox);窄于 560px 才横向滚动。 */}
+        <div style={{ minWidth: Math.min(560, width) }}>
+          <div className="relative" style={{ width: "100%", maxWidth: width }}>
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              style={{ width: "100%", height: "auto", display: "block" }}
+              role="img"
+              aria-label={zh ? "趋势图" : "Trend chart"}
+            >
+              {ticks.map((tick) => (
+                <g key={tick}>
+                  <line
+                    x1={padL}
+                    y1={y(tick)}
+                    x2={width - padR}
+                    y2={y(tick)}
+                    style={{ stroke: "var(--color-line)" }}
+                    strokeWidth={tick === 0 ? 1.2 : 1}
+                  />
+                  <text
+                    x={padL - 8}
+                    y={y(tick) + 3.5}
+                    textAnchor="end"
+                    style={{ fill: "var(--color-grey)", font: `10px ${monoFont}` }}
+                  >
+                    {axisTickText(metric, tick, zh, currency)}
+                  </text>
+                </g>
+              ))}
+              {hovered && (
+                <rect
+                  x={padL + hovered.index * slot}
+                  y={padT}
+                  width={slot}
+                  height={plotHeight}
+                  style={{ fill: "color-mix(in srgb, var(--color-paper) 6%, transparent)" }}
+                />
+              )}
+              {trend.map((item, index) => {
+                const x = padL + index * slot + (slot - barW) / 2;
+                if (metric === "tokens") {
+                  const segments = [
+                    { value: item.inputTokens + item.cacheWriteInputTokens, fill: FILL_INPUT },
+                    { value: item.cacheReadInputTokens, fill: FILL_CACHE },
+                    { value: item.outputTokens, fill: FILL_OUTPUT },
+                    { value: item.reasoningOutputTokens, fill: FILL_REASONING },
+                  ];
+                  let cursor = y(0);
+                  return (
+                    <g key={item.day}>
+                      {item.totalTokens <= 0 && (
+                        <rect x={x} y={cursor - 1} width={barW} height={1} style={{ fill: "var(--color-card)" }} />
+                      )}
+                      {segments.map((segment) => {
+                        if (segment.value <= 0) return null;
+                        const h = (segment.value / max) * plotHeight;
+                        cursor -= h;
+                        return (
+                          <rect
+                            key={segment.fill}
+                            x={x}
+                            y={cursor}
+                            width={barW}
+                            height={Math.max(h, 1.5)}
+                            rx={1}
+                            style={{ fill: segment.fill }}
+                          />
+                        );
+                      })}
+                    </g>
+                  );
+                }
+                const value = metricValue(item, metric);
+                const h = value <= 0 ? 1 : Math.max(2, (value / max) * plotHeight);
+                return (
+                  <rect
+                    key={item.day}
+                    x={x}
+                    y={y(0) - h}
+                    width={barW}
+                    height={h}
+                    rx={1}
+                    style={{
+                      fill:
+                        value <= 0
+                          ? "var(--color-card)"
+                          : metric === "cost"
+                            ? FILL_COST
+                            : FILL_DURATION,
+                    }}
+                  />
+                );
+              })}
+              {maPath && (
+                <path
+                  d={maPath}
+                  fill="none"
+                  strokeWidth={1.6}
+                  strokeDasharray="5 5"
+                  style={{ stroke: "var(--color-grey)" }}
+                />
+              )}
+              {trend.map((item, index) =>
+                labels.has(index) ? (
+                  <text
+                    key={item.day}
+                    /* 两端标签改用 start/end 锚点内收,避免贴边被 padR/padL 裁掉 */
+                    x={
+                      index === 0
+                        ? padL - 4
+                        : index === n - 1
+                          ? width - padR + 4
+                          : padL + index * slot + slot / 2
+                    }
+                    y={height - 6}
+                    textAnchor={index === 0 ? "start" : index === n - 1 ? "end" : "middle"}
+                    style={{ fill: "var(--color-grey)", font: `9.5px ${monoFont}` }}
+                  >
+                    {trendAxisLabel(item.day, granularity, rangeLabel)}
+                  </text>
+                ) : null,
+              )}
+            </svg>
+            <div
+              className="absolute flex"
+              /* 与 SVG 同 viewBox 比例定位:整体缩放/拉伸时热区始终对齐柱子。 */
+              style={{
+                left: `${(padL / width) * 100}%`,
+                top: `${(padT / height) * 100}%`,
+                width: `${(plotW / width) * 100}%`,
+                height: `${(plotHeight / height) * 100}%`,
+              }}
+            >
+              {trend.map((item, index) => (
+                <button
+                  key={item.day}
+                  type="button"
+                  aria-label={`${item.day}: ${metricText(item, metric, zh, currency)}`}
+                  className="h-full min-w-0 flex-1 cursor-pointer focus:outline-none focus-visible:bg-paper/10"
+                  onMouseEnter={(event) =>
+                    setHovered({ index, left: tooltipLeft(event, viewportRef.current) })
+                  }
+                  onFocus={(event) =>
+                    setHovered({ index, left: tooltipLeft(event, viewportRef.current) })
+                  }
+                  onBlur={() => setHovered(null)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {active && hovered && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute top-3 z-20 w-[244px] rounded-lg border border-line bg-moon p-3 shadow-2xl"
+          style={{ left: hovered.left }}
+        >
+          <div className="font-mono text-[11px] font-semibold text-paper">
+            {tooltipTitle ? tooltipTitle(active) : active.day}
+          </div>
+          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
+            <span className="text-paper">{metricText(active, metric, zh, currency)}</span>
+            {metric === "tokens" && (
+              <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(active)}</span>
+            )}
+          </div>
+          {tooltipNote?.(active, hovered.index)}
+          {metric === "tokens" && <TokenBreakdown item={active} zh={zh} />}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function UsageTrendChart({
@@ -156,117 +402,18 @@ export function UsageTrendChart({
   granularity: UsageGranularity;
   rangeLabel: UsageRangeLabel;
   zh: boolean;
-  currency: CurrencySpec;
+  currency: UsageCurrencySpec;
 }) {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const [hovered, setHovered] = useState<{ index: number; left: number } | null>(null);
-  const max = Math.max(0, ...trend.map((item) => metricValue(item, metric)));
-  if (max <= 0) {
-    return (
-      <div className="flex h-52 items-center justify-center text-xs text-grey">
-        {zh ? "该范围内暂无数据" : "No data in this range"}
-      </div>
-    );
-  }
-
-  const labels = labelIndexes(trend.length);
-  const minWidth = Math.max(680, trend.length * (granularity === "hour" ? 34 : 28));
-  const maxMarker =
-    metric === "cost"
-      ? fmtCost(max, currency)
-      : metric === "duration"
-        ? duration(max, zh)
-        : compact(max);
-  const active = hovered ? trend[hovered.index] : null;
-
   return (
-    <div ref={viewportRef} className="relative" onMouseLeave={() => setHovered(null)}>
-      <div className="overflow-x-auto pb-1">
-        <div style={{ minWidth }}>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-1 top-0 z-10 font-mono text-[10px] text-grey/80">
-              {maxMarker}
-            </span>
-            <div className="flex h-52 items-end gap-1.5 border-b border-line px-1">
-              {trend.map((item, index) => {
-                const value = metricValue(item, metric);
-                const heightPx = value === 0 ? 1 : Math.max(4, Math.round((value / max) * 192));
-                const announce = `${item.day}: ${metricText(item, metric, zh, currency)}`;
-                return (
-                  <button
-                    key={item.day}
-                    type="button"
-                    aria-label={announce}
-                    className="group relative flex h-full min-w-1 flex-1 items-end focus:outline-none"
-                    onMouseEnter={(event) =>
-                      setHovered({ index, left: tooltipLeft(event, viewportRef.current) })
-                    }
-                    onFocus={(event) =>
-                      setHovered({ index, left: tooltipLeft(event, viewportRef.current) })
-                    }
-                    onBlur={() => setHovered(null)}
-                  >
-                    {metric === "tokens" ? (
-                      <TokenStack item={item} heightPx={heightPx} />
-                    ) : (
-                      <span
-                        className={`block w-full transition-opacity group-hover:opacity-80 group-focus-visible:outline group-focus-visible:outline-1 group-focus-visible:outline-blue ${
-                          value === 0 ? "bg-card" : metric === "cost" ? "bg-blue" : "bg-blue/70"
-                        }`}
-                        style={{ height: `${heightPx}px` }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="relative mt-1.5 h-4 px-1">
-            {trend.map((item, index) => {
-              if (!labels.has(index)) return null;
-              const pct = trend.length <= 1 ? 0 : (index / (trend.length - 1)) * 100;
-              return (
-                <span
-                  key={item.day}
-                  className={`absolute whitespace-nowrap font-mono text-[10px] text-grey ${
-                    index === 0 ? "translate-x-0" : index === trend.length - 1 ? "-translate-x-full" : "-translate-x-1/2"
-                  }`}
-                  style={{ left: `${pct}%` }}
-                >
-                  {trendAxisLabel(item.day, granularity, rangeLabel)}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {active && hovered && (
-        <div
-          role="tooltip"
-          className="pointer-events-none absolute top-3 z-20 w-[244px] border border-line bg-moon p-3 shadow-2xl"
-          style={{ left: hovered.left }}
-        >
-          <div className="font-mono text-[11px] font-semibold text-paper">{active.day}</div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
-            <span className="text-paper">{metricText(active, metric, zh, currency)}</span>
-            {metric === "tokens" && (
-              <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(active)}</span>
-            )}
-          </div>
-          {metric === "tokens" && <TokenBreakdown item={active} zh={zh} />}
-        </div>
-      )}
-
-      {metric === "tokens" && (
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11px] text-grey">
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-blue" />{zh ? "输入(含缓存写)" : "Input (incl. cache write)"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-emerald-400/80" />{zh ? "缓存读" : "Cache read"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-paper/75" />{zh ? "输出" : "Output"}</span>
-          <span className="flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-400" />{zh ? "推理" : "Reasoning"}</span>
-        </div>
-      )}
-    </div>
+    <TrendCore
+      trend={trend}
+      metric={metric}
+      zh={zh}
+      currency={currency}
+      granularity={granularity}
+      rangeLabel={rangeLabel}
+      maWindow={7}
+    />
   );
 }
 
@@ -285,17 +432,16 @@ function percentDelta(current: number, previous: number): string {
 export function UsageWeeklyTrend({
   trend,
   zh,
+  currency,
 }: {
   trend: UsageTrendDay[];
   zh: boolean;
+  currency: UsageCurrencySpec;
 }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const max = Math.max(0, ...trend.map((item) => item.totalTokens));
   const current = trend.at(-1);
   const previous = trend.at(-2);
-  const active = hovered === null ? null : trend[hovered];
   return (
-    <div onMouseLeave={() => setHovered(null)}>
+    <div>
       <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] text-grey">
         <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0)}</strong></span>
         <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0)}</strong></span>
@@ -303,61 +449,21 @@ export function UsageWeeklyTrend({
           {percentDelta(current?.totalTokens ?? 0, previous?.totalTokens ?? 0)}
         </span>
       </div>
-      <div className="relative">
-        <div className="overflow-x-auto pb-1">
-          <div className="min-w-[680px]">
-            <div className="relative">
-              <span className="pointer-events-none absolute left-1 top-0 font-mono text-[10px] text-grey/80">
-                {compact(max)}
-              </span>
-              <div className="flex h-40 items-end gap-2 border-b border-line px-1">
-                {trend.map((item, index) => {
-                  const heightPx = item.totalTokens <= 0 ? 1 : Math.max(4, Math.round((item.totalTokens / Math.max(1, max)) * 140));
-                  return (
-                    <button
-                      key={item.day}
-                      type="button"
-                      aria-label={`${item.day}–${weekEnd(item.day)}: ${compact(item.totalTokens)} tokens`}
-                      className="group relative flex h-full min-w-3 flex-1 items-end focus:outline-none"
-                      onMouseEnter={() => setHovered(index)}
-                      onFocus={() => setHovered(index)}
-                      onBlur={() => setHovered(null)}
-                    >
-                      <TokenStack item={item} heightPx={heightPx} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="mt-1.5 grid grid-cols-12 gap-2 px-1">
-              {trend.map((item, index) => (
-                <span key={item.day} className="text-center font-mono text-[9px] text-grey" title={item.day}>
-                  {index % 2 === 0 || index === trend.length - 1 ? item.day.slice(5) : ""}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-        {active && hovered !== null && (
-          <div
-            role="tooltip"
-            className={`pointer-events-none absolute top-3 z-20 w-[244px] border border-line bg-moon p-3 shadow-2xl ${
-              hovered < trend.length / 2 ? "left-3" : "right-3"
-            }`}
-          >
-            <div className="font-mono text-[11px] font-semibold text-paper">
-              {active.day} → {weekEnd(active.day)}
-            </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
-              <span className="text-paper">{compact(active.totalTokens)} tokens</span>
-              <span className="text-grey">
-                {zh ? "环比" : "WoW"} {percentDelta(active.totalTokens, trend[hovered - 1]?.totalTokens ?? 0)}
-              </span>
-            </div>
-            <TokenBreakdown item={active} zh={zh} />
+      <TrendCore
+        trend={trend}
+        metric="tokens"
+        zh={zh}
+        currency={currency}
+        granularity="day"
+        rangeLabel="custom"
+        plotHeight={140}
+        tooltipTitle={(item) => `${item.day} → ${weekEnd(item.day)}`}
+        tooltipNote={(item, index) => (
+          <div className="mt-1 font-mono text-[10px] text-grey">
+            {zh ? "环比" : "WoW"} {percentDelta(item.totalTokens, trend[index - 1]?.totalTokens ?? 0)}
           </div>
         )}
-      </div>
+      />
     </div>
   );
 }
@@ -371,26 +477,8 @@ interface HeatTokenCell {
   totalTokens: number;
 }
 
-function heatGrid(heatmap: UsageHeatmap, metric: UsageHeatMetric): number[][] {
-  if (metric === "cost") return heatmap.costMicros;
-  if (metric === "duration") return heatmap.activeSeconds;
-  if (metric === "prompts") return heatmap.prompts;
-  return heatmap.tokens;
-}
-
-function heatValueText(
-  metric: UsageHeatMetric,
-  value: number,
-  zh: boolean,
-  currency: CurrencySpec,
-): string {
-  if (metric === "cost") return fmtCost(value, currency);
-  if (metric === "duration") return duration(value, zh);
-  if (metric === "prompts") {
-    return zh ? `${compact(value)} 条用户消息` : `${compact(value)} user messages`;
-  }
-  return `${compact(value)} tokens`;
-}
+/* 6 档色阶(占峰值比):图例 ramp 与格子共用这一组 class。 */
+const HEAT_STEPS = ["bg-blue/15", "bg-blue/30", "bg-blue/45", "bg-blue/60", "bg-blue/80", "bg-blue"];
 
 export function UsageHeatmapGrid({
   heatmap,
@@ -403,21 +491,23 @@ export function UsageHeatmapGrid({
   metric: UsageHeatMetric;
   tzLabel: string;
   zh: boolean;
-  currency: CurrencySpec;
+  currency: UsageCurrencySpec;
 }) {
   const [hovered, setHovered] = useState<{ weekday: number; hour: number } | null>(null);
-  const grid = heatGrid(heatmap, metric);
+  const grid = heatGridFor(heatmap, metric);
   const max = Math.max(0, ...grid.flat());
+  const peak = heatPeakSlot(heatmap, metric);
   const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
   const shortNames = zh ? WEEKDAY_SHORT_ZH : WEEKDAY_SHORT_EN;
   const stepClass = (value: number): string => {
-    if (value <= 0 || max <= 0) return "bg-card";
+    if (value <= 0 || max <= 0) return "bg-paper/[0.05]";
     const ratio = value / max;
-    if (ratio <= 0.25) return "bg-blue/25";
-    if (ratio <= 0.45) return "bg-blue/45";
-    if (ratio <= 0.65) return "bg-blue/65";
-    if (ratio <= 0.85) return "bg-blue/85";
-    return "bg-blue";
+    if (ratio <= 0.16) return HEAT_STEPS[0];
+    if (ratio <= 0.32) return HEAT_STEPS[1];
+    if (ratio <= 0.48) return HEAT_STEPS[2];
+    if (ratio <= 0.64) return HEAT_STEPS[3];
+    if (ratio <= 0.82) return HEAT_STEPS[4];
+    return HEAT_STEPS[5];
   };
   const cell = hovered
     ? {
@@ -429,17 +519,53 @@ export function UsageHeatmapGrid({
         totalTokens: heatmap.tokens[hovered.weekday][hovered.hour],
       }
     : null;
-  const top = grid
-    .flatMap((row, weekday) => row.map((value, hour) => ({ weekday, hour, value })))
-    .filter((item) => item.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
 
   return (
     <div className="relative" onMouseLeave={() => setHovered(null)}>
       <div className="overflow-x-auto pb-1">
         <div className="min-w-[620px]">
-          <div className="flex items-center gap-1.5">
+          <div className="space-y-[3px]">
+            {grid.map((row, weekday) => (
+              <div key={weekday} className="flex items-center gap-1.5">
+                <span className="w-6 shrink-0 text-center font-mono text-[10px] text-grey">
+                  {shortNames[weekday]}
+                </span>
+                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
+                  {row.map((value, hour) => {
+                    if (!heatmap.hasData[weekday][hour]) {
+                      /* 采集缺口:虚线描边格,不可交互。 */
+                      return (
+                        <span
+                          key={hour}
+                          aria-hidden="true"
+                          className="aspect-square rounded-[3px] border border-dashed border-paper/20"
+                        />
+                      );
+                    }
+                    const isPeak =
+                      peak !== null && peak.weekday === weekday && peak.hour === hour && max > 0;
+                    return (
+                      <button
+                        key={hour}
+                        type="button"
+                        aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${heatMetricText(metric, value, zh, currency)}`}
+                        className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
+                        style={
+                          isPeak
+                            ? { boxShadow: "0 0 0 1.5px #fff, 0 0 16px rgb(59 130 246 / 0.55)" }
+                            : undefined
+                        }
+                        onMouseEnter={() => setHovered({ weekday, hour })}
+                        onFocus={() => setHovered({ weekday, hour })}
+                        onBlur={() => setHovered(null)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-[3px] flex items-center gap-1.5">
             <span className="w-6 shrink-0" />
             <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
               {Array.from({ length: 24 }, (_, hour) => (
@@ -449,31 +575,11 @@ export function UsageHeatmapGrid({
               ))}
             </div>
           </div>
-          <div className="mt-1 space-y-[3px]">
-            {grid.map((row, weekday) => (
-              <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-6 shrink-0 font-mono text-[10px] text-grey">{shortNames[weekday]}</span>
-                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
-                  {row.map((value, hour) => (
-                    <button
-                      key={hour}
-                      type="button"
-                      aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${heatValueText(metric, value, zh, currency)}`}
-                      className={`aspect-square transition-transform hover:scale-110 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
-                      onMouseEnter={() => setHovered({ weekday, hour })}
-                      onFocus={() => setHovered({ weekday, hour })}
-                      onBlur={() => setHovered(null)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
       {hovered && cell && (
-        <div role="tooltip" className="pointer-events-none absolute right-1 top-5 z-20 w-[252px] border border-line bg-moon p-3 shadow-2xl">
+        <div role="tooltip" className="pointer-events-none absolute right-1 top-5 z-20 w-[252px] rounded-lg border border-line bg-moon p-3 shadow-2xl">
           <div className="font-mono text-[11px] font-semibold text-paper">
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
           </div>
@@ -491,26 +597,27 @@ export function UsageHeatmapGrid({
         </div>
       )}
 
-      <p className="mt-3 font-mono text-[10px] text-grey">
-        {zh ? `时区:${tzLabel}(浏览器本地)` : `Timezone: ${tzLabel} (browser local)`}
-      </p>
-      <details className="mt-2">
-        <summary className="min-h-11 cursor-pointer py-3 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
-          {zh ? "最活跃时段(TOP 5)" : "BUSIEST SLOTS (TOP 5)"}
-        </summary>
-        {top.length === 0 ? (
-          <p className="mt-2 text-[10px] text-grey">{zh ? "该范围内暂无数据" : "No data in this range"}</p>
-        ) : (
-          <ol className="mt-2 space-y-1 font-mono text-[10px] text-grey">
-            {top.map((item) => (
-              <li key={`${item.weekday}-${item.hour}`}>
-                {longNames[item.weekday]} {String(item.hour).padStart(2, "0")}:00 —{" "}
-                {heatValueText(metric, item.value, zh, currency)}
-              </li>
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] text-grey">
+        <span className="flex items-center gap-1.5">
+          {zh ? "少" : "Less"}
+          <span className="flex gap-[3px]">
+            {HEAT_STEPS.map((step) => (
+              <i key={step} className={`h-3 w-3 rounded-[3px] ${step}`} />
             ))}
-          </ol>
-        )}
-      </details>
+          </span>
+          {zh ? "多" : "More"}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <i className="h-[11px] w-[11px] rounded-[3px] border border-dashed border-paper/30" />
+          {zh ? "描边 = 无数据(采集缺口)" : "Dashed = no data (collection gap)"}
+        </span>
+        <span className="text-grey/80">
+          {zh ? "白圈 = 峰值 · 悬停查看数值" : "White ring = peak · hover for values"}
+        </span>
+        <span className="text-grey/80">
+          {zh ? `时区:${tzLabel}(浏览器本地)` : `Timezone: ${tzLabel} (browser local)`}
+        </span>
+      </div>
     </div>
   );
 }

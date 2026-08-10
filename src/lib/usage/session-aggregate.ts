@@ -76,6 +76,7 @@ export function createEmptyUsageHeatmap(): UsageHeatmap {
     costMicros: grid(),
     activeSeconds: grid(),
     prompts: grid(),
+    hasData: Array.from({ length: 7 }, () => Array<boolean>(24).fill(false)),
   };
 }
 
@@ -98,6 +99,7 @@ export function aggregateUsageSessionRows(
     if (options?.heatmap) {
       options.heatmap.activeSeconds[weekday][localHour] += hour.activeSeconds;
       options.heatmap.prompts[weekday][localHour] += hour.userMessageCount;
+      options.heatmap.hasData[weekday][localHour] = true;
     }
     const day = options?.ensureDay?.(trendKeyFromInstant(hour.hourStart, filters));
     if (day) day.activeSeconds += hour.activeSeconds;

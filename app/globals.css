@@ -222,3 +222,50 @@ html[data-sidebar="0"] .rightsidebar .sidebar-rail {
 .kb-toast {
   animation: kb-toast-in 0.16s ease-out;
 }
+
+/* ---- 用量中心:Kimi Design 设计稿改造(页级 scoped,不进全局 token)---- */
+/* Hero 卡:顶部细渐变 + 右上角蓝色径向微光。color-mix 基于 --color-blue,
+   深浅主题都安全;微光只做质感,不承担信息。 */
+.usage-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 3%, transparent), transparent),
+    var(--color-card);
+}
+.usage-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    240px 90px at 85% 0%,
+    color-mix(in srgb, var(--color-blue) 8%, transparent),
+    transparent 70%
+  );
+}
+/* 同步状态脉冲圆点(薄荷绿 = 同步链路健康,与 hero 的语义色一致)。 */
+@keyframes usage-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgb(52 211 153 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 0);
+  }
+}
+.usage-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #34d399;
+  animation: usage-pulse 2.4s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .usage-pulse-dot {
+    animation: none;
+  }
+}

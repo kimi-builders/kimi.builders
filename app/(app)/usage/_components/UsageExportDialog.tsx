@@ -31,7 +31,7 @@ export default function UsageExportDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-haspopup="dialog"
-        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
       >
         <Download size={13} aria-hidden="true" /> {zh ? "导出" : "Export"}
       </button>

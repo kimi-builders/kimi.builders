@@ -13,6 +13,12 @@ import RecordsColumnsMenu, {
   OPTIONAL_RECORD_COLUMNS,
   type OptionalRecordColumn,
 } from "./RecordsColumnsMenu";
+import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "./seg-classes";
 
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
@@ -271,7 +277,15 @@ export default function UsageRecordsSection({
     {
       id: "hitRate",
       header: zh ? "命中率" : "HIT%",
-      cell: (row) => formatHitRate(usageCacheHitRate(row)),
+      cell: (row) => {
+        const rate = usageCacheHitRate(row);
+        if (rate === null) return <span className="text-grey">—</span>;
+        return (
+          <span className="rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[10px] text-emerald-400">
+            {formatHitRate(rate)}
+          </span>
+        );
+      },
     },
     {
       id: "requests",
@@ -287,11 +301,11 @@ export default function UsageRecordsSection({
   );
 
   return (
-    <section className="mt-4 border border-line bg-card p-4 sm:p-5">
+    <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-mono text-[11px] font-semibold tracking-[0.16em] text-paper">
-            {zh ? "明细" : "RECORDS"}
+          <h2 className="text-[13px] font-semibold text-paper">
+            {zh ? "明细" : "Records"}
           </h2>
           <p className="mt-1 font-mono text-[11px] text-grey">
             {zh
@@ -307,16 +321,14 @@ export default function UsageRecordsSection({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <nav aria-label={zh ? "明细粒度" : "Record grain"} className="flex items-center gap-1">
+          <nav aria-label={zh ? "明细粒度" : "Record grain"} className={SEG_WRAP}>
             {grainItems.map((item) => (
               <Link
                 key={item.key}
                 href={item.href}
                 scroll={false}
                 aria-current={item.active ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  item.active ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
-                }`}
+                className={`${SEG_ITEM} ${item.active ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
               >
                 {item.label}
               </Link>
@@ -346,7 +358,7 @@ export default function UsageRecordsSection({
                   {records.rows.map((row, index) => (
                     <tr
                       key={`${row.day}-${row.time ?? ""}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
-                      className="border-t border-line"
+                      className="border-t border-line transition-colors hover:bg-paper/[0.03]"
                     >
                       {columns.map((column) => (
                         <td
@@ -367,7 +379,7 @@ export default function UsageRecordsSection({
             {records.rows.map((row, index) => (
               <li
                 key={`${row.day}-${row.time ?? ""}-${row.source}-${row.model}-${row.project ?? ""}-${row.deviceId}-${index}`}
-                className="border border-line p-3"
+                className="rounded-lg border border-line p-3"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="shrink-0 font-mono text-[11px] text-grey">
@@ -414,11 +426,11 @@ export default function UsageRecordsSection({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
         {previousHref ? (
-          <Link href={previousHref} scroll={false} className="inline-flex min-h-11 items-center border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          <Link href={previousHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
             {zh ? "上一页" : "Prev"}
           </Link>
         ) : (
-          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center border border-line px-3 font-mono text-[11px] text-grey/40">
+          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey/40">
             {zh ? "上一页" : "Prev"}
           </span>
         )}
@@ -426,11 +438,11 @@ export default function UsageRecordsSection({
           {zh ? `第 ${records.page} / ${totalPages} 页` : `Page ${records.page} / ${totalPages}`}
         </span>
         {nextHref ? (
-          <Link href={nextHref} scroll={false} className="inline-flex min-h-11 items-center border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          <Link href={nextHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
             {zh ? "下一页" : "Next"}
           </Link>
         ) : (
-          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center border border-line px-3 font-mono text-[11px] text-grey/40">
+          <span aria-disabled="true" className="inline-flex min-h-11 cursor-not-allowed items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey/40">
             {zh ? "下一页" : "Next"}
           </span>
         )}
