@@ -161,6 +161,7 @@ const DICT = {
   /* ---- 登录 chip ---- */
   "auth.login": { zh: "登录", en: "Log in" },
   "auth.logout": { zh: "退出", en: "Log out" },
+  "auth.email": { zh: "邮箱", en: "Email" },
   /* ---- 表单错误 ---- */
   "err.login": { zh: "请先登录", en: "Please log in first" },
   "err.unknownType": { zh: "未知帖子类型", en: "Unknown post type" },

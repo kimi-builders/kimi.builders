@@ -30,6 +30,44 @@ export async function findOrCreateUser(
   return uid;
 }
 
+/* 邮箱注册:不自动并号(防撞号);handle 从邮箱本地部分派生去重。 */
+export async function createEmailUser(email: string, name?: string): Promise<number> {
+  const pool = getPool();
+  const localPart = email.split("@")[0] || "builder";
+  const handle = await uniqueHandle(pool, name || localPart);
+  const display = (name || localPart).slice(0, 64);
+  const [res] = await pool.query<ResultSetHeader>(
+    "INSERT INTO users (handle, name, email) VALUES (?, ?, ?)",
+    [handle, display, email],
+  );
+  return Number(res.insertId);
+}
+
+export async function setUserPassword(userId: number, passwordHash: string): Promise<void> {
+  await getPool().query("UPDATE users SET password_hash = ? WHERE id = ?", [
+    passwordHash,
+    userId,
+  ]);
+}
+
+export interface EmailAccountRow {
+  id: number;
+  passwordHash: string | null;
+}
+
+export async function findEmailAccount(email: string): Promise<EmailAccountRow | null> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT id, password_hash FROM users WHERE email = ? LIMIT 1",
+    [email],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    passwordHash: row.password_hash === null ? null : String(row.password_hash),
+  };
+}
+
 export async function setUserLocale(
   userId: number,
   locale: "zh" | "en",
