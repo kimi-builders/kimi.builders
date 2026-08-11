@@ -14,8 +14,8 @@ import Widget from "./Widget";
 
 const SCOPES = [
   { id: "base", labelKey: "awesome.scopeBase", hintKey: "awesome.scopeBaseHint", dot: "bg-blue" },
-  { id: "eco", labelKey: "awesome.scopeEco", hintKey: "awesome.scopeEcoHint", dot: "bg-emerald-400" },
-  { id: "part", labelKey: "awesome.scopePart", hintKey: "awesome.scopePartHint", dot: "bg-amber-400" },
+  { id: "eco", labelKey: "awesome.scopeEco", hintKey: "awesome.scopeEcoHint", dot: "bg-blue" },
+  { id: "part", labelKey: "awesome.scopePart", hintKey: "awesome.scopePartHint", dot: "bg-grey" },
 ] as const;
 
 export default async function AwesomeRail({

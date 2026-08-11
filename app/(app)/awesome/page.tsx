@@ -27,8 +27,8 @@ export const metadata: Metadata = { title: "Awesome — kimi.builders" };
 
 const SCOPES = [
   { id: "base", key: "awesome.scopeBase" as const, dot: "bg-blue" },
-  { id: "eco", key: "awesome.scopeEco" as const, dot: "bg-emerald-400" },
-  { id: "part", key: "awesome.scopePart" as const, dot: "bg-amber-400" },
+  { id: "eco", key: "awesome.scopeEco" as const, dot: "bg-blue" },
+  { id: "part", key: "awesome.scopePart" as const, dot: "bg-grey" },
 ];
 
 export default async function AwesomePage({

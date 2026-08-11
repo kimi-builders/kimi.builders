@@ -78,7 +78,7 @@ export default async function WorkRail({
         {claimBadge !== null && (
           <p className="mt-3">
             <span
-              className="inline-block rounded-md bg-emerald-400/10 px-1.5 py-px font-mono text-[10px] font-medium text-emerald-400"
+              className="inline-block rounded-md bg-blue/10 px-1.5 py-px font-mono text-[10px] font-medium text-blue"
               title={t(locale, "works.badgeTitle")}
             >
               {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}

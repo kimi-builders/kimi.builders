@@ -108,7 +108,7 @@ export default function PostEditForm({
       </div>
 
       {state?.error && (
-        <p role="alert" className="text-xs text-red-400">{state.error}</p>
+        <p role="alert" className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">{state.error}</p>
       )}
 
       <div className="flex items-center gap-3 border-t border-line pt-4">

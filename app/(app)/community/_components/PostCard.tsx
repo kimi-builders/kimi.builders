@@ -17,18 +17,18 @@ import VoteCluster from "./VoteCluster";
 /* 分类 chip 配色(tint 底 + 彩字);feedbar 话题 pill 的激活态同款。 */
 export const CATEGORY_TINT: Record<string, string> = {
   chat: "bg-blue/10 text-blue",
-  showcase: "bg-emerald-400/10 text-emerald-400",
-  help: "bg-amber-400/10 text-amber-400",
-  feedback: "bg-red-400/10 text-red-400",
+  showcase: "bg-blue/10 text-blue",
+  help: "bg-blue/10 text-blue",
+  feedback: "bg-blue/10 text-blue",
   announcement: "bg-paper/[0.07] text-grey",
 };
 
 /* 话题 pill 的色点(与 chip tint 同 hue)。 */
 export const CATEGORY_DOT: Record<string, string> = {
   chat: "bg-blue",
-  showcase: "bg-emerald-400",
-  help: "bg-amber-400",
-  feedback: "bg-red-400",
+  showcase: "bg-blue",
+  help: "bg-blue",
+  feedback: "bg-blue",
   announcement: "bg-grey",
 };
 
