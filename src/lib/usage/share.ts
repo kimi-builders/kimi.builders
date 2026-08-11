@@ -14,10 +14,11 @@ export interface UsageShareActivityCell {
   tokens: number;
   level: number;
   future: boolean;
-  /* stacked 主图(30d)专用:当日输入(含缓存写)/缓存读/输出(含推理)。 */
+  /* stacked 主图(30d)专用:当日输入(含缓存写)/缓存读/输出/推理。 */
   inputTokens?: number;
   cacheTokens?: number;
   outputTokens?: number;
+  reasoningTokens?: number;
 }
 
 /* 桑基流四类总量(范围内互斥):fresh input = 输入 + 缓存写;输出与推理分列。 */
@@ -43,6 +44,8 @@ export interface UsageShareWeek {
 
 export interface UsageShareSnapshot {
   range: UsageShareRange;
+  /* 导出界面语言:zh 可中英混搭,en 纯英文(构建期按它出文案)。 */
+  zh: boolean;
   rangeLabel: string;
   rangeLabelEn: string;
   generatedDate: string;
@@ -75,13 +78,15 @@ export interface UsageShareSnapshot {
   /* 数据起止月份(本地 YYYY-MM):首条 bucket 所在月 → 当前月。 */
   span: { from: string; to: string };
   main: {
-    kind: "hours" | "days" | "stacked" | "calendar";
+    kind: "hours" | "weekheat" | "stacked" | "calendar";
     eyebrow: string;
     headline: string;
     subline: string;
     columns: number;
     rows: number;
     cells: UsageShareActivityCell[];
+    /* weekheat(7D)专用:7(周一起)×24(本地小时)的 token 总量。 */
+    heat?: number[][];
   };
 }
 
@@ -91,13 +96,34 @@ interface DailyUsage {
   /* 输入 + 缓存写(fresh input)。 */
   inputTokens: number;
   cacheReadTokens: number;
-  /* 输出 + 推理。 */
+  /* 输出与推理分列(海报四段堆叠用)。 */
   outputTokens: number;
+  reasoningOutputTokens: number;
 }
 
 const DAY_MS = 86_400_000;
 /* 短周期也把日序列拉满 12 周:streak/velocity 日历在全周期口径一致。 */
 const SHARE_WEEKS = 12;
+/* 贡献图跨度:90D ≈ 3 个月(13 个自然周),ALL 封顶半年(26 周,整年没必要)。 */
+const SHARE_CALENDAR_WEEKS: Partial<Record<UsageShareRange, number>> = { "90d": 13, all: 26 };
+const WEEKDAY_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+const WEEKDAY_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+/* 星期×小时网格的峰值格(7D 海报 subline 用);全零返回 null。 */
+function peakSlotOf(grid: number[][]): { weekday: number; hour: number } | null {
+  let best: { weekday: number; hour: number } | null = null;
+  let maximum = 0;
+  for (let weekday = 0; weekday < 7; weekday += 1) {
+    for (let hour = 0; hour < 24; hour += 1) {
+      const value = grid[weekday]?.[hour] ?? 0;
+      if (value > maximum) {
+        maximum = value;
+        best = { weekday, hour };
+      }
+    }
+  }
+  return best;
+}
 
 export function normalizeUsageShareRange(value: unknown): UsageShareRange {
   return typeof value === "string" && (USAGE_SHARE_RANGES as readonly string[]).includes(value)
@@ -242,7 +268,7 @@ function buildDayCells(daily: DailyUsage[], today: string): UsageShareActivityCe
   });
 }
 
-/* 30d 堆叠主图:最近 30 个本地日,每日 输入(含缓存写)/缓存读/输出(含推理)。 */
+/* 30d 堆叠主图:最近 30 个本地日,每日 输入(含缓存写)/缓存读/输出/推理。 */
 export function buildShareStackedCells(
   daily: DailyUsage[],
   today: string,
@@ -262,6 +288,7 @@ export function buildShareStackedCells(
       inputTokens: item?.inputTokens ?? 0,
       cacheTokens: item?.cacheReadTokens ?? 0,
       outputTokens: item?.outputTokens ?? 0,
+      reasoningTokens: item?.reasoningOutputTokens ?? 0,
     };
   });
 }
@@ -317,8 +344,8 @@ function initials(name: string, handle: string): string {
   return [...source].slice(0, 2).join("").toUpperCase();
 }
 
-function effortLabel(value: string): string {
-  if (!value) return "未记录";
+function effortLabel(value: string, zh: boolean): string {
+  if (!value) return zh ? "未记录" : "—";
   return value.replaceAll("_", " ").replaceAll("-", " ").toUpperCase();
 }
 
@@ -330,9 +357,12 @@ export async function getUsageShareSnapshot(input: {
   tzOffsetMinutes: number;
   uploadProject: boolean;
   retentionDays: number;
+  /* 海报语言:zh 可中英混搭,en 纯英文;默认 zh。 */
+  zh?: boolean;
   now?: Date;
 }): Promise<UsageShareSnapshot> {
   const now = input.now ?? new Date();
+  const zh = input.zh ?? true;
   const filters = shareFilters(
     input.range,
     input.tzOffsetMinutes,
@@ -341,9 +371,10 @@ export async function getUsageShareSnapshot(input: {
     now,
   );
   const today = localDayKey(now, filters.tzOffsetMinutes);
-  /* 日序列窗口 = max(范围, 最近 12 个自然周),短周期也能算 streak/velocity。 */
+  /* 日序列窗口 = max(范围, 贡献图跨度, 最近 12 个自然周),短周期也能算 streak/velocity。 */
+  const calendarWeeks = SHARE_CALENDAR_WEEKS[input.range] ?? SHARE_WEEKS;
   const weekWindowStartUtc = new Date(
-    utcDateOfDay(dayKeyAt(mondayOf(today), -(SHARE_WEEKS - 1) * 7)).getTime()
+    utcDateOfDay(dayKeyAt(mondayOf(today), -(calendarWeeks - 1) * 7)).getTime()
       - filters.tzOffsetMinutes * 60_000,
   );
   const dailyFilters: UsageFilters =
@@ -360,7 +391,8 @@ export async function getUsageShareSnapshot(input: {
       `SELECT DATE(${shifted}) AS day,
               SUM(input_tokens + cache_write_input_tokens) AS input_tokens,
               SUM(cache_read_input_tokens) AS cache_read_tokens,
-              SUM(output_tokens + reasoning_output_tokens) AS output_tokens
+              SUM(output_tokens) AS output_tokens,
+              SUM(reasoning_output_tokens) AS reasoning_output_tokens
        FROM usage_buckets
        WHERE ${dailyBucket.where}
        GROUP BY DATE(${shifted})
@@ -387,47 +419,72 @@ export async function getUsageShareSnapshot(input: {
     const inputTokens = Number(row.input_tokens ?? 0);
     const cacheReadTokens = Number(row.cache_read_tokens ?? 0);
     const outputTokens = Number(row.output_tokens ?? 0);
+    const reasoningOutputTokens = Number(row.reasoning_output_tokens ?? 0);
     return {
       day: row.day instanceof Date ? row.day.toISOString().slice(0, 10) : String(row.day).slice(0, 10),
-      tokens: inputTokens + cacheReadTokens + outputTokens,
+      tokens: inputTokens + cacheReadTokens + outputTokens + reasoningOutputTokens,
       inputTokens,
       cacheReadTokens,
       outputTokens,
+      reasoningOutputTokens,
     };
   });
   const dayRun = dailyStreak(daily, today);
   const weekRun = weeklyStreak(daily, today);
   const labels = rangeLabels(input.range);
   const isHours = input.range === "today" || input.range === "24h";
-  const isDays = input.range === "7d";
+  const isWeekheat = input.range === "7d";
   const isStacked = input.range === "30d";
   const trendMax = Math.max(0, ...overview.trend.map((item) => item.totalTokens));
   const dailyMax = Math.max(0, ...daily.map((item) => item.tokens));
+  /* 小时柱同 30d 主图口径:输入(含缓存写)/缓存读/输出/推理 四段堆叠。 */
   const hourCells: UsageShareActivityCell[] = overview.trend.map((item) => ({
     key: item.day,
     tokens: item.totalTokens,
     level: activityLevel(item.totalTokens, trendMax),
     future: false,
+    inputTokens: item.inputTokens + item.cacheWriteInputTokens,
+    cacheTokens: item.cacheReadInputTokens,
+    outputTokens: item.outputTokens,
+    reasoningTokens: item.reasoningOutputTokens,
   }));
+  const heatPeak = peakSlotOf(overview.heatmap.tokens);
+  const heatPeakText = heatPeak
+    ? zh
+      ? `峰值时段 ${WEEKDAY_ZH[heatPeak.weekday]} ${String(heatPeak.hour).padStart(2, "0")}–${String((heatPeak.hour + 1) % 24).padStart(2, "0")} 时`
+      : `PEAK ${WEEKDAY_EN[heatPeak.weekday]} ${String(heatPeak.hour).padStart(2, "0")}:00`
+    : null;
   const main: UsageShareSnapshot["main"] = isHours
     ? {
         kind: "hours",
         eyebrow: "BUILD PULSE",
-        headline: input.range === "today" ? "今日构建脉冲" : "24 小时构建脉冲",
-        subline: `${overview.totals.requests.toLocaleString("zh-CN")} 次请求 · 峰值按小时`,
+        headline: zh
+          ? input.range === "today"
+            ? "今日构建脉冲"
+            : "24 小时构建脉冲"
+          : input.range === "today"
+            ? "TODAY'S BUILD PULSE"
+            : "24H BUILD PULSE",
+        subline: zh
+          ? `${overview.totals.requests.toLocaleString("zh-CN")} 次请求 · 峰值按小时`
+          : `${overview.totals.requests.toLocaleString("en-US")} REQUESTS · HOURLY PEAK`,
         columns: Math.max(1, hourCells.length),
         rows: 1,
         cells: hourCells,
       }
-    : isDays
+    : isWeekheat
       ? {
-          kind: "days",
-          eyebrow: "7-DAY BUILD RHYTHM",
-          headline: `${dayRun.current || dayRun.longest} 天连续构建`,
-          subline: `最长连续 ${dayRun.longest} 天 · 峰值按日`,
-          columns: 7,
-          rows: 1,
+          kind: "weekheat",
+          eyebrow: "7-DAY ACTIVE SLOTS",
+          headline: zh
+            ? `${dayRun.current || dayRun.longest} 天连续构建`
+            : `${dayRun.current || dayRun.longest}-DAY STREAK`,
+          subline:
+            heatPeakText ?? (zh ? "近 7 天 · 星期 × 小时" : "LAST 7 DAYS · WEEKDAY × HOUR"),
+          columns: 24,
+          rows: 7,
           cells: buildDayCells(daily, today),
+          heat: overview.heatmap.tokens,
         }
       : isStacked
         ? {
@@ -435,21 +492,31 @@ export async function getUsageShareSnapshot(input: {
             eyebrow: "30-DAY TOKEN MIX",
             headline:
               usageCacheHitRate(overview.totals) === null
-                ? `${daily.filter((item) => item.tokens > 0).length} 天有构建`
-                : `缓存命中 ${((usageCacheHitRate(overview.totals) ?? 0) * 100).toFixed(1)}%`,
-            subline: "每柱一天 · 输入 / 缓存命中 / 输出 堆叠",
+                ? zh
+                  ? `${daily.filter((item) => item.tokens > 0).length} 天有构建`
+                  : `${daily.filter((item) => item.tokens > 0).length} ACTIVE DAYS`
+                : zh
+                  ? `缓存命中 ${((usageCacheHitRate(overview.totals) ?? 0) * 100).toFixed(1)}%`
+                  : `CACHE HIT ${((usageCacheHitRate(overview.totals) ?? 0) * 100).toFixed(1)}%`,
+            subline: zh
+              ? "每柱一天 · 输入 / 缓存读 / 输出 / 推理 堆叠"
+              : "1 BAR/DAY · INPUT / CACHE / OUTPUT / REASONING",
             columns: 30,
             rows: 1,
             cells: buildShareStackedCells(daily, today),
           }
         : {
             kind: "calendar",
-            eyebrow: `${SHARE_WEEKS}-WEEK ACTIVITY`,
-            headline: `${weekRun.current || weekRun.longest} 周连续构建`,
-            subline: `最长连续 ${weekRun.longest} 周 · 每格代表一天`,
-            columns: SHARE_WEEKS,
+            eyebrow: input.range === "90d" ? "90-DAY FOOTPRINT" : "6-MONTH FOOTPRINT",
+            headline: zh
+              ? `${weekRun.current || weekRun.longest} 周连续构建`
+              : `${weekRun.current || weekRun.longest}-WEEK STREAK`,
+            subline: zh
+              ? `最长连续 ${weekRun.longest} 周 · 每格代表一天`
+              : `LONGEST ${weekRun.longest} WEEKS · 1 CELL/DAY`,
+            columns: calendarWeeks,
             rows: 7,
-            cells: buildCalendarCells(daily, today, SHARE_WEEKS),
+            cells: buildCalendarCells(daily, today, calendarWeeks),
           };
 
   const firstRow = firstResult[0][0];
@@ -458,6 +525,7 @@ export async function getUsageShareSnapshot(input: {
 
   return {
     range: input.range,
+    zh,
     rangeLabel: labels.zh,
     rangeLabelEn: labels.en,
     generatedDate: today,
@@ -471,10 +539,10 @@ export async function getUsageShareSnapshot(input: {
     costMicros: overview.totals.costMicros,
     activeSeconds: overview.totals.activeSeconds,
     peakTokens: isHours ? trendMax : dailyMax,
-    peakLabel: isHours ? "小时峰值" : "单日峰值",
+    peakLabel: isHours ? (zh ? "小时峰值" : "HOURLY PEAK") : zh ? "单日峰值" : "DAILY PEAK",
     cacheHitRate: usageCacheHitRate(overview.totals),
-    topModel: overview.distributions.model.rows[0]?.label ?? "未记录",
-    topEffort: effortLabel(String(effortResult[0][0]?.reasoning_effort ?? "")),
+    topModel: overview.distributions.model.rows[0]?.label ?? (zh ? "未记录" : "—"),
+    topEffort: effortLabel(String(effortResult[0][0]?.reasoning_effort ?? ""), zh),
     toolCount: overview.distributions.source.rows.filter((row) => row.key !== "__other__").length,
     requests: overview.totals.requests,
     flow,
@@ -509,13 +577,14 @@ function scaleFlow(flow: UsageShareFlow, factor: number): UsageShareFlow {
   };
 }
 
-export function mockUsageShareSnapshot(range: UsageShareRange): UsageShareSnapshot {
+export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): UsageShareSnapshot {
   const labels = rangeLabels(range);
   const today = "2026-08-09";
   const isHours = range === "today" || range === "24h";
-  const isDays = range === "7d";
+  const isWeekheat = range === "7d";
   const isStacked = range === "30d";
-  const count = isHours ? 24 : isDays ? 7 : isStacked ? 30 : SHARE_WEEKS * 7;
+  const calendarWeeks = SHARE_CALENDAR_WEEKS[range] ?? SHARE_WEEKS;
+  const count = isHours ? 24 : isWeekheat ? 7 : isStacked ? 30 : calendarWeeks * 7;
   const cells: UsageShareActivityCell[] = Array.from({ length: count }, (_, index) => {
     const pulse = Math.round((Math.sin(index * 1.73) + 1.35) * 71_000_000);
     const inactive = index % 13 === 0 || index % 19 === 0;
@@ -525,17 +594,26 @@ export function mockUsageShareSnapshot(range: UsageShareRange): UsageShareSnapsh
       tokens,
       level: inactive ? 0 : ((index * 3) % 4) + 1,
       future:
-        !isHours && !isDays && !isStacked
+        !isHours && !isWeekheat && !isStacked
           ? index >= count - ((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7 + 1)
           : false,
     };
-    if (isStacked) {
+    if (isStacked || isHours) {
       cell.inputTokens = Math.round(tokens * 0.09);
-      cell.outputTokens = Math.round(tokens * 0.06);
-      cell.cacheTokens = tokens - cell.inputTokens - cell.outputTokens;
+      cell.outputTokens = Math.round(tokens * 0.04);
+      cell.reasoningTokens = Math.round(tokens * 0.02);
+      cell.cacheTokens = tokens - cell.inputTokens - cell.outputTokens - cell.reasoningTokens;
     }
     return cell;
   });
+  /* weekheat 网格 mock:工作时段重、周末淡的确定性图案。 */
+  const heat = Array.from({ length: 7 }, (_, weekday) =>
+    Array.from({ length: 24 }, (_, hour) => {
+      const work = hour >= 9 && hour <= 23 ? 1 : 0.12;
+      const weekend = weekday >= 5 ? 0.4 : 1;
+      return Math.round((Math.sin(weekday * 3.7 + hour * 1.13) + 1.15) * 60_000_000 * work * weekend);
+    }),
+  );
   const totalTokens = range === "today"
     ? 399_813_342
     : range === "24h"
@@ -561,43 +639,55 @@ export function mockUsageShareSnapshot(range: UsageShareRange): UsageShareSnapsh
     ? {
         kind: "hours",
         eyebrow: "BUILD PULSE",
-        headline: range === "today" ? "今日构建脉冲" : "24 小时构建脉冲",
-        subline: "12,481 次请求 · 峰值按小时",
+        headline: zh
+          ? range === "today"
+            ? "今日构建脉冲"
+            : "24 小时构建脉冲"
+          : range === "today"
+            ? "TODAY'S BUILD PULSE"
+            : "24H BUILD PULSE",
+        subline: zh ? "12,481 次请求 · 峰值按小时" : "12,481 REQUESTS · HOURLY PEAK",
         columns: 24,
         rows: 1,
         cells,
       }
-    : isDays
+    : isWeekheat
       ? {
-          kind: "days",
-          eyebrow: "7-DAY BUILD RHYTHM",
-          headline: `${dayStreak.current} 天连续构建`,
-          subline: `最长连续 ${dayStreak.longest} 天 · 峰值按日`,
-          columns: 7,
-          rows: 1,
+          kind: "weekheat",
+          eyebrow: "7-DAY ACTIVE SLOTS",
+          headline: zh ? `${dayStreak.current} 天连续构建` : `${dayStreak.current}-DAY STREAK`,
+          subline: zh ? "峰值时段 周三 14–15 时" : "PEAK WED 14:00",
+          columns: 24,
+          rows: 7,
           cells,
+          heat,
         }
       : isStacked
         ? {
             kind: "stacked",
             eyebrow: "30-DAY TOKEN MIX",
-            headline: `缓存命中 ${(cacheHitRate * 100).toFixed(1)}%`,
-            subline: "每柱一天 · 输入 / 缓存命中 / 输出 堆叠",
+            headline: zh ? `缓存命中 ${(cacheHitRate * 100).toFixed(1)}%` : `CACHE HIT ${(cacheHitRate * 100).toFixed(1)}%`,
+            subline: zh
+              ? "每柱一天 · 输入 / 缓存读 / 输出 / 推理 堆叠"
+              : "1 BAR/DAY · INPUT / CACHE / OUTPUT / REASONING",
             columns: 30,
             rows: 1,
             cells,
           }
         : {
             kind: "calendar",
-            eyebrow: `${SHARE_WEEKS}-WEEK ACTIVITY`,
-            headline: `${weekStreak.current} 周连续构建`,
-            subline: `最长连续 ${weekStreak.longest} 周 · 每格代表一天`,
-            columns: SHARE_WEEKS,
+            eyebrow: range === "90d" ? "90-DAY FOOTPRINT" : "6-MONTH FOOTPRINT",
+            headline: zh ? `${weekStreak.current} 周连续构建` : `${weekStreak.current}-WEEK STREAK`,
+            subline: zh
+              ? `最长连续 ${weekStreak.longest} 周 · 每格代表一天`
+              : `LONGEST ${weekStreak.longest} WEEKS · 1 CELL/DAY`,
+            columns: calendarWeeks,
             rows: 7,
             cells,
           };
   return {
     range,
+    zh,
     rangeLabel: labels.zh,
     rangeLabelEn: labels.en,
     generatedDate: today,
@@ -613,7 +703,7 @@ export function mockUsageShareSnapshot(range: UsageShareRange): UsageShareSnapsh
           : 4_032_510_000,
     activeSeconds: range === "today" ? 14_040 : range === "24h" ? 20_700 : 181_380,
     peakTokens: isHours ? 71_000_000 : 612_900_000,
-    peakLabel: isHours ? "小时峰值" : "单日峰值",
+    peakLabel: isHours ? (zh ? "小时峰值" : "HOURLY PEAK") : zh ? "单日峰值" : "DAILY PEAK",
     cacheHitRate,
     topModel: "GPT-5.6 Sol",
     topEffort: "EXTRA HIGH",

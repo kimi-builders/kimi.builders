@@ -29,14 +29,15 @@ test("share snapshots keep one shell while adapting the activity story", () => {
 
   assert.deepEqual(
     [today.main.kind, hours.main.kind, week.main.kind, month.main.kind, quarter.main.kind, all.main.kind],
-    ["hours", "hours", "days", "stacked", "calendar", "calendar"],
+    ["hours", "hours", "weekheat", "stacked", "calendar", "calendar"],
   );
   assert.equal(today.main.cells.length, 24);
   assert.equal(hours.main.cells.length, 24);
   assert.equal(week.main.cells.length, 7);
   assert.equal(month.main.cells.length, 30);
-  assert.equal(quarter.main.cells.length, 12 * 7);
-  assert.equal(all.main.cells.length, 12 * 7);
+  /* 贡献图跨度:90D = 13 个自然周(3 个月),ALL = 26 周(半年封顶)。 */
+  assert.equal(quarter.main.cells.length, 13 * 7);
+  assert.equal(all.main.cells.length, 26 * 7);
   assert.match(month.main.eyebrow, /30-DAY/);
   assert.match(quarter.main.headline, /^12 周/);
 });
@@ -133,10 +134,19 @@ test("top tools drop the __other__ bucket, sort by tokens and cap at five", () =
   assert.notEqual(snapshot.topTools[0].id, "__other__");
 });
 
-test("stacked cells split each day into input / cache / output", () => {
+test("stacked cells split each day into input / cache / output / reasoning", () => {
   const today = "2026-08-09";
   const cells = buildShareStackedCells(
-    [{ day: "2026-08-09", tokens: 100, inputTokens: 20, cacheReadTokens: 70, outputTokens: 10 }],
+    [
+      {
+        day: "2026-08-09",
+        tokens: 100,
+        inputTokens: 20,
+        cacheReadTokens: 70,
+        outputTokens: 6,
+        reasoningOutputTokens: 4,
+      },
+    ],
     today,
   );
   assert.equal(cells.length, 30);
@@ -144,9 +154,47 @@ test("stacked cells split each day into input / cache / output", () => {
   assert.equal(last?.key, today);
   assert.equal(last?.inputTokens, 20);
   assert.equal(last?.cacheTokens, 70);
-  assert.equal(last?.outputTokens, 10);
+  assert.equal(last?.outputTokens, 6);
+  assert.equal(last?.reasoningTokens, 4);
   assert.equal(cells[0].tokens, 0);
   assert.equal(cells[0].cacheTokens, 0);
+  assert.equal(cells[0].reasoningTokens, 0);
+  /* 堆叠四段之和 = 当日总量(mock 快照逐格自洽) */
+  const month = mockUsageShareSnapshot("30d");
+  for (const cell of month.main.cells) {
+    if (cell.tokens <= 0) continue;
+    const parts =
+      (cell.inputTokens ?? 0) + (cell.cacheTokens ?? 0) + (cell.outputTokens ?? 0) + (cell.reasoningTokens ?? 0);
+    assert.ok(Math.abs(parts - cell.tokens) <= 4, `${cell.key}: ${parts} vs ${cell.tokens}`);
+  }
+});
+
+test("poster copy follows the export locale: zh may mix, en stays pure English", () => {
+  const cjk = /[一-鿿]/;
+  for (const range of USAGE_SHARE_RANGES) {
+    const zhSnap = mockUsageShareSnapshot(range, true);
+    const enSnap = mockUsageShareSnapshot(range, false);
+    assert.equal(zhSnap.zh, true, range);
+    assert.equal(enSnap.zh, false, range);
+    assert.match(zhSnap.main.headline, cjk, `${range} zh headline`);
+    assert.doesNotMatch(enSnap.main.headline, cjk, `${range} en headline`);
+    assert.doesNotMatch(enSnap.main.subline, cjk, `${range} en subline`);
+    assert.doesNotMatch(enSnap.peakLabel, cjk, `${range} en peakLabel`);
+    assert.doesNotMatch(enSnap.topEffort, cjk, `${range} en topEffort`);
+  }
+});
+
+test("7d weekheat carries a 7×24 grid and hours cells carry stack parts", () => {
+  const week = mockUsageShareSnapshot("7d");
+  assert.equal(week.main.kind, "weekheat");
+  assert.equal(week.main.heat?.length, 7);
+  assert.equal(week.main.heat?.[0]?.length, 24);
+  const today = mockUsageShareSnapshot("today");
+  const cell = today.main.cells.find((item) => item.tokens > 0);
+  assert.ok(cell);
+  const parts =
+    (cell.inputTokens ?? 0) + (cell.cacheTokens ?? 0) + (cell.outputTokens ?? 0) + (cell.reasoningTokens ?? 0);
+  assert.ok(Math.abs(parts - cell.tokens) <= 4);
 });
 
 test("mock snapshots carry the new share facts for every range", () => {
