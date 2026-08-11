@@ -74,6 +74,11 @@ export default async function EditWorkContent({
           tags: work.tags,
           agents: work.agents,
           authorLabel: work.authorLabel,
+          status: work.status,
+          models: work.models,
+          kind: work.kind,
+          descriptionMd: work.descriptionMd,
+          scope: work.scope,
         }}
         claim={{
           initial: work.claimedTokens,

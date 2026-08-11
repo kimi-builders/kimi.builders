@@ -174,6 +174,11 @@ function workRow(overrides: Partial<WorkRow> = {}): WorkRow {
     voteCount: 10,
     commentCount: 2,
     claimedTokens: null,
+    status: "released",
+    models: [],
+    kind: "app",
+    descriptionMd: "",
+    scope: "",
     ...overrides,
   };
 }

@@ -12,9 +12,12 @@ import { deleteWorkAction } from "../actions";
 export default function WorkOwnerActions({
   workId,
   locale,
+  redirectTo,
 }: {
   workId: number;
   locale: Locale;
+  /* 详情页删除后要跳走(refresh 会停在「已撤下」页);卡片场景缺省 refresh */
+  redirectTo?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -32,7 +35,8 @@ export default function WorkOwnerActions({
         return;
       }
       toast(t(locale, "toast.deleted"));
-      router.refresh();
+      if (redirectTo) router.push(redirectTo);
+      else router.refresh();
     } catch {
       toast(t(locale, "toast.failed"));
     } finally {

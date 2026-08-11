@@ -1,89 +1,179 @@
 /* Awesome Kimi:全世界用 Kimi 构建的项目(全部来源:成员作品 + 推荐的站外项目)。
-   顶部 Agent 筛选芯片(?agent=<id>),卡片与 /works 共用 WorkCard,
-   首屏与「加载更多」共用 ../works/_components/works-page(游标分页,P1-4)。
-   收录口径见 awesome.intro(放宽:参与即可)。 */
+   头部说明 + sort seg + 筛选下拉(Agent / 类型 / 收录口径);卡片与 /works 共用
+   WorkCard(awesome 条目带口径 chip + 推荐人),首屏与「加载更多」共用
+   ../works/_components/works-page(游标分页:new = id,hot = votes|id 复合)。
+   收录口径见 awesome.intro(放宽:参与即可);推荐规则见右栏。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SquarePen, Star } from "lucide-react";
+import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
+import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "@/components/seg-classes";
 import { AGENTS } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import AgentIcon from "@/components/AgentIcon";
+import { isWorkKind, WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
 import { loadMoreWorksAction } from "../works/actions";
 import { loadWorksCards } from "../works/_components/works-page";
+import WorksFilterBar from "../works/_components/WorksFilterBar";
 
 export const metadata: Metadata = { title: "Awesome — kimi.builders" };
+
+const SCOPES = [
+  { id: "base", key: "awesome.scopeBase" as const, dot: "bg-blue" },
+  { id: "eco", key: "awesome.scopeEco" as const, dot: "bg-emerald-400" },
+  { id: "part", key: "awesome.scopePart" as const, dot: "bg-amber-400" },
+];
 
 export default async function AwesomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ agent?: string }>;
+  searchParams: Promise<{ sort?: string; agent?: string; kind?: string; scope?: string }>;
 }) {
-  const { agent } = await searchParams;
+  const { sort, agent, kind, scope } = await searchParams;
+  const currentSort = sort === "hot" ? "hot" : "new";
+  const csv = (value?: string) => (value ?? "").split(",").filter(Boolean);
+  const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));
+  const activeKinds = csv(kind).filter(isWorkKind);
+  const activeScope = SCOPES.some((s) => s.id === scope) ? scope : undefined;
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  const active = AGENTS.some((a) => a.id === agent) ? agent : undefined;
-  const page = await loadWorksCards({ awesome: true, agent: active }, user, locale);
+  const zh = locale === "zh";
+  const page = await loadWorksCards(
+    {
+      awesome: true,
+      sort: currentSort,
+      agents: activeAgents,
+      kinds: activeKinds,
+      scope_: activeScope,
+    },
+    user,
+    locale,
+  );
 
-  const chipCls = (on: boolean) =>
-    `flex items-center gap-1.5 border px-2.5 py-1.5 font-mono text-xs transition-colors ${
-      on
-        ? "border-blue text-blue"
-        : "border-line text-grey hover:border-paper/30 hover:text-paper"
-    }`;
+  const preservedQuery = currentSort !== "new" ? `sort=${currentSort}` : "";
+
+  /* sort 切换保留筛选 */
+  const sortHref = (nextSort: string) => {
+    const params = new URLSearchParams();
+    if (nextSort !== "new") params.set("sort", nextSort);
+    if (activeAgents.length > 0) params.set("agent", activeAgents.join(","));
+    if (activeKinds.length > 0) params.set("kind", activeKinds.join(","));
+    if (activeScope) params.set("scope", activeScope);
+    const qs = params.toString();
+    return qs ? `/awesome?${qs}` : "/awesome";
+  };
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
-          <Star size={17} />
-          {t(locale, "nav.awesome")}
-        </h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+            <Star size={20} aria-hidden="true" />
+            {t(locale, "nav.awesome")}
+          </h1>
+          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
+            {t(locale, "awesome.intro")}
+          </p>
+        </div>
         {user && (
           <Link
             href="/works/new"
-            className="flex items-center gap-2 border border-blue px-4 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            <SquarePen size={13} />
+            <SquarePen size={13} aria-hidden="true" />
             {t(locale, "awesome.recommend")}
           </Link>
         )}
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-grey">
-        {t(locale, "awesome.intro")}
-      </p>
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Link href="/awesome" className={chipCls(!active)}>
-          {t(locale, "awesome.all")}
-        </Link>
-        {AGENTS.map((a) => (
-          <Link
-            key={a.id}
-            href={`/awesome?agent=${a.id}`}
-            className={chipCls(active === a.id)}
-          >
-            <AgentIcon id={a.id} size={14} />
-            {a.name}
-          </Link>
-        ))}
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
+        <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
+          {(
+            [
+              { key: "hot", label: t(locale, "feed.hot"), active: currentSort === "hot", href: sortHref("hot") },
+              { key: "new", label: t(locale, "feed.new"), active: currentSort === "new", href: sortHref("new") },
+            ] as const
+          ).map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              scroll={false}
+              aria-current={item.active ? "page" : undefined}
+              className={`${SEG_ITEM} ${item.active ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        {/* 筛选:Agent / 类型(多选)+ 收录口径(单选)—— 用量中心同款下拉 */}
+        <WorksFilterBar
+          basePath="/awesome"
+          preservedQuery={preservedQuery}
+          zh={zh}
+          filters={[
+            {
+              key: "agent",
+              label: "Agent",
+              options: AGENTS.map((a) => ({
+                value: a.id,
+                label: a.name,
+                icon: <AgentIcon id={a.id} size={13} />,
+              })),
+            },
+            {
+              key: "kind",
+              label: zh ? "类型" : "Type",
+              options: WORK_KINDS.map((k) => ({
+                value: k.id,
+                label: workKindLabel(k.id, zh),
+                icon: <i className={`size-[7px] rounded-full ${k.dot}`} />,
+              })),
+            },
+            {
+              key: "scope",
+              label: zh ? "口径" : "Scope",
+              single: true,
+              options: SCOPES.map((s) => ({
+                value: s.id,
+                label: t(locale, s.key),
+                icon: <i className={`size-[7px] rounded-full ${s.dot}`} />,
+              })),
+            },
+          ]}
+          selected={{
+            agent: activeAgents,
+            kind: activeKinds,
+            scope: activeScope ? [activeScope] : [],
+          }}
+        />
       </div>
 
       {page.nodes.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-grey">
-          {t(locale, "awesome.empty")}
-        </p>
+        <div className="mt-4 rounded-2xl border border-line bg-card p-8 text-center">
+          <Star size={22} className="mx-auto text-grey" aria-hidden="true" />
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-grey">
+            {t(locale, "awesome.empty")}
+          </p>
+        </div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {page.nodes}
           <LoadMore
-            key={`awesome-${active ?? "all"}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
+            key={`awesome-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${activeScope ?? ""}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
             initialCursor={page.nextCursor}
             load={loadMoreWorksAction.bind(null, {
               awesome: true,
-              agent: active ?? null,
+              sort: currentSort,
+              agents: activeAgents,
+              kinds: activeKinds,
+              scope_: activeScope ?? null,
             })}
             locale={locale}
           />

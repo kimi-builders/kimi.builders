@@ -37,6 +37,14 @@ export interface WorkRow {
   commentCount: number;
   /* 用量声明制:作者声明的该作品构建投入 tokens;null = 未声明(无徽章) */
   claimedTokens: number | null;
+  /* 20260824_work_meta:作品元数据(状态/模型/平台/长描述/awesome 收录口径) */
+  status: string;
+  models: string[];
+  /* 作品类型(app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other) */
+  kind: string;
+  descriptionMd: string;
+  /* Awesome 收录口径:base/eco/part;仅 awesome 条目,作品墙恒 "" */
+  scope: string;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -73,12 +81,18 @@ function mapWork(r: RowDataPacket): WorkRow {
     voteCount: Number(r.vote_count ?? 0),
     commentCount: Number(r.comment_count ?? 0),
     claimedTokens: r.claimed_tokens === null ? null : Number(r.claimed_tokens),
+    status: r.status ?? "released",
+    models: parseStrArray(r.models),
+    kind: r.kind ?? "app",
+    descriptionMd: r.description_md ?? "",
+    scope: r.scope ?? "",
   };
 }
 
 const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.screenshot_url, w.tags, w.agents, w.source, w.author_label, w.created_at,
-       w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens`;
+       w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
+       w.status, w.models, w.kind, w.description_md, w.scope`;
 
 const SELECT_WORKS = `SELECT ${WORK_COLUMNS},
        u.handle, u.avatar_url
@@ -90,38 +104,83 @@ const SELECT_WORK_DETAIL = `SELECT ${WORK_COLUMNS},
      FROM works w LEFT JOIN users u ON u.id = w.user_id
      LEFT JOIN users e ON e.id = w.featured_by`;
 
-/* 作品列表分页(P1-4):id 游标 —— id 自增随 created_at 单调(同评论分页的取舍),
-   键唯一且走主键范围扫;ORDER BY w.id DESC 与原 created_at DESC 可见顺序一致。
-   每页多取 1 条判断是否还有下一页。 */
+/* 作品列表分页:游标 keyset —— new = 裸 id(id 自增随 created_at 单调);
+   hot = "votes|id" 复合(vote_count 降序 + id 降序键集,UNSIGNED 列无负值坑)。
+   每页多取 1 条判断是否还有下一页。非法游标按首页处理(不静默 500)。 */
 export const WORKS_PAGE_SIZE = 100;
 export const AWESOME_PAGE_SIZE = 200;
+export type WorksSort = "hot" | "new";
 
 export interface WorksPage {
   works: WorkRow[];
-  nextCursor: number | null;
+  nextCursor: string | null;
+}
+
+export function encodeWorksCursor(c: { id: number; votes?: number }): string {
+  return c.votes !== undefined ? `${c.votes}|${c.id}` : String(c.id);
+}
+
+export function decodeWorksCursor(
+  raw: string | undefined,
+  sort: WorksSort,
+): { id: number; votes?: number } | null {
+  if (raw === undefined || raw === "") return null;
+  if (sort === "hot") {
+    const m = /^(\d{1,20})\|(\d{1,20})$/.exec(raw);
+    if (!m) return null;
+    const votes = Number(m[1]);
+    const id = Number(m[2]);
+    if (!Number.isSafeInteger(votes) || votes < 0) return null;
+    if (!Number.isSafeInteger(id) || id <= 0) return null;
+    return { id, votes };
+  }
+  if (!/^\d{1,20}$/.test(raw)) return null;
+  const id = Number(raw);
+  return Number.isSafeInteger(id) && id > 0 ? { id } : null;
 }
 
 export function worksPageQuery(opts: {
   source: "site" | "all";
-  agent?: string;
-  after?: number;
+  sort?: WorksSort;
+  agents?: string[];
+  kinds?: string[];
+  scope?: string;
+  after?: string;
 }): { sql: string; args: (string | number)[] } {
   const where: string[] = [];
   const args: (string | number)[] = [];
   if (opts.source === "site") where.push("w.source = 'site'");
-  /* agent 非空时按参与 Agent 过滤(JSON 数组成员) */
-  if (opts.agent) {
-    where.push("JSON_CONTAINS(w.agents, JSON_QUOTE(?))");
-    args.push(opts.agent);
+  /* 参与 Agent 多选:任一命中即可(JSON 数组成员,OR 链) */
+  if (opts.agents && opts.agents.length > 0) {
+    where.push(`(${opts.agents.map(() => "JSON_CONTAINS(w.agents, JSON_QUOTE(?))").join(" OR ")})`);
+    args.push(...opts.agents.slice(0, 10));
   }
-  if (opts.after !== undefined && Number.isSafeInteger(opts.after) && opts.after > 0) {
-    where.push("w.id < ?");
-    args.push(opts.after);
+  /* 作品类型多选:IN 列表 */
+  if (opts.kinds && opts.kinds.length > 0) {
+    where.push(`w.kind IN (${opts.kinds.map(() => "?").join(",")})`);
+    args.push(...opts.kinds.slice(0, 12));
+  }
+  /* awesome 收录口径过滤(base/eco/part) */
+  if (opts.scope) {
+    where.push("w.scope = ?");
+    args.push(opts.scope);
+  }
+  const sort: WorksSort = opts.sort === "hot" ? "hot" : "new";
+  const cursor = decodeWorksCursor(opts.after, sort);
+  if (cursor) {
+    if (sort === "hot" && cursor.votes !== undefined) {
+      where.push("(w.vote_count < ? OR (w.vote_count = ? AND w.id < ?))");
+      args.push(cursor.votes, cursor.votes, cursor.id);
+    } else {
+      where.push("w.id < ?");
+      args.push(cursor.id);
+    }
   }
   const size = opts.source === "site" ? WORKS_PAGE_SIZE : AWESOME_PAGE_SIZE;
+  const order = sort === "hot" ? "w.vote_count DESC, w.id DESC" : "w.id DESC";
   return {
     sql: `${SELECT_WORKS} ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-     ORDER BY w.id DESC LIMIT ${size + 1}`,
+     ORDER BY ${order} LIMIT ${size + 1}`,
     args,
   };
 }
@@ -129,31 +188,61 @@ export function worksPageQuery(opts: {
 async function runWorksPage(
   q: { sql: string; args: (string | number)[] },
   size: number,
+  sort: WorksSort,
 ): Promise<WorksPage> {
   const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
   const kept = rows.length > size ? rows.slice(0, size) : rows;
-  return {
-    works: kept.map(mapWork),
-    nextCursor:
-      rows.length > size && kept.length > 0
-        ? Number(kept[kept.length - 1].id)
-        : null,
-  };
+  let nextCursor: string | null = null;
+  if (rows.length > size && kept.length > 0) {
+    const last = kept[kept.length - 1];
+    nextCursor =
+      sort === "hot"
+        ? encodeWorksCursor({ id: Number(last.id), votes: Number(last.vote_count ?? 0) })
+        : encodeWorksCursor({ id: Number(last.id) });
+  }
+  return { works: kept.map(mapWork), nextCursor };
 }
 
-/* /works 墙:只看成员自己的作品。 */
-export async function getWorksPage(after?: number): Promise<WorksPage> {
-  return runWorksPage(worksPageQuery({ source: "site", after }), WORKS_PAGE_SIZE);
-}
-
-/* /awesome:全部来源。 */
-export async function getAwesomeWorksPage(
-  agent?: string,
-  after?: number,
+/* /works 墙:只看成员自己的作品;Agent/类型多选过滤 + 排序。 */
+export async function getWorksPage(
+  opts: { sort?: WorksSort; agents?: string[]; kinds?: string[]; after?: string } = {},
 ): Promise<WorksPage> {
+  const sort = opts.sort === "hot" ? "hot" : "new";
   return runWorksPage(
-    worksPageQuery({ source: "all", agent, after }),
+    worksPageQuery({
+      source: "site",
+      sort,
+      agents: opts.agents,
+      kinds: opts.kinds,
+      after: opts.after,
+    }),
+    WORKS_PAGE_SIZE,
+    sort,
+  );
+}
+
+/* /awesome:全部来源;Agent/类型/收录口径过滤 + 排序。 */
+export async function getAwesomeWorksPage(
+  opts: {
+    sort?: WorksSort;
+    agents?: string[];
+    kinds?: string[];
+    scope?: string;
+    after?: string;
+  } = {},
+): Promise<WorksPage> {
+  const sort = opts.sort === "hot" ? "hot" : "new";
+  return runWorksPage(
+    worksPageQuery({
+      source: "all",
+      sort,
+      agents: opts.agents,
+      kinds: opts.kinds,
+      scope: opts.scope,
+      after: opts.after,
+    }),
     AWESOME_PAGE_SIZE,
+    sort,
   );
 }
 
@@ -330,6 +419,13 @@ export interface WorkFields {
   authorLabel: string; // 非空 → source=awesome(推荐站外项目)
   /* 构建投入声明(声明制);null = 未声明。额度校验在 action 层(checkClaimAllowance) */
   claimedTokens: number | null;
+  /* 20260824_work_meta;action 层已做白名单校验 */
+  status: string;
+  models: string[];
+  kind: string;
+  descriptionMd: string;
+  /* awesome 收录口径(base/eco/part);作品墙条目恒 null */
+  scope: string | null;
 }
 
 export async function createWork(
@@ -338,8 +434,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label, claimed_tokens)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label, claimed_tokens, status, models, kind, description_md, scope)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -351,7 +447,13 @@ export async function createWork(
       JSON.stringify(f.agents.slice(0, 10)),
       source,
       f.authorLabel.slice(0, 120),
-      f.claimedTokens,
+      /* awesome 条目强制无声明(声明是作品墙的作者自报语义) */
+      source === "awesome" ? null : f.claimedTokens,
+      f.status,
+      JSON.stringify(f.models.slice(0, 10)),
+      f.kind,
+      f.descriptionMd || null,
+      source === "awesome" ? f.scope : null,
     ],
   );
   return Number(res.insertId);
@@ -365,7 +467,8 @@ export async function updateWork(
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
-       tags = ?, agents = ?, source = ?, author_label = ?, claimed_tokens = ?
+       tags = ?, agents = ?, source = ?, author_label = ?, claimed_tokens = ?,
+       status = ?, models = ?, kind = ?, description_md = ?, scope = ?
      WHERE id = ? AND user_id = ?`,
     [
       f.name.slice(0, 120),
@@ -377,7 +480,12 @@ export async function updateWork(
       JSON.stringify(f.agents.slice(0, 10)),
       source,
       f.authorLabel.slice(0, 120),
-      f.claimedTokens,
+      source === "awesome" ? null : f.claimedTokens,
+      f.status,
+      JSON.stringify(f.models.slice(0, 10)),
+      f.kind,
+      f.descriptionMd || null,
+      source === "awesome" ? f.scope : null,
       workId,
       userId,
     ],
@@ -506,6 +614,108 @@ export async function getAwesomeSourceStats(): Promise<{
     else if (r.source === "awesome") awesome = Number(r.n);
   }
   return { site, awesome };
+}
+
+/* ---- 列表右栏统计(20260824 改造)---- */
+
+/* /works 右栏:上架作品 / 作者 / 声明投入 Σ / 本周新上架(全部 source='site')。 */
+export async function getWorksWallStats(): Promise<{
+  works: number;
+  authors: number;
+  claimedSum: number;
+  weeklyNew: number;
+}> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS works, COUNT(DISTINCT w.user_id) AS authors,
+            COALESCE(SUM(w.claimed_tokens), 0) AS claimed_sum,
+            COALESCE(SUM(CASE WHEN w.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END), 0) AS weekly_new
+     FROM works w WHERE w.source = 'site'`,
+  );
+  const r = rows[0] ?? {};
+  return {
+    works: Number(r.works ?? 0),
+    authors: Number(r.authors ?? 0),
+    claimedSum: Number(r.claimed_sum ?? 0),
+    weeklyNew: Number(r.weekly_new ?? 0),
+  };
+}
+
+/* 活跃 Agent 分布(按参与作品数;JSON 成员在 JS 侧摊开,作品量小无需 JSON_TABLE)。 */
+export async function getWorksAgentStats(
+  source: "site" | "awesome",
+  limit = 6,
+): Promise<{ agent: string; count: number }[]> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    source === "site"
+      ? "SELECT w.agents FROM works w WHERE w.source = 'site'"
+      : "SELECT w.agents FROM works w WHERE w.source = 'awesome'",
+  );
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    for (const a of parseStrArray(r.agents)) {
+      counts.set(a, (counts.get(a) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([agent, count]) => ({ agent, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/* /awesome 右栏:收录项目 / 参与 Agent / 本周新增 / 推荐成员。 */
+export async function getAwesomeStats(): Promise<{
+  items: number;
+  agents: number;
+  weeklyNew: number;
+  recommenders: number;
+}> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE w.source = 'awesome'`,
+  );
+  const agentSet = new Set<string>();
+  const recommenderSet = new Set<number>();
+  let weeklyNew = 0;
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  for (const r of rows) {
+    for (const a of parseStrArray(r.agents)) agentSet.add(a);
+    if (r.user_id !== null) recommenderSet.add(Number(r.user_id));
+    if (r.created_at && new Date(r.created_at).getTime() >= weekAgo) weeklyNew += 1;
+  }
+  return {
+    items: rows.length,
+    agents: agentSet.size,
+    weeklyNew,
+    recommenders: recommenderSet.size,
+  };
+}
+
+/* /awesome 收录口径计数(base/eco/part)。 */
+export async function getAwesomeScopeStats(): Promise<{
+  base: number;
+  eco: number;
+  part: number;
+}> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT w.scope, COUNT(*) AS n FROM works w WHERE w.source = 'awesome' GROUP BY w.scope",
+  );
+  const out = { base: 0, eco: 0, part: 0 };
+  for (const r of rows) {
+    if (r.scope === "base" || r.scope === "eco" || r.scope === "part") {
+      out[r.scope as "base" | "eco" | "part"] = Number(r.n);
+    }
+  }
+  return out;
+}
+
+/* 类型分布(按作品数;卡片 chip / 筛选下拉 / 右栏共用同一预设表 work-kinds.ts)。 */
+export async function getWorksKindStats(
+  source: "site" | "awesome",
+): Promise<{ kind: string; count: number }[]> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT w.kind, COUNT(*) AS n FROM works w WHERE w.source = ? GROUP BY w.kind ORDER BY n DESC`,
+    [source],
+  );
+  return rows.map((r) => ({ kind: String(r.kind), count: Number(r.n) }));
 }
 
 /* 浏览者是否已支持(详情页支持按钮初态)。 */

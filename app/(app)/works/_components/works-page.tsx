@@ -22,18 +22,35 @@ import WorkCard from "./WorkCard";
 
 export interface WorksPageData {
   nodes: ReactNode[];
-  nextCursor: number | null;
+  nextCursor: string | null;
 }
 
 export async function loadWorksCards(
-  scope: { awesome: boolean; agent?: string },
+  scope: {
+    awesome: boolean;
+    sort?: "hot" | "new";
+    agents?: string[];
+    kinds?: string[];
+    scope_?: string;
+  },
   user: SessionUser | null,
   locale: Locale,
-  after?: number,
+  after?: string,
 ): Promise<WorksPageData> {
   const page = scope.awesome
-    ? await getAwesomeWorksPage(scope.agent, after)
-    : await getWorksPage(after);
+    ? await getAwesomeWorksPage({
+        sort: scope.sort,
+        agents: scope.agents,
+        kinds: scope.kinds,
+        scope: scope.scope_,
+        after,
+      })
+    : await getWorksPage({
+        sort: scope.sort,
+        agents: scope.agents,
+        kinds: scope.kinds,
+        after,
+      });
   const authorIds = page.works.map((w) => w.userId);
   const [totals, claimSums] = scope.awesome
     ? [new Map<number, number>(), new Map<number, number>()]

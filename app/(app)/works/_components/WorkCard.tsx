@@ -1,6 +1,6 @@
 /* 作品卡片:/works(成员作品墙)与 /awesome(全来源)、/u/[handle] 作品页签共用。
-   截图(无图占位)→ 名称/介绍 → Agent 徽章(lobehub 图标)→ 标签 →
-   作者行(站内作者链主页;awesome 条目用 author_label);自己的条目带编辑/删除。
+   Kimi Design 改造:rounded-2xl + tint 芯片;头部 = 名称 + 口径/状态/精选/声明徽章;
+   Agent 带图标小 chip;标签 tint pill;底行作者(awesome 条目带推荐人)/支持/链接/操作。
    整卡链到详情页(P1-2,absolute 覆盖链接);作者/访问/源码/操作行抬 z-10 保持独立跳转。
    编辑精选:featured_at 非空的卡片带「编辑精选」蓝芯片;canFeature(admin/mod,
    由页面用 session role 判断)时底部多一行设/撤精选操作(每周精选 v0)。
@@ -9,15 +9,44 @@
    「声明构建投入」芯片;null = 完全不渲染(未声明/超额暂停,无负面标记)。
    claimPaused(仅作者本人为 true)时作者在自己的卡片上看到重新分配提示。 */
 import Link from "next/link";
-import { ExternalLink, Heart, Rocket } from "lucide-react";
+import { ExternalLink, Heart } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
+import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import type { WorkRow } from "@/src/lib/works";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkOwnerActions from "./WorkOwnerActions";
+
+/* 状态芯片:released 不显示(默认态);planning 琥珀 / building 蓝 / archived 灰。 */
+const STATUS_CHIP: Record<
+  string,
+  {
+    cls: string;
+    key: "works.statusPlanning" | "works.statusBuilding" | "works.statusArchived";
+  }
+> = {
+  planning: { cls: "bg-amber-400/10 text-amber-400", key: "works.statusPlanning" },
+  building: { cls: "bg-blue/10 text-blue", key: "works.statusBuilding" },
+  archived: { cls: "bg-paper/[0.07] text-grey", key: "works.statusArchived" },
+};
+
+/* Awesome 收录口径芯片:base 蓝 / eco 绿 / part 琥珀。 */
+const SCOPE_CHIP: Record<
+  string,
+  {
+    cls: string;
+    key: "awesome.scopeBase" | "awesome.scopeEco" | "awesome.scopePart";
+  }
+> = {
+  base: { cls: "bg-blue/10 text-blue", key: "awesome.scopeBase" },
+  eco: { cls: "bg-emerald-400/10 text-emerald-400", key: "awesome.scopeEco" },
+  part: { cls: "bg-amber-400/10 text-amber-400", key: "awesome.scopePart" },
+};
+
+const CHIP = "inline-flex items-center rounded-md px-1.5 py-px text-[10px] font-medium";
 
 export default function WorkCard({
   work: w,
@@ -34,57 +63,93 @@ export default function WorkCard({
   claimBadge?: number | null;
   claimPaused?: boolean;
 }) {
+  const statusChip = STATUS_CHIP[w.status];
+  const scopeChip = w.source === "awesome" ? SCOPE_CHIP[w.scope] : undefined;
   return (
-    <article className="relative flex flex-col border border-line bg-card transition-colors hover:border-paper/20">
+    <article className="relative flex flex-col rounded-2xl border border-line bg-card transition-colors hover:border-paper/20">
       {/* 整卡链详情页(P1-2,absolute 覆盖链接);下方交互元素抬 z-10 保持独立跳转 */}
       <Link
         href={`/works/${w.id}`}
         aria-label={w.name}
-        className="absolute inset-0"
+        className="absolute inset-0 rounded-2xl"
       />
-      {w.screenshotUrl ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={w.screenshotUrl}
-          alt={w.name}
-          className="aspect-video w-full border-b border-line object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div className="flex aspect-video w-full items-center justify-center border-b border-line text-grey/40">
-          <Rocket size={28} />
-        </div>
-      )}
+      <div className="overflow-hidden rounded-t-2xl border-b border-line">
+        {w.screenshotUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={w.screenshotUrl}
+            alt={w.name}
+            className="aspect-video w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          /* 无封面:类型色调的渐变占位(首字符 + 类型标签,比裸图标有辨识度) */
+          <div
+            className="flex aspect-video w-full flex-col items-center justify-center gap-2"
+            style={{
+              background: `linear-gradient(135deg, ${workKind(w.kind).from}, ${workKind(w.kind).to})`,
+            }}
+          >
+            <span className="font-mono text-3xl font-bold text-white/75">
+              {[...w.name][0]}
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.14em] text-white/50">
+              {workKindLabel(w.kind, locale === "zh")}
+            </span>
+          </div>
+        )}
+      </div>
       <div className="flex flex-1 flex-col p-4">
-        <h2 className="font-medium leading-snug text-paper">
-          {w.name}
-          {w.featuredAt && (
-            <span
-              className="ml-2 inline-block border border-blue/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-blue"
-              title={w.featuredReason ?? undefined}
-            >
-              {t(locale, "featured.badge")}
+        <div className="flex items-start gap-2">
+          <h2 className="min-w-0 text-[15px] font-semibold leading-snug text-paper">
+            {w.name}
+          </h2>
+          <span className="ml-auto flex shrink-0 flex-wrap justify-end gap-1.5">
+            <span className={`${CHIP} ${workKind(w.kind).tint}`}>
+              {workKindLabel(w.kind, locale === "zh")}
             </span>
-          )}
-          {claimBadge !== null && claimBadge > 0 && (
-            <span
-              className="ml-2 inline-block border border-emerald-400/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-emerald-400"
-              title={t(locale, "works.badgeTitle")}
-            >
-              {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
-            </span>
-          )}
-        </h2>
+            {scopeChip && (
+              <span className={`${CHIP} ${scopeChip.cls}`}>
+                {t(locale, scopeChip.key)}
+              </span>
+            )}
+            {statusChip && (
+              <span className={`${CHIP} ${statusChip.cls}`}>
+                {t(locale, statusChip.key)}
+              </span>
+            )}
+            {w.featuredAt && (
+              <span
+                className={`${CHIP} bg-blue/10 text-blue`}
+                title={w.featuredReason ?? undefined}
+              >
+                {t(locale, "featured.badge")}
+              </span>
+            )}
+            {claimBadge !== null && claimBadge > 0 && (
+              <span
+                className={`${CHIP} bg-emerald-400/10 font-mono text-emerald-400`}
+                title={t(locale, "works.badgeTitle")}
+              >
+                {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
+              </span>
+            )}
+          </span>
+        </div>
         {w.tagline && (
-          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
+          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-grey">
             {w.tagline}
           </p>
         )}
         {w.agents.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-grey">
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             {w.agents.map((a) => (
-              <span key={a} title={agentName(a)} className="inline-flex">
-                <AgentIcon id={a} size={15} />
+              <span
+                key={a}
+                className="inline-flex items-center gap-1 rounded-md border border-line bg-paper/[0.03] px-1.5 py-0.5 text-[10.5px] text-grey"
+              >
+                <AgentIcon id={a} size={12} />
+                {agentName(a)}
               </span>
             ))}
           </div>
@@ -94,7 +159,7 @@ export default function WorkCard({
             {w.tags.map((tag) => (
               <span
                 key={tag}
-                className="border border-line px-1.5 py-px font-mono text-[10px] text-grey"
+                className="rounded-md bg-paper/[0.05] px-1.5 py-px font-mono text-[10px] text-grey"
               >
                 {tag}
               </span>
@@ -104,8 +169,14 @@ export default function WorkCard({
         <div className="mt-auto pt-3">
           <div className="flex items-center gap-3 font-mono text-[11px] text-grey">
             {w.source === "awesome" && w.authorLabel ? (
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {t(locale, "awesome.by", { name: w.authorLabel })}
+                {w.handle && (
+                  <span className="text-grey/70">
+                    {" · "}
+                    {t(locale, "awesome.recommender", { handle: w.handle })}
+                  </span>
+                )}
               </span>
             ) : w.handle ? (
               <Link

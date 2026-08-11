@@ -146,6 +146,13 @@ CREATE TABLE IF NOT EXISTS works (
   comment_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '可见评论数(冗余;软删即减)',
   -- claimed_tokens 由 20260822_work_claims.sql 引入,已有库执行该迁移
   claimed_tokens BIGINT UNSIGNED NULL COMMENT '作者声明的该作品构建投入 tokens;NULL=未声明(声明制:同作者 Σ声明 ≤ 可验证总量)',
+  -- status/models/description_md/scope 由 20260824_work_meta.sql 引入,已有库执行该迁移
+  status VARCHAR(16) NOT NULL DEFAULT 'released' COMMENT 'planning/building/released/archived',
+  models JSON NULL COMMENT '开发模型(家族键或自填型号文本)',
+  description_md TEXT NULL COMMENT '作品描述(Markdown);NULL 时详情页用 tagline',
+  scope VARCHAR(16) NULL COMMENT 'Awesome 收录口径:base/eco/part;仅 awesome 条目',
+  -- kind 由 20260825_work_kind.sql 引入(该迁移同时 DROP platforms),已有库执行该迁移
+  kind VARCHAR(24) NOT NULL DEFAULT 'app' COMMENT '作品类型:app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other',
   KEY idx_source (source, created_at),
   KEY idx_featured (featured_at),
   CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),

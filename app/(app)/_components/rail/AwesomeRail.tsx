@@ -1,10 +1,22 @@
-/* /awesome 右栏:收录说明 + 提交入口(登录后可见,与页面头 CTA 同口径)
-   + 来源统计(站内作品 / 站外收录条目数)。 */
+/* /awesome 右栏:收录统计 + 收录口径(带计数,点行即筛选)+ Agent 分布
+   + 推荐规则(必须填原作者/不进作品墙/无徽章)+ 推荐入口。 */
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
+import AgentIcon from "@/components/AgentIcon";
+import { agentName } from "@/src/lib/agents";
 import { t, type Locale } from "@/src/lib/i18n";
-import { getAwesomeSourceStats } from "@/src/lib/works";
+import {
+  getAwesomeScopeStats,
+  getAwesomeStats,
+  getWorksAgentStats,
+} from "@/src/lib/works";
 import Widget from "./Widget";
+
+const SCOPES = [
+  { id: "base", labelKey: "awesome.scopeBase", hintKey: "awesome.scopeBaseHint", dot: "bg-blue" },
+  { id: "eco", labelKey: "awesome.scopeEco", hintKey: "awesome.scopeEcoHint", dot: "bg-emerald-400" },
+  { id: "part", labelKey: "awesome.scopePart", hintKey: "awesome.scopePartHint", dot: "bg-amber-400" },
+] as const;
 
 export default async function AwesomeRail({
   locale,
@@ -13,40 +25,100 @@ export default async function AwesomeRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  const stats = await getAwesomeSourceStats();
+  const [stats, scopeStats, agents] = await Promise.all([
+    getAwesomeStats(),
+    getAwesomeScopeStats(),
+    getWorksAgentStats("awesome", 6),
+  ]);
+  const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
     <>
-      <Widget title={t(locale, "rail.awesomeAbout")}>
+      <Widget
+        title={t(locale, "awesome.statsTitle")}
+        note={t(locale, "awesome.statsNote")}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { n: stats.items, l: t(locale, "awesome.statItems") },
+            { n: stats.agents, l: t(locale, "awesome.statAgents") },
+            { n: stats.weeklyNew, l: t(locale, "awesome.statWeeklyNew") },
+            { n: stats.recommenders, l: t(locale, "awesome.statRecommenders") },
+          ].map((s) => (
+            <div key={s.l}>
+              <div className="font-mono text-lg font-semibold text-paper">{s.n}</div>
+              <div className="mt-0.5 font-mono text-[10px] text-grey">{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </Widget>
+
+      <Widget
+        title={t(locale, "awesome.scopeTitle")}
+        note={t(locale, "awesome.scopeNote")}
+      >
+        <ul>
+          {SCOPES.map((s) => (
+            <li key={s.id}>
+              <Link
+                href={`/awesome?scope=${s.id}`}
+                className="group flex items-center gap-2.5 border-b border-line py-2.5 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              >
+                <i className={`size-[7px] shrink-0 rounded-full ${s.dot}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs text-paper transition-colors group-hover:text-blue">
+                    {t(locale, s.labelKey)}
+                  </span>
+                  <span className="mt-0.5 block text-[10.5px] text-grey/80">
+                    {t(locale, s.hintKey)}
+                  </span>
+                </span>
+                <span className="shrink-0 font-mono text-[11px] font-semibold text-grey">
+                  {scopeStats[s.id]}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Widget>
+
+      {agents.length > 0 && (
+        <Widget
+          title={t(locale, "awesome.agentDist")}
+          note={t(locale, "awesome.agentDistNote")}
+        >
+          <ul className="space-y-2.5">
+            {agents.map((a) => (
+              <li key={a.agent} className="flex items-center gap-2.5">
+                <span className="flex w-28 shrink-0 items-center gap-1.5 text-[11px] text-grey">
+                  <AgentIcon id={a.agent} size={13} />
+                  <span className="truncate">{agentName(a.agent)}</span>
+                </span>
+                <span className="h-1.5 min-w-0 flex-1 rounded-full bg-paper/[0.06]">
+                  <span
+                    className="block h-full rounded-full bg-blue/70"
+                    style={{ width: `${Math.max((a.count / agentMax) * 100, 4)}%` }}
+                  />
+                </span>
+                <span className="shrink-0 font-mono text-[10px] text-grey">{a.count}</span>
+              </li>
+            ))}
+          </ul>
+        </Widget>
+      )}
+
+      <Widget title={t(locale, "awesome.rulesTitle")}>
         <p className="text-xs leading-relaxed text-grey">
-          {t(locale, "awesome.intro")}
+          {t(locale, "awesome.rulesBody")}
         </p>
         {loggedIn && (
           <Link
             href="/works/new"
-            className="mt-3 flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+            className="mt-3 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            <SquarePen size={13} />
+            <SquarePen size={13} aria-hidden="true" />
             {t(locale, "awesome.recommend")}
           </Link>
         )}
-      </Widget>
-
-      <Widget title={t(locale, "rail.awesomeStats")}>
-        <div className="flex justify-between">
-          {[
-            { n: stats.site, l: t(locale, "rail.sourceSite") },
-            { n: stats.awesome, l: t(locale, "rail.sourceAwesome") },
-          ].map((s) => (
-            <div key={s.l}>
-              <div className="font-mono text-lg font-semibold text-paper">
-                {s.n}
-              </div>
-              <div className="mt-0.5 font-mono text-[10px] text-grey">
-                {s.l}
-              </div>
-            </div>
-          ))}
-        </div>
       </Widget>
     </>
   );

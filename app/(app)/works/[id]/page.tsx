@@ -11,12 +11,15 @@ import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import Markdown from "@/components/Markdown";
+import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
 import { agentName } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { modelFamilyName } from "@/src/lib/model-families";
+import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import {
   claimBadgeOf,
   getAuthorClaimContext,
@@ -27,6 +30,7 @@ import {
 import { loadMoreWorkCommentsAction } from "../actions";
 import { loadWorkComments } from "../_components/work-comment-page";
 import WorkCommentForm from "../_components/WorkCommentForm";
+import WorkOwnerActions from "../_components/WorkOwnerActions";
 import WorkScreenshot from "../_components/WorkScreenshot";
 import WorkVoteButton from "../_components/WorkVoteButton";
 
@@ -104,9 +108,33 @@ export default async function WorkPage({
 
       <h1 className="mt-4 text-2xl font-semibold leading-snug">
         {work.name}
+        {work.scope && (
+          <span className="ml-2 inline-block rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue">
+            {t(
+              locale,
+              work.scope === "eco"
+                ? "awesome.scopeEco"
+                : work.scope === "part"
+                  ? "awesome.scopePart"
+                  : "awesome.scopeBase",
+            )}
+          </span>
+        )}
+        {work.status !== "released" && (
+          <span className="ml-2 inline-block rounded-md bg-paper/[0.07] px-1.5 py-px align-middle font-mono text-[10px] font-medium text-grey">
+            {t(
+              locale,
+              work.status === "planning"
+                ? "works.statusPlanning"
+                : work.status === "building"
+                  ? "works.statusBuilding"
+                  : "works.statusArchived",
+            )}
+          </span>
+        )}
         {work.featuredAt && (
           <span
-            className="ml-2 inline-block border border-blue/60 px-1.5 py-px align-middle font-mono text-[10px] font-normal text-blue"
+            className="ml-2 inline-block rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue"
             title={`${work.featuredReason ?? ""}${
               work.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
@@ -138,14 +166,14 @@ export default async function WorkPage({
         <WorkScreenshot url={work.screenshotUrl} name={work.name} />
       </div>
 
-      {/* 按钮行:体验作品(外链新 tab)/ 支持(登录,乐观更新)/ 分享 */}
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      {/* 按钮行:体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除 */}
+      <div className="mt-6 flex flex-wrap items-center gap-2.5">
         {work.url && (
           <a
             href={work.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 border border-blue px-4 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <ExternalLink size={13} />
             {t(locale, "works.tryIt")}
@@ -160,14 +188,23 @@ export default async function WorkPage({
           />
         ) : (
           <span
-            className="inline-flex items-center gap-1.5 border border-line px-4 py-1.5 font-mono text-xs text-grey"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-mono text-xs text-grey"
             title={t(locale, "works.loginToSupport")}
           >
             <Heart size={13} />
             {t(locale, "works.support")} · {work.voteCount}
           </span>
         )}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-3">
+          {user && work.userId === user.id && (
+            <span className="flex items-center gap-3 font-mono text-[11px] text-grey">
+              <WorkOwnerActions
+                workId={work.id}
+                locale={locale}
+                redirectTo={work.source === "awesome" ? "/awesome" : "/works"}
+              />
+            </span>
+          )}
           <ShareButton
             path={`/works/${work.id}`}
             title={work.name}
@@ -181,7 +218,10 @@ export default async function WorkPage({
           (右栏注册表 work kind),正文占满正常阅读列宽 */}
       <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_180px] xl:grid-cols-1">
         <div>
-          {work.tagline && <Markdown source={work.tagline} />}
+          {/* 长描述优先(20260824 新增 description_md),缺省回退 tagline */}
+          {(work.descriptionMd || work.tagline) && (
+            <Markdown source={work.descriptionMd || work.tagline} />
+          )}
           {work.tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
               {work.tags.map((tag) => (
@@ -276,7 +316,7 @@ export default async function WorkPage({
                 {work.agents.map((a) => (
                   <span
                     key={a}
-                    className="inline-flex items-center gap-1.5 border border-line px-2 py-1 font-mono text-[10px] text-grey"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-grey"
                   >
                     <AgentIcon id={a} size={13} />
                     {agentName(a)}
@@ -285,6 +325,40 @@ export default async function WorkPage({
               </div>
             </div>
           )}
+
+          {work.kind && (
+            <div>
+              <h3 className="font-mono text-[11px] tracking-wider text-grey">
+                {t(locale, "works.kind")}
+              </h3>
+              <div className="mt-3">
+                <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[10px] ${workKind(work.kind).tint}`}>
+                  <i className={`size-[6px] rounded-full ${workKind(work.kind).dot}`} />
+                  {workKindLabel(work.kind, locale === "zh")}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {work.models.length > 0 && (
+            <div>
+              <h3 className="font-mono text-[11px] tracking-wider text-grey">
+                {t(locale, "works.sideModels")}
+              </h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {work.models.map((m) => (
+                  <span
+                    key={m}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-paper/[0.05] px-2 py-1 font-mono text-[10px] text-grey"
+                  >
+                    <ModelIcon id={m} size={13} />
+                    {modelFamilyName(m)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           <div>
             <h3 className="font-mono text-[11px] tracking-wider text-grey">

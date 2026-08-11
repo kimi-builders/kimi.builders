@@ -7,6 +7,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
+import { isWorkKind } from "@/src/lib/work-kinds";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
   canModerate,
@@ -62,7 +63,22 @@ function parseTagsInput(raw: string): string[] {
     .map((s) => s.slice(0, 24));
 }
 
+const WORK_STATUSES = ["planning", "building", "released", "archived"] as const;
+const AWESOME_SCOPES = ["base", "eco", "part"] as const;
+
+/* 模型:家族预设键或自填型号文本,≤10 个,每个 ≤40 字。 */
+function sanitizeModelsInput(raw: unknown[]): string[] {
+  return raw
+    .map(String)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 10)
+    .map((s) => s.slice(0, 40));
+}
+
 function readFields(formData: FormData) {
+  const status = String(formData.get("status") || "released");
+  const scope = String(formData.get("scope") || "");
   return {
     name: String(formData.get("name") || "").trim(),
     tagline: String(formData.get("tagline") || "").trim(),
@@ -72,6 +88,17 @@ function readFields(formData: FormData) {
     tags: parseTagsInput(String(formData.get("tags") || "")),
     agents: sanitizeAgentIds(formData.getAll("agents")),
     authorLabel: String(formData.get("author_label") || "").trim(),
+    /* 表单意图(我的作品/推荐站外项目):authorLabel 非空才是 awesome 条目,
+       intent 只用于校验提示(推荐但没填原作者 → 明确报错而不是静默当成作品) */
+    intent: String(formData.get("kind") || "site") === "awesome" ? "awesome" : "site",
+    status: (WORK_STATUSES as readonly string[]).includes(status) ? status : "released",
+    models: sanitizeModelsInput(formData.getAll("models")),
+    /* 作品类型(单选);表单的 kind 字段是「我的作品/推荐」意图,不冲突 */
+    kind: isWorkKind(String(formData.get("work_kind") || ""))
+      ? String(formData.get("work_kind"))
+      : "app",
+    descriptionMd: String(formData.get("description_md") || "").trim().slice(0, 10000),
+    scope: (AWESOME_SCOPES as readonly string[]).includes(scope) ? scope : null,
   };
 }
 
@@ -90,6 +117,10 @@ function validate(
   if (!f.url && !f.repoUrl) return t(locale, "err.workNoLink");
   if (f.authorLabel.length > 120) return t(locale, "err.workAuthorLong");
   if (f.agents.length === 0) return t(locale, "err.workNoAgent");
+  /* 表单选了「推荐站外项目」但没填原作者 → 明确报错(而不是静默当成作品墙条目) */
+  if (f.intent === "awesome" && !f.authorLabel) return t(locale, "err.workAuthorRequired");
+  /* awesome 条目必须有收录口径(推荐规则:公开展示推荐人,口径必填) */
+  if (f.authorLabel && !f.scope) return t(locale, "err.workNoScope");
   return null;
 }
 
@@ -230,18 +261,32 @@ export async function unfeatureWorkAction(
    卡片(ReactNode 随 RSC 序列化),客户端直接追加;徽章/精选行与首屏同口径
    (都在 loadWorksCards 里)。游标 = 上一页最后一个作品的 id。 */
 export async function loadMoreWorksAction(
-  scope: { awesome: boolean; agent: string | null },
-  after: number,
+  scope: {
+    awesome: boolean;
+    sort: "hot" | "new";
+    agents: string[];
+    kinds: string[];
+    scope_: string | null;
+  },
+  after: string,
 ): Promise<({ ok: true } & WorksPageData) | { ok: false }> {
-  if (!Number.isSafeInteger(after) || after <= 0) return { ok: false };
+  if (typeof after !== "string" || after.length === 0 || after.length > 40) return { ok: false };
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  const agent =
-    scope.agent && AGENTS.some((a) => a.id === scope.agent)
-      ? scope.agent
+  const agents = scope.agents.filter((id) => AGENTS.some((a) => a.id === id)).slice(0, 10);
+  const kinds = scope.kinds.filter(isWorkKind).slice(0, 12);
+  const scopeFilter =
+    scope.scope_ && ["base", "eco", "part"].includes(scope.scope_)
+      ? scope.scope_
       : undefined;
   const data = await loadWorksCards(
-    { awesome: scope.awesome, agent },
+    {
+      awesome: scope.awesome,
+      sort: scope.sort === "hot" ? "hot" : "new",
+      agents,
+      kinds,
+      scope_: scopeFilter,
+    },
     user,
     locale,
     after,

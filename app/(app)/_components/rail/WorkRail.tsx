@@ -6,9 +6,12 @@ import Link from "next/link";
 import { ExternalLink, Heart, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
+import ModelIcon from "@/components/ModelIcon";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
+import { modelFamilyName } from "@/src/lib/model-families";
+import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import {
   claimBadgeOf,
   getAuthorClaimContext,
@@ -75,7 +78,7 @@ export default async function WorkRail({
         {claimBadge !== null && (
           <p className="mt-3">
             <span
-              className="inline-block border border-emerald-400/60 px-1.5 py-px font-mono text-[10px] text-emerald-400"
+              className="inline-block rounded-md bg-emerald-400/10 px-1.5 py-px font-mono text-[10px] font-medium text-emerald-400"
               title={t(locale, "works.badgeTitle")}
             >
               {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -83,15 +86,92 @@ export default async function WorkRail({
           </p>
         )}
 
+        {/* 状态 + 收录口径(awesome) */}
+        {(work.status !== "released" || work.scope) && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {work.scope && (
+              <span className="inline-flex items-center rounded-md bg-blue/10 px-1.5 py-px text-[10px] font-medium text-blue">
+                {t(
+                  locale,
+                  work.scope === "eco"
+                    ? "awesome.scopeEco"
+                    : work.scope === "part"
+                      ? "awesome.scopePart"
+                      : "awesome.scopeBase",
+                )}
+              </span>
+            )}
+            {work.status !== "released" && (
+              <span className="inline-flex items-center rounded-md bg-paper/[0.07] px-1.5 py-px text-[10px] font-medium text-grey">
+                {t(
+                  locale,
+                  work.status === "planning"
+                    ? "works.statusPlanning"
+                    : work.status === "building"
+                      ? "works.statusBuilding"
+                      : "works.statusArchived",
+                )}
+              </span>
+            )}
+          </div>
+        )}
+
         {work.agents.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {work.agents.map((a) => (
               <span
                 key={a}
-                className="inline-flex items-center gap-1.5 border border-line px-2 py-1 font-mono text-[10px] text-grey"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-grey"
               >
                 <AgentIcon id={a} size={13} />
                 {agentName(a)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {work.kind && (
+          <div className="mt-3 border-t border-line pt-3">
+            <h4 className="font-mono text-[10px] tracking-wider text-grey">
+              {t(locale, "works.kind")}
+            </h4>
+            <div className="mt-2">
+              <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[10px] ${workKind(work.kind).tint}`}>
+                <i className={`size-[6px] rounded-full ${workKind(work.kind).dot}`} />
+                {workKindLabel(work.kind, locale === "zh")}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {work.models.length > 0 && (
+          <div className="mt-3 border-t border-line pt-3">
+            <h4 className="font-mono text-[10px] tracking-wider text-grey">
+              {t(locale, "works.sideModels")}
+            </h4>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {work.models.map((m) => (
+                <span
+                  key={m}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-paper/[0.05] px-2 py-1 font-mono text-[10px] text-grey"
+                >
+                  <ModelIcon id={m} size={13} />
+                  {modelFamilyName(m)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+
+        {work.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-3">
+            {work.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-md bg-paper/[0.05] px-1.5 py-px font-mono text-[10px] text-grey"
+              >
+                {tag}
               </span>
             ))}
           </div>
