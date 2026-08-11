@@ -98,7 +98,7 @@ export default async function CommunityPage({
         {/* 话题 pills:cat 参数的快捷形态;移动端放不下时横向滑动 */}
         <nav
           aria-label={t(locale, "feed.topicsAll")}
-          className="flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto"
+          className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto"
         >
           <Link
             href={feedHref({ cat: null })}

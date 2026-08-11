@@ -4,7 +4,7 @@
    话题+标题双列;投票选项 2–8 条动态增删;自绘 checkbox(AI 回复/私密);
    底栏 hint + primary 发布。提交走 server action(createPostAction),校验错误就地显示。
    完整页(/community/new)与弹窗(@modal)共用,RouteModal 已提供圆角壳。 */
-import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Check, Trash2, X } from "lucide-react";
 import {
   SEG_ITEM,
@@ -31,8 +31,6 @@ const TYPES = [
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
 const labelCls = "mb-1.5 block text-[11.5px] text-grey";
-
-const subscribeHydration = () => () => undefined;
 
 /* 自绘复选框:sr-only input + 兄弟节点方盒(peer-checked 驱动),与用量页 switch 同族。 */
 function CheckBox({
@@ -84,27 +82,31 @@ export default function PostForm({
   const [body, setBody] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const submittingRef = useRef(false);
   const [state, formAction, pending] = useActionState<
     PostFormState | null,
     FormData
   >(createPostAction, null);
-  const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
 
-  if (hydrated && !draftLoaded) {
-    const draft = readCommunityDraft(window.localStorage.getItem(COMMUNITY_DRAFT_KEY));
-    setDraftLoaded(true);
-    if (draft) {
-      setType(draft.type);
-      setCategory(CATEGORIES.some((item) => item.id === draft.category) ? draft.category : "chat");
-      setTitle(draft.title);
-      setLinkUrl(draft.linkUrl);
-      setBody(draft.body);
-      setOptions(draft.options.length >= 2 ? draft.options : ["", ""]);
-      setDraftRestored(true);
-    }
-  }
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const draft = readCommunityDraft(window.localStorage.getItem(COMMUNITY_DRAFT_KEY));
+      if (draft) {
+        setType(draft.type);
+        setCategory(CATEGORIES.some((item) => item.id === draft.category) ? draft.category : "chat");
+        setTitle(draft.title);
+        setLinkUrl(draft.linkUrl);
+        setBody(draft.body);
+        setOptions(draft.options.length >= 2 ? draft.options : ["", ""]);
+        setDraftRestored(true);
+        setDraftSaved(true);
+      }
+      setDraftLoaded(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (!draftLoaded) return;
@@ -117,12 +119,14 @@ export default function PostForm({
       );
       if (!hasContent) {
         window.localStorage.removeItem(COMMUNITY_DRAFT_KEY);
+        setDraftSaved(false);
         return;
       }
       window.localStorage.setItem(
         COMMUNITY_DRAFT_KEY,
         writeCommunityDraft({ type, category, title, linkUrl, body, options }),
       );
+      setDraftSaved(true);
     }, 180);
     return () => window.clearTimeout(timer);
   }, [body, category, draftLoaded, linkUrl, options, title, type]);
@@ -147,6 +151,7 @@ export default function PostForm({
     setBody("");
     setOptions(["", ""]);
     setDraftRestored(false);
+    setDraftSaved(false);
   };
 
   return (
@@ -325,7 +330,9 @@ export default function PostForm({
       )}
 
       <div className="flex items-center gap-3 border-t border-line pt-4">
-        <span className="text-[11px] text-grey/80">{t(locale, "form.footerHint")}</span>
+        <span className="text-[11px] text-grey/80">
+          {draftSaved ? t(locale, "form.draftSaved") : t(locale, "form.footerHint")}
+        </span>
         <button
           type="submit"
           disabled={pending}

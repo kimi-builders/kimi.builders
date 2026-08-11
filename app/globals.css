@@ -244,6 +244,14 @@ html[data-theme="light"] .theme-card-light {
   animation: kb-toast-in 0.16s ease-out;
 }
 
+/* Keep compact horizontal filter rows touch-scrollable without a desktop gutter. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ---- 用量中心:Kimi Design 设计稿改造(页级 scoped,不进全局 token)---- */
 /* Hero 卡:顶部细渐变 + 右上角蓝色径向微光。color-mix 基于 --color-blue,
    深浅主题都安全;微光只做质感,不承担信息。 */
