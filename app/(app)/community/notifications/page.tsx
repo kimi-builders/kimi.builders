@@ -24,7 +24,7 @@ export default async function NotificationsPage() {
         <h1 className="font-mono text-lg font-semibold">
           {t(locale, "notif.title")}
         </h1>
-        <p className="mt-8 text-sm text-grey">
+        <p className="mt-8 rounded-2xl border border-line bg-card p-5 text-sm text-grey">
           {t(locale, "notif.loginRequired")}
           <a
             href="/api/auth/github"
@@ -53,16 +53,17 @@ export default async function NotificationsPage() {
         {t(locale, "notif.title")}
       </h1>
       {items.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-grey">
-          {t(locale, "notif.empty")}
-        </p>
+        <div className="mt-6 rounded-2xl border border-line bg-card p-8 text-center">
+          <Bell size={22} className="mx-auto text-grey/70" aria-hidden="true" />
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-grey">{t(locale, "notif.empty")}</p>
+        </div>
       ) : (
         <ul className="mt-6 space-y-3">
           {items.map((n) => (
             <li key={n.id}>
               <Link
                 href={`/community/${n.postId}#comment-${n.commentId}`}
-                className="flex items-start gap-3 border border-line bg-card p-3.5 transition-colors hover:border-paper/20"
+                className="flex items-start gap-3 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:border-paper/20"
               >
                 <Avatar
                   url={n.actorHandle ? n.actorAvatar : BOT_AVATAR}

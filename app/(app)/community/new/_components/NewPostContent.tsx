@@ -14,7 +14,7 @@ export default async function NewPostContent({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   return (
-    <div>
+    <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
         <h1 className="font-mono text-lg font-semibold">
           {t(locale, "form.pageTitle")}
@@ -23,7 +23,7 @@ export default async function NewPostContent({
       {user ? (
         <PostForm aiDefault={user.aiRepliesEnabled} locale={locale} />
       ) : (
-        <p className="mt-8 text-sm text-grey">
+        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
           {t(locale, "form.loginRequired")}
           <a href="/api/auth/github" className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
             GitHub

@@ -10,7 +10,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { updatePostAction, type PostFormState } from "../actions";
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:shadow-[0_0_0_3px_rgb(26_136_255/0.15)]";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
 const labelCls = "mb-1.5 block text-[11.5px] text-grey";
 
 export default function PostEditForm({
@@ -48,11 +48,7 @@ export default function PostEditForm({
             id="edit-category"
             name="category"
             defaultValue={initialCategory}
-            className={`${inputCls} cursor-pointer appearance-none bg-[position:right_12px_center] bg-no-repeat pr-8`}
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239AA1AE' fill='none' stroke-width='1.5'/%3E%3C/svg%3E\")",
-            }}
+            className={`${inputCls} cursor-pointer`}
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id} className="bg-bg">

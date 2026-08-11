@@ -150,6 +150,8 @@ const DICT = {
     zh: "加载更多评论(还有 {n} 条)",
     en: "Load more comments ({n} more)",
   },
+  "post.showReplies": { zh: "展开另外 {n} 条回复", en: "Show {n} more replies" },
+  "post.hideReplies": { zh: "收起回复", en: "Hide replies" },
   /* ---- 消息通知 ---- */
   "notif.title": { zh: "消息", en: "Notifications" },
   "notif.empty": {
@@ -200,6 +202,11 @@ const DICT = {
     zh: "发布后进入「全部讨论」,可随时编辑或删除",
     en: "Posted to \"All discussions\"; edit or delete anytime",
   },
+  "form.draftRestored": {
+    zh: "已恢复上次未发布的草稿,内容会继续自动保存在此设备。",
+    en: "Your unpublished draft was restored and will keep saving on this device.",
+  },
+  "form.clearDraft": { zh: "清空草稿", en: "Clear draft" },
   "post.official": { zh: "官方账号", en: "Official account" },
   "post.aiJoin": { zh: "小筑参与互动", en: "Kimi bot joins" },
   "edit.pageTitle": { zh: "编辑帖子", en: "Edit post" },

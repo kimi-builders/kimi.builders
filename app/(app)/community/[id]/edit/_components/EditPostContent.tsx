@@ -24,7 +24,7 @@ export default async function EditPostContent({
   const locale = await getLocale(user);
 
   return (
-    <div>
+    <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
         <h1 className="font-mono text-lg font-semibold">
           {t(locale, "edit.pageTitle")}

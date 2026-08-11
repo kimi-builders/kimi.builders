@@ -4,8 +4,8 @@
    话题+标题双列;投票选项 2–8 条动态增删;自绘 checkbox(AI 回复/私密);
    底栏 hint + primary 发布。提交走 server action(createPostAction),校验错误就地显示。
    完整页(/community/new)与弹窗(@modal)共用,RouteModal 已提供圆角壳。 */
-import { useActionState, useState } from "react";
-import { Check, X } from "lucide-react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Check, Trash2, X } from "lucide-react";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -13,6 +13,12 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 import { CATEGORIES } from "@/src/lib/categories";
+import {
+  COMMUNITY_DRAFT_KEY,
+  readCommunityDraft,
+  writeCommunityDraft,
+  type CommunityDraft,
+} from "@/src/lib/community-draft";
 import { t, type Locale } from "@/src/lib/i18n";
 import { createPostAction, type PostFormState } from "../actions";
 
@@ -23,8 +29,10 @@ const TYPES = [
 ] as const;
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:shadow-[0_0_0_3px_rgb(26_136_255/0.15)]";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
 const labelCls = "mb-1.5 block text-[11.5px] text-grey";
+
+const subscribeHydration = () => () => undefined;
 
 /* 自绘复选框:sr-only input + 兄弟节点方盒(peer-checked 驱动),与用量页 switch 同族。 */
 function CheckBox({
@@ -69,15 +77,99 @@ export default function PostForm({
   aiDefault: boolean;
   locale: Locale;
 }) {
-  const [type, setType] = useState<string>("text");
+  const [type, setType] = useState<CommunityDraft["type"]>("text");
+  const [category, setCategory] = useState("chat");
+  const [title, setTitle] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [body, setBody] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const submittingRef = useRef(false);
   const [state, formAction, pending] = useActionState<
     PostFormState | null,
     FormData
   >(createPostAction, null);
+  const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
+
+  if (hydrated && !draftLoaded) {
+    const draft = readCommunityDraft(window.localStorage.getItem(COMMUNITY_DRAFT_KEY));
+    setDraftLoaded(true);
+    if (draft) {
+      setType(draft.type);
+      setCategory(CATEGORIES.some((item) => item.id === draft.category) ? draft.category : "chat");
+      setTitle(draft.title);
+      setLinkUrl(draft.linkUrl);
+      setBody(draft.body);
+      setOptions(draft.options.length >= 2 ? draft.options : ["", ""]);
+      setDraftRestored(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+    const timer = window.setTimeout(() => {
+      const hasContent = !!(
+        title.trim() ||
+        body.trim() ||
+        linkUrl.trim() ||
+        options.some((option) => option.trim())
+      );
+      if (!hasContent) {
+        window.localStorage.removeItem(COMMUNITY_DRAFT_KEY);
+        return;
+      }
+      window.localStorage.setItem(
+        COMMUNITY_DRAFT_KEY,
+        writeCommunityDraft({ type, category, title, linkUrl, body, options }),
+      );
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [body, category, draftLoaded, linkUrl, options, title, type]);
+
+  useEffect(() => {
+    if (!pending && state?.error) submittingRef.current = false;
+  }, [pending, state]);
+
+  useEffect(
+    () => () => {
+      if (submittingRef.current) window.localStorage.removeItem(COMMUNITY_DRAFT_KEY);
+    },
+    [],
+  );
+
+  const clearDraft = () => {
+    window.localStorage.removeItem(COMMUNITY_DRAFT_KEY);
+    setType("text");
+    setCategory("chat");
+    setTitle("");
+    setLinkUrl("");
+    setBody("");
+    setOptions(["", ""]);
+    setDraftRestored(false);
+  };
 
   return (
-    <form action={formAction} className="mt-5 space-y-4">
+    <form
+      action={formAction}
+      onSubmitCapture={() => {
+        submittingRef.current = true;
+      }}
+      className="mt-5 space-y-4"
+    >
+      {draftRestored && (
+        <div className="flex items-center gap-3 rounded-xl border border-line bg-moon px-3 py-2.5 text-xs text-grey">
+          <span className="min-w-0 flex-1">{t(locale, "form.draftRestored")}</span>
+          <button
+            type="button"
+            onClick={clearDraft}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[10px] text-grey transition-colors hover:bg-card hover:text-paper"
+          >
+            <Trash2 size={12} aria-hidden="true" />
+            {t(locale, "form.clearDraft")}
+          </button>
+        </div>
+      )}
       {/* 类型:seg 分段 */}
       <div className={SEG_WRAP} role="radiogroup" aria-label={t(locale, "form.pageTitle")}>
         {TYPES.map((tp) => (
@@ -90,7 +182,7 @@ export default function PostForm({
               name="type"
               value={tp.id}
               checked={type === tp.id}
-              onChange={() => setType(tp.id)}
+              onChange={() => setType(tp.id as CommunityDraft["type"])}
               className="sr-only"
             />
             {t(locale, tp.key)}
@@ -107,12 +199,9 @@ export default function PostForm({
           <select
             id="post-category"
             name="category"
-            defaultValue="chat"
-            className={`${inputCls} cursor-pointer appearance-none bg-[position:right_12px_center] bg-no-repeat pr-8`}
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239AA1AE' fill='none' stroke-width='1.5'/%3E%3C/svg%3E\")",
-            }}
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            className={`${inputCls} cursor-pointer`}
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id} className="bg-bg">
@@ -129,6 +218,8 @@ export default function PostForm({
           <input
             id="post-title"
             name="title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
             placeholder={t(locale, "form.title")}
             maxLength={200}
             className={inputCls}
@@ -145,6 +236,8 @@ export default function PostForm({
             id="post-link"
             name="link_url"
             type="url"
+            value={linkUrl}
+            onChange={(event) => setLinkUrl(event.target.value)}
             placeholder="https://…"
             className={`${inputCls} font-mono`}
           />
@@ -152,7 +245,7 @@ export default function PostForm({
       )}
 
       {type === "poll" && (
-        <div className="rounded-xl border border-line p-3.5">
+        <div className="rounded-2xl border border-line bg-card p-3.5">
           <p className="font-mono text-[11px] text-grey">{t(locale, "form.pollOpts")}</p>
           <div className="mt-2.5 space-y-2">
             {options.map((opt, i) => (
@@ -201,6 +294,8 @@ export default function PostForm({
         <textarea
           id="post-body"
           name="body"
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
           rows={type === "text" ? 7 : 4}
           placeholder={t(locale, type === "text" ? "form.bodyText" : "form.bodyOpt")}
           className={`${inputCls} resize-y`}

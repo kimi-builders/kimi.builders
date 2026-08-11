@@ -13,7 +13,8 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import { useRouter } from "next/navigation";
-import { ArrowBigUp } from "lucide-react";
+import { ArrowBigUp, ChevronDown, ChevronUp, X } from "lucide-react";
+import { visibleReplyCount } from "@/src/lib/community-draft";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import VoteCluster from "./VoteCluster";
@@ -68,6 +69,7 @@ export default function CommentSection({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [posting, setPosting] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [expandedThreads, setExpandedThreads] = useState<Set<number>>(new Set());
   /* 已追加的后续页;mutation 触发 router.refresh() 后首屏 props 换新,追加页作废 */
   const [extra, setExtra] = useState<{
     threads: CommentThread[];
@@ -214,7 +216,7 @@ export default function CommentSection({
         <span className="text-paper">{c.author}</span>
       )}
       {c.isAi && (
-        <span className="border border-blue px-1 py-px text-[9px] tracking-wider text-blue">
+        <span className="rounded-md border border-blue px-1.5 py-px text-[9px] tracking-wider text-blue">
           AI
         </span>
       )}
@@ -287,7 +289,7 @@ export default function CommentSection({
     <li
       key={c.id}
       id={`comment-${c.id}`}
-      className={`scroll-mt-24 ${c.isAi && !nested ? "border-l-2 border-blue pl-4" : ""} ${
+      className={`scroll-mt-24 ${!nested ? "rounded-xl border border-line bg-bg/40 p-4" : ""} ${c.isAi && !nested ? "border-l-2 border-l-blue" : ""} ${
         c.score <= -3 ? "opacity-55" : ""
       }`}
       title={c.score <= -3 ? t(locale, "post.dimmed") : undefined}
@@ -301,13 +303,13 @@ export default function CommentSection({
             rows={3}
             required
             defaultValue={c.bodyMd}
-            className="w-full border border-line bg-transparent px-3 py-2 text-sm text-paper focus:border-blue focus:outline-none"
+            className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm text-paper focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
           />
           <div className="flex gap-3 font-mono text-[11px]">
             <button
               type="submit"
               disabled={busyId === c.id}
-              className="border border-blue px-3 py-1 text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
+              className="rounded-lg bg-blue px-3 py-1.5 font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {busyId === c.id
                 ? t(locale, "post.submitting")
@@ -326,27 +328,52 @@ export default function CommentSection({
         <div className="mt-2">{c.body}</div>
       )}
       {actions(c)}
-      {nested === false && (c as CommentThread).replies?.length > 0 && (
-        <ul className="ml-2 mt-4 space-y-4 border-l border-line pl-4">
-          {(c as CommentThread).replies.map((r) => row(r, true))}
-        </ul>
-      )}
+      {nested === false && (c as CommentThread).replies?.length > 0 && (() => {
+        const replies = (c as CommentThread).replies;
+        const expanded = expandedThreads.has(c.id);
+        const visible = visibleReplyCount(replies.length, expanded);
+        const hidden = replies.length - visible;
+        return (
+          <div className="ml-2 mt-4 border-l border-line pl-4">
+            <ul className="space-y-4">{replies.slice(0, visible).map((reply) => row(reply, true))}</ul>
+            {replies.length > 3 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setExpandedThreads((current) => {
+                    const next = new Set(current);
+                    if (next.has(c.id)) next.delete(c.id);
+                    else next.add(c.id);
+                    return next;
+                  });
+                }}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[11px] text-blue transition-colors hover:bg-blue/10"
+              >
+                {expanded ? <ChevronUp size={13} aria-hidden="true" /> : <ChevronDown size={13} aria-hidden="true" />}
+                {expanded
+                  ? t(locale, "post.hideReplies")
+                  : t(locale, "post.showReplies", { n: hidden })}
+              </button>
+            )}
+          </div>
+        );
+      })()}
     </li>
   );
 
   return (
-    <section>
-      <h2 id="comments" className="mt-10 font-mono text-sm text-grey">
+    <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
+      <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
         {t(locale, "post.comments", { n: total })}
       </h2>
-      <ul className="mt-6 space-y-6">{allThreads.map((c) => row(c, false))}</ul>
+      <ul className="mt-5 space-y-3">{allThreads.map((c) => row(c, false))}</ul>
 
       {cursor !== null && (
         <button
           type="button"
           onClick={loadMore}
           disabled={loadingMore}
-          className="mt-8 border border-line px-5 py-1.5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
+          className="mt-6 rounded-lg border border-line px-4 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
         >
           {loadingMore
             ? t(locale, "post.submitting")
@@ -355,7 +382,7 @@ export default function CommentSection({
       )}
 
       {loggedIn ? (
-        <form ref={formRef} onSubmit={submitComment} className="mt-10 space-y-3">
+        <form ref={formRef} onSubmit={submitComment} className="mt-6 space-y-3 rounded-xl border border-line bg-bg/40 p-3 sm:p-4">
           <input type="hidden" name="post_id" value={postId} />
           {replyTo && (
             <>
@@ -366,9 +393,9 @@ export default function CommentSection({
                   type="button"
                   onClick={() => setReplyTo(null)}
                   aria-label="取消回复 / Cancel reply"
-                  className="text-grey transition-colors hover:text-paper"
+                  className="flex size-7 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper"
                 >
-                  ×
+                  <X size={14} aria-hidden="true" />
                 </button>
               </p>
             </>
@@ -379,18 +406,18 @@ export default function CommentSection({
             rows={4}
             required
             placeholder={t(locale, "post.commentPh")}
-            className="w-full border border-line bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none"
+            className="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
           />
           <button
             type="submit"
             disabled={posting}
-            className="border border-blue px-5 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
+            className="rounded-lg bg-blue px-5 py-2 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {posting ? t(locale, "post.submitting") : t(locale, "post.comment")}
           </button>
         </form>
       ) : (
-        <p className="mt-10 border-t border-line pt-6 text-sm text-grey">
+        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
           {t(locale, "post.loginToComment")}
           <a
             href="/api/auth/github"
