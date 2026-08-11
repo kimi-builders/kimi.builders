@@ -11,6 +11,7 @@ import {
   Menu,
   MessagesSquare,
   Newspaper,
+  Presentation,
   Rocket,
   Settings,
   SquarePen,
@@ -29,6 +30,7 @@ const SECTIONS = [
   { href: "/works", icon: Rocket, key: "nav.works", soon: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false },
+  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false },
 ] as const;
 
 export default function MobileNavDrawer({

@@ -39,7 +39,7 @@ export default function RouteModal({
           type="button"
           onClick={() => dialogRef.current?.close()}
           aria-label={closeLabel}
-          className="flex size-11 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-moon hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           <X size={17} />
         </button>

@@ -3,6 +3,7 @@
    版式:页签(资料/偏好/隐私与公开/账号)+ rounded-2xl 面板卡(标题 + 右侧口径小字);
    行式控件(左标题说明、右开关/分段/卡片)与用量页同一套 Kimi Design 语法。 */
 import { AtSign, Settings as SettingsIcon } from "lucide-react";
+import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -57,14 +58,14 @@ export default async function SettingsContent({
 
   if (!user) {
     return (
-      <div>
+      <div className={showTitle ? "rounded-2xl border border-line bg-card p-5 sm:p-6" : ""}>
         {showTitle && (
           <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
             <SettingsIcon size={20} aria-hidden="true" />
             {t(locale, "set.title")}
           </h1>
         )}
-        <p className="mt-8 text-sm text-grey">
+        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
           {t(locale, "set.loginRequired")}
           <a
             href="/api/auth/github"
@@ -160,12 +161,12 @@ export default async function SettingsContent({
 
           <Panel title={t(locale, "set.account")} note={t(locale, "set.accountNote")}>
             {linked && (
-              <p className="mb-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-400">
+              <p className="mb-3 rounded-lg border border-blue/30 bg-blue/10 px-3 py-2 text-xs text-blue">
                 {t(locale, "set.linkedOk", { p: linked === "github" ? "GitHub" : "Google" })}
               </p>
             )}
             {linkError && (
-              <p className="mb-3 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs text-red-400">
+              <p className="mb-3 rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">
                 {t(
                   locale,
                   linkError === "taken"
@@ -194,7 +195,7 @@ export default async function SettingsContent({
                 return (
                   <div key={p} className="flex items-center gap-3 py-3.5 last:pb-0">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-paper/[0.04] font-mono text-xs font-semibold text-grey">
-                      {p === "github" ? <GithubIcon size={15} /> : "G"}
+                      {p === "github" ? <GithubIcon size={15} /> : <GoogleColor size={15} />}
                     </span>
                     <div className="min-w-0">
                       <p className="flex items-center gap-2 text-[13px] font-medium text-paper">
@@ -202,7 +203,7 @@ export default async function SettingsContent({
                         <span
                           className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${
                             linkedAccount
-                              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400"
+                              ? "border-blue/30 bg-blue/10 text-blue"
                               : "border-line text-grey"
                           }`}
                         >
