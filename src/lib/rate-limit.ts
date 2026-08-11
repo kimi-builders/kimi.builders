@@ -1,4 +1,4 @@
-/* 社区写操作限流(P1-5):发帖 / 评论 / 顶踩投票的 DB 固定窗口计数器。
+/* 社区写操作限流(P1-5):发帖 / 评论 / 顶踩投票 / 图片上传的 DB 固定窗口计数器。
    复用 usage_rate_limits 表(scope 前缀 community: 区分),窗口与计数语义同
    src/lib/usage/rate-limit.ts —— upsert 时窗口过期即重置,窗口内 attempts 只增,
    计数先于判定(本次调用即占一个额度)。identity 同 usage 侧存 peppered HMAC,
@@ -11,7 +11,7 @@ import { usageHmac } from "./usage/crypto";
 
 type Queryable = Pool | PoolConnection;
 
-export type CommunityRateAction = "post" | "comment" | "vote";
+export type CommunityRateAction = "post" | "comment" | "vote" | "upload";
 
 export interface CommunityRateResult {
   allowed: boolean;
@@ -19,13 +19,14 @@ export interface CommunityRateResult {
   retryAfterSeconds: number;
 }
 
-/* 限额(P1-5):发帖 10/小时、评论 30/小时、顶踩投票 120/小时;固定窗口 1 小时 */
+/* 限额(P1-5):发帖 10/小时、评论 30/小时、顶踩投票 120/小时、上传 30/小时;固定窗口 1 小时 */
 export const COMMUNITY_RATE_WINDOW_SECONDS = 60 * 60;
 
 export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
   post: 10,
   comment: 30,
   vote: 120,
+  upload: 30,
 };
 
 /* 限流键:scope = community:<action>,同一用户不同 action 各自独立计数 */

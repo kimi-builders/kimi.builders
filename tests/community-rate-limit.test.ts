@@ -34,8 +34,13 @@ function fakeDb(options: { selectRows?: Record<string, unknown>[][] } = {}) {
   return db as unknown as Pool & { calls: FakeCall[] };
 }
 
-test("limits follow the P1-5 contract: 10 posts / 30 comments / 120 votes per hour", () => {
-  assert.deepEqual(COMMUNITY_RATE_LIMITS, { post: 10, comment: 30, vote: 120 });
+test("limits follow the P1-5 contract: 10 posts / 30 comments / 120 votes / 30 uploads per hour", () => {
+  assert.deepEqual(COMMUNITY_RATE_LIMITS, {
+    post: 10,
+    comment: 30,
+    vote: 120,
+    upload: 30,
+  });
   assert.equal(COMMUNITY_RATE_WINDOW_SECONDS, 3600);
 });
 
