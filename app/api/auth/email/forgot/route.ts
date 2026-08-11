@@ -3,6 +3,7 @@
    发信失败只记服务端日志,对用户仍显示已发送。
    同源校验 + IP 限速(5 次/小时,scope auth-email-forgot)。 */
 import { NextRequest, NextResponse } from "next/server";
+import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { isValidEmail, normalizeEmail } from "@/src/lib/auth/password";
 import { issuePasswordResetToken } from "@/src/lib/auth/password-reset";
 import { findEmailAccount } from "@/src/lib/auth/users";
@@ -18,12 +19,8 @@ function back(req: NextRequest, params: Record<string, string>): NextResponse {
   return NextResponse.redirect(url, 303);
 }
 
-/* 重置链接走站点 canonical URL(NEXT_PUBLIC_SITE_URL,部署期校验过是不带尾斜杠的
-   https origin);未配置时退回请求 origin(本地/预览自适应,同 OAuth 路由惯例)。
-   不用裸请求 Host 拼邮件链接,防 Host 头注入劫持重置链接。 */
-function siteOrigin(req: NextRequest): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin).replace(/\/+$/, "");
-}
+/* 重置链接走站点 canonical origin(src/lib/auth/origin.ts):不用裸请求 Host
+   拼邮件链接,防 Host 头注入劫持重置链接。 */
 
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return back(req, { error: "invalid_origin" });
@@ -41,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   if (account) {
     const token = await issuePasswordResetToken(account.id);
-    const siteUrl = siteOrigin(req);
+    const siteUrl = canonicalOrigin(req);
     const resetUrl = `${siteUrl}/login/reset?token=${token}`;
     const mail = renderPasswordResetMail({ resetUrl, siteUrl });
     const sent = await sendMail({ to: email, ...mail });

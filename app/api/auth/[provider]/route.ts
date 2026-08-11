@@ -1,6 +1,6 @@
 /* 登录起点:GET /api/auth/github|google
    种 state cookie(CSRF 防护,10 分钟)→ 302 到提供方授权页。
-   redirect_uri 取请求来源 origin,本地 / 预览 / 生产域名都自适应。 */
+   redirect_uri 走 canonical origin(生产在反代后,req.url 是内网地址)。 */
 import { NextRequest, NextResponse } from "next/server";
 import {
   authorizeUrl,
@@ -10,6 +10,7 @@ import {
   STATE_COOKIE,
   type Provider,
 } from "@/src/lib/auth/oauth";
+import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { AUTH_RETURN_COOKIE, safeReturnTo } from "@/src/lib/auth/return-to";
 
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
   if (!PROVIDERS.includes(provider as Provider)) {
     return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   }
-  const origin = new URL(req.url).origin;
+  const origin = canonicalOrigin(req);
   /* link=1:设置页发起的绑定流程,回调把 provider 挂到当前登录账号 */
   const linking = new URL(req.url).searchParams.get("link") === "1";
   const returnTo = linking

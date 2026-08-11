@@ -14,6 +14,7 @@ import {
   type Provider,
 } from "@/src/lib/auth/oauth";
 import { getSessionUser, setSessionCookie } from "@/src/lib/auth/session";
+import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { AUTH_RETURN_COOKIE, safeReturnTo } from "@/src/lib/auth/return-to";
 import { findOrCreateUser, linkProviderAccount } from "@/src/lib/auth/users";
 
@@ -22,7 +23,7 @@ export async function GET(
   { params }: { params: Promise<{ provider: string }> },
 ) {
   const { provider } = await params;
-  const origin = new URL(req.url).origin;
+  const origin = canonicalOrigin(req);
   const cookieStore = await cookies();
   const returnTo = safeReturnTo(cookieStore.get(AUTH_RETURN_COOKIE)?.value);
   const linking = cookieStore.get(LINK_COOKIE)?.value === "1";
