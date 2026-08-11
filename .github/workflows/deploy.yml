@@ -248,6 +248,8 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
         run: |
           set -Eeuo pipefail
 
@@ -342,6 +344,14 @@ jobs:
             fi
             if [[ -n "$R2_PUBLIC_BASE_URL" ]]; then
               printf 'R2_PUBLIC_BASE_URL=%q\n' "$R2_PUBLIC_BASE_URL"
+            fi
+            # Mail (Resend) — optional: forgot-password emails silently skip
+            # (soft-fail "not_configured") when RESEND_API_KEY is absent.
+            if [[ -n "$RESEND_API_KEY" ]]; then
+              printf 'RESEND_API_KEY=%q\n' "$RESEND_API_KEY"
+            fi
+            if [[ -n "$MAIL_FROM" ]]; then
+              printf 'MAIL_FROM=%q\n' "$MAIL_FROM"
             fi
           } | ssh \
             -i "$HOME/.ssh/deploy_key" \

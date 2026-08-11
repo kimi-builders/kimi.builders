@@ -17,6 +17,7 @@ const ERROR_TEXT: Record<string, { zh: string; en: string }> = {
   password_mismatch: { zh: "两次输入的密码不一致", en: "Passwords do not match." },
   email_taken: { zh: "该邮箱已注册,直接登录即可", en: "Email already registered — just sign in." },
   bad_credentials: { zh: "邮箱或密码不正确", en: "Incorrect email or password." },
+  invalid_token: { zh: "重置链接无效或已过期,请重新发起", en: "This reset link is invalid or expired — request a new one." },
 };
 
 export default async function LoginContent({
@@ -33,9 +34,15 @@ export default async function LoginContent({
 
   const locale = await getLocale(null);
   const zh = locale === "zh";
-  const mode = (Array.isArray(sp.mode) ? sp.mode[0] : sp.mode) === "register" ? "register" : "login";
+  const rawMode = Array.isArray(sp.mode) ? sp.mode[0] : sp.mode;
+  const mode =
+    rawMode === "register" || rawMode === "forgot" || rawMode === "reset"
+      ? rawMode
+      : "login";
   const errorCode = Array.isArray(sp.error) ? sp.error[0] : sp.error;
   const error = errorCode ? ERROR_TEXT[errorCode] : undefined;
+  const token = (Array.isArray(sp.token) ? sp.token[0] : sp.token) ?? "";
+  const sent = (Array.isArray(sp.sent) ? sp.sent[0] : sp.sent) === "1";
 
   const inputCls =
     "w-full border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue";
@@ -98,7 +105,7 @@ export default async function LoginContent({
         </p>
       )}
 
-      {mode === "login" ? (
+      {mode === "login" && (
         <form method="POST" action="/api/auth/email/login" className="mt-4 space-y-3">
           <input type="hidden" name="next" value={next} />
           <div>
@@ -108,16 +115,23 @@ export default async function LoginContent({
             <input id="email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="password">
-              {zh ? "密码" : "Password"}
-            </label>
+            <div className="mb-1 flex items-baseline justify-between">
+              <label className="block font-mono text-[10px] text-grey" htmlFor="password">
+                {zh ? "密码" : "Password"}
+              </label>
+              <a href="/login?mode=forgot" className="font-mono text-[10px] text-grey transition-colors hover:text-paper">
+                {zh ? "忘记密码?" : "Forgot password?"}
+              </a>
+            </div>
             <input id="password" name="password" type="password" required autoComplete="current-password" className={inputCls} />
           </div>
           <button type="submit" className={submitCls}>
             <Mail size={12} className="mr-1 inline" /> {zh ? "登录" : "Sign in"}
           </button>
         </form>
-      ) : (
+      )}
+
+      {mode === "register" && (
         <form method="POST" action="/api/auth/email/register" className="mt-4 space-y-3">
           <input type="hidden" name="next" value={next} />
           <div>
@@ -150,10 +164,86 @@ export default async function LoginContent({
         </form>
       )}
 
+      {mode === "forgot" &&
+        (sent ? (
+          <div className="mt-4 space-y-3">
+            <p className="border border-blue/40 px-3 py-2 text-xs leading-relaxed text-paper">
+              {zh
+                ? "如果该邮箱已注册,重置邮件已在路上(链接 1 小时内有效)。没收到请检查垃圾邮件,或稍后重新发送。"
+                : "If that email is registered, a reset link is on its way (valid for 1 hour). Check spam if it doesn't show up, or resend later."}
+            </p>
+            <a
+              href="/login?mode=forgot"
+              className="inline-block font-mono text-[10px] text-grey transition-colors hover:text-paper"
+            >
+              {zh ? "重新发送 / 换个邮箱 →" : "Resend / use another email →"}
+            </a>
+          </div>
+        ) : (
+          <form method="POST" action="/api/auth/email/forgot" className="mt-4 space-y-3">
+            <p className="text-xs leading-relaxed text-grey">
+              {zh
+                ? "输入注册邮箱,我们会发一封带重置链接的邮件。"
+                : "Enter your account email and we'll send you a reset link."}
+            </p>
+            <div>
+              <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="forgot-email">
+                {zh ? "邮箱" : "Email"}
+              </label>
+              <input id="forgot-email" name="email" type="email" required autoComplete="email" className={inputCls} />
+            </div>
+            <button type="submit" className={submitCls}>
+              <Mail size={12} className="mr-1 inline" /> {zh ? "发送重置邮件" : "Send reset email"}
+            </button>
+          </form>
+        ))}
+
+      {mode === "reset" &&
+        (token ? (
+          <form method="POST" action="/api/auth/email/reset" className="mt-4 space-y-3">
+            <input type="hidden" name="token" value={token} />
+            <div>
+              <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reset-password">
+                {zh ? "新密码(至少 8 位)" : "New password (8+ chars)"}
+              </label>
+              <input id="reset-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reset-password2">
+                {zh ? "确认新密码" : "Confirm new password"}
+              </label>
+              <input id="reset-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
+            </div>
+            <button type="submit" className={submitCls}>
+              <Mail size={12} className="mr-1 inline" /> {zh ? "重置密码并登录" : "Reset & sign in"}
+            </button>
+          </form>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <p className="border border-red-500/40 px-3 py-2 text-xs text-red-400">
+              {zh ? ERROR_TEXT.invalid_token.zh : ERROR_TEXT.invalid_token.en}
+            </p>
+            <a
+              href="/login?mode=forgot"
+              className="inline-block font-mono text-[10px] text-grey transition-colors hover:text-paper"
+            >
+              {zh ? "重新发起重置 →" : "Request a new link →"}
+            </a>
+          </div>
+        ))}
+
+      {(mode === "forgot" || mode === "reset") && (
+        <p className="mt-4 font-mono text-[10px]">
+          <a href="/login" className="text-grey transition-colors hover:text-paper">
+            ← {zh ? "返回登录" : "Back to sign in"}
+          </a>
+        </p>
+      )}
+
       <p className="mt-6 text-[10px] leading-relaxed text-grey/80">
         {zh
-          ? "v0 暂不支持邮箱找回密码;忘记密码请联系管理员重置。"
-          : "v0 has no self-serve password reset; contact an admin if you lose access."}
+          ? "重置链接 1 小时内有效、只能用一次;收不到邮件请联系管理员。"
+          : "Reset links expire after 1 hour and work once; contact an admin if no email arrives."}
       </p>
     </div>
   );

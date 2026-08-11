@@ -71,6 +71,8 @@ test("deploy.yml wires secrets, packaging and migration", () => {
     "R2_SECRET_ACCESS_KEY",
     "R2_BUCKET",
     "R2_PUBLIC_BASE_URL",
+    "RESEND_API_KEY",
+    "MAIL_FROM",
   ]) {
     assert.ok(workflow.includes(name), `deploy.yml must reference ${name}`);
   }
