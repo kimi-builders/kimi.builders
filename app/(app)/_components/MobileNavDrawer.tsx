@@ -98,14 +98,14 @@ export default function MobileNavDrawer({
           <div className="flex-1 overflow-y-auto py-4">
             {/* 登录态块:头像 + @handle + 退出(未登录 = 登录入口),顶栏迁入 */}
             {account && (
-              <div className="mx-4 mb-4 flex items-center gap-3 border border-line bg-card px-3 py-2.5 font-mono text-sm [&>a:last-child]:ml-auto">
+              <div className="mx-4 mb-4 flex items-center gap-3 rounded-xl border border-line bg-card px-3 py-2.5 font-mono text-sm [&>a:last-child]:ml-auto">
                 {account}
               </div>
             )}
             <Link
               href="/community/new"
               onClick={close}
-              className="mx-4 flex min-h-12 items-center justify-center gap-2 border border-blue bg-blue px-4 font-mono text-sm font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/15 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <SquarePen size={16} aria-hidden="true" />
               {t(locale, "nav.post")}
