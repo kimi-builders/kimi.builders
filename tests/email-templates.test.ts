@@ -19,7 +19,7 @@ test("template: CTA href 同时出现在按钮与明文兜底链接", () => {
   const html = renderBrandEmail(SAMPLE);
   const occurrences = html.split(SAMPLE.cta.href).length - 1;
   assert.ok(occurrences >= 2, `href should appear at least twice, got ${occurrences}`);
-  assert.match(html, /bgcolor="#2563eb"/); // 防弹按钮的 td 底色
+  assert.match(html, /bgcolor="#1783ff"/); // 防弹按钮的 td 底色(品牌蓝)
   assert.match(html, /border-radius:8px/);
 });
 
@@ -45,12 +45,18 @@ test("template: 无 script / 无外部样式表 / 无 flex/grid,纯 table + 内�
   assert.ok(html.includes("style="));
 });
 
-test("template: 外层浅底 + 白卡圆角 + 560px 居中", () => {
+test("template: 外层深底(bgcolor+style 双写)+ 深卡 hairline 圆角 + 560px 居中", () => {
   const html = renderBrandEmail(SAMPLE);
-  assert.ok(html.includes("background-color:#f5f5f4"));
-  assert.ok(html.includes("background-color:#ffffff"));
+  assert.ok(html.includes('bgcolor="#0e0e13"')); // body/外层 table 的 bgcolor 属性
+  assert.ok(html.includes("background-color:#0e0e13"));
+  assert.ok(html.includes('bgcolor="#16161f"')); // 深面板卡
+  assert.ok(html.includes("border:1px solid rgba(255,255,255,0.12)"));
   assert.ok(html.includes("width:560px;max-width:100%"));
-  assert.ok(html.includes("border-radius:12px"));
+  assert.ok(html.includes("border-radius:16px"));
+  // 深色邮件:暖白主文字 + 次要灰,不允许深底上压近黑文字
+  assert.ok(html.includes("color:#efe8dc"));
+  assert.ok(html.includes("color:#9a9aa5"));
+  assert.ok(!html.includes("color:#000"));
 });
 
 test("template: style 属性内不混双引号(字体栈单引号,按钮白字样式不被截断)", () => {
@@ -81,10 +87,18 @@ test("template: title/label/footnote 转义,bodyHtml 信任透传", () => {
 
 test("template: 缺省 cta/footnote 时对应块不渲染;footnote 换行变 <br>", () => {
   const bare = renderBrandEmail({ title: "t", bodyHtml: "<p>x</p>" });
-  assert.ok(!bare.includes('bgcolor="#2563eb"'));
+  assert.ok(!bare.includes('bgcolor="#1783ff"'));
   assert.ok(!bare.includes("Paste this link"));
   const html = renderBrandEmail(SAMPLE);
   assert.ok(html.includes("即可。<br>If you didn't"));
+});
+
+test("template: eyebrow mono 小字标签渲染并转义;缺省不出现", () => {
+  const html = renderBrandEmail({ ...SAMPLE, eyebrow: "KIMI.BUILDERS / SECURITY" });
+  assert.ok(html.includes("KIMI.BUILDERS / SECURITY"));
+  assert.ok(html.includes("ui-monospace,'SF Mono'"));
+  const bare = renderBrandEmail({ title: "t", bodyHtml: "<p>x</p>" });
+  assert.ok(!bare.includes("ui-monospace"));
 });
 
 test("template: preheader 隐藏摘要缺省用 title,可覆盖", () => {
@@ -105,9 +119,10 @@ test("password reset mail: subject/text/html 齐备,双语文案 + 链接一致"
   assert.ok(mail.text.includes("https://kimi.builders/login/reset?token=deadbeef"));
   assert.ok(mail.text.includes("1 小时内有效"));
   assert.ok(!mail.text.includes("<p"));
-  // html:品牌骨架 + 同一链接 + 双语
+  // html:品牌骨架 + 同一链接 + 双语 + mono eyebrow
   assert.ok(mail.html.includes("https://kimi.builders/login/reset?token=deadbeef"));
   assert.ok(mail.html.includes("点击下方按钮设置新密码"));
   assert.ok(mail.html.includes("Use the button below"));
+  assert.ok(mail.html.includes("KIMI.BUILDERS / SECURITY"));
   assert.ok(mail.html.includes("<!doctype html>"));
 });
