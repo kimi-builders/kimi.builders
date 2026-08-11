@@ -6,7 +6,7 @@
    不存在/已删作品给友好文案,不 404 硬错。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink, Heart } from "lucide-react";
+import { ArrowLeft, ExternalLink, Heart, Rocket } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
@@ -50,14 +50,18 @@ export async function generateMetadata({
 /* 不存在/已撤下:友好文案 + 回作品墙,不硬 404。 */
 function WorkGone({ locale }: { locale: Locale }) {
   return (
-    <div className="mt-16 text-center">
+    <div className="mt-10 rounded-2xl border border-line bg-card p-8 text-center">
+      <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-line bg-moon text-blue">
+        <Rocket size={23} aria-hidden="true" />
+      </span>
       <p className="text-sm leading-relaxed text-grey">
         {t(locale, "works.notFound")}
       </p>
       <Link
         href="/works"
-        className="mt-4 inline-block border border-line px-4 py-1.5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue"
       >
+        <ArrowLeft size={13} aria-hidden="true" />
         {t(locale, "works.backToWorks")}
       </Link>
     </div>
@@ -97,13 +101,15 @@ export default async function WorkPage({
 
   return (
     <div>
+      <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       {/* 面包屑:作品(awesome 条目回 /awesome)/ 名称 */}
-      <div className="flex items-center gap-3 font-mono text-[11px] tracking-wider text-grey">
+      <div className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
         <Link
           href={work.source === "awesome" ? "/awesome" : "/works"}
-          className="shrink-0 hover:text-paper"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
         >
-          ← {t(locale, work.source === "awesome" ? "nav.awesome" : "nav.works")}
+          <ArrowLeft size={13} aria-hidden="true" />
+          {t(locale, work.source === "awesome" ? "nav.awesome" : "nav.works")}
         </Link>
         <span className="truncate">{work.name}</span>
       </div>
@@ -180,7 +186,12 @@ export default async function WorkPage({
         {work.imageKeys.length > 0 ? (
           <WorkGallery keys={work.imageKeys} name={work.name} />
         ) : (
-          <WorkScreenshot url={work.screenshotUrl} name={work.name} />
+          <WorkScreenshot
+            url={work.screenshotUrl}
+            name={work.name}
+            logoUrl={work.logoKey ? mediaUrl(work.logoKey) : ""}
+            kindLabel={workKindLabel(work.kind, locale === "zh")}
+          />
         )}
       </div>
 
@@ -245,7 +256,7 @@ export default async function WorkPage({
               {work.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="border border-line px-1.5 py-px font-mono text-[10px] text-grey"
+                  className="rounded-md border border-line px-1.5 py-px font-mono text-[10px] text-grey"
                 >
                   {tag}
                 </span>
@@ -262,7 +273,7 @@ export default async function WorkPage({
             {work.handle ? (
               <Link
                 href={`/u/${work.handle}`}
-                className="mt-3 flex items-center gap-3 border border-line p-3 transition-colors hover:border-blue"
+                className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-bg/40 p-3 transition-colors hover:border-blue"
               >
                 <Avatar
                   url={work.avatarUrl}
@@ -276,7 +287,7 @@ export default async function WorkPage({
                   </span>
                   {claimBadge !== null && (
                     <span
-                      className="mt-1 inline-block border border-emerald-400/60 px-1.5 py-px font-mono text-[10px] text-emerald-400"
+                      className="mt-1 inline-block rounded-md border border-blue/60 px-1.5 py-px font-mono text-[10px] text-blue"
                       title={t(locale, "works.badgeTitle")}
                     >
                       {t(locale, "works.badge", {
@@ -287,7 +298,7 @@ export default async function WorkPage({
                 </span>
               </Link>
             ) : (
-              <p className="mt-3 border border-line p-3 text-sm text-grey">
+              <p className="mt-3 rounded-xl border border-line bg-bg/40 p-3 text-sm text-grey">
                 {work.authorLabel}
               </p>
             )}
@@ -398,15 +409,16 @@ export default async function WorkPage({
           </div>
         </aside>
       </div>
+      </article>
 
       {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删) */}
-      <section>
-        <h2 id="comments" className="mt-12 font-mono text-sm text-grey">
+      <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
+        <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
           {t(locale, "works.discuss")} ·{" "}
           {t(locale, "post.comments", { n: comments.total })}
         </h2>
         {comments.nodes.length === 0 ? (
-          <p className="mt-6 text-sm text-grey">
+          <p className="mt-5 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
             {t(locale, "works.noComments")}
           </p>
         ) : (
@@ -426,7 +438,7 @@ export default async function WorkPage({
         {user ? (
           <WorkCommentForm workId={workId} locale={locale} />
         ) : (
-          <p className="mt-8 border-t border-line pt-6 text-sm text-grey">
+          <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
             {t(locale, "post.loginToComment")}
             <a
               href="/api/auth/github"

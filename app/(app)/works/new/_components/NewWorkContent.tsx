@@ -20,13 +20,13 @@ export default async function NewWorkContent({
 
   if (!user) {
     return (
-      <div>
+      <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
         {showTitle && (
           <h1 className="font-mono text-lg font-semibold">
             {t(locale, "works.newTitle")}
           </h1>
         )}
-        <p className="mt-8 text-sm text-grey">
+        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
           {t(locale, "works.loginRequired")}
           <a
             href="/api/auth/github"
@@ -48,7 +48,7 @@ export default async function NewWorkContent({
   const allowance = await getClaimAllowance(user.id);
 
   return (
-    <div>
+    <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
         <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
           <SquarePen size={17} />

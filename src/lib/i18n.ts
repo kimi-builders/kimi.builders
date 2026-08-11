@@ -558,6 +558,8 @@ const DICT = {
   "works.emptyQuota": { zh: "可声明额度 {n}", en: "Claimable {n}" },
   "works.statWorks": { zh: "上架作品", en: "works" },
   "works.statAuthors": { zh: "作者", en: "authors" },
+  "works.clearFilters": { zh: "清除筛选", en: "Clear filters" },
+  "works.removeFilter": { zh: "移除筛选 {name}", en: "Remove filter {name}" },
   "works.statClaimed": { zh: "声明投入 ⚡", en: "claimed ⚡" },
   "works.statWeeklyNew": { zh: "本周新上架", en: "new this week" },
   "works.statsTitle": { zh: "作品统计", en: "WORKS STATS" },

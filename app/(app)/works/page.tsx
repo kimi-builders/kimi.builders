@@ -110,7 +110,7 @@ export default async function WorksPage({
         <WorksFilterBar
           basePath="/works"
           preservedQuery={preservedQuery}
-          zh={zh}
+          locale={locale}
           filters={[
             {
               key: "agent",

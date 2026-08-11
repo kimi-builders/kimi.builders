@@ -48,7 +48,7 @@ export default function AgentIcon({
   if (id === "kimi" || id === "kimi-code") {
     return (
       <span
-        className="inline-flex shrink-0 items-center justify-center bg-[#1A1A1A]"
+        className="inline-flex shrink-0 items-center justify-center rounded-md bg-grey"
         style={{ width: size + 5, height: size + 5 }}
       >
         <Icon size={size} />

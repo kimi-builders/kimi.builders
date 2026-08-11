@@ -116,7 +116,7 @@ export default async function AwesomePage({
         <WorksFilterBar
           basePath="/awesome"
           preservedQuery={preservedQuery}
-          zh={zh}
+          locale={locale}
           filters={[
             {
               key: "agent",

@@ -41,19 +41,19 @@ export default function WorkCommentForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-8 space-y-3">
+    <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl border border-line bg-bg/40 p-3 sm:p-4">
       <input type="hidden" name="work_id" value={workId} />
       <textarea
         name="body"
         rows={3}
         required
         placeholder={t(locale, "post.commentPh")}
-        className="w-full border border-line bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none"
+        className="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
       />
       <button
         type="submit"
         disabled={posting}
-        className="border border-blue px-5 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
+        className="rounded-lg bg-blue px-5 py-2 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         {posting ? t(locale, "post.submitting") : t(locale, "post.comment")}
       </button>

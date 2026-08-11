@@ -26,7 +26,7 @@ import type { WorkFormState } from "../actions";
 import WorkMediaFields, { type MediaRef } from "./WorkMediaFields";
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:shadow-[0_0_0_3px_rgb(26_136_255/0.15)]";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
 const labelCls = "mb-1.5 block text-[11.5px] text-grey";
 const chipCls =
   "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-bg px-2.5 py-1.5 text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper has-checked:border-blue has-checked:bg-blue/10 has-checked:text-blue";
@@ -145,7 +145,7 @@ export default function WorkForm({
         ))}
       </div>
       {kind === "awesome" && (
-        <p className="rounded-lg border border-dashed border-amber-400/40 bg-amber-400/5 px-3 py-2 text-[11px] leading-relaxed text-grey">
+        <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-[11px] leading-relaxed text-grey">
           {t(locale, "awesome.rulesBody")}
         </p>
       )}
