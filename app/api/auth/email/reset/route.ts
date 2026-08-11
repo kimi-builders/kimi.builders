@@ -3,6 +3,7 @@
    种会话 cookie 按既有登录成功行为跳 /community。
    失败一律回 /login?mode=reset&token=…&error=<code>;同源校验 + IP 限速(10 次/小时)。 */
 import { NextRequest, NextResponse } from "next/server";
+import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { hashPassword, passwordPolicyError } from "@/src/lib/auth/password";
 import { consumePasswordResetToken } from "@/src/lib/auth/password-reset";
 import { setSessionCookie } from "@/src/lib/auth/session";
@@ -11,7 +12,7 @@ import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
 
 function back(req: NextRequest, code: string, token: string): NextResponse {
-  const url = new URL("/login", req.url);
+  const url = new URL("/login", canonicalOrigin(req));
   url.searchParams.set("mode", "reset");
   url.searchParams.set("error", code);
   if (token) url.searchParams.set("token", token);
@@ -43,5 +44,5 @@ export async function POST(req: NextRequest) {
 
   await setUserPassword(userId, await hashPassword(password));
   await setSessionCookie(userId);
-  return NextResponse.redirect(new URL("/community", req.url), 303);
+  return NextResponse.redirect(new URL("/community", canonicalOrigin(req)), 303);
 }

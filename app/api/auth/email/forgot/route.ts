@@ -13,7 +13,7 @@ import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
 
 function back(req: NextRequest, params: Record<string, string>): NextResponse {
-  const url = new URL("/login", req.url);
+  const url = new URL("/login", canonicalOrigin(req));
   url.searchParams.set("mode", "forgot");
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return NextResponse.redirect(url, 303);

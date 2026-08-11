@@ -2,6 +2,7 @@
    表单 POST(urlencoded);同源校验 + IP 限速;成功种会话并回跳。
    失败一律回 /login?mode=register&error=<code>,不写明文原因到日志外渠道。 */
 import { NextRequest, NextResponse } from "next/server";
+import { canonicalOrigin } from "@/src/lib/auth/origin";
 import {
   hashPassword,
   isValidEmail,
@@ -15,7 +16,7 @@ import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
 
 function back(req: NextRequest, code: string): NextResponse {
-  const url = new URL("/login", req.url);
+  const url = new URL("/login", canonicalOrigin(req));
   url.searchParams.set("mode", "register");
   url.searchParams.set("error", code);
   const next = new URL(req.url).searchParams.get("next");
@@ -50,5 +51,5 @@ export async function POST(req: NextRequest) {
   await setSessionCookie(uid);
 
   const next = safeReturnTo(new URL(req.url).searchParams.get("next"));
-  return NextResponse.redirect(new URL(next === "/" ? "/community" : next, req.url), 303);
+  return NextResponse.redirect(new URL(next === "/" ? "/community" : next, canonicalOrigin(req)), 303);
 }

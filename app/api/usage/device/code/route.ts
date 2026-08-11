@@ -1,4 +1,5 @@
 import { createDeviceAuthorization } from "@/src/lib/usage/device";
+import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { noStoreJson } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
 import {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
       throw new UsageRequestError("invalid_payload", "Request body must be an object.");
     }
     const result = await createDeviceAuthorization(body as Record<string, unknown>);
-    const origin = new URL(request.url).origin;
+    const origin = canonicalOrigin(request);
     const verificationUri = `${origin}/usage/device`;
     return noStoreJson(
       {

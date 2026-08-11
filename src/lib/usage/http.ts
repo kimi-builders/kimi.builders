@@ -1,8 +1,11 @@
+import { canonicalOrigin } from "@/src/lib/auth/origin";
+
 export function isSameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
-    return new URL(origin).origin === new URL(request.url).origin;
+    /* 与站点 canonical origin 比对:生产在反代后,request.url 是内网地址 */
+    return new URL(origin).origin === canonicalOrigin(request);
   } catch {
     return false;
   }
