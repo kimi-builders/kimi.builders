@@ -2,6 +2,7 @@ import { Ecc, QrCode } from "@rc-component/qrcode/es/libs/qrcodegen";
 import { generatePath } from "@rc-component/qrcode/es/utils";
 import type { UsageShareFlow, UsageShareSnapshot } from "@/src/lib/usage/share";
 import { TOOL_GLYPHS } from "./tool-glyphs";
+import { MODEL_GLYPHS, modelGlyphId } from "./model-glyphs";
 
 export const USAGE_SHARE_POSTER_SIZE = { width: 1080, height: 1440 } as const;
 
@@ -53,9 +54,13 @@ function safeMetric(value: string, maximum = 24): string {
   return value.length > maximum ? `${value.slice(0, maximum - 1)}…` : value;
 }
 
-function spanText(span: { from: string; to: string }): string {
+function spanText(span: { from: string; to: string }, zh: boolean): string {
   const [fromYear, fromMonth] = span.from.split("-").map(Number);
   const [toYear, toMonth] = span.to.split("-").map(Number);
+  /* zh 不用英文月名:2025.11 — 2026.08 */
+  if (zh) {
+    return `${fromYear}.${String(fromMonth).padStart(2, "0")} — ${toYear}.${String(toMonth).padStart(2, "0")}`;
+  }
   const from = MONTHS[(fromMonth || 1) - 1] ?? "—";
   const to = MONTHS[(toMonth || 1) - 1] ?? "—";
   return fromYear === toYear
@@ -86,7 +91,7 @@ function Eyebrow({ left, right }: { left: string; right?: string }) {
   );
 }
 
-function FlowSankey({ flow }: { flow: UsageShareFlow }) {
+function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
   const height = 168;
   const anchor = Math.max(flow.cacheReadTokens, flow.inputTokens, flow.outputTokens, flow.reasoningTokens, 1);
   const inputHeight = flowHeight(flow.inputTokens, anchor, 58, 14);
@@ -112,27 +117,33 @@ function FlowSankey({ flow }: { flow: UsageShareFlow }) {
         <rect x="0" y={inputTop} width="40" height="4" fill={palette.blueBright} />
       </svg>
       <div style={{ display: "flex", position: "absolute", left: 0, top: 0, flexDirection: "column" }}>
-        <div style={{ display: "flex", color: palette.muted, fontSize: 13, letterSpacing: 2 }}>INPUT</div>
+        <div style={{ display: "flex", color: palette.muted, fontSize: 13, letterSpacing: 2 }}>
+          {zh ? "输入" : "INPUT"}
+        </div>
         <div style={{ display: "flex", marginTop: 4, color: palette.paper, fontSize: 19, fontWeight: 700 }}>
           {compact(flow.inputTokens)}
         </div>
       </div>
       <div style={{ display: "flex", position: "absolute", left: 222, top: 84, flexDirection: "column" }}>
         <div style={{ display: "flex", color: palette.greenInk, fontSize: 14, fontWeight: 700, letterSpacing: 3 }}>
-          CACHE READ
+          {zh ? "缓存读" : "CACHE READ"}
         </div>
         <div style={{ display: "flex", marginTop: 3, color: palette.greenInk, fontSize: 34, fontWeight: 800 }}>
           {compact(flow.cacheReadTokens)}
         </div>
       </div>
       <div style={{ display: "flex", position: "absolute", right: 0, top: 22, flexDirection: "column", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", color: palette.muted, fontSize: 13, letterSpacing: 2 }}>OUTPUT</div>
+        <div style={{ display: "flex", color: palette.muted, fontSize: 13, letterSpacing: 2 }}>
+          {zh ? "输出" : "OUTPUT"}
+        </div>
         <div style={{ display: "flex", marginTop: 3, color: palette.blueBright, fontSize: 19, fontWeight: 700 }}>
           {compact(flow.outputTokens)}
         </div>
       </div>
       <div style={{ display: "flex", position: "absolute", right: 0, top: 96, flexDirection: "column", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", color: palette.muted, fontSize: 13, letterSpacing: 2 }}>REASONING</div>
+        <div style={{ display: "flex", color: palette.muted, fontSize: 13, letterSpacing: 2 }}>
+          {zh ? "推理" : "REASONING"}
+        </div>
         <div style={{ display: "flex", marginTop: 3, color: palette.amber, fontSize: 19, fontWeight: 700 }}>
           {compact(flow.reasoningTokens)}
         </div>
@@ -636,82 +647,113 @@ function ToolIcon({ id, label }: { id: string; label: string }) {
   );
 }
 
-/* 武器库:TOP 5 Agent + 主力模型 + 推理强度。 */
+/* 主力模型厂商字形:按型号名归族(model-glyphs.ts),未命中则不渲染图标。 */
+function ModelGlyph({ label }: { label: string }) {
+  const id = modelGlyphId(label);
+  const glyph = id ? MODEL_GLYPHS[id] : undefined;
+  if (!glyph) return null;
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={palette.paper} fillRule="evenodd" clipRule="evenodd">
+      {glyph.paths.map((d) => (
+        <path key={d.slice(0, 24)} d={d} />
+      ))}
+    </svg>
+  );
+}
+
+/* 武器库:eyebrow 行 / TOP 5 Agent 行 / 主力模型 + 推理强度 meta 行。 */
 function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const zh = snapshot.zh;
   const tools = snapshot.topTools;
   const maximum = Math.max(1, ...tools.map((tool) => tool.tokens));
+  const hasModelGlyph = modelGlyphId(snapshot.topModel) !== null;
+  const hasEffort = snapshot.topEffort !== "" && snapshot.topEffort !== "未记录" && snapshot.topEffort !== "—";
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <Eyebrow
-        left="TOP AGENTS"
-        right={zh ? `共 ${snapshot.toolCount} 个 · BY TOKENS` : `${snapshot.toolCount} IN USE · BY TOKENS`}
+        left={zh ? "常用 AGENT" : "TOP AGENTS"}
+        right={zh ? `共 ${snapshot.toolCount} 个 · 按 TOKEN` : `${snapshot.toolCount} IN USE · BY TOKENS`}
       />
       <div style={{ display: "flex", marginTop: 16 }}>
-        <div style={{ display: "flex", flex: 1, minWidth: 0 }}>
-          {tools.map((tool, index) => (
-            <div key={tool.id} style={{ display: "flex", flex: 1, minWidth: 0 }}>
-              {index > 0 ? <div style={{ display: "flex", width: 1, background: palette.line }} /> : null}
-              <div
-                style={{
-                  display: "flex",
-                  flex: 1,
-                  minWidth: 0,
-                  flexDirection: "column",
-                  paddingLeft: index === 0 ? 0 : 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <ToolIcon id={tool.id} label={tool.label} />
-                  <div style={{ display: "flex", marginLeft: 10, flexDirection: "column" }}>
-                    <div style={{ display: "flex", fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>
-                      {safeMetric(tool.label, 12)}
-                    </div>
-                    <div style={{ display: "flex", marginTop: 4, color: palette.muted, fontSize: 12 }}>
-                      {compact(tool.tokens)} · {(tool.share * 100).toFixed(0)}%
-                    </div>
+        {tools.map((tool, index) => (
+          <div key={tool.id} style={{ display: "flex", flex: 1, minWidth: 0 }}>
+            {index > 0 ? <div style={{ display: "flex", width: 1, background: palette.line }} /> : null}
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                minWidth: 0,
+                flexDirection: "column",
+                paddingLeft: index === 0 ? 0 : 16,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <ToolIcon id={tool.id} label={tool.label} />
+                <div style={{ display: "flex", marginLeft: 10, flexDirection: "column" }}>
+                  <div style={{ display: "flex", fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>
+                    {safeMetric(tool.label, 12)}
+                  </div>
+                  <div style={{ display: "flex", marginTop: 4, color: palette.muted, fontSize: 12 }}>
+                    {compact(tool.tokens)} · {(tool.share * 100).toFixed(0)}%
                   </div>
                 </div>
-                <div style={{ display: "flex", marginTop: 10, height: 3, background: "#11151a" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      width: `${Math.max(4, (tool.tokens / maximum) * 100)}%`,
-                      background: index === 0 ? palette.green : palette.blue,
-                    }}
-                  />
-                </div>
+              </div>
+              <div style={{ display: "flex", marginTop: 10, height: 3, background: "#11151a" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    width: `${Math.max(4, (tool.tokens / maximum) * 100)}%`,
+                    background: index === 0 ? palette.green : palette.blue,
+                  }}
+                />
               </div>
             </div>
-          ))}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            width: 196,
-            marginLeft: 24,
-            flexDirection: "column",
-            borderLeft: `1px solid ${palette.line}`,
-            paddingLeft: 22,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", color: palette.muted, fontSize: 12, letterSpacing: 1.5 }}>
-              {zh ? "主力模型 TOP MODEL" : "TOP MODEL"}
-            </div>
-            <div style={{ display: "flex", marginTop: 8, fontSize: 19, fontWeight: 700, whiteSpace: "nowrap" }}>
-              {safeMetric(snapshot.topModel, 16)}
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          marginTop: 16,
+          borderTop: `1px solid ${palette.line}`,
+          paddingTop: 16,
+          alignItems: "center",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", color: palette.muted, fontSize: 12, letterSpacing: 1.5 }}>
+            {zh ? "主力模型" : "TOP MODEL"}
+          </div>
+          <div style={{ display: "flex", marginTop: 8, alignItems: "center" }}>
+            {hasModelGlyph ? <ModelGlyph label={snapshot.topModel} /> : null}
+            <div
+              style={{
+                display: "flex",
+                marginLeft: hasModelGlyph ? 10 : 0,
+                fontSize: 19,
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {safeMetric(snapshot.topModel, 20)}
             </div>
           </div>
-          <div style={{ display: "flex", marginTop: 14, flexDirection: "column" }}>
-            <div style={{ display: "flex", color: palette.muted, fontSize: 12, letterSpacing: 1.5 }}>
-              {zh ? "推理强度 EFFORT" : "EFFORT"}
-            </div>
-            <div
-              style={{ display: "flex", marginTop: 8, fontSize: 19, fontWeight: 700, color: palette.amber, whiteSpace: "nowrap" }}
-            >
-              {effortShort(snapshot.topEffort)}
-            </div>
+        </div>
+        <div style={{ display: "flex", marginLeft: "auto", flexDirection: "column", alignItems: "flex-end" }}>
+          <div style={{ display: "flex", color: palette.muted, fontSize: 12, letterSpacing: 1.5 }}>
+            {zh ? "推理强度" : "EFFORT"}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 8,
+              fontSize: 19,
+              fontWeight: 700,
+              color: hasEffort ? palette.amber : palette.muted,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {hasEffort ? effortShort(snapshot.topEffort) : "—"}
           </div>
         </div>
       </div>
@@ -719,13 +761,13 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
   );
 }
 
-function UsageQrCode() {
+function UsageQrCode({ url }: { url: string }) {
   const margin = 1;
-  const qr = QrCode.encodeText("https://kimi.builders/usage", Ecc.MEDIUM);
+  const qr = QrCode.encodeText(url, Ecc.MEDIUM);
   const modules = qr.getModules();
   const size = modules.length + margin * 2;
   return (
-    <svg width="104" height="104" viewBox={`0 0 ${size} ${size}`} role="img" aria-label="kimi.builders/usage QR code">
+    <svg width="104" height="104" viewBox={`0 0 ${size} ${size}`} role="img" aria-label="poster target QR code">
       <path fill="#ffffff" d={`M0,0 h${size}v${size}H0z`} shapeRendering="crispEdges" />
       <path fill="#050607" d={generatePath(modules, margin)} shapeRendering="crispEdges" />
     </svg>
@@ -746,6 +788,8 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
     : snapshot.streakWeeks.current > 0
       ? "WEEK STREAK"
       : "LONGEST STREAK";
+  /* 展示地址:去协议与 query、全大写、品牌蓝(QR 仍指完整 siteUrl)。 */
+  const siteUrlDisplay = snapshot.siteUrl.replace("https://", "").replace("?tab=usage", "").toUpperCase();
   return (
     <div
       style={{
@@ -759,11 +803,12 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         fontFamily: "monospace",
       }}
     >
-      {/* 身份带:站点品牌 + 用户社交信息同区置顶 */}
+      {/* 身份带:站点品牌 + 用户社交信息同区置顶;字号/色阶一套 ramp
+          (品牌 22/700·名称 24/700·正文 15·标签 13 muted ls2) */}
       <div style={{ display: "flex", flexDirection: "column", borderBottom: `1px solid ${palette.line}`, paddingBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", fontSize: 22, fontWeight: 700, letterSpacing: 5 }}>
-            kimi.builders <span style={{ display: "flex", marginLeft: 16, color: palette.muted }}>/ USAGE</span>
+          <div style={{ display: "flex", alignItems: "center", fontSize: 22, fontWeight: 700, letterSpacing: 4 }}>
+            KIMI.BUILDERS <span style={{ display: "flex", marginLeft: 14, color: palette.blueBright }}>/ USAGE</span>
           </div>
           <div style={{ display: "flex", alignItems: "center" }}>
             <div style={{ display: "flex", color: palette.muted, fontSize: 15, letterSpacing: 3 }}>TOKEN X-RAY</div>
@@ -781,29 +826,38 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", marginTop: 20, alignItems: "center" }}>
+        <div style={{ display: "flex", marginTop: 22, alignItems: "center" }}>
           <div
             style={{
               display: "flex",
-              width: 54,
-              height: 54,
-              borderRadius: 27,
+              width: 64,
+              height: 64,
+              borderRadius: 32,
               alignItems: "center",
               justifyContent: "center",
               background: palette.green,
               color: palette.greenInk,
-              fontSize: 20,
+              fontSize: 23,
               fontWeight: 800,
             }}
           >
             {snapshot.user.initials}
           </div>
-          <div style={{ display: "flex", marginLeft: 16, flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 22, fontWeight: 700 }}>{safeMetric(snapshot.user.name, 32)}</div>
-            <div style={{ display: "flex", marginTop: 6, alignItems: "center" }}>
-              <div style={{ display: "flex", color: palette.muted, fontSize: 16 }}>@{snapshot.user.handle}</div>
-              <div style={{ display: "flex", marginLeft: 14, color: palette.blueBright, fontSize: 14, letterSpacing: 1 }}>
-                kimi.builders/usage
+          <div style={{ display: "flex", marginLeft: 18, flexDirection: "column" }}>
+            <div style={{ display: "flex", fontSize: 24, fontWeight: 700 }}>{safeMetric(snapshot.user.name, 32)}</div>
+            <div style={{ display: "flex", marginTop: 7, alignItems: "center" }}>
+              <div style={{ display: "flex", color: palette.muted, fontSize: 15 }}>@{snapshot.user.handle}</div>
+              <div
+                style={{
+                  display: "flex",
+                  marginLeft: 14,
+                  color: palette.blueBright,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                }}
+              >
+                {siteUrlDisplay}
               </div>
             </div>
           </div>
@@ -822,7 +876,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
             <div style={{ display: "flex", width: 1, height: 50, margin: "0 26px", background: palette.line }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
               <div style={{ display: "flex", fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>
-                {spanText(snapshot.span)}
+                {spanText(snapshot.span, zh)}
               </div>
               <div style={{ display: "flex", marginTop: 5, color: palette.muted, fontSize: 13, letterSpacing: 2 }}>
                 {zh ? "数据起止 SPAN" : "DATA SPAN"}
@@ -887,11 +941,11 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         }}
       >
         <Eyebrow
-          left="TOKEN FLOW"
+          left={zh ? "TOKEN 流向" : "TOKEN FLOW"}
           right={zh ? "对数带宽 · 输入 → 上下文 → 输出" : "LOG BANDWIDTH · INPUT → CONTEXT → OUTPUT"}
         />
         <div style={{ display: "flex", marginTop: 10 }}>
-          <FlowSankey flow={snapshot.flow} />
+          <FlowSankey flow={snapshot.flow} zh={zh} />
         </div>
       </div>
 
@@ -940,15 +994,17 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         <ArsenalRow snapshot={snapshot} />
       </div>
 
+      {/* 页脚:与顶部同一套 ramp(20/700 主行 · 14 muted 副行 · 13 muted 注记);
+          QR 与展示地址同目标(公开成员落到个人主页用量 tab) */}
       <div style={{ display: "flex", marginTop: 20, alignItems: "center" }}>
         <div style={{ display: "flex", padding: 8, background: "#ffffff" }}>
-          <UsageQrCode />
+          <UsageQrCode url={snapshot.siteUrl} />
         </div>
         <div style={{ display: "flex", marginLeft: 24, flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: 21, fontWeight: 700 }}>
+          <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>
             @{snapshot.user.handle} · {zh ? snapshot.rangeLabel : snapshot.rangeLabelEn} · {snapshot.generatedDate}
           </div>
-          <div style={{ display: "flex", marginTop: 10, color: palette.muted, fontSize: 15 }}>
+          <div style={{ display: "flex", marginTop: 10, color: palette.muted, fontSize: 14 }}>
             {zh ? "扫码看实时用量看板" : "Scan for the live dashboard"}
           </div>
         </div>
@@ -959,14 +1015,17 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
             flexDirection: "column",
             alignItems: "flex-end",
             color: palette.muted,
-            fontSize: 14,
-            lineHeight: 1.7,
+            fontSize: 13,
+            letterSpacing: 1,
+            lineHeight: 1.8,
           }}
         >
-          <span style={{ display: "flex" }}>STANDARD API PRICE ESTIMATE</span>
-          <span style={{ display: "flex" }}>PRIVATE LOCAL SYNC · NO CONTENT</span>
+          <span style={{ display: "flex" }}>{zh ? "标准 API 计价估算" : "STANDARD API PRICE ESTIMATE"}</span>
+          <span style={{ display: "flex" }}>{zh ? "本地私密同步 · 不含对话内容" : "PRIVATE LOCAL SYNC · NO CONTENT"}</span>
           <span style={{ display: "flex" }}>
-            LEVERAGE ×{snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = TOTAL ÷ FRESH INPUT
+            {zh
+              ? `杠杆 ×${snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = 总量 ÷ 新鲜输入`
+              : `LEVERAGE ×${snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = TOTAL ÷ FRESH INPUT`}
           </span>
         </div>
       </div>

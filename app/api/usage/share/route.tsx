@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
           uploadProject: settings.uploadProject,
           retentionDays: settings.retentionDays,
           zh,
+          publicProfile: settings.showOnLeaderboard,
         });
       })();
 

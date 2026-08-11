@@ -46,6 +46,8 @@ export interface UsageShareSnapshot {
   range: UsageShareRange;
   /* 导出界面语言:zh 可中英混搭,en 纯英文(构建期按它出文案)。 */
   zh: boolean;
+  /* 海报展示地址 + QR 目标:公开成员(参与社区榜)指向个人主页用量 tab,否则 /usage。 */
+  siteUrl: string;
   rangeLabel: string;
   rangeLabelEn: string;
   generatedDate: string;
@@ -359,6 +361,8 @@ export async function getUsageShareSnapshot(input: {
   retentionDays: number;
   /* 海报语言:zh 可中英混搭,en 纯英文;默认 zh。 */
   zh?: boolean;
+  /* 参与社区榜(show_on_leaderboard)成员:海报地址指向公开的个人主页用量 tab。 */
+  publicProfile?: boolean;
   now?: Date;
 }): Promise<UsageShareSnapshot> {
   const now = input.now ?? new Date();
@@ -457,7 +461,7 @@ export async function getUsageShareSnapshot(input: {
   const main: UsageShareSnapshot["main"] = isHours
     ? {
         kind: "hours",
-        eyebrow: "BUILD PULSE",
+        eyebrow: zh ? "构建脉冲" : "BUILD PULSE",
         headline: zh
           ? input.range === "today"
             ? "今日构建脉冲"
@@ -475,7 +479,7 @@ export async function getUsageShareSnapshot(input: {
     : isWeekheat
       ? {
           kind: "weekheat",
-          eyebrow: "7-DAY ACTIVE SLOTS",
+          eyebrow: zh ? "7 天活跃时段" : "7-DAY ACTIVE SLOTS",
           headline: zh
             ? `${dayRun.current || dayRun.longest} 天连续构建`
             : `${dayRun.current || dayRun.longest}-DAY STREAK`,
@@ -489,7 +493,7 @@ export async function getUsageShareSnapshot(input: {
       : isStacked
         ? {
             kind: "stacked",
-            eyebrow: "30-DAY TOKEN MIX",
+            eyebrow: zh ? "30 天 TOKEN 构成" : "30-DAY TOKEN MIX",
             headline:
               usageCacheHitRate(overview.totals) === null
                 ? zh
@@ -507,7 +511,13 @@ export async function getUsageShareSnapshot(input: {
           }
         : {
             kind: "calendar",
-            eyebrow: input.range === "90d" ? "90-DAY FOOTPRINT" : "6-MONTH FOOTPRINT",
+            eyebrow: zh
+              ? input.range === "90d"
+                ? "90 天构建足迹"
+                : "半年构建足迹"
+              : input.range === "90d"
+                ? "90-DAY FOOTPRINT"
+                : "6-MONTH FOOTPRINT",
             headline: zh
               ? `${weekRun.current || weekRun.longest} 周连续构建`
               : `${weekRun.current || weekRun.longest}-WEEK STREAK`,
@@ -526,6 +536,9 @@ export async function getUsageShareSnapshot(input: {
   return {
     range: input.range,
     zh,
+    siteUrl: input.publicProfile
+      ? `https://kimi.builders/u/${input.user.handle}?tab=usage`
+      : "https://kimi.builders/usage",
     rangeLabel: labels.zh,
     rangeLabelEn: labels.en,
     generatedDate: today,
@@ -638,7 +651,7 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
   const main: UsageShareSnapshot["main"] = isHours
     ? {
         kind: "hours",
-        eyebrow: "BUILD PULSE",
+        eyebrow: zh ? "构建脉冲" : "BUILD PULSE",
         headline: zh
           ? range === "today"
             ? "今日构建脉冲"
@@ -654,7 +667,7 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
     : isWeekheat
       ? {
           kind: "weekheat",
-          eyebrow: "7-DAY ACTIVE SLOTS",
+          eyebrow: zh ? "7 天活跃时段" : "7-DAY ACTIVE SLOTS",
           headline: zh ? `${dayStreak.current} 天连续构建` : `${dayStreak.current}-DAY STREAK`,
           subline: zh ? "峰值时段 周三 14–15 时" : "PEAK WED 14:00",
           columns: 24,
@@ -665,7 +678,7 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
       : isStacked
         ? {
             kind: "stacked",
-            eyebrow: "30-DAY TOKEN MIX",
+            eyebrow: zh ? "30 天 TOKEN 构成" : "30-DAY TOKEN MIX",
             headline: zh ? `缓存命中 ${(cacheHitRate * 100).toFixed(1)}%` : `CACHE HIT ${(cacheHitRate * 100).toFixed(1)}%`,
             subline: zh
               ? "每柱一天 · 输入 / 缓存读 / 输出 / 推理 堆叠"
@@ -676,7 +689,13 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
           }
         : {
             kind: "calendar",
-            eyebrow: range === "90d" ? "90-DAY FOOTPRINT" : "6-MONTH FOOTPRINT",
+            eyebrow: zh
+              ? range === "90d"
+                ? "90 天构建足迹"
+                : "半年构建足迹"
+              : range === "90d"
+                ? "90-DAY FOOTPRINT"
+                : "6-MONTH FOOTPRINT",
             headline: zh ? `${weekStreak.current} 周连续构建` : `${weekStreak.current}-WEEK STREAK`,
             subline: zh
               ? `最长连续 ${weekStreak.longest} 周 · 每格代表一天`
@@ -688,6 +707,7 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
   return {
     range,
     zh,
+    siteUrl: "https://kimi.builders/u/aklman?tab=usage",
     rangeLabel: labels.zh,
     rangeLabelEn: labels.en,
     generatedDate: today,

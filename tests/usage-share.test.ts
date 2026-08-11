@@ -38,7 +38,7 @@ test("share snapshots keep one shell while adapting the activity story", () => {
   /* 贡献图跨度:90D = 13 个自然周(3 个月),ALL = 26 周(半年封顶)。 */
   assert.equal(quarter.main.cells.length, 13 * 7);
   assert.equal(all.main.cells.length, 26 * 7);
-  assert.match(month.main.eyebrow, /30-DAY/);
+  assert.match(month.main.eyebrow, /30 天/);
   assert.match(quarter.main.headline, /^12 周/);
 });
 
@@ -177,11 +177,20 @@ test("poster copy follows the export locale: zh may mix, en stays pure English",
     assert.equal(zhSnap.zh, true, range);
     assert.equal(enSnap.zh, false, range);
     assert.match(zhSnap.main.headline, cjk, `${range} zh headline`);
+    assert.match(zhSnap.main.eyebrow, cjk, `${range} zh eyebrow`);
     assert.doesNotMatch(enSnap.main.headline, cjk, `${range} en headline`);
+    assert.doesNotMatch(enSnap.main.eyebrow, cjk, `${range} en eyebrow`);
     assert.doesNotMatch(enSnap.main.subline, cjk, `${range} en subline`);
     assert.doesNotMatch(enSnap.peakLabel, cjk, `${range} en peakLabel`);
     assert.doesNotMatch(enSnap.topEffort, cjk, `${range} en topEffort`);
   }
+});
+
+test("share snapshots expose the poster target url", () => {
+  const snapshot = mockUsageShareSnapshot("30d");
+  assert.match(snapshot.siteUrl, /^https:\/\/kimi\.builders\//);
+  /* mock 以公开成员身份出图:指向个人主页用量 tab */
+  assert.match(snapshot.siteUrl, /\/u\/[\w-]+\?tab=usage$/);
 });
 
 test("7d weekheat carries a 7×24 grid and hours cells carry stack parts", () => {
