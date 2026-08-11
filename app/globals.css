@@ -217,6 +217,18 @@ html[data-nav="1"] .panel-pair {
   flex-direction: column;
 }
 
+/* 设置页偏好控件(语言 seg / 主题卡)的激活态:跟随 <html> 直出属性,SSR 即正确。
+   类名常量与 components/seg-classes.ts / pref-controls.tsx 的 ThemeCards 同步。 */
+html[lang="zh-CN"] .seg-zh,
+html[lang="en"] .seg-en {
+  background: var(--color-paper);
+  color: var(--color-bg);
+}
+html[data-theme="dark"] .theme-card-dark,
+html[data-theme="light"] .theme-card-light {
+  border-color: var(--color-blue);
+}
+
 /* ---- toast:操作反馈轻提示(Toaster 出口,2.6s 自灭)---- */
 @keyframes kb-toast-in {
   from {

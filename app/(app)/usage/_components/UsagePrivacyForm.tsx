@@ -81,12 +81,17 @@ export default function UsagePrivacyForm({
     });
   }
 
+  const rowCls =
+    "flex cursor-pointer items-start justify-between gap-4 border-b border-line py-4 first:pt-0";
+  const rowTitle = "block text-[13px] font-medium text-paper";
+  const rowHint = "mt-1 block max-w-lg text-xs leading-relaxed text-grey";
+
   return (
-    <form action={submit} aria-busy={pending} className="mt-4">
-      <label className="flex min-h-14 cursor-pointer items-start justify-between gap-4 border-b border-line pb-4">
+    <form action={submit} aria-busy={pending}>
+      <label className={rowCls}>
         <span>
-          <span className="block text-sm text-paper">{zh ? "上传项目目录名" : "Upload project names"}</span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey">
+          <span className={rowTitle}>{zh ? "上传项目目录名" : "Upload project names"}</span>
+          <span className={rowHint}>
             {zh
               ? "仅 basename；关闭后 Collector 的 payload 中不会出现 project 字段。"
               : "Basename only; when off, project is absent from collector payloads."}
@@ -103,10 +108,10 @@ export default function UsagePrivacyForm({
           }}
         />
       </label>
-      <label className="mt-4 flex min-h-14 cursor-pointer items-start justify-between gap-4 border-b border-line pb-4">
+      <label className={rowCls}>
         <span>
-          <span className="block text-sm text-paper">{t(locale, "lb.optin")}</span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey">
+          <span className={rowTitle}>{t(locale, "lb.optin")}</span>
+          <span className={rowHint}>
             {t(locale, "lb.optinHint")}
           </span>
         </span>

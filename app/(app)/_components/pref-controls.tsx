@@ -18,12 +18,18 @@ import {
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import {
+  SEG_ITEM,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "@/components/seg-classes";
+import {
   saveLocaleAction,
   setLocaleAction,
   setThemeAction,
   toggleNavAction,
   toggleSidebarAction,
 } from "../community/actions";
+import { setLocaleToAction, setThemeToAction } from "../settings/actions";
 
 const YEAR = 365 * 86400;
 
@@ -174,5 +180,89 @@ export function SidebarToggle({
         <span className="nav-label only-sidebar-hidden">{t(locale, "side.show")}</span>
       </button>
     </form>
+  );
+}
+
+/* 语言分段(设置页「偏好」):seg 双键显式选择,激活态走 globals.css 的
+   html[lang] 态类(SSR 首屏即正确);逻辑与 LocaleToggle 同源(cookie +
+   html.lang + refresh + 账号偏好后台写入)。 */
+export function LocaleSeg() {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const pick = (next: "zh" | "en") => (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
+    writeCookie("kb_locale", next);
+    void saveLocaleAction(next);
+    startTransition(() => router.refresh());
+  };
+  return (
+    <div
+      className={`${SEG_WRAP}${pending ? " opacity-50" : ""}`}
+      role="group"
+      aria-label="界面语言 / Interface language"
+    >
+      <form action={setLocaleToAction} className="contents">
+        <button
+          type="submit"
+          name="locale"
+          value="zh"
+          onClick={pick("zh")}
+          className={`${SEG_ITEM} ${SEG_ITEM_IDLE} seg-zh`}
+        >
+          中文
+        </button>
+        <button
+          type="submit"
+          name="locale"
+          value="en"
+          onClick={pick("en")}
+          className={`${SEG_ITEM} ${SEG_ITEM_IDLE} seg-en`}
+        >
+          English
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/* 主题卡片(设置页「偏好」):深/浅两张迷你预览卡,激活态走 globals.css 的
+   html[data-theme] 态类;逻辑同 ThemeToggle(纯客户端 cookie,无网络)。 */
+export function ThemeCards({ locale }: { locale: Locale }) {
+  const pick = (next: "dark" | "light") => (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    document.documentElement.dataset.theme = next;
+    writeCookie("kb_theme", next);
+  };
+  const card =
+    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+  return (
+    <div className="flex flex-wrap gap-3">
+      <form action={setThemeToAction} className="contents">
+        <button type="submit" name="theme" value="dark" onClick={pick("dark")} className={`${card} theme-card-dark`}>
+          <span className="block h-16 rounded-lg border border-line bg-bg p-2.5">
+            <span className="block h-1.5 w-2/3 rounded-full bg-blue" />
+            <span className="mt-2 block h-1.5 w-full rounded-full bg-paper/20" />
+            <span className="mt-1.5 block h-1.5 w-5/6 rounded-full bg-paper/10" />
+          </span>
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+            {t(locale, "set.themeDark")}
+            <span className="rounded border border-line px-1 text-[9px] text-grey">
+              {t(locale, "set.themeDefault")}
+            </span>
+          </span>
+        </button>
+        <button type="submit" name="theme" value="light" onClick={pick("light")} className={`${card} theme-card-light`}>
+          <span className="block h-16 rounded-lg border border-line bg-[#fbfaf9] p-2.5">
+            <span className="block h-1.5 w-2/3 rounded-full bg-blue" />
+            <span className="mt-2 block h-1.5 w-full rounded-full bg-black/20" />
+            <span className="mt-1.5 block h-1.5 w-5/6 rounded-full bg-black/10" />
+          </span>
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+            {t(locale, "set.themeLight")}
+          </span>
+        </button>
+      </form>
+    </div>
   );
 }

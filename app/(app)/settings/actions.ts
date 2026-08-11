@@ -2,10 +2,29 @@
 
 /* 设置页写操作:资料(显示名/handle/简介/头像 URL)与 AI 回复偏好。
    全部先过 session,再做字段校验;handle 唯一性在查询层排除自己。 */
+import { cookies } from "next/headers";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { setUserLocale } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { updateAiPrefs, updateProfile } from "@/src/lib/users";
+
+const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
+
+/* 主题/语言的显式选择(设置页 seg 与主题卡的无 JS 兜底;客户端已乐观翻转,
+   这里只落 cookie;语言同步写账号偏好,与 community/actions 的翻转动作同语义)。 */
+export async function setThemeToAction(formData: FormData): Promise<void> {
+  const store = await cookies();
+  store.set("kb_theme", formData.get("theme") === "light" ? "light" : "dark", PREF_COOKIE);
+}
+
+export async function setLocaleToAction(formData: FormData): Promise<void> {
+  const next = formData.get("locale") === "en" ? "en" : "zh";
+  const store = await cookies();
+  store.set("kb_locale", next, PREF_COOKIE);
+  const user = await getSessionUser();
+  if (user) await setUserLocale(user.id, next);
+}
 
 export interface SettingsState {
   ok?: boolean;
