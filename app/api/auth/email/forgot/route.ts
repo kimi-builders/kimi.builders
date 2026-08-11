@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isValidEmail, normalizeEmail } from "@/src/lib/auth/password";
 import { issuePasswordResetToken } from "@/src/lib/auth/password-reset";
 import { findEmailAccount } from "@/src/lib/auth/users";
+import { renderPasswordResetMail } from "@/src/lib/email-templates";
 import { sendMail } from "@/src/lib/mailer";
 import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
@@ -24,22 +25,6 @@ function siteOrigin(req: NextRequest): string {
   return (process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin).replace(/\/+$/, "");
 }
 
-function resetMailText(resetUrl: string): string {
-  return [
-    "你好 / Hello,",
-    "",
-    "我们收到了重置 kimi.builders 账号密码的请求。打开下面的链接设置新密码(1 小时内有效,只能用一次):",
-    "We received a request to reset your kimi.builders password. Open the link below to choose a new one (valid for 1 hour, single use):",
-    "",
-    resetUrl,
-    "",
-    "如果这不是你的操作,直接忽略本邮件即可,密码不会改变。",
-    "If you didn't request this, just ignore this email — your password stays unchanged.",
-    "",
-    "— kimi.builders",
-  ].join("\n");
-}
-
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return back(req, { error: "invalid_origin" });
   const allowed = await consumeUsageRateLimit({
@@ -56,12 +41,10 @@ export async function POST(req: NextRequest) {
 
   if (account) {
     const token = await issuePasswordResetToken(account.id);
-    const resetUrl = `${siteOrigin(req)}/login/reset?token=${token}`;
-    const sent = await sendMail({
-      to: email,
-      subject: "重置你的 kimi.builders 密码 / Reset your kimi.builders password",
-      text: resetMailText(resetUrl),
-    });
+    const siteUrl = siteOrigin(req);
+    const resetUrl = `${siteUrl}/login/reset?token=${token}`;
+    const mail = renderPasswordResetMail({ resetUrl, siteUrl });
+    const sent = await sendMail({ to: email, ...mail });
     if (!sent.ok) console.error(`forgot password: mail to user ${account.id} failed: ${sent.error}`);
   }
   return back(req, { sent: "1" });

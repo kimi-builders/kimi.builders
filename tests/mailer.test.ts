@@ -76,6 +76,24 @@ test("mailer: 成功路径请求形状(endpoint/Bearer/默认 from/body/超时 s
   }
 });
 
+test("mailer: html 可选透传(传则有、不传则无)", async () => {
+  const restoreEnv = withEnv("RESEND_API_KEY", "re_test_key");
+  const stub = stubFetch(async () => new Response("{}", { status: 200 }));
+  try {
+    await sendMail({ to: "u@example.com", subject: "s", text: "t", html: "<p>品牌版</p>" });
+    const withHtml = JSON.parse(String(stub.calls[0].init?.body));
+    assert.equal(withHtml.html, "<p>品牌版</p>");
+    assert.equal(withHtml.text, "t");
+    await sendMail({ to: "u@example.com", subject: "s", text: "t" });
+    const withoutHtml = JSON.parse(String(stub.calls[1].init?.body));
+    assert.equal(withoutHtml.text, "t");
+    assert.ok(!("html" in withoutHtml));
+  } finally {
+    stub.restore();
+    restoreEnv();
+  }
+});
+
 test("mailer: MAIL_FROM 覆盖默认发件人", async () => {
   const restoreEnv = withEnv("RESEND_API_KEY", "re_test_key");
   const restoreFrom = withEnv("MAIL_FROM", "KB <hello@mail.kimi.builders>");

@@ -12,10 +12,13 @@ export async function sendMail({
   to,
   subject,
   text,
+  html,
 }: {
   to: string;
   subject: string;
   text: string;
+  /* 品牌 HTML(模板见 src/lib/email-templates.ts);text 必填兜底,html 可选 */
+  html?: string;
 }): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "not_configured" };
@@ -31,6 +34,7 @@ export async function sendMail({
         to,
         subject,
         text,
+        ...(html ? { html } : {}),
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
