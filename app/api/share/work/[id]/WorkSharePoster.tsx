@@ -1,16 +1,16 @@
-/* 作品分享海报:品牌行 → 作品名 → tagline → agents 细线 chip
-   → (已声明且不变式满足)声明构建投入 hero → 作者行 → 指标带(支持/评论/发布)→ QR 页脚。
+/* 作品分享海报:共享身份带(作者)→ 作品名 hero → tagline → agents 细线 chip
+   → (已声明且不变式满足)声明构建投入 hero → 指标带(支持/评论/发布)→ 共享 QR 页脚。
    hero 为声明制(20260822_work_claims):数字 = 作者声明的本作品构建投入,
    小字口径 = 作者声明、系统按可验证总量封顶;未声明/超额 = 不渲染。
    lobehub 图标在 Satori 里不可依赖,agents 统一细线描边 mono chip(名字即可)。 */
 import type { WorkShareSnapshot } from "@/src/lib/share-posters";
 import {
-  BrandRow,
-  InitialsCircle,
   MetricBand,
   OutlineChip,
   POSTER_FONT_FAMILY,
+  POSTER_PADDING,
   PosterFooter,
+  PosterHeader,
   compact,
   palette,
 } from "../../poster-kit";
@@ -28,13 +28,21 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
         flexDirection: "column",
         background: palette.background,
         color: palette.paper,
-        padding: "52px 58px 46px",
+        padding: POSTER_PADDING,
         fontFamily: POSTER_FONT_FAMILY,
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", borderBottom: `1px solid ${palette.line}`, paddingBottom: 34 }}>
-        <BrandRow section="WORKS" right="BUILDER MADE" />
-        <div style={{ display: "flex", marginTop: 38, fontSize: nameSize, fontWeight: 800, lineHeight: 1.2 }}>
+      <PosterHeader
+        section="WORKS"
+        eyebrow="BUILDER MADE"
+        initials={s.author.initials}
+        name={s.author.name}
+        handle={s.author.handle}
+        linkLabel={s.author.handle ? `kimi.builders/u/${s.author.handle}` : undefined}
+      />
+
+      <main style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column", justifyContent: "center", padding: "30px 0 28px" }}>
+        <div style={{ display: "flex", fontSize: nameSize, fontWeight: 800, lineHeight: 1.2 }}>
           {s.name}
         </div>
         {s.tagline && (
@@ -62,20 +70,8 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
             </div>
           </div>
         )}
-      </header>
-
-      <main style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column", justifyContent: "center", padding: "30px 0 28px" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <InitialsCircle initials={s.author.initials} />
-          <div style={{ display: "flex", marginLeft: 20, flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 25, fontWeight: 700 }}>{s.author.name}</div>
-            {s.author.handle && (
-              <div style={{ display: "flex", marginTop: 6, color: palette.muted, fontSize: 19 }}>@{s.author.handle}</div>
-            )}
-          </div>
-        </div>
         <MetricBand
-          style={{ marginTop: 25 }}
+          style={{ marginTop: 40 }}
           items={[
             { label: "支持", value: compact(s.voteCount), color: palette.blue },
             { label: "评论", value: compact(s.commentCount), color: palette.green },
@@ -87,8 +83,8 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
       <PosterFooter
         url={s.url}
         headline={s.author.handle ? `@${s.author.handle} · ${s.publishedAt}` : s.publishedAt}
-        linkLabel={s.url.replace("https://", "")}
-        notes={["SCAN TO VIEW THE WORK", "METRICS AT RENDER TIME"]}
+        scanHint="扫码查看作品"
+        notes={["公开作品快照", "指标为渲染时数值"]}
       />
     </div>
   );

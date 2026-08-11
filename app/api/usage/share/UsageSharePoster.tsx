@@ -1,6 +1,10 @@
-import { Ecc, QrCode } from "@rc-component/qrcode/es/libs/qrcodegen";
-import { generatePath } from "@rc-component/qrcode/es/utils";
 import type { UsageShareFlow, UsageShareSnapshot } from "@/src/lib/usage/share";
+import {
+  POSTER_FONT_FAMILY,
+  POSTER_PADDING,
+  PosterFooter,
+  PosterHeader,
+} from "../../share/poster-kit";
 import { TOOL_GLYPHS } from "./tool-glyphs";
 import { MODEL_GLYPHS, modelGlyphId } from "./model-glyphs";
 
@@ -756,19 +760,6 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
   );
 }
 
-function UsageQrCode({ url }: { url: string }) {
-  const margin = 1;
-  const qr = QrCode.encodeText(url, Ecc.MEDIUM);
-  const modules = qr.getModules();
-  const size = modules.length + margin * 2;
-  return (
-    <svg width="104" height="104" viewBox={`0 0 ${size} ${size}`} role="img" aria-label="poster target QR code">
-      <path fill="#ffffff" d={`M0,0 h${size}v${size}H0z`} shapeRendering="crispEdges" />
-      <path fill="#050607" d={generatePath(modules, margin)} shapeRendering="crispEdges" />
-    </svg>
-  );
-}
-
 export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const { main } = snapshot;
   const zh = snapshot.zh;
@@ -794,69 +785,21 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         flexDirection: "column",
         background: `radial-gradient(680px 320px at 86% 0%, rgba(20,120,255,0.10), rgba(5,6,7,0) 72%), ${palette.background}`,
         color: palette.paper,
-        padding: "44px 54px 36px",
-        fontFamily: "monospace",
+        padding: POSTER_PADDING,
+        fontFamily: POSTER_FONT_FAMILY,
       }}
     >
-      {/* 身份带:站点品牌 + 用户社交信息同区置顶;字号/色阶一套 ramp
-          (品牌 22/700·名称 24/700·正文 15·标签 13 muted ls2) */}
-      <div style={{ display: "flex", flexDirection: "column", borderBottom: `1px solid ${palette.line}`, paddingBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", fontSize: 22, fontWeight: 700, letterSpacing: 4 }}>
-            KIMI.BUILDERS <span style={{ display: "flex", marginLeft: 14, color: palette.blueBright }}>/ USAGE</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ display: "flex", color: palette.muted, fontSize: 15, letterSpacing: 3 }}>TOKEN X-RAY</div>
-            <div
-              style={{
-                display: "flex",
-                marginLeft: 18,
-                border: `1px solid ${palette.line}`,
-                padding: "6px 14px",
-                fontSize: 14,
-                letterSpacing: 2,
-              }}
-            >
-              {zh ? snapshot.rangeLabel : snapshot.rangeLabelEn}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", marginTop: 22, alignItems: "center" }}>
-          <div
-            style={{
-              display: "flex",
-              width: 64,
-              height: 64,
-              borderRadius: 32,
-              alignItems: "center",
-              justifyContent: "center",
-              background: palette.green,
-              color: palette.greenInk,
-              fontSize: 23,
-              fontWeight: 800,
-            }}
-          >
-            {snapshot.user.initials}
-          </div>
-          <div style={{ display: "flex", marginLeft: 18, flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 24, fontWeight: 700 }}>{safeMetric(snapshot.user.name, 32)}</div>
-            <div style={{ display: "flex", marginTop: 7, alignItems: "center" }}>
-              <div style={{ display: "flex", color: palette.muted, fontSize: 15 }}>@{snapshot.user.handle}</div>
-              <div
-                style={{
-                  display: "flex",
-                  marginLeft: 14,
-                  color: palette.blueBright,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  letterSpacing: 1,
-                }}
-              >
-                {siteUrlDisplay}
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", marginLeft: "auto", alignItems: "center" }}>
+      {/* 身份带:四张海报统一的共享件(poster-kit);右槽 = streak + 数据起止 */}
+      <PosterHeader
+        section="USAGE"
+        eyebrow="TOKEN X-RAY"
+        chip={zh ? snapshot.rangeLabel : snapshot.rangeLabelEn}
+        initials={snapshot.user.initials}
+        name={safeMetric(snapshot.user.name, 32)}
+        handle={snapshot.user.handle}
+        linkLabel={siteUrlDisplay}
+        aside={
+          <>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
               <div style={{ display: "flex", alignItems: "baseline" }}>
                 <div style={{ display: "flex", color: palette.blue, fontSize: 40, fontWeight: 800, lineHeight: 1 }}>
@@ -877,9 +820,9 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
                 {zh ? "数据起止 SPAN" : "DATA SPAN"}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Hero 数字带 */}
       <div
@@ -989,41 +932,25 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         <ArsenalRow snapshot={snapshot} />
       </div>
 
-      {/* 页脚:与顶部同一套 ramp(20/700 主行 · 14 muted 副行 · 13 muted 注记);
-          QR 与展示地址同目标(公开成员落到个人主页用量 tab) */}
-      <div style={{ display: "flex", marginTop: 20, alignItems: "center" }}>
-        <div style={{ display: "flex", padding: 8, background: "#ffffff" }}>
-          <UsageQrCode url={snapshot.siteUrl} />
-        </div>
-        <div style={{ display: "flex", marginLeft: 24, flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: 20, fontWeight: 700 }}>
-            @{snapshot.user.handle} · {zh ? snapshot.rangeLabel : snapshot.rangeLabelEn} · {snapshot.generatedDate}
-          </div>
-          <div style={{ display: "flex", marginTop: 10, color: palette.muted, fontSize: 14 }}>
-            {zh ? "扫码看实时用量看板" : "Scan for the live dashboard"}
-          </div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            marginLeft: "auto",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            color: palette.muted,
-            fontSize: 13,
-            letterSpacing: 1,
-            lineHeight: 1.8,
-          }}
-        >
-          <span style={{ display: "flex" }}>{zh ? "标准 API 计价估算" : "STANDARD API PRICE ESTIMATE"}</span>
-          <span style={{ display: "flex" }}>{zh ? "本地私密同步 · 不含对话内容" : "PRIVATE LOCAL SYNC · NO CONTENT"}</span>
-          <span style={{ display: "flex" }}>
-            {zh
-              ? `杠杆 ×${snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = 总量 ÷ 新鲜输入`
-              : `LEVERAGE ×${snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = TOTAL ÷ FRESH INPUT`}
-          </span>
-        </div>
-      </div>
+      {/* 页脚:四张海报统一的共享件(poster-kit);QR 与展示地址同目标 */}
+      <PosterFooter
+        url={snapshot.siteUrl}
+        headline={`@${snapshot.user.handle} · ${zh ? snapshot.rangeLabel : snapshot.rangeLabelEn} · ${snapshot.generatedDate}`}
+        scanHint={zh ? "扫码看实时用量看板" : "Scan for the live dashboard"}
+        notes={
+          zh
+            ? [
+                "标准 API 计价估算",
+                "本地私密同步 · 不含对话内容",
+                `杠杆 ×${snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = 总量 ÷ 新鲜输入`,
+              ]
+            : [
+                "STANDARD API PRICE ESTIMATE",
+                "PRIVATE LOCAL SYNC · NO CONTENT",
+                `LEVERAGE ×${snapshot.leverage === null ? "—" : snapshot.leverage.toFixed(1)} = TOTAL ÷ FRESH INPUT`,
+              ]
+        }
+      />
     </div>
   );
 }

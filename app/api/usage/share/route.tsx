@@ -7,7 +7,10 @@ import {
   getUsageShareSnapshot,
   mockUsageShareSnapshot,
   normalizeUsageShareRange,
+  usageShareText,
 } from "@/src/lib/usage/share";
+import { getPosterFonts } from "@/app/api/share/poster-fonts";
+import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
 import { UsageSharePoster, USAGE_SHARE_POSTER_SIZE } from "./UsageSharePoster";
 
 export const dynamic = "force-dynamic";
@@ -44,8 +47,11 @@ export async function GET(request: NextRequest) {
   }
 
   const download = request.nextUrl.searchParams.get("download") === "1";
+  const fonts = await getPosterFonts(usageShareText(snapshot) + POSTER_STATIC_TEXT);
   return new ImageResponse(<UsageSharePoster snapshot={snapshot} />, {
     ...USAGE_SHARE_POSTER_SIZE,
+    /* 空数组会被 satori 当「零字体」(全豆腐),必须回落默认字体 */
+    ...(fonts.length ? { fonts } : {}),
     headers: {
       "Cache-Control": "private, no-store, max-age=0",
       "Content-Disposition": `${download ? "attachment" : "inline"}; filename="kimi-builders-usage-${range}.png"`,

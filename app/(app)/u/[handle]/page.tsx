@@ -299,7 +299,7 @@ export default async function ProfilePage({
             copiedLabel={t(locale, "post.copied")}
           />
           <a
-            href={posterHref}
+            href={`${posterHref}?download=1`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"

@@ -1,17 +1,17 @@
-/* 帖子分享海报:品牌行 → 垂直居中的内容组(大标题 → 摘要 → 链接/投票
-   → 作者行 → 指标带)→ QR 页脚。视觉对齐用量海报。
+/* 帖子分享海报:共享身份带(作者 + 分类 chip + 类型徽章)→ 垂直居中的内容组
+   (大标题 → 摘要 → 链接/投票 → 指标带)→ 共享 QR 页脚。
    版式:内容组整体垂直居中(组内固定间距),多内容(摘要/投票)自然撑满,
    少内容(短文本帖)上下留白对称 —— 不用 space-between 摊开。
    稀疏情形(无摘要且非投票/链接帖):标题按长度分档放大(同作品海报思路),
    并加大号低透明引号 + 蓝方块细线两件克制装饰填视觉(硬边细线语言)。 */
 import type { PostShareSnapshot } from "@/src/lib/share-posters";
 import {
-  BrandRow,
-  InitialsCircle,
   MetricBand,
   OutlineChip,
   POSTER_FONT_FAMILY,
+  POSTER_PADDING,
   PosterFooter,
+  PosterHeader,
   compact,
   palette,
 } from "../../poster-kit";
@@ -65,13 +65,19 @@ export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
         flexDirection: "column",
         background: palette.background,
         color: palette.paper,
-        padding: "52px 58px 46px",
+        padding: POSTER_PADDING,
         fontFamily: POSTER_FONT_FAMILY,
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", borderBottom: `1px solid ${palette.line}`, paddingBottom: 30 }}>
-        <BrandRow section="COMMUNITY" right={s.categoryLabel} />
-      </header>
+      <PosterHeader
+        section="COMMUNITY"
+        eyebrow={s.type === "poll" ? "POLL" : s.type === "link" ? "LINK" : "THREAD"}
+        chip={s.categoryLabel}
+        initials={s.author.initials}
+        name={s.author.name}
+        handle={s.author.handle}
+        linkLabel={`kimi.builders/u/${s.author.handle}`}
+      />
 
       <main style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column", justifyContent: "center", padding: "30px 0 28px" }}>
         {sparse && (
@@ -102,18 +108,8 @@ export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
         )}
         <PollBlock snapshot={s} />
 
-        <div style={{ display: "flex", marginTop: 40, alignItems: "center" }}>
-          <InitialsCircle initials={s.author.initials} />
-          <div style={{ display: "flex", marginLeft: 20, flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 25, fontWeight: 700 }}>{s.author.name}</div>
-            <div style={{ display: "flex", marginTop: 6, color: palette.muted, fontSize: 19 }}>@{s.author.handle}</div>
-          </div>
-          <div style={{ display: "flex", marginLeft: "auto", color: palette.muted, fontSize: 19, letterSpacing: 3 }}>
-            {s.type === "poll" ? "POLL" : s.type === "link" ? "LINK" : "THREAD"}
-          </div>
-        </div>
         <MetricBand
-          style={{ marginTop: 25 }}
+          style={{ marginTop: 40 }}
           items={[
             { label: "顶", value: compact(s.score), color: palette.blue },
             { label: "评论", value: compact(s.commentCount), color: palette.green },
@@ -125,8 +121,8 @@ export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
       <PosterFooter
         url={s.url}
         headline={`@${s.author.handle} · ${s.publishedAt}`}
-        linkLabel={s.url.replace("https://", "")}
-        notes={["PUBLIC POST SNAPSHOT", "SCAN TO READ THE THREAD"]}
+        scanHint="扫码阅读全文"
+        notes={["公开帖子快照", "数据为渲染时口径"]}
       />
     </div>
   );

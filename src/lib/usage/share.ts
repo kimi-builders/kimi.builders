@@ -558,9 +558,24 @@ export async function getUsageShareSnapshot(input: {
   };
 }
 
+/* 海报动态文本(CJK 粗体子集抓取用,同 share-posters 的 *ShareText pattern):
+   用户名/范围/主图文案/峰值标签/模型与 Agent 名等会变的中文。 */
+export function usageShareText(s: UsageShareSnapshot): string {
+  return [
+    s.user.name,
+    s.user.initials,
+    s.rangeLabel,
+    s.main.eyebrow,
+    s.main.headline,
+    s.main.subline,
+    s.peakLabel,
+    s.topModel,
+    ...s.topTools.map((tool) => tool.label),
+  ].join(" ");
+}
+
 /* mock 数据量级对齐参考海报(总量 3.8B / 缓存读 3.6B / 12 周 streak),
-   方便 dev preview 下做视觉验收;短周期按比例缩放。 */
-const MOCK_FLOW_90D: UsageShareFlow = {
+   方便 dev preview 下做视觉验收;短周期按比例缩放。 */const MOCK_FLOW_90D: UsageShareFlow = {
   inputTokens: 130_800_000,
   cacheReadTokens: 3_615_500_000,
   outputTokens: 10_900_000,
