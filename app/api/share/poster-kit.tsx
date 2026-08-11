@@ -1,13 +1,12 @@
-/* 四张分享海报的共享视觉件(单一事实源):色板 / 尺寸 / 字体栈 / 身份带 / 页脚 /
+/* 四张分享海报的共享视觉件(单一事实源):色板 / 字体栈 / 外边距 / 身份带 / 页脚 /
    贡献图网格 / 指标带。全部对齐用量海报(app/api/usage/share/UsageSharePoster.tsx)
-   v3 语法:深色 #050607 底、硬边细线、mono、大数字小标签、1080×1440、
-   身份带(大写品牌 + 蓝 accent + 头像 + 小写蓝地址 + 右槽)+ QR 页脚。
+   v3 语法:深色 #050607 底、硬边细线、mono、大数字小标签、宽 1080(高分档自适应,
+   见 poster-sizes.ts)、身份带(大写品牌 + 蓝 accent + 头像 + 小写蓝地址 + 右槽)
+   + QR 页脚。
    QR 用 @rc-component/qrcode 的 qrcodegen + generatePath 内联 SVG(同用量海报)。 */
 import { Ecc, QrCode } from "@rc-component/qrcode/es/libs/qrcodegen";
 import { generatePath } from "@rc-component/qrcode/es/utils";
 import type { CSSProperties, ReactNode } from "react";
-
-export const POSTER_SIZE = { width: 1080, height: 1440 } as const;
 
 /* 四张统一的外边距(用量海报 v3 值)。 */
 export const POSTER_PADDING = "44px 54px 36px";

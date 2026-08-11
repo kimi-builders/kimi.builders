@@ -9,7 +9,8 @@ import {
   postShareText,
 } from "@/src/lib/share-posters";
 import { getPosterFonts } from "@/app/api/share/poster-fonts";
-import { POSTER_SIZE, POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
+import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
+import { postPosterSize } from "@/app/api/share/poster-sizes";
 import { PostSharePoster } from "./PostSharePoster";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function GET(
   const download = request.nextUrl.searchParams.get("download") === "1";
   const fonts = await getPosterFonts(postShareText(snapshot) + POSTER_STATIC_TEXT);
   return new ImageResponse(<PostSharePoster snapshot={snapshot} />, {
-    ...POSTER_SIZE,
+    ...postPosterSize(snapshot),
     /* 空数组会被 satori 当「零字体」(全豆腐),必须回落默认字体 */
     ...(fonts.length ? { fonts } : {}),
     headers: {

@@ -16,6 +16,12 @@ import {
 } from "../src/lib/share-posters";
 import type { UserProfile } from "../src/lib/users";
 import type { WorkRow } from "../src/lib/works";
+import {
+  POSTER_WIDTH,
+  postPosterSize,
+  profilePosterSize,
+  workPosterSize,
+} from "../app/api/share/poster-sizes";
 
 function postDetail(overrides: Partial<PostDetail> = {}): PostDetail {
   return {
@@ -271,4 +277,65 @@ test("works count query scopes to member works of the user", () => {
   assert.match(sql, /source = 'site'/);
   assert.match(sql, /user_id = \?/);
   assert.deepEqual(args, [3]);
+});
+
+/* ---- 分档自适应高度(poster-sizes.ts) ---- */
+
+const POSTER_STEPS = [960, 1080, 1200, 1320, 1440];
+
+test("post poster height follows content: short sparse shortest, long title/poll taller", () => {
+  const short = buildPostShareSnapshot(postDetail({ title: "hello", bodyMd: "" }), null);
+  assert.ok(short);
+  const shortSize = postPosterSize(short);
+  assert.equal(shortSize.width, POSTER_WIDTH);
+  assert.equal(shortSize.height, 960);
+
+  /* 长标题稀疏帖(截图里的情形):66 字上档,不再硬撑 1440 */
+  const longTitle = buildPostShareSnapshot(postDetail({ title: "长".repeat(60), bodyMd: "" }), null);
+  assert.ok(longTitle);
+  const longSize = postPosterSize(longTitle);
+  assert.ok(longSize.height > shortSize.height);
+  assert.ok(longSize.height <= 1440);
+
+  const withPoll = buildPostShareSnapshot(
+    postDetail({ type: "poll" }),
+    {
+      options: [
+        { id: 1, label: "选项一", voteCount: 5 },
+        { id: 2, label: "选项二", voteCount: 3 },
+        { id: 3, label: "选项三", voteCount: 2 },
+        { id: 4, label: "选项四", voteCount: 1 },
+      ],
+      total: 11,
+      myOptionId: null,
+    },
+  );
+  assert.ok(withPoll?.poll);
+  const pollSize = postPosterSize(withPoll);
+  assert.ok(pollSize.height >= 1080 && pollSize.height <= 1440);
+});
+
+test("work/profile poster heights follow their content blocks", () => {
+  const noClaim = workPosterSize(buildWorkShareSnapshot(workRow(), new Map(), new Map()));
+  const withClaim = workPosterSize(
+    buildWorkShareSnapshot(
+      workRow({ claimedTokens: 2_000_000 }),
+      new Map([[3, 5_000_000]]),
+      new Map([[3, 3_000_000]]),
+    ),
+  );
+  assert.ok(withClaim.height > noClaim.height);
+
+  const base = { profile: profile(), stats: { posts: 1, comments: 2, likes: 3 }, works: 4 };
+  const noUsage = profilePosterSize(buildProfileShareSnapshot({ ...base, usage: null }));
+  assert.equal(noUsage.height, 960);
+  const withUsage = profilePosterSize(
+    buildProfileShareSnapshot({ ...base, usage: { totalTokens: 1_000_000, activeDays: 12 } }),
+  );
+  assert.ok(withUsage.height > noUsage.height);
+
+  for (const size of [noClaim, withClaim, noUsage, withUsage]) {
+    assert.ok(POSTER_STEPS.includes(size.height), `height ${size.height} is a valid step`);
+    assert.equal(size.width, POSTER_WIDTH);
+  }
 });

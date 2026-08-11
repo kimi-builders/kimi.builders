@@ -8,7 +8,8 @@ import {
   workShareText,
 } from "@/src/lib/share-posters";
 import { getPosterFonts } from "@/app/api/share/poster-fonts";
-import { POSTER_SIZE, POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
+import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
+import { workPosterSize } from "@/app/api/share/poster-sizes";
 import { WorkSharePoster } from "./WorkSharePoster";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export async function GET(
   const download = request.nextUrl.searchParams.get("download") === "1";
   const fonts = await getPosterFonts(workShareText(snapshot) + POSTER_STATIC_TEXT);
   return new ImageResponse(<WorkSharePoster snapshot={snapshot} />, {
-    ...POSTER_SIZE,
+    ...workPosterSize(snapshot),
     ...(fonts.length ? { fonts } : {}),
     headers: {
       "Cache-Control": preview ? "private, no-store, max-age=0" : "public, max-age=300",
