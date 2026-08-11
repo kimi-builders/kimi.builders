@@ -165,7 +165,7 @@ export default function UsageRecordsSection({
     },
     {
       id: "source",
-      header: zh ? "工具" : "SOURCE",
+      header: zh ? "Agent" : "AGENT",
       cell: (row) => (
         <span className="inline-flex items-center gap-1.5">
           <AgentIcon id={row.source} size={12} />
@@ -310,8 +310,8 @@ export default function UsageRecordsSection({
           </h2>
           <p className="mt-1 font-mono text-[11px] text-grey">
             {zh
-              ? `按 ${grain === "bucket" ? "30分钟" : "日"}×工具×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total.toLocaleString("zh-CN")} 组`
-              : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × source × model × effort × Agent version × project × device · ${records.total.toLocaleString("en-US")} groups`}
+              ? `按 ${grain === "bucket" ? "30分钟" : "日"}×Agent×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total.toLocaleString("zh-CN")} 组`
+              : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × agent × model × effort × Agent version × project × device · ${records.total.toLocaleString("en-US")} groups`}
           </p>
           {grain === "bucket" && (
             <p className="mt-1 font-mono text-[11px] text-grey/80">

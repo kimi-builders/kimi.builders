@@ -1,7 +1,7 @@
 /* 个人主页 /u/[handle](Kimi Design 改造):身份 Hero(头像/统计带)+ 构建足迹
-   (通栏 53 周贡献图)+ 动态 Tab 卡(帖子/评论/作品 + 用量/工具/偏好)。
+   (通栏 53 周贡献图)+ 动态 Tab 卡(帖子/评论/作品 + 用量/Agent/偏好)。
    本人视角多「编辑资料」入口,且能看到自己的私密帖(带标);访客只统计/展示公开内容。
-   用量相关块(统计带/足迹/用量·工具·偏好 tab)仅本人或对方自愿公开
+   用量相关块(统计带/足迹/用量·Agent·偏好 tab)仅本人或对方自愿公开
    (usage_settings.show_on_leaderboard=1)时渲染,否则整块缺席(无负面标记)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -143,7 +143,7 @@ export default async function ProfilePage({
   const self = me?.id === profile.id;
   /* 用量块门禁:本人恒可见;访客仅当对方 opt-in 公开。 */
   const usageVisible = self || (await isUsagePublic(profile.id));
-  /* 用量/工具/偏好三个 tab 同属隐私聚合,共用 usageVisible 门禁 */
+  /* 用量/Agent/偏好三个 tab 同属隐私聚合,共用 usageVisible 门禁 */
   const activeTab =
     tab === "comments" || tab === "works"
       ? tab
@@ -673,7 +673,7 @@ export default async function ProfilePage({
               </div>
             )}
 
-            {/* 常用工具(门禁同用量 tab,用量中心分布卡的行式版本) */}
+            {/* 常用 Agent(门禁同用量 tab,用量中心分布卡的行式版本) */}
             {activeTab === "tools" && usageVisible && snapshotAll &&
               (snapshotAll.topTools.length === 0 ? (
                 <p className="px-5 py-10 text-center text-sm text-grey">

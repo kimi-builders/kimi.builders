@@ -4,7 +4,7 @@
    token 口径与看板总量一致(见 community.ts / query.ts);活跃天数按 UTC 自然日计
    (社区参考口径,连接池两端都是 UTC,见 db.ts)。
 
-   增强(24H/7D/30D 周期、分工具/分模型榜、预估费用、我的排名):
+   增强(24H/7D/30D 周期、分 Agent/分模型榜、预估费用、我的排名):
    - 周期 cutoff = now - 24h/7d/30d 的 DATETIME(3) UTC 串(比较口径同 retention.ts)。
    - 分维度榜在同一查询上加 source / canonical 模型表达式过滤,只改 WHERE,不改输出列。
    - 预估费用只在总榜 TOP 50 候选池内计算:估费要逐「用户 × 日 × source × 模型」
@@ -81,7 +81,7 @@ export function usageLeaderboardCutoff(period: UsageLeaderboardPeriod, now: Date
 export interface UsageLeaderboardQueryOptions {
   /* 默认 USAGE_LEADERBOARD_LIMIT;0 = 不限(我的排名需要全量 opt-in 排序)。 */
   limit?: number;
-  /* 分工具榜:只看该 source 的桶。 */
+  /* 分 Agent 榜:只看该 source 的桶。 */
   source?: string;
   /* 分模型榜:按 canonical 模型表达式匹配。 */
   model?: string;

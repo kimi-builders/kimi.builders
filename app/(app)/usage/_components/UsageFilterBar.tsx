@@ -181,7 +181,7 @@ function DimensionDropdown({
   );
 }
 
-/* 筛选栏:时间分段 + 维度多选下拉(主:工具/模型/项目;次:推理强度/Agent 版本/设备,
+/* 筛选栏:时间分段 + 维度多选下拉(主:Agent/模型/项目;次:推理强度/Agent 版本/设备,
    收进「更多筛选」虚线 chip)。所有状态都在 URL 上(可分享/可刷新);任何筛选变化把
    page 重置回 1,metric/hm/ps 等原样保留。trailing 渲染在行右端(币种切换)。 */
 export default function UsageFilterBar({
@@ -245,7 +245,7 @@ export default function UsageFilterBar({
   const dimensions: Dimension[] = [
     {
       key: "sources",
-      label: zh ? "工具" : "Tool",
+      label: zh ? "Agent" : "Agent",
       entries: options.sources.map((id) => ({ value: id, label: usageSourceLabel(id) })),
       withIcons: true,
     },

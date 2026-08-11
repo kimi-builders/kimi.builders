@@ -35,8 +35,8 @@ export function UsageFirstRun({
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-grey">
             {zh
-              ? "Collector 只在本机读取 Kimi Code、Claude Code、Codex 等工具的统计日志。上传前会展示字段预览；对话内容、完整路径和供应商凭据不会离开设备。"
-              : "The Collector reads statistical logs from Kimi Code, Claude Code, Codex, and other tools locally. You preview the fields before upload; conversations, full paths, and provider credentials never leave the device."}
+              ? "Collector 只在本机读取 Kimi Code、Claude Code、Codex 等 Agent 的统计日志。上传前会展示字段预览；对话内容、完整路径和供应商凭据不会离开设备。"
+              : "The Collector reads statistical logs from Kimi Code, Claude Code, Codex, and other agents locally. You preview the fields before upload; conversations, full paths, and provider credentials never leave the device."}
           </p>
 
           <div className="mt-5 flex min-w-0 items-stretch overflow-hidden rounded-lg border border-line bg-bg">

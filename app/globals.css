@@ -194,18 +194,27 @@ html:not([data-nav="1"]) .only-nav-collapsed {
   display: none !important;
 }
 
-/* 右栏隐藏:完整 widget 与细轨按钮都渲染,CSS 二选一。
+/* 右栏隐藏:结构常渲染、纯 CSS 收束,切换零网络。开关在左栏底部「界面」组
+   (pref-controls 的 SidebarToggle),隐藏后不再留细轨重开按钮。
    哪些路由有右栏、主列多宽,由右栏注册表决定(app/(app)/_components/right-rail.ts
-   的 railFor;usage/个人主页无右栏且主列放宽到 1120)——原 :has(> .usage-dashboard)
+   的 railFor;usage/个人主页无右栏且主列放宽到 1000)——原 :has(> .usage-dashboard)
    加宽 hack 已收编进注册表,布局壳不再靠内容嗅探。 */
-.rightsidebar .sidebar-rail {
-  display: none;
-}
 html[data-sidebar="0"] .rightsidebar .sidebar-full {
   display: none;
 }
-html[data-sidebar="0"] .rightsidebar .sidebar-rail {
-  display: block;
+/* 侧栏开关自身的图标/文案按态切换 */
+html[data-sidebar="0"] .only-sidebar-full {
+  display: none !important;
+}
+html:not([data-sidebar="0"]) .only-sidebar-hidden {
+  display: none !important;
+}
+/* 左栏「界面」双键:两个 form 等宽;左栏收起时纵排成图标键 */
+.panel-pair > form {
+  flex: 1;
+}
+html[data-nav="1"] .panel-pair {
+  flex-direction: column;
 }
 
 /* ---- toast:操作反馈轻提示(Toaster 出口,2.6s 自灭)---- */

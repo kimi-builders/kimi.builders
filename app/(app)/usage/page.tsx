@@ -426,8 +426,8 @@ export default async function UsagePage({
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-grey">
           {zh
-            ? "以 Kimi 为第一公民的多工具 AI 编程用量中心。数据默认私有，只上传统计字段。"
-            : "A Kimi-first usage center for AI coding tools. Data stays private and only metrics are uploaded."}
+            ? "以 Kimi 为第一公民的多 Agent AI 编程用量中心。数据默认私有，只上传统计字段。"
+            : "A Kimi-first usage center for AI coding agents. Data stays private and only metrics are uploaded."}
         </p>
         <div className="mt-8">
           <p className="text-sm text-grey">{zh ? "登录后连接设备：" : "Sign in to connect a device:"}</p>
@@ -503,8 +503,8 @@ export default async function UsagePage({
         </h1>
         <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
           {zh
-            ? "Kimi-first，多工具兼容。这里只接收 token、时间与计数，不接收对话内容、完整路径或供应商凭据。"
-            : "Kimi-first and multi-tool ready. Only token, timing, and count metrics are accepted—never conversations, full paths, or provider credentials."}
+            ? "Kimi-first，多 Agent 兼容。这里只接收 token、时间与计数，不接收对话内容、完整路径或供应商凭据。"
+            : "Kimi-first and multi-agent ready. Only token, timing, and count metrics are accepted—never conversations, full paths, or provider credentials."}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey" role="status" aria-live="polite">
           <span className="flex items-center gap-1.5">
@@ -1097,7 +1097,7 @@ export default async function UsagePage({
       </p>
       <div className="mt-3 grid gap-4 lg:grid-cols-2">
         <DistributionCard
-          title={zh ? "工具" : "Tools"}
+          title={zh ? "Agent" : "Agents"}
           dist={overview.distributions.source}
           metric={filters.metric}
           zh={zh}

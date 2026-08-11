@@ -110,7 +110,8 @@ export function LocaleToggle({
 }
 
 /* 左栏收起/展开:纯客户端(cookie-only);显隐规则在 globals.css 的
-   html[data-nav] 块,图标也用 only-nav-* 按态切换。 */
+   html[data-nav] 块,图标与文案用 only-nav-* 按态切换。
+   与右栏开关并排组成左栏底部的「界面」双键(className 由 LeftNav 传入)。 */
 export function NavToggle({
   locale,
   className,
@@ -122,7 +123,7 @@ export function NavToggle({
     <form action={toggleNavAction}>
       <button
         type="submit"
-        title={t(locale, "nav.collapse")}
+        title={`${t(locale, "nav.collapse")} / ${t(locale, "nav.expand")}`}
         aria-label="收起或展开导航 / Collapse or expand navigation"
         onClick={(e) => {
           e.preventDefault();
@@ -133,56 +134,45 @@ export function NavToggle({
         }}
         className={className}
       >
-        <PanelLeftClose size={15} className="shrink-0 only-nav-full" />
-        <PanelLeftOpen size={15} className="shrink-0 only-nav-collapsed" />
-        <span className="nav-label">{t(locale, "nav.collapse")}</span>
+        <PanelLeftClose size={13} className="shrink-0 only-nav-full" />
+        <PanelLeftOpen size={13} className="shrink-0 only-nav-collapsed" />
+        <span className="nav-label only-nav-full">{t(locale, "nav.collapse")}</span>
+        <span className="nav-label only-nav-collapsed">{t(locale, "nav.expand")}</span>
       </button>
     </form>
   );
 }
 
-/* 右栏隐藏/重开:同上。variant=rail 是隐藏后留下的重开小按钮。 */
+/* 右栏隐藏/重开:同上(cookie-only,显隐规则在 globals.css 的
+   html[data-sidebar] 块)。开关已迁到左栏「界面」组,隐藏后不再在右侧
+   留细轨按钮;图标与文案用 only-sidebar-* 按态切换。 */
 export function SidebarToggle({
-  variant,
   locale,
+  className,
 }: {
-  variant: "full" | "rail";
   locale: Locale;
+  className?: string;
 }) {
-  const flip = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const el = document.documentElement;
-    const next = el.dataset.sidebar === "0" ? "1" : "0";
-    el.dataset.sidebar = next;
-    writeCookie("kb_sidebar", next);
-  };
-  if (variant === "rail") {
-    return (
-      <form action={toggleSidebarAction}>
-        <button
-          type="submit"
-          title={t(locale, "side.show")}
-          aria-label={t(locale, "side.show")}
-          onClick={flip}
-          className="border border-line p-2 text-grey transition-colors hover:border-blue hover:text-blue"
-        >
-          <PanelRightOpen size={15} />
-        </button>
-      </form>
-    );
-  }
   return (
     <form action={toggleSidebarAction}>
       <button
         type="submit"
-        title={t(locale, "side.hide")}
-        onClick={flip}
-        className="flex items-center gap-1.5 font-mono text-[10px] text-grey transition-colors hover:text-paper"
+        title={`${t(locale, "side.hide")} / ${t(locale, "side.show")}`}
+        aria-label="隐藏或显示右侧栏 / Hide or show the sidebar"
+        onClick={(e) => {
+          e.preventDefault();
+          const el = document.documentElement;
+          const next = el.dataset.sidebar === "0" ? "1" : "0";
+          el.dataset.sidebar = next;
+          writeCookie("kb_sidebar", next);
+        }}
+        className={className}
       >
-        <PanelRightClose size={12} />
-        {t(locale, "side.hide")}
+        <PanelRightClose size={13} className="shrink-0 only-sidebar-full" />
+        <PanelRightOpen size={13} className="shrink-0 only-sidebar-hidden" />
+        <span className="nav-label only-sidebar-full">{t(locale, "side.hide")}</span>
+        <span className="nav-label only-sidebar-hidden">{t(locale, "side.show")}</span>
       </button>
     </form>
   );
 }
-

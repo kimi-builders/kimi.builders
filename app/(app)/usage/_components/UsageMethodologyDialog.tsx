@@ -135,8 +135,8 @@ export default function UsageMethodologyDialog({
                   </div>
                   <p className="mt-1.5">
                     {zh
-                      ? "全部已同步历史，不受今天/7D/30D 等日期范围影响；工具、模型、项目和设备筛选仍然生效。"
-                      : "All synced history, independent of Today/7D/30D. Source, model, project, and device filters still apply."}
+                      ? "全部已同步历史，不受今天/7D/30D 等日期范围影响；Agent、模型、项目和设备筛选仍然生效。"
+                      : "All synced history, independent of Today/7D/30D. Agent, model, project, and device filters still apply."}
                   </p>
                 </div>
                 <div className="border border-line bg-card p-3">
@@ -161,8 +161,8 @@ export default function UsageMethodologyDialog({
                   </div>
                   <p className="mt-1.5">
                     {zh
-                      ? "原始模型名始终保留日志中的精确 ID；规范模型名仅用于统一展示、跨工具比较和价格匹配，不会覆盖原始事实。推理强度与请求时 Agent 版本只在日志明确提供时记录，缺失显示「—」，不会用默认值或当前版本推断历史请求。设备页展示的是最近同步时检测到的终端、系统、Collector 与已安装 Agent 版本。"
-                      : "The raw model keeps the exact log ID. A separate canonical model is used only for display, cross-tool comparison, and pricing; it never overwrites the raw fact. Reasoning effort and request-time Agent version are recorded only when the log explicitly provides them; missing values show “—” and are never inferred from defaults or today's version. The device panel shows terminal, OS, Collector, and installed Agent versions detected at the latest sync."}
+                      ? "原始模型名始终保留日志中的精确 ID；规范模型名仅用于统一展示、跨 Agent 比较和价格匹配，不会覆盖原始事实。推理强度与请求时 Agent 版本只在日志明确提供时记录，缺失显示「—」，不会用默认值或当前版本推断历史请求。设备页展示的是最近同步时检测到的终端、系统、Collector 与已安装 Agent 版本。"
+                      : "The raw model keeps the exact log ID. A separate canonical model is used only for display, cross-agent comparison, and pricing; it never overwrites the raw fact. Reasoning effort and request-time Agent version are recorded only when the log explicitly provides them; missing values show “—” and are never inferred from defaults or today's version. The device panel shows terminal, OS, Collector, and installed Agent versions detected at the latest sync."}
                   </p>
                 </div>
               </div>
@@ -284,8 +284,8 @@ export default function UsageMethodologyDialog({
                   <div className="font-mono text-[10px] text-paper">{zh ? "活跃时长" : "ACTIVE TIME"}</div>
                   <p className="mt-1.5">
                     {zh
-                      ? "按用户发起的 turn 统计 AI/工具实际产生活动的事件间隔；同一 turn 内每段间隔最多计 5 分钟，排除排队等待和首 Token 延迟。不同工具日志精度不同，因此这是跨工具可比的近似值。"
-                      : "AI/tool activity gaps inside user-initiated turns, capped at 5 minutes per gap. Queueing and time-to-first-token are excluded. Log precision varies by tool, so this is a cross-tool comparable approximation."}
+                      ? "按用户发起的 turn 统计 AI/Agent 实际产生活动的事件间隔；同一 turn 内每段间隔最多计 5 分钟，排除排队等待和首 Token 延迟。不同 Agent 日志精度不同，因此这是跨 Agent 可比的近似值。"
+                      : "AI/agent activity gaps inside user-initiated turns, capped at 5 minutes per gap. Queueing and time-to-first-token are excluded. Log precision varies by agent, so this is a cross-agent comparable approximation."}
                   </p>
                 </div>
                 <div className="border-l-2 border-paper/50 pl-3">

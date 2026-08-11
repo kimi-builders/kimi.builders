@@ -1,5 +1,5 @@
 /* UI 偏好(cookie 驱动,SSR 直出目标状态:无闪烁、无 JS 也能切换)。
-   kb_nav=1 → 左栏收成图标轨;kb_sidebar=0 → 右栏隐藏(留细轨可重开);
+   kb_nav=1 → 左栏收成图标轨;kb_sidebar=0 → 右栏隐藏(左栏「界面」组重开);
    kb_theme=light → 亮色主题(默认暗色)。
    切换动作在 app/(app)/community/actions.ts。 */
 import { cookies } from "next/headers";

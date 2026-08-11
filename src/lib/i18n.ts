@@ -38,10 +38,8 @@ const DICT = {
   "side.posts": { zh: "帖子", en: "posts" },
   "side.comments": { zh: "评论", en: "comments" },
   "side.newMembers": { zh: "新成员", en: "NEW MEMBERS" },
-  "side.hide": {
-    zh: "隐藏侧栏(留下的小按钮可重开)",
-    en: "Hide sidebar (a small button stays to reopen)",
-  },
+  "side.display": { zh: "界面", en: "DISPLAY" },
+  "side.hide": { zh: "隐藏侧栏", en: "Hide sidebar" },
   "side.show": { zh: "显示侧栏", en: "Show sidebar" },
   "side.featured": { zh: "编辑精选", en: "EDITOR'S PICKS" },
   "side.lbPreview": { zh: "用量排行", en: "USAGE LEADERBOARD" },
@@ -334,8 +332,8 @@ const DICT = {
   },
   /* ---- 用量看板 ---- */
   "usage.intro": {
-    zh: "以 Kimi 为主,汇总多种 AI 编程工具的 token 与活跃数据。Collector 只上传统计字段,不上传对话内容、完整文件路径或供应商凭据。",
-    en: "Kimi-first usage analytics across multiple AI coding tools. The collector uploads metrics only — never conversation content, full file paths, or provider credentials.",
+    zh: "以 Kimi 为主,汇总多种 AI 编程 Agent 的 token 与活跃数据。Collector 只上传统计字段,不上传对话内容、完整文件路径或供应商凭据。",
+    en: "Kimi-first usage analytics across multiple AI coding agents. The collector uploads metrics only — never conversation content, full file paths, or provider credentials.",
   },
   "usage.loginRequired": {
     zh: "登录后查看你的用量看板:",
@@ -619,10 +617,10 @@ const DICT = {
   },
   "lb.entry": { zh: "社区用量榜", en: "Community leaderboard" },
   "lb.entryHint": {
-    zh: "自愿公开成员的周期聚合排名:24 小时 / 7 天 / 30 天,含总榜与分工具、分模型榜。",
-    en: "Period aggregates from opted-in members: 24H / 7D / 30D — overall plus per-tool and per-model boards.",
+    zh: "自愿公开成员的周期聚合排名:24 小时 / 7 天 / 30 天,含总榜与分 Agent、分模型榜。",
+    en: "Period aggregates from opted-in members: 24H / 7D / 30D — overall plus per-agent and per-model boards.",
   },
-  /* ---- 社区用量榜增强(24H 周期 / 分工具分模型榜 / 我的排名 / 分享;独立分区,降低合并冲突面) ---- */
+  /* ---- 社区用量榜增强(24H 周期 / 分 Agent 分模型榜 / 我的排名 / 分享;独立分区,降低合并冲突面) ---- */
   "lb.period24": { zh: "24 小时", en: "24H" },
   "lb.mine": { zh: "我的排名", en: "MY RANK" },
   "lb.mineTokens": { zh: "TOKEN 总榜", en: "TOKENS" },
@@ -642,7 +640,7 @@ const DICT = {
     en: "Ranks are per period; beyond TOP 50 shows 50+. Cost rank is sorted by estimate within the top-50 board.",
   },
   "lb.boardAll": { zh: "总榜", en: "OVERALL" },
-  "lb.boardSource": { zh: "分工具榜", en: "BY TOOL" },
+  "lb.boardSource": { zh: "分 Agent 榜", en: "BY AGENT" },
   "lb.boardModel": { zh: "分模型榜", en: "BY MODEL" },
   "lb.colCost": { zh: "预估费用", en: "EST. COST" },
   "lb.dimEmpty": {
@@ -837,7 +835,7 @@ const DICT = {
     en: "Public profile snapshot · scan to visit; no projects, devices, or conversations",
   },
   "prof.makerCta": { zh: "生成分享海报", en: "Create share poster" },
-  "prof.tools": { zh: "常用工具", en: "Top tools" },
+  "prof.tools": { zh: "常用 Agent", en: "Top agents" },
   "prof.toolsNote": { zh: "全部历史 · 按 Token", en: "all-time · by tokens" },
   "prof.toolsEmpty": { zh: "还没有用量数据。", en: "No usage data yet." },
   "prof.prefs": { zh: "构建偏好", en: "Build preferences" },

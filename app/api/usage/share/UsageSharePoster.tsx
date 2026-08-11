@@ -508,7 +508,7 @@ function MetricsBand({ snapshot }: { snapshot: UsageShareSnapshot }) {
       color: palette.green,
     },
     { icon: "sessions", label: "会话 SESS", value: snapshot.sessions.toLocaleString("en-US"), color: palette.paper },
-    { icon: "tools", label: "AI 工具 TOOLS", value: `${snapshot.toolCount}`, color: palette.green },
+    { icon: "tools", label: "Agent AGENTS", value: `${snapshot.toolCount}`, color: palette.green },
     { icon: "effort", label: "推理强度 EFFORT", value: effortShort(snapshot.topEffort), color: palette.amber },
   ];
   return (
@@ -560,7 +560,7 @@ function ToolsRow({ tools }: { tools: UsageShareTool[] }) {
   const maximum = Math.max(1, ...tools.map((tool) => tool.tokens));
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <Eyebrow left="TOP AI TOOLS" right="BY TOKENS · TOP 5" />
+      <Eyebrow left="TOP AGENTS" right="BY TOKENS · TOP 5" />
       <div style={{ display: "flex", marginTop: 16 }}>
         {tools.map((tool, index) => (
           <div key={tool.id} style={{ display: "flex", flex: 1, minWidth: 0 }}>
