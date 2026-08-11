@@ -1,0 +1,431 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  ci:
+    name: Quality gates
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: kimi-builders-ci-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        env:
+          DEPLOYMENT_VERSION: ${{ github.sha }}
+        run: npm run build
+
+  deploy:
+    name: Deploy production
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment:
+      name: production
+      url: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+    concurrency:
+      group: kimi-builders-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+      APP_PORT: ${{ vars.APP_PORT || '3210' }}
+      PM2_APP_NAME: ${{ vars.PM2_APP_NAME || 'kimi-builders' }}
+      KEEP_RELEASES: ${{ vars.KEEP_RELEASES || '5' }}
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Validate production configuration
+        run: |
+          set -Eeuo pipefail
+          missing=0
+          for name in DEPLOY_PATH NEXT_PUBLIC_SITE_URL; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured as a repository Actions variable."
+              missing=1
+            fi
+          done
+          (( missing == 0 )) || exit 1
+
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ && "$DEPLOY_PATH" != "/" && ${#DEPLOY_PATH} -gt 5 ]] || {
+            echo "::error::DEPLOY_PATH must be a safe absolute path without spaces."
+            exit 1
+          }
+          [[ "$DEPLOY_SSH_PORT" =~ ^[0-9]{1,5}$ ]] || exit 1
+          [[ "$APP_PORT" =~ ^[0-9]{2,5}$ ]] || exit 1
+          [[ "$PM2_APP_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || exit 1
+          [[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]] || exit 1
+          (( DEPLOY_SSH_PORT >= 1 && DEPLOY_SSH_PORT <= 65535 )) || exit 1
+          (( APP_PORT >= 1024 && APP_PORT <= 65535 )) || exit 1
+          (( KEEP_RELEASES >= 3 && KEEP_RELEASES <= 20 )) || exit 1
+          [[ "$NEXT_PUBLIC_SITE_URL" =~ ^https://[^/]+$ ]] || {
+            echo "::error::NEXT_PUBLIC_SITE_URL must be an https origin without a trailing slash."
+            exit 1
+          }
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build standalone release
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          DEPLOYMENT_VERSION: ${{ github.sha }}
+        run: npm run build
+
+      - name: Package release
+        run: |
+          set -Eeuo pipefail
+          rm -rf .release
+          mkdir -p .release/.next .release/ops
+          cp -a .next/standalone/. .release/
+          rm -rf .release/.next/static .release/public
+          cp -a .next/static .release/.next/static
+          cp -a public .release/public
+          # The migration runner ships inside the release so deploy-release.sh
+          # can apply pending migrations on the server BEFORE switching
+          # current. It resolves mysql2 from the standalone bundle's traced
+          # node_modules (see scripts/db-migrate.mjs createRequire).
+          cp -a scripts .release/scripts
+          cp -a db .release/db
+          test -d .release/node_modules/mysql2 || {
+            echo "::error::mysql2 is missing from the standalone bundle; db-migrate.mjs needs it."
+            exit 1
+          }
+          install -m 644 ops/ecosystem.config.cjs .release/ecosystem.config.cjs
+          install -m 755 ops/deploy-release.sh .release/ops/deploy-release.sh
+          printf '%s\n' "$GITHUB_SHA" > .release/RELEASE
+          (
+            cd .release
+            find . -type f ! -path './RELEASE.sha256' -print0 \
+              | LC_ALL=C sort -z \
+              | xargs -0 sha256sum > RELEASE.sha256
+          )
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          missing=0
+          for name in \
+            DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_PRIVATE_KEY DEPLOY_KNOWN_HOSTS; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured as a repository Actions secret."
+              missing=1
+            fi
+          done
+          (( missing == 0 )) || exit 1
+
+          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9.-]+$ ]] || {
+            echo "::error::DEPLOY_HOST must be a hostname or IPv4 address."
+            exit 1
+          }
+          [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || {
+            echo "::error::DEPLOY_USER is not a safe Linux username."
+            exit 1
+          }
+          [[ "$DEPLOY_SSH_PRIVATE_KEY" == *"BEGIN "*"PRIVATE KEY"* ]] || {
+            echo "::error::DEPLOY_SSH_PRIVATE_KEY must contain a private key."
+            exit 1
+          }
+
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+
+      - name: Upload release
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "command -v rsync >/dev/null && mkdir -p '$DEPLOY_PATH/incoming/$GITHUB_SHA' '$DEPLOY_PATH/releases' '$DEPLOY_PATH/shared'"
+
+          link_dest=()
+          if ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "test -L '$DEPLOY_PATH/current'"; then
+            link_dest=("--link-dest=$DEPLOY_PATH/current")
+          fi
+
+          rsync \
+            -rlpz \
+            --checksum \
+            --delete-delay \
+            "${link_dest[@]}" \
+            -e "ssh -i $HOME/.ssh/deploy_key -p $DEPLOY_SSH_PORT -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            .release/ \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/incoming/$GITHUB_SHA/"
+
+      - name: Sync runtime configuration
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_GITHUB_ID: ${{ secrets.AUTH_GITHUB_ID }}
+          AUTH_GITHUB_SECRET: ${{ secrets.AUTH_GITHUB_SECRET }}
+          AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
+          AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
+          KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+          KIMI_MODEL: ${{ secrets.KIMI_MODEL }}
+          USAGE_KEY_PEPPER: ${{ secrets.USAGE_KEY_PEPPER }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        run: |
+          set -Eeuo pipefail
+
+          missing=0
+          for name in \
+            DATABASE_URL AUTH_SECRET USAGE_KEY_PEPPER CRON_SECRET \
+            R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured as an Actions secret."
+              missing=1
+            fi
+          done
+          (( missing == 0 )) || exit 1
+
+          [[ "$DATABASE_URL" =~ ^mysql:// ]] || {
+            echo "::error::DATABASE_URL must use the mysql:// scheme."
+            exit 1
+          }
+          for name in AUTH_SECRET USAGE_KEY_PEPPER CRON_SECRET; do
+            value="${!name}"
+            (( ${#value} >= 32 )) || {
+              echo "::error::$name must contain at least 32 characters."
+              exit 1
+            }
+          done
+          [[ "$AUTH_SECRET" != "$USAGE_KEY_PEPPER" &&
+             "$AUTH_SECRET" != "$CRON_SECRET" &&
+             "$USAGE_KEY_PEPPER" != "$CRON_SECRET" ]] || {
+            echo "::error::AUTH_SECRET, USAGE_KEY_PEPPER and CRON_SECRET must be different."
+            exit 1
+          }
+
+          # Remote MySQL (Aliyun RDS): the runner can't be whitelisted
+          # reliably, so preflight FROM the deploy host — it is the network
+          # the app will actually use. URL parts are base64-encoded on the
+          # runner (immune to shell-special characters in the password)
+          # and decoded on the box; MYSQL_PWD keeps the password out of
+          # the process list.
+          node --input-type=module -e '
+            const u = new URL(process.env.DATABASE_URL);
+            const b64 = (s) => Buffer.from(s).toString("base64");
+            console.log(`RDS_HOST_B64=${b64(u.hostname)}`);
+            console.log(`RDS_PORT_B64=${b64(u.port || "3306")}`);
+            console.log(`RDS_USER_B64=${b64(decodeURIComponent(u.username))}`);
+            console.log(`RDS_PASS_B64=${b64(decodeURIComponent(u.password))}`);
+            console.log(`RDS_DB_B64=${b64(u.pathname.replace(/^\//, ""))}`);
+          ' | ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -Eeuo pipefail; \
+             eval \"\$(cat)\"; \
+             RDS_HOST=\"\$(printf %s \"\$RDS_HOST_B64\" | base64 -d)\"; \
+             RDS_PORT=\"\$(printf %s \"\$RDS_PORT_B64\" | base64 -d)\"; \
+             RDS_USER=\"\$(printf %s \"\$RDS_USER_B64\" | base64 -d)\"; \
+             RDS_PASS=\"\$(printf %s \"\$RDS_PASS_B64\" | base64 -d)\"; \
+             RDS_DB=\"\$(printf %s \"\$RDS_DB_B64\" | base64 -d)\"; \
+             MYSQL_PWD=\"\$RDS_PASS\" mysql -h \"\$RDS_HOST\" -P \"\$RDS_PORT\" \
+               -u \"\$RDS_USER\" \"\$RDS_DB\" -e 'SELECT 1'"
+          echo "MySQL credential preflight passed (from deploy host)."
+
+          {
+            printf 'DATABASE_URL=%q\n' "$DATABASE_URL"
+            printf 'AUTH_SECRET=%q\n' "$AUTH_SECRET"
+            printf 'USAGE_KEY_PEPPER=%q\n' "$USAGE_KEY_PEPPER"
+            printf 'CRON_SECRET=%q\n' "$CRON_SECRET"
+            printf 'R2_ENDPOINT=%q\n' "$R2_ENDPOINT"
+            printf 'R2_ACCESS_KEY_ID=%q\n' "$R2_ACCESS_KEY_ID"
+            printf 'R2_SECRET_ACCESS_KEY=%q\n' "$R2_SECRET_ACCESS_KEY"
+            # Optional OAuth providers — both-or-neither. The file is fully
+            # rewritten on every deploy, so a secret removed from GitHub
+            # disappears from the server on the next run.
+            if [[ -n "$AUTH_GITHUB_ID" && -n "$AUTH_GITHUB_SECRET" ]]; then
+              printf 'AUTH_GITHUB_ID=%q\n' "$AUTH_GITHUB_ID"
+              printf 'AUTH_GITHUB_SECRET=%q\n' "$AUTH_GITHUB_SECRET"
+            fi
+            if [[ -n "$AUTH_GOOGLE_ID" && -n "$AUTH_GOOGLE_SECRET" ]]; then
+              printf 'AUTH_GOOGLE_ID=%q\n' "$AUTH_GOOGLE_ID"
+              printf 'AUTH_GOOGLE_SECRET=%q\n' "$AUTH_GOOGLE_SECRET"
+            fi
+            if [[ -n "$KIMI_API_KEY" ]]; then
+              printf 'KIMI_API_KEY=%q\n' "$KIMI_API_KEY"
+            fi
+            if [[ -n "$KIMI_MODEL" ]]; then
+              printf 'KIMI_MODEL=%q\n' "$KIMI_MODEL"
+            fi
+            if [[ -n "$R2_BUCKET" ]]; then
+              printf 'R2_BUCKET=%q\n' "$R2_BUCKET"
+            fi
+            if [[ -n "$R2_PUBLIC_BASE_URL" ]]; then
+              printf 'R2_PUBLIC_BASE_URL=%q\n' "$R2_PUBLIC_BASE_URL"
+            fi
+          } | ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -Eeuo pipefail; \
+             shared_dir='$DEPLOY_PATH/shared'; \
+             mkdir -p \"\$shared_dir\"; \
+             chmod 700 \"\$shared_dir\"; \
+             temp_file=\"\$shared_dir/.env.production.\$\$\"; \
+             trap 'rm -f -- \"\$temp_file\"' EXIT; \
+             cat > \"\$temp_file\"; \
+             chmod 600 \"\$temp_file\"; \
+             mv -f -- \"\$temp_file\" \"\$shared_dir/.env.production\"; \
+             trap - EXIT"
+
+      - name: Activate release
+        run: |
+          set -Eeuo pipefail
+          # deploy-release.sh verifies SHA + checksums, runs
+          # `node scripts/db-migrate.mjs migrate` from the release directory,
+          # then switches current atomically and probes /api/health; on any
+          # failure it rolls back to the previous release.
+          ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$DEPLOY_PATH' '$GITHUB_SHA' '$PM2_APP_NAME' '$APP_PORT' '/api/health' '$KEEP_RELEASES'" \
+            < ops/deploy-release.sh
+
+      - name: Verify public URL
+        run: |
+          set -Eeuo pipefail
+          site_url="${NEXT_PUBLIC_SITE_URL%/}"
+
+          public_health_ok=0
+          for attempt in {1..8}; do
+            body="$(curl --fail --silent --show-error \
+              --connect-timeout 5 --max-time 15 \
+              "$site_url/api/health" 2>/dev/null || true)"
+            if HEALTH_BODY="$body" EXPECTED_SHA="$GITHUB_SHA" node -e '
+              const health = JSON.parse(process.env.HEALTH_BODY);
+              const expected = process.env.EXPECTED_SHA;
+              if (!(health.ok === true && health.version === expected)) {
+                process.exit(1);
+              }
+            ' 2>/dev/null; then
+              echo "Public health check passed: $site_url"
+              public_health_ok=1
+              break
+            fi
+            sleep 3
+          done
+          if (( public_health_ok == 0 )); then
+            echo "::error::Public health check did not reach release $GITHUB_SHA."
+            exit 1
+          fi
+
+          # Retry loop: the health probe above proves the API is up, but the
+          # homepage fetch crosses the public network — a transient runner-side
+          # failure must not mark a good deploy red.
+          homepage_ok=0
+          for attempt in {1..4}; do
+            if curl --fail --silent --show-error -o /dev/null \
+              --connect-timeout 5 --max-time 20 \
+              "$site_url/"; then
+              homepage_ok=1
+              break
+            fi
+            (( attempt < 4 )) && sleep 5
+          done
+          if (( homepage_ok == 0 )); then
+            echo "::error::Homepage $site_url/ did not return 200 after the deploy."
+            exit 1
+          fi
+
+          echo "Public health matches $GITHUB_SHA and the homepage answers 200."
+
+      - name: Remove SSH material
+        if: always()
+        run: rm -f "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
