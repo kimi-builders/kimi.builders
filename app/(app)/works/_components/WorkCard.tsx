@@ -13,6 +13,7 @@ import { ExternalLink, Heart } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
+import { mediaUrl } from "@/src/lib/storage";
 import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import type { WorkRow } from "@/src/lib/works";
 import Avatar from "@/components/Avatar";
@@ -83,16 +84,27 @@ export default function WorkCard({
             loading="lazy"
           />
         ) : (
-          /* 无封面:类型色调的渐变占位(首字符 + 类型标签,比裸图标有辨识度) */
+          /* 无封面:类型色调的渐变占位 —— 有 Logo 挂 Logo(20260826_work_media),
+             否则首字符 + 类型标签(比裸图标有辨识度) */
           <div
             className="flex aspect-video w-full flex-col items-center justify-center gap-2"
             style={{
               background: `linear-gradient(135deg, ${workKind(w.kind).from}, ${workKind(w.kind).to})`,
             }}
           >
-            <span className="font-mono text-3xl font-bold text-white/75">
-              {[...w.name][0]}
-            </span>
+            {w.logoKey ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={mediaUrl(w.logoKey)}
+                alt=""
+                loading="lazy"
+                className="size-14 rounded-2xl border border-white/25 object-cover"
+              />
+            ) : (
+              <span className="font-mono text-3xl font-bold text-white/75">
+                {[...w.name][0]}
+              </span>
+            )}
             <span className="font-mono text-[10px] tracking-[0.14em] text-white/50">
               {workKindLabel(w.kind, locale === "zh")}
             </span>

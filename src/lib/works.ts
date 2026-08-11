@@ -45,6 +45,10 @@ export interface WorkRow {
   descriptionMd: string;
   /* Awesome 收录口径:base/eco/part;仅 awesome 条目,作品墙恒 "" */
   scope: string;
+  /* 20260826_work_media:Logo 存储 key(空 = 无)+ 配图 key 数组(≤9,第一张 = 封面)。
+     DB 只存 key,公开 URL 渲染时由 storage.ts mediaUrl 拼接 */
+  logoKey: string;
+  imageKeys: string[];
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -86,13 +90,15 @@ function mapWork(r: RowDataPacket): WorkRow {
     kind: r.kind ?? "app",
     descriptionMd: r.description_md ?? "",
     scope: r.scope ?? "",
+    logoKey: r.logo_key ?? "",
+    imageKeys: parseStrArray(r.image_keys),
   };
 }
 
 const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.screenshot_url, w.tags, w.agents, w.source, w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
-       w.status, w.models, w.kind, w.description_md, w.scope`;
+       w.status, w.models, w.kind, w.description_md, w.scope, w.logo_key, w.image_keys`;
 
 const SELECT_WORKS = `SELECT ${WORK_COLUMNS},
        u.handle, u.avatar_url
@@ -426,7 +432,22 @@ export interface WorkFields {
   descriptionMd: string;
   /* awesome 收录口径(base/eco/part);作品墙条目恒 null */
   scope: string | null;
+  /* 20260826_work_media;action 层已做形状 + 前缀校验(isWorkLogoKey/areWorkImageKeys) */
+  logoKey: string;
+  imageKeys: string[];
 }
+
+/* ---- 作品媒体 key 校验(20260826_work_media)----
+   实现在 src/lib/work-media.ts(纯函数,客户端组件可引);这里 re-export
+   让 action / 测试维持从 works 导入的既有习惯。 */
+export {
+  areWorkImageKeys,
+  isWorkLogoKey,
+  isWorkMediaKey,
+  parseWorkImageKeysInput,
+  WORK_IMAGE_MAX,
+} from "./work-media";
+import { WORK_IMAGE_MAX } from "./work-media";
 
 export async function createWork(
   userId: number,
@@ -434,8 +455,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label, claimed_tokens, status, models, kind, description_md, scope)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label, claimed_tokens, status, models, kind, description_md, scope, logo_key, image_keys)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -454,6 +475,11 @@ export async function createWork(
       f.kind,
       f.descriptionMd || null,
       source === "awesome" ? f.scope : null,
+      /* 媒体同声明:仅作品墙条目,awesome 强制为空 */
+      source === "awesome" ? "" : f.logoKey.slice(0, 255),
+      source === "awesome" || f.imageKeys.length === 0
+        ? null
+        : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
     ],
   );
   return Number(res.insertId);
@@ -468,7 +494,8 @@ export async function updateWork(
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
        tags = ?, agents = ?, source = ?, author_label = ?, claimed_tokens = ?,
-       status = ?, models = ?, kind = ?, description_md = ?, scope = ?
+       status = ?, models = ?, kind = ?, description_md = ?, scope = ?,
+       logo_key = ?, image_keys = ?
      WHERE id = ? AND user_id = ?`,
     [
       f.name.slice(0, 120),
@@ -486,6 +513,10 @@ export async function updateWork(
       f.kind,
       f.descriptionMd || null,
       source === "awesome" ? f.scope : null,
+      source === "awesome" ? "" : f.logoKey.slice(0, 255),
+      source === "awesome" || f.imageKeys.length === 0
+        ? null
+        : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
       workId,
       userId,
     ],

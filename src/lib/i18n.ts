@@ -952,6 +952,44 @@ const DICT = {
     zh: "超出剩余可声明额度(剩余 {n} tokens)",
     en: "Exceeds your remaining claimable allowance ({n} tokens left)",
   },
+  /* ---- 作品媒体:Logo + 多图上传(20260826_work_media;独立分区,降低合并冲突面) ---- */
+  "works.logo": { zh: "作品 Logo(可选)", en: "Work logo (optional)" },
+  "works.logoUpload": { zh: "上传 Logo", en: "Upload logo" },
+  "works.logoChange": { zh: "更换", en: "Change" },
+  "works.logoRemove": { zh: "移除", en: "Remove" },
+  "works.logoCropTitle": { zh: "调整 Logo", en: "Adjust logo" },
+  "works.logoCropHint": {
+    zh: "拖动定位,滑杆缩放;导出为 512×512 正方形。",
+    en: "Drag to position, slider to zoom; exported as a 512×512 square.",
+  },
+  "works.logoZoom": { zh: "缩放", en: "Zoom" },
+  "works.cropApply": { zh: "裁剪并上传", en: "Crop & upload" },
+  "works.images": {
+    zh: "配图(最多 9 张,第一张为封面)",
+    en: "Images (up to 9, first is the cover)",
+  },
+  "works.imagesAdd": { zh: "点击选择配图", en: "Click to add images" },
+  "works.imagesHint": {
+    zh: "也可以直接拖入或粘贴图片;拖动缩略图调整顺序。",
+    en: "You can also drop or paste images; drag thumbnails to reorder.",
+  },
+  "works.imageRemove": { zh: "删除这张图", en: "Remove this image" },
+  "works.coverBadge": { zh: "封面", en: "COVER" },
+  "works.uploading": { zh: "上传中…", en: "Uploading…" },
+  "works.uploadFailed": { zh: "上传失败", en: "Upload failed" },
+  "works.retry": { zh: "重试", en: "Retry" },
+  "err.uploadFailed": {
+    zh: "图片上传失败,请重试",
+    en: "Image upload failed — please retry",
+  },
+  "err.workLogoKey": {
+    zh: "Logo 数据无效,请重新上传",
+    en: "Invalid logo data — please re-upload",
+  },
+  "err.workImageKeys": {
+    zh: "配图数据无效(最多 9 张),请重新上传",
+    en: "Invalid image data (max 9) — please re-upload",
+  },
   /* ---- 壳层改版:固定顶栏 + 右栏上下文化(2026-08-10;独立分区,降低合并冲突面) ---- */
   "topbar.notif": { zh: "消息通知", en: "Notifications" },
   "rail.postMeta": { zh: "帖子信息", en: "POST INFO" },

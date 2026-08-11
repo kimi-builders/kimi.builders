@@ -22,6 +22,7 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
+  areWorkImageKeys,
   checkClaimAllowance,
   createWork,
   createWorkComment,
@@ -29,7 +30,9 @@ import {
   deleteWorkComment,
   getClaimAllowance,
   getWork,
+  isWorkLogoKey,
   parseClaimInput,
+  parseWorkImageKeysInput,
   toggleWorkVote,
   updateWork,
 } from "@/src/lib/works";
@@ -99,6 +102,10 @@ function readFields(formData: FormData) {
       : "app",
     descriptionMd: String(formData.get("description_md") || "").trim().slice(0, 10000),
     scope: (AWESOME_SCOPES as readonly string[]).includes(scope) ? scope : null,
+    /* 媒体隐藏字段(20260826_work_media):logoKey 单 key;imageKeys 为 JSON 字符串,
+       解析失败 = null,交给 validate 报错(不静默吞掉手搓值) */
+    logoKey: String(formData.get("logoKey") || "").trim(),
+    imageKeys: parseWorkImageKeysInput(String(formData.get("imageKeys") || "")),
   };
 }
 
@@ -121,6 +128,10 @@ function validate(
   if (f.intent === "awesome" && !f.authorLabel) return t(locale, "err.workAuthorRequired");
   /* awesome 条目必须有收录口径(推荐规则:公开展示推荐人,口径必填) */
   if (f.authorLabel && !f.scope) return t(locale, "err.workNoScope");
+  /* 媒体 key:形状 + 前缀白名单(logo 仅 logo/,配图 ≤9 且仅 image/) */
+  if (!isWorkLogoKey(f.logoKey)) return t(locale, "err.workLogoKey");
+  if (f.imageKeys === null || !areWorkImageKeys(f.imageKeys))
+    return t(locale, "err.workImageKeys");
   return null;
 }
 
@@ -162,7 +173,11 @@ export async function createWorkAction(
     awesome: !!f.authorLabel,
   });
   if ("error" in claim) return { error: claim.error };
-  await createWork(user.id, { ...f, claimedTokens: claim.claimed });
+  await createWork(user.id, {
+    ...f,
+    imageKeys: f.imageKeys ?? [],
+    claimedTokens: claim.claimed,
+  });
   revalidatePath("/works");
   revalidatePath("/awesome");
   redirect(f.authorLabel ? "/awesome" : "/works");
@@ -187,6 +202,7 @@ export async function updateWorkAction(
   if ("error" in claim) return { error: claim.error };
   const ok = await updateWork(user.id, workId, {
     ...f,
+    imageKeys: f.imageKeys ?? [],
     claimedTokens: claim.claimed,
   });
   if (!ok) return { error: t(locale, "err.notOwnerWork") };

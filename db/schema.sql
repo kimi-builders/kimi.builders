@@ -153,6 +153,9 @@ CREATE TABLE IF NOT EXISTS works (
   scope VARCHAR(16) NULL COMMENT 'Awesome 收录口径:base/eco/part;仅 awesome 条目',
   -- kind 由 20260825_work_kind.sql 引入(该迁移同时 DROP platforms),已有库执行该迁移
   kind VARCHAR(24) NOT NULL DEFAULT 'app' COMMENT '作品类型:app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other',
+  -- logo_key/image_keys 由 20260826_work_media.sql 引入,已有库执行该迁移
+  logo_key VARCHAR(255) NOT NULL DEFAULT '' COMMENT '作品 Logo 存储 key(空=无;URL 渲染时拼接)',
+  image_keys JSON NULL COMMENT '配图 key JSON 数组(image/ 前缀,≤9;第一张为封面)',
   KEY idx_source (source, created_at),
   KEY idx_featured (featured_at),
   CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),

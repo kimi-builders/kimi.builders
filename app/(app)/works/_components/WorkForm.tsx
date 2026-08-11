@@ -23,6 +23,7 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 import type { WorkFormState } from "../actions";
+import WorkMediaFields, { type MediaRef } from "./WorkMediaFields";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:shadow-[0_0_0_3px_rgb(26_136_255/0.15)]";
@@ -51,6 +52,7 @@ export default function WorkForm({
   workId,
   initial,
   claim,
+  media,
 }: {
   action: (prev: WorkFormState | null, formData: FormData) => Promise<WorkFormState>;
   locale: Locale;
@@ -76,6 +78,12 @@ export default function WorkForm({
     hasUsage: boolean;
     remaining: number;
     suggested: { label: string; tokens: number } | null;
+  };
+  /* 媒体回填(20260826_work_media):编辑时由服务端 mediaUrl 拼好 URL 传入;
+     仅「我的作品」路径渲染上传区(awesome 推荐条目服务端强制置空) */
+  media?: {
+    logo: MediaRef | null;
+    images: MediaRef[];
   };
 }) {
   const [state, formAction, pending] = useActionState<WorkFormState | null, FormData>(
@@ -254,6 +262,16 @@ export default function WorkForm({
           className={`${inputCls} font-mono`}
         />
       </div>
+
+      {/* Logo + 配图上传(20260826_work_media):仅「我的作品」;推荐站外项目不渲染
+          (组件卸载后隐藏字段不提交,服务端对 awesome 条目再强制置空) */}
+      {kind === "site" && (
+        <WorkMediaFields
+          locale={locale}
+          initialLogo={media?.logo ?? null}
+          initialImages={media?.images ?? []}
+        />
+      )}
 
       <div>
         <label htmlFor="work-desc" className={labelCls}>

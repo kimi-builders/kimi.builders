@@ -19,6 +19,7 @@ import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { modelFamilyName } from "@/src/lib/model-families";
+import { mediaUrl } from "@/src/lib/storage";
 import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import {
   claimBadgeOf,
@@ -30,6 +31,7 @@ import {
 import { loadMoreWorkCommentsAction } from "../actions";
 import { loadWorkComments } from "../_components/work-comment-page";
 import WorkCommentForm from "../_components/WorkCommentForm";
+import WorkGallery from "../_components/WorkGallery";
 import WorkOwnerActions from "../_components/WorkOwnerActions";
 import WorkScreenshot from "../_components/WorkScreenshot";
 import WorkVoteButton from "../_components/WorkVoteButton";
@@ -106,8 +108,18 @@ export default async function WorkPage({
         <span className="truncate">{work.name}</span>
       </div>
 
-      <h1 className="mt-4 text-2xl font-semibold leading-snug">
-        {work.name}
+      {/* 标题行:有 Logo 时左侧挂方形 Logo(20260826_work_media) */}
+      <div className="mt-4 flex items-start gap-3">
+        {work.logoKey && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={mediaUrl(work.logoKey)}
+            alt=""
+            className="mt-0.5 size-11 shrink-0 rounded-lg border border-line object-cover"
+          />
+        )}
+        <h1 className="text-2xl font-semibold leading-snug">
+          {work.name}
         {work.scope && (
           <span className="ml-2 inline-block rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue">
             {t(
@@ -144,7 +156,8 @@ export default async function WorkPage({
             {t(locale, "featured.badge")}
           </span>
         )}
-      </h1>
+        </h1>
+      </div>
       <div className="mt-3 flex items-center gap-3 font-mono text-[11px] text-grey">
         {work.handle ? (
           <>
@@ -163,7 +176,12 @@ export default async function WorkPage({
       </div>
 
       <div className="mt-6">
-        <WorkScreenshot url={work.screenshotUrl} name={work.name} />
+        {/* 有配图走图集(封面大图 + 缩略图);无配图保持原单张外链截图 */}
+        {work.imageKeys.length > 0 ? (
+          <WorkGallery keys={work.imageKeys} name={work.name} />
+        ) : (
+          <WorkScreenshot url={work.screenshotUrl} name={work.name} />
+        )}
       </div>
 
       {/* 按钮行:体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除 */}

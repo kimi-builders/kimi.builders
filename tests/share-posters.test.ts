@@ -185,6 +185,8 @@ function workRow(overrides: Partial<WorkRow> = {}): WorkRow {
     kind: "app",
     descriptionMd: "",
     scope: "",
+    logoKey: "",
+    imageKeys: [],
     ...overrides,
   };
 }

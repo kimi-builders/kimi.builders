@@ -7,6 +7,7 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { mediaUrl } from "@/src/lib/storage";
 import { getSuggestedClaimProjects } from "@/src/lib/usage/verifiable";
 import {
   claimsPaused,
@@ -85,6 +86,11 @@ export default async function EditWorkContent({
           hasUsage: allowance.total > 0,
           remaining: allowance.remaining,
           suggested,
+        }}
+        /* 媒体回填(20260826_work_media):key → 公开 URL 在此(服务端)拼好 */
+        media={{
+          logo: work.logoKey ? { key: work.logoKey, url: mediaUrl(work.logoKey) } : null,
+          images: work.imageKeys.map((k) => ({ key: k, url: mediaUrl(k) })),
         }}
       />
     </div>
