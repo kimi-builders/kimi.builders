@@ -6,12 +6,17 @@ import { useState, type ReactNode } from "react";
 
 export default function SettingsTabs({
   tabs,
+  initialKey,
   children,
 }: {
   tabs: { key: string; label: string }[];
+  /* 绑定回执落地时直接展开「账号」页签 */
+  initialKey?: string;
   children: ReactNode[];
 }) {
-  const [active, setActive] = useState(tabs[0]?.key ?? "");
+  const [active, setActive] = useState(
+    initialKey && tabs.some((tab) => tab.key === initialKey) ? initialKey : (tabs[0]?.key ?? ""),
+  );
   return (
     <div>
       <div className="flex gap-5 border-b border-line" role="tablist">

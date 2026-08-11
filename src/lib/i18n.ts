@@ -314,6 +314,28 @@ const DICT = {
   "set.account": { zh: "账号", en: "Account" },
   "set.linked": { zh: "已绑定的登录方式", en: "Linked sign-in methods" },
   "set.linkedBadge": { zh: "已绑定", en: "Linked" },
+  "set.notLinked": { zh: "未绑定", en: "Not linked" },
+  "set.link": { zh: "绑定", en: "Link" },
+  "set.linkHint": {
+    zh: "绑定后可用任一方式登录同一账号。",
+    en: "Every linked method signs into the same account.",
+  },
+  "set.linkedOk": {
+    zh: "{p} 绑定成功,现在可以用它登录本账号。",
+    en: "{p} linked — you can now sign in with it.",
+  },
+  "set.linkTaken": {
+    zh: "这个 {p} 账号已绑定到其他用户。",
+    en: "This {p} account is already linked to another user.",
+  },
+  "set.linkNoSession": {
+    zh: "登录状态已失效,请重新登录后再绑定。",
+    en: "Session expired — sign in again, then retry linking.",
+  },
+  "set.linkFailed": {
+    zh: "{p} 绑定失败,请稍后重试。",
+    en: "Failed to link {p} — please try again.",
+  },
   "set.linkedSince": { zh: "绑定于 {d}", en: "linked {d}" },
   "set.email": { zh: "邮箱", en: "Email" },
   "set.loginRequired": { zh: "登录后才能修改设置:", en: "Log in to change settings:" },

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   authorizeUrl,
   createState,
+  LINK_COOKIE,
   PROVIDERS,
   STATE_COOKIE,
   type Provider,
@@ -20,7 +21,11 @@ export async function GET(
     return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   }
   const origin = new URL(req.url).origin;
-  const returnTo = safeReturnTo(new URL(req.url).searchParams.get("next"));
+  /* link=1:设置页发起的绑定流程,回调把 provider 挂到当前登录账号 */
+  const linking = new URL(req.url).searchParams.get("link") === "1";
+  const returnTo = linking
+    ? "/settings"
+    : safeReturnTo(new URL(req.url).searchParams.get("next"));
   const state = createState();
   const res = NextResponse.redirect(
     authorizeUrl(provider as Provider, {
@@ -28,19 +33,15 @@ export async function GET(
       state,
     }),
   );
-  res.cookies.set(STATE_COOKIE, state, {
+  const cookieOpts = {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 600,
-  });
-  res.cookies.set(AUTH_RETURN_COOKIE, returnTo, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 600,
-  });
+  };
+  res.cookies.set(STATE_COOKIE, state, cookieOpts);
+  res.cookies.set(AUTH_RETURN_COOKIE, returnTo, cookieOpts);
+  if (linking) res.cookies.set(LINK_COOKIE, "1", cookieOpts);
   return res;
 }

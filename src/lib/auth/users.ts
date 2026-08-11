@@ -6,21 +6,69 @@ import type { Pool } from "mysql2/promise";
 import { getPool } from "../db";
 import type { OAuthProfile, Provider } from "./oauth";
 
+/* provider 账号 → 已绑定用户 id;未绑定返回 null。 */
+export async function findLinkedUserId(
+  provider: Provider,
+  providerAccountId: string,
+): Promise<number | null> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_account_id = ? LIMIT 1",
+    [provider, providerAccountId],
+  );
+  return rows[0] ? Number(rows[0].user_id) : null;
+}
+
+/* 登录后绑定(设置页发起):已绑给本人幂等 ok;已绑给别人 → taken(不抢绑);
+   否则新建绑定行。 */
+export async function linkProviderAccount(
+  userId: number,
+  provider: Provider,
+  profile: OAuthProfile,
+): Promise<"ok" | "taken"> {
+  const existing = await findLinkedUserId(provider, profile.providerAccountId);
+  if (existing === userId) return "ok";
+  if (existing !== null) return "taken";
+  await getPool().query(
+    "INSERT INTO oauth_accounts (user_id, provider, provider_account_id) VALUES (?, ?, ?)",
+    [userId, provider, profile.providerAccountId],
+  );
+  return "ok";
+}
+
 export async function findOrCreateUser(
   provider: Provider,
   profile: OAuthProfile,
 ): Promise<number> {
   const pool = getPool();
-  const [linked] = await pool.query<RowDataPacket[]>(
-    "SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_account_id = ? LIMIT 1",
-    [provider, profile.providerAccountId],
-  );
-  if (linked[0]) return Number(linked[0].user_id);
+  const linkedId = await findLinkedUserId(provider, profile.providerAccountId);
+  if (linkedId !== null) return linkedId;
+
+  /* 邮箱占用检查:已验证邮箱 → 自动并号(挂 provider 后登录既有账号,不再新建小号);
+     未验证邮箱撞上既有账号 → 新号不落该邮箱(防唯一约束冲突 + 防撞号)。
+     GitHub 只取 verified 邮箱、Google 要 email_verified=true(见 oauth.ts)。 */
+  let emailTaken = false;
+  if (profile.email) {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [profile.email],
+    );
+    if (rows[0]) {
+      if (profile.emailVerified) {
+        const uid = Number(rows[0].id);
+        await pool.query(
+          "INSERT INTO oauth_accounts (user_id, provider, provider_account_id) VALUES (?, ?, ?)",
+          [uid, provider, profile.providerAccountId],
+        );
+        return uid;
+      }
+      emailTaken = true;
+    }
+  }
 
   const handle = await uniqueHandle(pool, profile.handle || profile.name || "builder");
   const [res] = await pool.query<ResultSetHeader>(
     "INSERT INTO users (handle, name, email, avatar_url) VALUES (?, ?, ?, ?)",
-    [handle, profile.name.slice(0, 64), profile.email, profile.avatarUrl.slice(0, 500)],
+    [handle, profile.name.slice(0, 64), emailTaken ? null : profile.email, profile.avatarUrl.slice(0, 500)],
   );
   const uid = Number(res.insertId);
   await pool.query(

@@ -42,8 +42,15 @@ function ymd(d: Date): string {
 
 export default async function SettingsContent({
   showTitle = true,
+  linked,
+  linkError,
+  linkProvider,
 }: {
   showTitle?: boolean;
+  /* OAuth 绑定回执:?linked=github / ?link_error=taken&p=github(落在「账号」页签) */
+  linked?: string;
+  linkError?: string;
+  linkProvider?: string;
 }) {
   const user = await getSessionUser();
   const locale = await getLocale(user);
@@ -109,7 +116,7 @@ export default async function SettingsContent({
       )}
 
       <div className={showTitle ? "mt-6" : ""}>
-        <SettingsTabs tabs={tabs}>
+        <SettingsTabs tabs={tabs} initialKey={linked || linkError ? "account" : undefined}>
           <Panel title={t(locale, "set.profile")} note={t(locale, "set.profileNote")}>
             <ProfileForm
               initial={{
@@ -152,6 +159,24 @@ export default async function SettingsContent({
           </Panel>
 
           <Panel title={t(locale, "set.account")} note={t(locale, "set.accountNote")}>
+            {linked && (
+              <p className="mb-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-400">
+                {t(locale, "set.linkedOk", { p: linked === "github" ? "GitHub" : "Google" })}
+              </p>
+            )}
+            {linkError && (
+              <p className="mb-3 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs text-red-400">
+                {t(
+                  locale,
+                  linkError === "taken"
+                    ? "set.linkTaken"
+                    : linkError === "no_session"
+                      ? "set.linkNoSession"
+                      : "set.linkFailed",
+                  { p: linkProvider === "github" ? "GitHub" : "Google" },
+                )}
+              </p>
+            )}
             <div className="divide-y divide-line">
               {own.email && (
                 <div className="flex items-center gap-3 py-3.5 first:pt-0">
@@ -164,24 +189,43 @@ export default async function SettingsContent({
                   </div>
                 </div>
               )}
-              {accounts.map((a) => (
-                <div key={a.provider} className="flex items-center gap-3 py-3.5 last:pb-0">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-paper/[0.04] font-mono text-xs font-semibold text-grey">
-                    {a.provider === "github" ? <GithubIcon size={15} /> : "G"}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-2 text-[13px] font-medium text-paper">
-                      {a.provider === "github" ? "GitHub" : "Google"}
-                      <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 font-mono text-[10px] text-emerald-400">
-                        {t(locale, "set.linkedBadge")}
-                      </span>
-                    </p>
-                    <p className="mt-0.5 font-mono text-[11px] text-grey">
-                      {t(locale, "set.linkedSince", { d: ymd(a.createdAt) })}
-                    </p>
+              {(["github", "google"] as const).map((p) => {
+                const linkedAccount = accounts.find((a) => a.provider === p);
+                return (
+                  <div key={p} className="flex items-center gap-3 py-3.5 last:pb-0">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-paper/[0.04] font-mono text-xs font-semibold text-grey">
+                      {p === "github" ? <GithubIcon size={15} /> : "G"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-[13px] font-medium text-paper">
+                        {p === "github" ? "GitHub" : "Google"}
+                        <span
+                          className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${
+                            linkedAccount
+                              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400"
+                              : "border-line text-grey"
+                          }`}
+                        >
+                          {t(locale, linkedAccount ? "set.linkedBadge" : "set.notLinked")}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] text-grey">
+                        {linkedAccount
+                          ? t(locale, "set.linkedSince", { d: ymd(linkedAccount.createdAt) })
+                          : t(locale, "set.linkHint")}
+                      </p>
+                    </div>
+                    {!linkedAccount && (
+                      <a
+                        href={`/api/auth/${p}?link=1`}
+                        className="ml-auto inline-flex min-h-9 shrink-0 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-paper transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                      >
+                        {t(locale, "set.link")}
+                      </a>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Panel>
         </SettingsTabs>

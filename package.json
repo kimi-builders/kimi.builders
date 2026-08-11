@@ -11,7 +11,7 @@
     "test:usage-db": "tsx tests/usage-db.integration.ts && tsx tests/usage-phase2.integration.ts",
     "db:migrate": "node scripts/db-migrate.mjs migrate",
     "db:status": "node scripts/db-migrate.mjs status",
-    "test:auth-db": "tsx tests/auth-email.integration.ts"
+    "test:auth-db": "tsx tests/auth-email.integration.ts && tsx tests/auth-link.integration.ts"
   },
   "dependencies": {
     "@lobehub/icons": "^5.15.0",

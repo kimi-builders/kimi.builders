@@ -7,12 +7,16 @@ export type Provider = "github" | "google";
 export const PROVIDERS: Provider[] = ["github", "google"];
 
 export const STATE_COOKIE = "kb_oauth_state";
+/* 绑定模式标记:登录用户从设置页发起 OAuth 时置 1,回调把 provider 挂到当前账号。 */
+export const LINK_COOKIE = "kb_oauth_link";
 
 export interface OAuthProfile {
   providerAccountId: string;
   handle: string; // 建议 handle(入库前去重)
   name: string;
   email: string | null;
+  /* 邮箱是否经提供方验证:只有已验证邮箱才参与登录时的自动并号。 */
+  emailVerified: boolean;
   avatarUrl: string;
 }
 
@@ -93,22 +97,27 @@ async function fetchGitHubProfile(
     email?: string | null;
     avatar_url?: string;
   };
-  let email = user.email ?? null;
-  if (!email) {
-    // 用户隐藏了公开邮箱时,从 /user/emails 取主邮箱
-    const emails = (await (
-      await fetch("https://api.github.com/user/emails", { headers })
-    ).json()) as { email: string; primary: boolean; verified: boolean }[];
-    if (Array.isArray(emails)) {
-      const pick = emails.find((e) => e.primary && e.verified) ?? emails.find((e) => e.verified);
-      email = pick?.email ?? null;
+  /* 优先取 /user/emails 里已验证的邮箱(自动并号的安全前提);
+     公开邮箱(user.email)未验证,只做兜底展示,不参与并号。 */
+  let email: string | null = null;
+  let emailVerified = false;
+  const emails = (await (
+    await fetch("https://api.github.com/user/emails", { headers })
+  ).json()) as { email: string; primary: boolean; verified: boolean }[];
+  if (Array.isArray(emails)) {
+    const pick = emails.find((e) => e.primary && e.verified) ?? emails.find((e) => e.verified);
+    if (pick) {
+      email = pick.email;
+      emailVerified = true;
     }
   }
+  if (!email) email = user.email ?? null;
   return {
     providerAccountId: String(user.id),
     handle: user.login ?? "",
     name: user.name || user.login || "",
     email,
+    emailVerified,
     avatarUrl: user.avatar_url ?? "",
   };
 }
@@ -139,6 +148,7 @@ async function fetchGoogleProfile(
     sub: string;
     name?: string;
     email?: string;
+    email_verified?: boolean;
     picture?: string;
   };
   return {
@@ -146,6 +156,7 @@ async function fetchGoogleProfile(
     handle: info.email?.split("@")[0] ?? info.name ?? "",
     name: info.name ?? "",
     email: info.email ?? null,
+    emailVerified: info.email_verified === true,
     avatarUrl: info.picture ?? "",
   };
 }
