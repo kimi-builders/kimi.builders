@@ -1,15 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUiPrefs } from "@/src/lib/prefs";
 import Toaster from "@/components/Toaster";
 import "./globals.css";
 
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["500", "600"],
+/* 本地化字体(2026-08):Google Fonts 边缘节点抖动曾咬挂 CI 构建,
+   字体文件入库后构建不再依赖外网。 */
+const jetbrains = localFont({
+  src: [
+    { path: "./fonts/JetBrainsMono-500-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/JetBrainsMono-600-latin.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-jetbrains",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
