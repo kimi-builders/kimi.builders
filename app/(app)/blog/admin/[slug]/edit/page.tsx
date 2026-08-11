@@ -27,7 +27,7 @@ export default async function EditArticlePage({
   const locale = await getLocale(user);
   if (!user || !canModerate(user.role)) {
     return (
-      <p className="mt-8 font-mono text-xs text-grey">
+      <p className="mt-8 rounded-2xl border border-line bg-card p-6 font-mono text-xs text-grey">
         {t(locale, user ? "err.forbidden" : "err.login")}
       </p>
     );
@@ -38,11 +38,11 @@ export default async function EditArticlePage({
   const article = await getArticleForEdit(s, artLocale);
   if (!article) notFound();
   return (
-    <div>
+    <div className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       <h1 className="font-mono text-lg font-semibold">
         {t(locale, "artf.editTitle")}
         {!article.publishedAt && (
-          <span className="ml-3 border border-line px-1.5 py-px align-middle font-mono text-[10px] tracking-wider text-grey">
+          <span className="ml-3 rounded-md border border-line px-1.5 py-px align-middle font-mono text-[10px] tracking-wider text-grey">
             {t(locale, "art.draft")}
           </span>
         )}

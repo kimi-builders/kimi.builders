@@ -10,6 +10,7 @@ import { monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import Markdown from "@/components/Markdown";
+import { ArrowLeft } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -39,21 +40,22 @@ export default async function GuidePage({
   const canEdit = !!user && canModerate(user.role);
 
   return (
-    <div>
+    <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       <div className="flex items-center gap-3 font-mono text-[11px] tracking-wider text-grey">
-        <Link href="/learn" className="hover:text-paper">
-          ← {t(locale, "nav.learn")}
+        <Link href="/learn" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
+          <ArrowLeft size={13} aria-hidden="true" />
+          {t(locale, "nav.learn")}
         </Link>
         <span>{monthLabel(article.publishedAt)}</span>
         {article.fallback && (
-          <span className="border border-line px-1.5 py-px text-[10px] text-paper">
+          <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
             {t(locale, article.locale === "zh" ? "art.langZh" : "art.langEn")}
           </span>
         )}
         {canEdit && (
           <Link
             href={`/blog/admin/${article.slug}/edit?locale=${article.locale}`}
-            className="ml-auto text-grey transition-colors hover:text-blue"
+            className="ml-auto rounded-lg px-2 py-1 text-grey transition-colors hover:bg-moon hover:text-blue"
           >
             {t(locale, "post.edit")}
           </Link>
@@ -71,9 +73,9 @@ export default async function GuidePage({
         </Link>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 border-t border-line pt-8">
         <Markdown source={article.bodyMd} />
       </div>
-    </div>
+    </article>
   );
 }

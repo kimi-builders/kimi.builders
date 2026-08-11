@@ -52,10 +52,10 @@ export default function RsvpButton({
       aria-pressed={rsvped}
       aria-label={t(locale, rsvped ? "dn.cancelRsvp" : "dn.rsvp")}
       title={t(locale, rsvped ? "dn.cancelRsvp" : "dn.rsvp")}
-      className={`inline-flex min-h-11 items-center gap-2 border px-5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+      className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-5 font-mono text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
         rsvped
-          ? "border-blue bg-blue text-bg hover:bg-transparent hover:text-blue"
-          : "border-blue text-blue hover:bg-blue hover:text-bg"
+          ? "border border-blue bg-transparent text-blue hover:bg-blue/10"
+          : "bg-blue text-white shadow-lg shadow-blue/15 hover:opacity-90"
       }`}
     >
       <Icon size={14} aria-hidden="true" />

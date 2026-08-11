@@ -25,7 +25,7 @@ export default async function BlogPage() {
 
   return (
     <div>
-      <header>
+      <header className="rounded-2xl border border-line bg-card p-5 sm:p-6">
         <p className="font-mono text-[10px] tracking-[0.25em] text-blue">
           {t(locale, "blog.sub")}
         </p>
@@ -36,7 +36,7 @@ export default async function BlogPage() {
           {canEdit && (
             <Link
               href="/blog/admin/new"
-              className="ml-auto shrink-0 border border-blue px-3 py-1 font-mono text-[11px] text-blue transition-colors hover:bg-blue hover:text-bg"
+              className="ml-auto shrink-0 rounded-lg bg-blue px-3 py-2 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90"
             >
               {t(locale, "blog.new")}
             </Link>
@@ -45,17 +45,17 @@ export default async function BlogPage() {
       </header>
 
       {items.length === 0 ? (
-        <p className="mt-10 border border-line bg-card p-6 text-sm leading-relaxed text-grey">
+        <p className="mt-6 rounded-2xl border border-line bg-card p-6 text-sm leading-relaxed text-grey">
           {t(locale, "blog.empty")}
         </p>
       ) : (
-        <div className="mt-8">
+        <div className="mt-4 space-y-3">
           {items.map((a) => (
-            <article key={a.slug} className="border-t border-line py-6 first:mt-0">
+            <article key={a.slug} className="rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20">
               <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-grey">
                 <span>{monthLabel(a.publishedAt)}</span>
                 {a.fallback && (
-                  <span className="border border-line px-1.5 py-px text-paper">
+                  <span className="rounded-md border border-line px-1.5 py-px text-paper">
                     {t(locale, a.locale === "zh" ? "art.langZh" : "art.langEn")}
                   </span>
                 )}
@@ -81,7 +81,6 @@ export default async function BlogPage() {
               </p>
             </article>
           ))}
-          <div className="border-t border-line" />
         </div>
       )}
     </div>

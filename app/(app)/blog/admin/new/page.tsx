@@ -14,13 +14,13 @@ export default async function NewArticlePage() {
   const locale = await getLocale(user);
   if (!user || !canModerate(user.role)) {
     return (
-      <p className="mt-8 font-mono text-xs text-grey">
+      <p className="mt-8 rounded-2xl border border-line bg-card p-6 font-mono text-xs text-grey">
         {t(locale, user ? "err.forbidden" : "err.login")}
       </p>
     );
   }
   return (
-    <div>
+    <div className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       <h1 className="font-mono text-lg font-semibold">
         {t(locale, "artf.newTitle")}
       </h1>

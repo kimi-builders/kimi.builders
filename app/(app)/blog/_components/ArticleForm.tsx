@@ -8,13 +8,19 @@ import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "@/components/seg-classes";
+import {
   deleteArticleAction,
   saveArticleAction,
   type ArticleFormState,
 } from "../actions";
 
 const inputCls =
-  "w-full border border-line bg-transparent px-3 py-2 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
 
 export interface ArticleFormInitial {
   id: number;
@@ -69,7 +75,8 @@ export default function ArticleForm({
     <form action={formAction} className="mt-6 space-y-5">
       {initial && <input type="hidden" name="id" value={initial.id} />}
 
-      <div className="flex flex-wrap gap-2 font-mono text-xs">
+      <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+        <div className={SEG_WRAP} role="radiogroup" aria-label={t(locale, "artf.kindLetter")}>
         {(
           [
             { id: "letter", key: "artf.kindLetter" },
@@ -78,11 +85,7 @@ export default function ArticleForm({
         ).map((k) => (
           <label
             key={k.id}
-            className={`cursor-pointer border px-3 py-1.5 ${
-              kind === k.id
-                ? "border-blue text-blue"
-                : "border-line text-grey hover:text-paper"
-            }`}
+            className={`${SEG_ITEM} cursor-pointer ${kind === k.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
           >
             <input
               type="radio"
@@ -95,6 +98,7 @@ export default function ArticleForm({
             {t(locale, k.key)}
           </label>
         ))}
+        </div>
         <select
           name="locale"
           defaultValue={initial?.locale ?? locale}
@@ -174,7 +178,7 @@ export default function ArticleForm({
         <button
           type="submit"
           disabled={pending || deleting}
-          className="border border-blue px-6 py-2 font-mono text-sm text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
+          className="rounded-lg bg-blue px-6 py-2.5 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {pending ? t(locale, "post.submitting") : t(locale, "post.save")}
         </button>
@@ -183,7 +187,7 @@ export default function ArticleForm({
             type="button"
             onClick={del}
             disabled={pending || deleting}
-            className="font-mono text-xs text-grey transition-colors hover:text-blue disabled:opacity-40"
+            className="rounded-lg border border-line px-3 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
           >
             {deleting ? t(locale, "post.submitting") : t(locale, "post.delete")}
           </button>
