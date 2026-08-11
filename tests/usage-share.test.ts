@@ -182,8 +182,13 @@ test("poster copy follows the export locale: zh may mix, en stays pure English",
     assert.doesNotMatch(enSnap.main.eyebrow, cjk, `${range} en eyebrow`);
     assert.doesNotMatch(enSnap.main.subline, cjk, `${range} en subline`);
     assert.doesNotMatch(enSnap.peakLabel, cjk, `${range} en peakLabel`);
-    assert.doesNotMatch(enSnap.topEffort, cjk, `${range} en topEffort`);
   }
+});
+
+test("share snapshots carry reliable top-model facts", () => {
+  const snapshot = mockUsageShareSnapshot("30d");
+  assert.ok(snapshot.topModelTokens > 0);
+  assert.ok(snapshot.topModelShare > 0 && snapshot.topModelShare <= 1);
 });
 
 test("share snapshots expose the poster target url", () => {

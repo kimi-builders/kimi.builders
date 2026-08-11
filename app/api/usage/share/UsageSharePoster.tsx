@@ -68,11 +68,6 @@ function spanText(span: { from: string; to: string }, zh: boolean): string {
     : `${fromYear} · ${from} — ${toYear} · ${to}`;
 }
 
-function effortShort(value: string): string {
-  if (!value || value === "未记录" || value === "—") return "—";
-  return value.replace("EXTRA ", "X").replaceAll(" ", "");
-}
-
 /* 对数带宽:以缓存读为锚,指数 4 放大差距(纯 log 下 130M 与 3.6B 几乎同宽)。 */
 function flowHeight(value: number, anchor: number, maximum: number, minimum: number): number {
   if (value <= 0 || anchor <= 0) return minimum;
@@ -667,7 +662,6 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const tools = snapshot.topTools;
   const maximum = Math.max(1, ...tools.map((tool) => tool.tokens));
   const hasModelGlyph = modelGlyphId(snapshot.topModel) !== null;
-  const hasEffort = snapshot.topEffort !== "" && snapshot.topEffort !== "未记录" && snapshot.topEffort !== "—";
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <Eyebrow
@@ -698,11 +692,12 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
                   </div>
                 </div>
               </div>
-              <div style={{ display: "flex", marginTop: 10, height: 3, background: "#11151a" }}>
+              <div style={{ display: "flex", marginTop: 12, height: 6, borderRadius: 2, background: "#11151a" }}>
                 <div
                   style={{
                     display: "flex",
                     width: `${Math.max(4, (tool.tokens / maximum) * 100)}%`,
+                    borderRadius: 2,
                     background: index === 0 ? palette.green : palette.blue,
                   }}
                 />
@@ -741,7 +736,7 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
         </div>
         <div style={{ display: "flex", marginLeft: "auto", flexDirection: "column", alignItems: "flex-end" }}>
           <div style={{ display: "flex", color: palette.muted, fontSize: 12, letterSpacing: 1.5 }}>
-            {zh ? "推理强度" : "EFFORT"}
+            {zh ? "模型用量" : "MODEL TOKENS"}
           </div>
           <div
             style={{
@@ -749,11 +744,11 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
               marginTop: 8,
               fontSize: 19,
               fontWeight: 700,
-              color: hasEffort ? palette.amber : palette.muted,
+              color: palette.paper,
               whiteSpace: "nowrap",
             }}
           >
-            {hasEffort ? effortShort(snapshot.topEffort) : "—"}
+            {`${compact(snapshot.topModelTokens)} · ${(snapshot.topModelShare * 100).toFixed(0)}%`}
           </div>
         </div>
       </div>
@@ -788,8 +783,8 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
     : snapshot.streakWeeks.current > 0
       ? "WEEK STREAK"
       : "LONGEST STREAK";
-  /* 展示地址:去协议与 query、全大写、品牌蓝(QR 仍指完整 siteUrl)。 */
-  const siteUrlDisplay = snapshot.siteUrl.replace("https://", "").replace("?tab=usage", "").toUpperCase();
+  /* 展示地址:去协议与 query、保持小写(与顶部大写品牌区分开);QR 仍指完整 siteUrl。 */
+  const siteUrlDisplay = snapshot.siteUrl.replace("https://", "").replace("?tab=usage", "");
   return (
     <div
       style={{

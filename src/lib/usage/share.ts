@@ -64,7 +64,9 @@ export interface UsageShareSnapshot {
   peakLabel: string;
   cacheHitRate: number | null;
   topModel: string;
-  topEffort: string;
+  /* 主力模型的范围内 token 与占比(分布直接采集,比残缺的推理强度可靠)。 */
+  topModelTokens: number;
+  topModelShare: number;
   toolCount: number;
   requests: number;
   flow: UsageShareFlow;
@@ -346,11 +348,6 @@ function initials(name: string, handle: string): string {
   return [...source].slice(0, 2).join("").toUpperCase();
 }
 
-function effortLabel(value: string, zh: boolean): string {
-  if (!value) return zh ? "未记录" : "—";
-  return value.replaceAll("_", " ").replaceAll("-", " ").toUpperCase();
-}
-
 export async function getUsageShareSnapshot(input: {
   /* 只用 id/handle/name(已 grep 确认):收窄到 Pick,个人主页访客视角
      才能用公开用户的资料构造调用(门禁在调用方)。 */
@@ -385,11 +382,10 @@ export async function getUsageShareSnapshot(input: {
     filters.from.getTime() <= weekWindowStartUtc.getTime()
       ? filters
       : { ...filters, from: weekWindowStartUtc };
-  const bucket = bucketFilterSql(input.user.id, filters);
   const dailyBucket = bucketFilterSql(input.user.id, dailyFilters);
   const shifted = `DATE_ADD(bucket_start, INTERVAL ${dailyFilters.tzOffsetMinutes} MINUTE)`;
   const pool = getPool();
-  const [overview, dailyResult, effortResult, firstResult] = await Promise.all([
+  const [overview, dailyResult, firstResult] = await Promise.all([
     getUsageOverview(input.user.id, filters),
     pool.query<RowDataPacket[]>(
       `SELECT DATE(${shifted}) AS day,
@@ -402,17 +398,6 @@ export async function getUsageShareSnapshot(input: {
        GROUP BY DATE(${shifted})
        ORDER BY day`,
       dailyBucket.params,
-    ),
-    pool.query<RowDataPacket[]>(
-      `SELECT reasoning_effort,
-              SUM(input_tokens + cache_write_input_tokens + cache_read_input_tokens
-                  + output_tokens + reasoning_output_tokens) AS tokens
-       FROM usage_buckets
-       WHERE ${bucket.where} AND reasoning_effort <> ''
-       GROUP BY reasoning_effort
-       ORDER BY tokens DESC
-       LIMIT 1`,
-      bucket.params,
     ),
     pool.query<RowDataPacket[]>(
       `SELECT MIN(bucket_start) AS first_at FROM usage_buckets WHERE user_id = ?`,
@@ -555,7 +540,8 @@ export async function getUsageShareSnapshot(input: {
     peakLabel: isHours ? (zh ? "小时峰值" : "HOURLY PEAK") : zh ? "单日峰值" : "DAILY PEAK",
     cacheHitRate: usageCacheHitRate(overview.totals),
     topModel: overview.distributions.model.rows[0]?.label ?? (zh ? "未记录" : "—"),
-    topEffort: effortLabel(String(effortResult[0][0]?.reasoning_effort ?? ""), zh),
+    topModelTokens: overview.distributions.model.rows[0]?.tokens ?? 0,
+    topModelShare: overview.distributions.model.rows[0]?.share ?? 0,
     toolCount: overview.distributions.source.rows.filter((row) => row.key !== "__other__").length,
     requests: overview.totals.requests,
     flow,
@@ -726,7 +712,8 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
     peakLabel: isHours ? (zh ? "小时峰值" : "HOURLY PEAK") : zh ? "单日峰值" : "DAILY PEAK",
     cacheHitRate,
     topModel: "GPT-5.6 Sol",
-    topEffort: "EXTRA HIGH",
+    topModelTokens: Math.round(totalTokens * 0.42),
+    topModelShare: 0.42,
     toolCount: 6,
     requests: 12_481,
     flow,
