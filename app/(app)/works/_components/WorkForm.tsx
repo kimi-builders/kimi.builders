@@ -28,8 +28,13 @@ import WorkMediaFields, { type MediaRef } from "./WorkMediaFields";
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
 const labelCls = "mb-1.5 block text-[11.5px] text-grey";
+/* Choice inputs fill their own label instead of using `sr-only`'s page-level
+   absolute position. In a long route modal, focusing an uncontained sr-only
+   radio can scroll the outer <dialog> itself and strand the visible form. */
+const choiceInputCls =
+  "absolute inset-0 m-0 size-full cursor-pointer appearance-none opacity-0";
 const chipCls =
-  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-bg px-2.5 py-1.5 text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper has-checked:border-blue has-checked:bg-blue/10 has-checked:text-blue";
+  "relative inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-bg px-2.5 py-1.5 text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper has-checked:border-blue has-checked:bg-blue/10 has-checked:text-blue has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue";
 
 const STATUSES = [
   { id: "planning", key: "works.statusPlanning" },
@@ -188,7 +193,7 @@ export default function WorkForm({
                 name="status"
                 value={s.id}
                 defaultChecked={(initial?.status ?? "released") === s.id}
-                className="sr-only"
+                className={choiceInputCls}
               />
               {t(locale, s.key)}
             </label>
@@ -208,7 +213,7 @@ export default function WorkForm({
                 name="work_kind"
                 value={k.id}
                 defaultChecked={(initial?.kind ?? "app") === k.id}
-                className="sr-only"
+                className={choiceInputCls}
               />
               <i className={`size-[7px] rounded-full ${k.dot}`} />
               {workKindLabel(k.id, locale === "zh")}
@@ -315,7 +320,7 @@ export default function WorkForm({
                 name="agents"
                 value={a.id}
                 defaultChecked={checkedAgents.has(a.id)}
-                className="sr-only"
+                className={choiceInputCls}
               />
               <AgentIcon id={a.id} size={14} />
               {a.name}
@@ -337,7 +342,7 @@ export default function WorkForm({
                 name="models"
                 value={m.id}
                 defaultChecked={initial?.models.includes(m.id)}
-                className="sr-only"
+                className={choiceInputCls}
               />
               <ModelIcon id={m.id} size={14} />
               {m.name}
@@ -417,14 +422,14 @@ export default function WorkForm({
               {SCOPES.map((s) => (
                 <label
                   key={s.id}
-                  className="cursor-pointer rounded-lg border border-line bg-bg px-3 py-2.5 transition-colors hover:border-paper/30 has-checked:border-blue has-checked:bg-blue/10"
+                  className="relative cursor-pointer rounded-lg border border-line bg-bg px-3 py-2.5 transition-colors hover:border-paper/30 has-checked:border-blue has-checked:bg-blue/10 has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue"
                 >
                   <input
                     type="radio"
                     name="scope"
                     value={s.id}
                     defaultChecked={initial?.scope === s.id}
-                    className="sr-only"
+                    className={choiceInputCls}
                   />
                   <span className="block text-xs font-medium text-paper">
                     {t(locale, s.key)}
