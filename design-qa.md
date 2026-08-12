@@ -156,6 +156,57 @@ The annotated source used one-character weekday labels, left the right side of t
 
 final result: passed
 
+## Community leaderboard unification follow-up
+
+### Visual target and evidence
+
+- Source leaderboard capture: `/tmp/community-ranking-audit-01-current-desktop.jpg`
+- Product gold-standard capture: `/tmp/community-ranking-audit-03-profile-gold.jpg`
+- Final implementation captures: `/tmp/community-ranking-final-dark-zh.jpg`, `/tmp/community-ranking-impl-05-overall-light-zh.jpg`, `/tmp/community-ranking-impl-02-agent-dark-en.jpg`, and `/tmp/community-ranking-impl-03-model-dark-en.jpg`
+- Full three-state comparison (old leaderboard / profile gold standard / revised leaderboard): `/tmp/community-ranking-design-qa-comparison.jpg`
+- Focused leaderboard comparison (old stack / revised single board): `/tmp/community-ranking-design-qa-focus.jpg`
+- Browser CSS viewport: 1280×720, device pixel ratio 2. In-app browser full-page screenshots are CSS-pixel normalized: source 1265×895, profile reference 1265×957, final dark Chinese implementation 1265×837.
+- Primary comparison state: authenticated as `@kimi`, dark Chinese, overall board, 7-day period. Additional dark English Agent/model states and light Chinese overall state were captured.
+
+### Comparison history
+
+- Initial P1: overall, Agent, and model rankings were three equally weighted hard-edged tables, making the page read like an admin report rather than the profile-led community product. Fixed by moving title/trust/period controls into a `usage-hero`, adding a profile-style personal metric strip, and consolidating the three data sets into one rounded primary ranking card.
+- Initial P2: raw source/model identifiers (`claude-code`, `kimi-code`, `kimi-k3`) were visible controls. Fixed by reusing `usageSourceLabel`, `usageModelDisplayName`, `AgentIcon`, and `ModelIcon`; raw IDs remain only in stable URL query values and optional titles.
+- Initial P2: repeated headers and share actions obscured hierarchy. Fixed with a single `overall / by Agent / by model` segmented control and one contextual share action.
+- Initial P2: fixed tabular rows offered weak narrow-screen priority and no column semantics. Fixed with a semantic table, scoped column headers, a two-tier member cell below `sm`, hidden secondary desktop columns on small screens, and 44px mobile controls.
+- Post-fix comparison evidence: `/tmp/community-ranking-design-qa-comparison.jpg` and `/tmp/community-ranking-design-qa-focus.jpg`.
+
+### Required fidelity surfaces
+
+- Typography: existing local JetBrains Mono/UI stack is unchanged; display hierarchy now follows the profile gold standard with a 21px title, 14px card heading, compact metric values, and mono metadata.
+- Spacing and layout: 16px/20px card padding, 16px section gaps, `rounded-2xl` primary surfaces, hairline dividers, and one bounded wide canvas align with `/u/[handle]` and `/usage`.
+- Colors and tokens: only existing `paper`, `grey`, `blue`, `line`, `card`, and `usage-hero` tokens are used. Blue is restricted to trust/status, active outlines, and first-place emphasis.
+- Assets and icons: Lucide Trophy/ShieldCheck and existing LobeHub brand icons are reused; no emoji, placeholder, CSS-drawn, or fabricated visual assets were added.
+- Copy and content: current bilingual strings and factual trust/scope/cost disclosures are preserved; duplicated trust copy was removed from the footer.
+
+### Interaction and accessibility checks
+
+- Authenticated `@kimi` state exposes the real “My rank” card with token, active-day, and cost ranks.
+- Period, board type, Agent, and model selections navigate to restorable URL states; Kimi Code and Kimi K3 labels/icons were verified after navigation.
+- The leaderboard now exposes native table/caption/column-header semantics, member profile links, `aria-current` selected states, keyboard focus outlines, and minimum 44px mobile segmented/chip targets.
+- Dark Chinese, dark English, and light Chinese renders have zero desktop horizontal overflow; a fresh console check reports 0 errors and 0 warnings.
+- The in-app browser viewport override did not change its fixed desktop canvas during this run. Narrow-screen behavior was therefore checked from the rendered responsive class rules rather than claimed as a separate browser screenshot; the table intentionally collapses secondary metrics into the member cell below `sm`.
+
+### Findings
+
+- P0/P1/P2 remaining: none.
+- P3 remaining: none. The browser's fixed desktop canvas prevented a new exact 390px capture, so that environment limitation is recorded above rather than represented as a product defect.
+
+### Final gates
+
+- `npx tsc --noEmit`: pass.
+- `npm run lint`: pass.
+- `npm test`: pass — 261/261.
+- `npm run build -- --webpack`: pass — isolated Next.js 16.3.0 production build, 42 static pages generated.
+- `git diff --check`: pass.
+
+final result: passed
+
 ## §8 completion audit
 
 ### Full visual matrix
