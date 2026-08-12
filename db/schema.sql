@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS posts (
   featured_reason VARCHAR(280) NULL COMMENT '精选理由(编辑填写,一句话)',
   featured_by BIGINT UNSIGNED NULL COMMENT '定夺编辑 users.id(admin/mod)',
   KEY idx_feed (category, created_at),
+  KEY idx_posts_live_new (deleted_at, created_at, id),
   KEY idx_user (user_id),
   KEY idx_featured (featured_at),
   KEY idx_hidden (hidden_at),
