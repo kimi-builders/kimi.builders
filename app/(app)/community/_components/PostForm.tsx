@@ -5,7 +5,8 @@
    底栏 hint + primary 发布。提交走 server action(createPostAction),校验错误就地显示。
    完整页(/community/new)与弹窗(@modal)共用,RouteModal 已提供圆角壳。 */
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Check, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
+import CheckboxControl from "@/components/CheckboxControl";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -46,20 +47,7 @@ function CheckBox({
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] text-paper">
-      <span className="relative mt-px inline-flex shrink-0">
-        <input
-          type="checkbox"
-          name={name}
-          defaultChecked={defaultChecked}
-          className="peer sr-only"
-        />
-        <span
-          aria-hidden="true"
-          className="grid size-4 place-items-center rounded-[5px] border-[1.5px] border-line text-transparent transition-colors peer-checked:border-blue peer-checked:bg-blue peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-blue"
-        >
-          <Check size={11} strokeWidth={3} />
-        </span>
-      </span>
+      <CheckboxControl name={name} defaultChecked={defaultChecked} className="mt-px" />
       <span>
         {label}
         <span className="mt-0.5 block text-[11px] leading-relaxed text-grey">{hint}</span>

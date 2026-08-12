@@ -6,6 +6,7 @@
 import { ChevronDown, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import CheckboxControl from "@/components/CheckboxControl";
 
 export interface FilterOption {
   value: string;
@@ -141,11 +142,9 @@ export default function FilterDropdown({
                   key={option.value}
                   className="flex min-h-10 cursor-pointer items-center gap-2 px-3 text-xs text-paper transition-colors hover:bg-card"
                 >
-                  <input
-                    type="checkbox"
+                  <CheckboxControl
                     checked={draft.includes(option.value)}
                     onChange={() => toggle(option.value)}
-                    className="size-4 shrink-0 accent-blue"
                   />
                   {option.icon}
                   <span className="min-w-0 truncate" title={option.label}>

@@ -4,6 +4,7 @@ import { ChevronDown, LoaderCircle, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import AgentIcon from "@/components/AgentIcon";
+import CheckboxControl from "@/components/CheckboxControl";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
 import type { UsageFilterOptions } from "@/src/lib/usage/query";
@@ -141,11 +142,9 @@ function DimensionDropdown({
                   key={entry.value}
                   className="flex min-h-11 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
                 >
-                  <input
-                    type="checkbox"
+                  <CheckboxControl
                     checked={draft.includes(entry.value)}
                     onChange={() => toggle(entry.value)}
-                    className="size-4 shrink-0 accent-blue"
                   />
                   {dimension.withIcons && <AgentIcon id={entry.value} size={12} />}
                   <span className="min-w-0 truncate" title={entry.label}>

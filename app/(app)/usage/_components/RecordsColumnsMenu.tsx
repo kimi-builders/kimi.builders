@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import CheckboxControl from "@/components/CheckboxControl";
 
 /* 明细表的可选列(默认全关)。顺序即列选择器里的展示顺序;
    cols 参数的值从这里出,垃圾值由页面侧解析时丢弃。 */
@@ -75,11 +76,9 @@ export default function RecordsColumnsMenu({
               key={column.id}
               className="flex min-h-11 cursor-pointer items-center gap-2 px-3 text-xs text-paper hover:bg-card"
             >
-              <input
-                type="checkbox"
+              <CheckboxControl
                 checked={enabled.includes(column.id)}
                 onChange={() => toggle(column.id)}
-                className="size-4 shrink-0 accent-blue"
               />
               <span className="min-w-0 truncate">{zh ? column.zh : column.en}</span>
             </label>

@@ -5,6 +5,7 @@
    提交走 server action(saveArticleAction),校验错误就地显示;风格对齐 PostForm。 */
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
+import CheckboxControl from "@/components/CheckboxControl";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import {
@@ -161,11 +162,9 @@ export default function ArticleForm({
       />
 
       <label className="flex cursor-pointer items-center gap-2 font-mono text-xs text-grey">
-        <input
-          type="checkbox"
+        <CheckboxControl
           name="publish"
           defaultChecked={initial?.published ?? false}
-          className="accent-blue"
         />
         {t(locale, "artf.publish")}
       </label>
