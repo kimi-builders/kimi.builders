@@ -20,5 +20,6 @@ export const config = {
     "/u/:path*",
     "/settings/:path*",
     "/demo-night/:path*",
+    "/admin/:path*",
   ],
 };

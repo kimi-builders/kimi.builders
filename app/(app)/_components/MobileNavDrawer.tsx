@@ -14,6 +14,7 @@ import {
   Newspaper,
   Presentation,
   Settings,
+  ShieldCheck,
   SquarePen,
   Star,
   User,

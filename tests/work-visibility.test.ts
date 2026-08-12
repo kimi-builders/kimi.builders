@@ -12,28 +12,29 @@ import {
    匿名/访客只见 public;登录浏览者额外放行自己的私密条目(同 posts feed)。
    公共上下文(相关作品/精选/统计/海报)恒 public-only。 */
 
-test("worksPageQuery: anonymous sees public only (wall and awesome)", () => {
+test("worksPageQuery: anonymous sees public, non-hidden only (wall and awesome)", () => {
   const wall = worksPageQuery({ source: "site" });
-  assert.match(wall.sql, /WHERE w\.visibility = 'public' AND w\.source = 'site'/);
+  assert.match(wall.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND w\.source = 'site'/);
   assert.deepEqual(wall.args, []);
   const awesome = worksPageQuery({ source: "all" });
-  assert.match(awesome.sql, /WHERE w\.visibility = 'public'/);
+  assert.match(awesome.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL/);
   assert.deepEqual(awesome.args, []);
 });
 
-test("worksPageQuery: viewer additionally sees their own private entries", () => {
+test("worksPageQuery: viewer additionally sees their own private/hidden entries", () => {
   const { sql, args } = worksPageQuery({ source: "site", viewerId: 7 });
   assert.match(sql, /\(w\.visibility = 'public' OR w\.user_id = \?\)/);
-  assert.deepEqual(args, [7]);
+  assert.match(sql, /\(w\.hidden_at IS NULL OR w\.user_id = \?\)/);
+  assert.deepEqual(args, [7, 7]);
   /* 可见性谓词在最前,其余过滤/游标依次排后 */
   const both = worksPageQuery({ source: "all", viewerId: 7, kinds: ["app"], after: "9" });
-  assert.deepEqual(both.args, [7, "app", 9]);
+  assert.deepEqual(both.args, [7, 7, "app", 9]);
 });
 
-test("relatedWorksQuery is a public context (never leaks private works)", () => {
+test("relatedWorksQuery is a public context (never leaks private/hidden works)", () => {
   const q = relatedWorksQuery({ id: 9, userId: 3, agents: ["kimi"] });
   assert.ok(q);
-  assert.match(q.sql, /w\.id <> \? AND w\.visibility = 'public' AND \(/);
+  assert.match(q.sql, /w\.id <> \? AND w\.visibility = 'public' AND w\.hidden_at IS NULL AND \(/);
 });
 
 test("featuredWorksQuery excludes private works from featured slots", () => {

@@ -23,7 +23,7 @@ test("page sizes keep the previous fixed limits, over-fetching one", () => {
 
 test("works wall only lists member works, ordered by id (monotonic with created_at)", () => {
   const { sql, args } = worksPageQuery({ source: "site" });
-  assert.match(sql, /WHERE w\.visibility = 'public' AND w\.source = 'site'/);
+  assert.match(sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND w\.source = 'site'/);
   assert.match(sql, /ORDER BY w\.id DESC/);
   assert.deepEqual(args, []);
 });

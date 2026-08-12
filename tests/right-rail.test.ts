@@ -16,6 +16,8 @@ test("railFor: community feed and unlisted routes fall back to community rail", 
   assert.deepEqual(railFor("/community/notifications"), { kind: "community", id: null, wide: false });
   /* 头缺失时 layout 传 "/" */
   assert.deepEqual(railFor("/"), { kind: "community", id: null, wide: false });
+  /* 管理台(20260830):无右栏 + 宽画布,与 /usage、个人主页同档 */
+  assert.deepEqual(railFor("/admin"), { kind: "none", id: null, wide: true });
 });
 
 test("railFor: post/work detail get contextual rails with route id", () => {
@@ -98,6 +100,6 @@ test("relatedWorksQuery: no author and no agents → null (caller skips the quer
 
 test("awesomeSourceStatsQuery: group by source for site/external counts (public only)", () => {
   const { sql, args } = awesomeSourceStatsQuery();
-  assert.match(sql, /SELECT w\.source, COUNT\(\*\) AS n FROM works w WHERE w\.visibility = 'public' GROUP BY w\.source/);
+  assert.match(sql, /SELECT w\.source, COUNT\(\*\) AS n FROM works w WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL GROUP BY w\.source/);
   assert.deepEqual(args, []);
 });

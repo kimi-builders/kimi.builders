@@ -19,6 +19,7 @@ import {
   Newspaper,
   Presentation,
   Settings,
+  ShieldCheck,
   SquarePen,
   Star,
   User,
@@ -40,9 +41,12 @@ const SECTIONS = [
 export default function LeftNav({
   locale,
   profileHref,
+  moderator = false,
 }: {
   locale: Locale;
   profileHref?: string;
+  /* admin/mod:底部工具组多「管理」入口(20260830 治理) */
+  moderator?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -103,6 +107,16 @@ export default function LeftNav({
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
+        {moderator && (
+          <Link prefetch={false}
+            href="/admin"
+            title={t(locale, "nav.admin")}
+            className={itemCls(pathname.startsWith("/admin"))}
+          >
+            <ShieldCheck size={15} className="shrink-0" />
+            <span className="nav-label">{t(locale, "nav.admin")}</span>
+          </Link>
+        )}
         <Link prefetch={false}
           href="/settings"
           title={t(locale, "nav.settings")}

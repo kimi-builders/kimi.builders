@@ -39,7 +39,7 @@ import WorkGallery from "../_components/WorkGallery";
 import WorkOwnerActions from "../_components/WorkOwnerActions";
 import WorkScreenshot from "../_components/WorkScreenshot";
 import WorkVoteButton from "../_components/WorkVoteButton";
-import ModToolbar from "../../../admin/_components/ModToolbar";
+import ModToolbar from "../../admin/_components/ModToolbar";
 
 export async function generateMetadata({
   params,

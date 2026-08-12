@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
+import { canModerate } from "@/src/lib/featured";
 import { getUnreadNotificationCount } from "@/src/lib/posts";
 import LeftNav from "./_components/LeftNav";
 import MobileTabBar from "./_components/MobileTabBar";
@@ -32,11 +33,13 @@ export default async function AppLayout({
     headers(),
   ]);
   const profileHref = user ? `/u/${user.handle}` : undefined;
+  /* 管理台入口:仅 admin/mod(20260830);/admin 路由本身服务端再 404 兜底 */
+  const moderator = !!user && canModerate(user.role);
   /* proxy 未覆盖的路径(头缺失)按回落处理:community rail + 正常列宽 */
   const rail = railFor(headerStore.get("x-kb-path") ?? "/");
   return (
     <div>
-      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} />
+      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} />
       {/* 桌面固定顶栏(≥lg);内容区 lg:pt-14 让位 */}
       <TopBar locale={locale} unread={unread} loggedIn={!!user} />
       {/* 三栏统一收进 1320 居中容器:栏间距固定,宽屏只剩两侧等宽留白,
@@ -44,7 +47,7 @@ export default async function AppLayout({
       <div className="mx-auto flex w-full max-w-[1320px] items-start gap-6 lg:pt-14">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
-          <LeftNav locale={locale} profileHref={profileHref} />
+          <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} />
         </Suspense>
         {/* 主列在容器内靠左;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
             wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding) */}

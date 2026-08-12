@@ -37,6 +37,10 @@ export function railFor(pathname: string): RailDecision {
     return decision("none", { wide: true });
   }
   if (p.startsWith("/u/")) return decision("none", { wide: true });
+  /* 管理台(20260830 治理):无右栏,宽画布 */
+  if (p === "/admin" || p.startsWith("/admin/")) {
+    return decision("none", { wide: true });
+  }
 
   /* 详情页:仅精确匹配 /community/<id>、/works/<id>(/edit 等子页不算) */
   const post = /^\/community\/(\d+)$/.exec(p);

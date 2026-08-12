@@ -68,9 +68,11 @@ test("viewer/category filters keep their argument order before the cursor args",
     cursor: { id: 10 },
   });
   assert.match(sql, /p\.visibility = 'public' OR p\.user_id = \?/);
+  /* 治理屏蔽:公开侧滤掉被屏蔽帖,作者本人仍可见(20260830) */
+  assert.match(sql, /p\.hidden_at IS NULL OR p\.user_id = \?/);
   assert.match(sql, /rd\.kind = 'down'/);
   assert.match(sql, /p\.category = \?/);
-  assert.deepEqual(args, [5, 5, "showcase", 10]);
+  assert.deepEqual(args, [5, 5, 5, "showcase", 10]);
 });
 
 test("invalid categories are ignored rather than filtering everything out", () => {

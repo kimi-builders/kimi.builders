@@ -12,7 +12,8 @@
     "db:migrate": "node scripts/db-migrate.mjs migrate",
     "db:status": "node scripts/db-migrate.mjs status",
     "test:auth-db": "tsx tests/auth-email.integration.ts && tsx tests/auth-link.integration.ts && tsx tests/auth-avatar.integration.ts && tsx tests/password-reset.integration.ts",
-    "test:works-db": "tsx tests/work-visibility.integration.ts"
+    "test:works-db": "tsx tests/work-visibility.integration.ts",
+    "test:moderation-db": "tsx tests/moderation.integration.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1107.0",
