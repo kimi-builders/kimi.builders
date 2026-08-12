@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
   isMediaKind,
+  isUploadContentLengthTooLarge,
   MEDIA_MAX_INPUT_BYTES,
   MediaError,
   processMedia,
@@ -27,6 +28,21 @@ export async function POST(request: Request) {
     );
   }
 
+  /* 先扣配额再触碰请求体，超限账号不会继续制造 multipart 解析成本。 */
+  const rate = await consumeCommunityRateLimit(user.id, "upload");
+  if (!rate.allowed) {
+    return noStoreJson(
+      { ok: false, error: "rate_limited", retryAfter: rate.retryAfterSeconds },
+      { status: 429 },
+    );
+  }
+
+  /* Caddy/反代还应配置独立硬上限(由部署主人设置)。应用层在 formData() 前
+     用可信 Content-Length 快速拒绝；chunked 无长度时仍由下面的 sharp 上限兜底。 */
+  if (isUploadContentLengthTooLarge(request.headers.get("content-length"))) {
+    return noStoreJson({ ok: false, error: "too_large" }, { status: 413 });
+  }
+
   let form: FormData;
   try {
     form = await request.formData();
@@ -43,14 +59,6 @@ export async function POST(request: Request) {
   }
   if (file.size > MEDIA_MAX_INPUT_BYTES) {
     return noStoreJson({ ok: false, error: "too_large" }, { status: 413 });
-  }
-
-  const rate = await consumeCommunityRateLimit(user.id, "upload");
-  if (!rate.allowed) {
-    return noStoreJson(
-      { ok: false, error: "rate_limited", retryAfter: rate.retryAfterSeconds },
-      { status: 429 },
-    );
   }
 
   let processed;

@@ -20,6 +20,8 @@ export interface WorkRow {
   tagline: string;
   url: string;
   repoUrl: string;
+  /* 已知取舍:screenshot_url 保持允许任意 http(s) 外链，方便展示托管在作者站点的截图；
+     接受访客跟踪像素风险，后续如需收紧应引入受限图片代理。 */
   screenshotUrl: string;
   tags: string[];
   agents: string[];

@@ -1,13 +1,19 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  isOwnAvatarUrl,
   shouldSyncProviderAvatar,
+  syncProviderAvatar,
 } from "../src/lib/auth/users";
+import {
+  isAllowedAvatarUrl,
+  isOwnAvatarUrl,
+  OAUTH_AVATAR_EXACT_HOSTS,
+  OAUTH_AVATAR_HOST_SUFFIXES,
+} from "../src/lib/avatar-urls";
+import type { Pool } from "mysql2/promise";
 
-/* provider 头像同步的防覆盖判定(src/lib/auth/users.ts):
-   站内自传头像 = 指向自家 CDN(R2_PUBLIC_BASE_URL 的 host)或 /avatar/ 前缀路径;
-   当前头像为空或非自有 → 允许 provider 同步;自有头像 → 不冲掉。 */
+/* provider 头像同步与可持久化 URL 白名单。 */
 
 const CDN_AVATAR = "https://cdn.kimi.builders/avatar/202608/0123456789abcdef.webp";
 const PROVIDER_AVATAR = "https://avatars.githubusercontent.com/u/12345?v=4";
@@ -22,14 +28,13 @@ test("isOwnAvatarUrl: CDN host match counts as own (default base)", () => {
   );
 });
 
-test("isOwnAvatarUrl: /avatar/ path prefix counts as own even off-CDN host", () => {
+test("isOwnAvatarUrl: off-host /avatar/ paths and relative keys are never trusted", () => {
   delete process.env.R2_PUBLIC_BASE_URL;
-  /* 换 CDN 域名前的存量数据:host 不同,但路径形状仍是站内头像 key */
   assert.equal(
     isOwnAvatarUrl("https://old-cdn.example.com/avatar/202501/0123456789abcdef.webp"),
-    true,
+    false,
   );
-  assert.equal(isOwnAvatarUrl("/avatar/202501/0123456789abcdef.webp"), true);
+  assert.equal(isOwnAvatarUrl("/avatar/202501/0123456789abcdef.webp"), false);
 });
 
 test("isOwnAvatarUrl: external provider URLs are not own", () => {
@@ -49,8 +54,8 @@ test("isOwnAvatarUrl: honors R2_PUBLIC_BASE_URL override", () => {
       isOwnAvatarUrl("https://media.example.com/avatar/202608/0123456789abcdef.webp"),
       true,
     );
-    /* 默认域名此时不再算自有(配置已指向别的 host),但 /avatar/ 前缀仍兜底 */
-    assert.equal(isOwnAvatarUrl(CDN_AVATAR), true);
+    /* 配置切换后只认新 host，不再按路径把旧/外部域冒充为自有。 */
+    assert.equal(isOwnAvatarUrl(CDN_AVATAR), false);
     assert.equal(
       isOwnAvatarUrl("https://cdn.kimi.builders/image/202608/0123456789abcdef.webp"),
       false,
@@ -77,6 +82,51 @@ test("shouldSyncProviderAvatar: own uploaded avatar is never overwritten", () =>
   assert.equal(shouldSyncProviderAvatar(CDN_AVATAR), false);
   assert.equal(
     shouldSyncProviderAvatar("https://old-cdn.example.com/avatar/202501/0123456789abcdef.webp"),
+    true,
+  );
+});
+
+test("avatar allowlist accepts exact CDN/provider hosts and rejects suffix tricks", () => {
+  delete process.env.R2_PUBLIC_BASE_URL;
+  assert.deepEqual(OAUTH_AVATAR_EXACT_HOSTS, ["avatars.githubusercontent.com"]);
+  assert.deepEqual(OAUTH_AVATAR_HOST_SUFFIXES, [".googleusercontent.com"]);
+  assert.equal(isAllowedAvatarUrl(CDN_AVATAR), true);
+  assert.equal(isAllowedAvatarUrl(PROVIDER_AVATAR), true);
+  assert.equal(isAllowedAvatarUrl("https://lh3.googleusercontent.com/a/abc"), true);
+  assert.equal(isAllowedAvatarUrl("https://googleusercontent.com/a/abc"), true);
+  assert.equal(isAllowedAvatarUrl("https://evil.example/avatar/x.webp"), false);
+  assert.equal(isAllowedAvatarUrl("https://avatars.githubusercontent.com.evil.example/u/1"), false);
+  assert.equal(isAllowedAvatarUrl("https://evilgoogleusercontent.com/a/abc"), false);
+  assert.equal(isAllowedAvatarUrl("http://avatars.githubusercontent.com/u/1"), false);
+});
+
+test("settings action uses the shared allowlist and a host-specific localized error", () => {
+  const source = readFileSync(
+    new URL("../app/(app)/settings/actions.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /isAllowedAvatarUrl\(avatarUrl\)/);
+  assert.match(source, /err\.avatarHostInvalid/);
+});
+
+test("provider sync pins the previously read avatar in the UPDATE WHERE (TOCTOU guard)", async () => {
+  const calls: { sql: string; args: unknown[] }[] = [];
+  const fake = {
+    async query(sql: string, args: unknown[]) {
+      calls.push({ sql, args });
+      if (sql.startsWith("SELECT")) return [[{ avatar_url: PROVIDER_AVATAR }]];
+      /* affectedRows=0 simulates a custom avatar winning between SELECT and UPDATE. */
+      return [{ affectedRows: 0 }];
+    },
+  } as unknown as Pool;
+  assert.equal(
+    await syncProviderAvatar(fake, 7, "https://avatars.githubusercontent.com/u/12345?v=8"),
     false,
   );
+  assert.match(calls[1].sql, /WHERE id = \? AND avatar_url = \?/);
+  assert.deepEqual(calls[1].args, [
+    "https://avatars.githubusercontent.com/u/12345?v=8",
+    7,
+    PROVIDER_AVATAR,
+  ]);
 });

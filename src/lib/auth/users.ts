@@ -4,34 +4,13 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import { getPool } from "../db";
+import {
+  allowedProviderAvatar,
+  isOwnAvatarUrl,
+} from "../avatar-urls";
 import type { OAuthProfile, Provider } from "./oauth";
 
-/* ---- 头像同步约定(防 OAuth 覆盖)----
-   用户在站内上传的头像落在自家 CDN:key 形如 avatar/yyyyMM/<hash>.webp,
-   公开 URL 以 R2_PUBLIC_BASE_URL(默认 https://cdn.kimi.builders)为 host。
-   判定「自有头像」:URL host 与 R2_PUBLIC_BASE_URL 相同,或路径以 /avatar/ 开头
-   (双条件任一即可,兼容换 CDN 域名前的存量数据)。 */
-export function isOwnAvatarUrl(url: string): boolean {
-  const u = url.trim();
-  if (!u) return false;
-  const base = (
-    process.env.R2_PUBLIC_BASE_URL || "https://cdn.kimi.builders"
-  ).replace(/\/+$/, "");
-  let host = "";
-  try {
-    host = new URL(base).host;
-  } catch {
-    /* R2_PUBLIC_BASE_URL 配置异常时退化为只看 /avatar/ 前缀 */
-  }
-  try {
-    const parsed = new URL(u);
-    if (host && parsed.host === host) return true;
-    return parsed.pathname.startsWith("/avatar/");
-  } catch {
-    /* 非绝对 URL(存量 key 路径等):只看 /avatar/ 前缀 */
-    return u.startsWith("/avatar/");
-  }
-}
+export { isOwnAvatarUrl } from "../avatar-urls";
 
 /* provider 头像是否允许同步到账号:当前头像为空,或不是站内自传的,才同步;
    用户自己上传过的头像不被后续 OAuth 登录冲掉。 */
@@ -43,20 +22,26 @@ export function shouldSyncProviderAvatar(
 }
 
 /* 登录时的 provider 头像同步:带防覆盖条件(见上),无 provider 头像或无需变更时不动。 */
-async function syncProviderAvatar(
+export async function syncProviderAvatar(
   pool: Pool,
   userId: number,
   providerAvatarUrl: string,
-): Promise<void> {
-  const next = providerAvatarUrl.trim().slice(0, 500);
-  if (!next) return;
+): Promise<boolean> {
+  const next = allowedProviderAvatar(providerAvatarUrl);
+  if (!next) return false;
   const [rows] = await pool.query<RowDataPacket[]>(
     "SELECT avatar_url FROM users WHERE id = ? LIMIT 1",
     [userId],
   );
   const current = rows[0] ? String(rows[0].avatar_url ?? "") : "";
-  if (current === next || !shouldSyncProviderAvatar(current)) return;
-  await pool.query("UPDATE users SET avatar_url = ? WHERE id = ?", [next, userId]);
+  if (current === next || !shouldSyncProviderAvatar(current)) return false;
+  /* 把已读旧值钉进 UPDATE，若用户在 SELECT 后刚上传自有头像，affectedRows=0，
+     OAuth 登录不会覆盖并发的新值。 */
+  const [res] = await pool.query<ResultSetHeader>(
+    "UPDATE users SET avatar_url = ? WHERE id = ? AND avatar_url = ?",
+    [next, userId, current],
+  );
+  return res.affectedRows > 0;
 }
 
 /* provider 账号 → 已绑定用户 id;未绑定返回 null。 */
@@ -127,7 +112,12 @@ export async function findOrCreateUser(
   const handle = await uniqueHandle(pool, profile.handle || profile.name || "builder");
   const [res] = await pool.query<ResultSetHeader>(
     "INSERT INTO users (handle, name, email, avatar_url) VALUES (?, ?, ?, ?)",
-    [handle, profile.name.slice(0, 64), emailTaken ? null : profile.email, profile.avatarUrl.slice(0, 500)],
+    [
+      handle,
+      profile.name.slice(0, 64),
+      emailTaken ? null : profile.email,
+      allowedProviderAvatar(profile.avatarUrl),
+    ],
   );
   const uid = Number(res.insertId);
   await pool.query(

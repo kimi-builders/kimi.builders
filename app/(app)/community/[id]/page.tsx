@@ -18,11 +18,13 @@ import { plainExcerpt, relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
+  canViewPost,
   getPoll,
   getPost,
   getPostReactions,
   incrementViewCount,
   isSubscribed,
+  postMetadataTitle,
 } from "@/src/lib/posts";
 import Avatar from "@/components/Avatar";
 import Markdown from "@/components/Markdown";
@@ -42,10 +44,12 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPost(Number(id) || 0);
+  const [post, user] = await Promise.all([
+    getPost(Number(id) || 0),
+    getSessionUser(),
+  ]);
   if (!post) return { title: "kimi.builders" };
-  const name = post.title || plainExcerpt(post.bodyMd, 60);
-  return { title: `${name} — kimi.builders` };
+  return { title: postMetadataTitle(post, user) };
 }
 
 export default async function PostPage({
@@ -56,19 +60,9 @@ export default async function PostPage({
   const { id } = await params;
   const postId = Number(id);
   if (!Number.isInteger(postId) || postId <= 0) notFound();
-  const post = await getPost(postId);
+  const [post, user] = await Promise.all([getPost(postId), getSessionUser()]);
   if (!post) notFound();
-
-  const user = await getSessionUser();
-  /* 私密帖仅作者可见;作者本人照常(带「私密」标) */
-  if (post.visibility !== "public" && post.userId !== user?.id) notFound();
-  /* 被屏蔽帖:公开侧不可见(对非作者/非管理按不存在);作者与 admin/mod 可开,
-     页面带「已被管理员屏蔽」标注(治理评审与作者知情) */
-  if (
-    post.hiddenAt &&
-    !(user && (post.userId === user.id || canModerate(user.role)))
-  )
-    notFound();
+  if (!canViewPost(post, user)) notFound();
   after(() => incrementViewCount(postId));
 
   const locale = await getLocale(user);

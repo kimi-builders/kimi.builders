@@ -26,19 +26,20 @@ import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
   CATEGORIES,
-  createComment,
+  createCommentForVisiblePost,
   createPost,
   deleteComment,
   deletePost,
-  getCommentForReply,
   getPost,
-  setCommentReaction,
-  setPostReaction,
+  getVisibleCommentAccess,
+  getVisiblePostAccess,
+  setCommentReactionForViewer,
+  setPostReactionForViewer,
   setPostVisibility,
-  toggleSubscribe,
+  toggleSubscribeForViewer,
   updateComment,
   updatePost,
-  votePoll,
+  votePollForViewer,
 } from "@/src/lib/posts";
 import {
   loadCommentPage,
@@ -142,12 +143,14 @@ export async function createCommentAction(
   const parentId = Number(formData.get("parent_id")) || null;
   if (!postId) return { ok: false, error: t(locale, "err.generic") };
   if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
-  /* 楼中楼:parent 必须存在、属于同帖、未删除;层级不限,展示侧拍平到两层 */
-  let parent: { id: number; isAi: boolean; userId: number | null } | null = null;
-  if (parentId) {
-    parent = await getCommentForReply(parentId, postId);
-    if (!parent) return { ok: false, error: t(locale, "err.generic") };
-  }
+  /* 不可见/不存在统一成 generic，且在消耗限流额度前拒绝，避免旁路与无效写入。 */
+  if (!(await getVisiblePostAccess(postId, user)))
+    return { ok: false, error: t(locale, "err.generic") };
+  const parent = parentId
+    ? await getVisibleCommentAccess(parentId, user)
+    : null;
+  if (parentId && (!parent || parent.postId !== postId))
+    return { ok: false, error: t(locale, "err.generic") };
   /* 限流(P1-5):parent 校验通过后、写库前消耗额度 */
   const rate = await consumeCommunityRateLimit(user.id, "comment");
   if (!rate.allowed)
@@ -156,12 +159,14 @@ export async function createCommentAction(
       error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
       retryAfterSeconds: rate.retryAfterSeconds,
     };
-  const commentId = await createComment(postId, user.id, body, parentId);
+  /* 真正 INSERT 前在事务内锁帖并重做门禁，封住预检后的可见性竞态。 */
+  const created = await createCommentForVisiblePost(user, postId, body, parentId);
+  if (!created) return { ok: false, error: t(locale, "err.generic") };
   /* 回复了 AI 的评论 → 触发 AI 接话(带对话链上下文)。
      门槛:帖子允许 AI + 回帖人全局允许 AI;链路深度上限在执行侧。 */
   if (parent?.isAi && user.aiRepliesEnabled) {
     const post = await getPost(postId);
-    if (post?.aiReply) await enqueueAiReply(postId, commentId);
+    if (post?.aiReply) await enqueueAiReply(postId, created.id);
   }
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community"); /* feed 卡片上的评论数 */
@@ -182,10 +187,7 @@ export async function loadMoreCommentsAction(
     after < 0
   )
     return { ok: false };
-  const post = await getPost(postId);
-  if (!post) return { ok: false };
-  if (post.visibility !== "public" && post.userId !== user?.id)
-    return { ok: false };
+  if (!(await getVisiblePostAccess(postId, user))) return { ok: false };
   const locale = await getLocale(user);
   const data = await loadCommentPage(postId, user, locale, after);
   return { ok: true, ...data };
@@ -228,6 +230,7 @@ export async function setPostReactionAction(
   const postId = Number(formData.get("post_id"));
   const kind = formData.get("kind") === "down" ? "down" : "up";
   if (!postId) return { ok: false };
+  if (!(await getVisiblePostAccess(postId, user))) return { ok: false };
   const rate = await consumeCommunityRateLimit(user.id, "vote");
   if (!rate.allowed) {
     const locale = await getLocale(user);
@@ -237,8 +240,7 @@ export async function setPostReactionAction(
       retryAfterSeconds: rate.retryAfterSeconds,
     };
   }
-  await setPostReaction(user.id, postId, kind);
-  return { ok: true };
+  return { ok: await setPostReactionForViewer(user, postId, kind) };
 }
 
 export async function setCommentReactionAction(
@@ -249,6 +251,7 @@ export async function setCommentReactionAction(
   const commentId = Number(formData.get("comment_id"));
   const kind = formData.get("kind") === "down" ? "down" : "up";
   if (!commentId) return { ok: false };
+  if (!(await getVisibleCommentAccess(commentId, user))) return { ok: false };
   const rate = await consumeCommunityRateLimit(user.id, "vote");
   if (!rate.allowed) {
     const locale = await getLocale(user);
@@ -258,8 +261,7 @@ export async function setCommentReactionAction(
       retryAfterSeconds: rate.retryAfterSeconds,
     };
   }
-  await setCommentReaction(user.id, commentId, kind);
-  return { ok: true };
+  return { ok: await setCommentReactionForViewer(user, commentId, kind) };
 }
 
 /* 订阅:乐观更新路径;作废旧 feed 预取(「订阅」页签内容会变)。 */
@@ -268,7 +270,8 @@ export async function toggleSubscribeAction(formData: FormData): Promise<void> {
   if (!user) return;
   const postId = Number(formData.get("post_id"));
   if (!postId) return;
-  await toggleSubscribe(user.id, postId);
+  if (!(await getVisiblePostAccess(postId, user))) return;
+  if (!(await toggleSubscribeForViewer(user, postId))) return;
   revalidatePath("/community");
 }
 
@@ -280,7 +283,8 @@ export async function votePollAction(
   const postId = Number(formData.get("post_id"));
   const optionId = Number(formData.get("option_id"));
   if (!postId || !optionId) return { ok: false };
-  const r = await votePoll(user.id, postId, optionId);
+  if (!(await getVisiblePostAccess(postId, user))) return { ok: false };
+  const r = await votePollForViewer(user, postId, optionId);
   if (r === "ok") revalidatePath(`/community/${postId}`);
   return { ok: r === "ok" };
 }

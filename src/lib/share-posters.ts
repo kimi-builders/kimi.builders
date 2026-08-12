@@ -19,7 +19,13 @@ import { plainExcerpt } from "./format";
 import { getPoll, getPost, type PollData, type PostDetail } from "./posts";
 import { getPublicTokenTotals, getSocialDailyActivity } from "./usage/social";
 import { getVerifiableTokenTotals } from "./usage/verifiable";
-import { getProfileByHandle, getProfileStats, type ProfileStats, type UserProfile } from "./users";
+import {
+  getProfileByHandle,
+  getProfileStats,
+  profileDisplay,
+  type ProfileStats,
+  type UserProfile,
+} from "./users";
 import {
   canViewWork,
   claimBadgeOf,
@@ -210,6 +216,8 @@ export interface ProfileShareSnapshot {
   handle: string;
   name: string;
   initials: string;
+  /* 当前海报不绘制远程头像，但快照仍只携带访客口径，避免未来模板直接泄露。 */
+  avatarUrl: string;
   bio: string;
   joinedAt: string;
   stats: { posts: number; comments: number; likes: number; works: number };
@@ -243,11 +251,14 @@ export function buildProfileShareSnapshot(input: {
   usage: { totalTokens: number; activeDays: number; activity?: Record<string, number> } | null;
 }): ProfileShareSnapshot {
   const { profile, stats } = input;
+  const display = profileDisplay(profile, false);
   return {
     handle: profile.handle,
-    name: clip(profile.name || profile.handle, 28),
-    initials: posterInitials(profile.name, profile.handle),
-    bio: clip(profile.bio, 100),
+    name: clip(display.displayName, 28),
+    /* 隐藏显示名时从公开 handle 生成，不让姓名首字母形成旁路。 */
+    initials: posterInitials(profile.showName ? display.displayName : "", profile.handle),
+    avatarUrl: display.avatarUrl,
+    bio: clip(display.bio, 100),
     joinedAt: posterYmd(profile.createdAt).slice(0, 7),
     stats: {
       posts: stats.posts,
@@ -267,6 +278,10 @@ export function buildProfileShareSnapshot(input: {
     url: `${POSTER_SITE_ORIGIN}/u/${profile.handle}`,
   };
 }
+
+/* 资料隐私变更必须在下一次请求立即反映；浏览器/CDN 的 5 分钟公共缓存无法被
+   Server Action 的 revalidatePath 可靠清除，因此个人海报单独选择 no-store。 */
+export const PROFILE_SHARE_CACHE_CONTROL = "private, no-store, max-age=0";
 
 export async function getProfileShareSnapshot(handle: string): Promise<ProfileShareSnapshot | null> {
   const profile = await getProfileByHandle(handle);
@@ -362,6 +377,7 @@ export function mockProfileShareSnapshot(): ProfileShareSnapshot {  return {
     handle: "aklman",
     name: "Aklman Zhapar",
     initials: "AZ",
+    avatarUrl: "",
     bio: "独立开发者,白天写代码晚上写提示词。正在用 Kimi 构建一人公司全家桶,记录每一次人机协作的实验。",
     joinedAt: "2025-12",
     stats: { posts: 47, comments: 231, likes: 1_280, works: 6 },

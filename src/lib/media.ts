@@ -39,6 +39,15 @@ export function isMediaKind(value: string): value is MediaKind {
   return value === "logo" || value === "image" || value === "avatar";
 }
 
+/* multipart 整体 Content-Length 的早期拒绝。缺失/非法长度(chunked 等)不能据此
+   判定，继续解析并由 File.size + sharp 输入上限兜底。 */
+export function isUploadContentLengthTooLarge(
+  contentLength: string | null,
+): boolean {
+  if (!contentLength || !/^\d+$/.test(contentLength)) return false;
+  return Number(contentLength) > MEDIA_MAX_INPUT_BYTES;
+}
+
 export async function processMedia(
   kind: MediaKind,
   input: Buffer,

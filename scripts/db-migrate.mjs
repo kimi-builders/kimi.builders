@@ -14,17 +14,17 @@
  * Env: DATABASE_URL=mysql://user:pass@host:3306/dbname (required).
  *
  * Design notes:
- * - Idempotency lives in the _migrations ledger, not in SQL shape: one-shot
- *   ALTERs are exactly-once. Seed migrations stay re-runnable by their own
- *   guards but still run only once per database through the ledger.
+ * - File completion lives in _migrations; every statement is additionally
+ *   checkpointed in _migration_steps because MySQL DDL auto-commits.
  * - Editing an already-applied migration is flagged as checksum drift
  *   (warning only) — write a corrective migration instead.
- * - MySQL DDL auto-commits; a failed file may be partially applied. Fix the
- *   file or the DB and re-run — the ledger only records completed files.
+ * - A failed file resumes after its last completed statement. Recognized
+ *   duplicate-DDL errors from an old partially-applied run are adopted once.
  */
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 
 const require = createRequire(new URL('../package.json', import.meta.url));
 const mysql = require('mysql2/promise');
@@ -34,11 +34,11 @@ const MIGRATIONS_DIR = `${ROOT}db/migrations`;
 
 const command = process.argv[2] ?? 'migrate';
 
-function sha256(text) {
+export function sha256(text) {
   return createHash('sha256').update(text).digest('hex');
 }
 
-function splitStatements(sql) {
+export function splitStatements(sql) {
   return sql
     .split(/;\s*(?:\n|$)/)
     .map((statement) =>
@@ -49,6 +49,55 @@ function splitStatements(sql) {
         .trim(),
     )
     .filter(Boolean);
+}
+
+function isAlreadyAppliedDdlError(error) {
+  return new Set([
+    'ER_DUP_FIELDNAME',
+    'ER_DUP_KEYNAME',
+    'ER_FK_DUP_NAME',
+    'ER_TABLE_EXISTS_ERROR',
+  ]).has(error?.code);
+}
+
+/* MySQL DDL 不能与 ledger INSERT 原子提交；逐句 checkpoint 把失败窗口缩到单句。
+   对旧 runner 留下的“statement 已成功但 file 未记账”状态，仅收编明确的重复 DDL。 */
+export async function applyMigrationFile(connection, file, sql) {
+  const statements = splitStatements(sql);
+  const [rows] = await connection.query(
+    'SELECT step_index, checksum FROM _migration_steps WHERE migration_name = ? ORDER BY step_index',
+    [file],
+  );
+  const appliedSteps = new Map(rows.map((row) => [Number(row.step_index), row.checksum]));
+  let executed = 0;
+  let skipped = 0;
+  for (let index = 0; index < statements.length; index += 1) {
+    const statement = statements[index];
+    const checksum = sha256(statement);
+    const recorded = appliedSteps.get(index);
+    if (recorded !== undefined) {
+      if (recorded !== checksum) {
+        throw new Error(`${file} statement ${index + 1} checksum drift`);
+      }
+      skipped += 1;
+      continue;
+    }
+    try {
+      await connection.query(statement);
+    } catch (error) {
+      if (!isAlreadyAppliedDdlError(error)) throw error;
+    }
+    await connection.query(
+      'INSERT INTO _migration_steps (migration_name, step_index, checksum) VALUES (?, ?, ?)',
+      [file, index, checksum],
+    );
+    executed += 1;
+  }
+  await connection.query('INSERT INTO _migrations (name, checksum) VALUES (?, ?)', [
+    file,
+    sha256(sql),
+  ]);
+  return { statements: statements.length, executed, skipped };
 }
 
 function migrationFiles() {
@@ -79,6 +128,13 @@ async function main() {
       name VARCHAR(190) PRIMARY KEY,
       checksum VARCHAR(64) NOT NULL COMMENT 'sha256 of file at apply time; "legacy" = backfilled, drift check skipped',
       applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+    await connection.query(`CREATE TABLE IF NOT EXISTS _migration_steps (
+      migration_name VARCHAR(190) NOT NULL,
+      step_index INT UNSIGNED NOT NULL,
+      checksum VARCHAR(64) NOT NULL COMMENT 'sha256 of normalized statement at apply time',
+      applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (migration_name, step_index)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
     const files = migrationFiles();
@@ -141,16 +197,12 @@ async function main() {
       const statements = splitStatements(sql);
       process.stdout.write(`  ${file} (${statements.length} statements) … `);
       try {
-        for (const statement of statements) await connection.query(statement);
-        await connection.query('INSERT INTO _migrations (name, checksum) VALUES (?, ?)', [
-          file,
-          sha256(sql),
-        ]);
-        console.log('ok');
+        const result = await applyMigrationFile(connection, file, sql);
+        console.log(`ok (${result.executed} run, ${result.skipped} resumed)`);
       } catch (error) {
         console.log('FAILED');
         console.error(`  statement error: ${error.message}`);
-        console.error('  ledger not updated — fix and re-run; earlier files are recorded');
+        console.error('  completed statements are checkpointed — fix and re-run to resume');
         process.exitCode = 1;
         return;
       }
@@ -161,7 +213,10 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exit(1);
-});
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+  });
+}

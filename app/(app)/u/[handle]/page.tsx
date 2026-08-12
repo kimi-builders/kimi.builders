@@ -108,7 +108,7 @@ function EmptyPane({
       <div className="grid size-14 place-items-center rounded-2xl border border-dashed border-line bg-paper/[0.03] text-grey">
         <Icon size={20} aria-hidden="true" />
       </div>
-      <h4 className="mt-4 text-sm font-semibold text-paper">{title}</h4>
+      <h4 className="mt-4 max-w-sm text-sm leading-relaxed font-semibold text-paper">{title}</h4>
       {text && (
         <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-grey">{text}</p>
       )}
@@ -294,7 +294,7 @@ export default async function ProfilePage({
                 {view.bio}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-nowrap items-center gap-1.5 overflow-x-auto sm:flex-wrap sm:gap-2">
               <ProfileShareButtons
                 path={profilePath}
                 label={t(locale, "prof.share")}
@@ -304,14 +304,14 @@ export default async function ProfilePage({
                 href={`${posterHref}?download=1`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 font-mono text-[10px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
               >
                 {t(locale, "prof.poster")}
               </a>
               {self && (
                 <Link
                   href="/settings"
-                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-3.5 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 font-mono text-[10px] font-semibold whitespace-nowrap text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
                 >
                   {t(locale, "prof.edit")}
                 </Link>
@@ -464,7 +464,6 @@ export default async function ProfilePage({
                 <EmptyPane
                   icon={PenLine}
                   title={self ? t(locale, "prof.emptyPostsTitle") : t(locale, "prof.noPosts")}
-                  text={self ? t(locale, "prof.emptyPostsText") : undefined}
                   ctaHref={self ? "/community/new" : undefined}
                   ctaLabel={self ? t(locale, "prof.emptyPostsCta") : undefined}
                 />

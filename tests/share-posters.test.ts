@@ -4,6 +4,7 @@ import type { PollData, PostDetail } from "../src/lib/posts";
 import {
   buildPostShareSnapshot,
   buildProfileShareSnapshot,
+  PROFILE_SHARE_CACHE_CONTROL,
   buildWorkShareSnapshot,
   clip,
   linkDomainOf,
@@ -280,6 +281,33 @@ test("profile snapshot: stats include works count, joined is YYYY-MM", () => {
   assert.deepEqual(s.stats, { posts: 47, comments: 231, likes: 1280, works: 6 });
   assert.equal(s.joinedAt, "2025-12");
   assert.equal(s.url, "https://kimi.builders/u/aklman");
+});
+
+test("profile snapshot: each privacy switch is applied with the visitor display rules", () => {
+  const base = { stats: { posts: 1, comments: 2, likes: 3 }, works: 4, usage: null };
+  const avatarHidden = buildProfileShareSnapshot({
+    ...base,
+    profile: profile({ avatarUrl: "https://cdn.kimi.builders/avatar/private.webp", showAvatar: false }),
+  });
+  assert.equal(avatarHidden.avatarUrl, "");
+
+  const nameHidden = buildProfileShareSnapshot({
+    ...base,
+    profile: profile({ name: "PRIVATE NAME", showName: false }),
+  });
+  assert.equal(nameHidden.name, "@aklman");
+  assert.equal(nameHidden.initials, "AK");
+  assert.doesNotMatch(`${nameHidden.name} ${nameHidden.initials}`, /PRIVATE|PN/);
+
+  const bioHidden = buildProfileShareSnapshot({
+    ...base,
+    profile: profile({ bio: "PRIVATE BIO", showBio: false }),
+  });
+  assert.equal(bioHidden.bio, "");
+});
+
+test("profile poster disables storage caches so privacy toggles take effect next request", () => {
+  assert.equal(PROFILE_SHARE_CACHE_CONTROL, "private, no-store, max-age=0");
 });
 
 test("works count query scopes to member works of the user", () => {

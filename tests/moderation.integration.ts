@@ -26,7 +26,7 @@ import {
   unhideContent,
   unmuteUser,
 } from "../src/lib/moderation";
-import { createComment, createPost, getCommentsPage, getFeedPage } from "../src/lib/posts";
+import { createComment, createPost, getCommentsPage, getFeedPage, getPost } from "../src/lib/posts";
 import { getPostShareSnapshot, getWorkShareSnapshot } from "../src/lib/share-posters";
 import { createWork, getWorksPage, type WorkFields } from "../src/lib/works";
 
@@ -95,10 +95,31 @@ async function main() {
     assert.ok(!anonComments.comments.some((c) => c.id === commentId));
     /* 父被屏蔽 → 回复升级为顶层(与软删同语义) */
     assert.equal(anonComments.comments.length, 1);
+    assert.equal(anonComments.total, 1);
+    assert.equal((await getPost(postId))?.commentCount, 1);
+    assert.equal(
+      (await getFeedPage({ sort: "new" })).posts.find((p) => p.id === postId)?.commentCount,
+      1,
+    );
+    assert.equal((await getPostShareSnapshot(postId))?.commentCount, 1);
     const authorComments = await getCommentsPage(postId, { showAi: true, viewerId: member });
     assert.ok(authorComments.comments.some((c) => c.id === commentId && c.hiddenAt !== null));
     assert.equal(await unhideContent(mod, "comment", commentId), true);
     audit += 1;
+    assert.equal((await getPost(postId))?.commentCount, 2);
+    assert.equal((await getPostShareSnapshot(postId))?.commentCount, 2);
+
+    /* ---- 审计失败注入:业务更新必须随事务回滚 ---- */
+    const rollbackPost = await createPost({
+      userId: member, type: "text", category: "chat", title: "审计回滚",
+      bodyMd: "body", linkUrl: "", lang: "zh", aiReply: false, visibility: "public", options: [],
+    });
+    postIds.push(rollbackPost);
+    await assert.rejects(() => adminDeletePost(2_147_483_647, rollbackPost, "invalid actor"));
+    const [rollbackRows] = await pool.query(
+      "SELECT deleted_at FROM posts WHERE id = ?", [rollbackPost],
+    );
+    assert.equal((rollbackRows as { deleted_at: Date | null }[])[0]?.deleted_at, null);
 
     /* ---- 屏蔽作品:墙/海报口径 ---- */
     const wFields: WorkFields = {
@@ -155,6 +176,11 @@ async function main() {
     assert.equal(await unmuteUser(mod, member), true);
     audit += 1;
     assert.equal(await getActiveMute(member), null);
+    await pool.query("UPDATE users SET muted_until = ? WHERE id = ?", [until, admin]);
+    assert.equal(await unmuteUser(mod, admin), false); /* 历史脏值也不能让 mod 解禁 admin */
+    const [adminMute] = await pool.query("SELECT muted_until FROM users WHERE id = ?", [admin]);
+    assert.ok((adminMute as { muted_until: Date | null }[])[0]?.muted_until);
+    await pool.query("UPDATE users SET muted_until = NULL WHERE id = ?", [admin]);
     await pool.query("UPDATE users SET muted_until = '2020-01-01 00:00:00' WHERE id = ?", [member]);
     assert.equal(await getActiveMute(member), null); /* 过期自动解除 */
 
