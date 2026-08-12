@@ -294,7 +294,7 @@ test("parseUsageSettings accepts the leaderboard switch, default off, rejects no
   assert.equal(parseUsageSettings({ ...base, showOnLeaderboard: "yes" }), null);
 });
 
-test("settings read keeps INSERT IGNORE and maps show_on_leaderboard", async () => {
+test("settings read maps show_on_leaderboard from the SELECT-first hot path", async () => {
   const calls: FakeCall[] = [];
   const db = {
     async query(sql: string, params: unknown[]): Promise<unknown[]> {
@@ -316,8 +316,8 @@ test("settings read keeps INSERT IGNORE and maps show_on_leaderboard", async () 
     },
   } as unknown as Pool;
   const settings = await getUsageSettings(7, db);
-  assert.match(calls[0].sql, /INSERT IGNORE INTO usage_settings/);
-  assert.match(calls[1].sql, /show_on_leaderboard/);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /show_on_leaderboard/);
   assert.equal(settings.showOnLeaderboard, true);
   assert.equal(settings.retentionDays, 90);
 });
