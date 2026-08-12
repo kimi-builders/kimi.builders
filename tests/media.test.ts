@@ -3,6 +3,7 @@ import test from "node:test";
 import sharp from "sharp";
 import {
   isMediaKind,
+  isUploadContentLengthTooLarge,
   MEDIA_MAX_INPUT_BYTES,
   MediaError,
   processMedia,
@@ -59,4 +60,12 @@ test("rejects oversized input before decoding", async () => {
     () => processMedia("image", big),
     (err: unknown) => err instanceof MediaError && err.code === "too_large",
   );
+});
+
+test("Content-Length rejects multipart bodies above 8 MiB before parsing", () => {
+  assert.equal(isUploadContentLengthTooLarge(String(MEDIA_MAX_INPUT_BYTES + 1)), true);
+  assert.equal(isUploadContentLengthTooLarge(String(MEDIA_MAX_INPUT_BYTES)), false);
+  assert.equal(isUploadContentLengthTooLarge(null), false); /* chunked */
+  assert.equal(isUploadContentLengthTooLarge("not-a-number"), false);
+  assert.equal(isUploadContentLengthTooLarge("-1"), false);
 });
