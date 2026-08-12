@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import CheckboxControl from "@/components/CheckboxControl";
 import type { Locale } from "@/src/lib/i18n";
 import {
   decideUsageDeviceAction,
@@ -64,11 +65,10 @@ export default function DeviceApprovalForm({
       </label>
 
       <label className="flex cursor-pointer items-start gap-3 border border-line bg-card p-3">
-        <input
-          type="checkbox"
+        <CheckboxControl
           name="upload_project"
           value="1"
-          className="mt-0.5 h-4 w-4 accent-blue"
+          className="mt-0.5"
         />
         <span>
           <span className="block text-sm text-paper">

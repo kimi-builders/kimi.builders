@@ -5,6 +5,7 @@
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
+import { t, type Locale } from "@/src/lib/i18n";
 import FilterDropdown, { type FilterOption } from "./FilterDropdown";
 
 export interface WorksFilterSpec {
@@ -20,14 +21,15 @@ export default function WorksFilterBar({
   preservedQuery,
   filters,
   selected,
-  zh,
+  locale,
 }: {
   basePath: string;
   preservedQuery: string;
   filters: WorksFilterSpec[];
   selected: Record<string, string[]>;
-  zh: boolean;
+  locale: Locale;
 }) {
+  const zh = locale === "zh";
   const router = useRouter();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -79,7 +81,7 @@ export default function WorksFilterBar({
             }
             className="min-h-9 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            {zh ? "清除筛选" : "Clear filters"}
+            {t(locale, "works.clearFilters")}
           </button>
         )}
       </div>
@@ -99,7 +101,7 @@ export default function WorksFilterBar({
                   onClick={() =>
                     pushParams({ [item.key]: rest.length > 0 ? rest.join(",") : null })
                   }
-                  aria-label={zh ? `移除筛选 ${labelOf(item.key, item.value)}` : `Remove filter ${labelOf(item.key, item.value)}`}
+                  aria-label={t(locale, "works.removeFilter", { name: labelOf(item.key, item.value) })}
                   className="flex size-6 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   <X size={10} />

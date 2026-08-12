@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
-import { ArrowBigUp, MessageCircle } from "lucide-react";
+import { ArrowBigUp, ArrowLeft, Check, ExternalLink, MessageCircle } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { canModerate, getPostFeatured } from "@/src/lib/featured";
@@ -78,14 +78,16 @@ export default async function PostPage({
 
   return (
     <div>
-      <div className="flex items-center gap-3 font-mono text-[11px] tracking-wider text-grey">
-        <Link href="/community" className="hover:text-paper">
-          ← {t(locale, "nav.community")}
+      <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
+      <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
+        <Link href="/community" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
+          <ArrowLeft size={13} aria-hidden="true" />
+          {t(locale, "nav.community")}
         </Link>
-        <span>{categoryLabel(locale, post.category)}</span>
+        <span className="rounded-full bg-blue/10 px-2.5 py-1 text-blue"># {categoryLabel(locale, post.category)}</span>
         {post.visibility === "private" && (
           <span
-            className="border border-line px-1.5 py-px text-[10px] text-paper"
+            className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper"
             title={t(locale, "post.privateHint")}
           >
             {t(locale, "post.private")}
@@ -94,7 +96,7 @@ export default async function PostPage({
         {/* 编辑精选徽章:理由 + 定夺编辑放在 title(硬边描边芯片,对齐「私密」标) */}
         {postFeatured && (
           <span
-            className="border border-blue/60 px-1.5 py-px text-[10px] text-blue"
+            className="rounded-md border border-blue/60 px-1.5 py-px text-[10px] text-blue"
             title={`${postFeatured.reason}${
               postFeatured.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: postFeatured.editorHandle })}`
@@ -107,7 +109,7 @@ export default async function PostPage({
       </div>
 
       {post.title && (
-        <h1 className="mt-4 text-2xl font-semibold leading-snug">{post.title}</h1>
+        <h1 className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">{post.title}</h1>
       )}
       <div
         className={`flex items-center gap-3 font-mono text-[11px] text-grey ${
@@ -136,14 +138,15 @@ export default async function PostPage({
           href={post.linkUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 block border border-line p-4 font-mono text-xs text-blue underline-offset-4 transition-colors hover:border-blue hover:underline"
+          className="mt-6 flex items-center gap-3 rounded-xl border border-line bg-bg/40 p-4 font-mono text-xs text-blue transition-colors hover:border-blue"
         >
-          {post.linkUrl}
+          <span className="min-w-0 flex-1 truncate">{post.linkUrl}</span>
+          <ExternalLink size={15} className="shrink-0" aria-hidden="true" />
         </a>
       )}
 
       {poll && (
-        <div className="mt-6 border border-line p-5">
+        <div className="mt-6 rounded-xl border border-line bg-bg/40 p-5">
           {user && poll.myOptionId === null ? (
             <PollVoteForm
               postId={post.id}
@@ -159,16 +162,18 @@ export default async function PostPage({
                   <div key={o.id}>
                     <div className="flex items-baseline gap-2 text-sm">
                       <span className={mine ? "text-blue" : "text-paper"}>
-                        {o.label}
-                        {mine && " ✓"}
+                        <span className="inline-flex items-center gap-1.5">
+                          {o.label}
+                          {mine && <Check size={13} aria-hidden="true" />}
+                        </span>
                       </span>
                       <span className="ml-auto font-mono text-[11px] text-grey">
                         {o.voteCount} · {pct}%
                       </span>
                     </div>
-                    <div className="mt-1 h-1 bg-moon">
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-moon">
                       <div
-                        className={`h-full ${mine ? "bg-blue" : "bg-grey/50"}`}
+                        className={`h-full rounded-full ${mine ? "bg-blue" : "bg-grey/50"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -185,7 +190,7 @@ export default async function PostPage({
       )}
 
       {/* 动作条:顶/踩 + 评论 + 订阅 + 分享 + 作者操作(编辑/可见性/删除) */}
-      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-3">
+      <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
         {user ? (
           <VoteCluster
             target="post"
@@ -244,6 +249,7 @@ export default async function PostPage({
           />
         </span>
       </div>
+      </article>
 
       <CommentSection
         postId={post.id}

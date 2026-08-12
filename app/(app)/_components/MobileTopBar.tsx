@@ -4,6 +4,7 @@ import Link from "next/link";
 import AuthChip from "@/components/AuthChip";
 import type { Locale } from "@/src/lib/i18n";
 import MobileNavDrawer from "./MobileNavDrawer";
+import GlobalSearch from "./GlobalSearch";
 
 export default function MobileTopBar({
   locale,
@@ -31,6 +32,11 @@ export default function MobileTopBar({
         <img src="/brand/logo-tile.svg" alt="" className="h-6 w-6 rounded-md" />
         <span className="truncate">kimi<span className="text-blue">.</span>builders</span>
       </Link>
+      <GlobalSearch
+        locale={locale}
+        mode="mobile"
+        className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+      />
     </div>
   );
 }

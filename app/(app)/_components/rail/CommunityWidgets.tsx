@@ -82,7 +82,7 @@ export default async function CommunityWidgets({
               <li key={e.userId} className="flex items-center gap-2.5 border-b border-line py-2 last:border-b-0">
                 <span
                   className={`w-4 shrink-0 font-mono text-[11px] font-bold ${
-                    e.rank === 1 ? "text-amber-400" : "text-grey/70"
+                    e.rank === 1 ? "text-blue" : "text-grey/70"
                   }`}
                 >
                   {String(e.rank).padStart(2, "0")}
@@ -96,7 +96,7 @@ export default async function CommunityWidgets({
                 >
                   {e.name || e.handle}
                 </Link>
-                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-emerald-400">
+                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-blue">
                   {compact(e.totalTokens)}
                 </span>
               </li>
@@ -234,12 +234,17 @@ export default async function CommunityWidgets({
       <Widget title={t(locale, "side.newMembers")}>
         <div className="flex gap-2">
           {data.newMembers.map((m) => (
-            <Link key={m.handle} href={`/u/${m.handle}`} title={`@${m.handle}`}>
+            <Link
+              key={m.handle}
+              href={`/u/${m.handle}`}
+              title={`@${m.handle}`}
+              className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
               <Avatar
                 url={m.avatarUrl}
                 handle={m.handle}
                 size={28}
-                className="transition-colors hover:border-blue hover:text-blue"
+                className="transition-opacity hover:opacity-80"
               />
             </Link>
           ))}

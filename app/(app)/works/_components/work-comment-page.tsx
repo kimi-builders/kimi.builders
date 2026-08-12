@@ -36,7 +36,7 @@ export async function loadWorkComments(
       const canDelete =
         !!user && (c.userId === user.id || workAuthorId === user.id);
       return (
-        <div key={c.id} id={`work-comment-${c.id}`} className="scroll-mt-24">
+        <div key={c.id} id={`work-comment-${c.id}`} className="scroll-mt-24 rounded-xl border border-line bg-bg/40 p-4">
           <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
             {c.handle ? (
               <>
@@ -53,7 +53,7 @@ export async function loadWorkComments(
               <span className="text-paper">#{c.userId}</span>
             )}
             {isAuthor && (
-              <span className="border border-blue/60 px-1 py-px text-[9px] tracking-wider text-blue">
+              <span className="rounded-md border border-blue/60 px-1.5 py-px text-[9px] tracking-wider text-blue">
                 {t(locale, "works.authorChip")}
               </span>
             )}

@@ -17,8 +17,8 @@ export default async function LearnPage() {
 
   return (
     <div>
-      <header>
-        <h1 className="font-mono text-lg font-semibold">
+      <header className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+        <h1 className="font-mono text-xl font-semibold">
           {t(locale, "nav.learn")}
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-grey">
@@ -27,15 +27,15 @@ export default async function LearnPage() {
       </header>
 
       {items.length === 0 ? (
-        <p className="mt-8 border border-line bg-card p-6 text-sm leading-relaxed text-grey">
+        <p className="mt-6 rounded-2xl border border-line bg-card p-6 text-sm leading-relaxed text-grey">
           {t(locale, "learn.empty")}
         </p>
       ) : (
-        <div className="mt-8">
+        <div className="mt-4 space-y-3">
           {items.map((a, i) => (
-            <article key={a.slug} className="border-t border-line py-6 first:mt-0">
-              <div className="flex items-baseline gap-4">
-                <span className="shrink-0 font-mono text-sm text-blue">
+            <article key={a.slug} className="rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20">
+              <div className="flex items-start gap-4">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-line bg-moon font-mono text-xs text-blue">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">
@@ -60,7 +60,7 @@ export default async function LearnPage() {
                       </Link>
                     </span>
                     {a.fallback && (
-                      <span className="border border-line px-1.5 py-px text-[10px] text-paper">
+                      <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
                         {t(locale, a.locale === "zh" ? "art.langZh" : "art.langEn")}
                       </span>
                     )}
@@ -69,7 +69,6 @@ export default async function LearnPage() {
               </div>
             </article>
           ))}
-          <div className="border-t border-line" />
         </div>
       )}
     </div>

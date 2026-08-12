@@ -91,7 +91,7 @@ export default function PostOwnerActions({
         type="button"
         onClick={remove}
         disabled={busy !== null}
-        className={`${btn} hover:text-red-400`}
+        className={`${btn} hover:text-paper`}
       >
         {busy === "del" ? t(locale, "post.submitting") : t(locale, "post.delete")}
       </button>

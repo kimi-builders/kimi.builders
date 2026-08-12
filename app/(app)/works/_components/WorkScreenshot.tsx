@@ -1,22 +1,42 @@
 "use client";
 
-/* 详情页大截图:无图或加载失败(onerror)时回落到 Rocket 占位(与 WorkCard 一致)。
-   onerror 需要客户端态(P2-6 顺手修一半,仅详情页;列表卡片仍未带兜底)。 */
+/* 列表与详情共用的媒体兜底:截图加载失败时回落到真实 Logo 或 Lucide 图标。
+   不再绘制渐变/首字母假素材,两种主题都只走全局颜色令牌。 */
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import { GalleryVerticalEnd } from "lucide-react";
 
 export default function WorkScreenshot({
   url,
   name,
+  logoUrl = "",
+  kindLabel = "",
+  embedded = false,
 }: {
   url: string;
   name: string;
+  logoUrl?: string;
+  kindLabel?: string;
+  embedded?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   if (!url || failed) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center border border-line text-grey/40">
-        <Rocket size={40} />
+      <div className={`flex aspect-video w-full flex-col items-center justify-center gap-3 bg-moon text-grey ${embedded ? "" : "rounded-2xl border border-line"}`}>
+        {logoUrl && !logoFailed ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={logoUrl}
+            alt=""
+            onError={() => setLogoFailed(true)}
+            className="size-14 rounded-xl border border-line object-cover"
+          />
+        ) : (
+          <span className="flex size-12 items-center justify-center rounded-xl border border-line bg-card text-blue">
+            <GalleryVerticalEnd size={24} aria-hidden="true" />
+          </span>
+        )}
+        {kindLabel && <span className="font-mono text-[10px] tracking-[0.14em] text-grey">{kindLabel}</span>}
       </div>
     );
   }
@@ -26,7 +46,7 @@ export default function WorkScreenshot({
       src={url}
       alt={name}
       onError={() => setFailed(true)}
-      className="aspect-video w-full border border-line object-cover"
+      className={`aspect-video w-full object-cover ${embedded ? "" : "rounded-2xl border border-line"}`}
     />
   );
 }

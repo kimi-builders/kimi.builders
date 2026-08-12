@@ -32,7 +32,7 @@ export default async function EditWorkContent({
 
   if (!user || !work || work.userId !== user.id) {
     return (
-      <p className="mt-16 text-center text-sm text-grey">
+      <p className="mt-10 rounded-2xl border border-line bg-card p-8 text-center text-sm text-grey">
         {t(locale, "err.notOwnerWork")}
       </p>
     );
@@ -51,14 +51,14 @@ export default async function EditWorkContent({
       : null;
 
   return (
-    <div>
+    <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
         <h1 className="font-mono text-lg font-semibold">
           {t(locale, "works.editTitle")}
         </h1>
       )}
       {paused && (
-        <p className="mt-4 border border-amber-400/40 px-3 py-2 font-mono text-[11px] leading-relaxed text-amber-400/90">
+        <p className="mt-4 rounded-xl border border-line bg-moon px-3 py-2 font-mono text-[11px] leading-relaxed text-grey">
           {t(locale, "works.claimPaused")}
         </p>
       )}

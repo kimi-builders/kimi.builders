@@ -24,7 +24,7 @@ export default function WorkGallery({
         <img
           src={mediaUrl(cover)}
           alt={name}
-          className="aspect-video w-full border border-line object-cover"
+          className="aspect-video w-full rounded-2xl border border-line object-cover"
         />
       </a>
       {rest.length > 0 && (
@@ -35,7 +35,7 @@ export default function WorkGallery({
               href={mediaUrl(k)}
               target="_blank"
               rel="noopener noreferrer"
-              className="block overflow-hidden border border-line transition-colors hover:border-blue"
+              className="block overflow-hidden rounded-lg border border-line transition-colors hover:border-blue"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

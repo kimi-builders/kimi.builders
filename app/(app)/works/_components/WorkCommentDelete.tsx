@@ -47,7 +47,7 @@ export default function WorkCommentDelete({
       type="button"
       onClick={remove}
       disabled={busy}
-      className="transition-colors hover:text-red-400 disabled:opacity-40"
+      className="transition-colors hover:text-paper disabled:opacity-40"
     >
       {busy ? t(locale, "post.submitting") : t(locale, "post.delete")}
     </button>

@@ -240,10 +240,8 @@ export function ThemeCards({ locale }: { locale: Locale }) {
     <div className="flex flex-wrap gap-3">
       <form action={setThemeToAction} className="contents">
         <button type="submit" name="theme" value="dark" onClick={pick("dark")} className={`${card} theme-card-dark`}>
-          <span className="block h-16 rounded-lg border border-line bg-bg p-2.5">
-            <span className="block h-1.5 w-2/3 rounded-full bg-blue" />
-            <span className="mt-2 block h-1.5 w-full rounded-full bg-paper/20" />
-            <span className="mt-1.5 block h-1.5 w-5/6 rounded-full bg-paper/10" />
+          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-bg text-blue">
+            <Moon size={22} aria-hidden="true" />
           </span>
           <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
             {t(locale, "set.themeDark")}
@@ -253,10 +251,8 @@ export function ThemeCards({ locale }: { locale: Locale }) {
           </span>
         </button>
         <button type="submit" name="theme" value="light" onClick={pick("light")} className={`${card} theme-card-light`}>
-          <span className="block h-16 rounded-lg border border-line bg-[#fbfaf9] p-2.5">
-            <span className="block h-1.5 w-2/3 rounded-full bg-blue" />
-            <span className="mt-2 block h-1.5 w-full rounded-full bg-black/20" />
-            <span className="mt-1.5 block h-1.5 w-5/6 rounded-full bg-black/10" />
+          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-moon text-blue">
+            <Sun size={22} aria-hidden="true" />
           </span>
           <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
             {t(locale, "set.themeLight")}

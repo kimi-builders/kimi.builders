@@ -21,7 +21,7 @@ export default function Avatar({
       <img
         src={url}
         alt={`@${handle}`}
-        className={`${shape} border border-paper/10 ${className}`}
+        className={`${shape} object-cover ${className}`}
         style={{ width: size, height: size }}
       />
     );
@@ -30,7 +30,7 @@ export default function Avatar({
   return (
     <span
       aria-label={`@${handle}`}
-      className={`inline-flex shrink-0 select-none items-center justify-center ${shape} border border-line bg-moon font-mono text-paper ${className}`}
+      className={`inline-flex shrink-0 select-none items-center justify-center ${shape} bg-moon font-mono text-paper ${className}`}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}
     >
       {initial}

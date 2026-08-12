@@ -9,6 +9,7 @@ import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import { t, type Locale } from "@/src/lib/i18n";
 import { LocaleToggle, ThemeToggle } from "./pref-controls";
+import GlobalSearch from "./GlobalSearch";
 
 export default function TopBar({
   locale,
@@ -20,7 +21,7 @@ export default function TopBar({
   loggedIn: boolean;
 }) {
   const iconBtn =
-    "flex h-9 w-9 items-center justify-center text-grey transition-colors hover:text-paper";
+    "flex h-9 w-9 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <header className="fixed inset-x-0 top-0 z-20 hidden h-14 border-b border-line bg-bg/95 backdrop-blur lg:block">
       {/* 内容与下方三栏共用 1320 居中容器:品牌与左栏左边线、登录态与右栏右边线对齐 */}
@@ -39,6 +40,7 @@ export default function TopBar({
       </Link>
 
       <div className="ml-auto flex items-center gap-1.5 font-mono text-xs">
+        <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
         {loggedIn && (
           <Link
             href="/community/notifications"

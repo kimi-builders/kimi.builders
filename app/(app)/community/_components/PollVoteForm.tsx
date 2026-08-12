@@ -42,6 +42,7 @@ export default function PollVoteForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      <input type="hidden" name="post_id" value={postId} />
       {options.map((o) => (
         <label
           key={o.id}
@@ -60,7 +61,7 @@ export default function PollVoteForm({
       <button
         type="submit"
         disabled={pending}
-        className="border border-blue px-4 py-1.5 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg disabled:opacity-40"
+        className="rounded-lg bg-blue px-4 py-2 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         {pending ? t(locale, "post.submitting") : t(locale, "post.vote")}
       </button>

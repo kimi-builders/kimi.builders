@@ -2,22 +2,25 @@
    showTitle=false 时收起 h1(弹窗自带标题栏)。
    GitHub / Google / 邮箱三入口;邮箱部分是无 JS 也能用的原生表单(303 回跳
    携带 error/next)。已登录访问直接 redirect(next)——在拦截路由里同样生效。 */
-import { Mail } from "lucide-react";
+import GoogleColor from "@lobehub/icons/es/Google/components/Color";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { safeReturnTo } from "@/src/lib/auth/return-to";
+import { t, type I18nKey } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { redirect } from "next/navigation";
+import GithubIcon from "../../_components/GithubIcon";
 
-const ERROR_TEXT: Record<string, { zh: string; en: string }> = {
-  invalid_origin: { zh: "请求来源无效,请重试", en: "Invalid request origin. Try again." },
-  rate_limited: { zh: "尝试太频繁,请稍后再试", en: "Too many attempts. Try again later." },
-  invalid_email: { zh: "邮箱格式不正确", en: "Invalid email address." },
-  too_short: { zh: "密码至少 8 位", en: "Password needs at least 8 characters." },
-  too_long: { zh: "密码最长 72 位", en: "Password is limited to 72 characters." },
-  password_mismatch: { zh: "两次输入的密码不一致", en: "Passwords do not match." },
-  email_taken: { zh: "该邮箱已注册,直接登录即可", en: "Email already registered — just sign in." },
-  bad_credentials: { zh: "邮箱或密码不正确", en: "Incorrect email or password." },
-  invalid_token: { zh: "重置链接无效或已过期,请重新发起", en: "This reset link is invalid or expired — request a new one." },
+const ERROR_KEYS: Record<string, I18nKey> = {
+  invalid_origin: "login.errOrigin",
+  rate_limited: "login.errRate",
+  invalid_email: "login.errEmail",
+  too_short: "login.errShort",
+  too_long: "login.errLong",
+  password_mismatch: "login.errMismatch",
+  email_taken: "login.errTaken",
+  bad_credentials: "login.errCredentials",
+  invalid_token: "login.errToken",
 };
 
 export default async function LoginContent({
@@ -33,54 +36,53 @@ export default async function LoginContent({
   if (user) redirect(next === "/" ? "/community" : next);
 
   const locale = await getLocale(null);
-  const zh = locale === "zh";
   const rawMode = Array.isArray(sp.mode) ? sp.mode[0] : sp.mode;
   const mode =
     rawMode === "register" || rawMode === "forgot" || rawMode === "reset"
       ? rawMode
       : "login";
   const errorCode = Array.isArray(sp.error) ? sp.error[0] : sp.error;
-  const error = errorCode ? ERROR_TEXT[errorCode] : undefined;
+  const errorKey = errorCode ? ERROR_KEYS[errorCode] : undefined;
   const token = (Array.isArray(sp.token) ? sp.token[0] : sp.token) ?? "";
   const sent = (Array.isArray(sp.sent) ? sp.sent[0] : sp.sent) === "1";
 
   const inputCls =
-    "w-full border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue";
+    "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue focus:ring-4 focus:ring-blue/10";
   const submitCls =
-    "w-full border border-blue bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white hover:opacity-90";
+    "w-full rounded-lg bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90";
   const oauthNext = next === "/" ? "" : `?next=${encodeURIComponent(next)}`;
 
   return (
-    <div className="mx-auto max-w-sm py-10">
+    <div className={`mx-auto max-w-sm ${showTitle ? "rounded-2xl border border-line bg-card p-5 sm:p-6" : ""}`}>
       {showTitle && (
         <h1 className="font-mono text-lg font-semibold text-paper">
-          {zh ? "登录 kimi.builders" : "Sign in to kimi.builders"}
+          {t(locale, "login.title")}
         </h1>
       )}
       <p className="mt-2 text-xs leading-relaxed text-grey">
-        {zh
-          ? "发帖、作品、用量同步需要账号;浏览全站无需登录。"
-          : "An account is needed for posting, works and usage sync; browsing needs none."}
+        {t(locale, "login.subtitle")}
       </p>
 
       <div className="mt-6 space-y-2">
         <a
           href={`/api/auth/github${oauthNext}`}
-          className="flex items-center justify-center gap-2 border border-line px-4 py-2.5 font-mono text-xs text-paper transition-colors hover:border-blue"
+          className="flex items-center justify-center gap-2 rounded-lg border border-line bg-bg/40 px-4 py-2.5 font-mono text-xs text-paper transition-colors hover:border-blue"
         >
+          <GithubIcon size={15} />
           GitHub
         </a>
         <a
           href={`/api/auth/google${oauthNext}`}
-          className="flex items-center justify-center gap-2 border border-line px-4 py-2.5 font-mono text-xs text-paper transition-colors hover:border-blue"
+          className="flex items-center justify-center gap-2 rounded-lg border border-line bg-bg/40 px-4 py-2.5 font-mono text-xs text-paper transition-colors hover:border-blue"
         >
+          <GoogleColor size={15} />
           Google
         </a>
       </div>
 
       <div className="my-5 flex items-center gap-3 font-mono text-[10px] text-grey">
         <span className="h-px flex-1 bg-line" />
-        {zh ? "或用邮箱" : "or with email"}
+        {t(locale, "login.emailDivider")}
         <span className="h-px flex-1 bg-line" />
       </div>
 
@@ -90,18 +92,18 @@ export default async function LoginContent({
             key={m}
             href={`/login?mode=${m}${next === "/" ? "" : `&next=${encodeURIComponent(next)}`}`}
             aria-current={m === mode ? "page" : undefined}
-            className={`px-3 py-1.5 transition-colors ${
-              m === mode ? "bg-paper text-bg" : "text-grey hover:bg-card hover:text-paper"
+            className={`rounded-lg px-3 py-1.5 transition-colors ${
+              m === mode ? "bg-paper text-bg" : "text-grey hover:bg-moon hover:text-paper"
             }`}
           >
-            {m === "login" ? (zh ? "登录" : "Sign in") : zh ? "注册" : "Register"}
+            {t(locale, m === "login" ? "login.signIn" : "login.register")}
           </a>
         ))}
       </nav>
 
-      {error && (
-        <p className="mt-4 border border-red-500/40 px-3 py-2 text-xs text-red-400">
-          {zh ? error.zh : error.en}
+      {errorKey && (
+        <p className="mt-4 rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">
+          {t(locale, errorKey)}
         </p>
       )}
 
@@ -110,23 +112,23 @@ export default async function LoginContent({
           <input type="hidden" name="next" value={next} />
           <div>
             <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="email">
-              {zh ? "邮箱" : "Email"}
+              {t(locale, "auth.email")}
             </label>
             <input id="email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
             <div className="mb-1 flex items-baseline justify-between">
               <label className="block font-mono text-[10px] text-grey" htmlFor="password">
-                {zh ? "密码" : "Password"}
+                {t(locale, "login.password")}
               </label>
               <a href="/login?mode=forgot" className="font-mono text-[10px] text-grey transition-colors hover:text-paper">
-                {zh ? "忘记密码?" : "Forgot password?"}
+                {t(locale, "login.forgot")}
               </a>
             </div>
             <input id="password" name="password" type="password" required autoComplete="current-password" className={inputCls} />
           </div>
           <button type="submit" className={submitCls}>
-            <Mail size={12} className="mr-1 inline" /> {zh ? "登录" : "Sign in"}
+            <Mail size={12} className="mr-1 inline" /> {t(locale, "login.signIn")}
           </button>
         </form>
       )}
@@ -136,30 +138,30 @@ export default async function LoginContent({
           <input type="hidden" name="next" value={next} />
           <div>
             <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-email">
-              {zh ? "邮箱" : "Email"}
+              {t(locale, "auth.email")}
             </label>
             <input id="reg-email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
             <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-name">
-              {zh ? "昵称(可选)" : "Display name (optional)"}
+              {t(locale, "login.displayName")}
             </label>
             <input id="reg-name" name="name" type="text" maxLength={64} autoComplete="nickname" className={inputCls} />
           </div>
           <div>
             <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-password">
-              {zh ? "密码(至少 8 位)" : "Password (8+ chars)"}
+              {t(locale, "login.password8")}
             </label>
             <input id="reg-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
           </div>
           <div>
             <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-password2">
-              {zh ? "确认密码" : "Confirm password"}
+              {t(locale, "login.confirmPassword")}
             </label>
             <input id="reg-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
           </div>
           <button type="submit" className={submitCls}>
-            <Mail size={12} className="mr-1 inline" /> {zh ? "注册并登录" : "Register & sign in"}
+            <Mail size={12} className="mr-1 inline" /> {t(locale, "login.registerSubmit")}
           </button>
         </form>
       )}
@@ -167,33 +169,32 @@ export default async function LoginContent({
       {mode === "forgot" &&
         (sent ? (
           <div className="mt-4 space-y-3">
-            <p className="border border-blue/40 px-3 py-2 text-xs leading-relaxed text-paper">
-              {zh
-                ? "如果该邮箱已注册,重置邮件已在路上(链接 1 小时内有效)。没收到请检查垃圾邮件,或稍后重新发送。"
-                : "If that email is registered, a reset link is on its way (valid for 1 hour). Check spam if it doesn't show up, or resend later."}
+            <p className="rounded-lg border border-blue/40 bg-blue/10 px-3 py-2 text-xs leading-relaxed text-paper">
+              {t(locale, "login.forgotSent")}
             </p>
             <a
               href="/login?mode=forgot"
               className="inline-block font-mono text-[10px] text-grey transition-colors hover:text-paper"
             >
-              {zh ? "重新发送 / 换个邮箱 →" : "Resend / use another email →"}
+              <span className="inline-flex items-center gap-1.5">
+                {t(locale, "login.resend")}
+                <ArrowRight size={12} aria-hidden="true" />
+              </span>
             </a>
           </div>
         ) : (
           <form method="POST" action="/api/auth/email/forgot" className="mt-4 space-y-3">
             <p className="text-xs leading-relaxed text-grey">
-              {zh
-                ? "输入注册邮箱,我们会发一封带重置链接的邮件。"
-                : "Enter your account email and we'll send you a reset link."}
+              {t(locale, "login.forgotIntro")}
             </p>
             <div>
               <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="forgot-email">
-                {zh ? "邮箱" : "Email"}
+                {t(locale, "auth.email")}
               </label>
               <input id="forgot-email" name="email" type="email" required autoComplete="email" className={inputCls} />
             </div>
             <button type="submit" className={submitCls}>
-              <Mail size={12} className="mr-1 inline" /> {zh ? "发送重置邮件" : "Send reset email"}
+              <Mail size={12} className="mr-1 inline" /> {t(locale, "login.sendReset")}
             </button>
           </form>
         ))}
@@ -204,46 +205,48 @@ export default async function LoginContent({
             <input type="hidden" name="token" value={token} />
             <div>
               <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reset-password">
-                {zh ? "新密码(至少 8 位)" : "New password (8+ chars)"}
+                {t(locale, "login.newPassword8")}
               </label>
               <input id="reset-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
             </div>
             <div>
               <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reset-password2">
-                {zh ? "确认新密码" : "Confirm new password"}
+                {t(locale, "login.confirmNewPassword")}
               </label>
               <input id="reset-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
             </div>
             <button type="submit" className={submitCls}>
-              <Mail size={12} className="mr-1 inline" /> {zh ? "重置密码并登录" : "Reset & sign in"}
+              <Mail size={12} className="mr-1 inline" /> {t(locale, "login.resetSubmit")}
             </button>
           </form>
         ) : (
           <div className="mt-4 space-y-3">
-            <p className="border border-red-500/40 px-3 py-2 text-xs text-red-400">
-              {zh ? ERROR_TEXT.invalid_token.zh : ERROR_TEXT.invalid_token.en}
+            <p className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">
+              {t(locale, "login.errToken")}
             </p>
             <a
               href="/login?mode=forgot"
               className="inline-block font-mono text-[10px] text-grey transition-colors hover:text-paper"
             >
-              {zh ? "重新发起重置 →" : "Request a new link →"}
+              <span className="inline-flex items-center gap-1.5">
+                {t(locale, "login.requestNew")}
+                <ArrowRight size={12} aria-hidden="true" />
+              </span>
             </a>
           </div>
         ))}
 
       {(mode === "forgot" || mode === "reset") && (
         <p className="mt-4 font-mono text-[10px]">
-          <a href="/login" className="text-grey transition-colors hover:text-paper">
-            ← {zh ? "返回登录" : "Back to sign in"}
+          <a href="/login" className="inline-flex items-center gap-1.5 text-grey transition-colors hover:text-paper">
+            <ArrowLeft size={12} aria-hidden="true" />
+            {t(locale, "login.backSignIn")}
           </a>
         </p>
       )}
 
       <p className="mt-6 text-[10px] leading-relaxed text-grey/80">
-        {zh
-          ? "重置链接 1 小时内有效、只能用一次;收不到邮件请联系管理员。"
-          : "Reset links expire after 1 hour and work once; contact an admin if no email arrives."}
+        {t(locale, "login.resetNote")}
       </p>
     </div>
   );

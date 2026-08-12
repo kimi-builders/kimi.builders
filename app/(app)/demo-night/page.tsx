@@ -67,8 +67,8 @@ export default async function DemoNightPage() {
 
   return (
     <div>
-      <header className="border-b border-line pb-6">
-        <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
+      <header className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+        <h1 className="flex items-center gap-2 font-mono text-xl font-semibold">
           <Presentation size={18} aria-hidden="true" />
           {t(locale, "dn.title")}
         </h1>
@@ -78,7 +78,7 @@ export default async function DemoNightPage() {
       </header>
 
       {/* ---- 当前场 ---- */}
-      <section className="mt-6 border border-line bg-card p-5">
+      <section className="mt-4 rounded-2xl border border-line bg-card p-5 sm:p-6">
         <h2 className="font-mono text-[10px] tracking-[0.25em] text-grey">
           {t(locale, "dn.upcoming")}
         </h2>
@@ -109,7 +109,7 @@ export default async function DemoNightPage() {
                   locale={locale}
                 />
               ) : (
-                <p className="text-xs text-grey">
+                  <p className="rounded-lg border border-line bg-bg/40 px-3 py-2 text-xs text-grey">
                   {t(locale, "dn.loginToRsvp")}
                   <a
                     href="/api/auth/github"
@@ -139,7 +139,7 @@ export default async function DemoNightPage() {
             </div>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-grey">{t(locale, "dn.nextPreparing")}</p>
+          <p className="mt-3 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">{t(locale, "dn.nextPreparing")}</p>
         )}
       </section>
 
@@ -149,13 +149,13 @@ export default async function DemoNightPage() {
           {t(locale, "dn.archive")}
         </h2>
         {archive.length === 0 ? (
-          <p className="mt-3 text-sm text-grey">{t(locale, "dn.archiveEmpty")}</p>
+          <p className="mt-3 rounded-2xl border border-line bg-card p-6 text-sm text-grey">{t(locale, "dn.archiveEmpty")}</p>
         ) : (
           <ul className="mt-3 space-y-4">
             {archive.map((ev) => {
               const evRoster = archiveRosters.get(ev.id) ?? [];
               return (
-                <li key={ev.id} className="border border-line bg-card p-5">
+                <li key={ev.id} className="rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <h3 className="text-sm font-semibold text-paper">
                       {ev.title}
@@ -193,7 +193,7 @@ export default async function DemoNightPage() {
                       href={ev.streamUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] text-grey underline decoration-blue/50 underline-offset-4 transition-colors hover:text-blue"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-blue"
                     >
                       <MonitorPlay size={13} aria-hidden="true" />
                       {t(locale, "dn.watchReplay")}

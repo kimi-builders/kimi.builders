@@ -7,6 +7,8 @@ import { ExternalLink, Heart, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
+import WorkKindIcon from "@/components/WorkKindIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -78,7 +80,7 @@ export default async function WorkRail({
         {claimBadge !== null && (
           <p className="mt-3">
             <span
-              className="inline-block rounded-md bg-emerald-400/10 px-1.5 py-px font-mono text-[10px] font-medium text-emerald-400"
+              className="inline-block rounded-md bg-blue/10 px-1.5 py-px font-mono text-[10px] font-medium text-blue"
               title={t(locale, "works.badgeTitle")}
             >
               {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -90,7 +92,8 @@ export default async function WorkRail({
         {(work.status !== "released" || work.scope) && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {work.scope && (
-              <span className="inline-flex items-center rounded-md bg-blue/10 px-1.5 py-px text-[10px] font-medium text-blue">
+              <span className="inline-flex items-center gap-1 rounded-md bg-blue/10 px-1.5 py-px text-[10px] font-medium text-blue">
+                <WorkScopeIcon id={work.scope} size={11} />
                 {t(
                   locale,
                   work.scope === "eco"
@@ -137,7 +140,7 @@ export default async function WorkRail({
             </h4>
             <div className="mt-2">
               <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[10px] ${workKind(work.kind).tint}`}>
-                <i className={`size-[6px] rounded-full ${workKind(work.kind).dot}`} />
+                <WorkKindIcon id={work.kind} size={12} />
                 {workKindLabel(work.kind, locale === "zh")}
               </span>
             </div>

@@ -198,7 +198,7 @@ function LogoCropDialog({
           />
         </label>
         {failed && (
-          <p role="alert" className="mt-3 text-xs text-red-400">
+          <p role="alert" className="mt-3 text-xs text-blue">
             {t(locale, "err.uploadFailed")}
           </p>
         )}
@@ -410,7 +410,7 @@ export default function WorkMediaFields({
               <button
                 type="button"
                 onClick={() => setLogo(null)}
-                className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
                 {t(locale, "works.logoRemove")}
               </button>
@@ -547,7 +547,7 @@ export default function WorkMediaFields({
                 )}
                 {it.status === "error" && (
                   <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/65">
-                    <span className="font-mono text-[10px] text-red-300">
+                    <span className="font-mono text-[10px] text-blue">
                       {t(locale, "works.uploadFailed")}
                     </span>
                     {it.file && (

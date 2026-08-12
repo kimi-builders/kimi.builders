@@ -13,10 +13,11 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
+  GalleryVerticalEnd,
   Info,
   MessagesSquare,
   Newspaper,
-  Rocket,
+  Presentation,
   Settings,
   SquarePen,
   Star,
@@ -30,9 +31,10 @@ const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false },
   { href: "/blog", icon: Newspaper, key: "nav.blog", soon: false },
   { href: "/learn", icon: BookOpen, key: "nav.learn", soon: false },
-  { href: "/works", icon: Rocket, key: "nav.works", soon: false },
+  { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false },
+  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false },
 ] as const;
 
 export default function LeftNav({
@@ -60,7 +62,7 @@ export default function LeftNav({
       <Link prefetch={false}
         href="/community/new"
         title={t(locale, "nav.post")}
-        className="nav-item flex items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+        className="nav-item flex items-center justify-center gap-2 rounded-lg bg-blue py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <SquarePen size={14} className="shrink-0" />
         <span className="nav-label">{t(locale, "nav.post")}</span>

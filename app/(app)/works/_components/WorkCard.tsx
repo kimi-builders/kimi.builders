@@ -18,8 +18,11 @@ import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import type { WorkRow } from "@/src/lib/works";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
+import WorkKindIcon from "@/components/WorkKindIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkOwnerActions from "./WorkOwnerActions";
+import WorkScreenshot from "./WorkScreenshot";
 
 /* 状态芯片:released 不显示(默认态);planning 琥珀 / building 蓝 / archived 灰。 */
 const STATUS_CHIP: Record<
@@ -29,7 +32,7 @@ const STATUS_CHIP: Record<
     key: "works.statusPlanning" | "works.statusBuilding" | "works.statusArchived";
   }
 > = {
-  planning: { cls: "bg-amber-400/10 text-amber-400", key: "works.statusPlanning" },
+  planning: { cls: "bg-moon text-grey", key: "works.statusPlanning" },
   building: { cls: "bg-blue/10 text-blue", key: "works.statusBuilding" },
   archived: { cls: "bg-paper/[0.07] text-grey", key: "works.statusArchived" },
 };
@@ -43,11 +46,11 @@ const SCOPE_CHIP: Record<
   }
 > = {
   base: { cls: "bg-blue/10 text-blue", key: "awesome.scopeBase" },
-  eco: { cls: "bg-emerald-400/10 text-emerald-400", key: "awesome.scopeEco" },
-  part: { cls: "bg-amber-400/10 text-amber-400", key: "awesome.scopePart" },
+  eco: { cls: "bg-paper/[0.07] text-paper", key: "awesome.scopeEco" },
+  part: { cls: "bg-moon text-grey", key: "awesome.scopePart" },
 };
 
-const CHIP = "inline-flex items-center rounded-md px-1.5 py-px text-[10px] font-medium";
+const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-[10px] font-medium";
 
 export default function WorkCard({
   work: w,
@@ -75,41 +78,13 @@ export default function WorkCard({
         className="absolute inset-0 rounded-2xl"
       />
       <div className="overflow-hidden rounded-t-2xl border-b border-line">
-        {w.screenshotUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={w.screenshotUrl}
-            alt={w.name}
-            className="aspect-video w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          /* 无封面:类型色调的渐变占位 —— 有 Logo 挂 Logo(20260826_work_media),
-             否则首字符 + 类型标签(比裸图标有辨识度) */
-          <div
-            className="flex aspect-video w-full flex-col items-center justify-center gap-2"
-            style={{
-              background: `linear-gradient(135deg, ${workKind(w.kind).from}, ${workKind(w.kind).to})`,
-            }}
-          >
-            {w.logoKey ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={mediaUrl(w.logoKey)}
-                alt=""
-                loading="lazy"
-                className="size-14 rounded-2xl border border-white/25 object-cover"
-              />
-            ) : (
-              <span className="font-mono text-3xl font-bold text-white/75">
-                {[...w.name][0]}
-              </span>
-            )}
-            <span className="font-mono text-[10px] tracking-[0.14em] text-white/50">
-              {workKindLabel(w.kind, locale === "zh")}
-            </span>
-          </div>
-        )}
+        <WorkScreenshot
+          url={w.screenshotUrl}
+          name={w.name}
+          logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
+          kindLabel={workKindLabel(w.kind, locale === "zh")}
+          embedded
+        />
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start gap-2">
@@ -118,10 +93,12 @@ export default function WorkCard({
           </h2>
           <span className="ml-auto flex shrink-0 flex-wrap justify-end gap-1.5">
             <span className={`${CHIP} ${workKind(w.kind).tint}`}>
+              <WorkKindIcon id={w.kind} size={11} />
               {workKindLabel(w.kind, locale === "zh")}
             </span>
             {scopeChip && (
               <span className={`${CHIP} ${scopeChip.cls}`}>
+                <WorkScopeIcon id={w.scope} size={11} />
                 {t(locale, scopeChip.key)}
               </span>
             )}
@@ -140,7 +117,7 @@ export default function WorkCard({
             )}
             {claimBadge !== null && claimBadge > 0 && (
               <span
-                className={`${CHIP} bg-emerald-400/10 font-mono text-emerald-400`}
+                className={`${CHIP} bg-blue/10 font-mono text-blue`}
                 title={t(locale, "works.badgeTitle")}
               >
                 {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -242,7 +219,7 @@ export default function WorkCard({
           </div>
           {/* 声明超额提示(声明制):仅作者本人可见,引导去编辑页重新分配 */}
           {claimPaused && meId !== null && w.userId === meId && (
-            <p className="relative z-10 mt-2 font-mono text-[10px] leading-relaxed text-amber-400/90">
+            <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[10px] leading-relaxed text-grey">
               {t(locale, "works.claimPaused")}
             </p>
           )}
