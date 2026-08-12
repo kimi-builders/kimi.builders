@@ -6,6 +6,7 @@ import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 import { CATEGORIES, type CategoryId } from "./categories";
+import { canModerate } from "./featured";
 import { plainExcerpt } from "./format";
 
 export { CATEGORIES, categoryLabel } from "./categories";
@@ -43,6 +44,29 @@ export interface PostDetail extends FeedPost {
   aiReply: boolean;
   editedAt: Date | null;
   viewCount: number;
+}
+
+/* 帖子详情、metadata 与互动入口共用同一可见性口径:
+   私密帖只对作者开放;治理屏蔽帖对作者和 admin/mod 开放。 */
+export function canViewPost(
+  post: Pick<PostDetail, "visibility" | "userId" | "hiddenAt">,
+  viewer: { id: number; role: string } | null,
+): boolean {
+  if (post.visibility !== "public" && post.userId !== viewer?.id) return false;
+  if (post.hiddenAt) {
+    return !!viewer && (post.userId === viewer.id || canModerate(viewer.role));
+  }
+  return true;
+}
+
+/* 不可见帖子只能返回站点通用标题，避免浏览器标签、分享预览泄露正文或标题。 */
+export function postMetadataTitle(
+  post: Pick<PostDetail, "visibility" | "userId" | "hiddenAt" | "title" | "bodyMd">,
+  viewer: { id: number; role: string } | null,
+): string {
+  if (!canViewPost(post, viewer)) return "kimi.builders";
+  const name = post.title || plainExcerpt(post.bodyMd, 60);
+  return `${name} — kimi.builders`;
 }
 
 export interface CommentRow {
