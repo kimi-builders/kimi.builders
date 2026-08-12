@@ -4,6 +4,7 @@
    (无 dispatcher 的环境 —— 单测/server action —— 自动退化为普通调用)。 */
 import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { Pool, PoolConnection } from "mysql2/promise";
 import { getPool } from "./db";
 import { CATEGORIES, type CategoryId } from "./categories";
 import { canModerate } from "./featured";
@@ -46,11 +47,14 @@ export interface PostDetail extends FeedPost {
   viewCount: number;
 }
 
+type Queryable = Pool | PoolConnection;
+export type PostViewer = { id: number; role: string } | null;
+
 /* 帖子详情、metadata 与互动入口共用同一可见性口径:
    私密帖只对作者开放;治理屏蔽帖对作者和 admin/mod 开放。 */
 export function canViewPost(
   post: Pick<PostDetail, "visibility" | "userId" | "hiddenAt">,
-  viewer: { id: number; role: string } | null,
+  viewer: PostViewer,
 ): boolean {
   if (post.visibility !== "public" && post.userId !== viewer?.id) return false;
   if (post.hiddenAt) {
@@ -62,11 +66,140 @@ export function canViewPost(
 /* 不可见帖子只能返回站点通用标题，避免浏览器标签、分享预览泄露正文或标题。 */
 export function postMetadataTitle(
   post: Pick<PostDetail, "visibility" | "userId" | "hiddenAt" | "title" | "bodyMd">,
-  viewer: { id: number; role: string } | null,
+  viewer: PostViewer,
 ): string {
   if (!canViewPost(post, viewer)) return "kimi.builders";
   const name = post.title || plainExcerpt(post.bodyMd, 60);
   return `${name} — kimi.builders`;
+}
+
+export interface VisiblePostAccess {
+  id: number;
+  userId: number;
+  visibility: string;
+  hiddenAt: Date | null;
+}
+
+/* Server Action 的轻量门禁查询。写路径传事务连接并 FOR UPDATE，确保从判定
+   到 INSERT/UPDATE 之间帖子不能被并发转私密、屏蔽或软删。 */
+export async function getVisiblePostAccess(
+  postId: number,
+  viewer: PostViewer,
+  db: Queryable = getPool(),
+  lock = false,
+): Promise<VisiblePostAccess | null> {
+  const [rows] = await db.query<RowDataPacket[]>(
+    `SELECT id, user_id, visibility, hidden_at FROM posts
+     WHERE id = ? AND deleted_at IS NULL LIMIT 1${lock ? " FOR UPDATE" : ""}`,
+    [postId],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  const post = {
+    id: Number(r.id),
+    userId: Number(r.user_id),
+    visibility: String(r.visibility),
+    hiddenAt: r.hidden_at ?? null,
+  };
+  return canViewPost(post, viewer) ? post : null;
+}
+
+export interface VisibleCommentAccess {
+  id: number;
+  postId: number;
+  userId: number | null;
+  isAi: boolean;
+}
+
+/* 评论反应/回复同时校验评论本身和父帖。被屏蔽评论只放行评论作者与管理角色；
+   JOIN + FOR UPDATE 在写事务里一起锁住评论和帖子。 */
+export async function getVisibleCommentAccess(
+  commentId: number,
+  viewer: PostViewer,
+  db: Queryable = getPool(),
+  lock = false,
+): Promise<VisibleCommentAccess | null> {
+  const [rows] = await db.query<RowDataPacket[]>(
+    `SELECT c.id, c.post_id, c.user_id, c.is_ai, c.hidden_at AS comment_hidden_at,
+            p.user_id AS post_user_id, p.visibility, p.hidden_at AS post_hidden_at
+     FROM comments c JOIN posts p ON p.id = c.post_id
+     WHERE c.id = ? AND c.deleted_at IS NULL AND p.deleted_at IS NULL
+     LIMIT 1${lock ? " FOR UPDATE" : ""}`,
+    [commentId],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  if (
+    !canViewPost(
+      {
+        userId: Number(r.post_user_id),
+        visibility: String(r.visibility),
+        hiddenAt: r.post_hidden_at ?? null,
+      },
+      viewer,
+    )
+  )
+    return null;
+  const userId = r.user_id === null ? null : Number(r.user_id);
+  if (
+    r.comment_hidden_at &&
+    !(viewer && (userId === viewer.id || canModerate(viewer.role)))
+  )
+    return null;
+  return {
+    id: Number(r.id),
+    postId: Number(r.post_id),
+    userId,
+    isAi: !!r.is_ai,
+  };
+}
+
+async function withVisiblePostLock<T>(
+  postId: number,
+  viewer: Exclude<PostViewer, null>,
+  work: (conn: PoolConnection, post: VisiblePostAccess) => Promise<T>,
+): Promise<T | null> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const post = await getVisiblePostAccess(postId, viewer, conn, true);
+    if (!post) {
+      await conn.rollback();
+      return null;
+    }
+    const result = await work(conn, post);
+    await conn.commit();
+    return result;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
+async function withVisibleCommentLock<T>(
+  commentId: number,
+  viewer: Exclude<PostViewer, null>,
+  work: (conn: PoolConnection, comment: VisibleCommentAccess) => Promise<T>,
+): Promise<T | null> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const comment = await getVisibleCommentAccess(commentId, viewer, conn, true);
+    if (!comment) {
+      await conn.rollback();
+      return null;
+    }
+    const result = await work(conn, comment);
+    await conn.commit();
+    return result;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
 }
 
 export interface CommentRow {
@@ -577,6 +710,50 @@ export async function createComment(
   return id;
 }
 
+export interface VisibleCommentCreated {
+  id: number;
+  parent: VisibleCommentAccess | null;
+}
+
+/* 登录成员写评论的安全入口:事务内锁父帖并重做可见性判定，回复目标也必须
+   仍属于同帖且可见。评论、冗余计数和自动订阅同事务提交。 */
+export async function createCommentForVisiblePost(
+  viewer: Exclude<PostViewer, null>,
+  postId: number,
+  bodyMd: string,
+  parentId: number | null = null,
+): Promise<VisibleCommentCreated | null> {
+  const created = await withVisiblePostLock(postId, viewer, async (conn) => {
+    let parent: VisibleCommentAccess | null = null;
+    if (parentId !== null) {
+      parent = await getVisibleCommentAccess(parentId, viewer, conn, true);
+      if (!parent || parent.postId !== postId) return null;
+    }
+    const [res] = await conn.query<ResultSetHeader>(
+      "INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md) VALUES (?, ?, ?, 0, ?)",
+      [postId, parentId, viewer.id, bodyMd.slice(0, 10000)],
+    );
+    const id = Number(res.insertId);
+    await conn.query(
+      "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
+      [postId],
+    );
+    await conn.query(
+      "INSERT IGNORE INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
+      [viewer.id, postId],
+    );
+    return { id, parent };
+  });
+  if (!created) return null;
+  await notifyOnComment({
+    postId,
+    commentId: created.id,
+    actorId: viewer.id,
+    parentId,
+  });
+  return created;
+}
+
 /* 回复前校验 + AI 触发判断:返回目标评论概况;不存在/跨帖/已删除 → null。 */
 export async function getCommentForReply(
   commentId: number,
@@ -602,20 +779,20 @@ async function setReaction(
   targetType: "post" | "comment",
   targetId: number,
   kind: "up" | "down",
+  db: Queryable = getPool(),
 ): Promise<void> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
+  const [rows] = await db.query<RowDataPacket[]>(
     "SELECT id, kind FROM reactions WHERE user_id = ? AND target_type = ? AND target_id = ? AND kind IN ('up','down') LIMIT 1",
     [userId, targetType, targetId],
   );
   const cur = rows[0];
   if (cur && cur.kind === kind) {
-    await pool.query("DELETE FROM reactions WHERE id = ?", [cur.id]);
+    await db.query("DELETE FROM reactions WHERE id = ?", [cur.id]);
   } else if (cur) {
-    await pool.query("UPDATE reactions SET kind = ? WHERE id = ?", [kind, cur.id]);
+    await db.query("UPDATE reactions SET kind = ? WHERE id = ?", [kind, cur.id]);
   } else {
     try {
-      await pool.query(
+      await db.query(
         "INSERT INTO reactions (user_id, target_type, target_id, kind) VALUES (?, ?, ?, ?)",
         [userId, targetType, targetId, kind],
       );
@@ -624,7 +801,7 @@ async function setReaction(
     }
   }
   const table = targetType === "post" ? "posts" : "comments";
-  await pool.query(
+  await db.query(
     `UPDATE ${table} t SET t.score =
        (SELECT COUNT(*) FROM reactions r WHERE r.target_type = ? AND r.target_id = ? AND r.kind = 'up') -
        (SELECT COUNT(*) FROM reactions r WHERE r.target_type = ? AND r.target_id = ? AND r.kind = 'down')
@@ -654,6 +831,36 @@ export async function setCommentReaction(
   kind: "up" | "down",
 ): Promise<void> {
   await setReaction(userId, "comment", commentId, kind);
+}
+
+export async function setPostReactionForViewer(
+  viewer: Exclude<PostViewer, null>,
+  postId: number,
+  kind: "up" | "down",
+): Promise<boolean> {
+  const changed = await withVisiblePostLock(postId, viewer, async (conn) => {
+    await setReaction(viewer.id, "post", postId, kind, conn);
+    if (kind === "up") {
+      await conn.query(
+        "INSERT IGNORE INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
+        [viewer.id, postId],
+      );
+    }
+    return true;
+  });
+  return changed === true;
+}
+
+export async function setCommentReactionForViewer(
+  viewer: Exclude<PostViewer, null>,
+  commentId: number,
+  kind: "up" | "down",
+): Promise<boolean> {
+  const changed = await withVisibleCommentLock(commentId, viewer, async (conn) => {
+    await setReaction(viewer.id, "comment", commentId, kind, conn);
+    return true;
+  });
+  return changed === true;
 }
 
 export interface ReactionState {
@@ -718,6 +925,31 @@ export async function toggleSubscribe(
       /* 并发重复订阅 → 主键挡住,当已订阅处理 */
     }
   }
+}
+
+export async function toggleSubscribeForViewer(
+  viewer: Exclude<PostViewer, null>,
+  postId: number,
+): Promise<boolean> {
+  const changed = await withVisiblePostLock(postId, viewer, async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      "SELECT user_id FROM post_subscriptions WHERE user_id = ? AND post_id = ? LIMIT 1",
+      [viewer.id, postId],
+    );
+    if (rows[0]) {
+      await conn.query(
+        "DELETE FROM post_subscriptions WHERE user_id = ? AND post_id = ?",
+        [viewer.id, postId],
+      );
+    } else {
+      await conn.query(
+        "INSERT IGNORE INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
+        [viewer.id, postId],
+      );
+    }
+    return true;
+  });
+  return changed === true;
 }
 
 export async function isSubscribed(
@@ -875,6 +1107,42 @@ export async function votePoll(
     [optionId],
   );
   return "ok";
+}
+
+export type VisiblePollVoteResult = "ok" | "voted" | "bad_option" | "not_visible";
+
+export async function votePollForViewer(
+  viewer: Exclude<PostViewer, null>,
+  postId: number,
+  optionId: number,
+): Promise<VisiblePollVoteResult> {
+  const result = await withVisiblePostLock(postId, viewer, async (conn) => {
+    const [opt] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM poll_options WHERE id = ? AND post_id = ? LIMIT 1 FOR UPDATE",
+      [optionId, postId],
+    );
+    if (!opt[0]) return "bad_option" as const;
+    const [dup] = await conn.query<RowDataPacket[]>(
+      `SELECT v.id FROM poll_votes v JOIN poll_options o ON o.id = v.option_id
+       WHERE o.post_id = ? AND v.user_id = ? LIMIT 1`,
+      [postId, viewer.id],
+    );
+    if (dup[0]) return "voted" as const;
+    try {
+      await conn.query(
+        "INSERT INTO poll_votes (option_id, user_id) VALUES (?, ?)",
+        [optionId, viewer.id],
+      );
+    } catch {
+      return "voted" as const;
+    }
+    await conn.query(
+      "UPDATE poll_options SET vote_count = vote_count + 1 WHERE id = ?",
+      [optionId],
+    );
+    return "ok" as const;
+  });
+  return result ?? "not_visible";
 }
 
 /* ---- 作者自助:编辑 / 删除 / 可见性 ----
