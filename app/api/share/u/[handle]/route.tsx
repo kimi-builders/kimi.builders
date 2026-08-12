@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import {
   getProfileShareSnapshot,
   mockProfileShareSnapshot,
+  PROFILE_SHARE_CACHE_CONTROL,
   profileShareText,
 } from "@/src/lib/share-posters";
 import { getPosterFonts } from "@/app/api/share/poster-fonts";
@@ -34,7 +35,7 @@ export async function GET(
     ...profilePosterSize(snapshot),
     ...(fonts.length ? { fonts } : {}),
     headers: {
-      "Cache-Control": preview ? "private, no-store, max-age=0" : "public, max-age=300",
+      "Cache-Control": PROFILE_SHARE_CACHE_CONTROL,
       "Content-Disposition": `${download ? "attachment" : "inline"}; filename="kimi-builders-u-${snapshot.handle}.png"`,
       "X-Content-Type-Options": "nosniff",
     },
