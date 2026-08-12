@@ -4,6 +4,8 @@
 import type { ReactNode } from "react";
 import type { Locale } from "@/src/lib/i18n";
 import { getFeedPage, getPostReactions } from "@/src/lib/posts";
+import { getPublicFeedFirstPage } from "@/src/lib/public-feed-cache";
+import { publicFeedCacheScope } from "@/src/lib/public-feed";
 import PostCard from "./PostCard";
 
 export interface FeedPageData {
@@ -21,7 +23,10 @@ export async function loadFeedCards(
   },
   locale: Locale,
 ): Promise<FeedPageData> {
-  const page = await getFeedPage(opts);
+  const publicScope = publicFeedCacheScope(opts);
+  const page = publicScope
+    ? await getPublicFeedFirstPage(publicScope)
+    : await getFeedPage(opts);
   const reacted = opts.viewerId
     ? await getPostReactions(
         opts.viewerId,

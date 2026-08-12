@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
+import { PUBLIC_POSTS_CACHE_TAG } from "@/src/lib/cache-tags";
 import {
   canModerate,
   clearPostFeatured,
@@ -125,6 +126,7 @@ export async function createPostAction(
   /* 入队 AI 回帖:本帖开关 + 作者全局开关都开才排(v2 决策 3)。
      enqueue 内部用 after(),必须在 redirect 抛出前调用。 */
   if (aiReply && user.aiRepliesEnabled) await enqueueAiReply(postId);
+  updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath("/community");
   redirect(`/community/${postId}`);
 }
@@ -169,6 +171,7 @@ export async function createCommentAction(
     const post = await getPost(postId);
     if (post?.aiReply) await enqueueAiReply(postId, created.id);
   }
+  updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community"); /* feed 卡片上的评论数 */
   return { ok: true };
@@ -241,7 +244,9 @@ export async function setPostReactionAction(
       retryAfterSeconds: rate.retryAfterSeconds,
     };
   }
-  return { ok: await setPostReactionForViewer(user, postId, kind) };
+  const ok = await setPostReactionForViewer(user, postId, kind);
+  if (ok) updateTag(PUBLIC_POSTS_CACHE_TAG);
+  return { ok };
 }
 
 export async function setCommentReactionAction(
@@ -313,6 +318,7 @@ export async function updatePostAction(
     return { error: t(locale, "err.unknownCat") };
   const ok = await updatePost(user.id, postId, { title, bodyMd: body, linkUrl, category });
   if (!ok) return { error: t(locale, "err.notOwner") };
+  updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community");
   redirect(`/community/${postId}`);
@@ -327,7 +333,10 @@ export async function deletePostAction(
   const postId = Number(formData.get("post_id"));
   if (!postId) return { ok: false };
   const ok = await deletePost(user.id, postId);
-  if (ok) revalidatePath("/community");
+  if (ok) {
+    updateTag(PUBLIC_POSTS_CACHE_TAG);
+    revalidatePath("/community");
+  }
   return { ok };
 }
 
@@ -341,6 +350,7 @@ export async function setPostVisibilityAction(
   if (!postId) return { ok: false };
   const ok = await setPostVisibility(user.id, postId, visibility);
   if (ok) {
+    updateTag(PUBLIC_POSTS_CACHE_TAG);
     revalidatePath(`/community/${postId}`);
     revalidatePath("/community");
   }
@@ -370,6 +380,7 @@ export async function deleteCommentAction(
   if (!commentId) return { ok: false };
   const ok = await deleteComment(user.id, commentId);
   if (ok) {
+    updateTag(PUBLIC_POSTS_CACHE_TAG);
     revalidatePath("/community/[id]", "page");
     revalidatePath("/community");
   }
