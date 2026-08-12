@@ -23,7 +23,7 @@ import { relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
-import { getProfileByHandle, getProfileStats } from "@/src/lib/users";
+import { getProfileByHandle, getProfileStats, profileDisplay } from "@/src/lib/users";
 import { userWorksCountQuery } from "@/src/lib/share-posters";
 import { USAGE_TREND_LEGEND, USAGE_WEEKDAYS_EN, USAGE_WEEKDAYS_ZH } from "@/src/lib/usage/heatmap";
 import { USAGE_DISPLAY_CURRENCIES } from "@/src/lib/usage/pricing";
@@ -82,10 +82,14 @@ export async function generateMetadata({
   const { handle } = await params;
   const p = await getProfileByHandle(handle);
   if (!p) return { title: "kimi.builders" };
-  return { title: `${p.name || p.handle} (@${p.handle}) — kimi.builders` };
+  /* 显示名对访客隐藏时,标签页标题/分享预览同样只落 @handle(本人视角不受限) */
+  const me = await getSessionUser();
+  const view = profileDisplay(p, me?.id === p.id);
+  return { title: `${view.displayName} (@${p.handle}) — kimi.builders` };
 }
 
-/* Tab 空态:虚线图标 tile + 标题 + 说明 + CTA(CTA 仅本人)。 */
+/* Tab 空态:虚线图标 tile + 标题 + 说明 + CTA(CTA 仅本人)。
+   访客视角的说明省略(标题本身就是「还没有…」,再放一句同义文案是重复)。 */
 function EmptyPane({
   icon: Icon,
   title,
@@ -95,7 +99,7 @@ function EmptyPane({
 }: {
   icon: typeof PenLine;
   title: string;
-  text: string;
+  text?: string;
   ctaHref?: string;
   ctaLabel?: string;
 }) {
@@ -105,7 +109,9 @@ function EmptyPane({
         <Icon size={20} aria-hidden="true" />
       </div>
       <h4 className="mt-4 text-sm font-semibold text-paper">{title}</h4>
-      <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-grey">{text}</p>
+      {text && (
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-grey">{text}</p>
+      )}
       {ctaHref && ctaLabel && (
         <Link
           href={ctaHref}
@@ -141,6 +147,8 @@ export default async function ProfilePage({
   }
 
   const self = me?.id === profile.id;
+  /* 资料字段级隐私(20260829):头像/显示名/简介的访客展示口径;本人视角不受限 */
+  const view = profileDisplay(profile, self);
   /* 用量块门禁:本人恒可见;访客仅当对方 opt-in 公开。 */
   const usageVisible = self || (await isUsagePublic(profile.id));
   /* 用量/Agent/偏好三个 tab 同属隐私聚合,共用 usageVisible 门禁 */
@@ -156,13 +164,13 @@ export default async function ProfilePage({
   const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
 
   const ownerSettings = usageVisible ? await getUsageSettings(profile.id) : null;
-  const worksCountQ = userWorksCountQuery(profile.id);
+  const worksCountQ = userWorksCountQuery(profile.id, self);
   const [stats, posts, comments, works, heatmap, daily, topDims, snapshotAll, worksCountRows] =
     await Promise.all([
       getProfileStats(profile.id, self),
       activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
       activeTab === "comments" ? getUserComments(profile.id, self) : Promise.resolve([]),
-      activeTab === "works" ? getUserWorks(profile.id) : Promise.resolve([]),
+      activeTab === "works" ? getUserWorks(profile.id, self) : Promise.resolve([]),
       usageVisible ? getSocialUsageHeatmap(profile.id, tz) : Promise.resolve(null),
       usageVisible ? getSocialDailyActivity(profile.id, tz) : Promise.resolve(null),
       usageVisible ? getSocialTopDimensions(profile.id) : Promise.resolve(null),
@@ -252,14 +260,14 @@ export default async function ProfilePage({
       <header className="usage-hero rounded-2xl border border-line p-5 sm:p-6">
         <div className="relative z-[1] flex items-start gap-4 sm:gap-6">
           <Avatar
-            url={profile.avatarUrl}
+            url={view.avatarUrl}
             handle={profile.handle}
             size={96}
             className="shrink-0 max-sm:!size-[72px]"
           />
           <div className="min-w-0 flex-1 pt-0.5">
             <h1 className="flex flex-wrap items-center gap-2.5 text-[22px] font-semibold tracking-[0.1px] text-paper sm:text-[26px]">
-              {profile.name || profile.handle}
+              {view.displayName}
               {profile.role !== "member" && (
                 <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-[0.16em] text-blue">
                   {profile.role.toUpperCase()}
@@ -281,9 +289,9 @@ export default async function ProfilePage({
                 {SITE_HOST}{profilePath}
               </span>
             </div>
-            {profile.bio && (
+            {view.bio && (
               <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
-                {profile.bio}
+                {view.bio}
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -455,8 +463,8 @@ export default async function ProfilePage({
               (posts.length === 0 ? (
                 <EmptyPane
                   icon={PenLine}
-                  title={t(locale, "prof.emptyPostsTitle")}
-                  text={self ? t(locale, "prof.emptyPostsText") : t(locale, "prof.noPosts")}
+                  title={self ? t(locale, "prof.emptyPostsTitle") : t(locale, "prof.noPosts")}
+                  text={self ? t(locale, "prof.emptyPostsText") : undefined}
                   ctaHref={self ? "/community/new" : undefined}
                   ctaLabel={self ? t(locale, "prof.emptyPostsCta") : undefined}
                 />
@@ -470,6 +478,14 @@ export default async function ProfilePage({
                           {p.visibility === "private" && (
                             <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
                               {t(locale, "post.private")}
+                            </span>
+                          )}
+                          {p.hiddenAt && (
+                            <span
+                              className="rounded-md border border-red-400/60 px-1.5 py-px text-[10px] text-red-400"
+                              title={p.hiddenReason ?? undefined}
+                            >
+                              {t(locale, "mod.hiddenBadge")}
                             </span>
                           )}
                           {categoryLabel(locale, p.category)}
@@ -531,8 +547,8 @@ export default async function ProfilePage({
               (comments.length === 0 ? (
                 <EmptyPane
                   icon={MessagesSquare}
-                  title={t(locale, "prof.emptyCommentsTitle")}
-                  text={self ? t(locale, "prof.emptyCommentsText") : t(locale, "prof.noComments")}
+                  title={self ? t(locale, "prof.emptyCommentsTitle") : t(locale, "prof.noComments")}
+                  text={self ? t(locale, "prof.emptyCommentsText") : undefined}
                   ctaHref={self ? "/community" : undefined}
                   ctaLabel={self ? t(locale, "prof.emptyCommentsCta") : undefined}
                 />
@@ -550,6 +566,11 @@ export default async function ProfilePage({
                         </Link>
                         <span className="mx-2">·</span>
                         {relTime(c.createdAt, locale)}
+                        {c.hidden && (
+                          <span className="ml-2 rounded-md border border-red-400/60 px-1.5 py-px text-[10px] text-red-400">
+                            {t(locale, "mod.hiddenBadge")}
+                          </span>
+                        )}
                       </div>
                       <Link
                         href={`/community/${c.postId}#comment-${c.id}`}
@@ -566,13 +587,13 @@ export default async function ProfilePage({
                 </div>
               ))}
 
-            {/* 作品:复用作品墙的 WorkCard;作品本来就公开,访客/本人同视图 */}
+            {/* 作品:复用作品墙的 WorkCard;访客只见公开,本人含私密(卡片带「私密」标) */}
             {activeTab === "works" &&
               (works.length === 0 ? (
                 <EmptyPane
                   icon={Package}
-                  title={t(locale, "prof.emptyWorksTitle")}
-                  text={self ? t(locale, "prof.emptyWorksText") : t(locale, "prof.noWorks")}
+                  title={self ? t(locale, "prof.emptyWorksTitle") : t(locale, "prof.noWorks")}
+                  text={self ? t(locale, "prof.emptyWorksText") : undefined}
                   ctaHref={self ? "/works/new" : undefined}
                   ctaLabel={self ? t(locale, "prof.emptyWorksCta") : undefined}
                 />

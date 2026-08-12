@@ -3,6 +3,7 @@
    纯函数可直接单测(见 tests/share-posters.test.ts)。
    隐私口径:
    - 私密帖 / 已删帖 → 快照 null,路由 404 不渲染(deleted 由 getPost 滤掉);
+   - 私密作品同理(getWork 取出后由 canViewWork 拦截,海报是匿名公共上下文);
    - 主页统计用访客口径(getProfileStats self=false,不泄露私密量);
    - 个人主页用量行仅作者自愿公开(usage_settings.show_on_leaderboard=1)才带数字,
      门禁复用 usage/social.ts 的 getPublicTokenTotals(SQL JOIN 钉死),未公开 = null
@@ -20,6 +21,7 @@ import { getPublicTokenTotals, getSocialDailyActivity } from "./usage/social";
 import { getVerifiableTokenTotals } from "./usage/verifiable";
 import { getProfileByHandle, getProfileStats, type ProfileStats, type UserProfile } from "./users";
 import {
+  canViewWork,
   claimBadgeOf,
   getWork,
   getWorkClaimSums,
@@ -107,13 +109,13 @@ export function pollForPoster(poll: PollData | null, max = POSTER_POLL_OPTIONS_M
   return { options, totalVotes: poll.total, more: poll.options.length - options.length };
 }
 
-/* 私密帖 → null(路由 404)。标题非强制:无标题帖正文摘要坐到主标题位
+/* 私密帖 / 被屏蔽帖 → null(路由 404)。标题非强制:无标题帖正文摘要坐到主标题位
    (同详情页/feed 的回退);摘要与主标题完全雷同时(短帖)不重复展示。 */
 export function buildPostShareSnapshot(
   post: PostDetail,
   poll: PollData | null,
 ): PostShareSnapshot | null {
-  if (post.visibility !== "public") return null;
+  if (post.visibility !== "public" || post.hiddenAt) return null;
   const hasTitle = post.title.trim().length > 0;
   const title = hasTitle ? clip(post.title, 66) : plainExcerpt(post.bodyMd, 66);
   const rawExcerpt = hasTitle ? plainExcerpt(post.bodyMd, POSTER_EXCERPT_MAX) : "";
@@ -193,7 +195,8 @@ export function buildWorkShareSnapshot(
 
 export async function getWorkShareSnapshot(id: number): Promise<WorkShareSnapshot | null> {
   const work = await getWork(id);
-  if (!work) return null;
+  /* 私密作品 → null(路由 404,同私密帖口径);海报是匿名公共上下文,viewer 恒 null */
+  if (!work || !canViewWork(work, null)) return null;
   const [totals, claimSums] = await Promise.all([
     getVerifiableTokenTotals([work.userId]),
     getWorkClaimSums([work.userId]),
@@ -221,10 +224,14 @@ export interface ProfileShareSnapshot {
   url: string;
 }
 
-/* 作品数统计:成员自有作品(source='site'),与主页「作品」页签同口径。 */
-export function userWorksCountQuery(userId: number): { sql: string; args: number[] } {
+/* 作品数统计:成员自有作品(source='site'),与主页「作品」页签同口径。
+   self=false(访客/海报等公共上下文)只数公开作品,不泄露私密度量。 */
+export function userWorksCountQuery(
+  userId: number,
+  self = false,
+): { sql: string; args: number[] } {
   return {
-    sql: "SELECT COUNT(*) AS n FROM works WHERE source = 'site' AND user_id = ?",
+    sql: `SELECT COUNT(*) AS n FROM works WHERE source = 'site' AND user_id = ?${self ? "" : " AND visibility = 'public' AND hidden_at IS NULL"}`,
     args: [userId],
   };
 }

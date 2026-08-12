@@ -44,12 +44,14 @@ export async function loadWorksCards(
         kinds: scope.kinds,
         scope: scope.scope_,
         after,
+        viewerId: user?.id,
       })
     : await getWorksPage({
         sort: scope.sort,
         agents: scope.agents,
         kinds: scope.kinds,
         after,
+        viewerId: user?.id,
       });
   const authorIds = page.works.map((w) => w.userId);
   const [totals, claimSums] = scope.awesome

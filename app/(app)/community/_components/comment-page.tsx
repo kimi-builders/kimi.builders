@@ -32,6 +32,8 @@ export async function loadCommentPage(
   const page = await getCommentsPage(postId, {
     showAi: user ? user.showAiReplies : true,
     after,
+    /* 治理屏蔽(20260830):被屏蔽评论仅其作者本人可见(带标注),其余人视角滤掉 */
+    viewerId: user?.id,
   });
   const reactions = user
     ? await getCommentReactions(user.id, page.comments.map((c) => c.id))
@@ -49,6 +51,7 @@ export async function loadCommentPage(
     avatarUrl: c.isAi ? BOT_AVATAR : (c.avatarUrl ?? ""),
     time: relTime(c.createdAt, locale),
     edited: !!c.editedAt,
+    hidden: c.hiddenAt !== null,
     score: c.score,
     replyToAuthor: replyTo
       ? replyTo.isAi

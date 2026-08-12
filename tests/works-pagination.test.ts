@@ -23,7 +23,7 @@ test("page sizes keep the previous fixed limits, over-fetching one", () => {
 
 test("works wall only lists member works, ordered by id (monotonic with created_at)", () => {
   const { sql, args } = worksPageQuery({ source: "site" });
-  assert.match(sql, /WHERE w\.source = 'site'/);
+  assert.match(sql, /WHERE w\.visibility = 'public' AND w\.source = 'site'/);
   assert.match(sql, /ORDER BY w\.id DESC/);
   assert.deepEqual(args, []);
 });
@@ -42,8 +42,11 @@ test("awesome keeps the agent JSON filter and can combine it with the cursor", (
   /* 单个 agent 也是 OR 链包装(括号形式) */
   assert.match(both.sql, /\(JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\)\) AND w\.id < \?/);
   assert.deepEqual(both.args, ["kimi-cli", 7]);
-  /* awesome 无筛选时没有 WHERE 子句(全来源) */
-  assert.equal(worksPageQuery({ source: "all" }).sql.includes("WHERE"), false);
+  /* awesome 无筛选时只剩可见性谓词(公开条目;登录浏览者另放行自己的私密条目) */
+  assert.equal(
+    worksPageQuery({ source: "all" }).sql.includes("WHERE w.visibility = 'public'"),
+    true,
+  );
 });
 
 test("multi-agent filter OR-chains, kind filter uses IN", () => {

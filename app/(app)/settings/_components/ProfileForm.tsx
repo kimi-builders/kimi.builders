@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { updateProfileAction, type SettingsState } from "../actions";
+import AvatarField from "./AvatarField";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
@@ -16,9 +17,12 @@ const labelCls = "font-mono text-[11px] text-grey";
 export default function ProfileForm({
   initial,
   locale,
+  hasCustomAvatar,
 }: {
   initial: { handle: string; name: string; bio: string; avatarUrl: string };
   locale: Locale;
+  /* 服务端判定:当前头像为站内自传 → 显示「恢复默认」 */
+  hasCustomAvatar: boolean;
 }) {
   const [state, formAction, pending] = useActionState<
     SettingsState | null,
@@ -74,21 +78,14 @@ export default function ProfileForm({
           className={`${inputCls} mt-1.5`}
         />
       </label>
-      <label className="block">
-        <span className={labelCls}>
-          {t(locale, "set.avatar")}
-        </span>
-        <input
-          name="avatar_url"
-          type="url"
-          placeholder={initial.avatarUrl || "https://…"}
-          maxLength={500}
-          className={`${inputCls} mt-1.5 font-mono`}
-        />
-        <span className="mt-1 block text-xs leading-relaxed text-grey/80">
-          {t(locale, "set.avatarHint")}
-        </span>
-      </label>
+      <AvatarField
+        locale={locale}
+        handle={initial.handle}
+        currentUrl={initial.avatarUrl}
+        hasCustom={hasCustomAvatar}
+        inputCls={inputCls}
+        labelCls={labelCls}
+      />
       {state?.error && (
         <p className="font-mono text-xs text-blue">{state.error}</p>
       )}

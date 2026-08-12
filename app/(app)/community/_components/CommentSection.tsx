@@ -24,6 +24,7 @@ import {
   loadMoreCommentsAction,
   updateCommentAction,
 } from "../actions";
+import { hideContentAction } from "../../admin/actions";
 
 export interface CommentView {
   id: number;
@@ -34,6 +35,8 @@ export interface CommentView {
   avatarUrl: string;
   time: string;
   edited: boolean;
+  /* 已被管理员屏蔽(仅作者本人视角会拿到 true;公开侧查询已滤) */
+  hidden: boolean;
   score: number;
   replyToAuthor: string | null;
   bodyMd: string;
@@ -48,6 +51,7 @@ export default function CommentSection({
   postId,
   locale,
   meId,
+  moderator = false,
   total,
   threads,
   nextCursor,
@@ -57,6 +61,8 @@ export default function CommentSection({
   postId: number;
   locale: Locale;
   meId: number | null;
+  /* admin/mod:评论行多一个「屏蔽」治理入口(action 层再鉴权) */
+  moderator?: boolean;
   total: number;
   threads: CommentThread[];
   nextCursor: number | null;
@@ -196,6 +202,31 @@ export default function CommentSection({
     }
   };
 
+  /* 治理屏蔽(admin/mod):填原因 → 落库 → 刷新(公开侧随即不可见) */
+  const hideAsMod = async (id: number) => {
+    if (busyId !== null) return;
+    const reason = window.prompt(t(locale, "mod.hidePrompt"), "");
+    if (reason === null) return;
+    setBusyId(id);
+    try {
+      const fd = new FormData();
+      fd.set("target_type", "comment");
+      fd.set("target_id", String(id));
+      fd.set("reason", reason);
+      const res = await hideContentAction(fd);
+      if (!res.ok) {
+        toast(res.error || t(locale, "toast.failed"));
+        return;
+      }
+      toast(t(locale, "mod.toastHidden"));
+      router.refresh();
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const head = (c: CommentView) => (
     <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
       <Avatar
@@ -218,6 +249,11 @@ export default function CommentSection({
       {c.isAi && (
         <span className="rounded-md border border-blue px-1.5 py-px text-[9px] tracking-wider text-blue">
           AI
+        </span>
+      )}
+      {c.hidden && (
+        <span className="rounded-md border border-red-400/60 px-1.5 py-px text-[9px] tracking-wider text-red-400">
+          {t(locale, "mod.hiddenBadge")}
         </span>
       )}
       {c.replyToAuthor && (
@@ -280,6 +316,17 @@ export default function CommentSection({
               {busy ? t(locale, "post.submitting") : t(locale, "post.delete")}
             </button>
           </>
+        )}
+        {/* 治理入口:admin/mod 可屏蔽未屏蔽的评论(屏蔽后仅作者可见,解除走 /admin) */}
+        {moderator && !c.hidden && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => hideAsMod(c.id)}
+            className="transition-colors hover:text-red-400 disabled:opacity-40"
+          >
+            {t(locale, "mod.hide")}
+          </button>
         )}
       </div>
     );

@@ -7,12 +7,14 @@
    自填型号(回车添加)依赖 JS,删除键同样。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { useActionState, useRef, useState } from "react";
+import { ImageUp, LoaderCircle, Plus, X } from "lucide-react";
+import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { isModelFamily, MODEL_FAMILIES } from "@/src/lib/model-families";
+import { uploadMedia } from "@/src/lib/upload";
 import { WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
 import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
@@ -53,6 +55,29 @@ const SCOPES = [
   { id: "part", key: "awesome.scopePart", hintKey: "awesome.scopePartHint" },
 ] as const;
 
+/* 自绘复选框(私密开关):与发帖页同一套 CheckboxControl 样式,无 JS 可提交。 */
+function CheckBox({
+  name,
+  defaultChecked,
+  label,
+  hint,
+}: {
+  name: string;
+  defaultChecked?: boolean;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] text-paper">
+      <CheckboxControl name={name} defaultChecked={defaultChecked} className="mt-px" />
+      <span>
+        {label}
+        <span className="mt-0.5 block text-[11px] leading-relaxed text-grey">{hint}</span>
+      </span>
+    </label>
+  );
+}
+
 export default function WorkForm({
   action,
   locale,
@@ -73,6 +98,7 @@ export default function WorkForm({
     tags: string[];
     agents: string[];
     authorLabel: string;
+    visibility: string;
     status: string;
     models: string[];
     kind: string;
@@ -109,6 +135,27 @@ export default function WorkForm({
     (initial?.models ?? []).filter((m) => !isModelFamily(m)),
   );
   const [modelInput, setModelInput] = useState("");
+  /* 封面图 URL:可手贴外链,也可「上传」落自家 CDN 后回填;
+     broken 仅影响小预览(外链失效时不至于挂破图) */
+  const [shotUrl, setShotUrl] = useState(initial?.screenshotUrl ?? "");
+  const [shotUploading, setShotUploading] = useState(false);
+  const [shotError, setShotError] = useState(false);
+  const [shotBroken, setShotBroken] = useState(false);
+  const shotFile = useRef<HTMLInputElement>(null);
+  const uploadShot = async (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setShotUploading(true);
+    setShotError(false);
+    try {
+      const ref = await uploadMedia(file, "image");
+      setShotUrl(ref.url);
+      setShotBroken(false);
+    } catch {
+      setShotError(true);
+    } finally {
+      setShotUploading(false);
+    }
+  };
   const addCustomModel = () => {
     const value = modelInput.trim().slice(0, 40);
     if (!value) return;
@@ -259,15 +306,78 @@ export default function WorkForm({
         <label htmlFor="work-shot" className={labelCls}>
           {t(locale, "works.shot")}
         </label>
+        <div className="flex items-center gap-2">
+          <input
+            id="work-shot"
+            name="screenshot_url"
+            type="url"
+            value={shotUrl}
+            onChange={(e) => {
+              setShotUrl(e.target.value);
+              setShotError(false);
+              setShotBroken(false);
+            }}
+            placeholder="https://…"
+            maxLength={500}
+            className={`${inputCls} font-mono`}
+          />
+          <button
+            type="button"
+            onClick={() => shotFile.current?.click()}
+            disabled={shotUploading}
+            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+          >
+            {shotUploading ? (
+              <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <ImageUp size={12} aria-hidden="true" />
+            )}
+            {shotUploading ? t(locale, "works.uploading") : t(locale, "works.shotUpload")}
+          </button>
+        </div>
         <input
-          id="work-shot"
-          name="screenshot_url"
-          type="url"
-          defaultValue={initial?.screenshotUrl}
-          placeholder="https://…"
-          maxLength={500}
-          className={`${inputCls} font-mono`}
+          ref={shotFile}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            void uploadShot(e.target.files?.[0]);
+            e.target.value = "";
+          }}
         />
+        {shotUrl.trim() && (
+          <div className="mt-2 flex items-center gap-2">
+            {shotBroken ? (
+              <span className="flex h-16 w-28 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
+                <ImageUp size={16} aria-hidden="true" />
+              </span>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={shotUrl}
+                alt=""
+                onError={() => setShotBroken(true)}
+                className="h-16 w-28 rounded-lg border border-line object-cover"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShotUrl("");
+                setShotBroken(false);
+              }}
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              <X size={11} aria-hidden="true" />
+              {t(locale, "works.shotClear")}
+            </button>
+          </div>
+        )}
+        {shotError && (
+          <p role="alert" className="mt-1.5 text-xs text-blue">
+            {t(locale, "err.uploadFailed")}
+          </p>
+        )}
       </div>
 
       {/* Logo + 配图上传(20260826_work_media):仅「我的作品」;推荐站外项目不渲染
@@ -489,6 +599,16 @@ export default function WorkForm({
         </div>
       )}
 
+      {/* 私密开关:我的作品 / 推荐站外项目都可用(推荐人即作者);
+          user_id 为 NULL 的编辑收录条目不经本表单,恒 public */}
+      <div className="space-y-2.5 pt-1">
+        <CheckBox
+          name="private"
+          defaultChecked={initial?.visibility === "private"}
+          label={t(locale, "works.formPrivate")}
+          hint={t(locale, "works.formPrivateHint")}
+        />
+      </div>
       <p className="text-[11px] leading-relaxed text-grey/80">
         {t(locale, "works.hint")}
       </p>

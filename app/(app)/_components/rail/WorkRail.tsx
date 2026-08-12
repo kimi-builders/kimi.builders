@@ -1,7 +1,9 @@
 /* 作品详情右栏(/works/[id]):作品元数据卡(作者/agents/链接/声明徽章/支持·评论数)
    + 相关作品(同作者或同 Agent,5 条)。≥xl 取代详情页内联侧栏(页面侧 xl:hidden)。
    作品与徽章数据复用详情页查询(getWorkDetail / getAuthorClaimContext 都走
-   React cache,同一请求去重);作品不存在时页面给友好文案,右栏整个不渲染。 */
+   React cache,同一请求去重);作品不存在时页面给友好文案,右栏整个不渲染。
+   私密作品:详情页对非作者按不存在处理,右栏同样不渲染(布局壳仍挂载,
+   不能借右栏把私密作品元数据漏给外人;同 PostRail 口径)。 */
 import Link from "next/link";
 import { ExternalLink, Heart, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -10,11 +12,13 @@ import ModelIcon from "@/components/ModelIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
+import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { modelFamilyName } from "@/src/lib/model-families";
 import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import {
+  canViewWork,
   claimBadgeOf,
   getAuthorClaimContext,
   getRelatedWorks,
@@ -31,6 +35,10 @@ export default async function WorkRail({
 }) {
   const work = await getWorkDetail(id);
   if (!work) return null;
+  if (work.visibility !== "public" || work.hiddenAt) {
+    const user = await getSessionUser();
+    if (!canViewWork(work, user)) return null;
+  }
 
   const [claimCtx, related] = await Promise.all([
     work.userId !== null

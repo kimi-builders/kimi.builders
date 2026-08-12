@@ -49,14 +49,15 @@ export function featuredPostsQuery(limit: number): {
           FROM posts p
           JOIN users u ON u.id = p.user_id
           LEFT JOIN users e ON e.id = p.featured_by
-          WHERE p.deleted_at IS NULL AND p.visibility = 'public'
+          WHERE p.deleted_at IS NULL AND p.visibility = 'public' AND p.hidden_at IS NULL
                 AND p.featured_at IS NOT NULL
           ORDER BY p.featured_at DESC, p.id DESC LIMIT ?`,
     args: [limit],
   };
 }
 
-/* 最新精选作品:站内作者(u 可空 = awesome 外部条目)+ 定夺编辑(e)。 */
+/* 最新精选作品:站内作者(u 可空 = awesome 外部条目)+ 定夺编辑(e)。
+   私密作品不进精选位:即便误标,列表查询也不露出(同 featuredPostsQuery)。 */
 export function featuredWorksQuery(limit: number): {
   sql: string;
   args: number[];
@@ -68,7 +69,7 @@ export function featuredWorksQuery(limit: number): {
           FROM works w
           LEFT JOIN users u ON u.id = w.user_id
           LEFT JOIN users e ON e.id = w.featured_by
-          WHERE w.featured_at IS NOT NULL
+          WHERE w.featured_at IS NOT NULL AND w.visibility = 'public' AND w.hidden_at IS NULL
           ORDER BY w.featured_at DESC, w.id DESC LIMIT ?`,
     args: [limit],
   };
@@ -163,7 +164,7 @@ export async function getPostFeatured(
 
 /* ---- 写操作(权限校验在 action 层:登录 + admin/mod,理由 normalizeFeaturedReason)---- */
 
-/* 设精选:私密/已删帖不可精选(WHERE 钉死,affectedRows=0 即失败)。 */
+/* 设精选:私密/已删/被屏蔽帖不可精选(WHERE 钉死,affectedRows=0 即失败)。 */
 export async function setPostFeatured(
   editorId: number,
   postId: number,
@@ -171,7 +172,7 @@ export async function setPostFeatured(
 ): Promise<boolean> {
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE posts SET featured_at = NOW(), featured_reason = ?, featured_by = ?
-     WHERE id = ? AND deleted_at IS NULL AND visibility = 'public'`,
+     WHERE id = ? AND deleted_at IS NULL AND visibility = 'public' AND hidden_at IS NULL`,
     [reason.slice(0, FEATURED_REASON_MAX), editorId, postId],
   );
   return res.affectedRows > 0;
@@ -186,6 +187,7 @@ export async function clearPostFeatured(postId: number): Promise<boolean> {
   return res.affectedRows > 0;
 }
 
+/* 设精选(作品):私密/被屏蔽作品不可精选(WHERE 钉死,affectedRows=0 即失败;同帖子口径)。 */
 export async function setWorkFeatured(
   editorId: number,
   workId: number,
@@ -193,7 +195,7 @@ export async function setWorkFeatured(
 ): Promise<boolean> {
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET featured_at = NOW(), featured_reason = ?, featured_by = ?
-     WHERE id = ?`,
+     WHERE id = ? AND visibility = 'public' AND hidden_at IS NULL`,
     [reason.slice(0, FEATURED_REASON_MAX), editorId, workId],
   );
   return res.affectedRows > 0;

@@ -34,6 +34,7 @@ import PollVoteForm from "../_components/PollVoteForm";
 import PostOwnerActions from "../_components/PostOwnerActions";
 import SubscribeButton from "../_components/SubscribeButton";
 import VoteCluster from "../_components/VoteCluster";
+import ModToolbar from "../../admin/_components/ModToolbar";
 
 export async function generateMetadata({
   params,
@@ -61,6 +62,13 @@ export default async function PostPage({
   const user = await getSessionUser();
   /* 私密帖仅作者可见;作者本人照常(带「私密」标) */
   if (post.visibility !== "public" && post.userId !== user?.id) notFound();
+  /* 被屏蔽帖:公开侧不可见(对非作者/非管理按不存在);作者与 admin/mod 可开,
+     页面带「已被管理员屏蔽」标注(治理评审与作者知情) */
+  if (
+    post.hiddenAt &&
+    !(user && (post.userId === user.id || canModerate(user.role)))
+  )
+    notFound();
   after(() => incrementViewCount(postId));
 
   const locale = await getLocale(user);
@@ -79,6 +87,12 @@ export default async function PostPage({
   return (
     <div>
       <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
+      {post.hiddenAt && (
+        <p className="mb-4 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-3 py-2 text-xs leading-relaxed text-red-400">
+          {t(locale, "mod.hiddenBanner")}
+          {post.hiddenReason ? ` — ${post.hiddenReason}` : ""}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
         <Link href="/community" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
           <ArrowLeft size={13} aria-hidden="true" />
@@ -91,6 +105,14 @@ export default async function PostPage({
             title={t(locale, "post.privateHint")}
           >
             {t(locale, "post.private")}
+          </span>
+        )}
+        {post.hiddenAt && (
+          <span
+            className="rounded-md border border-red-400/60 px-1.5 py-px text-[10px] text-red-400"
+            title={post.hiddenReason ?? undefined}
+          >
+            {t(locale, "mod.hiddenBadge")}
           </span>
         )}
         {/* 编辑精选徽章:理由 + 定夺编辑放在 title(硬边描边芯片,对齐「私密」标) */}
@@ -239,6 +261,17 @@ export default async function PostPage({
             locale={locale}
           />
         )}
+        {/* 治理工具条:admin/mod(屏蔽/软删;硬删仅 admin),action 层再鉴权 */}
+        {canFeature && (
+          <ModToolbar
+            targetType="post"
+            targetId={post.id}
+            hidden={!!post.hiddenAt}
+            isAdmin={user?.role === "admin"}
+            locale={locale}
+            redirectAfter="/community"
+          />
+        )}
         <span className="ml-auto">
           <ShareButton
             path={`/community/${post.id}`}
@@ -255,6 +288,7 @@ export default async function PostPage({
         postId={post.id}
         locale={locale}
         meId={user?.id ?? null}
+        moderator={canFeature}
         total={commentPage.total}
         threads={commentPage.threads}
         nextCursor={commentPage.nextCursor}

@@ -10,10 +10,13 @@ export default function MobileTopBar({
   locale,
   unread = 0,
   profileHref,
+  moderator = false,
 }: {
   locale: Locale;
   unread?: number;
   profileHref?: string;
+  /* admin/mod:抽屉里多「管理」入口(20260830 治理) */
+  moderator?: boolean;
 }) {
   return (
     <div className="sticky top-0 z-20 flex min-h-16 items-center gap-2 border-b border-line bg-bg/95 px-2 backdrop-blur lg:hidden">
@@ -21,6 +24,7 @@ export default function MobileTopBar({
         locale={locale}
         unread={unread}
         profileHref={profileHref}
+        moderator={moderator}
         account={<AuthChip />}
       />
       <Link

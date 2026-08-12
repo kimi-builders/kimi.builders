@@ -5,6 +5,7 @@
 import { AtSign, Settings as SettingsIcon } from "lucide-react";
 import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { isOwnAvatarUrl } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getLinkedAccounts, getOwnProfile } from "@/src/lib/users";
@@ -14,6 +15,7 @@ import { LocaleSeg, ThemeCards } from "../../_components/pref-controls";
 import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
 import ProfileForm from "./ProfileForm";
+import ProfilePrivacyForm from "./ProfilePrivacyForm";
 import SettingsTabs from "./SettingsTabs";
 
 function Panel({
@@ -127,6 +129,7 @@ export default async function SettingsContent({
                 avatarUrl: own.avatarUrl,
               }}
               locale={locale}
+              hasCustomAvatar={isOwnAvatarUrl(own.avatarUrl)}
             />
           </Panel>
 
@@ -149,14 +152,40 @@ export default async function SettingsContent({
             </div>
           </Panel>
 
-          {/* 隐私与公开:与 /usage 共用同一份设置,任何一处保存全站生效 */}
+          {/* 隐私与公开:资料展示(本页设置)+ 用量数据(与 /usage 共用同一份设置,
+              任何一处保存全站生效) */}
           <Panel title={t(locale, "set.privacy")} note={t(locale, "set.privacyNote")}>
-            <UsagePrivacyForm
-              uploadProject={usageSettings.uploadProject}
-              showOnLeaderboard={usageSettings.showOnLeaderboard}
-              retentionDays={usageSettings.retentionDays}
-              zh={locale === "zh"}
-            />
+            <div>
+              <div className="flex items-baseline justify-between gap-4">
+                <h3 className="text-[13px] font-semibold text-paper">
+                  {t(locale, "set.pdTitle")}
+                </h3>
+              </div>
+              <p className="mt-1 max-w-lg text-xs leading-relaxed text-grey">
+                {t(locale, "set.pdHint")}
+              </p>
+              <div className="mt-2">
+                <ProfilePrivacyForm
+                  showAvatar={own.showAvatar}
+                  showName={own.showName}
+                  showBio={own.showBio}
+                  locale={locale}
+                />
+              </div>
+            </div>
+            <div className="mt-6 border-t border-line pt-4">
+              <h3 className="text-[13px] font-semibold text-paper">
+                {t(locale, "set.usageDataTitle")}
+              </h3>
+              <div className="mt-2">
+                <UsagePrivacyForm
+                  uploadProject={usageSettings.uploadProject}
+                  showOnLeaderboard={usageSettings.showOnLeaderboard}
+                  retentionDays={usageSettings.retentionDays}
+                  zh={locale === "zh"}
+                />
+              </div>
+            </div>
           </Panel>
 
           <Panel title={t(locale, "set.account")} note={t(locale, "set.accountNote")}>

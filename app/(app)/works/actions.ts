@@ -20,9 +20,11 @@ import { compactNumber } from "@/src/lib/format";
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
   areWorkImageKeys,
+  canViewWork,
   checkClaimAllowance,
   createWork,
   createWorkComment,
@@ -91,6 +93,10 @@ function readFields(formData: FormData) {
     tags: parseTagsInput(String(formData.get("tags") || "")),
     agents: sanitizeAgentIds(formData.getAll("agents")),
     authorLabel: String(formData.get("author_label") || "").trim(),
+    /* 私密开关:checkbox 提交 "on";非 "on" 一律 public(枚举在这里钉死) */
+    visibility: (formData.get("private") === "on" ? "private" : "public") as
+      | "public"
+      | "private",
     /* 表单意图(我的作品/推荐站外项目):authorLabel 非空才是 awesome 条目,
        intent 只用于校验提示(推荐但没填原作者 → 明确报错而不是静默当成作品) */
     intent: String(formData.get("kind") || "site") === "awesome" ? "awesome" : "site",
@@ -166,6 +172,9 @@ export async function createWorkAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
+  /* 禁言(20260830):到期自动解除 */
+  const mutedWork = await getActiveMute(user.id);
+  if (mutedWork) return { error: muteMessage(locale, mutedWork) };
   const f = readFields(formData);
   const err = validate(locale, f);
   if (err) return { error: err };
@@ -325,9 +334,10 @@ export async function toggleWorkVoteAction(
   if (!user) return { ok: false };
   const workId = Number(formData.get("work_id"));
   if (!Number.isSafeInteger(workId) || workId <= 0) return { ok: false };
-  /* 作品已删/不存在 → FK 会拒,提前挡掉按失败处理(客户端回滚乐观态) */
+  /* 作品已删/不存在 → FK 会拒,提前挡掉按失败处理(客户端回滚乐观态);
+     私密作品对非作者同样拒绝(手搓请求也不能隔空支持) */
   const work = await getWork(workId);
-  if (!work) return { ok: false };
+  if (!work || !canViewWork(work, user)) return { ok: false };
   /* 限流(P1-5):投票类动作用 vote 配额;超限返回结构化错误,客户端回滚 + toast */
   const rate = await consumeCommunityRateLimit(user.id, "vote");
   if (!rate.allowed) {
@@ -348,13 +358,17 @@ export async function createWorkCommentAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { ok: false, error: t(locale, "err.login") };
+  /* 禁言(20260830):到期自动解除 */
+  const mutedNow = await getActiveMute(user.id);
+  if (mutedNow) return { ok: false, error: muteMessage(locale, mutedNow) };
   const workId = Number(formData.get("work_id"));
   const body = String(formData.get("body") || "").trim();
   if (!Number.isSafeInteger(workId) || workId <= 0)
     return { ok: false, error: t(locale, "err.generic") };
   if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
+  /* 私密作品对非作者拒绝评论(页面本不可达,这里挡手搓请求) */
   const work = await getWork(workId);
-  if (!work) return { ok: false, error: t(locale, "err.generic") };
+  if (!work || !canViewWork(work, user)) return { ok: false, error: t(locale, "err.generic") };
   /* 限流(P1-5):作品评论共用社区 comment 配额,写库前消耗额度 */
   const rate = await consumeCommunityRateLimit(user.id, "comment");
   if (!rate.allowed)
@@ -399,6 +413,8 @@ export async function loadMoreWorkCommentsAction(
   const work = await getWork(workId);
   if (!work) return { ok: false };
   const user = await getSessionUser();
+  /* 私密/被屏蔽作品的评论分页对非作者关闭(与详情页门禁同口径) */
+  if (!canViewWork(work, user)) return { ok: false };
   const locale = await getLocale(user);
   const data = await loadWorkComments(workId, work.userId, user, locale, after);
   return { ok: true, ...data };

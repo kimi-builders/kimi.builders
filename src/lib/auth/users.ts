@@ -6,6 +6,59 @@ import type { Pool } from "mysql2/promise";
 import { getPool } from "../db";
 import type { OAuthProfile, Provider } from "./oauth";
 
+/* ---- 头像同步约定(防 OAuth 覆盖)----
+   用户在站内上传的头像落在自家 CDN:key 形如 avatar/yyyyMM/<hash>.webp,
+   公开 URL 以 R2_PUBLIC_BASE_URL(默认 https://cdn.kimi.builders)为 host。
+   判定「自有头像」:URL host 与 R2_PUBLIC_BASE_URL 相同,或路径以 /avatar/ 开头
+   (双条件任一即可,兼容换 CDN 域名前的存量数据)。 */
+export function isOwnAvatarUrl(url: string): boolean {
+  const u = url.trim();
+  if (!u) return false;
+  const base = (
+    process.env.R2_PUBLIC_BASE_URL || "https://cdn.kimi.builders"
+  ).replace(/\/+$/, "");
+  let host = "";
+  try {
+    host = new URL(base).host;
+  } catch {
+    /* R2_PUBLIC_BASE_URL 配置异常时退化为只看 /avatar/ 前缀 */
+  }
+  try {
+    const parsed = new URL(u);
+    if (host && parsed.host === host) return true;
+    return parsed.pathname.startsWith("/avatar/");
+  } catch {
+    /* 非绝对 URL(存量 key 路径等):只看 /avatar/ 前缀 */
+    return u.startsWith("/avatar/");
+  }
+}
+
+/* provider 头像是否允许同步到账号:当前头像为空,或不是站内自传的,才同步;
+   用户自己上传过的头像不被后续 OAuth 登录冲掉。 */
+export function shouldSyncProviderAvatar(
+  current: string | null | undefined,
+): boolean {
+  const cur = (current ?? "").trim();
+  return cur === "" || !isOwnAvatarUrl(cur);
+}
+
+/* 登录时的 provider 头像同步:带防覆盖条件(见上),无 provider 头像或无需变更时不动。 */
+async function syncProviderAvatar(
+  pool: Pool,
+  userId: number,
+  providerAvatarUrl: string,
+): Promise<void> {
+  const next = providerAvatarUrl.trim().slice(0, 500);
+  if (!next) return;
+  const [rows] = await pool.query<RowDataPacket[]>(
+    "SELECT avatar_url FROM users WHERE id = ? LIMIT 1",
+    [userId],
+  );
+  const current = rows[0] ? String(rows[0].avatar_url ?? "") : "";
+  if (current === next || !shouldSyncProviderAvatar(current)) return;
+  await pool.query("UPDATE users SET avatar_url = ? WHERE id = ?", [next, userId]);
+}
+
 /* provider 账号 → 已绑定用户 id;未绑定返回 null。 */
 export async function findLinkedUserId(
   provider: Provider,
@@ -41,7 +94,12 @@ export async function findOrCreateUser(
 ): Promise<number> {
   const pool = getPool();
   const linkedId = await findLinkedUserId(provider, profile.providerAccountId);
-  if (linkedId !== null) return linkedId;
+  if (linkedId !== null) {
+    /* 老用户登录:provider 头像同步带防覆盖条件(自传头像不冲掉;
+       「恢复默认」清空 avatar_url 后,下次登录在这里重新同步 provider 头像) */
+    await syncProviderAvatar(pool, linkedId, profile.avatarUrl);
+    return linkedId;
+  }
 
   /* 邮箱占用检查:已验证邮箱 → 自动并号(挂 provider 后登录既有账号,不再新建小号);
      未验证邮箱撞上既有账号 → 新号不落该邮箱(防唯一约束冲突 + 防撞号)。
@@ -59,6 +117,7 @@ export async function findOrCreateUser(
           "INSERT INTO oauth_accounts (user_id, provider, provider_account_id) VALUES (?, ?, ?)",
           [uid, provider, profile.providerAccountId],
         );
+        await syncProviderAvatar(pool, uid, profile.avatarUrl);
         return uid;
       }
       emailTaken = true;

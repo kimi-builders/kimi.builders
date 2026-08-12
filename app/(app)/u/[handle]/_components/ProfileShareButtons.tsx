@@ -27,7 +27,7 @@ export default function ProfileShareButtons({
           /* 剪贴板被拒(权限/非安全上下文)就静默 */
         }
       }}
-      className={`inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto ${
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
         copied ? "text-blue" : "text-grey hover:text-paper"
       }`}
     >

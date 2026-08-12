@@ -20,6 +20,10 @@ export interface FeedPost {
   /* 原始 markdown 前缀(LEFT(body_md,500) 截到完整行):feed 卡格式化摘要专用。 */
   bodyMd: string;
   visibility: string;
+  /* 治理屏蔽(20260830):非空 = 已被管理员屏蔽;公开侧已被查询滤掉,
+     只有作者本人视角会拿到非空值(卡片/详情带「已被管理员屏蔽」标注) */
+  hiddenAt: Date | null;
+  hiddenReason: string | null;
   score: number;
   commentCount: number;
   createdAt: Date;
@@ -50,6 +54,8 @@ export interface CommentRow {
   score: number;
   createdAt: Date;
   editedAt: Date | null;
+  /* 治理屏蔽(20260830):非空 = 已被屏蔽;公开侧已滤,仅评论作者本人视角拿到非空 */
+  hiddenAt: Date | null;
   handle: string | null;
   name: string | null;
   avatarUrl: string | null;
@@ -72,6 +78,8 @@ function mapFeed(r: RowDataPacket): FeedPost {
     excerpt: r.body_excerpt ? plainExcerpt(r.body_excerpt) : "",
     bodyMd: mdPrefix(r.body_excerpt),
     visibility: r.visibility,
+    hiddenAt: r.hidden_at ?? null,
+    hiddenReason: r.hidden_reason ?? null,
     score: Number(r.score),
     commentCount: Number(r.comment_count),
     createdAt: r.created_at,
@@ -144,12 +152,16 @@ export function feedPageQuery(opts: {
   if (opts.viewerId) {
     where.push("(p.visibility = 'public' OR p.user_id = ?)");
     args.push(opts.viewerId);
+    /* 治理屏蔽:公开侧滤掉;作者本人仍可见(卡片带「已被管理员屏蔽」标注) */
+    where.push("(p.hidden_at IS NULL OR p.user_id = ?)");
+    args.push(opts.viewerId);
     where.push(
       "NOT EXISTS (SELECT 1 FROM reactions rd WHERE rd.target_type = 'post' AND rd.target_id = p.id AND rd.user_id = ? AND rd.kind = 'down')",
     );
     args.push(opts.viewerId);
   } else {
     where.push("p.visibility = 'public'");
+    where.push("p.hidden_at IS NULL");
   }
   if (opts.subscriberId) {
     join += " JOIN post_subscriptions ps ON ps.post_id = p.id AND ps.user_id = ?";
@@ -180,7 +192,7 @@ export function feedPageQuery(opts: {
   }
   return {
     sql: `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
-            p.visibility, p.score, p.comment_count, p.created_at, p.ai_reply,
+            p.visibility, p.hidden_at, p.hidden_reason, p.score, p.comment_count, p.created_at, p.ai_reply,
             u.handle, u.name, u.avatar_url, u.role${selectHot}
      FROM posts p ${join}
      WHERE ${where.join(" AND ")}
@@ -228,7 +240,7 @@ export async function getFeedPage(opts: {
 export const getPost = cache(async (id: number): Promise<PostDetail | null> => {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.user_id, p.type, p.category, p.title, p.body_md, p.link_url,
-            p.lang, p.ai_reply, p.visibility, p.score, p.comment_count,
+            p.lang, p.ai_reply, p.visibility, p.hidden_at, p.hidden_reason, p.score, p.comment_count,
             p.view_count, p.created_at, p.edited_at,
             u.handle, u.name, u.avatar_url, u.role
      FROM posts p JOIN users u ON u.id = p.user_id
@@ -250,7 +262,7 @@ export const getPost = cache(async (id: number): Promise<PostDetail | null> => {
 });
 
 /* 帖子详情右栏「相关帖子」:同板块近期公开帖(排除本帖)。
-   右栏是公共上下文,只取 public —— 别人的私密帖不能借右栏漏出。 */
+   右栏是公共上下文,只取 public 且未屏蔽 —— 别人的私密/被屏蔽帖不能借右栏漏出。 */
 export interface RelatedPost {
   id: number;
   title: string;
@@ -269,7 +281,7 @@ export function relatedPostsQuery(
     sql: `SELECT p.id, p.title, LEFT(p.body_md, 200) AS body_excerpt,
             p.comment_count, p.score, p.created_at
      FROM posts p
-     WHERE p.deleted_at IS NULL AND p.visibility = 'public'
+     WHERE p.deleted_at IS NULL AND p.visibility = 'public' AND p.hidden_at IS NULL
            AND p.category = ? AND p.id <> ?
      ORDER BY p.created_at DESC, p.id DESC LIMIT ${n}`,
     args: [category, postId],
@@ -314,24 +326,32 @@ export interface CommentPage {
 
 export function commentPageQuery(
   postId: number,
-  opts: { showAi: boolean; after: number },
+  opts: { showAi: boolean; after: number; viewerId?: number },
 ): { sql: string; args: number[] } {
   const aiC = opts.showAi ? "" : "AND c.is_ai = 0";
   const aiP = opts.showAi ? "" : "AND p.is_ai = 0";
+  /* 治理屏蔽(20260830):被屏蔽评论公开侧不可见;评论作者本人仍可见(带标注)。
+     父评论对 viewer 不可见时(软删/AI 过滤/被屏蔽),回复升级为顶层 —— 与软删同语义。 */
+  const hidC = opts.viewerId
+    ? "AND (c.hidden_at IS NULL OR c.user_id = ?)"
+    : "AND c.hidden_at IS NULL";
+  const hidP = opts.viewerId
+    ? "AND (p.hidden_at IS NULL OR p.user_id = ?)"
+    : "AND p.hidden_at IS NULL";
   const sql = `WITH RECURSIVE tree AS (
        SELECT c.id, c.id AS root_id
        FROM comments c
        LEFT JOIN comments p
-         ON p.id = c.parent_id AND p.deleted_at IS NULL ${aiP}
-       WHERE c.post_id = ? AND c.deleted_at IS NULL ${aiC}
+         ON p.id = c.parent_id AND p.deleted_at IS NULL ${aiP} ${hidP}
+       WHERE c.post_id = ? AND c.deleted_at IS NULL ${aiC} ${hidC}
              AND (c.parent_id IS NULL OR p.id IS NULL)
        UNION ALL
        SELECT c.id, t.root_id
        FROM comments c JOIN tree t ON c.parent_id = t.id
-       WHERE c.deleted_at IS NULL ${aiC}
+       WHERE c.deleted_at IS NULL ${aiC} ${hidC}
      )
      SELECT c.id, c.parent_id, c.user_id, c.is_ai, c.body_md, c.score,
-            c.created_at, c.edited_at, t.root_id,
+            c.created_at, c.edited_at, c.hidden_at, t.root_id,
             u.handle, u.name, u.avatar_url
      FROM tree t
      JOIN comments c ON c.id = t.id
@@ -345,27 +365,39 @@ export function commentPageQuery(
        ) AS page_roots
      )
      ORDER BY c.created_at ASC, c.id ASC`;
-  return { sql, args: [postId, opts.after] };
+  const args: number[] = [];
+  if (opts.viewerId) args.push(opts.viewerId); /* hidP(anchor join) */
+  args.push(postId);
+  if (opts.viewerId) args.push(opts.viewerId, opts.viewerId); /* hidC anchor + recursive */
+  args.push(opts.after);
+  return { sql, args };
 }
 
 /* 可见评论总数:与 commentPageQuery 同口径,两者必须一起改。 */
 export function commentCountQuery(
   postId: number,
-  opts: { showAi: boolean },
+  opts: { showAi: boolean; viewerId?: number },
 ): { sql: string; args: number[] } {
+  const hid = opts.viewerId
+    ? "AND (hidden_at IS NULL OR user_id = ?)"
+    : "AND hidden_at IS NULL";
   return {
     sql: `SELECT COUNT(*) AS n FROM comments
-          WHERE post_id = ? AND deleted_at IS NULL ${opts.showAi ? "" : "AND is_ai = 0"}`,
-    args: [postId],
+          WHERE post_id = ? AND deleted_at IS NULL ${opts.showAi ? "" : "AND is_ai = 0"} ${hid}`,
+    args: opts.viewerId ? [postId, opts.viewerId] : [postId],
   };
 }
 
 export async function getCommentsPage(
   postId: number,
-  opts: { showAi: boolean; after?: number },
+  opts: { showAi: boolean; after?: number; viewerId?: number },
 ): Promise<CommentPage> {
   const count = commentCountQuery(postId, opts);
-  const page = commentPageQuery(postId, { showAi: opts.showAi, after: opts.after ?? 0 });
+  const page = commentPageQuery(postId, {
+    showAi: opts.showAi,
+    after: opts.after ?? 0,
+    viewerId: opts.viewerId,
+  });
   const pool = getPool();
   const [countRows, rows] = await Promise.all([
     pool.query<RowDataPacket[]>(count.sql, count.args).then(([r]) => r),
@@ -390,6 +422,7 @@ export async function getCommentsPage(
       score: Number(r.score),
       createdAt: r.created_at,
       editedAt: r.edited_at ?? null,
+      hiddenAt: r.hidden_at ?? null,
       handle: r.handle,
       name: r.name,
       avatarUrl: r.avatar_url,
@@ -720,12 +753,13 @@ export interface HotPost {
   score: number;
 }
 
-/* 7 日热门(评论×2 + 净分):右栏 widget 与首页精选位的空态回落共用。 */
+/* 7 日热门(评论×2 + 净分):右栏 widget 与首页精选位的空态回落共用。
+   公共上下文:仅公开且未被屏蔽。 */
 export async function getHotPosts(limit = 5): Promise<HotPost[]> {
   const n = Math.max(1, Math.min(20, Math.floor(limit)));
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT id, title, LEFT(body_md, 200) AS body_excerpt, comment_count, score FROM posts
-     WHERE deleted_at IS NULL AND visibility = 'public' AND created_at > NOW() - INTERVAL 7 DAY
+     WHERE deleted_at IS NULL AND visibility = 'public' AND hidden_at IS NULL AND created_at > NOW() - INTERVAL 7 DAY
      ORDER BY CAST(comment_count AS SIGNED) * 2 + score DESC, created_at DESC LIMIT ${n}`,
   );
   return rows.map((r) => ({
@@ -743,13 +777,14 @@ export interface CommunityStats {
   comments: number;
 }
 
-/* 社区总量(成员 / 公开帖 / 评论):右栏「社区数据」与首页数据条共用。 */
+/* 社区总量(成员 / 公开帖 / 评论):右栏「社区数据」与首页数据条共用。
+   公共口径:公开、未软删且未被屏蔽。 */
 export async function getCommunityStats(): Promise<CommunityStats> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT
        (SELECT COUNT(*) FROM users) AS members,
-       (SELECT COUNT(*) FROM posts WHERE deleted_at IS NULL AND visibility = 'public') AS posts,
-       (SELECT COUNT(*) FROM comments WHERE deleted_at IS NULL) AS comments`,
+       (SELECT COUNT(*) FROM posts WHERE deleted_at IS NULL AND visibility = 'public' AND hidden_at IS NULL) AS posts,
+       (SELECT COUNT(*) FROM comments WHERE deleted_at IS NULL AND hidden_at IS NULL) AS comments`,
   );
   const s = rows[0] ?? { members: 0, posts: 0, comments: 0 };
   return {
@@ -957,17 +992,18 @@ export async function markNotificationsRead(userId: number): Promise<void> {
 
 /* ---- 个人主页 ---- */
 
-/* 某用户的帖子(主页「帖子」页签):self=true 含私密帖,访客只见公开。 */
+/* 某用户的帖子(主页「帖子」页签):self=true 含私密帖与被屏蔽帖(带标注),
+   访客只见公开且未被屏蔽的。 */
 export async function getUserPosts(
   userId: number,
   self: boolean,
 ): Promise<FeedPost[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
-            p.visibility, p.score, p.comment_count, p.created_at, p.ai_reply,
+            p.visibility, p.hidden_at, p.hidden_reason, p.score, p.comment_count, p.created_at, p.ai_reply,
             u.handle, u.name, u.avatar_url, u.role
      FROM posts p JOIN users u ON u.id = p.user_id
-     WHERE p.user_id = ? AND p.deleted_at IS NULL ${self ? "" : "AND p.visibility = 'public'"}
+     WHERE p.user_id = ? AND p.deleted_at IS NULL ${self ? "" : "AND p.visibility = 'public' AND p.hidden_at IS NULL"}
      ORDER BY p.created_at DESC LIMIT 50`,
     [userId],
   );
@@ -981,19 +1017,23 @@ export interface UserCommentRow {
   excerpt: string;
   score: number;
   createdAt: Date;
+  /* 治理屏蔽(20260830):评论被屏蔽或所在帖被屏蔽;仅本人视角含这类行(带标注) */
+  hidden: boolean;
 }
 
-/* 某用户的评论(主页「评论」页签):带上所在帖标题;访客视角不含私密帖下的评论。 */
+/* 某用户的评论(主页「评论」页签):带上所在帖标题;访客视角不含私密帖下的评论,
+   也不含被屏蔽的评论/被屏蔽帖下的评论;本人视角含(带「已被管理员屏蔽」标注)。 */
 export async function getUserComments(
   userId: number,
   self: boolean,
 ): Promise<UserCommentRow[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT c.id, c.post_id, LEFT(c.body_md, 300) AS body_excerpt, c.score, c.created_at,
+            c.hidden_at AS c_hidden, p.hidden_at AS p_hidden,
             p.title, LEFT(p.body_md, 200) AS post_excerpt
      FROM comments c JOIN posts p ON p.id = c.post_id
      WHERE c.user_id = ? AND c.deleted_at IS NULL AND p.deleted_at IS NULL
-           ${self ? "" : "AND p.visibility = 'public'"}
+           ${self ? "" : "AND p.visibility = 'public' AND c.hidden_at IS NULL AND p.hidden_at IS NULL"}
      ORDER BY c.id DESC LIMIT 50`,
     [userId],
   );
@@ -1004,5 +1044,6 @@ export async function getUserComments(
     excerpt: plainExcerpt(r.body_excerpt ?? "", 140),
     score: Number(r.score),
     createdAt: r.created_at,
+    hidden: r.c_hidden !== null || r.p_hidden !== null,
   }));
 }

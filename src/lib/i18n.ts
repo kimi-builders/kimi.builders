@@ -334,14 +334,48 @@ const DICT = {
   "set.profile": { zh: "资料", en: "Profile" },
   "set.profileNote": { zh: "公开资料", en: "Public profile" },
   "set.prefsNote": { zh: "界面与 AI 互动", en: "Interface & AI" },
-  "set.privacyNote": { zh: "用量数据的去留", en: "Usage data control" },
+  "set.privacyNote": { zh: "资料展示与用量数据", en: "Profile display & usage data" },
+  "set.pdTitle": { zh: "资料展示", en: "Profile display" },
+  "set.pdHint": {
+    zh: "仅影响个人主页的展示;帖子与评论区的头像、昵称是公开发言的必要标识,保持显示。",
+    en: "Only affects your profile page. Your avatar and name stay on your posts and comments as public attribution.",
+  },
+  "set.pdAvatar": { zh: "头像", en: "Avatar" },
+  "set.pdAvatarHint": {
+    zh: "关闭后,个人主页的头像显示为 @handle 首字符兜底。",
+    en: "When off, your profile shows a handle-initial fallback instead of your avatar.",
+  },
+  "set.pdName": { zh: "显示名", en: "Display name" },
+  "set.pdNameHint": {
+    zh: "关闭后,个人主页只显示 @handle。",
+    en: "When off, your profile shows only your @handle.",
+  },
+  "set.pdBio": { zh: "简介", en: "Bio" },
+  "set.pdBioHint": {
+    zh: "关闭后,个人主页不再展示简介。",
+    en: "When off, your bio is hidden from your profile.",
+  },
+  "set.usageDataTitle": { zh: "用量数据", en: "Usage data" },
   "set.accountNote": { zh: "登录方式", en: "Sign-in methods" },
   "set.name": { zh: "显示名", en: "Display name" },
   "set.bio": { zh: "简介", en: "Bio" },
-  "set.avatar": { zh: "头像 URL", en: "Avatar URL" },
+  "set.avatar": { zh: "头像", en: "Avatar" },
+  "set.avatarUrl": { zh: "头像 URL", en: "Avatar URL" },
   "set.avatarHint": {
     zh: "留空则不修改;头像默认来自登录平台。",
     en: "Leave empty to keep current. Your avatar comes from the login provider by default.",
+  },
+  "set.avatarChange": { zh: "更换头像", en: "Change avatar" },
+  "set.avatarReset": { zh: "恢复默认", en: "Reset" },
+  "set.avatarResetNote": {
+    zh: "保存后将清空自定义头像,下次登录时恢复为登录平台头像。",
+    en: "After saving, your custom avatar is cleared and the login provider's avatar is restored on next sign-in.",
+  },
+  "set.avatarUndo": { zh: "撤销", en: "Undo" },
+  "set.avatarCropTitle": { zh: "调整头像", en: "Adjust avatar" },
+  "set.avatarCropHint": {
+    zh: "拖动定位,滑杆缩放;导出为正方形头像。",
+    en: "Drag to position, slider to zoom; exported as a square avatar.",
   },
   "set.handleHint": {
     zh: "小写字母、数字、下划线;改了之后旧的主页链接会失效。",
@@ -490,6 +524,8 @@ const DICT = {
   "works.url": { zh: "体验地址", en: "Live URL" },
   "works.repoUrl": { zh: "开源仓库", en: "Repository" },
   "works.shot": { zh: "封面图 URL(可选)", en: "Cover image URL (optional)" },
+  "works.shotUpload": { zh: "上传", en: "Upload" },
+  "works.shotClear": { zh: "清除", en: "Clear" },
   "works.tags": {
     zh: "标签(逗号分隔,最多 5 个)",
     en: "Tags (comma separated, max 5)",
@@ -497,6 +533,15 @@ const DICT = {
   "works.hint": {
     zh: "链接和仓库至少填一个;提交后展示在作品墙,可随时编辑或撤下。",
     en: "Add at least a URL or a repo link. It lands on the wall right away and you can edit or take it down anytime.",
+  },
+  "works.private": { zh: "私密", en: "Private" },
+  "works.formPrivate": {
+    zh: "私密(仅自己可见)",
+    en: "Private (only visible to me)",
+  },
+  "works.formPrivateHint": {
+    zh: "不进作品墙、Awesome 与右栏统计,详情页和分享海报仅自己可开",
+    en: "Hidden from the wall, Awesome, and rail stats; only you can open its page or poster",
   },
   "works.loginRequired": {
     zh: "登录后提交作品:",

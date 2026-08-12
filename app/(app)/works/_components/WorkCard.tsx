@@ -92,6 +92,20 @@ export default function WorkCard({
             {w.name}
           </h2>
           <span className="ml-auto flex shrink-0 flex-wrap justify-end gap-1.5">
+            {/* 私密/被屏蔽徽标:数据层已保证只有作者本人看得到这类卡片(同 PostCard 口径) */}
+            {w.visibility === "private" && (
+              <span className={`${CHIP} border border-line text-grey`}>
+                {t(locale, "works.private")}
+              </span>
+            )}
+            {w.hiddenAt && (
+              <span
+                className={`${CHIP} border border-red-400/60 text-red-400`}
+                title={w.hiddenReason ?? undefined}
+              >
+                {t(locale, "mod.hiddenBadge")}
+              </span>
+            )}
             <span className={`${CHIP} ${workKind(w.kind).tint}`}>
               <WorkKindIcon id={w.kind} size={11} />
               {workKindLabel(w.kind, locale === "zh")}

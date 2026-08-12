@@ -75,6 +75,7 @@ export default async function EditWorkContent({
           tags: work.tags,
           agents: work.agents,
           authorLabel: work.authorLabel,
+          visibility: work.visibility,
           status: work.status,
           models: work.models,
           kind: work.kind,

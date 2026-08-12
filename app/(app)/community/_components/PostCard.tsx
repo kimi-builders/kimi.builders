@@ -77,6 +77,15 @@ export default function PostCard({
               {t(locale, "post.private")}
             </span>
           )}
+          {/* 被屏蔽标:feed 只向作者本人放行被屏蔽帖,徽章天然只有作者可见 */}
+          {p.hiddenAt && (
+            <span
+              className="rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[10px] text-red-400"
+              title={p.hiddenReason ?? undefined}
+            >
+              {t(locale, "mod.hiddenBadge")}
+            </span>
+          )}
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${CATEGORY_TINT[p.category] ?? CATEGORY_TINT.chat}`}
           >

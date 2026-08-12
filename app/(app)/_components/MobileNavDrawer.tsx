@@ -37,11 +37,14 @@ export default function MobileNavDrawer({
   locale,
   unread = 0,
   profileHref,
+  moderator = false,
   account,
 }: {
   locale: Locale;
   unread?: number;
   profileHref?: string;
+  /* admin/mod:账号导航里多「管理」入口(20260830 治理) */
+  moderator?: boolean;
   /* 登录态块(头像 + @handle + 退出 / 登录入口),由服务端父组件组合进来。 */
   account?: ReactNode;
 }) {
@@ -171,6 +174,16 @@ export default function MobileNavDrawer({
                 <Settings size={17} aria-hidden="true" />
                 {t(locale, "nav.settings")}
               </Link>
+              {moderator && (
+                <Link
+                  href="/admin"
+                  onClick={close}
+                  className={itemClass(pathname.startsWith("/admin"))}
+                >
+                  <ShieldCheck size={17} aria-hidden="true" />
+                  {t(locale, "nav.admin")}
+                </Link>
+              )}
             </nav>
           </div>
 

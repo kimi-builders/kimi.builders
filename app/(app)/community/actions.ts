@@ -22,6 +22,7 @@ import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { enqueueAiReply } from "@/src/lib/ai-reply";
+import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
   CATEGORIES,
@@ -67,6 +68,9 @@ export async function createPostAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
+  /* 禁言(20260830):到期自动解除;提示带截止日期 */
+  const muted = await getActiveMute(user.id);
+  if (muted) return { error: muteMessage(locale, muted) };
 
   const type = String(formData.get("type") || "text");
   if (!["text", "link", "poll"].includes(type))
@@ -130,6 +134,9 @@ export async function createCommentAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { ok: false, error: t(locale, "err.login") };
+  /* 禁言(20260830):到期自动解除 */
+  const muted = await getActiveMute(user.id);
+  if (muted) return { ok: false, error: muteMessage(locale, muted) };
   const postId = Number(formData.get("post_id"));
   const body = String(formData.get("body") || "").trim();
   const parentId = Number(formData.get("parent_id")) || null;

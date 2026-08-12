@@ -10,10 +10,16 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(190) UNIQUE,
   avatar_url VARCHAR(500) NOT NULL DEFAULT '',
   bio VARCHAR(300) NOT NULL DEFAULT '',
+  -- profile_show_* 由 20260829_profile_privacy.sql 引入,已有库执行该迁移
+  profile_show_avatar TINYINT(1) NOT NULL DEFAULT 1 COMMENT '个人主页展示头像;0=仅自己',
+  profile_show_name TINYINT(1) NOT NULL DEFAULT 1 COMMENT '个人主页展示显示名;0=仅显示 @handle',
+  profile_show_bio TINYINT(1) NOT NULL DEFAULT 1 COMMENT '个人主页展示简介;0=仅自己',
   locale VARCHAR(8) NOT NULL DEFAULT '' COMMENT 'UI 语言偏好 zh/en,空=自动推断',
   ai_replies_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '全局:允许 AI 回我的帖(v2 决策 3)',
   show_ai_replies TINYINT(1) NOT NULL DEFAULT 1 COMMENT '全局:浏览时显示 AI 回复',
   role VARCHAR(16) NOT NULL DEFAULT 'member' COMMENT 'member/mod/admin',
+  -- muted_until 由 20260830_moderation.sql 引入,已有库执行该迁移
+  muted_until DATETIME NULL COMMENT '禁言截止;NULL=未禁言,9999-12-31=永久;到期自动解除',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -51,6 +57,10 @@ CREATE TABLE IF NOT EXISTS posts (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   edited_at DATETIME NULL COMMENT '最后一次编辑时间(正文/标题)',
   deleted_at DATETIME NULL,
+  -- hidden_* 由 20260830_moderation.sql 引入,已有库执行该迁移
+  hidden_at DATETIME NULL COMMENT '屏蔽时间;NULL=未屏蔽(治理:公开侧不可见,作者可见带标注)',
+  hidden_by BIGINT UNSIGNED NULL COMMENT '执行屏蔽的管理员 users.id',
+  hidden_reason VARCHAR(280) NULL COMMENT '屏蔽原因(展示给作者/管理面)',
   -- featured_* 由 20260817_featured.sql 引入,已有库执行该迁移
   featured_at DATETIME NULL COMMENT '精选时间;NULL=未精选(每周精选 v0)',
   featured_reason VARCHAR(280) NULL COMMENT '精选理由(编辑填写,一句话)',
@@ -58,8 +68,10 @@ CREATE TABLE IF NOT EXISTS posts (
   KEY idx_feed (category, created_at),
   KEY idx_user (user_id),
   KEY idx_featured (featured_at),
+  KEY idx_hidden (hidden_at),
   CONSTRAINT fk_post_user FOREIGN KEY (user_id) REFERENCES users (id),
-  CONSTRAINT fk_post_featured FOREIGN KEY (featured_by) REFERENCES users (id)
+  CONSTRAINT fk_post_featured FOREIGN KEY (featured_by) REFERENCES users (id),
+  CONSTRAINT fk_post_hidden FOREIGN KEY (hidden_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 投票选项与投票记录
@@ -95,9 +107,14 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   edited_at DATETIME NULL,
   deleted_at DATETIME NULL,
+  -- hidden_* 由 20260830_moderation.sql 引入,已有库执行该迁移
+  hidden_at DATETIME NULL COMMENT '屏蔽时间;NULL=未屏蔽',
+  hidden_by BIGINT UNSIGNED NULL COMMENT '执行屏蔽的管理员 users.id',
+  hidden_reason VARCHAR(280) NULL COMMENT '屏蔽原因',
   KEY idx_post (post_id, created_at),
   CONSTRAINT fk_comment_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
-  CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES users (id)
+  CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES users (id),
+  CONSTRAINT fk_comment_hidden FOREIGN KEY (hidden_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 反应(顶/赞等,作用于帖子或评论)
@@ -135,6 +152,12 @@ CREATE TABLE IF NOT EXISTS works (
   tags JSON NULL,
   agents JSON NULL COMMENT '参与构建的 agent 品牌键列表(src/lib/agents.ts)',
   source VARCHAR(16) NOT NULL DEFAULT 'site' COMMENT 'site/awesome',
+  -- visibility 由 20260828_work_visibility.sql 引入,已有库执行该迁移
+  visibility VARCHAR(16) NOT NULL DEFAULT 'public' COMMENT 'public/private(私密=仅作者可见)',
+  -- hidden_* 由 20260830_moderation.sql 引入,已有库执行该迁移
+  hidden_at DATETIME NULL COMMENT '屏蔽时间;NULL=未屏蔽',
+  hidden_by BIGINT UNSIGNED NULL COMMENT '执行屏蔽的管理员 users.id',
+  hidden_reason VARCHAR(280) NULL COMMENT '屏蔽原因',
   author_label VARCHAR(120) NOT NULL DEFAULT '' COMMENT 'awesome 条目的外部作者名',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   -- featured_* 由 20260817_featured.sql 引入,已有库执行该迁移
@@ -157,9 +180,11 @@ CREATE TABLE IF NOT EXISTS works (
   logo_key VARCHAR(255) NOT NULL DEFAULT '' COMMENT '作品 Logo 存储 key(空=无;URL 渲染时拼接)',
   image_keys JSON NULL COMMENT '配图 key JSON 数组(image/ 前缀,≤9;第一张为封面)',
   KEY idx_source (source, created_at),
+  KEY idx_hidden (hidden_at),
   KEY idx_featured (featured_at),
   CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),
-  CONSTRAINT fk_work_featured FOREIGN KEY (featured_by) REFERENCES users (id)
+  CONSTRAINT fk_work_featured FOREIGN KEY (featured_by) REFERENCES users (id),
+  CONSTRAINT fk_work_hidden FOREIGN KEY (hidden_by) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Token 用量(本地脚本同步,按天幂等 upsert)
@@ -509,4 +534,22 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   UNIQUE KEY uq_reset_token_hash (token_hash),
   KEY idx_reset_user (user_id),
   CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
+-- 社区治理审计(迁移 20260830):所有管理动作必写 —— 屏蔽/解除/软删/硬删/
+-- 禁言/解禁/资料重置/角色变更。倒序分页在 /admin 日志页签。
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS moderation_actions (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  actor_id BIGINT UNSIGNED NOT NULL COMMENT '操作者(admin/mod)users.id',
+  action VARCHAR(24) NOT NULL COMMENT 'hide/unhide/delete/hard_delete/mute/unmute/profile_reset/role_grant/role_revoke',
+  target_type VARCHAR(16) NOT NULL COMMENT 'post/comment/work/user',
+  target_id BIGINT UNSIGNED NOT NULL,
+  reason VARCHAR(280) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_created (created_at),
+  KEY idx_target (target_type, target_id),
+  CONSTRAINT fk_mod_action_actor FOREIGN KEY (actor_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

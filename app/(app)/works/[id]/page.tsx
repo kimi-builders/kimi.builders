@@ -17,6 +17,7 @@ import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { canModerate } from "@/src/lib/featured";
 import { compactNumber, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -24,6 +25,7 @@ import { modelFamilyName } from "@/src/lib/model-families";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import {
+  canViewWork,
   claimBadgeOf,
   getAuthorClaimContext,
   getWork,
@@ -37,6 +39,7 @@ import WorkGallery from "../_components/WorkGallery";
 import WorkOwnerActions from "../_components/WorkOwnerActions";
 import WorkScreenshot from "../_components/WorkScreenshot";
 import WorkVoteButton from "../_components/WorkVoteButton";
+import ModToolbar from "../../../admin/_components/ModToolbar";
 
 export async function generateMetadata({
   params,
@@ -46,6 +49,9 @@ export async function generateMetadata({
   const { id } = await params;
   const work = await getWork(Number(id) || 0);
   if (!work) return { title: "kimi.builders" };
+  /* 私密作品不向非作者泄露标题;被屏蔽作品不向非作者/非管理泄露(标签页标题/分享预览都算) */
+  const user = await getSessionUser();
+  if (!canViewWork(work, user)) return { title: "kimi.builders" };
   return { title: `${work.name} — kimi.builders` };
 }
 
@@ -81,7 +87,10 @@ export default async function WorkPage({
   const locale = await getLocale(user);
   if (!Number.isInteger(workId) || workId <= 0) return <WorkGone locale={locale} />;
   const work = await getWorkDetail(workId);
-  if (!work) return <WorkGone locale={locale} />;
+  /* 私密作品对他人按「不存在」处理;被屏蔽作品仅作者与 admin/mod 可开(治理评审),
+     其余按同一友好文案(与已删/不存在一致,不构成存在性 oracle)。 */
+  if (!work || !canViewWork(work, user))
+    return <WorkGone locale={locale} />;
 
   const [voted, claimCtx, comments] = await Promise.all([
     user ? hasWorkVote(user.id, workId) : false,
@@ -104,6 +113,12 @@ export default async function WorkPage({
   return (
     <div>
       <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
+      {work.hiddenAt && (
+        <p className="mb-4 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-3 py-2 text-xs leading-relaxed text-red-400">
+          {t(locale, "mod.hiddenBanner")}
+          {work.hiddenReason ? ` — ${work.hiddenReason}` : ""}
+        </p>
+      )}
       {/* 面包屑:作品(awesome 条目回 /awesome)/ 名称 */}
       <div className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
         <Link
@@ -151,6 +166,19 @@ export default async function WorkPage({
                   ? "works.statusBuilding"
                   : "works.statusArchived",
             )}
+          </span>
+        )}
+        {work.visibility === "private" && (
+          <span className="ml-2 inline-block rounded-md border border-line px-1.5 py-px align-middle font-mono text-[10px] font-medium text-grey">
+            {t(locale, "works.private")}
+          </span>
+        )}
+        {work.hiddenAt && (
+          <span
+            className="ml-2 inline-block rounded-md border border-red-400/60 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-red-400"
+            title={work.hiddenReason ?? undefined}
+          >
+            {t(locale, "mod.hiddenBadge")}
           </span>
         )}
         {work.featuredAt && (
@@ -237,11 +265,27 @@ export default async function WorkPage({
               />
             </span>
           )}
+          {/* 治理工具条:admin/mod(屏蔽/解除;硬删仅 admin),action 层再鉴权 */}
+          {user && canModerate(user.role) && (
+            <ModToolbar
+              targetType="work"
+              targetId={work.id}
+              hidden={!!work.hiddenAt}
+              isAdmin={user.role === "admin"}
+              locale={locale}
+              redirectAfter={work.source === "awesome" ? "/awesome" : "/works"}
+            />
+          )}
           <ShareButton
             path={`/works/${work.id}`}
             title={work.name}
             locale={locale}
-            posterHref={`/api/share/work/${work.id}`}
+            /* 私密作品无海报(路由 404):按钮直接不带海报入口,同私密帖口径 */
+            posterHref={
+              work.visibility === "public"
+                ? `/api/share/work/${work.id}`
+                : undefined
+            }
           />
         </span>
       </div>

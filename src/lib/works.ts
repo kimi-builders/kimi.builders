@@ -9,6 +9,7 @@ import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
 import { getPool } from "./db";
+import { canModerate } from "./featured";
 import { getVerifiableTokenTotals, type ClaimProjectTotal } from "./usage/verifiable";
 
 type Queryable = Pool | PoolConnection;
@@ -23,6 +24,11 @@ export interface WorkRow {
   tags: string[];
   agents: string[];
   source: string;
+  /* public/private(20260828_work_visibility,语义同 posts.visibility:私密=仅作者可见) */
+  visibility: string;
+  /* 治理屏蔽(20260830):非空 = 已被管理员屏蔽;公开侧已滤,仅作者/管理员视角拿到 */
+  hiddenAt: Date | null;
+  hiddenReason: string | null;
   createdAt: Date;
   /* 站内作者(user_id 空 = awesome 外部条目,用 authorLabel) */
   userId: number | null;
@@ -75,6 +81,9 @@ function mapWork(r: RowDataPacket): WorkRow {
     tags: parseStrArray(r.tags),
     agents: parseStrArray(r.agents),
     source: r.source,
+    visibility: r.visibility ?? "public",
+    hiddenAt: r.hidden_at ?? null,
+    hiddenReason: r.hidden_reason ?? null,
     createdAt: r.created_at,
     userId: r.user_id === null ? null : Number(r.user_id),
     handle: r.handle ?? null,
@@ -96,9 +105,29 @@ function mapWork(r: RowDataPacket): WorkRow {
 }
 
 const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
-       w.screenshot_url, w.tags, w.agents, w.source, w.author_label, w.created_at,
+       w.screenshot_url, w.tags, w.agents, w.source, w.visibility, w.hidden_at, w.hidden_reason,
+       w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
        w.status, w.models, w.kind, w.description_md, w.scope, w.logo_key, w.image_keys`;
+
+/* 可见性谓词(20260828):私密=仅作者(推荐人)本人可见。
+   公共上下文(右栏/精选/海报/统计)恒用 PUBLIC_ONLY;列表/详情带 viewerId 放行作者本人。
+   user_id 为 NULL 的编辑收录条目恒 public(不经表单,列默认即 public)。 */
+const VISIBILITY_PUBLIC = "w.visibility = 'public'";
+/* 治理屏蔽谓词(20260830):公共上下文恒过滤;作者本人视角另行放行。 */
+const HIDDEN_PUBLIC = "w.hidden_at IS NULL";
+
+/* 单条目的可见性判定(详情页/海报/互动 action 共用):
+   被屏蔽 → 仅作者或 admin/mod(治理评审需要);否则公开或本人。 */
+export function canViewWork(
+  work: { visibility: string; userId: number | null; hiddenAt: Date | null },
+  viewer: { id: number; role: string } | null,
+): boolean {
+  if (work.hiddenAt) {
+    return !!viewer && (work.userId === viewer.id || canModerate(viewer.role));
+  }
+  return work.visibility === "public" || (viewer !== null && work.userId === viewer.id);
+}
 
 const SELECT_WORKS = `SELECT ${WORK_COLUMNS},
        u.handle, u.avatar_url
@@ -152,9 +181,21 @@ export function worksPageQuery(opts: {
   kinds?: string[];
   scope?: string;
   after?: string;
+  /* 登录浏览者:私密条目仅作者本人可见(同 posts feed 口径);缺省 = 匿名,仅公开 */
+  viewerId?: number;
 }): { sql: string; args: (string | number)[] } {
   const where: string[] = [];
   const args: (string | number)[] = [];
+  if (opts.viewerId) {
+    where.push(`(${VISIBILITY_PUBLIC} OR w.user_id = ?)`);
+    args.push(opts.viewerId);
+    /* 治理屏蔽:公开侧滤掉;作者本人仍可见(卡片带「已被管理员屏蔽」标注) */
+    where.push(`(${HIDDEN_PUBLIC} OR w.user_id = ?)`);
+    args.push(opts.viewerId);
+  } else {
+    where.push(VISIBILITY_PUBLIC);
+    where.push(HIDDEN_PUBLIC);
+  }
   if (opts.source === "site") where.push("w.source = 'site'");
   /* 参与 Agent 多选:任一命中即可(JSON 数组成员,OR 链) */
   if (opts.agents && opts.agents.length > 0) {
@@ -209,9 +250,10 @@ async function runWorksPage(
   return { works: kept.map(mapWork), nextCursor };
 }
 
-/* /works 墙:只看成员自己的作品;Agent/类型多选过滤 + 排序。 */
+/* /works 墙:只看成员自己的作品;Agent/类型多选过滤 + 排序。
+   viewerId = 登录浏览者:自己的私密作品可见(卡片带「私密」标),他人私密不出现。 */
 export async function getWorksPage(
-  opts: { sort?: WorksSort; agents?: string[]; kinds?: string[]; after?: string } = {},
+  opts: { sort?: WorksSort; agents?: string[]; kinds?: string[]; after?: string; viewerId?: number } = {},
 ): Promise<WorksPage> {
   const sort = opts.sort === "hot" ? "hot" : "new";
   return runWorksPage(
@@ -221,13 +263,14 @@ export async function getWorksPage(
       agents: opts.agents,
       kinds: opts.kinds,
       after: opts.after,
+      viewerId: opts.viewerId,
     }),
     WORKS_PAGE_SIZE,
     sort,
   );
 }
 
-/* /awesome:全部来源;Agent/类型/收录口径过滤 + 排序。 */
+/* /awesome:全部来源;Agent/类型/收录口径过滤 + 排序。可见性口径同上。 */
 export async function getAwesomeWorksPage(
   opts: {
     sort?: WorksSort;
@@ -235,6 +278,7 @@ export async function getAwesomeWorksPage(
     kinds?: string[];
     scope?: string;
     after?: string;
+    viewerId?: number;
   } = {},
 ): Promise<WorksPage> {
   const sort = opts.sort === "hot" ? "hot" : "new";
@@ -246,16 +290,21 @@ export async function getAwesomeWorksPage(
       kinds: opts.kinds,
       scope: opts.scope,
       after: opts.after,
+      viewerId: opts.viewerId,
     }),
     AWESOME_PAGE_SIZE,
     sort,
   );
 }
 
-/* 个人主页「作品」页签:成员自有作品(source=site)。作品本来就公开,访客/本人同视图。 */
-export async function getUserWorks(userId: number): Promise<WorkRow[]> {
+/* 个人主页「作品」页签:成员自有作品(source=site)。
+   self=true(本人)含私密与被屏蔽条目(带标注);访客只见公开且未屏蔽(同 getUserPosts)。 */
+export async function getUserWorks(
+  userId: number,
+  self = false,
+): Promise<WorkRow[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORKS} WHERE w.source = 'site' AND w.user_id = ? ORDER BY w.created_at DESC LIMIT 50`,
+    `${SELECT_WORKS} WHERE w.source = 'site' AND w.user_id = ? ${self ? "" : `AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`} ORDER BY w.created_at DESC LIMIT 50`,
     [userId],
   );
   return rows.map(mapWork);
@@ -423,6 +472,8 @@ export interface WorkFields {
   tags: string[];
   agents: string[];
   authorLabel: string; // 非空 → source=awesome(推荐站外项目)
+  /* public/private;action 层已钉死枚举(非 'private' 一律 public) */
+  visibility: "public" | "private";
   /* 构建投入声明(声明制);null = 未声明。额度校验在 action 层(checkClaimAllowance) */
   claimedTokens: number | null;
   /* 20260824_work_meta;action 层已做白名单校验 */
@@ -455,8 +506,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, author_label, claimed_tokens, status, models, kind, description_md, scope, logo_key, image_keys)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, logo_key, image_keys)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -467,6 +518,7 @@ export async function createWork(
       JSON.stringify(f.tags.slice(0, 5)),
       JSON.stringify(f.agents.slice(0, 10)),
       source,
+      f.visibility === "private" ? "private" : "public",
       f.authorLabel.slice(0, 120),
       /* awesome 条目强制无声明(声明是作品墙的作者自报语义) */
       source === "awesome" ? null : f.claimedTokens,
@@ -493,7 +545,7 @@ export async function updateWork(
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
-       tags = ?, agents = ?, source = ?, author_label = ?, claimed_tokens = ?,
+       tags = ?, agents = ?, source = ?, visibility = ?, author_label = ?, claimed_tokens = ?,
        status = ?, models = ?, kind = ?, description_md = ?, scope = ?,
        logo_key = ?, image_keys = ?
      WHERE id = ? AND user_id = ?`,
@@ -506,6 +558,7 @@ export async function updateWork(
       JSON.stringify(f.tags.slice(0, 5)),
       JSON.stringify(f.agents.slice(0, 10)),
       source,
+      f.visibility === "private" ? "private" : "public",
       f.authorLabel.slice(0, 120),
       source === "awesome" ? null : f.claimedTokens,
       f.status,
@@ -575,6 +628,7 @@ export const getAuthorClaimContext = cache(
 );
 
 /* 作品详情右栏「相关作品」:同作者或同 Agent(任一交集),同作者优先,其余按新到旧。
+   右栏是公共上下文,只取 public —— 别人的私密作品不能借右栏漏出(同 relatedPostsQuery)。
    站内作者与 agents 都没有(理论上的空条目)时不构成任何条件 → null,调用方不查库。 */
 export function relatedWorksQuery(
   work: { id: number; userId: number | null; agents: string[] },
@@ -599,7 +653,7 @@ export function relatedWorksQuery(
     args.push(work.userId);
   }
   return {
-    sql: `${SELECT_WORKS} WHERE w.id <> ? AND (${conds.join(" OR ")})
+    sql: `${SELECT_WORKS} WHERE w.id <> ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND (${conds.join(" OR ")})
      ORDER BY ${order} LIMIT ${n}`,
     args,
   };
@@ -615,19 +669,19 @@ export async function getRelatedWorks(
   return rows.map(mapWork);
 }
 
-/* /awesome 右栏来源统计:站内成员作品 vs 站外推荐条目数。 */
+/* /awesome 右栏来源统计:站内成员作品 vs 站外推荐条目数(公共上下文,仅公开条目)。 */
 /* /works 列表右栏:按支持数的热门站内作品(精选与否不参与排序,徽章只是编辑意志) */
 export async function getTopWorks(limit = 5): Promise<WorkRow[]> {
   const n = Math.max(1, Math.min(20, Math.floor(limit)));
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORKS} WHERE w.source = 'site' ORDER BY w.vote_count DESC, w.id DESC LIMIT ${n}`,
+    `${SELECT_WORKS} WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} ORDER BY w.vote_count DESC, w.id DESC LIMIT ${n}`,
   );
   return rows.map(mapWork);
 }
 
 export function awesomeSourceStatsQuery(): { sql: string; args: string[] } {
   return {
-    sql: "SELECT w.source, COUNT(*) AS n FROM works w GROUP BY w.source",
+    sql: `SELECT w.source, COUNT(*) AS n FROM works w WHERE ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.source`,
     args: [],
   };
 }
@@ -649,7 +703,8 @@ export async function getAwesomeSourceStats(): Promise<{
 
 /* ---- 列表右栏统计(20260824 改造)---- */
 
-/* /works 右栏:上架作品 / 作者 / 声明投入 Σ / 本周新上架(全部 source='site')。 */
+/* /works 右栏:上架作品 / 作者 / 声明投入 Σ / 本周新上架(全部 source='site';
+   公共上下文,仅公开条目——私密作品的数量也不计入,同 posts 社区统计口径)。 */
 export async function getWorksWallStats(): Promise<{
   works: number;
   authors: number;
@@ -660,7 +715,7 @@ export async function getWorksWallStats(): Promise<{
     `SELECT COUNT(*) AS works, COUNT(DISTINCT w.user_id) AS authors,
             COALESCE(SUM(w.claimed_tokens), 0) AS claimed_sum,
             COALESCE(SUM(CASE WHEN w.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END), 0) AS weekly_new
-     FROM works w WHERE w.source = 'site'`,
+     FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
   );
   const r = rows[0] ?? {};
   return {
@@ -671,15 +726,16 @@ export async function getWorksWallStats(): Promise<{
   };
 }
 
-/* 活跃 Agent 分布(按参与作品数;JSON 成员在 JS 侧摊开,作品量小无需 JSON_TABLE)。 */
+/* 活跃 Agent 分布(按参与作品数;JSON 成员在 JS 侧摊开,作品量小无需 JSON_TABLE)。
+   公共上下文,仅公开条目。 */
 export async function getWorksAgentStats(
   source: "site" | "awesome",
   limit = 6,
 ): Promise<{ agent: string; count: number }[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     source === "site"
-      ? "SELECT w.agents FROM works w WHERE w.source = 'site'"
-      : "SELECT w.agents FROM works w WHERE w.source = 'awesome'",
+      ? `SELECT w.agents FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`
+      : `SELECT w.agents FROM works w WHERE w.source = 'awesome' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
   );
   const counts = new Map<string, number>();
   for (const r of rows) {
@@ -693,7 +749,7 @@ export async function getWorksAgentStats(
     .slice(0, limit);
 }
 
-/* /awesome 右栏:收录项目 / 参与 Agent / 本周新增 / 推荐成员。 */
+/* /awesome 右栏:收录项目 / 参与 Agent / 本周新增 / 推荐成员(公共上下文,仅公开条目)。 */
 export async function getAwesomeStats(): Promise<{
   items: number;
   agents: number;
@@ -701,7 +757,7 @@ export async function getAwesomeStats(): Promise<{
   recommenders: number;
 }> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE w.source = 'awesome'`,
+    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE w.source = 'awesome' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
   );
   const agentSet = new Set<string>();
   const recommenderSet = new Set<number>();
@@ -720,14 +776,14 @@ export async function getAwesomeStats(): Promise<{
   };
 }
 
-/* /awesome 收录口径计数(base/eco/part)。 */
+/* /awesome 收录口径计数(base/eco/part;公共上下文,仅公开条目)。 */
 export async function getAwesomeScopeStats(): Promise<{
   base: number;
   eco: number;
   part: number;
 }> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT w.scope, COUNT(*) AS n FROM works w WHERE w.source = 'awesome' GROUP BY w.scope",
+    `SELECT w.scope, COUNT(*) AS n FROM works w WHERE w.source = 'awesome' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.scope`,
   );
   const out = { base: 0, eco: 0, part: 0 };
   for (const r of rows) {
@@ -738,12 +794,13 @@ export async function getAwesomeScopeStats(): Promise<{
   return out;
 }
 
-/* 类型分布(按作品数;卡片 chip / 筛选下拉 / 右栏共用同一预设表 work-kinds.ts)。 */
+/* 类型分布(按作品数;卡片 chip / 筛选下拉 / 右栏共用同一预设表 work-kinds.ts)。
+   公共上下文,仅公开条目。 */
 export async function getWorksKindStats(
   source: "site" | "awesome",
 ): Promise<{ kind: string; count: number }[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.kind, COUNT(*) AS n FROM works w WHERE w.source = ? GROUP BY w.kind ORDER BY n DESC`,
+    `SELECT w.kind, COUNT(*) AS n FROM works w WHERE w.source = ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.kind ORDER BY n DESC`,
     [source],
   );
   return rows.map((r) => ({ kind: String(r.kind), count: Number(r.n) }));

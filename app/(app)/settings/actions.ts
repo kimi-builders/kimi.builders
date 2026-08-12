@@ -7,7 +7,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { updateAiPrefs, updateProfile } from "@/src/lib/users";
+import { updateAiPrefs, updateProfile, updateProfilePrivacy } from "@/src/lib/users";
 
 const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
 
@@ -43,13 +43,15 @@ export async function updateProfileAction(
   const name = String(formData.get("name") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const avatarUrl = String(formData.get("avatar_url") || "").trim();
+  /* 恢复默认头像:显式清空标记优先于 URL 字段(清空走 updateProfile 的 clearAvatar) */
+  const clearAvatar = formData.get("avatar_clear") === "1";
 
   if (name.length > 64) return { error: t(locale, "err.nameLong") };
   if (bio.length > 300) return { error: t(locale, "err.bioLong") };
-  if (avatarUrl && !/^https?:\/\/.+/.test(avatarUrl))
+  if (!clearAvatar && avatarUrl && !/^https?:\/\/.+/.test(avatarUrl))
     return { error: t(locale, "err.avatarInvalid") };
 
-  const r = await updateProfile(user.id, { handle, name, bio, avatarUrl });
+  const r = await updateProfile(user.id, { handle, name, bio, avatarUrl, clearAvatar });
   if (r === "taken") return { error: t(locale, "err.handleTaken") };
   if (r === "invalid") return { error: t(locale, "err.handleInvalid") };
   return { ok: true };
@@ -64,6 +66,21 @@ export async function updateAiPrefsAction(
   await updateAiPrefs(user.id, {
     aiRepliesEnabled: formData.get("ai_mine") === "1",
     showAiReplies: formData.get("ai_show") === "1",
+  });
+  return { ok: true };
+}
+
+/* 资料展示隐私三个开关(头像/显示名/简介;1=公开 0=仅自己),
+   交互同 AI 偏好:客户端乐观切换,失败回退。 */
+export async function updateProfilePrivacyAction(
+  formData: FormData,
+): Promise<{ ok: boolean }> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
+  await updateProfilePrivacy(user.id, {
+    showAvatar: formData.get("pd_avatar") === "1",
+    showName: formData.get("pd_name") === "1",
+    showBio: formData.get("pd_bio") === "1",
   });
   return { ok: true };
 }
