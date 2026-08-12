@@ -233,7 +233,6 @@ export default function CommentSection({
         url={c.avatarUrl}
         handle={c.handle ?? c.author}
         size={20}
-        square={c.isAi}
         className="h-5 w-5"
       />
       {c.handle ? (
@@ -336,7 +335,7 @@ export default function CommentSection({
     <li
       key={c.id}
       id={`comment-${c.id}`}
-      className={`scroll-mt-24 ${!nested ? "rounded-xl border border-line bg-bg/40 p-4" : ""} ${c.isAi && !nested ? "border-l-2 border-l-blue" : ""} ${
+      className={`scroll-mt-24 ${!nested ? "rounded-xl border border-line bg-bg/40 p-4" : ""} ${
         c.score <= -3 ? "opacity-55" : ""
       }`}
       title={c.score <= -3 ? t(locale, "post.dimmed") : undefined}

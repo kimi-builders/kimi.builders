@@ -163,8 +163,9 @@ export async function createCommentAction(
   const created = await createCommentForVisiblePost(user, postId, body, parentId);
   if (!created) return { ok: false, error: t(locale, "err.generic") };
   /* 回复了 AI 的评论 → 触发 AI 接话(带对话链上下文)。
-     门槛:帖子允许 AI + 回帖人全局允许 AI;链路深度上限在执行侧。 */
-  if (parent?.isAi && user.aiRepliesEnabled) {
+     门槛:帖子允许 AI + 回帖人全局允许 AI;链路深度上限在执行侧。
+     重复提交(duplicate)不再触发——否则网络重试会刷出双倍 AI 回复。 */
+  if (!created.duplicate && parent?.isAi && user.aiRepliesEnabled) {
     const post = await getPost(postId);
     if (post?.aiReply) await enqueueAiReply(postId, created.id);
   }

@@ -713,6 +713,8 @@ export async function createComment(
 export interface VisibleCommentCreated {
   id: number;
   parent: VisibleCommentAccess | null;
+  /* 60 秒内同人同帖同文的重复提交命中已有评论时置位(幂等成功,不产生新行) */
+  duplicate?: boolean;
 }
 
 /* 登录成员写评论的安全入口:事务内锁父帖并重做可见性判定，回复目标也必须
@@ -729,9 +731,20 @@ export async function createCommentForVisiblePost(
       parent = await getVisibleCommentAccess(parentId, viewer, conn, true);
       if (!parent || parent.postId !== postId) return null;
     }
+    const body = bodyMd.slice(0, 10000);
+    /* 服务端幂等:同人同帖同文 60 秒内的重复提交视为已提交。
+       客户端有 posting 防抖,但网络重试/刷新重提会绕过它——双击不出重楼。 */
+    const [dup] = await conn.query<RowDataPacket[]>(
+      `SELECT id FROM comments
+        WHERE post_id = ? AND user_id = ? AND body_md = ? AND deleted_at IS NULL
+          AND created_at > TIMESTAMPADD(SECOND, -60, UTC_TIMESTAMP(3))
+        LIMIT 1`,
+      [postId, viewer.id, body],
+    );
+    if (dup[0]) return { id: Number(dup[0].id), parent, duplicate: true };
     const [res] = await conn.query<ResultSetHeader>(
       "INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md) VALUES (?, ?, ?, 0, ?)",
-      [postId, parentId, viewer.id, bodyMd.slice(0, 10000)],
+      [postId, parentId, viewer.id, body],
     );
     const id = Number(res.insertId);
     await conn.query(
