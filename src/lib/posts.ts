@@ -1205,18 +1205,36 @@ export async function deleteComment(
   userId: number,
   commentId: number,
 ): Promise<boolean> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT post_id FROM comments WHERE id = ? AND user_id = ? AND deleted_at IS NULL LIMIT 1",
-    [commentId, userId],
-  );
-  if (!rows[0]) return false;
-  await pool.query("UPDATE comments SET deleted_at = NOW() WHERE id = ?", [commentId]);
-  await pool.query(
-    "UPDATE posts SET comment_count = GREATEST(0, comment_count - 1) WHERE id = ?",
-    [rows[0].post_id],
-  );
-  return true;
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT post_id, hidden_at FROM comments
+       WHERE id = ? AND user_id = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE`,
+      [commentId, userId],
+    );
+    const target = rows[0];
+    if (!target) {
+      await conn.rollback();
+      return false;
+    }
+    await conn.query("UPDATE comments SET deleted_at = NOW() WHERE id = ?", [commentId]);
+    /* 屏蔽时已从公开冗余计数移除，作者再删除不能二次扣减。 */
+    if (!target.hidden_at) {
+      await conn.query(
+        `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - 1)
+         WHERE id = ?`,
+        [target.post_id],
+      );
+    }
+    await conn.commit();
+    return true;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
 }
 
 /* 浏览量:只记录,不展示(详情页渲染后经 after() 写入)。 */

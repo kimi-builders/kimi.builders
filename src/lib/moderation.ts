@@ -13,6 +13,7 @@
    - 所有治理动作写 moderation_actions 审计;写路径权限在 action 层
      (requireModerator/requireAdmin),这里不再重复判角色。 */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { Pool, PoolConnection } from "mysql2/promise";
 import { getSessionUser, type SessionUser } from "./auth/session";
 import { getPool } from "./db";
 import { canModerate } from "./featured";
@@ -44,6 +45,26 @@ const TABLE: Record<ModTargetType, string> = {
   work: "works",
 };
 
+type Queryable = Pool | PoolConnection;
+
+/* 治理不变量:目标锁定、业务变更、级联计数与审计必须同生共死。 */
+async function withModerationTransaction<T>(
+  work: (conn: PoolConnection) => Promise<T>,
+): Promise<T> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const result = await work(conn);
+    await conn.commit();
+    return result;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
 /* ---- 审计 ---- */
 
 export type ModAction =
@@ -63,8 +84,9 @@ export async function logModeration(
   targetType: ModTargetType | "user",
   targetId: number,
   reason = "",
+  db: Queryable = getPool(),
 ): Promise<void> {
-  await getPool().query(
+  await db.query(
     "INSERT INTO moderation_actions (actor_id, action, target_type, target_id, reason) VALUES (?, ?, ?, ?, ?)",
     [actorId, action, targetType, targetId, reason.slice(0, 280)],
   );
@@ -120,17 +142,30 @@ export async function hideContent(
   id: number,
   reason: string,
 ): Promise<boolean> {
-  /* works 无 deleted_at(物理删除);posts/comments 软删目标不可再屏蔽(先恢复不存在,
-     叠加态按已删展示,不再接受屏蔽操作) */
-  const notDeleted = type === "work" ? "" : "AND deleted_at IS NULL";
-  const [res] = await getPool().query<ResultSetHeader>(
-    `UPDATE ${TABLE[type]} SET hidden_at = NOW(), hidden_by = ?, hidden_reason = ?
-     WHERE id = ? AND hidden_at IS NULL ${notDeleted}`,
-    [actorId, reason.slice(0, 280), id],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "hide", type, id, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const deletedColumn = type === "work" ? "" : ", deleted_at";
+    const postColumn = type === "comment" ? ", post_id" : "";
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT id, hidden_at${deletedColumn}${postColumn} FROM ${TABLE[type]}
+       WHERE id = ? LIMIT 1 FOR UPDATE`,
+      [id],
+    );
+    const target = rows[0];
+    if (!target || target.hidden_at || (type !== "work" && target.deleted_at)) return false;
+    await conn.query(
+      `UPDATE ${TABLE[type]} SET hidden_at = NOW(), hidden_by = ?, hidden_reason = ? WHERE id = ?`,
+      [actorId, reason.slice(0, 280), id],
+    );
+    if (type === "comment") {
+      await conn.query(
+        `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - 1)
+         WHERE id = ?`,
+        [target.post_id],
+      );
+    }
+    await logModeration(actorId, "hide", type, id, reason, conn);
+    return true;
+  });
 }
 
 export async function unhideContent(
@@ -138,14 +173,29 @@ export async function unhideContent(
   type: ModTargetType,
   id: number,
 ): Promise<boolean> {
-  const [res] = await getPool().query<ResultSetHeader>(
-    `UPDATE ${TABLE[type]} SET hidden_at = NULL, hidden_by = NULL, hidden_reason = NULL
-     WHERE id = ? AND hidden_at IS NOT NULL`,
-    [id],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "unhide", type, id);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const deletedColumn = type === "work" ? "" : ", deleted_at";
+    const postColumn = type === "comment" ? ", post_id" : "";
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT id, hidden_at${deletedColumn}${postColumn} FROM ${TABLE[type]}
+       WHERE id = ? LIMIT 1 FOR UPDATE`,
+      [id],
+    );
+    const target = rows[0];
+    if (!target || !target.hidden_at || (type !== "work" && target.deleted_at)) return false;
+    await conn.query(
+      `UPDATE ${TABLE[type]} SET hidden_at = NULL, hidden_by = NULL, hidden_reason = NULL WHERE id = ?`,
+      [id],
+    );
+    if (type === "comment") {
+      await conn.query(
+        "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ? AND deleted_at IS NULL",
+        [target.post_id],
+      );
+    }
+    await logModeration(actorId, "unhide", type, id, "", conn);
+    return true;
+  });
 }
 
 /* ---- 管理软删(posts/comments;works 无软删,硬删见下)---- */
@@ -155,13 +205,16 @@ export async function adminDeletePost(
   postId: number,
   reason: string,
 ): Promise<boolean> {
-  const [res] = await getPool().query<ResultSetHeader>(
-    "UPDATE posts SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL",
-    [postId],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "delete", "post", postId, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM posts WHERE id = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE",
+      [postId],
+    );
+    if (!rows[0]) return false;
+    await conn.query("UPDATE posts SET deleted_at = NOW() WHERE id = ?", [postId]);
+    await logModeration(actorId, "delete", "post", postId, reason, conn);
+    return true;
+  });
 }
 
 /* 评论软删:删行 + 帖冗余计数 -1(同 deleteComment 的两条语句取舍)。 */
@@ -170,19 +223,26 @@ export async function adminDeleteComment(
   commentId: number,
   reason: string,
 ): Promise<boolean> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT post_id FROM comments WHERE id = ? AND deleted_at IS NULL LIMIT 1",
-    [commentId],
-  );
-  if (!rows[0]) return false;
-  await pool.query("UPDATE comments SET deleted_at = NOW() WHERE id = ?", [commentId]);
-  await pool.query(
-    "UPDATE posts SET comment_count = GREATEST(0, comment_count - 1) WHERE id = ?",
-    [rows[0].post_id],
-  );
-  await logModeration(actorId, "delete", "comment", commentId, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      `SELECT id, post_id, hidden_at FROM comments
+       WHERE id = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE`,
+      [commentId],
+    );
+    const target = rows[0];
+    if (!target) return false;
+    await conn.query("UPDATE comments SET deleted_at = NOW() WHERE id = ?", [commentId]);
+    /* 已屏蔽评论在 hide 时已经从公开计数移除，软删不能再次减。 */
+    if (!target.hidden_at) {
+      await conn.query(
+        `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - 1)
+         WHERE id = ?`,
+        [target.post_id],
+      );
+    }
+    await logModeration(actorId, "delete", "comment", commentId, reason, conn);
+    return true;
+  });
 }
 
 /* ---- 硬删除(仅 admin;目标必须存在且未删)---- */
@@ -190,9 +250,10 @@ export async function adminDeleteComment(
 async function deleteReactions(
   targetType: "post" | "comment",
   ids: number[],
+  db: Queryable,
 ): Promise<void> {
   if (ids.length === 0) return;
-  await getPool().query(
+  await db.query(
     "DELETE FROM reactions WHERE target_type = ? AND target_id IN (?)",
     [targetType, ids],
   );
@@ -205,21 +266,22 @@ export async function hardDeletePost(
   postId: number,
   reason: string,
 ): Promise<boolean> {
-  const pool = getPool();
-  const [posts] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM posts WHERE id = ? AND deleted_at IS NULL LIMIT 1",
-    [postId],
-  );
-  if (!posts[0]) return false;
-  const [commentIds] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM comments WHERE post_id = ?",
-    [postId],
-  );
-  await deleteReactions("comment", commentIds.map((r) => Number(r.id)));
-  await deleteReactions("post", [postId]);
-  await pool.query("DELETE FROM posts WHERE id = ?", [postId]);
-  await logModeration(actorId, "hard_delete", "post", postId, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const [posts] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM posts WHERE id = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE",
+      [postId],
+    );
+    if (!posts[0]) return false;
+    const [commentIds] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM comments WHERE post_id = ? FOR UPDATE",
+      [postId],
+    );
+    await deleteReactions("comment", commentIds.map((r) => Number(r.id)), conn);
+    await deleteReactions("post", [postId], conn);
+    await conn.query("DELETE FROM posts WHERE id = ?", [postId]);
+    await logModeration(actorId, "hard_delete", "post", postId, reason, conn);
+    return true;
+  });
 }
 
 /* 评论硬删:整棵子树一起删(parent_id 无 FK,递归收集);帖冗余计数按其中
@@ -229,29 +291,44 @@ export async function hardDeleteComment(
   commentId: number,
   reason: string,
 ): Promise<boolean> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `WITH RECURSIVE tree AS (
-       SELECT c.id, c.post_id, c.deleted_at FROM comments c WHERE c.id = ?
-       UNION ALL
-       SELECT c.id, c.post_id, c.deleted_at FROM comments c JOIN tree t ON c.parent_id = t.id
-     ) SELECT id, post_id, deleted_at FROM tree`,
-    [commentId],
-  );
-  const root = rows.find((r) => Number(r.id) === commentId);
-  if (!root || root.deleted_at !== null) return false;
-  const ids = rows.map((r) => Number(r.id));
-  const liveCount = rows.filter((r) => r.deleted_at === null).length;
-  await deleteReactions("comment", ids);
-  await pool.query("DELETE FROM comments WHERE id IN (?)", [ids]);
-  if (liveCount > 0) {
-    await pool.query(
-      "UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - ?) WHERE id = ?",
-      [liveCount, root.post_id],
+  return withModerationTransaction(async (conn) => {
+    const [rootRows] = await conn.query<RowDataPacket[]>(
+      `SELECT id, post_id, deleted_at FROM comments WHERE id = ? LIMIT 1 FOR UPDATE`,
+      [commentId],
     );
-  }
-  await logModeration(actorId, "hard_delete", "comment", commentId, reason);
-  return true;
+    const root = rootRows[0];
+    if (!root || root.deleted_at !== null) return false;
+    /* 锁父帖，让所有治理计数变更和新的受守卫评论写入按帖串行。 */
+    await conn.query("SELECT id FROM posts WHERE id = ? LIMIT 1 FOR UPDATE", [root.post_id]);
+    const [tree] = await conn.query<RowDataPacket[]>(
+      `WITH RECURSIVE ids AS (
+         SELECT c.id FROM comments c WHERE c.id = ?
+         UNION ALL
+         SELECT c.id FROM comments c JOIN ids t ON c.parent_id = t.id
+       ) SELECT c.id, c.post_id, c.deleted_at, c.hidden_at
+         FROM comments c JOIN ids ON ids.id = c.id FOR UPDATE`,
+      [commentId],
+    );
+    const ids = tree.map((r) => Number(r.id));
+    const visibleLiveCount = tree.filter(
+      (r) => r.deleted_at === null && r.hidden_at === null,
+    ).length;
+    await deleteReactions("comment", ids, conn);
+    const [deleted] = await conn.query<ResultSetHeader>(
+      "DELETE FROM comments WHERE id IN (?)",
+      [ids],
+    );
+    if (deleted.affectedRows === 0) return false;
+    if (visibleLiveCount > 0) {
+      await conn.query(
+        `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - ?)
+         WHERE id = ?`,
+        [visibleLiveCount, root.post_id],
+      );
+    }
+    await logModeration(actorId, "hard_delete", "comment", commentId, reason, conn);
+    return true;
+  });
 }
 
 /* 作品硬删:work_votes/work_comments 走 ON DELETE CASCADE。 */
@@ -260,13 +337,16 @@ export async function hardDeleteWork(
   workId: number,
   reason: string,
 ): Promise<boolean> {
-  const [res] = await getPool().query<ResultSetHeader>(
-    "DELETE FROM works WHERE id = ?",
-    [workId],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "hard_delete", "work", workId, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM works WHERE id = ? LIMIT 1 FOR UPDATE",
+      [workId],
+    );
+    if (!rows[0]) return false;
+    await conn.query("DELETE FROM works WHERE id = ?", [workId]);
+    await logModeration(actorId, "hard_delete", "work", workId, reason, conn);
+    return true;
+  });
 }
 
 /* ---- 禁言 ---- */
@@ -307,33 +387,60 @@ export function muteMessage(locale: "zh" | "en", until: Date): string {
   return t(locale, "err.muted", { d: until.toISOString().slice(0, 10) });
 }
 
+interface GovernableUser {
+  id: number;
+  role: string;
+  mutedUntil: Date | null;
+}
+
+/* 所有用户治理动作共用同一服务端防线：admin 目标恒不可改。 */
+async function lockGovernableUser(
+  conn: PoolConnection,
+  userId: number,
+): Promise<GovernableUser | null> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    `SELECT id, role, muted_until FROM users WHERE id = ? LIMIT 1 FOR UPDATE`,
+    [userId],
+  );
+  const row = rows[0];
+  if (!row || row.role === "admin") return null;
+  return {
+    id: Number(row.id),
+    role: String(row.role),
+    mutedUntil: row.muted_until ?? null,
+  };
+}
+
 export async function muteUser(
   actorId: number,
   userId: number,
   until: Date | string,
   reason: string,
 ): Promise<boolean> {
-  /* admin 账号不可被禁言(防御);mod 之间允许(小社区,全部留审计) */
-  const [res] = await getPool().query<ResultSetHeader>(
-    "UPDATE users SET muted_until = ? WHERE id = ? AND role <> 'admin'",
-    [until, userId],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "mute", "user", userId, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    if (!(await lockGovernableUser(conn, userId))) return false;
+    await conn.query("UPDATE users SET muted_until = ? WHERE id = ?", [until, userId]);
+    await logModeration(actorId, "mute", "user", userId, reason, conn);
+    return true;
+  });
 }
 
 export async function unmuteUser(
   actorId: number,
   userId: number,
 ): Promise<boolean> {
-  const [res] = await getPool().query<ResultSetHeader>(
-    "UPDATE users SET muted_until = NULL WHERE id = ? AND muted_until IS NOT NULL",
-    [userId],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "unmute", "user", userId);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const target = await lockGovernableUser(conn, userId);
+    if (!target || !target.mutedUntil) return false;
+    /* WHERE 保留 role 防御，避免未来改动绕过共享锁定守卫。 */
+    const [res] = await conn.query<ResultSetHeader>(
+      "UPDATE users SET muted_until = NULL WHERE id = ? AND role <> 'admin' AND muted_until IS NOT NULL",
+      [userId],
+    );
+    if (res.affectedRows === 0) return false;
+    await logModeration(actorId, "unmute", "user", userId, "", conn);
+    return true;
+  });
 }
 
 /* ---- 资料重置(违规内容处置:清空自定义头像/显示名/简介,回到默认态)---- */
@@ -343,13 +450,12 @@ export async function resetUserProfile(
   userId: number,
   reason: string,
 ): Promise<boolean> {
-  const [res] = await getPool().query<ResultSetHeader>(
-    "UPDATE users SET avatar_url = '', name = '', bio = '' WHERE id = ? AND role <> 'admin'",
-    [userId],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(actorId, "profile_reset", "user", userId, reason);
-  return true;
+  return withModerationTransaction(async (conn) => {
+    if (!(await lockGovernableUser(conn, userId))) return false;
+    await conn.query("UPDATE users SET avatar_url = '', name = '', bio = '' WHERE id = ?", [userId]);
+    await logModeration(actorId, "profile_reset", "user", userId, reason, conn);
+    return true;
+  });
 }
 
 /* ---- 角色管理(仅 admin;member ⇄ mod;admin 不可被降)---- */
@@ -374,19 +480,24 @@ export async function setUserRole(
   targetId: number,
   nextRole: "member" | "mod",
 ): Promise<boolean> {
-  /* WHERE 再钉一道:目标不是 admin 才允许改(防御纵深,action 层已 canChangeRole) */
-  const [res] = await getPool().query<ResultSetHeader>(
-    "UPDATE users SET role = ? WHERE id = ? AND role <> 'admin' AND role <> ?",
-    [nextRole, targetId, nextRole],
-  );
-  if (res.affectedRows === 0) return false;
-  await logModeration(
-    actorId,
-    nextRole === "mod" ? "role_grant" : "role_revoke",
-    "user",
-    targetId,
-  );
-  return true;
+  return withModerationTransaction(async (conn) => {
+    const target = await lockGovernableUser(conn, targetId);
+    if (!target || target.role === nextRole) return false;
+    const [res] = await conn.query<ResultSetHeader>(
+      "UPDATE users SET role = ? WHERE id = ? AND role <> 'admin' AND role <> ?",
+      [nextRole, targetId, nextRole],
+    );
+    if (res.affectedRows === 0) return false;
+    await logModeration(
+      actorId,
+      nextRole === "mod" ? "role_grant" : "role_revoke",
+      "user",
+      targetId,
+      "",
+      conn,
+    );
+    return true;
+  });
 }
 
 /* ---- /admin 用户列表(可搜索)---- */
