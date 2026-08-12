@@ -11,7 +11,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
-import { PUBLIC_POSTS_CACHE_TAG } from "@/src/lib/cache-tags";
+import {
+  PUBLIC_FEATURED_CACHE_TAG,
+  PUBLIC_POSTS_CACHE_TAG,
+} from "@/src/lib/cache-tags";
 import {
   canModerate,
   clearPostFeatured,
@@ -319,6 +322,7 @@ export async function updatePostAction(
   const ok = await updatePost(user.id, postId, { title, bodyMd: body, linkUrl, category });
   if (!ok) return { error: t(locale, "err.notOwner") };
   updateTag(PUBLIC_POSTS_CACHE_TAG);
+  updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community");
   redirect(`/community/${postId}`);
@@ -335,6 +339,7 @@ export async function deletePostAction(
   const ok = await deletePost(user.id, postId);
   if (ok) {
     updateTag(PUBLIC_POSTS_CACHE_TAG);
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
     revalidatePath("/community");
   }
   return { ok };
@@ -351,6 +356,7 @@ export async function setPostVisibilityAction(
   const ok = await setPostVisibility(user.id, postId, visibility);
   if (ok) {
     updateTag(PUBLIC_POSTS_CACHE_TAG);
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
     revalidatePath(`/community/${postId}`);
     revalidatePath("/community");
   }
@@ -408,6 +414,7 @@ export async function featurePostAction(
   if (!ok) return { ok: false, error: t(locale, "err.generic") };
   /* 首页数据走 tag 缓存(updateTag 即时作废),详情页/首页路径缓存一并清 */
   updateTag(HOME_CACHE_TAG);
+  updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/");
   return { ok: true };
@@ -426,6 +433,7 @@ export async function unfeaturePostAction(
   const ok = await clearPostFeatured(postId);
   if (ok) {
     updateTag(HOME_CACHE_TAG);
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
     revalidatePath(`/community/${postId}`);
     revalidatePath("/");
   }

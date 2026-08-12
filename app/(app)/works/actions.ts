@@ -17,7 +17,10 @@ import {
   setWorkFeatured,
 } from "@/src/lib/featured";
 import { compactNumber } from "@/src/lib/format";
-import { PUBLIC_WORKS_CACHE_TAG } from "@/src/lib/cache-tags";
+import {
+  PUBLIC_FEATURED_CACHE_TAG,
+  PUBLIC_WORKS_CACHE_TAG,
+} from "@/src/lib/cache-tags";
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -218,6 +221,7 @@ export async function updateWorkAction(
   });
   if (!ok) return { error: t(locale, "err.notOwnerWork") };
   updateTag(PUBLIC_WORKS_CACHE_TAG);
+  updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
   redirect(f.authorLabel ? "/awesome" : "/works");
@@ -233,6 +237,7 @@ export async function deleteWorkAction(
   const ok = await deleteWork(user.id, workId);
   if (ok) {
     updateTag(PUBLIC_WORKS_CACHE_TAG);
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
     revalidatePath("/works");
     revalidatePath("/awesome");
   }
@@ -261,6 +266,7 @@ export async function featureWorkAction(
   /* 首页数据走 tag 缓存(updateTag 即时作废),列表/首页路径缓存一并清 */
   updateTag(HOME_CACHE_TAG);
   updateTag(PUBLIC_WORKS_CACHE_TAG);
+  updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
   revalidatePath("/");
@@ -281,6 +287,7 @@ export async function unfeatureWorkAction(
   if (ok) {
     updateTag(HOME_CACHE_TAG);
     updateTag(PUBLIC_WORKS_CACHE_TAG);
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
     revalidatePath("/works");
     revalidatePath("/awesome");
     revalidatePath("/");

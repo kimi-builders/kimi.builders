@@ -6,11 +6,7 @@ import AgentIcon from "@/components/AgentIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { t, type Locale } from "@/src/lib/i18n";
-import {
-  getAwesomeScopeStats,
-  getAwesomeStats,
-  getWorksAgentStats,
-} from "@/src/lib/works";
+import { getPublicAwesomeRail } from "@/src/lib/public-rails-cache";
 import Widget from "./Widget";
 
 const SCOPES = [
@@ -26,11 +22,7 @@ export default async function AwesomeRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  const [stats, scopeStats, agents] = await Promise.all([
-    getAwesomeStats(),
-    getAwesomeScopeStats(),
-    getWorksAgentStats("awesome", 6),
-  ]);
+  const { stats, scopeStats, agents } = await getPublicAwesomeRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
     <>

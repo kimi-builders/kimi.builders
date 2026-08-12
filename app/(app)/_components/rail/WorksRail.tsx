@@ -7,13 +7,8 @@ import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
+import { getPublicWorksRail } from "@/src/lib/public-rails-cache";
 import { workKind, workKindLabel } from "@/src/lib/work-kinds";
-import {
-  getTopWorks,
-  getWorksAgentStats,
-  getWorksKindStats,
-  getWorksWallStats,
-} from "@/src/lib/works";
 import Widget from "./Widget";
 
 export default async function WorksRail({
@@ -23,12 +18,7 @@ export default async function WorksRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  const [stats, agents, kinds, top] = await Promise.all([
-    getWorksWallStats(),
-    getWorksAgentStats("site", 6),
-    getWorksKindStats("site"),
-    getTopWorks(5),
-  ]);
+  const { stats, agents, kinds, top } = await getPublicWorksRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
     <>

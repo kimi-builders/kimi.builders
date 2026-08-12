@@ -8,6 +8,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { getLocale } from "@/src/lib/i18n-server";
 import { t } from "@/src/lib/i18n";
 import {
+  PUBLIC_FEATURED_CACHE_TAG,
   PUBLIC_POSTS_CACHE_TAG,
   PUBLIC_USERS_CACHE_TAG,
   PUBLIC_WORKS_CACHE_TAG,
@@ -46,6 +47,9 @@ function targetTypeOf(raw: string): ModTargetType | null {
 /* 治理动作后作废公共面缓存:列表/详情/首页精选/管理台。 */
 function revalidateAfterContent(id: number, type: ModTargetType) {
   updateTag(HOME_CACHE_TAG);
+  if (type === "post" || type === "work") {
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
+  }
   if (type === "post" || type === "comment") {
     updateTag(PUBLIC_POSTS_CACHE_TAG);
   }
