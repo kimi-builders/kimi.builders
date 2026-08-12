@@ -289,7 +289,9 @@ export async function loadMoreWorksAction(
   if (typeof after !== "string" || after.length === 0 || after.length > 40) return { ok: false };
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  const agents = scope.agents.filter((id) => AGENTS.some((a) => a.id === id)).slice(0, 10);
+  const agents = scope.agents
+    .filter((id) => AGENTS.some((a) => a.id === id))
+    .slice(0, AGENTS.length);
   const kinds = scope.kinds.filter(isWorkKind).slice(0, 12);
   const scopeFilter =
     scope.scope_ && ["base", "eco", "part"].includes(scope.scope_)

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowBigUp, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -73,7 +74,7 @@ export default async function WorksRail({
                     href={`/works?kind=${k.kind}`}
                     className="group flex items-center gap-2.5 border-b border-line py-2 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                   >
-                    <i className={`size-[7px] shrink-0 rounded-full ${meta.dot}`} />
+                    <WorkKindIcon id={meta.id} size={14} className="shrink-0 text-grey" />
                     <span className="min-w-0 flex-1 truncate text-xs text-paper transition-colors group-hover:text-blue">
                       {workKindLabel(k.kind, locale === "zh")}
                     </span>

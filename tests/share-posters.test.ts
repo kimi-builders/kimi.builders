@@ -229,7 +229,7 @@ test("work snapshot: agents mapped to display names and capped", () => {
     new Map(),
     new Map(),
   );
-  assert.deepEqual(s.agents, ["Kimi", "Claude Code", "Codex", "Cursor", "GitHub Copilot"]);
+  assert.deepEqual(s.agents, ["Kimi Code", "Claude Code", "Codex", "Cursor", "GitHub Copilot"]);
   assert.equal(s.agentsMore, 1);
 });
 

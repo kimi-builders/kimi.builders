@@ -1,7 +1,7 @@
 /* 模型家族厂商图标:窄子路径导入 @lobehub/icons(不走桶文件,防 bundle 膨胀)。
    有 Color 用 Color;没有的(OpenAI/Grok)用 Mono(currentColor,跟随文字色)。
    未收录的家族 id 返回 null(调用方落回纯文本 chip)。 */
-import KimiColor from "@lobehub/icons/es/Kimi/components/Color";
+import KimiMono from "@lobehub/icons/es/Kimi/components/Mono";
 import ClaudeColor from "@lobehub/icons/es/Claude/components/Color";
 import OpenAIMono from "@lobehub/icons/es/OpenAI/components/Mono";
 import GeminiColor from "@lobehub/icons/es/Gemini/components/Color";
@@ -13,8 +13,8 @@ import GLMVColor from "@lobehub/icons/es/GLMV/components/Color";
 import DoubaoColor from "@lobehub/icons/es/Doubao/components/Color";
 import WenxinColor from "@lobehub/icons/es/Wenxin/components/Color";
 
-const ICONS: Record<string, typeof KimiColor> = {
-  kimi: KimiColor,
+const ICONS: Record<string, typeof KimiMono> = {
+  kimi: KimiMono,
   claude: ClaudeColor,
   openai: OpenAIMono,
   gemini: GeminiColor,

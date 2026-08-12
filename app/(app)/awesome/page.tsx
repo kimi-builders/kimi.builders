@@ -8,6 +8,8 @@ import Link from "next/link";
 import { SquarePen, Star } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
+import WorkKindIcon from "@/components/WorkKindIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -26,9 +28,9 @@ import WorksFilterBar from "../works/_components/WorksFilterBar";
 export const metadata: Metadata = { title: "Awesome — kimi.builders" };
 
 const SCOPES = [
-  { id: "base", key: "awesome.scopeBase" as const, dot: "bg-blue" },
-  { id: "eco", key: "awesome.scopeEco" as const, dot: "bg-blue" },
-  { id: "part", key: "awesome.scopePart" as const, dot: "bg-grey" },
+  { id: "base", key: "awesome.scopeBase" as const },
+  { id: "eco", key: "awesome.scopeEco" as const },
+  { id: "part", key: "awesome.scopePart" as const },
 ];
 
 export default async function AwesomePage({
@@ -133,7 +135,7 @@ export default async function AwesomePage({
               options: WORK_KINDS.map((k) => ({
                 value: k.id,
                 label: workKindLabel(k.id, zh),
-                icon: <i className={`size-[7px] rounded-full ${k.dot}`} />,
+                icon: <WorkKindIcon id={k.id} size={13} />,
               })),
             },
             {
@@ -143,7 +145,7 @@ export default async function AwesomePage({
               options: SCOPES.map((s) => ({
                 value: s.id,
                 label: t(locale, s.key),
-                icon: <i className={`size-[7px] rounded-full ${s.dot}`} />,
+                icon: <WorkScopeIcon id={s.id} size={13} />,
               })),
             },
           ]}

@@ -3,7 +3,10 @@
    收录口径(decision):不要求 100% 由 Kimi 构建 —— Kimi 参与了、
    为 Kimi 生态做的应用、以 Kimi 为基座的项目都算;参与的 Agent 标出来。 */
 export const AGENTS = [
-  { id: "kimi", name: "Kimi" },
+  /* `kimi` 已落库，保留 id 兼容既有作品；展示名跟随当前官方产品名。 */
+  { id: "kimi", name: "Kimi Code" },
+  { id: "kimi-agent", name: "Kimi Agent" },
+  { id: "agent-swarm", name: "Agent Swarm" },
   { id: "claude-code", name: "Claude Code" },
   { id: "codex", name: "Codex" },
   { id: "cursor", name: "Cursor" },
@@ -19,13 +22,13 @@ export type AgentId = (typeof AGENTS)[number]["id"];
 
 const IDS = new Set<string>(AGENTS.map((a) => a.id));
 
-/* 只保留注册表里的 id,去重,最多 10 个。 */
+/* 只保留注册表里的 id 并去重；上限跟随作品 Agent 注册表。 */
 export function sanitizeAgentIds(raw: unknown[]): AgentId[] {
   const out: AgentId[] = [];
   for (const v of raw) {
     const s = String(v);
     if (IDS.has(s) && !out.includes(s as AgentId)) out.push(s as AgentId);
-    if (out.length >= 10) break;
+    if (out.length >= AGENTS.length) break;
   }
   return out;
 }

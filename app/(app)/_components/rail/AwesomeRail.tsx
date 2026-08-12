@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { t, type Locale } from "@/src/lib/i18n";
 import {
@@ -13,9 +14,9 @@ import {
 import Widget from "./Widget";
 
 const SCOPES = [
-  { id: "base", labelKey: "awesome.scopeBase", hintKey: "awesome.scopeBaseHint", dot: "bg-blue" },
-  { id: "eco", labelKey: "awesome.scopeEco", hintKey: "awesome.scopeEcoHint", dot: "bg-blue" },
-  { id: "part", labelKey: "awesome.scopePart", hintKey: "awesome.scopePartHint", dot: "bg-grey" },
+  { id: "base", labelKey: "awesome.scopeBase", hintKey: "awesome.scopeBaseHint" },
+  { id: "eco", labelKey: "awesome.scopeEco", hintKey: "awesome.scopeEcoHint" },
+  { id: "part", labelKey: "awesome.scopePart", hintKey: "awesome.scopePartHint" },
 ] as const;
 
 export default async function AwesomeRail({
@@ -63,7 +64,7 @@ export default async function AwesomeRail({
                 href={`/awesome?scope=${s.id}`}
                 className="group flex items-center gap-2.5 border-b border-line py-2.5 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
-                <i className={`size-[7px] shrink-0 rounded-full ${s.dot}`} />
+                <WorkScopeIcon id={s.id} size={14} className="shrink-0 text-grey" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs text-paper transition-colors group-hover:text-blue">
                     {t(locale, s.labelKey)}

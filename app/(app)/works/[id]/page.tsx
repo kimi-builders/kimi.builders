@@ -13,6 +13,8 @@ import LoadMore from "@/components/LoadMore";
 import Markdown from "@/components/Markdown";
 import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
+import WorkKindIcon from "@/components/WorkKindIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
@@ -127,7 +129,8 @@ export default async function WorkPage({
         <h1 className="text-2xl font-semibold leading-snug">
           {work.name}
         {work.scope && (
-          <span className="ml-2 inline-block rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue">
+          <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue">
+            <WorkScopeIcon id={work.scope} size={11} />
             {t(
               locale,
               work.scope === "eco"
@@ -362,7 +365,7 @@ export default async function WorkPage({
               </h3>
               <div className="mt-3">
                 <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[10px] ${workKind(work.kind).tint}`}>
-                  <i className={`size-[6px] rounded-full ${workKind(work.kind).dot}`} />
+                  <WorkKindIcon id={work.kind} size={12} />
                   {workKindLabel(work.kind, locale === "zh")}
                 </span>
               </div>

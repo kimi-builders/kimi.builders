@@ -16,6 +16,8 @@ import { isModelFamily, MODEL_FAMILIES } from "@/src/lib/model-families";
 import { WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
 import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
+import WorkKindIcon from "@/components/WorkKindIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -215,7 +217,7 @@ export default function WorkForm({
                 defaultChecked={(initial?.kind ?? "app") === k.id}
                 className={choiceInputCls}
               />
-              <i className={`size-[7px] rounded-full ${k.dot}`} />
+              <WorkKindIcon id={k.id} size={14} />
               {workKindLabel(k.id, locale === "zh")}
             </label>
           ))}
@@ -431,8 +433,9 @@ export default function WorkForm({
                     defaultChecked={initial?.scope === s.id}
                     className={choiceInputCls}
                   />
-                  <span className="block text-xs font-medium text-paper">
-                    {t(locale, s.key)}
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-paper">
+                    <WorkScopeIcon id={s.id} size={14} />
+                    <span>{t(locale, s.key)}</span>
                   </span>
                   <span className="mt-0.5 block text-[10.5px] leading-relaxed text-grey">
                     {t(locale, s.hintKey)}

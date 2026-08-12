@@ -521,8 +521,8 @@ const DICT = {
   },
   "works.agents": { zh: "参与的 Agent", en: "Agents involved" },
   "works.agentsHint": {
-    zh: "哪些 Agent 参与了这个项目(可多选)。",
-    en: "Which agents took part in this project (multi-select).",
+    zh: "可多选。Kimi Code 指终端 / IDE 编程 Agent；Kimi Agent 指 kimi.com、Kimi App / Kimi Work 中的通用 Agent；Agent Swarm 指并行多 Agent 模式。",
+    en: "Multi-select. Kimi Code is the terminal/IDE coding agent; Kimi Agent is the general agent in kimi.com, Kimi App, and Kimi Work; Agent Swarm is the parallel multi-agent mode.",
   },
   "works.authorLabel": { zh: "原作者 / 团队", en: "Original author / team" },
   "works.authorLabelPh": {

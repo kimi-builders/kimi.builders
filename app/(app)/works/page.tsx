@@ -9,6 +9,7 @@ import Link from "next/link";
 import { GalleryVerticalEnd, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
+import WorkKindIcon from "@/components/WorkKindIcon";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -127,7 +128,7 @@ export default async function WorksPage({
               options: WORK_KINDS.map((k) => ({
                 value: k.id,
                 label: workKindLabel(k.id, zh),
-                icon: <i className={`size-[7px] rounded-full ${k.dot}`} />,
+                icon: <WorkKindIcon id={k.id} size={13} />,
               })),
             },
           ]}

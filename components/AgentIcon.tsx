@@ -1,7 +1,7 @@
 /* Agent 品牌图标:窄子路径导入 @lobehub/icons(不走桶文件,防 bundle 膨胀)。
    有 Color 用 Color;没有的用 Mono(currentColor,跟随文字色)。
    图标本身是 "use client",这个 wrapper 保持 RSC,边界停在图标处。 */
-import KimiColor from "@lobehub/icons/es/Kimi/components/Color";
+import KimiMono from "@lobehub/icons/es/Kimi/components/Mono";
 import ClaudeCodeColor from "@lobehub/icons/es/ClaudeCode/components/Color";
 import CodexColor from "@lobehub/icons/es/Codex/components/Color";
 import CursorMono from "@lobehub/icons/es/Cursor/components/Mono";
@@ -14,11 +14,14 @@ import GeminiCliColor from "@lobehub/icons/es/GeminiCLI/components/Color";
 import OpenCodeMono from "@lobehub/icons/es/OpenCode/components/Mono";
 import AntigravityColor from "@lobehub/icons/es/Antigravity/components/Color";
 import QwenColor from "@lobehub/icons/es/Qwen/components/Color";
+import { Bot, Network } from "lucide-react";
 
 const ICONS = {
-  kimi: KimiColor,
+  kimi: KimiMono,
+  "kimi-agent": Bot,
+  "agent-swarm": Network,
   // 用量来源 id(usage source id)直接映射
-  "kimi-code": KimiColor,
+  "kimi-code": KimiMono,
   "claude-code": ClaudeCodeColor,
   codex: CodexColor,
   "gemini-cli": GeminiCliColor,
@@ -43,17 +46,5 @@ export default function AgentIcon({
 }) {
   const Icon = ICONS[id as keyof typeof ICONS];
   if (!Icon) return null;
-  // Kimi 的 Color 图标是白色 K(透明底),浅色主题下不可见 —— 垫一块品牌黑砖,
-  // 双主题都成立(与 Kimi 官方 lockup 一致)。
-  if (id === "kimi" || id === "kimi-code") {
-    return (
-      <span
-        className="inline-flex shrink-0 items-center justify-center rounded-md bg-grey"
-        style={{ width: size + 5, height: size + 5 }}
-      >
-        <Icon size={size} />
-      </span>
-    );
-  }
   return <Icon size={size} />;
 }

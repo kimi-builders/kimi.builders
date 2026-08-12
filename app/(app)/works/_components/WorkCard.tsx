@@ -18,6 +18,8 @@ import { workKind, workKindLabel } from "@/src/lib/work-kinds";
 import type { WorkRow } from "@/src/lib/works";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
+import WorkKindIcon from "@/components/WorkKindIcon";
+import WorkScopeIcon from "@/components/WorkScopeIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkOwnerActions from "./WorkOwnerActions";
 import WorkScreenshot from "./WorkScreenshot";
@@ -48,7 +50,7 @@ const SCOPE_CHIP: Record<
   part: { cls: "bg-moon text-grey", key: "awesome.scopePart" },
 };
 
-const CHIP = "inline-flex items-center rounded-md px-1.5 py-px text-[10px] font-medium";
+const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-[10px] font-medium";
 
 export default function WorkCard({
   work: w,
@@ -91,10 +93,12 @@ export default function WorkCard({
           </h2>
           <span className="ml-auto flex shrink-0 flex-wrap justify-end gap-1.5">
             <span className={`${CHIP} ${workKind(w.kind).tint}`}>
+              <WorkKindIcon id={w.kind} size={11} />
               {workKindLabel(w.kind, locale === "zh")}
             </span>
             {scopeChip && (
               <span className={`${CHIP} ${scopeChip.cls}`}>
+                <WorkScopeIcon id={w.scope} size={11} />
                 {t(locale, scopeChip.key)}
               </span>
             )}
