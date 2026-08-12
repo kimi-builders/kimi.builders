@@ -10,6 +10,7 @@ import { t } from "@/src/lib/i18n";
 import {
   PUBLIC_POSTS_CACHE_TAG,
   PUBLIC_USERS_CACHE_TAG,
+  PUBLIC_WORKS_CACHE_TAG,
 } from "@/src/lib/cache-tags";
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import type { RowDataPacket } from "mysql2";
@@ -48,6 +49,7 @@ function revalidateAfterContent(id: number, type: ModTargetType) {
   if (type === "post" || type === "comment") {
     updateTag(PUBLIC_POSTS_CACHE_TAG);
   }
+  if (type === "work") updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/community");
   revalidatePath("/works");
   revalidatePath("/awesome");

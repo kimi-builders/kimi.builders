@@ -17,6 +17,7 @@ import {
   setWorkFeatured,
 } from "@/src/lib/featured";
 import { compactNumber } from "@/src/lib/format";
+import { PUBLIC_WORKS_CACHE_TAG } from "@/src/lib/cache-tags";
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -187,6 +188,7 @@ export async function createWorkAction(
     imageKeys: f.imageKeys ?? [],
     claimedTokens: claim.claimed,
   });
+  updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
   redirect(f.authorLabel ? "/awesome" : "/works");
@@ -215,6 +217,7 @@ export async function updateWorkAction(
     claimedTokens: claim.claimed,
   });
   if (!ok) return { error: t(locale, "err.notOwnerWork") };
+  updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
   redirect(f.authorLabel ? "/awesome" : "/works");
@@ -229,6 +232,7 @@ export async function deleteWorkAction(
   if (!workId) return { ok: false };
   const ok = await deleteWork(user.id, workId);
   if (ok) {
+    updateTag(PUBLIC_WORKS_CACHE_TAG);
     revalidatePath("/works");
     revalidatePath("/awesome");
   }
@@ -256,6 +260,7 @@ export async function featureWorkAction(
   if (!ok) return { ok: false, error: t(locale, "err.generic") };
   /* 首页数据走 tag 缓存(updateTag 即时作废),列表/首页路径缓存一并清 */
   updateTag(HOME_CACHE_TAG);
+  updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
   revalidatePath("/");
@@ -275,6 +280,7 @@ export async function unfeatureWorkAction(
   const ok = await clearWorkFeatured(workId);
   if (ok) {
     updateTag(HOME_CACHE_TAG);
+    updateTag(PUBLIC_WORKS_CACHE_TAG);
     revalidatePath("/works");
     revalidatePath("/awesome");
     revalidatePath("/");
@@ -349,6 +355,7 @@ export async function toggleWorkVoteAction(
     };
   }
   await toggleWorkVote(user.id, workId);
+  updateTag(PUBLIC_WORKS_CACHE_TAG);
   return { ok: true };
 }
 
@@ -378,6 +385,7 @@ export async function createWorkCommentAction(
       retryAfterSeconds: rate.retryAfterSeconds,
     };
   await createWorkComment(workId, user.id, body);
+  updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath(`/works/${workId}`);
   return { ok: true };
 }
@@ -392,8 +400,11 @@ export async function deleteWorkCommentAction(
   if (!Number.isSafeInteger(commentId) || commentId <= 0) return { ok: false };
   /* 权限(评论作者本人或作品作者)在 SQL WHERE;affectedRows=0 即越权/已删 */
   const ok = await deleteWorkComment(user.id, commentId);
-  if (ok && Number.isSafeInteger(workId) && workId > 0)
-    revalidatePath(`/works/${workId}`);
+  if (ok) {
+    updateTag(PUBLIC_WORKS_CACHE_TAG);
+    if (Number.isSafeInteger(workId) && workId > 0)
+      revalidatePath(`/works/${workId}`);
+  }
   return { ok };
 }
 
