@@ -18,22 +18,16 @@ import {
   usageModelDisplayName,
 } from "./model-meta";
 
-/* 趋势时间格表达式:hour → 'YYYY-MM-DD HH:00'(本地);week → 本地周一日;day → 本地日。 */
-function trendTimeExpr(column: string, filters: UsageFilters): string {
-  const shifted = `DATE_ADD(${column}, INTERVAL ${filters.tzOffsetMinutes} MINUTE)`;
+function trendKeyFromInstant(value: unknown, filters: UsageFilters): string {
+  const instant = value instanceof Date ? value : new Date(value as string);
+  const local = new Date(instant.getTime() + filters.tzOffsetMinutes * 60_000);
   if (filters.granularity === "hour") {
-    return `DATE_FORMAT(${shifted}, '%Y-%m-%d %H:00')`;
+    return `${local.toISOString().slice(0, 13).replace("T", " ")}:00`;
   }
   if (filters.granularity === "week") {
-    return `DATE(DATE_SUB(${shifted}, INTERVAL WEEKDAY(${shifted}) DAY))`;
+    local.setUTCDate(local.getUTCDate() - ((local.getUTCDay() + 6) % 7));
   }
-  return `DATE(${shifted})`;
-}
-
-/* DATE_FORMAT 返回字符串;DATE() 经 timezone:'Z' 返回 UTC Date。 */
-function trendKeyOf(value: unknown, granularity: UsageFilters["granularity"]): string {
-  if (granularity === "hour") return String(value);
-  return utcDay(value);
+  return local.toISOString().slice(0, 10);
 }
 
 import {
@@ -129,7 +123,8 @@ function recordsQuery(
                    b.reasoning_effort, b.agent_version, b.context_tier,
                    b.processing_tier, b.project_label, b.project_hash, b.device_id,
                    SUM(b.input_tokens + b.cache_write_input_tokens + b.cache_read_input_tokens
-                       + b.output_tokens + b.reasoning_output_tokens) AS record_total_tokens
+                       + b.output_tokens + b.reasoning_output_tokens) AS record_total_tokens,
+                   COUNT(*) OVER() AS groups_count
             FROM usage_buckets b
             WHERE ${filtered.where}
             GROUP BY day, ${fine ? "b.bucket_start, " : ""}b.source, b.model,
@@ -143,6 +138,7 @@ function recordsQuery(
             LIMIT ? OFFSET ?
           )
      SELECT selected.day, selected.bucket_time, selected.record_total_tokens,
+            selected.groups_count,
             b.source, b.model, b.model_canonical, b.model_provider,
             b.reasoning_effort, b.agent_version, b.context_tier, b.processing_tier,
             b.project_label,
@@ -170,6 +166,7 @@ function recordsQuery(
       AND b.context_tier = selected.context_tier
       AND b.processing_tier = selected.processing_tier
       AND b.project_hash = selected.project_hash
+      AND b.project_label <=> selected.project_label
       AND ${fine ? "b.bucket_start = selected.bucket_time" : `${localDay} = selected.day`}
      JOIN usage_devices d ON d.id = b.device_id
      WHERE b.bucket_start >= ? AND b.bucket_start < ?
@@ -353,10 +350,7 @@ export async function getUsageOverview(
   filters: UsageFilters,
 ): Promise<UsageOverview> {
   const pool = getPool();
-  const prices = await loadModelPrices(pool);
-  const bucket = bucketFilterSql(userId, filters);
-  const session = sessionFilterSql(userId, filters);
-  const trendBucket = trendTimeExpr("bucket_start", filters);
+  const pricesPromise = loadModelPrices(pool);
 
   const rangeOnly: UsageFilters = {
     ...filters,
@@ -376,8 +370,6 @@ export async function getUsageOverview(
     from: new Date(filters.from.getTime() - prevSpan),
     to: filters.from,
   };
-  const prevBucket = bucketFilterSql(userId, prevFilters);
-  const prevSession = sessionFilterSql(userId, prevFilters);
 
   /* Lifetime 忽略日期范围但保留维度筛选；自然周固定取筛选结束点之前
      最近 12 个周一边界。Lifetime 以请求时刻为终点，避免自定义范围截断累计值。 */
@@ -387,7 +379,7 @@ export async function getUsageOverview(
     from: new Date(0),
     to: generatedAt,
   };
-  const lifetimeBucket = bucketFilterSql(userId, lifetimeFilters);
+  const lifetimeBucket = bucketFilterSql(userId, lifetimeFilters, "b");
   const tzMs = filters.tzOffsetMinutes * 60_000;
   /* 自然周以主筛选结束点为锚；历史自定义范围因此仍能看到对应时期的 12 周，
      普通预设的 filters.to 就是当前请求时刻。减 1ms 处理恰好落在周一 00:00 的右开边界。 */
@@ -402,8 +394,18 @@ export async function getUsageOverview(
     to: filters.to,
     granularity: "week",
   };
-  const weeklyBucket = bucketFilterSql(userId, weeklyFilters);
-  const weeklyBucketExpr = trendTimeExpr("bucket_start", weeklyFilters);
+  const bucketEnvelopeFilters: UsageFilters = {
+    ...filters,
+    from: new Date(Math.min(prevFilters.from.getTime(), weeklyFilters.from.getTime())),
+    to: filters.to,
+  };
+  const bucketEnvelope = bucketFilterSql(userId, bucketEnvelopeFilters);
+  const sessionEnvelopeFilters: UsageFilters = {
+    ...filters,
+    from: prevFilters.from,
+    to: filters.to,
+  };
+  const sessionEnvelope = sessionFilterSql(userId, sessionEnvelopeFilters);
 
   const recordsQ = recordsQuery(
     userId,
@@ -478,197 +480,128 @@ export async function getUsageOverview(
           ORDER BY kind, position`,
     params: optionParts.flatMap((part) => part.params),
   };
+  const projectColumn = filters.projectsEnabled ? "project_label" : "NULL";
+  const projectGroup = filters.projectsEnabled ? "project_label, " : "";
   const queries: Promise<RowDataPacket[]>[] = [
-    // 0 趋势+总览:30 分钟 × source × model。先按事实时间取价,
-    // 再在 JS 聚合到小时/日/周,避免价格窗口跨日/跨周时整段套用最早价格。
+    /* current/previous/weekly 共用一个事实包络。保留 bucket_start 精度，
+       才能按历史价格的 effective window 逐行估费。 */
     pool
       .query<RowDataPacket[]>(
-        `SELECT ${trendBucket} AS day, source, model, model_canonical, model_provider,
+        `SELECT device_id, ${projectColumn} AS project_label,
+                source, model, model_canonical, model_provider,
                 context_tier, processing_tier,
                 bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
-         WHERE ${bucket.where}
-         GROUP BY bucket_start, source, model, model_canonical, model_provider,
-                  context_tier, processing_tier
-         ORDER BY day`,
-        bucket.params,
+         WHERE ${bucketEnvelope.where}
+         GROUP BY bucket_start, device_id, ${projectGroup}source, model,
+                  model_canonical, model_provider, context_tier, processing_tier`,
+        bucketEnvelope.params,
       )
       .then(([rows]) => rows),
-    // 1 会话原始行:v3 小时事实必须在 JS 精确裁剪到筛选窗口。
+    // current/previous 共用 overlap envelope；v3 小时事实仍由 JS 精确裁剪。
     pool
       .query<RowDataPacket[]>(
         `SELECT device_id, first_message_at, last_message_at,
                 active_seconds, duration_seconds, message_count,
                 user_message_count, user_prompt_hours
          FROM usage_sessions
-         WHERE ${session.where}`,
-        session.params,
+         WHERE ${sessionEnvelope.where}`,
+        sessionEnvelope.params,
       )
       .then(([rows]) => rows),
-    // 2 设备数(范围内去重:bucket 侧 ∪ 会话侧在 JS 合并)
-    pool
-      .query<RowDataPacket[]>(
-        `SELECT DISTINCT device_id FROM usage_buckets WHERE ${bucket.where}`,
-        bucket.params,
-      )
-      .then(([rows]) => rows),
-    // 3 最近同步
-    pool
-      .query<RowDataPacket[]>(
-        `SELECT MAX(last_sync) AS last_sync FROM (
-           SELECT MAX(updated_at) AS last_sync FROM usage_buckets WHERE user_id = ?
-           UNION ALL
-           SELECT MAX(updated_at) AS last_sync FROM usage_sessions WHERE user_id = ?
-         ) syncs`,
-        [userId, userId],
-      )
-      .then(([rows]) => rows),
-    // 4 分布:project('' = 未上传)
-    filters.projectsEnabled
-      ? pool
-          .query<RowDataPacket[]>(
-            `SELECT COALESCE(project_label, '') AS k, source, model,
-                    model_canonical, model_provider, context_tier, processing_tier,
-                    bucket_start AS sample_at, ${TOKEN_SUMS}
-             FROM usage_buckets
-             WHERE ${bucket.where}
-             GROUP BY bucket_start, k, source, model, model_canonical, model_provider,
-                      context_tier, processing_tier`,
-            bucket.params,
-          )
-          .then(([rows]) => rows)
-      : Promise.resolve([]),
-    // 5 分布:device
-    pool
-      .query<RowDataPacket[]>(
-        `SELECT d.public_id AS k, d.name AS device_name,
-                d.platform AS device_platform, d.surface AS device_surface,
-                d.client_version AS device_client_version,
-                d.parser_version AS device_parser_version,
-                d.terminal_name AS device_terminal_name,
-                d.terminal_version AS device_terminal_version,
-                d.os_name AS device_os_name, d.os_version AS device_os_version,
-                d.architecture AS device_architecture,
-                b.source, b.model, b.model_canonical, b.model_provider,
-                b.context_tier, b.processing_tier,
-                b.bucket_start AS sample_at,
-                SUM(b.input_tokens) AS input_tokens,
-                SUM(b.cache_write_input_tokens) AS cache_write_input_tokens,
-                SUM(b.cache_write_5m_input_tokens) AS cache_write_5m_input_tokens,
-                SUM(b.cache_write_1h_input_tokens) AS cache_write_1h_input_tokens,
-                SUM(b.cache_read_input_tokens) AS cache_read_input_tokens,
-                SUM(b.output_tokens) AS output_tokens,
-                SUM(b.reasoning_output_tokens) AS reasoning_output_tokens,
-                SUM(b.request_count) AS request_count,
-                SUM(COALESCE(b.cost_micros, 0)) AS stored_cost_micros,
-                0 AS legacy_active_seconds,
-                0 AS legacy_session_count
-         FROM usage_buckets b
-         JOIN usage_devices d ON d.id = b.device_id
-         WHERE ${bucketFilterSql(userId, filters, "b").where}
-         GROUP BY b.bucket_start, d.public_id, d.name, d.platform, d.surface,
-                  d.client_version, d.parser_version, d.terminal_name,
-                  d.terminal_version, d.os_name, d.os_version, d.architecture,
-                  b.source, b.model, b.model_canonical, b.model_provider,
-                  b.context_tier, b.processing_tier`,
-        bucketFilterSql(userId, filters, "b").params,
-      )
-      .then(([rows]) => rows),
-    // 6 明细:本地日 × source × model × project × device(分页)
+    // 明细:本地日 × source × model × project × device(分页+窗口总数)
     pool
       .query<RowDataPacket[]>(recordsQ.sql, recordsQ.params)
       .then(([rows]) => rows),
-    // 7 明细总行数
-    pool
-      .query<RowDataPacket[]>(recordsCountQ.sql, recordsCountQ.params)
-      .then(([rows]) => rows),
-    // 8 筛选项候选(只看用户+时间范围；单次往返返回 kind/value)
+    // 筛选项候选(只看用户+时间范围；单次往返返回 kind/value)
     pool
       .query<RowDataPacket[]>(optionsQ.sql, optionsQ.params)
       .then(([rows]) => rows),
-    // 9 已链接设备候选与计数
+    /* 分布需要撤销设备的历史标签；筛选项/顶层计数再在 JS 过滤 revoked_at。 */
     pool
       .query<RowDataPacket[]>(
-        `SELECT public_id, name, platform, surface, client_version, parser_version,
-                terminal_name, terminal_version, os_name, os_version, architecture
+        `SELECT id, public_id, name, platform, surface, client_version, parser_version,
+                terminal_name, terminal_version, os_name, os_version, architecture,
+                revoked_at
          FROM usage_devices
-         WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at`,
+         WHERE user_id = ? ORDER BY created_at`,
         [userId],
       )
       .then(([rows]) => rows),
-    // 10/11 上一等长周期(环比):同筛选,窗口整体前移一个 span
+    /* Lifetime 保留维度筛选；同一次 bucket 扫描顺带取无筛选最近同步，
+       session 最近同步用 scalar subquery 合入同一 statement。 */
     pool
       .query<RowDataPacket[]>(
-        `SELECT source, model, model_canonical, model_provider,
-                context_tier, processing_tier,
-                bucket_start AS sample_at, ${TOKEN_SUMS}
-         FROM usage_buckets
-         WHERE ${prevBucket.where}
-         GROUP BY bucket_start, source, model, model_canonical, model_provider,
-                  context_tier, processing_tier`,
-        prevBucket.params,
-      )
-      .then(([rows]) => rows),
-    pool
-      .query<RowDataPacket[]>(
-        `SELECT device_id, first_message_at, last_message_at,
-                active_seconds, duration_seconds, message_count,
-                user_message_count, user_prompt_hours
-         FROM usage_sessions
-         WHERE ${prevSession.where}`,
-        prevSession.params,
-      )
-      .then(([rows]) => rows),
-    // 12 Lifetime token:忽略日期范围,保留全部维度筛选。
-    pool
-      .query<RowDataPacket[]>(
-        `SELECT SUM(input_tokens) AS input_tokens,
-                SUM(cache_write_input_tokens) AS cache_write_input_tokens,
-                SUM(cache_read_input_tokens) AS cache_read_input_tokens,
-                SUM(output_tokens) AS output_tokens,
-                SUM(reasoning_output_tokens) AS reasoning_output_tokens
-         FROM usage_buckets
-         WHERE ${lifetimeBucket.where}`,
-        lifetimeBucket.params,
-      )
-      .then(([rows]) => rows),
-    // 13 最近 12 个自然周:仍保留 30 分钟事实时间,便于历史价格精确匹配。
-    pool
-      .query<RowDataPacket[]>(
-        `SELECT ${weeklyBucketExpr} AS day, source, model, model_canonical, model_provider,
-                context_tier, processing_tier,
-                bucket_start AS sample_at, ${TOKEN_SUMS}
-         FROM usage_buckets
-         WHERE ${weeklyBucket.where}
-         GROUP BY bucket_start, source, model, model_canonical, model_provider,
-                  context_tier, processing_tier
-         ORDER BY day`,
-        weeklyBucket.params,
+        `WITH scoped AS (
+           SELECT b.input_tokens, b.cache_write_input_tokens,
+                  b.cache_read_input_tokens, b.output_tokens,
+                  b.reasoning_output_tokens, b.updated_at,
+                  (${lifetimeBucket.where}) AS in_lifetime
+           FROM usage_buckets b
+           WHERE b.user_id = ?
+         )
+         SELECT
+           SUM(CASE WHEN in_lifetime THEN input_tokens ELSE 0 END)
+             AS input_tokens,
+           SUM(CASE WHEN in_lifetime THEN cache_write_input_tokens ELSE 0 END)
+             AS cache_write_input_tokens,
+           SUM(CASE WHEN in_lifetime THEN cache_read_input_tokens ELSE 0 END)
+             AS cache_read_input_tokens,
+           SUM(CASE WHEN in_lifetime THEN output_tokens ELSE 0 END)
+             AS output_tokens,
+           SUM(CASE WHEN in_lifetime THEN reasoning_output_tokens ELSE 0 END)
+             AS reasoning_output_tokens,
+           MAX(updated_at) AS bucket_last_sync,
+           (SELECT MAX(s.updated_at) FROM usage_sessions s WHERE s.user_id = ?)
+             AS session_last_sync
+         FROM scoped`,
+        [
+          ...lifetimeBucket.params,
+          userId,
+          userId,
+        ],
       )
       .then(([rows]) => rows),
   ];
 
-  const queryResults = await Promise.all(queries);
+  const [prices, queryResults] = await Promise.all([pricesPromise, Promise.all(queries)]);
   const [
-    bucketRows,
+    bucketEnvelopeRows,
     sessionRows,
-    bucketDeviceRows,
-    syncRows,
-    projectDistRows,
-    deviceDistRows,
     recordRows,
-    recordCountRows,
     optionRows,
-    optionDeviceRows,
-    prevBucketRows,
-    prevSessionRows,
+    allDeviceRows,
     lifetimeRows,
-    weeklyRows,
   ] = queryResults;
-  /* loadModelPrices 也是本次 overview 的真实数据库往返，诊断必须纳入；
-     project 关闭时 queries[4] 是内存中的空 Promise，不计作 SQL。 */
-  const queryStatements = 1 + queries.length - (filters.projectsEnabled ? 0 : 1);
-  const rowsFetched = prices.length + queryResults.reduce((sum, rows) => sum + rows.length, 0);
+  const bucketRows: RowDataPacket[] = [];
+  const prevBucketRows: RowDataPacket[] = [];
+  const weeklyRows: RowDataPacket[] = [];
+  for (const row of bucketEnvelopeRows) {
+    const timestamp = new Date(row.sample_at as string).getTime();
+    if (timestamp >= filters.from.getTime() && timestamp < filters.to.getTime()) {
+      bucketRows.push(row);
+    }
+    if (timestamp >= prevFilters.from.getTime() && timestamp < prevFilters.to.getTime()) {
+      prevBucketRows.push(row);
+    }
+    if (timestamp >= weeklyFilters.from.getTime() && timestamp < weeklyFilters.to.getTime()) {
+      weeklyRows.push(row);
+    }
+  }
+  const prevSessionRows = sessionRows;
+
+  const deviceById = new Map(allDeviceRows.map((row) => [String(row.id), row]));
+  const optionDeviceRows = allDeviceRows.filter((row) => row.revoked_at === null);
+
+  let queryStatements = 1 + queries.length;
+  let rowsFetched = prices.length + queryResults.reduce((sum, rows) => sum + rows.length, 0);
+  let recordsTotal = num(recordRows[0]?.groups_count);
+  if (recordRows.length === 0 && filters.page > 1) {
+    const [countRows] = await pool.query<RowDataPacket[]>(recordsCountQ.sql, recordsCountQ.params);
+    recordsTotal = num(countRows[0]?.groups_count);
+    queryStatements += 1;
+    rowsFetched += countRows.length;
+  }
   const optionValues = (kind: string) => optionRows
     .filter((row) => String(row.kind) === kind)
     .map((row) => String(row.option_value));
@@ -706,8 +639,11 @@ export async function getUsageOverview(
     target.outputTokens += tokens.outputTokens;
     target.reasoningOutputTokens += tokens.reasoningOutputTokens;
   };
-  const estimateRow = (row: RowDataPacket, tokens: UsageTokenBreakdown) =>
-    estimateCostMicros(
+  const estimateByRow = new WeakMap<RowDataPacket, ReturnType<typeof estimateCostMicros>>();
+  const estimateRow = (row: RowDataPacket, tokens: UsageTokenBreakdown) => {
+    const cached = estimateByRow.get(row);
+    if (cached) return cached;
+    const estimate = estimateCostMicros(
       tokens,
       String(row.model) === LEGACY_MODEL
         ? null
@@ -717,9 +653,12 @@ export async function getUsageOverview(
             new Date(row.sample_at as string),
             String(row.source),
             String(row.context_tier ?? "") || undefined,
-          ),
+        ),
       String(row.context_tier ?? "") || undefined,
     );
+    estimateByRow.set(row, estimate);
+    return estimate;
+  };
 
   /* 逐事实时间估费并累计覆盖率。热图/分布只复用 estimateRow,不得重复污染台账。 */
   const priceRow = (
@@ -736,12 +675,13 @@ export async function getUsageOverview(
       String(row.source),
       String(row.context_tier ?? "") || undefined,
     );
+    estimateByRow.set(row, estimate);
     return estimate.micros;
   };
 
   for (const row of bucketRows) {
     const tokens = tokensOf(row);
-    const item = ensureDay(trendKeyOf(row.day, filters.granularity));
+    const item = ensureDay(trendKeyFromInstant(row.sample_at, filters));
     const estimated = priceRow(row, tokens);
     const stored = num(row.stored_cost_micros);
     addTokens(item, tokens);
@@ -766,7 +706,7 @@ export async function getUsageOverview(
   // 范围内活跃设备 = bucket ∪ session 事实里的去重 device_id
   totals.activeDevices = new Set(
     [
-      ...bucketDeviceRows.map((row) => String(row.device_id)),
+      ...bucketRows.map((row) => String(row.device_id)),
       ...sessionDeviceIds,
     ],
   ).size;
@@ -850,7 +790,7 @@ export async function getUsageOverview(
   // —— 最近 12 个自然周 ——
   const weeklyByDay = new Map<string, UsageTrendDay>();
   for (const row of weeklyRows) {
-    const key = trendKeyOf(row.day, "week");
+    const key = trendKeyFromInstant(row.sample_at, weeklyFilters);
     let item = weeklyByDay.get(key);
     if (!item) {
       item = {
@@ -945,7 +885,8 @@ export async function getUsageOverview(
 
   // —— 分布(token + 估费,Top 6 + 其他) ——
   interface DistInput {
-    k: unknown;
+    device_id?: unknown;
+    project_label?: unknown;
     source: unknown;
     model: unknown;
     model_canonical?: unknown;
@@ -961,16 +902,6 @@ export async function getUsageOverview(
     output_tokens: unknown;
     reasoning_output_tokens: unknown;
     stored_cost_micros: unknown;
-    device_name?: unknown;
-    device_platform?: unknown;
-    device_surface?: unknown;
-    device_client_version?: unknown;
-    device_parser_version?: unknown;
-    device_terminal_name?: unknown;
-    device_terminal_version?: unknown;
-    device_os_name?: unknown;
-    device_os_version?: unknown;
-    device_architecture?: unknown;
   }
   const distTokens = (row: DistInput): UsageTokenBreakdown => ({
     inputTokens: num(row.input_tokens),
@@ -983,6 +914,7 @@ export async function getUsageOverview(
   });
   const buildDistribution = (
     rows: DistInput[],
+    keyOf: (row: DistInput) => string,
     labelOf: (row: DistInput) => string,
   ): UsageDistribution => {
     interface Acc {
@@ -995,32 +927,15 @@ export async function getUsageOverview(
     let totalTokens = 0;
     let totalCostMicros = 0;
     for (const row of rows) {
-      const key = String(row.k);
+      const key = keyOf(row);
       const tokens = distTokens(row);
       const model = String(row.model);
-      const modelCanonical = canonicalUsageModel({
-        source: row.source,
-        model,
-        modelCanonical: row.model_canonical,
-        modelProvider: row.model_provider,
-      });
       const stored = num(row.stored_cost_micros);
       let estimated = 0;
       // legacy 迁入行的存储成本是旧口径假值,标记未定价,避免把 $0.00 伪装成准确值
       let unpriced = model === LEGACY_MODEL;
       if (model !== LEGACY_MODEL) {
-        const contextTier = String(row.context_tier ?? "");
-        const estimate = estimateCostMicros(
-          tokens,
-          matchModelPrice(
-            prices,
-            modelCanonical,
-            new Date(row.sample_at as string),
-            String(row.source),
-            contextTier || undefined,
-          ),
-          contextTier || undefined,
-        );
+        const estimate = estimateRow(row as unknown as RowDataPacket, tokens);
         estimated = estimate.micros;
         unpriced = estimate.status !== "priced";
       }
@@ -1066,32 +981,54 @@ export async function getUsageOverview(
   const distributions: UsageOverview["distributions"] = {
     /* source/model 都能从主事实行集派生，不再重复扫描同一时间范围。 */
     source: buildDistribution(
-      bucketRows.map((row) => ({ ...row, k: row.source })) as unknown as DistInput[],
-      (row) => String(row.k),
+      bucketRows as unknown as DistInput[],
+      (row) => String(row.source),
+      (row) => String(row.source),
     ),
     model: { rows: [], totalTokens: 0, totalCostMicros: 0 },
-    project: buildDistribution(projectDistRows as unknown as DistInput[], (row) =>
-      row.k === "" ? "" : String(row.k),
+    project: buildDistribution(
+      (filters.projectsEnabled ? bucketRows : []) as unknown as DistInput[],
+      (row) => String(row.project_label ?? ""),
+      (row) => String(row.project_label ?? ""),
     ),
-    device: buildDistribution(deviceDistRows as unknown as DistInput[], (row) =>
-      usageDeviceDisplayName({
-        name: row.device_name,
-        platform: row.device_platform,
-        surface: row.device_surface,
-        clientVersion: row.device_client_version,
-        parserVersion: row.device_parser_version,
-        terminalName: row.device_terminal_name,
-        terminalVersion: row.device_terminal_version,
-        osName: row.device_os_name,
-        osVersion: row.device_os_version,
-        architecture: row.device_architecture,
-      }),
+    device: buildDistribution(
+      bucketRows.filter((row) => deviceById.has(String(row.device_id))) as unknown as DistInput[],
+      (row) => String(deviceById.get(String(row.device_id))?.public_id),
+      (row) => {
+        const device = deviceById.get(String(row.device_id));
+        return usageDeviceDisplayName({
+          name: device?.name,
+          platform: device?.platform,
+          surface: device?.surface,
+          clientVersion: device?.client_version,
+          parserVersion: device?.parser_version,
+          terminalName: device?.terminal_name,
+          terminalVersion: device?.terminal_version,
+          osName: device?.os_name,
+          osVersion: device?.os_version,
+          architecture: device?.architecture,
+        });
+      },
     ),
   };
   // model 分布直接由精确时间行集派生;不得先跨价格窗口合并再套用首个价格。
   distributions.model = buildDistribution(
-    bucketRows.map((row) => ({ ...row, k: canonicalModelOf(row) })) as unknown as DistInput[],
-    (row) => usageModelDisplayName({ model: row.k, modelCanonical: row.k }),
+    bucketRows as unknown as DistInput[],
+    (row) => canonicalUsageModel({
+      source: row.source,
+      model: row.model,
+      modelCanonical: row.model_canonical,
+      modelProvider: row.model_provider,
+    }),
+    (row) => {
+      const model = canonicalUsageModel({
+        source: row.source,
+        model: row.model,
+        modelCanonical: row.model_canonical,
+        modelProvider: row.model_provider,
+      });
+      return usageModelDisplayName({ model, modelCanonical: model });
+    },
   );
 
   // —— 明细 ——
@@ -1126,7 +1063,7 @@ export async function getUsageOverview(
     distributions,
     records: {
       rows: records,
-      total: num(recordCountRows[0]?.groups_count),
+      total: recordsTotal,
       page: filters.page,
       pageSize: filters.pageSize,
     },
@@ -1153,7 +1090,13 @@ export async function getUsageOverview(
       })),
     },
     activeDevices: optionDeviceRows.length,
-    lastSyncAt: (syncRows[0]?.last_sync as Date | null) ?? null,
+    lastSyncAt: [lifetimeRows[0]?.bucket_last_sync, lifetimeRows[0]?.session_last_sync]
+      .reduce<Date | null>((latest, value) => {
+        if (!value) return latest;
+        const date = value instanceof Date ? value : new Date(value as string);
+        if (Number.isNaN(date.getTime())) return latest;
+        return latest === null || date > latest ? date : latest;
+      }, null),
     meta: {
       pricingVersions: [...ledger.versions].sort(),
       unpricedModels: [...ledger.unpricedModels].sort(),
