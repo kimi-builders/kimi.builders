@@ -1,16 +1,19 @@
 export default function Loading() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10" aria-label="页面加载中 / Loading page">
-      <div className="rounded-2xl border border-line bg-card p-6">
-        <div className="h-3 w-24 animate-pulse rounded-full bg-moon" />
-        <div className="mt-5 h-8 w-2/3 animate-pulse rounded-lg bg-moon" />
-        <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-moon" />
-        <div className="mt-2 h-4 w-4/5 animate-pulse rounded-full bg-moon" />
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <div className="h-32 animate-pulse rounded-xl border border-line bg-moon" />
-          <div className="h-32 animate-pulse rounded-xl border border-line bg-moon" />
-        </div>
-      </div>
+    <main
+      className="flex min-h-[70vh] w-full flex-col items-center justify-center px-6"
+      aria-label="页面加载中 / Loading page"
+    >
+      {/* 品牌加载态:首页同款双星绕月(SMIL 动画,浏览器原生播放) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/logo-animated.svg"
+        alt="kimi.builders"
+        className="h-36 w-36 rounded-3xl border border-line"
+      />
+      <p className="mt-6 font-mono text-[11px] tracking-[0.3em] text-grey">
+        LOADING<span className="text-blue">.</span>
+      </p>
     </main>
   );
 }
