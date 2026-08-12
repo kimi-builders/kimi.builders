@@ -113,6 +113,8 @@ CREATE TABLE IF NOT EXISTS comments (
   hidden_by BIGINT UNSIGNED NULL COMMENT '执行屏蔽的管理员 users.id',
   hidden_reason VARCHAR(280) NULL COMMENT '屏蔽原因',
   KEY idx_post (post_id, created_at),
+  KEY idx_comments_hidden_id (hidden_at, id),
+  KEY idx_comments_parent_visible (parent_id, deleted_at, hidden_at, is_ai),
   CONSTRAINT fk_comment_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
   CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES users (id),
   CONSTRAINT fk_comment_hidden FOREIGN KEY (hidden_by) REFERENCES users (id)
