@@ -3,6 +3,7 @@
 /* 设置页写操作:资料(显示名/handle/简介/头像 URL)与 AI 回复偏好。
    全部先过 session,再做字段校验;handle 唯一性在查询层排除自己。 */
 import { cookies } from "next/headers";
+import { isAllowedAvatarUrl } from "@/src/lib/avatar-urls";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
@@ -48,12 +49,13 @@ export async function updateProfileAction(
 
   if (name.length > 64) return { error: t(locale, "err.nameLong") };
   if (bio.length > 300) return { error: t(locale, "err.bioLong") };
-  if (!clearAvatar && avatarUrl && !/^https?:\/\/.+/.test(avatarUrl))
-    return { error: t(locale, "err.avatarInvalid") };
+  if (!clearAvatar && avatarUrl && !isAllowedAvatarUrl(avatarUrl))
+    return { error: t(locale, "err.avatarHostInvalid") };
 
   const r = await updateProfile(user.id, { handle, name, bio, avatarUrl, clearAvatar });
   if (r === "taken") return { error: t(locale, "err.handleTaken") };
   if (r === "invalid") return { error: t(locale, "err.handleInvalid") };
+  if (r === "avatar_invalid") return { error: t(locale, "err.avatarHostInvalid") };
   return { ok: true };
 }
 

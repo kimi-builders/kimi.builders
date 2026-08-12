@@ -1,6 +1,7 @@
 /* 用户资料与账号的查询/变更(设置页、个人主页用)。
    登录态会话查询在 ./auth/session;注册落库在 ./auth/users。 */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import { isAllowedAvatarUrl } from "./avatar-urls";
 import { getPool } from "./db";
 
 export interface UserProfile {
@@ -146,7 +147,7 @@ export function validateHandle(h: string): boolean {
   return /^[a-z0-9_]{1,28}$/.test(h) && /[a-z0-9]/.test(h);
 }
 
-export type UpdateProfileResult = "ok" | "taken" | "invalid";
+export type UpdateProfileResult = "ok" | "taken" | "invalid" | "avatar_invalid";
 
 /* 资料更新:handle 变更要过格式 + 唯一性(排除自己);空 avatarUrl = 不修改;
    clearAvatar = 显式清空(恢复默认,下次 OAuth 登录重新同步 provider 头像)。 */
@@ -156,6 +157,8 @@ export async function updateProfile(
 ): Promise<UpdateProfileResult> {
   const handle = fields.handle.trim().toLowerCase();
   if (!validateHandle(handle)) return "invalid";
+  if (!fields.clearAvatar && fields.avatarUrl.trim() && !isAllowedAvatarUrl(fields.avatarUrl))
+    return "avatar_invalid";
   const [dup] = await getPool().query<RowDataPacket[]>(
     "SELECT id FROM users WHERE handle = ? AND id != ? LIMIT 1",
     [handle, userId],
