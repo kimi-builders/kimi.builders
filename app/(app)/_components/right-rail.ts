@@ -23,6 +23,12 @@ export interface RailDecision {
   wide: boolean;
 }
 
+/* 布局需要重取的最小上下文:同一种 rail + 同一详情 id + 同一列宽时,
+   pathname 改变不影响右栏或壳宽度,无需 router.refresh() 全树重取。 */
+export function railDecisionKey({ kind, id, wide }: RailDecision): string {
+  return `${kind}:${id ?? "-"}:${wide ? 1 : 0}`;
+}
+
 const decision = (
   kind: RailKind,
   opts: { id?: number; wide?: boolean } = {},

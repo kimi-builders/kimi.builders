@@ -3,9 +3,9 @@
    作用于 (app) 路由组内所有分区;首页门面不在组内,保持独立暗色海报。
    右栏上下文与主列宽度由 railFor(pathname) 决定(right-rail.ts;
    pathname 由根 proxy.ts 写进 x-kb-path 请求头)。
-   注意:布局在软导航时不重渲染,所以 <RailRefresher/> 监听 pathname 变化
-   调 router.refresh(),让本布局按新 URL 重新求值(右栏/列宽随页面切换);
-   refresh 往返的那一拍里 <RailGate/> 按当前 pathname 把旧右栏隐藏,
+   注意:布局在软导航时不重渲染,所以 <RailRefresher/> 监听 rail decision 变化
+   调 router.refresh(),让本布局按新上下文重新求值(同 decision 导航不重取);
+   refresh 往返的那一拍里 <RailGate/> 按当前 decision 把旧右栏隐藏,
    中列新页面与右栏旧内容不会同框出现。
    三栏的收起/隐藏状态走 <html> data-* + CSS(root layout 直出),
    壳组件不接收状态 prop,切换零网络。 */
@@ -22,7 +22,7 @@ import RailGate from "./_components/RailGate";
 import RailRefresher from "./_components/RailRefresher";
 import RightSidebar from "./_components/RightSidebar";
 import TopBar from "./_components/TopBar";
-import { railFor } from "./_components/right-rail";
+import { railDecisionKey, railFor } from "./_components/right-rail";
 
 export default async function AppLayout({
   children,
@@ -41,6 +41,7 @@ export default async function AppLayout({
   /* proxy 未覆盖的路径(头缺失)按回落处理:community rail + 正常列宽 */
   const railPath = headerStore.get("x-kb-path") ?? "/";
   const rail = railFor(railPath);
+  const railKey = railDecisionKey(rail);
   return (
     <div>
       <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} />
@@ -63,9 +64,9 @@ export default async function AppLayout({
           {children}
         </main>
         {rail.kind !== "none" && (
-          /* 软导航的一拍里右栏还是上一页的:RailGate 按当前 pathname 把它
+          /* 跨上下文软导航的一拍里右栏还是上一页的:RailGate 按当前 decision 把它
              藏起来,refresh 带新右栏到达后再显示(不再出现中列/右栏错位) */
-          <RailGate path={railPath}>
+          <RailGate decisionKey={railKey}>
             <RightSidebar locale={locale} loggedIn={!!user} decision={rail} />
           </RailGate>
         )}
@@ -73,7 +74,7 @@ export default async function AppLayout({
       <Suspense fallback={null}>
         <MobileTabBar locale={locale} profileHref={profileHref} />
       </Suspense>
-      {/* 软导航后让布局按新 URL 重估右栏/列宽(布局本身不随导航重渲染) */}
+      {/* 软导航跨上下文时让布局重估右栏/列宽(同 decision 不全树重取) */}
       <RailRefresher />
     </div>
   );
