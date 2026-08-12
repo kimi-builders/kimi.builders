@@ -12,7 +12,6 @@ import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
 import {
   SEG_ITEM,
-  SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
   SEG_WRAP,
 } from "@/components/seg-classes";
@@ -34,6 +33,11 @@ import {
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
 import { getUsageSettings } from "@/src/lib/usage/settings";
+
+/* 榜单筛选信息密度高，选中态用品牌蓝浅底而不是 paper/bg 反色块；
+   深浅主题均由 --color-blue token 派生，EN 长标签不会形成沉重黑块。 */
+const LEADERBOARD_SEG_ACTIVE =
+  "bg-blue/10 text-blue ring-1 ring-inset ring-blue/20";
 
 export const metadata: Metadata = { title: "社区用量榜 — kimi.builders" };
 
@@ -415,7 +419,7 @@ export default async function UsageLeaderboardPage({
                 scroll={false}
                 aria-current={p === period ? "page" : undefined}
                 className={`${SEG_ITEM} justify-center max-sm:flex-1 ${
-                  p === period ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE
+                  p === period ? LEADERBOARD_SEG_ACTIVE : SEG_ITEM_IDLE
                 }`}
               >
                 {t(
@@ -518,7 +522,7 @@ export default async function UsageLeaderboardPage({
                   scroll={false}
                   aria-current={item.key === board ? "page" : undefined}
                   className={`${SEG_ITEM} justify-center max-sm:flex-1 ${
-                    item.key === board ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE
+                    item.key === board ? LEADERBOARD_SEG_ACTIVE : SEG_ITEM_IDLE
                   }`}
                 >
                   {item.label}

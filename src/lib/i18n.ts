@@ -965,10 +965,9 @@ const DICT = {
   "prof.fpActiveUnit": { zh: "天", en: "days" },
   "prof.fpPeak": { zh: "单日峰值", en: "Peak day" },
   "prof.fpStreak": { zh: "当前连续", en: "Streak" },
-  "prof.emptyPostsTitle": { zh: "还没有帖子", en: "No posts yet" },
-  "prof.emptyPostsText": {
-    zh: "把最近的构建心得、踩坑记录或作品进展写下来,社区成员都在等第一帖。",
-    en: "Share your build notes, pitfalls, or work in progress — the community is waiting.",
+  "prof.emptyPostsTitle": {
+    zh: "还没有帖子——把最近的构建心得、踩坑记录或作品进展写下来。",
+    en: "No posts yet — share your build notes, pitfalls, or work in progress.",
   },
   "prof.emptyPostsCta": { zh: "发第一帖", en: "New post" },
   "prof.emptyCommentsTitle": { zh: "还没有评论", en: "No comments yet" },
