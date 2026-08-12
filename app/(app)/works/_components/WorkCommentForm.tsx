@@ -53,7 +53,7 @@ export default function WorkCommentForm({
       <button
         type="submit"
         disabled={posting}
-        className="rounded-lg bg-blue px-5 py-2 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="rounded-lg bg-blue px-5 py-2 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         {posting ? t(locale, "post.submitting") : t(locale, "post.comment")}
       </button>

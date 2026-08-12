@@ -15,7 +15,7 @@ export default async function NotFound() {
         <h1 className="mt-2 text-2xl font-bold text-paper">{t(locale, "state.notFoundTitle")}</h1>
         <p className="mt-3 max-w-lg text-sm leading-7 text-grey">{t(locale, "state.notFoundBody")}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/community" className="inline-flex items-center gap-2 rounded-lg bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90">
+          <Link href="/community" className="inline-flex items-center gap-2 rounded-lg bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90">
             <ArrowLeft size={15} aria-hidden="true" />
             {t(locale, "state.backCommunity")}
           </Link>

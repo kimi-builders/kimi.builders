@@ -49,7 +49,7 @@ export default async function LoginContent({
   const inputCls =
     "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue focus:ring-4 focus:ring-blue/10";
   const submitCls =
-    "w-full rounded-lg bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/15 hover:opacity-90";
+    "w-full rounded-lg bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90";
   const oauthNext = next === "/" ? "" : `?next=${encodeURIComponent(next)}`;
 
   return (

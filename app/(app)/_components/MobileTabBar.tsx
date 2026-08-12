@@ -72,7 +72,7 @@ export default function MobileTabBar({
                     : "text-grey hover:text-paper"
               }`}
             >
-              <span className={`flex items-center justify-center ${tab.primary ? "size-8 rounded-lg bg-blue text-white shadow-lg shadow-blue/15" : "size-6"}`}>
+              <span className={`flex items-center justify-center ${tab.primary ? "size-8 rounded-lg bg-blue text-white shadow-lg shadow-blue/25" : "size-6"}`}>
                 <Icon size={tab.primary ? 17 : 18} />
               </span>
               {t(locale, tab.key)}

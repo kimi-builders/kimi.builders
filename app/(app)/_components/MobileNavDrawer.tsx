@@ -107,7 +107,7 @@ export default function MobileNavDrawer({
             <Link
               href="/community/new"
               onClick={close}
-              className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/15 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <SquarePen size={16} aria-hidden="true" />
               {t(locale, "nav.post")}

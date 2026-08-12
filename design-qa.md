@@ -57,7 +57,7 @@ The Skool and VibeCafé sources were inspected before implementation in the in-a
 
 - `npx tsc --noEmit`: pass
 - `npm run lint`: pass
-- `npm test`: pass — 259/259
+- `npm test`: pass — 261/261
 - `npm run build`: pass — Next.js 16.3.0 production build in an isolated temporary copy
 - Static token/emoji/fake-door audit: pass for the §8 scope; only global design tokens, email-template colors, source assets, and the protected gold-standard usage styles retain direct color literals.
 
@@ -153,5 +153,45 @@ The annotated source used one-character weekday labels, left the right side of t
 - `npm run lint`: pass.
 - `npm test`: pass — 259/259.
 - `npm run build`: pass — isolated Next.js 16.3.0 production build.
+
+final result: passed
+
+## §8 completion audit
+
+### Full visual matrix
+
+- Evidence root: `/tmp/style-final-qa`
+- Contact sheets: `/tmp/style-final-qa/contact-community.png`, `/tmp/style-final-qa/contact-works.png`, `/tmp/style-final-qa/contact-content.png`, and `/tmp/style-final-qa/contact-global.png`
+- 68 route-state captures: dark Chinese desktop (1440×1000), dark Chinese mobile (390×844), light English desktop, and light English mobile.
+- Authenticated routes: community feed/detail/new, works wall/detail/new, Awesome, Learn list/detail, Letter list/detail, Demo Night, notifications, settings, and 404.
+- Signed-out routes: login and public community.
+- Captures wait for real main content (`main.textContent.trim().length > 20`) before the final settle; loading skeletons are not accepted as final evidence.
+- All 34 mobile captures report `document.documentElement.scrollWidth === clientWidth`; English captures report the expected `html[lang="en"]`.
+
+### Final interaction pass
+
+- Global search: header button and `/` both open the dialog; `Escape` closes it.
+- Community: a typed draft reports saved, survives refresh, reports restored, and clears through the UI; one extra nested reply expands; reply context appears and cancels.
+- Works: selecting `Kimi Agent` and applying produces `?agent=kimi-agent` plus the active filter chip.
+- Awesome recommendation: at a 1024×650 viewport the intercepted `/works/new` dialog has a 495px viewport over 1686px of content, scrolls to 1191px, and returns to `/awesome` on `Escape`.
+- Demo Night: RSVP cancellation and restoration both complete against the isolated local QA database.
+- Mobile shell: the navigation drawer opens, moves to Works, closes after navigation, retains five bottom destinations, and has zero horizontal overflow.
+- Settings tabs select correctly on a 390×844 viewport with zero horizontal overflow.
+- A fresh production-browser session on `/awesome` reports 0 console errors and 0 warnings.
+
+### Final gap resolution
+
+- Primary blue actions across app error/404, desktop and mobile navigation, login, blog, community, works comments, polls, and Demo Night now use the brief's `shadow-blue/25` elevation instead of the weaker `/15` variant.
+- The root `@modal` slot is required in the root layout signature, matching Next.js 16 generated `LayoutProps` and unblocking the production build.
+- The explicit user follow-ups are present together: shared custom checkboxes, portfolio-oriented Works icon, full weekday labels with the busiest-time summary beside the heatmap, scroll-safe Awesome recommendation, consistent Kimi product marks, and work-only `Kimi Code` / `Kimi Swarm` / `Kimi Agent` attribution. Usage and leaderboard choices remain limited to measurable sources.
+
+### Final gates
+
+- `npx tsc --noEmit`: pass.
+- `npm run lint`: pass.
+- `npm test`: pass — 261/261.
+- `npm run build -- --webpack`: pass — isolated Next.js 16.3.0 production build, 42 static pages generated. The default Turbopack build cannot bind its internal PostCSS worker port in the Codex sandbox; the official Webpack build backend completes compilation, generated route typing, page-data collection, and static generation.
+- `git diff --check`: pass.
+- Static audits: no `shadow-blue/15` remains in `app` or `components`; no protected API/ops/dependency changes; no visible fake-door route or inactive soon control in scope.
 
 final result: passed

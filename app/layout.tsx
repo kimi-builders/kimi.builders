@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
   modal,
-}: Readonly<{ children: React.ReactNode; modal?: React.ReactNode }>) {
+}: Readonly<{ children: React.ReactNode; modal: React.ReactNode }>) {
   const user = await getSessionUser();
   const [locale, prefs] = await Promise.all([getLocale(user), getUiPrefs()]);
   return (

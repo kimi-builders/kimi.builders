@@ -177,7 +177,7 @@ export default function ArticleForm({
         <button
           type="submit"
           disabled={pending || deleting}
-          className="rounded-lg bg-blue px-6 py-2.5 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="rounded-lg bg-blue px-6 py-2.5 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {pending ? t(locale, "post.submitting") : t(locale, "post.save")}
         </button>

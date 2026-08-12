@@ -36,7 +36,7 @@ export default async function BlogPage() {
           {canEdit && (
             <Link
               href="/blog/admin/new"
-              className="ml-auto shrink-0 rounded-lg bg-blue px-3 py-2 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/15 transition-opacity hover:opacity-90"
+              className="ml-auto shrink-0 rounded-lg bg-blue px-3 py-2 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90"
             >
               {t(locale, "blog.new")}
             </Link>
