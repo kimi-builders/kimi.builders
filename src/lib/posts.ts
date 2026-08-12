@@ -1040,7 +1040,9 @@ export async function getCommunityStats(): Promise<CommunityStats> {
     `SELECT
        (SELECT COUNT(*) FROM users) AS members,
        (SELECT COUNT(*) FROM posts WHERE deleted_at IS NULL AND visibility = 'public' AND hidden_at IS NULL) AS posts,
-       (SELECT COUNT(*) FROM comments WHERE deleted_at IS NULL AND hidden_at IS NULL) AS comments`,
+       (SELECT COUNT(*) FROM comments c JOIN posts p ON p.id = c.post_id
+         WHERE c.deleted_at IS NULL AND c.hidden_at IS NULL
+           AND p.deleted_at IS NULL AND p.visibility = 'public' AND p.hidden_at IS NULL) AS comments`,
   );
   const s = rows[0] ?? { members: 0, posts: 0, comments: 0 };
   return {

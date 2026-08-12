@@ -14,9 +14,11 @@ import { featuredWorksQuery, setWorkFeatured, clearWorkFeatured } from "../src/l
 import { getWorkShareSnapshot, userWorksCountQuery } from "../src/lib/share-posters";
 import {
   getProfileByHandle,
+  getProfileStats,
   profileDisplay,
   updateProfilePrivacy,
 } from "../src/lib/users";
+import { createComment, createPost, getCommunityStats } from "../src/lib/posts";
 import {
   canViewWork,
   createWork,
@@ -63,6 +65,7 @@ async function main() {
   const stamp = Date.now();
   const userIds: number[] = [];
   const workIds: number[] = [];
+  const postIds: number[] = [];
   const insertUser = async (suffix: string): Promise<number> => {
     const [res] = await pool.query(
       "INSERT INTO users (handle, name) VALUES (?, ?)",
@@ -76,6 +79,38 @@ async function main() {
   try {
     const author = await insertUser("a");
     const stranger = await insertUser("b");
+
+    /* 公开聚合基线:后续只加私密/屏蔽内容，不应改变访客社区总量。 */
+    const communityBefore = await getCommunityStats();
+    const privatePost = await createPost({
+      userId: author, type: "text", category: "chat", title: "私密聚合",
+      bodyMd: "private", linkUrl: "", lang: "zh", aiReply: false,
+      visibility: "private", options: [],
+    });
+    const hiddenPost = await createPost({
+      userId: author, type: "text", category: "chat", title: "屏蔽聚合",
+      bodyMd: "hidden", linkUrl: "", lang: "zh", aiReply: false,
+      visibility: "public", options: [],
+    });
+    postIds.push(privatePost, hiddenPost);
+    const privateComment = await createComment(privatePost, author, "private comment");
+    const hiddenComment = await createComment(hiddenPost, author, "hidden comment");
+    await pool.query("UPDATE posts SET hidden_at = NOW() WHERE id = ?", [hiddenPost]);
+    await pool.query("UPDATE comments SET hidden_at = NOW() WHERE id = ?", [hiddenComment]);
+    for (const [targetType, targetId] of [
+      ["post", privatePost], ["post", hiddenPost],
+      ["comment", privateComment], ["comment", hiddenComment],
+    ] as const) {
+      await pool.query(
+        "INSERT INTO reactions (user_id, target_type, target_id, kind) VALUES (?, ?, ?, 'up')",
+        [stranger, targetType, targetId],
+      );
+    }
+    assert.deepEqual(await getProfileStats(author, false), { posts: 0, comments: 0, likes: 0 });
+    assert.deepEqual(await getProfileStats(author, true), { posts: 2, comments: 2, likes: 4 });
+    const communityAfter = await getCommunityStats();
+    assert.equal(communityAfter.posts, communityBefore.posts);
+    assert.equal(communityAfter.comments, communityBefore.comments);
 
     /* 种子:公开作品 / 私密作品 / 公开 awesome 推荐 / 私密 awesome 推荐 / 编辑收录(NULL 作者) */
     const pubWork = await createWork(author, fields({ name: "公开作品" }));
@@ -179,6 +214,8 @@ async function main() {
 
     console.log("work visibility integration: passed");
   } finally {
+    if (userIds.length) await pool.query("DELETE FROM reactions WHERE user_id IN (?)", [userIds]);
+    for (const id of postIds) await pool.query("DELETE FROM posts WHERE id = ?", [id]);
     for (const id of workIds) {
       await pool.query("DELETE FROM works WHERE id = ?", [id]);
     }

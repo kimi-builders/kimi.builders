@@ -125,9 +125,12 @@ export async function getProfileStats(
        (SELECT COUNT(*) FROM comments c JOIN posts p ON p.id = c.post_id
          WHERE c.user_id = ? AND c.deleted_at IS NULL AND p.deleted_at IS NULL ${commentVis}) AS comments,
        (SELECT COUNT(*) FROM reactions r JOIN posts p ON p.id = r.target_id
-         WHERE r.target_type = 'post' AND r.kind = 'up' AND p.user_id = ? AND p.deleted_at IS NULL) +
+         WHERE r.target_type = 'post' AND r.kind = 'up' AND p.user_id = ?
+           AND p.deleted_at IS NULL ${postVis}) +
        (SELECT COUNT(*) FROM reactions r JOIN comments c ON c.id = r.target_id
-         WHERE r.target_type = 'comment' AND r.kind = 'up' AND c.user_id = ? AND c.deleted_at IS NULL) AS likes`,
+         JOIN posts p ON p.id = c.post_id
+         WHERE r.target_type = 'comment' AND r.kind = 'up' AND c.user_id = ?
+           AND c.deleted_at IS NULL AND p.deleted_at IS NULL ${commentVis}) AS likes`,
     [userId, userId, userId, userId],
   );
   const r = rows[0] ?? { posts: 0, comments: 0, likes: 0 };
