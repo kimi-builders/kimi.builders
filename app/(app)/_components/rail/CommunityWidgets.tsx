@@ -234,12 +234,17 @@ export default async function CommunityWidgets({
       <Widget title={t(locale, "side.newMembers")}>
         <div className="flex gap-2">
           {data.newMembers.map((m) => (
-            <Link key={m.handle} href={`/u/${m.handle}`} title={`@${m.handle}`}>
+            <Link
+              key={m.handle}
+              href={`/u/${m.handle}`}
+              title={`@${m.handle}`}
+              className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
               <Avatar
                 url={m.avatarUrl}
                 handle={m.handle}
                 size={28}
-                className="transition-colors hover:border-blue hover:text-blue"
+                className="transition-opacity hover:opacity-80"
               />
             </Link>
           ))}

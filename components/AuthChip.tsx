@@ -13,12 +13,16 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
   if (user) {
     return (
       <>
-        <Link href={`/u/${user.handle}`} title={`@${user.handle}`}>
+        <Link
+          href={`/u/${user.handle}`}
+          title={`@${user.handle}`}
+          className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        >
           <Avatar
             url={user.avatarUrl}
             handle={user.handle}
             size={28}
-            className="transition-colors hover:border-blue hover:text-blue"
+            className="transition-opacity hover:opacity-80"
           />
         </Link>
         {!compact && (

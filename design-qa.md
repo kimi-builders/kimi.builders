@@ -107,6 +107,62 @@ The implementation capture renders the production filter component and the share
 
 final result: passed
 
+## Avatar, profile identity, and leaderboard navigation follow-up
+
+### Source visual truth and implementation evidence
+
+- User-reported leaderboard state: `/var/folders/gn/89m8bgj965dbqqvjdb5lw3080000gn/T/codex-clipboard-84a18663-0f51-4be1-b479-bc2107db0b46.png` (1920×767).
+- User-reported profile state: `/var/folders/gn/89m8bgj965dbqqvjdb5lw3080000gn/T/codex-clipboard-7205ab25-5cfe-4020-b112-a79440e0e194.png` (1365×452).
+- YouTube channel hierarchy reference: `/var/folders/gn/89m8bgj965dbqqvjdb5lw3080000gn/T/codex-clipboard-4bd0c5c4-c0ef-46e3-b5bf-f0e507d84b67.png` (1365×413).
+- Final profile implementation: `/tmp/avatar-profile-final-dark.png` (1265×720 viewport capture) and `/tmp/avatar-profile-v1-light.png` (1265×720 viewport capture).
+- Final leaderboard implementation: `/tmp/avatar-ranking-autoscroll-v2.png` (1265×878 viewport capture).
+- Full profile hierarchy comparison, reference above and implementation below: `/tmp/avatar-profile-youtube-comparison-final.jpg` (950×666).
+- Focused before/after profile comparison: `/tmp/avatar-profile-before-after-final.jpg` (950×666).
+- Focused before/after leaderboard comparison: `/tmp/avatar-ranking-before-after.jpg` (950×760).
+- CSS viewport: 1280×720 for the profile and 1287×878 for the leaderboard, device pixel ratio 2. Browser screenshots are CSS-pixel normalized. Focused comparisons normalize both regions to the same 950px-wide canvas before judging.
+- State: authenticated as `@kimi`, Chinese, desktop, dark primary state; profile also checked in light mode.
+
+### Comparison history
+
+- Initial P1: the selected model could remain clipped at the right edge after URL navigation. Fixed with a small client navigation wrapper that tracks the active key and scrolls the selected chip as close to center as available content permits. Direct URL restoration and an in-page model change both move the active chip into the visible region.
+- Initial P2: leaderboard ranks used filled circular badges that added unnecessary visual weight. Replaced with plain tabular mono numbers; first place keeps only blue text emphasis.
+- Post-fix P2: reducing the rank track made the Chinese `名次` header wrap. Restored the 48/56px responsive track while keeping the rank unframed. Post-fix evidence: `/tmp/avatar-ranking-autoscroll-v2.png` and `/tmp/avatar-ranking-before-after.jpg`.
+- Initial P1: the profile avatar used a blue ring/glow and identity statistics/actions were detached below the avatar. Removed the wrapper effect and reorganized the profile header in the YouTube reference order: avatar, display name, handle/social counts, joined/link metadata, bio, then actions.
+- Initial P2: the shared avatar component and two hover consumers could reintroduce borders. Removed borders at the shared component source, retained circular cropping and `object-cover`, and changed hover feedback to opacity while preserving keyboard-only focus outlines on links.
+
+### Required fidelity surfaces
+
+- Typography: the existing site font stack remains intact; the profile display name now carries the primary 22/26px weight while handle, social counts, and metadata use compact mono tiers like the channel reference.
+- Spacing and layout: identity content is grouped beside a 96px borderless avatar on desktop and a 72px avatar below `sm`; actions now follow the bio inside that content column. The existing usage metric strip stays separate and factual.
+- Colors and tokens: only current `paper`, `grey`, `blue`, `line`, `moon`, and `usage-hero` tokens are used. Blue remains a link/primary-action/first-rank accent instead of an avatar decoration.
+- Image quality and assets: real avatar images keep circular `object-cover`; missing avatars use the existing initial fallback without fabricated imagery. The YouTube banner was treated as a hierarchy reference, not copied because kimi.builders has no cover-image product field.
+- Copy and content: all existing profile facts, bilingual labels, actions, privacy language, and leaderboard values are preserved.
+
+### Interaction, accessibility, and responsive checks
+
+- `claude-sonnet-5` restores from the URL with the selected chip fully visible; measured chip bounds are inside the horizontal navigation bounds with `scrollLeft = 467.5`.
+- A model link navigation updates the URL and runs the same active-key positioning logic; reduced-motion users receive an immediate rather than animated scroll.
+- Leaderboard and profile report zero desktop horizontal overflow. The profile avatar computes to `border-top-width: 0px` and `box-shadow: none`.
+- Avatar links keep visible keyboard focus outlines even though resting and hover borders are removed.
+- Profile and leaderboard browser logs contain 0 errors and 0 warnings.
+- The shared avatar change covers every `Avatar` consumer; a static audit found no remaining avatar-specific ring, shadow, or border wrapper.
+
+### Final gates
+
+- React best-practices review: pass — minimal client boundary, primitive effect dependency, no data-fetching or hydration regression.
+- `npx tsc --noEmit`: pass.
+- `npm run lint`: pass.
+- `npm test`: pass — 261/261.
+- `npm run build -- --webpack`: pass — isolated Next.js 16.3.0 production build, 42 static pages generated.
+- `git diff --check`: pass.
+
+### Findings
+
+- P0/P1/P2 remaining: none.
+- P3 follow-up: none required for this request.
+
+final result: passed
+
 ## Works icon and profile heatmap follow-up
 
 ### Comparison target and evidence
@@ -235,6 +291,7 @@ final result: passed
 - Primary blue actions across app error/404, desktop and mobile navigation, login, blog, community, works comments, polls, and Demo Night now use the brief's `shadow-blue/25` elevation instead of the weaker `/15` variant.
 - The root `@modal` slot is required in the root layout signature, matching Next.js 16 generated `LayoutProps` and unblocking the production build.
 - The explicit user follow-ups are present together: shared custom checkboxes, portfolio-oriented Works icon, full weekday labels with the busiest-time summary beside the heatmap, scroll-safe Awesome recommendation, consistent Kimi product marks, and work-only `Kimi Code` / `Kimi Swarm` / `Kimi Agent` attribution. Usage and leaderboard choices remain limited to measurable sources.
+- The final post-audit refinement removes avatar decoration through the shared component, adopts the YouTube-style profile identity hierarchy, keeps leaderboard ranks unframed, and scrolls the active Agent/model chip fully into view.
 
 ### Final gates
 

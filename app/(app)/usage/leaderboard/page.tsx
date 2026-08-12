@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck, Trophy } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import AutoScrollNav from "@/components/AutoScrollNav";
 import Avatar from "@/components/Avatar";
 import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
@@ -85,8 +86,8 @@ function LeaderboardRow({
     <tr className={`border-b border-line last:border-b-0 ${first ? "bg-blue/[0.06]" : ""}`}>
       <td className="w-12 px-3 py-3 text-center sm:w-14 sm:px-4 sm:py-3.5">
         <span
-          className={`inline-grid size-7 place-items-center rounded-full font-mono text-xs font-semibold ${
-            first ? "bg-blue/15 text-blue" : "bg-paper/[0.04] text-grey"
+          className={`font-mono text-xs tabular-nums ${
+            first ? "font-semibold text-blue" : "text-grey"
           }`}
         >
           {entry.rank}
@@ -322,8 +323,9 @@ export default async function UsageLeaderboardPage({
     hrefOf: (item: string) => string,
   ) =>
     items.length > 0 ? (
-      <nav
-        aria-label={label}
+      <AutoScrollNav
+        activeKey={active}
+        ariaLabel={label}
         className="scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-line bg-paper/[0.015] px-4 py-3"
       >
         {items.map((item) => {
@@ -335,6 +337,7 @@ export default async function UsageLeaderboardPage({
               href={hrefOf(item)}
               scroll={false}
               aria-current={selected ? "page" : undefined}
+              data-scroll-active={selected || undefined}
               title={item !== display ? item : undefined}
               className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-10 ${
                 selected
@@ -351,7 +354,7 @@ export default async function UsageLeaderboardPage({
             </Link>
           );
         })}
-      </nav>
+      </AutoScrollNav>
     ) : null;
 
   const boardOptions: { key: BoardKind; label: string }[] = [

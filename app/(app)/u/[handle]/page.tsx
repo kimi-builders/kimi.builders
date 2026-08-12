@@ -248,26 +248,31 @@ export default async function ProfilePage({
 
   return (
     <div>
-      {/* ===== 身份 Hero ===== */}
+      {/* ===== 身份 Hero：参考频道页，把身份、社交数字、简介与操作收拢在头像右侧 ===== */}
       <header className="usage-hero rounded-2xl border border-line p-5 sm:p-6">
-        {/* L1:头像 + 名称/ID/加入时间/主页地址 一块 */}
-        <div className="relative z-[1] flex flex-wrap items-center gap-4 sm:gap-5">
-          <div className="shrink-0 rounded-full shadow-[0_0_0_2px_var(--color-card),0_0_0_4px_color-mix(in_srgb,var(--color-blue)_50%,transparent),0_0_26px_color-mix(in_srgb,var(--color-blue)_22%,transparent)]">
-            <Avatar url={profile.avatarUrl} handle={profile.handle} size={74} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="flex flex-wrap items-center gap-2.5 text-[21px] font-semibold tracking-[0.2px] text-paper">
+        <div className="relative z-[1] flex items-start gap-4 sm:gap-6">
+          <Avatar
+            url={profile.avatarUrl}
+            handle={profile.handle}
+            size={96}
+            className="shrink-0 max-sm:!size-[72px]"
+          />
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h1 className="flex flex-wrap items-center gap-2.5 text-[22px] font-semibold tracking-[0.1px] text-paper sm:text-[26px]">
               {profile.name || profile.handle}
-              <span className="rounded-full border border-line bg-paper/[0.05] px-2.5 py-0.5 font-mono text-[11px] font-medium text-grey">
-                @{profile.handle}
-              </span>
               {profile.role !== "member" && (
                 <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-[0.16em] text-blue">
                   {profile.role.toUpperCase()}
                 </span>
               )}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-grey">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-grey sm:text-xs">
+              <span className="font-semibold text-paper">@{profile.handle}</span>
+              <span>{stats.posts} {t(locale, "prof.posts")}</span>
+              <span>{stats.comments} {t(locale, "prof.comments")}</span>
+              <span>{stats.likes} {t(locale, "prof.likes")}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-grey sm:text-[12px]">
               <span className="flex items-center gap-1.5">
                 <CalendarDays size={12} aria-hidden="true" />
                 {t(locale, "prof.joined", { d: ymd(profile.createdAt) })}
@@ -276,50 +281,36 @@ export default async function ProfilePage({
                 {SITE_HOST}{profilePath}
               </span>
             </div>
+            {profile.bio && (
+              <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
+                {profile.bio}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <ProfileShareButtons
+                path={profilePath}
+                label={t(locale, "prof.share")}
+                copiedLabel={t(locale, "post.copied")}
+              />
+              <a
+                href={`${posterHref}?download=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              >
+                {t(locale, "prof.poster")}
+              </a>
+              {self && (
+                <Link
+                  href="/settings"
+                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-3.5 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                >
+                  {t(locale, "prof.edit")}
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-        {/* L2:社交统计(帖子/评论/获赞) */}
-        <div className="relative z-[1] mt-4 flex flex-wrap gap-x-6 gap-y-1">
-          {[
-            { n: stats.posts, l: t(locale, "prof.posts") },
-            { n: stats.comments, l: t(locale, "prof.comments") },
-            { n: stats.likes, l: t(locale, "prof.likes") },
-          ].map((s) => (
-            <div key={s.l} className="flex items-baseline gap-1.5">
-              <span className="font-mono text-sm font-semibold text-paper">{s.n}</span>
-              <span className="font-mono text-[11px] text-grey">{s.l}</span>
-            </div>
-          ))}
-        </div>
-        {/* L3:操作(分享主页/生成海报/编辑资料) */}
-        <div className="relative z-[1] mt-4 flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-flow-col max-sm:auto-cols-fr">
-          <ProfileShareButtons
-            path={profilePath}
-            label={t(locale, "prof.share")}
-            copiedLabel={t(locale, "post.copied")}
-          />
-          <a
-            href={`${posterHref}?download=1`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-          >
-            {t(locale, "prof.poster")}
-          </a>
-          {self && (
-            <Link
-              href="/settings"
-              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-3.5 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-            >
-              {t(locale, "prof.edit")}
-            </Link>
-          )}
-        </div>
-        {profile.bio && (
-          <p className="relative z-[1] mt-4 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
-            {profile.bio}
-          </p>
-        )}
         {/* 统计带:opt-in 公开用量 → 5 格用量统计;否则回退社交三格 */}
         <div className="relative z-[1] mt-5 grid grid-cols-2 border-t border-line sm:grid-cols-3 lg:grid-cols-5">
           {usageStatsReady ? (
