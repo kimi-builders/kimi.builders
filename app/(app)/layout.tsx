@@ -4,7 +4,9 @@
    右栏上下文与主列宽度由 railFor(pathname) 决定(right-rail.ts;
    pathname 由根 proxy.ts 写进 x-kb-path 请求头)。
    注意:布局在软导航时不重渲染,所以 <RailRefresher/> 监听 pathname 变化
-   调 router.refresh(),让本布局按新 URL 重新求值(右栏/列宽随页面切换)。
+   调 router.refresh(),让本布局按新 URL 重新求值(右栏/列宽随页面切换);
+   refresh 往返的那一拍里 <RailGate/> 按当前 pathname 把旧右栏隐藏,
+   中列新页面与右栏旧内容不会同框出现。
    三栏的收起/隐藏状态走 <html> data-* + CSS(root layout 直出),
    壳组件不接收状态 prop,切换零网络。 */
 import { Suspense } from "react";
@@ -16,6 +18,7 @@ import { getUnreadNotificationCount } from "@/src/lib/posts";
 import LeftNav from "./_components/LeftNav";
 import MobileTabBar from "./_components/MobileTabBar";
 import MobileTopBar from "./_components/MobileTopBar";
+import RailGate from "./_components/RailGate";
 import RailRefresher from "./_components/RailRefresher";
 import RightSidebar from "./_components/RightSidebar";
 import TopBar from "./_components/TopBar";
@@ -36,7 +39,8 @@ export default async function AppLayout({
   /* 管理台入口:仅 admin/mod(20260830);/admin 路由本身服务端再 404 兜底 */
   const moderator = !!user && canModerate(user.role);
   /* proxy 未覆盖的路径(头缺失)按回落处理:community rail + 正常列宽 */
-  const rail = railFor(headerStore.get("x-kb-path") ?? "/");
+  const railPath = headerStore.get("x-kb-path") ?? "/";
+  const rail = railFor(railPath);
   return (
     <div>
       <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} />
@@ -59,7 +63,11 @@ export default async function AppLayout({
           {children}
         </main>
         {rail.kind !== "none" && (
-          <RightSidebar locale={locale} loggedIn={!!user} decision={rail} />
+          /* 软导航的一拍里右栏还是上一页的:RailGate 按当前 pathname 把它
+             藏起来,refresh 带新右栏到达后再显示(不再出现中列/右栏错位) */
+          <RailGate path={railPath}>
+            <RightSidebar locale={locale} loggedIn={!!user} decision={rail} />
+          </RailGate>
         )}
       </div>
       <Suspense fallback={null}>
