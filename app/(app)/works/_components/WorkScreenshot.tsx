@@ -3,7 +3,7 @@
 /* 列表与详情共用的媒体兜底:截图加载失败时回落到真实 Logo 或 Lucide 图标。
    不再绘制渐变/首字母假素材,两种主题都只走全局颜色令牌。 */
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import { GalleryVerticalEnd } from "lucide-react";
 
 export default function WorkScreenshot({
   url,
@@ -33,7 +33,7 @@ export default function WorkScreenshot({
           />
         ) : (
           <span className="flex size-12 items-center justify-center rounded-xl border border-line bg-card text-blue">
-            <Rocket size={24} aria-hidden="true" />
+            <GalleryVerticalEnd size={24} aria-hidden="true" />
           </span>
         )}
         {kindLabel && <span className="font-mono text-[10px] tracking-[0.14em] text-grey">{kindLabel}</span>}

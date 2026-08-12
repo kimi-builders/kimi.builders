@@ -6,7 +6,7 @@
    fixed 定位 + safe-area 内边距(iPhone home 条);主区在 (app)/layout 里补 pb-24 防遮挡。 */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, MessagesSquare, Rocket, SquarePen, User } from "lucide-react";
+import { BarChart3, GalleryVerticalEnd, MessagesSquare, SquarePen, User } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 
 export default function MobileTabBar({
@@ -30,7 +30,7 @@ export default function MobileTabBar({
     },
     {
       href: "/works",
-      icon: Rocket,
+      icon: GalleryVerticalEnd,
       key: "nav.works" as const,
       active: pathname.startsWith("/works"),
     },

@@ -106,3 +106,52 @@ The implementation capture renders the production filter component and the share
 - P3 follow-up: none; the blue focus ring is intentionally stronger than the resting source state for keyboard accessibility.
 
 final result: passed
+
+## Works icon and profile heatmap follow-up
+
+### Comparison target and evidence
+
+- Source visual truth: `/var/folders/gn/89m8bgj965dbqqvjdb5lw3080000gn/T/codex-clipboard-777ce0db-9315-4364-b150-ac07faceb22b.png`
+- Browser-rendered profile implementation, dark desktop: `/tmp/profile-usage-layout-dark.png`
+- Browser-rendered profile implementation, light desktop: `/tmp/profile-usage-layout-v1.png`
+- Browser-rendered works icon, dark desktop: `/tmp/works-icon-qa-dark.png`
+- Browser-rendered works icon, light desktop: `/tmp/works-icon-qa.png`
+- Same-input focused comparison: `/tmp/profile-layout-comparison.png`
+- Source pixels: 2734×1686. Focused source crop: 1550×660, normalized to 1280×545 for the comparison sheet.
+- Implementation pixels and CSS viewport: 1280×720. Browser device pixel ratio: 2; the in-app browser returned CSS-pixel-normalized 1280×720 captures.
+- State: `/u/kimi?tab=usage`, Chinese, desktop, activity heatmap visible; both dark and light themes. `/works` was captured separately for the new navigation and empty-state icon.
+
+### Full-view comparison
+
+The annotated source used one-character weekday labels, left the right side of the 7×24 grid empty, and placed a collapsed busiest-slots disclosure below the chart. The implementation spells out `周一` through `周日`, preserves the 24 readable hourly columns, and uses the former right-side whitespace for a persistent ranked TOP 5 summary. The chart remains single-column on smaller breakpoints and becomes horizontally scrollable only where needed to protect cell legibility.
+
+### Focused comparison
+
+`/tmp/profile-layout-comparison.png` places the annotated source region and the browser-rendered dark implementation in one input. The weekday hierarchy, heatmap density, grid alignment, right-column occupation, card boundary, and TOP 5 scan order are directly visible. `/tmp/works-icon-qa-dark.png` confirms that the old rocket metaphor is replaced by Lucide `GalleryVerticalEnd` in the left navigation, works heading, and empty state; mobile drawer/tab reuse the same icon component.
+
+### Required fidelity surfaces
+
+- Fonts and typography: existing mono/UI font stack, weights, and sizes are preserved; weekday labels gain width without changing the heatmap's optical density.
+- Spacing and layout: the heatmap and summary use a bounded two-column desktop grid; the summary aligns with the chart top and fills the annotated whitespace without increasing card width.
+- Colors and tokens: all surfaces use the existing `paper`, `grey`, `blue`, `line`, and `moon` tokens in both themes.
+- Image/icon quality: no raster imagery is involved. `GalleryVerticalEnd` is a standard Lucide vector icon that matches the project's icon family and communicates a gallery/portfolio rather than launch.
+- Copy/content: Chinese weekdays are complete (`周一`–`周日`); English uses full weekday names. The existing TOP 5 values and timezone copy remain factual and unchanged.
+
+### Comparison history and findings
+
+- Initial P2: the rocket icon suggested launch rather than a gallery of finished work. Fixed by applying `GalleryVerticalEnd` consistently across desktop navigation, mobile navigation, the works page, work-detail empty state, and screenshot fallback.
+- Initial P2: one-character weekday labels required decoding, while the right column was unused and busiest slots were hidden below a disclosure. Fixed with full weekday labels and a persistent ranked side card.
+- Post-fix evidence: `/tmp/profile-usage-layout-dark.png`, `/tmp/profile-usage-layout-v1.png`, `/tmp/works-icon-qa-dark.png`, and `/tmp/profile-layout-comparison.png`.
+- P0/P1/P2 remaining: none.
+
+### Interaction and quality gates
+
+- Heatmap cells retain native button semantics, accessible full weekday/hour labels, hover/focus tooltip behavior, and keyboard focus styling.
+- TOP 5 is now immediately visible with no extra disclosure interaction.
+- Browser console: no errors or warnings; development informational log only.
+- `npx tsc --noEmit`: pass.
+- `npm run lint`: pass.
+- `npm test`: pass — 259/259.
+- `npm run build`: pass — isolated Next.js 16.3.0 production build.
+
+final result: passed

@@ -6,7 +6,7 @@
    不存在/已删作品给友好文案,不 404 硬错。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Heart, Rocket } from "lucide-react";
+import { ArrowLeft, ExternalLink, GalleryVerticalEnd, Heart } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
@@ -52,7 +52,7 @@ function WorkGone({ locale }: { locale: Locale }) {
   return (
     <div className="mt-10 rounded-2xl border border-line bg-card p-8 text-center">
       <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-line bg-moon text-blue">
-        <Rocket size={23} aria-hidden="true" />
+        <GalleryVerticalEnd size={23} aria-hidden="true" />
       </span>
       <p className="text-sm leading-relaxed text-grey">
         {t(locale, "works.notFound")}

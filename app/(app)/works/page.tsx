@@ -6,7 +6,7 @@
    作者已 opt-in 公开用量时,卡片带「已验证构建投入」徽章(见 works-page)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Rocket, SquarePen } from "lucide-react";
+import { GalleryVerticalEnd, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import {
@@ -69,7 +69,7 @@ export default async function WorksPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
-            <Rocket size={20} aria-hidden="true" />
+            <GalleryVerticalEnd size={20} aria-hidden="true" />
             {t(locale, "works.wallTitle")}
           </h1>
           <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
@@ -138,7 +138,7 @@ export default async function WorksPage({
       {page.nodes.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-line bg-card p-8 text-center sm:p-10">
           <div className="mx-auto grid size-14 place-items-center rounded-2xl border border-dashed border-line bg-paper/[0.03] text-grey">
-            <Rocket size={20} aria-hidden="true" />
+            <GalleryVerticalEnd size={20} aria-hidden="true" />
           </div>
           <h2 className="mt-4 text-sm font-semibold text-paper">
             {t(locale, "works.emptyTitle")}
