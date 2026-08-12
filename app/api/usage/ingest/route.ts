@@ -1,3 +1,5 @@
+import { revalidateTag } from "next/cache";
+import { PUBLIC_USAGE_LEADERBOARD_CACHE_TAG } from "@/src/lib/cache-tags";
 import { USAGE_INGEST_PROTOCOL_VERSION } from "@/src/lib/usage-contract";
 import { authenticateUsageRequest, usageUnauthorized } from "@/src/lib/usage/auth";
 import { deleteUsageForDevice } from "@/src/lib/usage/device";
@@ -18,6 +20,9 @@ export async function POST(request: Request) {
     const payload = validateUsageIngest(await readUsageJson(request), settings);
     const result = await ingestUsage(principal, payload);
     const { protectedBuckets, ...ingested } = result;
+    if (settings.showOnLeaderboard && ingested.buckets > 0) {
+      revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, "max");
+    }
     return noStoreJson({
       ok: true,
       protocolVersion: USAGE_INGEST_PROTOCOL_VERSION,
@@ -34,6 +39,7 @@ export async function DELETE(request: Request) {
     const principal = await authenticateUsageRequest(request, "delete");
     if (!principal) return usageUnauthorized();
     const deleted = await deleteUsageForDevice(principal.userId, principal.deviceId);
+    revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, { expire: 0 });
     return noStoreJson({ ok: true, deleted, scope: "current_device" });
   } catch (error) {
     return usageErrorResponse(error);

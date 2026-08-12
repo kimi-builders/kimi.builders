@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { PUBLIC_USAGE_LEADERBOARD_CACHE_TAG } from "@/src/lib/cache-tags";
 import {
   deleteUsageForDeviceByPublicId,
   revokeUsageDevice,
@@ -19,6 +21,9 @@ export async function DELETE(
   // dataOnly=1:只删除该设备的事实数据,保留授权;默认行为仍是撤销(可选连带删数据)。
   if (search.get("dataOnly") === "1") {
     const deleted = await deleteUsageForDeviceByPublicId(user.id, id);
+    if (deleted !== null) {
+      revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, { expire: 0 });
+    }
     return noStoreJson(
       { ok: deleted !== null, revoked: false, dataDeleted: deleted !== null, deleted },
       { status: deleted === null ? 404 : 200 },
@@ -26,9 +31,11 @@ export async function DELETE(
   }
   const deleteData = search.get("deleteData") === "1";
   const revoked = await revokeUsageDevice(user.id, id, deleteData);
+  if (revoked && deleteData) {
+    revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, { expire: 0 });
+  }
   return noStoreJson(
     { ok: revoked, revoked, dataDeleted: revoked && deleteData },
     { status: revoked ? 200 : 404 },
   );
 }
-

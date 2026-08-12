@@ -20,9 +20,6 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
   displayUsageLeaderboardRank,
-  getUsageLeaderboard,
-  getUsageLeaderboardCosts,
-  getUsageLeaderboardDimensions,
   normalizeUsageLeaderboardPeriod,
   usageLeaderboardRank,
   USAGE_LEADERBOARD_LIMIT,
@@ -30,6 +27,10 @@ import {
   type UsageLeaderboardEntry,
   type UsageLeaderboardPeriod,
 } from "@/src/lib/usage/leaderboard";
+import {
+  getPublicUsageLeaderboardDimension,
+  getPublicUsageLeaderboardSnapshot,
+} from "@/src/lib/usage/public-leaderboard-cache";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
 import { getUsageSettings } from "@/src/lib/usage/settings";
@@ -229,41 +230,39 @@ export default async function UsageLeaderboardPage({
 
   let data: BoardData | null = null;
   try {
-    /* 第一轮:全量 opt-in 聚合(无 LIMIT,行数 = 周期内有数据的公开成员数,
-       我的 token/活跃天数名次需要全量排序)+ 两个维度的 chips 候选。 */
-    const [all, sources, models] = await Promise.all([
-      getUsageLeaderboard(period, { limit: 0 }),
-      getUsageLeaderboardDimensions("source", period),
-      getUsageLeaderboardDimensions("model", period),
-    ]);
-    const selectedSource = param(raw.source) || sources[0] || "";
-    const selectedModel = param(raw.model) || models[0] || "";
-    const top = all.slice(0, USAGE_LEADERBOARD_LIMIT);
-    /* 第二轮:TOP 50 候选池的估费 + 两张分维度榜,互不依赖,并行。 */
-    const [costs, sourceEntries, modelEntries] = await Promise.all([
-      getUsageLeaderboardCosts(
-        top.map((entry) => entry.userId),
-        period,
-      ),
+    const snapshot = await getPublicUsageLeaderboardSnapshot(period);
+    const selectedSource = param(raw.source) || snapshot.sources[0] || "";
+    const selectedModel = param(raw.model) || snapshot.models[0] || "";
+    /* TOP-10 chip values use the shared dimension cache. Unknown values from
+       old/shared URLs keep their direct-query behavior without growing keys. */
+    const dimensionEntries =
       board === "source" && selectedSource
-        ? getUsageLeaderboard(period, { source: selectedSource })
-        : Promise.resolve([]),
-      board === "model" && selectedModel
-        ? getUsageLeaderboard(period, { model: selectedModel })
-        : Promise.resolve([]),
-    ]);
+        ? await getPublicUsageLeaderboardDimension(
+            period,
+            "source",
+            selectedSource,
+            snapshot,
+          )
+        : board === "model" && selectedModel
+          ? await getPublicUsageLeaderboardDimension(
+              period,
+              "model",
+              selectedModel,
+              snapshot,
+            )
+          : [];
     data = {
-      entries: top.map((entry) => ({
+      entries: snapshot.top.map((entry) => ({
         ...entry,
-        costMicros: costs.get(entry.userId) ?? 0,
+        costMicros: snapshot.costsByUserId[String(entry.userId)] ?? 0,
       })),
-      all,
-      sources,
-      models,
+      all: snapshot.all,
+      sources: snapshot.sources,
+      models: snapshot.models,
       selectedSource,
       selectedModel,
-      sourceEntries,
-      modelEntries,
+      sourceEntries: board === "source" ? dimensionEntries : [],
+      modelEntries: board === "model" ? dimensionEntries : [],
     };
   } catch {
     data = null;

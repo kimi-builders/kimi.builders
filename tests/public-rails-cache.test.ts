@@ -148,7 +148,7 @@ test("rail renderers keep session, locale, and interactive state outside cache",
   assert.match(community, /getPublicFeaturedRail\(\)/);
   assert.match(community, /getSessionUser\(\)/);
   assert.match(community, /getUpcomingSummary\(user\?\.id \?\? null\)/);
-  assert.match(community, /getUsageLeaderboard\("30d"\)/);
+  assert.match(community, /getPublicUsageLeaderboardPreview\(\)/);
   assert.match(works, /getPublicWorksRail\(\)/);
   assert.match(works, /loggedIn &&/);
   assert.match(awesome, /getPublicAwesomeRail\(\)/);

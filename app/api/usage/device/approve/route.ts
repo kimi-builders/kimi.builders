@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { PUBLIC_USAGE_LEADERBOARD_CACHE_TAG } from "@/src/lib/cache-tags";
 import { decideDeviceAuthorization } from "@/src/lib/usage/device";
 import { isSameOrigin, noStoreJson } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit } from "@/src/lib/usage/rate-limit";
@@ -46,6 +48,9 @@ export async function POST(request: Request) {
       deviceName: typeof body.deviceName === "string" ? body.deviceName : undefined,
       settings: settings ?? undefined,
     });
+    if (result === "approved" && settings) {
+      revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, { expire: 0 });
+    }
     const statuses: Record<typeof result, number> = {
       approved: 200,
       denied: 200,

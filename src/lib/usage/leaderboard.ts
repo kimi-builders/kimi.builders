@@ -145,8 +145,9 @@ export function buildUsageLeaderboardDimensionQuery(
 }
 
 /* 费用明细查询:只服务于 TOP 50 候选池(userIds 来自榜单查询结果,同请求内派生,
-   已卡 show_on_leaderboard = 1,非用户输入;校验为整数后字面展开,避免依赖驱动
-   的 IN 数组展开行为)。输出按「用户 × UTC 日 × source × 模型 × 计费档」聚合,
+   非用户输入;仍在本语句 JOIN 中重新卡 show_on_leaderboard = 1,避免共享快照
+   与隐私开关并发变化时读出已退出成员的费用)。ID 校验为整数后字面展开,
+   避免依赖驱动的 IN 数组展开行为。输出按「用户 × UTC 日 × source × 模型 × 计费档」聚合,
    供 JS 侧逐行匹配版本化价格表;项目/设备/小时内时段等明细列不进语句。 */
 export function buildUsageLeaderboardCostQuery(
   userIds: readonly number[],
@@ -171,6 +172,8 @@ export function buildUsageLeaderboardCostQuery(
                  SUM(b.reasoning_output_tokens) AS reasoning_output_tokens,
                  SUM(COALESCE(b.cost_micros, 0)) AS stored_cost_micros
           FROM usage_buckets b
+          JOIN usage_settings s
+            ON s.user_id = b.user_id AND s.show_on_leaderboard = 1
           WHERE b.user_id IN (${ids.join(",")})
             AND b.bucket_start >= ?
           GROUP BY b.user_id, b.source, b.model, b.model_canonical, b.model_provider,

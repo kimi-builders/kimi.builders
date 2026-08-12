@@ -136,8 +136,11 @@ test("dimension option queries rank candidates by period token weight", () => {
 
 test("cost query is user-scoped, day-granular and free of detail columns", () => {
   const { sql, params } = buildUsageLeaderboardCostQuery([7, 42], "7d", NOW);
-  /* userIds 来自已卡 show_on_leaderboard = 1 的榜单查询(同请求派生),
-     校验为整数后字面展开 */
+  /* userIds 来自榜单查询,费用语句仍独立重做 opt-in 门禁,并校验为整数后字面展开 */
+  assert.match(
+    sql,
+    /JOIN usage_settings s\s+ON s\.user_id = b\.user_id AND s\.show_on_leaderboard = 1/,
+  );
   assert.match(sql, /b\.user_id IN \(7,42\)/);
   assert.match(sql, /b\.bucket_start >= \?/);
   assert.match(sql, /SUM\(COALESCE\(b\.cost_micros, 0\)\) AS stored_cost_micros/);
