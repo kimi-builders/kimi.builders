@@ -1,6 +1,6 @@
 /* 管理台 /admin(20260830 社区治理):仅 admin/mod 可访问,其他人 404。
-   三个页签:内容治理(帖子/评论/作品,按状态筛选)/ 用户治理(可搜索)/
-   审计日志(倒序翻页)。所有写操作在 actions.ts 逐个鉴权并写审计。 */
+   四个页签:内容治理(帖子/评论/作品,按状态筛选)/ 用户治理(可搜索)/
+   审计日志(倒序翻页)/ 位置洞察。所有写操作在 actions.ts 逐个鉴权并写审计。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +13,7 @@ import {
   SEG_ITEM_IDLE,
   SEG_WRAP,
 } from "@/components/seg-classes";
+import { normalizeAnalyticsPeriod } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
@@ -32,6 +33,7 @@ import {
   loadMoreAdminLogAction,
 } from "./actions";
 import { renderContentRows, renderLogRows } from "./_components/admin-lists";
+import AnalyticsInsights from "./_components/AnalyticsInsights";
 import UserModControls from "./_components/UserModControls";
 
 export const metadata: Metadata = { title: "管理 — kimi.builders" };
@@ -42,7 +44,13 @@ const CONTENT_STATES = ["all", "hidden", "deleted"] as const;
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; type?: string; state?: string; q?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    type?: string;
+    state?: string;
+    q?: string;
+    period?: string;
+  }>;
 }) {
   const user = await getSessionUser();
   /* 非管理角色一律 404(不暴露管理台存在性) */
@@ -50,8 +58,10 @@ export default async function AdminPage({
   const locale = await getLocale(user);
   const admin = isAdmin(user.role);
 
-  const { tab, type, state, q } = await searchParams;
-  const activeTab = tab === "users" || tab === "log" ? tab : "content";
+  const { tab, type, state, q, period: rawPeriod } = await searchParams;
+  const activeTab =
+    tab === "users" || tab === "log" || tab === "insights" ? tab : "content";
+  const period = normalizeAnalyticsPeriod(rawPeriod);
   const activeType: ModTargetType = CONTENT_TYPES.some((x) => x === type)
     ? (type as ModTargetType)
     : "post";
@@ -79,6 +89,7 @@ export default async function AdminPage({
             { key: "content", label: t(locale, "admin.tabContent") },
             { key: "users", label: t(locale, "admin.tabUsers") },
             { key: "log", label: t(locale, "admin.tabLog") },
+            { key: "insights", label: t(locale, "admin.tabInsights") },
           ] as const
         ).map((item) => (
           <Link
@@ -172,6 +183,10 @@ export default async function AdminPage({
         <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
           <AdminLogList locale={locale} />
         </section>
+      )}
+
+      {activeTab === "insights" && (
+        <AnalyticsInsights locale={locale} period={period} />
       )}
     </div>
   );

@@ -8,9 +8,11 @@
    浏览量只记录不展示:after() 里 +1,不阻塞渲染。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { ArrowBigUp, ArrowLeft, Check, ExternalLink, MessageCircle } from "lucide-react";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { canModerate, getPostFeatured } from "@/src/lib/featured";
@@ -63,6 +65,8 @@ export default async function PostPage({
   const [post, user] = await Promise.all([getPost(postId), getSessionUser()]);
   if (!post) notFound();
   if (!canViewPost(post, user)) notFound();
+  const requestHeaders = await headers();
+  trackEvent("post_view", { kind: "post", id: postId }, { headers: requestHeaders });
   after(() => incrementViewCount(postId));
 
   const locale = await getLocale(user);
@@ -273,6 +277,7 @@ export default async function PostPage({
             locale={locale}
             /* 私密帖海报路由 404 不渲染,按钮也不给 */
             posterHref={post.visibility === "public" ? `/api/share/post/${post.id}` : undefined}
+            posterSurface={post.visibility === "public" ? "post" : undefined}
           />
         </span>
       </div>

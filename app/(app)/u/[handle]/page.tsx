@@ -5,7 +5,7 @@
    (usage_settings.show_on_leaderboard=1)时渲染,否则整块缺席(无负面标记)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   ArrowBigUp,
   CalendarDays,
@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import Avatar from "@/components/Avatar";
+import { TrackClick } from "@/app/(app)/_components/track";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { getPool } from "@/src/lib/db";
@@ -159,6 +161,18 @@ export default async function ProfilePage({
       : usageVisible && (tab === "usage" || tab === "tools" || tab === "prefs")
         ? tab
         : "posts";
+  const requestHeaders = await headers();
+  trackEvent(
+    "profile_view",
+    { kind: "profile", id: profile.handle },
+    { headers: requestHeaders },
+  );
+  trackEvent(
+    "profile_tab_view",
+    { kind: "profile", id: profile.handle },
+    { headers: requestHeaders },
+    { tab: activeTab },
+  );
   const usageQueryPlan = profileUsageQueryPlan(activeTab, usageVisible);
   /* 分时热图/足迹的「本地」跟浏览器 kb_tz cookie(同用量看板);无 cookie 按 GMT+0 */
   const store = await cookies();
@@ -306,14 +320,23 @@ export default async function ProfilePage({
                 label={t(locale, "prof.share")}
                 copiedLabel={t(locale, "post.copied")}
               />
-              <a
-                href={`${posterHref}?download=1`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 font-mono text-[10px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+              <TrackClick
+                payload={{
+                  event: "poster_download",
+                  target_kind: "surface",
+                  target_id: "profile",
+                  meta: { surface: "profile" },
+                }}
               >
-                {t(locale, "prof.poster")}
-              </a>
+                <a
+                  href={`${posterHref}?download=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 font-mono text-[10px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+                >
+                  {t(locale, "prof.poster")}
+                </a>
+              </TrackClick>
               {self && (
                 <Link
                   href="/settings"

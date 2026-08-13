@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
     "test:usage-db": "tsx tests/usage-db.integration.ts && tsx tests/usage-phase2.integration.ts",
+    "test:analytics-db": "tsx tests/analytics.integration.ts",
     "db:migrate": "node scripts/db-migrate.mjs migrate",
     "db:status": "node scripts/db-migrate.mjs status",
     "test:auth-db": "tsx tests/auth-email.integration.ts && tsx tests/auth-link.integration.ts && tsx tests/auth-avatar.integration.ts && tsx tests/password-reset.integration.ts && tsx tests/settings-account.integration.ts",

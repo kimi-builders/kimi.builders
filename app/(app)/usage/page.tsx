@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
@@ -414,6 +415,8 @@ export default async function UsagePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const requestHeaders = await headers();
+  trackEvent("usage_view", { kind: "page", id: "usage" }, { headers: requestHeaders });
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const zh = locale === "zh";

@@ -6,6 +6,7 @@
    不存在/已删作品给友好文案,不 404 硬错。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { ArrowLeft, ExternalLink, GalleryVerticalEnd, Heart } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
@@ -16,6 +17,7 @@ import ShareButton from "@/components/ShareButton";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import { compactNumber, relTime } from "@/src/lib/format";
@@ -91,6 +93,8 @@ export default async function WorkPage({
      其余按同一友好文案(与已删/不存在一致,不构成存在性 oracle)。 */
   if (!work || !canViewWork(work, user))
     return <WorkGone locale={locale} />;
+  const requestHeaders = await headers();
+  trackEvent("work_view", { kind: "work", id: workId }, { headers: requestHeaders });
 
   const [voted, claimCtx, comments] = await Promise.all([
     user ? hasWorkVote(user.id, workId) : false,
@@ -286,6 +290,7 @@ export default async function WorkPage({
                 ? `/api/share/work/${work.id}`
                 : undefined
             }
+            posterSurface={work.visibility === "public" ? "work" : undefined}
           />
         </span>
       </div>

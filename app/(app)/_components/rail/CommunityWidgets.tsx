@@ -8,6 +8,7 @@
    (React cache 与布局壳去重,不多查库)。 */
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { TrackClick } from "@/app/(app)/_components/track";
 import Avatar from "@/components/Avatar";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
@@ -147,7 +148,16 @@ export default async function CommunityWidgets({
               );
               return (
                 <li key={`${f.kind}-${f.id}`}>
-                  {title}
+                  <TrackClick
+                    payload={{
+                      event: "featured_click",
+                      target_kind: f.kind,
+                      target_id: String(f.id),
+                      meta: { position: "rail" },
+                    }}
+                  >
+                    {title}
+                  </TrackClick>
                   <p
                     className="mt-0.5 truncate text-[11px] leading-relaxed text-grey"
                     title={f.reason}

@@ -99,3 +99,31 @@ test("comments governance index matches hidden-state filter plus id cursor order
   );
   assert.match(sql, /\(hidden_at, id\)/);
 });
+
+test("analytics event storage stays pinned in the migration and schema", () => {
+  const migration = readFileSync(
+    new URL("../db/migrations/20260903_analytics_events.sql", import.meta.url),
+    "utf8",
+  );
+  const schema = readFileSync(
+    new URL("../db/schema.sql", import.meta.url),
+    "utf8",
+  );
+
+  for (const source of [migration, schema]) {
+    assert.match(
+      source,
+      /CREATE TABLE IF NOT EXISTS analytics_events\s*\(/,
+    );
+    assert.match(source, /viewer CHAR\(64\) NOT NULL/);
+    assert.match(source, /meta JSON NULL/);
+    assert.match(
+      source,
+      /KEY idx_event_time \(event, created_at\)/,
+    );
+    assert.match(
+      source,
+      /KEY idx_target \(target_kind, target_id, created_at\)/,
+    );
+  }
+});
