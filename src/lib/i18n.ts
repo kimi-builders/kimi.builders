@@ -199,6 +199,10 @@ const DICT = {
   "form.optional": { zh: "(可选)", en: "(optional)" },
   "form.bodyLabel": { zh: "正文", en: "Body" },
   "form.mdSupport": { zh: "支持 Markdown", en: "Markdown supported" },
+  "form.mdHint": {
+    zh: "**粗体** `代码` # 标题 - 列表",
+    en: "**Bold** `code` # Heading - List",
+  },
   "form.footerHint": {
     zh: "发布后进入「全部讨论」,可随时编辑或删除",
     en: "Posted to \"All discussions\"; edit or delete anytime",

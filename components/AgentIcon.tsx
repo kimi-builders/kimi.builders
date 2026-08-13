@@ -2,6 +2,7 @@
    有 Color 用 Color;没有的用 Mono(currentColor,跟随文字色)。
    图标本身是 "use client",这个 wrapper 保持 RSC,边界停在图标处。 */
 import KimiMono from "@lobehub/icons/es/Kimi/components/Mono";
+import MoonshotMono from "@lobehub/icons/es/Moonshot/components/Mono";
 import ClaudeCodeColor from "@lobehub/icons/es/ClaudeCode/components/Color";
 import CodexColor from "@lobehub/icons/es/Codex/components/Color";
 import CursorMono from "@lobehub/icons/es/Cursor/components/Mono";
@@ -14,12 +15,13 @@ import GeminiCliColor from "@lobehub/icons/es/GeminiCLI/components/Color";
 import OpenCodeMono from "@lobehub/icons/es/OpenCode/components/Mono";
 import AntigravityColor from "@lobehub/icons/es/Antigravity/components/Color";
 import QwenColor from "@lobehub/icons/es/Qwen/components/Color";
-import { Bot, Network } from "lucide-react";
 
 const ICONS = {
   kimi: KimiMono,
-  "kimi-agent": Bot,
-  "agent-swarm": Network,
+  /* Kimi 家族:Kimi Agent 用 Kimi K 标,Agent Swarm(Kimi Code 多智能体能力)
+     用 Moonshot 月标,不再用 lucide 通用占位(与品牌标同框显灰显假) */
+  "kimi-agent": KimiMono,
+  "agent-swarm": MoonshotMono,
   // 用量来源 id(usage source id)直接映射
   "kimi-code": KimiMono,
   "claude-code": ClaudeCodeColor,

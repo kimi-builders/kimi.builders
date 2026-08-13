@@ -201,6 +201,8 @@ export default async function ProfilePage({
             tzOffsetMinutes: tz,
             uploadProject: ownerSettings.uploadProject,
             retentionDays: ownerSettings.retentionDays,
+            /* 快照默认 zh(海报口径);主页按 UI 语言,否则 EN 界面会落出「未记录」 */
+            zh,
           })
         : Promise.resolve(null),
       getPool().query(worksCountQ.sql, worksCountQ.args).then(([rows]) => rows),
@@ -214,6 +216,7 @@ export default async function ProfilePage({
           tzOffsetMinutes: tz,
           uploadProject: ownerSettings.uploadProject,
           retentionDays: ownerSettings.retentionDays,
+          zh,
         })
       : null;
 
