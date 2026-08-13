@@ -14,7 +14,7 @@ import GeminiColor from "@lobehub/icons/es/Gemini/components/Color";
 import GeminiCliColor from "@lobehub/icons/es/GeminiCLI/components/Color";
 import OpenCodeMono from "@lobehub/icons/es/OpenCode/components/Mono";
 import AntigravityColor from "@lobehub/icons/es/Antigravity/components/Color";
-import QwenColor from "@lobehub/icons/es/Qwen/components/Color";
+import QoderColor from "@lobehub/icons/es/Qoder/components/Color";
 
 const ICONS = {
   kimi: KimiMono,
@@ -36,7 +36,7 @@ const ICONS = {
   trae: TraeColor,
   cline: ClineMono,
   gemini: GeminiColor,
-  qwen: QwenColor,
+  qoder: QoderColor,
 } as const;
 
 export default function AgentIcon({

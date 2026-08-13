@@ -79,6 +79,11 @@ function CheckBox({
   );
 }
 
+/* 声明快捷档位(token):只展示「剩余可声明额度之内」的档(渲染前再过滤) */
+const CLAIM_LADDER = [
+  100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 50_000_000, 100_000_000,
+] as const;
+
 export default function WorkForm({
   action,
   locale,
@@ -174,6 +179,11 @@ export default function WorkForm({
       : claim?.suggested
         ? String(claim.suggested.tokens)
         : undefined;
+  /* 受控值 + 快捷档位:档位都是「剩余可声明额度之内」的整档,一键填入,仍可手改 */
+  const [claimValue, setClaimValue] = useState(claimDefault ?? "");
+  const claimOptions = claim?.hasUsage
+    ? CLAIM_LADDER.filter((v) => v <= claim.remaining)
+    : [];
 
   return (
     <form action={formAction} className="mt-5 space-y-4">
@@ -567,12 +577,32 @@ export default function WorkForm({
           <input
             id="work-claim"
             name="claimed_tokens"
-            defaultValue={claimDefault}
+            value={claimValue}
+            onChange={(event) => setClaimValue(event.target.value)}
             placeholder={t(locale, "works.claimPh")}
             maxLength={24}
             disabled={!claim.hasUsage}
             className={`${inputCls} font-mono disabled:opacity-40`}
           />
+          {claim.hasUsage && claimOptions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {claimOptions.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={claimValue === String(v)}
+                  onClick={() => setClaimValue(String(v))}
+                  className={`rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                    claimValue === String(v)
+                      ? "border-blue bg-blue/10 text-blue"
+                      : "border-line text-grey hover:border-blue/50 hover:text-paper"
+                  }`}
+                >
+                  {compactNumber(v, locale)}
+                </button>
+              ))}
+            </div>
+          )}
           <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
             {claim.hasUsage ? (
               <>

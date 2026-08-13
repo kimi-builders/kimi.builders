@@ -15,7 +15,8 @@ export const AGENTS = [
   { id: "trae", name: "Trae" },
   { id: "cline", name: "Cline" },
   { id: "gemini", name: "Gemini" },
-  { id: "qwen", name: "Qwen" },
+  /* Qoder = 阿里的 Agentic IDE(品牌标在 AgentIcon);Qwen 只是模型族,不占 Agent 位 */
+  { id: "qoder", name: "Qoder" },
 ] as const;
 
 export type AgentId = (typeof AGENTS)[number]["id"];
