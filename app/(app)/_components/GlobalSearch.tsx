@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { searchSiteItems, type SiteSearchItem } from "@/src/lib/site-search";
-import { UPCOMING } from "@/src/lib/upcoming";
+import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 
 /* 未就绪板块(src/lib/upcoming.ts):搜索结果里保留词条但挂 SOON 标 */
 const soon = (locale: Locale, gated: boolean) =>
@@ -49,12 +49,17 @@ function catalog(locale: Locale): SiteSearchItem[] {
       description: t(locale, "search.usage"),
       keywords: ["usage", "用量", "token", "dashboard", "analytics"],
     },
-    {
-      href: "/demo-night",
-      label: t(locale, "search.demoNightTitle") + soon(locale, UPCOMING.demoNight),
-      description: t(locale, "search.demoNight"),
-      keywords: ["demo", "night", "展示夜", "event", "活动"],
-    },
+    /* 近期不上线的板块(NAV_HIDDEN)连搜索词条一并摘掉 */
+    ...(NAV_HIDDEN.demoNight
+      ? []
+      : [
+          {
+            href: "/demo-night",
+            label: t(locale, "search.demoNightTitle"),
+            description: t(locale, "search.demoNight"),
+            keywords: ["demo", "night", "展示夜", "event", "活动"],
+          },
+        ]),
     {
       href: "/settings",
       label: t(locale, "nav.settings"),

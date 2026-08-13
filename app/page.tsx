@@ -13,12 +13,12 @@ import AuthChip from "@/components/AuthChip";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber } from "@/src/lib/format";
 import { getHomeData, type HomeFeaturedItem } from "@/src/lib/home";
-import { t, type Locale } from "@/src/lib/i18n";
+import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 
-const AUTH_ERRORS: Record<string, string> = {
-  state_mismatch: "登录状态校验失败,请重试。",
-  oauth_failed: "OAuth 授权失败,请重试或换另一种登录方式。",
+const AUTH_ERRORS: Record<string, I18nKey> = {
+  state_mismatch: "home.errState",
+  oauth_failed: "home.errOauth",
 };
 
 /* 精选卡片:帖子链站内详情,作品直达外链(无链接回落 /works)。 */
@@ -110,7 +110,7 @@ export default async function Home({
         </div>
         {typeof authError === "string" && (
           <p className="absolute top-16 font-mono text-xs text-blue">
-            {AUTH_ERRORS[authError] ?? "登录失败,请重试。"}
+            {t(locale, AUTH_ERRORS[authError] ?? "home.errGeneric")}
           </p>
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -125,7 +125,7 @@ export default async function Home({
         <p className="mt-5 font-mono text-sm tracking-[0.24em] text-paper">
           BUILD GOOD THINGS WITH KIMI<span className="text-blue">.</span>
         </p>
-        <p className="mt-3 text-lg font-medium">用 Kimi,构建美好。</p>
+        <p className="mt-3 text-lg font-medium">{t(locale, "home.tagline")}</p>
         <p className="mt-8 font-mono text-xs tracking-[0.3em] text-grey">
           EXPLORE TOGETHER. BUILD TOGETHER.
         </p>
@@ -254,10 +254,10 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ---- 免责声明(原样保留)---- */}
+      {/* ---- 免责声明:两行,随 UI 语言切换 ---- */}
       <footer className="mx-auto max-w-xl px-6 pb-10 pt-4 text-center text-xs leading-relaxed text-grey">
-        kimi.builders is a user-built, non-commercial community. Not affiliated
-        with, sponsored, or endorsed by Moonshot AI(月之暗面).
+        <p>{t(locale, "home.footerLine1")}</p>
+        <p className="mt-1">{t(locale, "home.footerLine2")}</p>
       </footer>
     </main>
   );

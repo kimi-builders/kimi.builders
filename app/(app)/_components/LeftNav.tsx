@@ -25,18 +25,19 @@ import {
   User,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
-import { UPCOMING } from "@/src/lib/upcoming";
+import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 import GithubIcon from "./GithubIcon";
 import { NavToggle, SidebarToggle } from "./pref-controls";
 
+/* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
 const SECTIONS = [
-  { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false },
-  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog },
-  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn },
-  { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false },
-  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
-  { href: "/awesome", icon: Star, key: "nav.awesome", soon: false },
-  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: UPCOMING.demoNight },
+  { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
+  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog, hidden: false },
+  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn, hidden: false },
+  { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
+  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
+  { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
+  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false, hidden: NAV_HIDDEN.demoNight },
 ] as const;
 
 export default function LeftNav({
@@ -74,7 +75,7 @@ export default function LeftNav({
       </Link>
 
       <nav className="mt-6 space-y-1">
-        {SECTIONS.map((s) => {
+        {SECTIONS.filter((s) => !s.hidden).map((s) => {
           const Icon = s.icon;
           return (
             <Link prefetch={false}

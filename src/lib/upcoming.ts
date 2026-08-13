@@ -7,3 +7,9 @@ export const UPCOMING = {
   learn: true,
   demoNight: true,
 } as const;
+
+/* 近期不打算上线的板块:导航/搜索入口直接屏蔽(挂 SOON 也是持续曝光),
+   URL 仍走上面的 UPCOMING 占位。恢复上线时把对应项改 false 并加回入口。 */
+export const NAV_HIDDEN = {
+  demoNight: true,
+} as const;

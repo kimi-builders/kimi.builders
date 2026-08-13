@@ -476,6 +476,27 @@ const DICT = {
     en: "This section is still being prepared. Meanwhile, browse the community — or post what you'd like to see here.",
   },
   "soon.back": { zh: "去社区看看", en: "Browse the community" },
+  "home.tagline": { zh: "用 Kimi,构建美好。", en: "Build good things with Kimi." },
+  "home.footerLine1": {
+    zh: "kimi.builders 是用户自建的非商业社区。",
+    en: "kimi.builders is a user-built, non-commercial community.",
+  },
+  "home.footerLine2": {
+    zh: "与 Moonshot AI(月之暗面)无隶属、赞助或背书关系。",
+    en: "Not affiliated with, sponsored, or endorsed by Moonshot AI (月之暗面).",
+  },
+  "home.errState": {
+    zh: "登录状态校验失败,请重试。",
+    en: "Sign-in state check failed — please try again.",
+  },
+  "home.errOauth": {
+    zh: "OAuth 授权失败,请重试或换另一种登录方式。",
+    en: "OAuth authorization failed — try again or use another sign-in method.",
+  },
+  "home.errGeneric": {
+    zh: "登录失败,请重试。",
+    en: "Sign-in failed — please try again.",
+  },
   "set.loginRequired": { zh: "登录后才能修改设置:", en: "Log in to change settings:" },
   "err.handleTaken": { zh: "这个 handle 已被占用", en: "That handle is taken" },
   "err.handleInvalid": {
