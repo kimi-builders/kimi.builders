@@ -456,7 +456,7 @@ export default async function ProfilePage({
           {/* 动态 Tab 卡 */}
           <section className="overflow-hidden rounded-2xl border border-line bg-card">
             <nav
-              className="flex flex-nowrap gap-1 overflow-x-auto border-b border-line px-3 pt-2"
+              className="scrollbar-none flex flex-nowrap gap-1 overflow-x-auto border-b border-line px-3 pt-2"
               aria-label={zh ? "主页分区" : "Profile sections"}
             >
               {tabs.map((item) => {
