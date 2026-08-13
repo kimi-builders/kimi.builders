@@ -84,7 +84,7 @@ export default function LeftNav({
               className={itemCls(pathname.startsWith(s.href))}
             >
               <Icon size={15} className="shrink-0" />
-              <span className="nav-label flex items-center">
+              <span className="nav-label flex flex-1 items-center">
                 {t(locale, s.key)}
                 {s.soon && (
                   <span className="ml-auto font-mono text-[9px] tracking-wider text-grey/70">
