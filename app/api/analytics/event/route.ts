@@ -6,6 +6,7 @@ import {
   viewerHash,
   type AnalyticsEvent,
 } from "@/src/lib/analytics";
+import { readAnalyticsJson } from "@/src/lib/analytics-request";
 import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit } from "@/src/lib/usage/rate-limit";
 
@@ -27,15 +28,7 @@ export async function POST(request: Request) {
     return empty(400);
   }
 
-  let input: unknown;
-  try {
-    input = await request.json();
-  } catch {
-    return empty(400);
-  }
-  const payload = parseAnalyticsEventPayload(input);
-  if (!payload || !BEACON_EVENT_SET.has(payload.event)) return empty(400);
-
+  /* 扣配额后再读取 body:非法小包也占额度,chunked 大包会在 2 KiB 处停止。 */
   try {
     const viewer = viewerHash(request);
     const allowed = await consumeUsageRateLimit({
@@ -45,6 +38,21 @@ export async function POST(request: Request) {
       windowSeconds: 10 * 60,
     });
     if (!allowed) return empty();
+  } catch (error) {
+    console.error("analytics beacon rate limit failed", error);
+    return empty();
+  }
+
+  let input: unknown;
+  try {
+    input = await readAnalyticsJson(request);
+  } catch {
+    return empty(400);
+  }
+  const payload = parseAnalyticsEventPayload(input);
+  if (!payload || !BEACON_EVENT_SET.has(payload.event)) return empty(400);
+
+  try {
     trackEvent(
       payload.event,
       { kind: payload.target_kind, id: payload.target_id },

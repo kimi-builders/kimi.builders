@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { Pool } from "mysql2/promise";
 import {
+  ANALYTICS_RATE_LIMIT_RETENTION_SQL,
   ANALYTICS_RETENTION_SQL,
   ANALYTICS_TOP_LIMIT,
   analyticsCutoff,
@@ -115,13 +116,24 @@ test("getAnalyticsInsights maps six aggregate result sets without caching", asyn
 
 test("analytics retention deletes only rows older than 90 days", async () => {
   assert.match(ANALYTICS_RETENTION_SQL, /created_at < UTC_TIMESTAMP\(\) - INTERVAL 90 DAY/);
+  assert.match(ANALYTICS_RATE_LIMIT_RETENTION_SQL, /scope = 'analytics-event'/);
+  assert.match(
+    ANALYTICS_RATE_LIMIT_RETENTION_SQL,
+    /window_start < UTC_TIMESTAMP\(\) - INTERVAL 90 DAY/,
+  );
   const calls: string[] = [];
   const db = {
     async query(sql: string) {
       calls.push(sql);
-      return [{ affectedRows: 12 }];
+      return [{ affectedRows: calls.length === 1 ? 12 : 4 }];
     },
   } as unknown as Pool;
-  assert.deepEqual(await applyAnalyticsRetention(db), { deleted: 12 });
-  assert.deepEqual(calls, [ANALYTICS_RETENTION_SQL]);
+  assert.deepEqual(await applyAnalyticsRetention(db), {
+    deleted: 12,
+    rateLimitDeleted: 4,
+  });
+  assert.deepEqual(calls, [
+    ANALYTICS_RETENTION_SQL,
+    ANALYTICS_RATE_LIMIT_RETENTION_SQL,
+  ]);
 });

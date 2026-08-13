@@ -17,10 +17,22 @@ test("analytics beacon route pins same-origin, bot filtering, whitelist, and sil
   assert.match(route, /limit: 60/);
   assert.match(route, /windowSeconds: 10 \* 60/);
   assert.match(route, /if \(!allowed\) return empty\(\)/);
+  assert.match(route, /readAnalyticsJson/);
   assert.match(route, /return empty\(400\)/);
   assert.match(route, /return empty\(\)/);
-  assert.ok(route.indexOf("isAnalyticsBot") < route.indexOf("request.json()"));
-  assert.ok(route.indexOf("parseAnalyticsEventPayload") < route.indexOf("consumeUsageRateLimit"));
+  assert.doesNotMatch(route, /await request\.json\(\)/);
+  assert.ok(
+    route.indexOf('if (isAnalyticsBot(request.headers.get("user-agent")))') <
+      route.indexOf("input = await readAnalyticsJson(request)"),
+  );
+  assert.ok(
+    route.indexOf("await consumeUsageRateLimit({") <
+      route.indexOf("input = await readAnalyticsJson(request)"),
+  );
+  assert.ok(
+    route.indexOf("input = await readAnalyticsJson(request)") <
+      route.indexOf("const payload = parseAnalyticsEventPayload(input)"),
+  );
 });
 
 test("analytics storage and API body contain no persistent sensitive identity fields", () => {
@@ -120,5 +132,9 @@ test("analytics retention cron uses bearer auth and the 90-day delete helper", (
   assert.match(route, /process\.env\.CRON_SECRET/);
   assert.match(route, /`Bearer \$\{secret\}`/);
   assert.match(route, /applyAnalyticsRetention\(\)/);
+  assert.match(
+    source("src/lib/analytics.ts"),
+    /DELETE FROM usage_rate_limits WHERE scope = 'analytics-event'/,
+  );
   assert.doesNotMatch(source("app/api/cron/usage-retention/route.ts"), /analytics/i);
 });

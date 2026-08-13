@@ -418,10 +418,20 @@ export async function getAnalyticsInsights(
 
 export const ANALYTICS_RETENTION_SQL =
   "DELETE FROM analytics_events WHERE created_at < UTC_TIMESTAMP() - INTERVAL 90 DAY";
+export const ANALYTICS_RATE_LIMIT_RETENTION_SQL =
+  "DELETE FROM usage_rate_limits WHERE scope = 'analytics-event' AND window_start < UTC_TIMESTAMP() - INTERVAL 90 DAY";
 
 export async function applyAnalyticsRetention(
   db: Queryable = getPool(),
-): Promise<{ deleted: number }> {
+): Promise<{ deleted: number; rateLimitDeleted: number }> {
   const [result] = await db.query<ResultSetHeader>(ANALYTICS_RETENTION_SQL);
-  return { deleted: result.affectedRows };
+  /* 限速表里的 identity_hash 是 viewer 的二次 HMAC，也必须遵守同一 90 天
+     生命周期；scope 条件确保不触碰 auth/community/usage 的现有限速记录。 */
+  const [rateLimitResult] = await db.query<ResultSetHeader>(
+    ANALYTICS_RATE_LIMIT_RETENTION_SQL,
+  );
+  return {
+    deleted: result.affectedRows,
+    rateLimitDeleted: rateLimitResult.affectedRows,
+  };
 }
