@@ -5,6 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { searchSiteItems, type SiteSearchItem } from "@/src/lib/site-search";
+import { UPCOMING } from "@/src/lib/upcoming";
+
+/* 未就绪板块(src/lib/upcoming.ts):搜索结果里保留词条但挂 SOON 标 */
+const soon = (locale: Locale, gated: boolean) =>
+  gated ? ` · ${t(locale, "nav.soon")}` : "";
 
 function catalog(locale: Locale): SiteSearchItem[] {
   return [
@@ -28,13 +33,13 @@ function catalog(locale: Locale): SiteSearchItem[] {
     },
     {
       href: "/learn",
-      label: t(locale, "nav.learn"),
+      label: t(locale, "nav.learn") + soon(locale, UPCOMING.learn),
       description: t(locale, "search.learn"),
       keywords: ["learn", "知识库", "guide", "指南"],
     },
     {
       href: "/blog",
-      label: t(locale, "nav.blog"),
+      label: t(locale, "nav.blog") + soon(locale, UPCOMING.blog),
       description: t(locale, "search.blog"),
       keywords: ["blog", "月刊", "letter", "文章"],
     },
@@ -46,7 +51,7 @@ function catalog(locale: Locale): SiteSearchItem[] {
     },
     {
       href: "/demo-night",
-      label: t(locale, "search.demoNightTitle"),
+      label: t(locale, "search.demoNightTitle") + soon(locale, UPCOMING.demoNight),
       description: t(locale, "search.demoNight"),
       keywords: ["demo", "night", "展示夜", "event", "活动"],
     },

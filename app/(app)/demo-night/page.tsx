@@ -21,6 +21,8 @@ import {
 } from "@/src/lib/demo-night";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { UPCOMING } from "@/src/lib/upcoming";
+import SoonPanel from "../_components/SoonPanel";
 import RsvpButton from "./_components/RsvpButton";
 
 export const metadata: Metadata = { title: "Demo Night — kimi.builders" };
@@ -56,6 +58,10 @@ function RosterList({
 export default async function DemoNightPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
+  /* 板块未就绪(src/lib/upcoming.ts):整页换「正在路上」,不查库 */
+  if (UPCOMING.demoNight) {
+    return <SoonPanel title={t(locale, "nav.demoNight")} locale={locale} />;
+  }
   const [summary, archive] = await Promise.all([
     getUpcomingSummary(user?.id ?? null),
     getArchivedEvents(20),

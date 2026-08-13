@@ -4,7 +4,11 @@
    pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/layout.tsx 在服务端树重取时读表。
    kind=none → 不渲染右栏;wide → 主列 max-w 放宽到 1000(分析画布)。
    未列出的路由(/settings、/demo-night、/community 子页等)回落
-   community —— 与改版前「全站同一份 widget」的行为一致。 */
+   community —— 与改版前「全站同一份 widget」的行为一致。
+   未就绪板块(src/lib/upcoming.ts)的专属 rail 一并回落 community,
+   避免「正在路上」占位页旁边挂着空 rail。 */
+import { UPCOMING } from "@/src/lib/upcoming";
+
 export type RailKind =
   | "community"
   | "post"
@@ -64,12 +68,20 @@ export function railFor(pathname: string): RailDecision {
   if (p === "/works") return decision("works");
 
   if (p === "/awesome") return decision("awesome");
-  /* 月刊区:列表与文章详情同 rail;admin 编辑页回落默认 */
-  if (p === "/blog" || (p.startsWith("/blog/") && !p.startsWith("/blog/admin"))) {
+  /* 月刊区:列表与文章详情同 rail;admin 编辑页回落默认;
+     板块未就绪时(UPCOMING.blog)专属 rail 回落 community */
+  if (!UPCOMING.blog && p === "/blog") return decision("blog");
+  if (
+    !UPCOMING.blog &&
+    p.startsWith("/blog/") &&
+    !p.startsWith("/blog/admin")
+  ) {
     return decision("blog");
   }
-  /* 知识库:列表与文章详情同 rail */
-  if (p === "/learn" || p.startsWith("/learn/")) return decision("learn");
+  /* 知识库:列表与文章详情同 rail;未就绪时回落 community */
+  if (!UPCOMING.learn && (p === "/learn" || p.startsWith("/learn/"))) {
+    return decision("learn");
+  }
 
   /* 回落:社区 feed 及一切未列出路由(/community/new、/settings、/demo-night …) */
   return decision("community");

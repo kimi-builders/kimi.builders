@@ -470,6 +470,12 @@ const DICT = {
     zh: "操作太频繁,请稍后再试",
     en: "Too many attempts — try again later",
   },
+  "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
+  "soon.body": {
+    zh: "这个板块还在准备中,内容好了就开门。先去社区逛逛,或把你想看的题材发帖告诉我们。",
+    en: "This section is still being prepared. Meanwhile, browse the community — or post what you'd like to see here.",
+  },
+  "soon.back": { zh: "去社区看看", en: "Browse the community" },
   "set.loginRequired": { zh: "登录后才能修改设置:", en: "Log in to change settings:" },
   "err.handleTaken": { zh: "这个 handle 已被占用", en: "That handle is taken" },
   "err.handleInvalid": {

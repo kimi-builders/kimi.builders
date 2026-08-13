@@ -21,17 +21,18 @@ import {
   X,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
+import { UPCOMING } from "@/src/lib/upcoming";
 import GithubIcon from "./GithubIcon";
 import { LocaleToggle, ThemeToggle } from "./pref-controls";
 
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false },
-  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: false },
-  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: false },
+  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog },
+  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn },
   { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false },
-  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false },
+  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: UPCOMING.demoNight },
 ] as const;
 
 export default function MobileNavDrawer({

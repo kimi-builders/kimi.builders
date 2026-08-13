@@ -5,6 +5,8 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { UPCOMING } from "@/src/lib/upcoming";
+import SoonPanel from "../../../_components/SoonPanel";
 import ArticleForm from "../../_components/ArticleForm";
 
 export const metadata: Metadata = { title: "新建文章 — kimi.builders" };
@@ -12,6 +14,10 @@ export const metadata: Metadata = { title: "新建文章 — kimi.builders" };
 export default async function NewArticlePage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
+  /* 板块未就绪(src/lib/upcoming.ts):编辑后台一并关闸 */
+  if (UPCOMING.blog) {
+    return <SoonPanel title={t(locale, "nav.blog")} locale={locale} />;
+  }
   if (!user || !canModerate(user.role)) {
     return (
       <p className="mt-8 rounded-2xl border border-line bg-card p-6 font-mono text-xs text-grey">

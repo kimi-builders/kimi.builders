@@ -7,12 +7,18 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { listArticles } from "@/src/lib/articles";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { UPCOMING } from "@/src/lib/upcoming";
+import SoonPanel from "../_components/SoonPanel";
 
 export const metadata: Metadata = { title: "知识库 — kimi.builders" };
 
 export default async function LearnPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
+  /* 板块未就绪(src/lib/upcoming.ts):整页换「正在路上」,不查库 */
+  if (UPCOMING.learn) {
+    return <SoonPanel title={t(locale, "nav.learn")} locale={locale} />;
+  }
   const items = await listArticles("guide", locale);
 
   return (

@@ -9,8 +9,10 @@ import { canModerate } from "@/src/lib/featured";
 import { monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { UPCOMING } from "@/src/lib/upcoming";
 import Markdown from "@/components/Markdown";
 import { ArrowLeft } from "lucide-react";
+import SoonPanel from "../../_components/SoonPanel";
 
 export async function generateMetadata({
   params,
@@ -35,6 +37,10 @@ export default async function LetterPage({
   if (!s) notFound();
   const user = await getSessionUser();
   const locale = await getLocale(user);
+  /* 板块未就绪(src/lib/upcoming.ts):详情页同样换「正在路上」,不查库 */
+  if (UPCOMING.blog) {
+    return <SoonPanel title={t(locale, "nav.blog")} locale={locale} />;
+  }
   const article = await getArticleBySlug("letter", s, locale);
   if (!article) notFound();
   const canEdit = !!user && canModerate(user.role);

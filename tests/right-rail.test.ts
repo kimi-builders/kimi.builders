@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { UPCOMING } from "../src/lib/upcoming";
 import {
   railDecisionKey,
   railFor,
@@ -39,14 +40,17 @@ test("railFor: post/work detail get contextual rails with route id", () => {
 
 test("railFor: awesome / blog / learn sections", () => {
   assert.deepEqual(railFor("/awesome"), { kind: "awesome", id: null, wide: false });
-  assert.deepEqual(railFor("/blog"), { kind: "blog", id: null, wide: false });
+  /* 板块未就绪(src/lib/upcoming.ts)时专属 rail 回落 community;就绪后恢复 */
+  const blogRail = UPCOMING.blog ? "community" : "blog";
+  const learnRail = UPCOMING.learn ? "community" : "learn";
+  assert.deepEqual(railFor("/blog"), { kind: blogRail, id: null, wide: false });
   /* 文章详情同 rail */
-  assert.deepEqual(railFor("/blog/2026-08-letter"), { kind: "blog", id: null, wide: false });
+  assert.deepEqual(railFor("/blog/2026-08-letter"), { kind: blogRail, id: null, wide: false });
   /* admin 编辑页回落默认 */
   assert.deepEqual(railFor("/blog/admin/new"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/blog/admin/x/edit"), { kind: "community", id: null, wide: false });
-  assert.deepEqual(railFor("/learn"), { kind: "learn", id: null, wide: false });
-  assert.deepEqual(railFor("/learn/getting-started"), { kind: "learn", id: null, wide: false });
+  assert.deepEqual(railFor("/learn"), { kind: learnRail, id: null, wide: false });
+  assert.deepEqual(railFor("/learn/getting-started"), { kind: learnRail, id: null, wide: false });
 });
 
 test("railFor: usage and profiles have no rail and a wide canvas", () => {

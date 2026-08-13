@@ -11,6 +11,8 @@ import { canModerate } from "@/src/lib/featured";
 import { monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { UPCOMING } from "@/src/lib/upcoming";
+import SoonPanel from "../_components/SoonPanel";
 
 export const metadata: Metadata = {
   title: "给 Kimi 官方的一封信 — kimi.builders",
@@ -19,6 +21,10 @@ export const metadata: Metadata = {
 export default async function BlogPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
+  /* 板块未就绪(src/lib/upcoming.ts):整页换「正在路上」,不查库 */
+  if (UPCOMING.blog) {
+    return <SoonPanel title={t(locale, "nav.blog")} locale={locale} />;
+  }
   const items = await listArticles("letter", locale);
   /* 编辑入口:admin/mod 可见,action 层再校验一次 */
   const canEdit = !!user && canModerate(user.role);
