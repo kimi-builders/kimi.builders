@@ -21,7 +21,14 @@
 
 /* 亮色主题:root layout 按 cookie 给 <html data-theme>,这里覆盖令牌即可,
    组件全部引用 var(--color-*) 所以零改动跟随。 */
+:root {
+  /* UA 控件(原生滚动条/表单控件)配色跟随主题:默认暗色,亮色覆盖。
+     没这句,常显滚动条在暗色页里渲染成刺眼的白色轨道。 */
+  color-scheme: dark;
+}
+
 :root[data-theme="light"] {
+  color-scheme: light;
   --color-bg: #fbfaf9;
   --color-moon: #f5f5f5;
   --color-paper: rgb(0 0 0 / 0.9);
@@ -37,6 +44,8 @@
    background/color 也要在这里显式重设:body 规则算出的颜色是按 <html>
    主题解析后再继承下来的,光换令牌挡不住继承。 */
 [data-theme-scope="dark"] {
+  /* 海报恒暗:连 UA 滚动条也按暗色渲染(亮色 UI 下进入海报不突兀) */
+  color-scheme: dark;
   --color-bg: #0e0e13;
   --color-moon: #1b1b25;
   --color-paper: #efe8dc;
