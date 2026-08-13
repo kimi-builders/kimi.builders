@@ -169,7 +169,7 @@ export default async function AwesomePage({
           </p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-4">
           {page.nodes}
           <LoadMore
             key={`awesome-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${activeScope ?? ""}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}

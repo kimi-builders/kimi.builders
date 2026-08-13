@@ -629,7 +629,7 @@ export default async function ProfilePage({
                   ctaLabel={self ? t(locale, "prof.emptyWorksCta") : undefined}
                 />
               ) : (
-                <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+                <div className="grid gap-4 p-4 sm:p-5">
                   {works.map((w) => (
                     <WorkCard key={w.id} work={w} locale={locale} meId={me?.id ?? null} />
                   ))}

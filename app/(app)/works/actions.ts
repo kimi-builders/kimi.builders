@@ -186,7 +186,7 @@ export async function createWorkAction(
     awesome: !!f.authorLabel,
   });
   if ("error" in claim) return { error: claim.error };
-  await createWork(user.id, {
+  const newWorkId = await createWork(user.id, {
     ...f,
     imageKeys: f.imageKeys ?? [],
     claimedTokens: claim.claimed,
@@ -194,7 +194,8 @@ export async function createWorkAction(
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
-  redirect(f.authorLabel ? "/awesome" : "/works");
+  /* 落详情页:弹窗模式下跳列表(=弹窗底下的当前页)弹窗不会关,跳新页面才关掉 */
+  redirect(`/works/${newWorkId}`);
 }
 
 export async function updateWorkAction(
@@ -224,7 +225,8 @@ export async function updateWorkAction(
   updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
-  redirect(f.authorLabel ? "/awesome" : "/works");
+  /* 同新建:落详情页,弹窗随之关闭 */
+  redirect(`/works/${workId}`);
 }
 
 export async function deleteWorkAction(

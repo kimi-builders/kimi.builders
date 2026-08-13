@@ -11,18 +11,22 @@ export default function WorkScreenshot({
   logoUrl = "",
   kindLabel = "",
   embedded = false,
+  fill = false,
 }: {
   url: string;
   name: string;
   logoUrl?: string;
   kindLabel?: string;
   embedded?: boolean;
+  /* 行式卡左列:移动端 aspect-video,sm+ 撑满列高(object-cover 裁切) */
+  fill?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
+  const mediaCls = fill ? "aspect-video sm:aspect-auto sm:h-full" : "aspect-video";
   if (!url || failed) {
     return (
-      <div className={`flex aspect-video w-full flex-col items-center justify-center gap-3 bg-moon text-grey ${embedded ? "" : "rounded-2xl border border-line"}`}>
+      <div className={`flex w-full flex-col items-center justify-center gap-3 bg-moon text-grey ${mediaCls} ${fill ? "sm:min-h-36" : ""} ${embedded ? "" : "rounded-2xl border border-line"}`}>
         {logoUrl && !logoFailed ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -46,7 +50,7 @@ export default function WorkScreenshot({
       src={url}
       alt={name}
       onError={() => setFailed(true)}
-      className={`aspect-video w-full object-cover ${embedded ? "" : "rounded-2xl border border-line"}`}
+      className={`${mediaCls} w-full object-cover ${embedded ? "" : "rounded-2xl border border-line"}`}
     />
   );
 }

@@ -70,74 +70,75 @@ export default function WorkCard({
   const statusChip = STATUS_CHIP[w.status];
   const scopeChip = w.source === "awesome" ? SCOPE_CHIP[w.scope] : undefined;
   return (
-    <article className="relative flex flex-col rounded-2xl border border-line bg-card transition-colors hover:border-paper/20">
+    /* 行式卡:移动端正图在上,sm+ 图在左(固定列)、内容在右;
+       标题独占一行(长标题不再被徽章挤成竖排),徽章自成一行换行排 */
+    <article className="relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/20 sm:flex-row">
       {/* 整卡链详情页(P1-2,absolute 覆盖链接);下方交互元素抬 z-10 保持独立跳转 */}
       <Link
         href={`/works/${w.id}`}
         aria-label={w.name}
-        className="absolute inset-0 rounded-2xl"
+        className="absolute inset-0 z-0 rounded-2xl"
       />
-      <div className="overflow-hidden rounded-t-2xl border-b border-line">
+      <div className="shrink-0 border-b border-line sm:w-56 sm:self-stretch sm:border-b-0 sm:border-r">
         <WorkScreenshot
           url={w.screenshotUrl}
           name={w.name}
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={workKindLabel(w.kind, locale === "zh")}
           embedded
+          fill
         />
       </div>
-      <div className="flex flex-1 flex-col p-4">
-        <div className="flex items-start gap-2">
-          <h2 className="min-w-0 text-[15px] font-semibold leading-snug text-paper">
-            {w.name}
-          </h2>
-          <span className="ml-auto flex shrink-0 flex-wrap justify-end gap-1.5">
-            {/* 私密/被屏蔽徽标:数据层已保证只有作者本人看得到这类卡片(同 PostCard 口径) */}
-            {w.visibility === "private" && (
-              <span className={`${CHIP} border border-line text-grey`}>
-                {t(locale, "works.private")}
-              </span>
-            )}
-            {w.hiddenAt && (
-              <span
-                className={`${CHIP} border border-red-400/60 text-red-400`}
-                title={w.hiddenReason ?? undefined}
-              >
-                {t(locale, "mod.hiddenBadge")}
-              </span>
-            )}
-            <span className={`${CHIP} ${workKind(w.kind).tint}`}>
-              <WorkKindIcon id={w.kind} size={11} />
-              {workKindLabel(w.kind, locale === "zh")}
+      <div className="flex min-w-0 flex-1 flex-col p-4">
+        <h2 className="text-[15px] font-semibold leading-snug text-paper">
+          {w.name}
+        </h2>
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {/* 私密/被屏蔽徽标:数据层已保证只有作者本人看得到这类卡片(同 PostCard 口径) */}
+          {w.visibility === "private" && (
+            <span className={`${CHIP} border border-line text-grey`}>
+              {t(locale, "works.private")}
             </span>
-            {scopeChip && (
-              <span className={`${CHIP} ${scopeChip.cls}`}>
-                <WorkScopeIcon id={w.scope} size={11} />
-                {t(locale, scopeChip.key)}
-              </span>
-            )}
-            {statusChip && (
-              <span className={`${CHIP} ${statusChip.cls}`}>
-                {t(locale, statusChip.key)}
-              </span>
-            )}
-            {w.featuredAt && (
-              <span
-                className={`${CHIP} bg-blue/10 text-blue`}
-                title={w.featuredReason ?? undefined}
-              >
-                {t(locale, "featured.badge")}
-              </span>
-            )}
-            {claimBadge !== null && claimBadge > 0 && (
-              <span
-                className={`${CHIP} bg-blue/10 font-mono text-blue`}
-                title={t(locale, "works.badgeTitle")}
-              >
-                {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
-              </span>
-            )}
+          )}
+          {w.hiddenAt && (
+            <span
+              className={`${CHIP} border border-red-400/60 text-red-400`}
+              title={w.hiddenReason ?? undefined}
+            >
+              {t(locale, "mod.hiddenBadge")}
+            </span>
+          )}
+          <span className={`${CHIP} ${workKind(w.kind).tint}`}>
+            <WorkKindIcon id={w.kind} size={11} />
+            {workKindLabel(w.kind, locale === "zh")}
           </span>
+          {scopeChip && (
+            <span className={`${CHIP} ${scopeChip.cls}`}>
+              <WorkScopeIcon id={w.scope} size={11} />
+              {t(locale, scopeChip.key)}
+            </span>
+          )}
+          {statusChip && (
+            <span className={`${CHIP} ${statusChip.cls}`}>
+              {t(locale, statusChip.key)}
+            </span>
+          )}
+          {w.featuredAt && (
+            <span
+              className={`${CHIP} bg-blue/10 text-blue`}
+              title={w.featuredReason ?? undefined}
+            >
+              {t(locale, "featured.badge")}
+            </span>
+          )}
+          {claimBadge !== null && claimBadge > 0 && (
+            <span
+              className={`${CHIP} bg-blue/10 font-mono text-blue`}
+              title={t(locale, "works.badgeTitle")}
+            >
+              {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
+            </span>
+          )}
         </div>
         {w.tagline && (
           <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-grey">

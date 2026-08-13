@@ -894,8 +894,8 @@ const DICT = {
   "prof.usage": { zh: "用量", en: "Usage" },
   "prof.noWorks": { zh: "还没有作品。", en: "No works yet." },
   "works.badge": {
-    zh: "声明构建投入 {n} tokens",
-    en: "Declared build effort · {n} tokens",
+    zh: "声明投入 {n}",
+    en: "Declared {n}",
   },
   "works.badgeTitle": {
     zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",

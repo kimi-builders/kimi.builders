@@ -176,7 +176,7 @@ export default async function WorksPage({
           )}
         </div>
       ) : (
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-4">
           {page.nodes}
           {/* key 带首屏规模与游标:卡片行内删除触发 refresh 后首屏一变即 remount,
               已追加的页作废(同 CommentSection 语义) */}
