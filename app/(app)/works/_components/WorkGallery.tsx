@@ -28,6 +28,7 @@ export default function WorkGallery({
         />
       </a>
       {rest.length > 0 && (
+        /* 缩略图条:等宽 16:10 小砖,统一圆角细边框,hover 蓝边 */
         <div className="mt-2 flex flex-wrap gap-2">
           {rest.map((k, i) => (
             <a
@@ -42,7 +43,7 @@ export default function WorkGallery({
                 src={mediaUrl(k)}
                 alt={`${name} ${i + 2}`}
                 loading="lazy"
-                className="h-16 w-28 object-cover"
+                className="h-[70px] w-28 object-cover"
               />
             </a>
           ))}

@@ -608,6 +608,9 @@ const DICT = {
     zh: "标签(逗号分隔,最多 5 个)",
     en: "Tags (comma separated, max 5)",
   },
+  /* 信息行用的短标签(表单标签带填写指引,太长) */
+  "works.tagsShort": { zh: "标签", en: "Tags" },
+  "works.agentsShort": { zh: "Agent", en: "Agents" },
   "works.hint": {
     zh: "链接和仓库至少填一个;提交后展示在作品墙,可随时编辑或撤下。",
     en: "Add at least a URL or a repo link. It lands on the wall right away and you can edit or take it down anytime.",
@@ -897,6 +900,7 @@ const DICT = {
     zh: "声明投入 {n}",
     en: "Declared {n}",
   },
+  "works.declared": { zh: "声明投入", en: "Declared" },
   "works.badgeTitle": {
     zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
     en: "Declared by the author, capped by their verifiable total — not precise metering",

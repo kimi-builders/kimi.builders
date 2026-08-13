@@ -1,6 +1,6 @@
-/* 作品详情(P1-2):面包屑 + 标题(精选芯片)+ 大截图 + 「体验作品/支持/分享」按钮行
-   + 长描述(works 无独立长描述字段,tagline 按 Markdown 渲染)+ 元数据
-   (<xl 正文内联侧栏:作者卡/链接/agents/发布时间/支持数;≥xl 由右栏元数据卡取代,
+/* 作品详情(P1-2,20260813 改版):面包屑 + 干净 H1 + meta 行(作者/时间/类型/
+   声明投入/★精选;私密/屏蔽警示 pill)+ 操作条(体验/支持/分享/作者与治理操作)
+   + 图集 + 长描述 + label/value hairline 信息栏(<xl 内联;≥xl 由右栏 Work Info 卡取代,
    见右栏注册表 work kind)+ 底部单层评论区。
    浏览无需登录;支持/评论需登录(comment/vote 配额限流)。AI 不介入作品评论。
    不存在/已删作品给友好文案,不 404 硬错。 */
@@ -9,13 +9,10 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { ArrowLeft, ExternalLink, GalleryVerticalEnd, Heart } from "lucide-react";
 import Avatar from "@/components/Avatar";
-import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import Markdown from "@/components/Markdown";
-import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
 import WorkKindIcon from "@/components/WorkKindIcon";
-import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -25,7 +22,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { modelFamilyName } from "@/src/lib/model-families";
 import { mediaUrl } from "@/src/lib/storage";
-import { workKind, workKindLabel } from "@/src/lib/work-kinds";
+import { workKindLabel } from "@/src/lib/work-kinds";
 import {
   canViewWork,
   claimBadgeOf,
@@ -135,7 +132,7 @@ export default async function WorkPage({
         <span className="truncate">{work.name}</span>
       </div>
 
-      {/* 标题行:有 Logo 时左侧挂方形 Logo(20260826_work_media) */}
+      {/* 标题行:H1 保持干净,徽标全部移到下方 meta 行(20260813 改版) */}
       <div className="mt-4 flex items-start gap-3">
         {work.logoKey && (
           /* eslint-disable-next-line @next/next/no-img-element */
@@ -147,10 +144,32 @@ export default async function WorkPage({
         )}
         <h1 className="text-2xl font-semibold leading-snug">
           {work.name}
+        </h1>
+      </div>
+      {/* meta 行:作者 · 时间 · 类型 · 口径/状态 · 声明投入(蓝) · ★精选(蓝);
+          私密/屏蔽保留警示 pill(仅作者/治理可见) */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[11px] text-grey">
+        {work.handle ? (
+          <span className="inline-flex items-center gap-1.5">
+            <Avatar url={work.avatarUrl} handle={work.handle} size={20} />
+            <Link
+              href={`/u/${work.handle}`}
+              className="text-paper transition-colors hover:text-blue"
+            >
+              @{work.handle}
+            </Link>
+          </span>
+        ) : (
+          <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
+        )}
+        <span>· {relTime(work.createdAt, locale)}</span>
+        <span className="inline-flex items-center gap-1">
+          · <WorkKindIcon id={work.kind} size={11} />
+          {workKindLabel(work.kind, locale === "zh")}
+        </span>
         {work.scope && (
-          <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue">
-            <WorkScopeIcon id={work.scope} size={11} />
-            {t(
+          <span>
+            · {t(
               locale,
               work.scope === "eco"
                 ? "awesome.scopeEco"
@@ -161,8 +180,8 @@ export default async function WorkPage({
           </span>
         )}
         {work.status !== "released" && (
-          <span className="ml-2 inline-block rounded-md bg-paper/[0.07] px-1.5 py-px align-middle font-mono text-[10px] font-medium text-grey">
-            {t(
+          <span>
+            · {t(
               locale,
               work.status === "planning"
                 ? "works.statusPlanning"
@@ -172,66 +191,40 @@ export default async function WorkPage({
             )}
           </span>
         )}
-        {work.visibility === "private" && (
-          <span className="ml-2 inline-block rounded-md border border-line px-1.5 py-px align-middle font-mono text-[10px] font-medium text-grey">
-            {t(locale, "works.private")}
-          </span>
-        )}
-        {work.hiddenAt && (
-          <span
-            className="ml-2 inline-block rounded-md border border-red-400/60 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-red-400"
-            title={work.hiddenReason ?? undefined}
-          >
-            {t(locale, "mod.hiddenBadge")}
+        {claimBadge !== null && (
+          <span className="text-blue" title={t(locale, "works.badgeTitle")}>
+            · {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
           </span>
         )}
         {work.featuredAt && (
           <span
-            className="ml-2 inline-block rounded-md bg-blue/10 px-1.5 py-px align-middle font-mono text-[10px] font-medium text-blue"
+            className="text-blue"
             title={`${work.featuredReason ?? ""}${
               work.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
                 : ""
             }`}
           >
-            {t(locale, "featured.badge")}
+            · ★ {t(locale, "featured.badge")}
           </span>
         )}
-        </h1>
-      </div>
-      <div className="mt-3 flex items-center gap-3 font-mono text-[11px] text-grey">
-        {work.handle ? (
-          <>
-            <Avatar url={work.avatarUrl} handle={work.handle} size={20} />
-            <Link
-              href={`/u/${work.handle}`}
-              className="text-paper transition-colors hover:text-blue"
-            >
-              @{work.handle}
-            </Link>
-          </>
-        ) : (
-          <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
+        {work.visibility === "private" && (
+          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-[10px] font-medium text-grey">
+            {t(locale, "works.private")}
+          </span>
         )}
-        <span>{relTime(work.createdAt, locale)}</span>
-      </div>
-
-      <div className="mt-6">
-        {/* 有配图走图集(封面大图 + 缩略图);无配图保持原单张外链截图 */}
-        {work.imageKeys.length > 0 ? (
-          <WorkGallery keys={work.imageKeys} name={work.name} />
-        ) : (
-          <WorkScreenshot
-            url={work.screenshotUrl}
-            name={work.name}
-            logoUrl={work.logoKey ? mediaUrl(work.logoKey) : ""}
-            kindLabel={workKindLabel(work.kind, locale === "zh")}
-          />
+        {work.hiddenAt && (
+          <span
+            className="inline-block rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[10px] font-medium text-red-400"
+            title={work.hiddenReason ?? undefined}
+          >
+            {t(locale, "mod.hiddenBadge")}
+          </span>
         )}
       </div>
 
-      {/* 按钮行:体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除 */}
-      <div className="mt-6 flex flex-wrap items-center gap-2.5">
+      {/* 操作条(媒体之上):体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除 */}
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
         {work.url && (
           <a
             href={work.url}
@@ -295,170 +288,119 @@ export default async function WorkPage({
         </span>
       </div>
 
+      <div className="mt-5">
+        {/* 有配图走图集(封面大图 + 缩略图);无配图保持原单张外链截图 */}
+        {work.imageKeys.length > 0 ? (
+          <WorkGallery keys={work.imageKeys} name={work.name} />
+        ) : (
+          <WorkScreenshot
+            url={work.screenshotUrl}
+            name={work.name}
+            logoUrl={work.logoKey ? mediaUrl(work.logoKey) : ""}
+            kindLabel={workKindLabel(work.kind, locale === "zh")}
+          />
+        )}
+      </div>
+
       {/* 正文 + 右侧信息栏:<xl 内联显示(窄屏折行);≥xl 由右栏元数据卡取代
           (右栏注册表 work kind),正文占满正常阅读列宽 */}
-      <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_180px] xl:grid-cols-1">
+      <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_220px] xl:grid-cols-1">
         <div>
           {/* 长描述优先(20260824 新增 description_md),缺省回退 tagline */}
           {(work.descriptionMd || work.tagline) && (
             <Markdown source={work.descriptionMd || work.tagline} />
           )}
-          {work.tags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {work.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-md border border-line px-1.5 py-px font-mono text-[10px] text-grey"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
-        <aside className="space-y-6 border-t border-line pt-6 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 xl:hidden">
-          <div>
-            <h3 className="font-mono text-[11px] tracking-wider text-grey">
-              {t(locale, "works.sideAuthor")}
-            </h3>
-            {work.handle ? (
-              <Link
-                href={`/u/${work.handle}`}
-                className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-bg/40 p-3 transition-colors hover:border-blue"
-              >
-                <Avatar
-                  url={work.avatarUrl}
-                  handle={work.handle}
-                  size={32}
-                  className="shrink-0"
-                />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm text-paper">
-                    @{work.handle}
-                  </span>
-                  {claimBadge !== null && (
-                    <span
-                      className="mt-1 inline-block rounded-md border border-blue/60 px-1.5 py-px font-mono text-[10px] text-blue"
-                      title={t(locale, "works.badgeTitle")}
-                    >
-                      {t(locale, "works.badge", {
-                        n: compactNumber(claimBadge, locale),
-                      })}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            ) : (
-              <p className="mt-3 rounded-xl border border-line bg-bg/40 p-3 text-sm text-grey">
-                {work.authorLabel}
-              </p>
+        {/* 内联信息栏(<xl):与右栏同款 label/value hairline 行 */}
+        <aside className="border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 xl:hidden">
+          <dl className="font-mono text-[11px]">
+            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <dt className="text-grey">{t(locale, "works.sideAuthor")}</dt>
+              <dd className="min-w-0 text-paper">
+                {work.handle ? (
+                  <Link
+                    href={`/u/${work.handle}`}
+                    className="flex items-center gap-1.5 transition-colors hover:text-blue"
+                  >
+                    <Avatar url={work.avatarUrl} handle={work.handle} size={18} className="shrink-0" />
+                    <span className="truncate">@{work.handle}</span>
+                  </Link>
+                ) : (
+                  <span className="truncate">{work.authorLabel}</span>
+                )}
+              </dd>
+            </div>
+            {claimBadge !== null && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+                <dt className="text-grey">{t(locale, "works.declared")}</dt>
+                <dd className="text-blue" title={t(locale, "works.badgeTitle")}>
+                  {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
+                </dd>
+              </div>
             )}
-          </div>
-
-          {(work.url || work.repoUrl) && (
-            <div>
-              <h3 className="font-mono text-[11px] tracking-wider text-grey">
-                {t(locale, "works.sideLinks")}
-              </h3>
-              <div className="mt-3 space-y-2 font-mono text-xs">
-                {work.url && (
-                  <a
-                    href={work.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 break-all text-blue underline-offset-4 hover:underline"
-                  >
-                    <ExternalLink size={12} className="shrink-0" />
-                    {t(locale, "works.visit")}
-                  </a>
-                )}
-                {work.repoUrl && (
-                  <a
-                    href={work.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 break-all text-grey transition-colors hover:text-blue"
-                  >
-                    <ExternalLink size={12} className="shrink-0" />
-                    {t(locale, "works.repo")}
-                  </a>
-                )}
+            {work.agents.length > 0 && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+                <dt className="shrink-0 text-grey">{t(locale, "works.agentsShort")}</dt>
+                <dd className="min-w-0 truncate text-right text-paper">
+                  {work.agents.map(agentName).join(", ")}
+                </dd>
               </div>
+            )}
+            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <dt className="text-grey">{t(locale, "works.kind")}</dt>
+              <dd className="inline-flex items-center gap-1 text-paper">
+                <WorkKindIcon id={work.kind} size={11} />
+                {workKindLabel(work.kind, locale === "zh")}
+              </dd>
             </div>
-          )}
-
-          {work.agents.length > 0 && (
-            <div>
-              <h3 className="font-mono text-[11px] tracking-wider text-grey">
-                {t(locale, "works.agents")}
-              </h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {work.agents.map((a) => (
-                  <span
-                    key={a}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-grey"
-                  >
-                    <AgentIcon id={a} size={13} />
-                    {agentName(a)}
-                  </span>
-                ))}
+            {work.models.length > 0 && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+                <dt className="shrink-0 text-grey">{t(locale, "works.sideModels")}</dt>
+                <dd className="min-w-0 truncate text-right text-paper">
+                  {work.models.map((m) => modelFamilyName(m, locale)).join(", ")}
+                </dd>
               </div>
+            )}
+            {work.tags.length > 0 && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+                <dt className="shrink-0 text-grey">{t(locale, "works.tagsShort")}</dt>
+                <dd className="min-w-0 truncate text-right text-paper" title={work.tags.join(", ")}>
+                  {work.tags.join(", ")}
+                </dd>
+              </div>
+            )}
+            {(work.url || work.repoUrl) && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+                <dt className="text-grey">{t(locale, "works.sideLinks")}</dt>
+                <dd className="inline-flex items-center gap-3">
+                  {work.url && (
+                    <a href={work.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue underline-offset-4 hover:underline">
+                      <ExternalLink size={11} />
+                      {t(locale, "works.visit")}
+                    </a>
+                  )}
+                  {work.repoUrl && (
+                    <a href={work.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-grey transition-colors hover:text-blue">
+                      <ExternalLink size={11} />
+                      {t(locale, "works.repo")}
+                    </a>
+                  )}
+                </dd>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <dt className="text-grey">{t(locale, "works.published")}</dt>
+              <dd className="text-paper">{relTime(work.createdAt, locale)}</dd>
             </div>
-          )}
-
-          {work.kind && (
-            <div>
-              <h3 className="font-mono text-[11px] tracking-wider text-grey">
-                {t(locale, "works.kind")}
-              </h3>
-              <div className="mt-3">
-                <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[10px] ${workKind(work.kind).tint}`}>
-                  <WorkKindIcon id={work.kind} size={12} />
-                  {workKindLabel(work.kind, locale === "zh")}
-                </span>
-              </div>
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <dt className="text-grey">{t(locale, "works.support")}</dt>
+              <dd className="inline-flex items-center gap-1 text-paper">
+                <Heart size={11} />
+                {work.voteCount}
+              </dd>
             </div>
-          )}
-
-          {work.models.length > 0 && (
-            <div>
-              <h3 className="font-mono text-[11px] tracking-wider text-grey">
-                {t(locale, "works.sideModels")}
-              </h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {work.models.map((m) => (
-                  <span
-                    key={m}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-paper/[0.05] px-2 py-1 font-mono text-[10px] text-grey"
-                  >
-                    <ModelIcon id={m} size={13} />
-                    {modelFamilyName(m, locale)}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-
-          <div>
-            <h3 className="font-mono text-[11px] tracking-wider text-grey">
-              {t(locale, "works.sideInfo")}
-            </h3>
-            <div className="mt-3 space-y-1.5 font-mono text-[11px] text-grey">
-              <div className="flex items-center justify-between gap-2">
-                <span>{t(locale, "works.published")}</span>
-                <span>{relTime(work.createdAt, locale)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>{t(locale, "works.support")}</span>
-                <span className="inline-flex items-center gap-1">
-                  <Heart size={11} />
-                  {work.voteCount}
-                </span>
-              </div>
-            </div>
-          </div>
+          </dl>
         </aside>
       </div>
       </article>
