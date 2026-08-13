@@ -15,7 +15,10 @@ import { UPCOMING } from "@/src/lib/upcoming";
 import SoonPanel from "../_components/SoonPanel";
 
 export const metadata: Metadata = {
-  title: "给 Kimi 官方的一封信 — kimi.builders",
+  /* 关闸期间(UPCOMING.blog)标签页标题用板块名,不露出具体刊物名 */
+  title: UPCOMING.blog
+    ? "月刊 — kimi.builders"
+    : "给 Kimi 官方的一封信 — kimi.builders",
 };
 
 export default async function BlogPage() {

@@ -19,6 +19,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  /* 关闸期间(UPCOMING.blog)不出文章标题,也不查库 */
+  if (UPCOMING.blog) return { title: "月刊 — kimi.builders" };
   const { slug } = await params;
   const s = normalizeArticleSlug(slug);
   if (!s) return { title: "kimi.builders" };
