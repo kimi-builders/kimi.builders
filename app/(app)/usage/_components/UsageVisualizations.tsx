@@ -126,16 +126,29 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
   );
 }
 
-function tooltipLeft(
+const TIP_WIDTH = 244;
+
+/* 悬浮卡定位:优先放被 hover 柱子的右侧,其次左侧;两侧都放不下(柱宽/容器窄)
+   才压到离柱子最远的角落——任何情况下都不盖住鼠标所在的数据位。 */
+function tooltipPos(
   event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>,
   viewport: HTMLDivElement | null,
-): number {
-  if (!viewport) return 8;
+): { left: number; top: number } {
+  if (!viewport) return { left: 8, top: 12 };
   const viewportRect = viewport.getBoundingClientRect();
   const targetRect = event.currentTarget.getBoundingClientRect();
-  const center = targetRect.left + targetRect.width / 2 - viewportRect.left;
-  const width = 244;
-  return Math.max(8, Math.min(viewportRect.width - width - 8, center - width / 2));
+  const barLeft = targetRect.left - viewportRect.left;
+  const barRight = targetRect.right - viewportRect.left;
+  const gap = 12;
+  if (viewportRect.width - barRight >= TIP_WIDTH + gap + 8)
+    return { left: barRight + gap, top: 12 };
+  if (barLeft >= TIP_WIDTH + gap + 8)
+    return { left: barLeft - gap - TIP_WIDTH, top: 12 };
+  const barCenter = (barLeft + barRight) / 2;
+  return {
+    left: barCenter < viewportRect.width / 2 ? viewportRect.width - TIP_WIDTH - 8 : 8,
+    top: 12,
+  };
 }
 
 /* 趋势图核心:SVG 堆叠柱(+可选均线)+ Y 网格线 + HTML 透明热区(保键盘可达)。
@@ -164,7 +177,7 @@ function TrendCore({
   tooltipNote?: (item: UsageTrendDay, index: number) => ReactNode;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [hovered, setHovered] = useState<{ index: number; left: number } | null>(null);
+  const [hovered, setHovered] = useState<{ index: number; left: number; top: number } | null>(null);
   const max = Math.max(0, ...trend.map((item) => metricValue(item, metric)));
   if (max <= 0) {
     return (
@@ -353,10 +366,10 @@ function TrendCore({
                   aria-label={`${item.day}: ${metricText(item, metric, zh, currency)}`}
                   className="h-full min-w-0 flex-1 cursor-pointer focus:outline-none focus-visible:bg-paper/10"
                   onMouseEnter={(event) =>
-                    setHovered({ index, left: tooltipLeft(event, viewportRef.current) })
+                    setHovered({ index, ...tooltipPos(event, viewportRef.current) })
                   }
                   onFocus={(event) =>
-                    setHovered({ index, left: tooltipLeft(event, viewportRef.current) })
+                    setHovered({ index, ...tooltipPos(event, viewportRef.current) })
                   }
                   onBlur={() => setHovered(null)}
                 />
@@ -369,8 +382,8 @@ function TrendCore({
       {active && hovered && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute top-3 z-20 w-[244px] rounded-lg border border-line bg-moon p-3 shadow-2xl"
-          style={{ left: hovered.left }}
+          className="pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-moon p-3 shadow-2xl"
+          style={{ left: hovered.left, top: hovered.top }}
         >
           <div className="font-mono text-[11px] font-semibold text-paper">
             {tooltipTitle ? tooltipTitle(active) : active.day}
@@ -580,7 +593,14 @@ export function UsageHeatmapGrid({
       </div>
 
       {hovered && cell && (
-        <div role="tooltip" className="pointer-events-none absolute right-1 top-5 z-20 w-[252px] rounded-lg border border-line bg-moon p-3 shadow-2xl">
+        /* 悬浮卡放被 hover 格子的对侧半场:右半场的格子卡片去左边,反之亦然,
+           任何格子都不会被自己的数据卡挡住 */
+        <div
+          role="tooltip"
+          className={`pointer-events-none absolute top-5 z-20 w-[252px] rounded-lg border border-line bg-moon p-3 shadow-2xl ${
+            hovered.hour >= 12 ? "left-1" : "right-1"
+          }`}
+        >
           <div className="font-mono text-[11px] font-semibold text-paper">
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
           </div>
