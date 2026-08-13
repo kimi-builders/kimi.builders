@@ -20,6 +20,7 @@ import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
+import MarkdownEditor from "../../_components/MarkdownEditor";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -394,12 +395,13 @@ export default function WorkForm({
         <label htmlFor="work-desc" className={labelCls}>
           {t(locale, "works.desc")}
         </label>
-        <textarea
+        <MarkdownEditor
           id="work-desc"
           name="description_md"
+          locale={locale}
           rows={6}
           defaultValue={initial?.descriptionMd}
-          className={`${inputCls} resize-y`}
+          inputCls={inputCls}
         />
         <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>

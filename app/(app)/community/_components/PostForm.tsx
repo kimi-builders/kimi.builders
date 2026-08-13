@@ -22,6 +22,7 @@ import {
 } from "@/src/lib/community-draft";
 import { t, type Locale } from "@/src/lib/i18n";
 import { createPostAction, type PostFormState } from "../actions";
+import MarkdownEditor from "../../_components/MarkdownEditor";
 
 const TYPES = [
   { id: "text", key: "form.text" },
@@ -284,14 +285,15 @@ export default function PostForm({
         <label htmlFor="post-body" className={labelCls}>
           {t(locale, "form.bodyLabel")}
         </label>
-        <textarea
+        <MarkdownEditor
           id="post-body"
           name="body"
+          locale={locale}
           value={body}
-          onChange={(event) => setBody(event.target.value)}
+          onChange={setBody}
           rows={type === "text" ? 7 : 4}
           placeholder={t(locale, type === "text" ? "form.bodyText" : "form.bodyOpt")}
-          className={`${inputCls} resize-y`}
+          inputCls={inputCls}
         />
         <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>

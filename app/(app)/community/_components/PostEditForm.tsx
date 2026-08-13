@@ -8,6 +8,7 @@ import { useActionState } from "react";
 import { CATEGORIES } from "@/src/lib/categories";
 import { t, type Locale } from "@/src/lib/i18n";
 import { updatePostAction, type PostFormState } from "../actions";
+import MarkdownEditor from "../../_components/MarkdownEditor";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
@@ -93,13 +94,14 @@ export default function PostEditForm({
         <label htmlFor="edit-body" className={labelCls}>
           {t(locale, "form.bodyLabel")}
         </label>
-        <textarea
+        <MarkdownEditor
           id="edit-body"
           name="body"
+          locale={locale}
           rows={10}
           defaultValue={initialBody}
           placeholder={t(locale, "form.bodyText")}
-          className={`${inputCls} resize-y`}
+          inputCls={inputCls}
         />
         <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>
