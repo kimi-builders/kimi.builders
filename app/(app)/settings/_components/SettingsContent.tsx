@@ -5,7 +5,7 @@
 import { AtSign, Settings as SettingsIcon } from "lucide-react";
 import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { isOwnAvatarUrl } from "@/src/lib/auth/users";
+import { getUserPasswordHash, isOwnAvatarUrl } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getLinkedAccounts, getOwnProfile } from "@/src/lib/users";
@@ -14,9 +14,11 @@ import GithubIcon from "../../_components/GithubIcon";
 import { LocaleSeg, ThemeCards } from "../../_components/pref-controls";
 import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
+import PasswordForm from "./PasswordForm";
 import ProfileForm from "./ProfileForm";
 import ProfilePrivacyForm from "./ProfilePrivacyForm";
 import SettingsTabs from "./SettingsTabs";
+import UnlinkButton from "./UnlinkButton";
 
 function Panel({
   title,
@@ -92,10 +94,12 @@ export default async function SettingsContent({
     );
   }
 
-  const [own, accounts, usageSettings] = await Promise.all([
+  const [own, accounts, usageSettings, passwordHash] = await Promise.all([
     getOwnProfile(user.id),
     getLinkedAccounts(user.id),
     getUsageSettings(user.id),
+    /* 只用来推导 hasPassword 布尔;哈希本身不下发任何客户端 props */
+    getUserPasswordHash(user.id),
   ]);
   if (!own) return null;
 
@@ -253,9 +257,28 @@ export default async function SettingsContent({
                         {t(locale, "set.link")}
                       </a>
                     )}
+                    {linkedAccount && (
+                      <UnlinkButton
+                        locale={locale}
+                        provider={p}
+                        providerName={p === "github" ? "GitHub" : "Google"}
+                      />
+                    )}
                   </div>
                 );
               })}
+            </div>
+            {/* 密码:有密码走「当前 + 新密码」改密;无密码(OAuth 注册)直接设置 */}
+            <div className="mt-2 border-t border-line pt-4">
+              <h3 className="text-[13px] font-semibold text-paper">
+                {t(locale, "set.pwTitle")}
+              </h3>
+              <p className="mt-1 max-w-lg text-xs leading-relaxed text-grey">
+                {t(locale, passwordHash !== null ? "set.pwHint" : "set.pwSetHint")}
+              </p>
+              <div className="mt-3 max-w-sm">
+                <PasswordForm locale={locale} hasPassword={passwordHash !== null} />
+              </div>
             </div>
           </Panel>
         </SettingsTabs>

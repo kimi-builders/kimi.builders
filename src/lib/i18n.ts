@@ -438,6 +438,38 @@ const DICT = {
   },
   "set.linkedSince": { zh: "绑定于 {d}", en: "linked {d}" },
   "set.email": { zh: "邮箱", en: "Email" },
+  "set.unlink": { zh: "解绑", en: "Unlink" },
+  "set.unlinkConfirm": {
+    zh: "解绑后不能再用 {p} 登录。确定解绑?",
+    en: "You won't be able to sign in with {p} anymore. Unlink?",
+  },
+  "set.unlinkedOk": { zh: "已解绑 {p}", en: "{p} unlinked" },
+  "err.lastMethod": {
+    zh: "这是唯一的登录方式:先设置密码或绑定其他账号,再解绑。",
+    en: "This is your only sign-in method. Set a password or link another account first.",
+  },
+  "set.pwTitle": { zh: "密码", en: "Password" },
+  "set.pwHint": {
+    zh: "改密不影响其他已登录设备;忘记当前密码可从登录页走邮箱重置。",
+    en: "Other signed-in devices stay signed in. Forgot the current one? Reset by email from the sign-in page.",
+  },
+  "set.pwSetHint": {
+    zh: "当前账号还没设密码;设置后邮箱 + 密码也能登录。",
+    en: "No password yet — set one to also sign in with email + password.",
+  },
+  "set.pwCurrent": { zh: "当前密码", en: "Current password" },
+  "set.pwSubmit": { zh: "更新密码", en: "Update password" },
+  "set.pwSubmitSet": { zh: "设置密码", en: "Set password" },
+  "set.pwChanged": { zh: "密码已更新", en: "Password updated" },
+  "err.pwWrong": { zh: "当前密码不正确", en: "Current password is incorrect" },
+  "err.pwSame": {
+    zh: "新密码不能和当前密码相同",
+    en: "New password must differ from the current one",
+  },
+  "err.rateLimited": {
+    zh: "操作太频繁,请稍后再试",
+    en: "Too many attempts — try again later",
+  },
   "set.loginRequired": { zh: "登录后才能修改设置:", en: "Log in to change settings:" },
   "err.handleTaken": { zh: "这个 handle 已被占用", en: "That handle is taken" },
   "err.handleInvalid": {

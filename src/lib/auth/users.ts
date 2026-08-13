@@ -147,6 +147,65 @@ export async function setUserPassword(userId: number, passwordHash: string): Pro
   ]);
 }
 
+/* 设置页改密/展示用:返回当前密码哈希,无密码(OAuth 注册)为 null。
+   哈希只留在服务端,不进任何客户端 props。 */
+export async function getUserPasswordHash(userId: number): Promise<string | null> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT password_hash FROM users WHERE id = ? LIMIT 1",
+    [userId],
+  );
+  const row = rows[0];
+  return row?.password_hash == null ? null : String(row.password_hash);
+}
+
+/* 解绑守卫(纯函数):不能拿走账号最后一个登录方式——
+   无密码且只剩这一条 OAuth 绑定时,解绑后账号将永远无法登录。 */
+export function canUnlinkProvider(
+  hasPassword: boolean,
+  linkedCount: number,
+): "ok" | "last_method" | "not_linked" {
+  if (linkedCount <= 0) return "not_linked";
+  if (!hasPassword && linkedCount === 1) return "last_method";
+  return "ok";
+}
+
+/* 解绑 OAuth:事务里锁用户行重数登录方式(并发解绑两个 provider 也不会双双通过),
+   守卫通过后删除绑定行;affectedRows=0 即本来就没绑。 */
+export async function unlinkProviderAccount(
+  userId: number,
+  provider: Provider,
+): Promise<"ok" | "last_method" | "not_linked"> {
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const [urows] = await connection.query<RowDataPacket[]>(
+      "SELECT password_hash FROM users WHERE id = ? LIMIT 1 FOR UPDATE",
+      [userId],
+    );
+    const hasPassword = urows[0]?.password_hash != null;
+    const [crows] = await connection.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS n FROM oauth_accounts WHERE user_id = ?",
+      [userId],
+    );
+    const guard = canUnlinkProvider(hasPassword, Number(crows[0]?.n ?? 0));
+    if (guard !== "ok") {
+      await connection.rollback();
+      return guard;
+    }
+    const [res] = await connection.query<ResultSetHeader>(
+      "DELETE FROM oauth_accounts WHERE user_id = ? AND provider = ?",
+      [userId, provider],
+    );
+    await connection.commit();
+    return res.affectedRows > 0 ? "ok" : "not_linked";
+  } catch (e) {
+    await connection.rollback();
+    throw e;
+  } finally {
+    connection.release();
+  }
+}
+
 export interface EmailAccountRow {
   id: number;
   passwordHash: string | null;

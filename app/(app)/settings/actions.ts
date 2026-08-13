@@ -5,11 +5,22 @@
 import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { isAllowedAvatarUrl } from "@/src/lib/avatar-urls";
+import {
+  hashPassword,
+  passwordPolicyError,
+  verifyPassword,
+} from "@/src/lib/auth/password";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { setUserLocale } from "@/src/lib/auth/users";
+import {
+  getUserPasswordHash,
+  setUserLocale,
+  setUserPassword,
+  unlinkProviderAccount,
+} from "@/src/lib/auth/users";
 import { PUBLIC_USERS_CACHE_TAG } from "@/src/lib/cache-tags";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { consumeUsageRateLimit } from "@/src/lib/usage/rate-limit";
 import { updateAiPrefs, updateProfile, updateProfilePrivacy } from "@/src/lib/users";
 
 const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
@@ -87,5 +98,58 @@ export async function updateProfilePrivacyAction(
     showName: formData.get("pd_name") === "1",
     showBio: formData.get("pd_bio") === "1",
   });
+  return { ok: true };
+}
+
+/* 改密码(设置页「账号」页签):已有密码需先验证当前密码(限速同登录口径);
+   OAuth 注册的无密码账号直接设置,登录会话即凭证。会话是无状态签名 cookie,
+   改密不踢其他设备——要强制下线得先换 sessions 表(session.ts 注释)。 */
+export async function changePasswordAction(
+  _prev: SettingsState | null,
+  formData: FormData,
+): Promise<SettingsState> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { error: t(locale, "err.login") };
+  const allowed = await consumeUsageRateLimit({
+    scope: "settings-change-password",
+    identity: `u${user.id}`,
+    limit: 5,
+    windowSeconds: 600,
+  });
+  if (!allowed) return { error: t(locale, "err.rateLimited") };
+
+  const current = String(formData.get("current_password") ?? "");
+  const next = String(formData.get("new_password") ?? "");
+  const confirm = String(formData.get("confirm_password") ?? "");
+
+  const hash = await getUserPasswordHash(user.id);
+  if (hash !== null && !(await verifyPassword(current, hash)))
+    return { error: t(locale, "err.pwWrong") };
+  const policy = passwordPolicyError(next);
+  if (policy)
+    return { error: t(locale, policy === "too_short" ? "login.errShort" : "login.errLong") };
+  if (next !== confirm) return { error: t(locale, "login.errMismatch") };
+  if (hash !== null && (await verifyPassword(next, hash)))
+    return { error: t(locale, "err.pwSame") };
+  await setUserPassword(user.id, await hashPassword(next));
+  return { ok: true };
+}
+
+/* 解绑 OAuth(设置页「账号」页签):唯一登录方式守卫在 unlinkProviderAccount
+   事务里重查,这里的失败码只负责翻译。 */
+export async function unlinkProviderAction(
+  _prev: SettingsState | null,
+  formData: FormData,
+): Promise<SettingsState> {
+  const user = await getSessionUser();
+  const locale = await getLocale(user);
+  if (!user) return { error: t(locale, "err.login") };
+  const provider = String(formData.get("provider") ?? "");
+  if (provider !== "github" && provider !== "google")
+    return { error: t(locale, "err.generic") };
+  const r = await unlinkProviderAccount(user.id, provider);
+  if (r === "last_method") return { error: t(locale, "err.lastMethod") };
+  if (r !== "ok") return { error: t(locale, "err.generic") };
   return { ok: true };
 }
