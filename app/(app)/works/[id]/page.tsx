@@ -433,7 +433,7 @@ export default async function WorkPage({
                     className="inline-flex items-center gap-1.5 rounded-md bg-paper/[0.05] px-2 py-1 font-mono text-[10px] text-grey"
                   >
                     <ModelIcon id={m} size={13} />
-                    {modelFamilyName(m)}
+                    {modelFamilyName(m, locale)}
                   </span>
                 ))}
               </div>

@@ -11,6 +11,9 @@ const SOURCE_LABELS: Record<string, string> = {
   "copilot-cli": "Copilot CLI",
   grok: "Grok",
   cursor: "Cursor",
+  zcode: "Zcode",
+  codebuddy: "CodeBuddy",
+  "pi-coding-agent": "Pi Agent",
 };
 
 export function usageSourceLabel(id: string): string {

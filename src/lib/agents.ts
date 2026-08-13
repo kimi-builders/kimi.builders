@@ -17,6 +17,12 @@ export const AGENTS = [
   { id: "gemini", name: "Gemini" },
   /* Qoder = 阿里的 Agentic IDE(品牌标在 AgentIcon);Qwen 只是模型族,不占 Agent 位 */
   { id: "qoder", name: "Qoder" },
+  /* 智谱国际版(Z.ai)的编码 Agent;图标用 zai 标 */
+  { id: "zcode", name: "Zcode" },
+  /* 腾讯 CodeBuddy */
+  { id: "codebuddy", name: "CodeBuddy" },
+  /* Pi Agent */
+  { id: "pi-agent", name: "Pi Agent" },
 ] as const;
 
 export type AgentId = (typeof AGENTS)[number]["id"];

@@ -15,6 +15,9 @@ import GeminiCliColor from "@lobehub/icons/es/GeminiCLI/components/Color";
 import OpenCodeMono from "@lobehub/icons/es/OpenCode/components/Mono";
 import AntigravityColor from "@lobehub/icons/es/Antigravity/components/Color";
 import QoderColor from "@lobehub/icons/es/Qoder/components/Color";
+import ZaiMono from "@lobehub/icons/es/ZAI/components/Mono";
+import CodeBuddyColor from "@lobehub/icons/es/CodeBuddy/components/Color";
+import PiMono from "@lobehub/icons/es/Pi/components/Mono";
 
 const ICONS = {
   kimi: KimiMono,
@@ -37,6 +40,11 @@ const ICONS = {
   cline: ClineMono,
   gemini: GeminiColor,
   qoder: QoderColor,
+  /* 智谱 Z.ai / 腾讯 / Pi:ZAI 与 Pi 只有 Mono(currentColor 跟随主题) */
+  zcode: ZaiMono,
+  codebuddy: CodeBuddyColor,
+  "pi-agent": PiMono,
+  "pi-coding-agent": PiMono,
 } as const;
 
 export default function AgentIcon({

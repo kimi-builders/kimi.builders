@@ -13,7 +13,7 @@ import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
-import { isModelFamily, MODEL_FAMILIES } from "@/src/lib/model-families";
+import { isModelFamily, MODEL_FAMILIES, modelFamilyName } from "@/src/lib/model-families";
 import { uploadMedia } from "@/src/lib/upload";
 import { WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
 import AgentIcon from "@/components/AgentIcon";
@@ -469,7 +469,7 @@ export default function WorkForm({
                 className={choiceInputCls}
               />
               <ModelIcon id={m.id} size={14} />
-              {m.name}
+              {modelFamilyName(m.id, locale)}
             </label>
           ))}
           {/* 自填型号(纯文本 chip,可删) */}

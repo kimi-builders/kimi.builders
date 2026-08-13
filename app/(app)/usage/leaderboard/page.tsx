@@ -72,6 +72,8 @@ function modelIconId(model: string): string {
   if (id.startsWith("grok-")) return "grok";
   if (id.startsWith("minimax-")) return "minimax";
   if (id.startsWith("glm-")) return "glm";
+  if (id.startsWith("doubao")) return "doubao";
+  if (id.startsWith("ernie") || id.startsWith("wenxin")) return "wenxin";
   return "";
 }
 

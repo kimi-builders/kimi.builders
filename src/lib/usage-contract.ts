@@ -31,6 +31,7 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "cline", tier: "beta" },
   { id: "roo-code", tier: "stable" },
   { id: "zcode", tier: "beta" },
+  { id: "codebuddy", tier: "beta" },
 ] as const;
 
 export type UsageSource = (typeof USAGE_SOURCE_CATALOG)[number];

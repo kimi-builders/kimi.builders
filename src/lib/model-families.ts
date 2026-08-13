@@ -11,8 +11,8 @@ export const MODEL_FAMILIES = [
   { id: "grok", name: "Grok" },
   { id: "minimax", name: "MiniMax" },
   { id: "glm", name: "GLM" },
-  { id: "doubao", name: "豆包" },
-  { id: "wenxin", name: "文心一言" },
+  { id: "doubao", name: "豆包", nameEn: "Doubao" },
+  { id: "wenxin", name: "文心一言", nameEn: "ERNIE Bot" },
 ] as const;
 
 export type ModelFamilyId = (typeof MODEL_FAMILIES)[number]["id"];
@@ -21,6 +21,10 @@ export function isModelFamily(id: string): id is ModelFamilyId {
   return MODEL_FAMILIES.some((f) => f.id === id);
 }
 
-export function modelFamilyName(id: string): string {
-  return MODEL_FAMILIES.find((f) => f.id === id)?.name ?? id;
+/* 家族展示名:中文家族(豆包/文心一言)在 EN 界面用英文厂商名,其余家族两种语言同形。 */
+export function modelFamilyName(id: string, locale?: "zh" | "en"): string {
+  const family = MODEL_FAMILIES.find((f) => f.id === id);
+  if (!family) return id;
+  if (locale === "en") return ("nameEn" in family ? family.nameEn : family.name) as string;
+  return family.name;
 }
