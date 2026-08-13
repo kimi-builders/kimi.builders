@@ -16,7 +16,9 @@ test("railFor: community feed and unlisted routes fall back to community rail", 
   assert.deepEqual(railFor("/demo-night"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/works"), { kind: "works", id: null, wide: false });
   assert.deepEqual(railFor("/community/new"), { kind: "community", id: null, wide: false });
-  assert.deepEqual(railFor("/community/notifications"), { kind: "community", id: null, wide: false });
+  /* 通知页:同 community rail,但 id=0 哨兵给独立 decision key(访问即已读,
+     强制壳重估清角标——见 railFor 与下方 decision key 测试) */
+  assert.deepEqual(railFor("/community/notifications"), { kind: "community", id: 0, wide: false });
   /* 头缺失时 layout 传 "/" */
   assert.deepEqual(railFor("/"), { kind: "community", id: null, wide: false });
   /* 管理台(20260830):无右栏 + 宽画布,与 /usage、个人主页同档 */
@@ -73,6 +75,14 @@ test("rail decision key: context, detail id, and width changes are distinct", ()
     railDecisionKey({ kind: "community", id: null, wide: false }),
     railDecisionKey({ kind: "community", id: null, wide: true }),
   );
+});
+
+test("rail decision key: notifications gets its own key so the unread badge re-evaluates", () => {
+  /* 通知页访问即已读,但顶栏角标在布局里渲染:同 key 不触发壳重取,
+     角标会滞留旧数字——独立 key 让进出各 refresh 一次 */
+  const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
+  assert.equal(railFor("/community/notifications").kind, "community");
+  assert.notEqual(keyFor("/community/notifications"), keyFor("/community"));
 });
 
 /* ---- 相关帖子:同板块近期公开帖,排除本帖 ---- */

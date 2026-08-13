@@ -17,7 +17,8 @@ export type RailKind =
 
 export interface RailDecision {
   kind: RailKind;
-  /* post/work 详情的路由 id,其余 kind 恒为 null */
+  /* post/work 详情的路由 id;其余 kind 恒为 null(仅通知页用 0 哨兵,
+     同 rail 但需强制壳重估——见 railFor 内注释) */
   id: number | null;
   /* 主列加宽(1000);目前仅 kind=none 的宽画布路由 */
   wide: boolean;
@@ -47,6 +48,11 @@ export function railFor(pathname: string): RailDecision {
   if (p === "/admin" || p.startsWith("/admin/")) {
     return decision("none", { wide: true });
   }
+
+  /* 通知页与 feed 同一份 community rail,但访问即已读(markNotificationsRead
+     在页面渲染里执行):给它独立 decision key,进出各强制一次全树重取,
+     布局里的未读角标随即清零;id=0 是哨兵,非详情路由 id */
+  if (p === "/community/notifications") return decision("community", { id: 0 });
 
   /* 详情页:仅精确匹配 /community/<id>、/works/<id>(/edit 等子页不算) */
   const post = /^\/community\/(\d+)$/.exec(p);
