@@ -87,7 +87,16 @@ export default function UsagePrivacyForm({
   const rowHint = "mt-1 block max-w-lg text-xs leading-relaxed text-grey";
 
   return (
-    <form action={submit} aria-busy={pending}>
+    /* 用 onSubmit + preventDefault 而不是 form action:React 19 的 form action
+       完成后会自动 reset 表单,把受控开关的 DOM 打回 SSR 初值(状态其实是对的,
+       但界面看起来「保存后自动关掉」)。手动提交不触发这个隐式重置。 */
+    <form
+      aria-busy={pending}
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit(new FormData(event.currentTarget));
+      }}
+    >
       <label className={rowCls}>
         <span>
           <span className={rowTitle}>{zh ? "上传项目目录名" : "Upload project names"}</span>

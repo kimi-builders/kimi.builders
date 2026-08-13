@@ -19,7 +19,7 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "dimagent", tier: "beta" },
   { id: "openclaw", tier: "beta" },
   { id: "omp", tier: "beta" },
-  { id: "pi-coding-agent", tier: "beta" },
+  { id: "pi-coding-agent", tier: "stable" },
   { id: "qwen-code", tier: "beta" },
   { id: "amp", tier: "beta" },
   { id: "droid", tier: "beta" },
@@ -30,7 +30,8 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "mimocode", tier: "beta" },
   { id: "cline", tier: "beta" },
   { id: "roo-code", tier: "stable" },
-  { id: "zcode", tier: "beta" },
+  { id: "zcode", tier: "stable" },
+  { id: "workbuddy", tier: "stable" },
   { id: "codebuddy", tier: "beta" },
 ] as const;
 

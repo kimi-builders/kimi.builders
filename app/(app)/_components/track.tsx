@@ -4,8 +4,10 @@
    不采集 URL、referrer、用户身份或任何浏览器原始信息。 */
 import {
   cloneElement,
+  isValidElement,
   type MouseEventHandler,
   type ReactElement,
+  type ReactNode,
 } from "react";
 
 export type PosterSurface = "profile" | "post" | "work" | "usage";
@@ -65,14 +67,17 @@ type TrackableProps = {
 };
 
 /* 克隆唯一子元素并合并 onClick:不新增 DOM 包裹层,原 <a>/<Link> 的语义、
-   href、target、键盘行为与样式全部保持不变。 */
+   href、target、键盘行为与样式全部保持不变。
+   注意守卫:RSC 边界/dev 模式下 children 运行时可能不是可直接克隆的元素
+   (props 为 undefined,直接读会崩整个路由);非元素时原样渲染、放弃这次埋点。 */
 export function TrackClick({
   payload,
   children,
 }: {
   payload: AnalyticsBeaconPayload;
-  children: ReactElement<TrackableProps>;
+  children: ReactNode;
 }) {
+  if (!isValidElement<TrackableProps>(children)) return <>{children}</>;
   const originalClick = children.props.onClick;
   return cloneElement(children, {
     onClick: (event) => {
