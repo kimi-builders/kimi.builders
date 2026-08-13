@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { railFor } from "../app/(app)/_components/right-rail";
+import {
+  railDecisionKey,
+  railFor,
+} from "../app/(app)/_components/right-rail";
 import { relatedPostsQuery } from "../src/lib/posts";
 import { awesomeSourceStatsQuery, relatedWorksQuery } from "../src/lib/works";
 
@@ -49,6 +52,27 @@ test("railFor: usage and profiles have no rail and a wide canvas", () => {
   assert.deepEqual(railFor("/usage/device"), { kind: "none", id: null, wide: true });
   assert.deepEqual(railFor("/usage/leaderboard"), { kind: "none", id: null, wide: true });
   assert.deepEqual(railFor("/u/aklman"), { kind: "none", id: null, wide: true });
+});
+
+test("rail decision key: same shell context survives pathname changes", () => {
+  const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
+  assert.equal(keyFor("/community"), keyFor("/settings"));
+  assert.equal(keyFor("/settings"), keyFor("/demo-night"));
+  assert.equal(keyFor("/usage/device"), keyFor("/usage/leaderboard"));
+  assert.equal(keyFor("/usage"), keyFor("/u/another-handle"));
+  assert.equal(keyFor("/blog/issue-a"), keyFor("/blog/issue-b"));
+  assert.equal(keyFor("/learn/start"), keyFor("/learn/advanced"));
+});
+
+test("rail decision key: context, detail id, and width changes are distinct", () => {
+  const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
+  assert.notEqual(keyFor("/community"), keyFor("/works"));
+  assert.notEqual(keyFor("/community/1"), keyFor("/community/2"));
+  assert.notEqual(keyFor("/works/1"), keyFor("/works/2"));
+  assert.notEqual(
+    railDecisionKey({ kind: "community", id: null, wide: false }),
+    railDecisionKey({ kind: "community", id: null, wide: true }),
+  );
 });
 
 /* ---- 相关帖子:同板块近期公开帖,排除本帖 ---- */

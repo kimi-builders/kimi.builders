@@ -35,6 +35,7 @@ import {
   getSocialTopDimensions,
   getSocialUsageHeatmap,
   isUsagePublic,
+  profileUsageQueryPlan,
 } from "@/src/lib/usage/social";
 import {
   buildYearGrid,
@@ -158,6 +159,7 @@ export default async function ProfilePage({
       : usageVisible && (tab === "usage" || tab === "tools" || tab === "prefs")
         ? tab
         : "posts";
+  const usageQueryPlan = profileUsageQueryPlan(activeTab, usageVisible);
   /* 分时热图/足迹的「本地」跟浏览器 kb_tz cookie(同用量看板);无 cookie 按 GMT+0 */
   const store = await cookies();
   const parsedTz = Number(store.get("kb_tz")?.value);
@@ -171,9 +173,13 @@ export default async function ProfilePage({
       activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
       activeTab === "comments" ? getUserComments(profile.id, self) : Promise.resolve([]),
       activeTab === "works" ? getUserWorks(profile.id, self) : Promise.resolve([]),
-      usageVisible ? getSocialUsageHeatmap(profile.id, tz) : Promise.resolve(null),
+      usageQueryPlan.heatmap
+        ? getSocialUsageHeatmap(profile.id, tz)
+        : Promise.resolve(null),
       usageVisible ? getSocialDailyActivity(profile.id, tz) : Promise.resolve(null),
-      usageVisible ? getSocialTopDimensions(profile.id) : Promise.resolve(null),
+      usageQueryPlan.topDimensions
+        ? getSocialTopDimensions(profile.id)
+        : Promise.resolve(null),
       usageVisible && ownerSettings
         ? getUsageShareSnapshot({
             user: profile,

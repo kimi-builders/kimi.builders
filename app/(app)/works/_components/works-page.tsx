@@ -10,6 +10,8 @@ import type { ReactNode } from "react";
 import type { SessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import type { Locale } from "@/src/lib/i18n";
+import { getPublicWorksFirstPage } from "@/src/lib/public-works-cache";
+import { publicWorksCacheScope } from "@/src/lib/public-works";
 import { getVerifiableTokenTotals } from "@/src/lib/usage/verifiable";
 import {
   claimBadgeOf,
@@ -37,22 +39,23 @@ export async function loadWorksCards(
   locale: Locale,
   after?: string,
 ): Promise<WorksPageData> {
-  const page = scope.awesome
-    ? await getAwesomeWorksPage({
-        sort: scope.sort,
-        agents: scope.agents,
-        kinds: scope.kinds,
-        scope: scope.scope_,
-        after,
-        viewerId: user?.id,
-      })
-    : await getWorksPage({
-        sort: scope.sort,
-        agents: scope.agents,
-        kinds: scope.kinds,
-        after,
-        viewerId: user?.id,
-      });
+  const queryOpts = {
+    sort: scope.sort,
+    agents: scope.agents,
+    kinds: scope.kinds,
+    after,
+    viewerId: user?.id,
+  };
+  const publicScope = publicWorksCacheScope({
+    awesome: scope.awesome,
+    ...queryOpts,
+    scope_: scope.scope_,
+  });
+  const page = publicScope
+    ? await getPublicWorksFirstPage(publicScope)
+    : scope.awesome
+      ? await getAwesomeWorksPage({ ...queryOpts, scope: scope.scope_ })
+      : await getWorksPage(queryOpts);
   const authorIds = page.works.map((w) => w.userId);
   const [totals, claimSums] = scope.awesome
     ? [new Map<number, number>(), new Map<number, number>()]

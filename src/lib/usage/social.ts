@@ -11,6 +11,31 @@ import { usageDeviceDisplayName } from "./device-label";
 
 type Queryable = Pool | PoolConnection;
 
+export type ProfileUsageTab =
+  | "posts"
+  | "comments"
+  | "works"
+  | "usage"
+  | "tools"
+  | "prefs";
+
+export interface ProfileUsageQueryPlan {
+  heatmap: boolean;
+  topDimensions: boolean;
+}
+
+/* 主页的年度足迹与全量快照跨 tab 共用,调用方始终保留。这里只规划
+   仅服务特定 tab 的额外查询,避免帖子/评论/作品等页面读取不会渲染的数据。 */
+export function profileUsageQueryPlan(
+  activeTab: ProfileUsageTab,
+  usageVisible: boolean,
+): ProfileUsageQueryPlan {
+  return {
+    heatmap: usageVisible && (activeTab === "usage" || activeTab === "prefs"),
+    topDimensions: usageVisible && activeTab === "prefs",
+  };
+}
+
 /* 与 filters.ts clampTzOffset 同区间。 */
 function clampTz(value: unknown): number {
   const parsed = Number(value);

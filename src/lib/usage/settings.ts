@@ -17,13 +17,22 @@ export async function getUsageSettings(
   userId: number,
   db: Queryable = getPool(),
 ): Promise<UsageSettings> {
-  await db.query("INSERT IGNORE INTO usage_settings (user_id) VALUES (?)", [userId]);
-  const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT upload_project, upload_device_label, upload_quota, show_on_leaderboard, retention_days
-     FROM usage_settings WHERE user_id = ? LIMIT 1`,
-    [userId],
-  );
-  const row = rows[0];
+  const select = async (): Promise<RowDataPacket | undefined> => {
+    const [rows] = await db.query<RowDataPacket[]>(
+      `SELECT upload_project, upload_device_label, upload_quota, show_on_leaderboard, retention_days
+       FROM usage_settings WHERE user_id = ? LIMIT 1`,
+      [userId],
+    );
+    return rows[0];
+  };
+
+  let row = await select();
+  if (!row) {
+    await db.query("INSERT IGNORE INTO usage_settings (user_id) VALUES (?)", [userId]);
+    /* INSERT IGNORE may lose a race to an update that created customized settings.
+       Re-read so the caller observes the winning row instead of stale defaults. */
+    row = await select();
+  }
   if (!row) return { ...USAGE_PRIVACY_DEFAULTS };
   return {
     uploadProject: !!row.upload_project,
@@ -89,4 +98,3 @@ export function parseUsageSettings(value: unknown): UsageSettings | null {
     retentionDays,
   };
 }
-

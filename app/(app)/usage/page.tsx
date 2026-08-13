@@ -440,6 +440,14 @@ export default async function UsagePage({
     );
   }
 
+  const deviceLoadPromise = captureUsageOperation(
+    "usage.dashboard.devices",
+    () => listUsageDevices(user.id),
+    {
+      slowMs: 750,
+      summarize: (value) => ({ devices: value.length }),
+    },
+  );
   const settings = await getUsageSettings(user.id);
   const cookieStore = await cookies();
   const parsedTz = Number(cookieStore.get("kb_tz")?.value);
@@ -463,10 +471,7 @@ export default async function UsagePage({
         rowsFetched: value.meta.diagnostics.rowsFetched,
       }),
     }),
-    captureUsageOperation("usage.dashboard.devices", () => listUsageDevices(user.id), {
-      slowMs: 750,
-      summarize: (value) => ({ devices: value.length }),
-    }),
+    deviceLoadPromise,
   ]);
   const overview = overviewLoad.ok ? overviewLoad.value : null;
   const devices = deviceLoad.ok ? deviceLoad.value : null;

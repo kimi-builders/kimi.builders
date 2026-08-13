@@ -136,8 +136,11 @@ test("dimension option queries rank candidates by period token weight", () => {
 
 test("cost query is user-scoped, day-granular and free of detail columns", () => {
   const { sql, params } = buildUsageLeaderboardCostQuery([7, 42], "7d", NOW);
-  /* userIds 来自已卡 show_on_leaderboard = 1 的榜单查询(同请求派生),
-     校验为整数后字面展开 */
+  /* userIds 来自榜单查询,费用语句仍独立重做 opt-in 门禁,并校验为整数后字面展开 */
+  assert.match(
+    sql,
+    /JOIN usage_settings s\s+ON s\.user_id = b\.user_id AND s\.show_on_leaderboard = 1/,
+  );
   assert.match(sql, /b\.user_id IN \(7,42\)/);
   assert.match(sql, /b\.bucket_start >= \?/);
   assert.match(sql, /SUM\(COALESCE\(b\.cost_micros, 0\)\) AS stored_cost_micros/);
@@ -294,7 +297,7 @@ test("parseUsageSettings accepts the leaderboard switch, default off, rejects no
   assert.equal(parseUsageSettings({ ...base, showOnLeaderboard: "yes" }), null);
 });
 
-test("settings read keeps INSERT IGNORE and maps show_on_leaderboard", async () => {
+test("settings read maps show_on_leaderboard from the SELECT-first hot path", async () => {
   const calls: FakeCall[] = [];
   const db = {
     async query(sql: string, params: unknown[]): Promise<unknown[]> {
@@ -316,8 +319,8 @@ test("settings read keeps INSERT IGNORE and maps show_on_leaderboard", async () 
     },
   } as unknown as Pool;
   const settings = await getUsageSettings(7, db);
-  assert.match(calls[0].sql, /INSERT IGNORE INTO usage_settings/);
-  assert.match(calls[1].sql, /show_on_leaderboard/);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /show_on_leaderboard/);
   assert.equal(settings.showOnLeaderboard, true);
   assert.equal(settings.retentionDays, 90);
 });

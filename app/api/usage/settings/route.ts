@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { PUBLIC_USAGE_LEADERBOARD_CACHE_TAG } from "@/src/lib/cache-tags";
 import { authenticateUsageRequest, usageUnauthorized } from "@/src/lib/usage/auth";
 import { isSameOrigin, noStoreJson } from "@/src/lib/usage/http";
 import {
@@ -36,9 +38,9 @@ export async function PATCH(request: Request) {
       throw new UsageRequestError("invalid_settings", "Usage privacy settings are invalid.");
     }
     await updateUsageSettings(user.id, settings);
+    revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, { expire: 0 });
     return noStoreJson({ ok: true, settings });
   } catch (error) {
     return usageErrorResponse(error);
   }
 }
-

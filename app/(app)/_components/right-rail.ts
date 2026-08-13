@@ -1,8 +1,8 @@
 /* 右栏注册表(docs/shell-and-ai-native.md B 节):按路由段分发右栏上下文,
    同时给出主内容列宽(usage 的 :has 加宽 hack 收编到这里,个人主页同样加宽)。
    railFor 是纯函数,单测直接测(tests/right-rail.test.ts);
-   pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/template.tsx 读表渲染(每次导航重估)。
-   kind=none → 不渲染右栏;wide → 主列 max-w 放宽到 1120(分析画布)。
+   pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/layout.tsx 在服务端树重取时读表。
+   kind=none → 不渲染右栏;wide → 主列 max-w 放宽到 1000(分析画布)。
    未列出的路由(/settings、/demo-night、/community 子页等)回落
    community —— 与改版前「全站同一份 widget」的行为一致。 */
 export type RailKind =
@@ -19,8 +19,14 @@ export interface RailDecision {
   kind: RailKind;
   /* post/work 详情的路由 id,其余 kind 恒为 null */
   id: number | null;
-  /* 主列加宽(1120);目前仅 kind=none 的宽画布路由 */
+  /* 主列加宽(1000);目前仅 kind=none 的宽画布路由 */
   wide: boolean;
+}
+
+/* 布局需要重取的最小上下文:同一种 rail + 同一详情 id + 同一列宽时,
+   pathname 改变不影响右栏或壳宽度,无需 router.refresh() 全树重取。 */
+export function railDecisionKey({ kind, id, wide }: RailDecision): string {
+  return `${kind}:${id ?? "-"}:${wide ? 1 : 0}`;
 }
 
 const decision = (
@@ -59,6 +65,6 @@ export function railFor(pathname: string): RailDecision {
   /* 知识库:列表与文章详情同 rail */
   if (p === "/learn" || p.startsWith("/learn/")) return decision("learn");
 
-  /* 回落:社区 feed 及一切未列出路由(/community/new、/works、/settings …) */
+  /* 回落:社区 feed 及一切未列出路由(/community/new、/settings、/demo-night …) */
   return decision("community");
 }

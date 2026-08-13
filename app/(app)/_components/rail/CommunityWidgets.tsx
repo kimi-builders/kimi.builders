@@ -11,9 +11,11 @@ import { MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
-import { getFeaturedFeed } from "@/src/lib/featured";
-import { getSidebarData } from "@/src/lib/posts";
-import { getUsageLeaderboard } from "@/src/lib/usage/leaderboard";
+import {
+  getPublicCommunitySidebar,
+  getPublicFeaturedRail,
+} from "@/src/lib/public-rails-cache";
+import { getPublicUsageLeaderboardPreview } from "@/src/lib/usage/public-leaderboard-cache";
 import { t, type Locale } from "@/src/lib/i18n";
 import Widget from "./Widget";
 
@@ -32,10 +34,10 @@ export default async function CommunityWidgets({
 }) {
   const user = await getSessionUser();
   const [data, featured, demoNight, lbEntries] = await Promise.all([
-    getSidebarData(),
-    getFeaturedFeed(3),
+    getPublicCommunitySidebar(),
+    getPublicFeaturedRail(),
     getUpcomingSummary(user?.id ?? null),
-    getUsageLeaderboard("30d"),
+    getPublicUsageLeaderboardPreview(),
   ]);
   const lbTop = lbEntries.slice(0, 4);
   const lbMe =

@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { PUBLIC_USAGE_LEADERBOARD_CACHE_TAG } from "@/src/lib/cache-tags";
 import {
   decideDeviceAuthorization,
   deleteAllUsage,
@@ -49,6 +50,9 @@ export async function decideUsageDeviceAction(
           }
         : undefined,
   });
+  if (action === "approve" && status === "approved") {
+    updateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG);
+  }
   revalidatePath("/usage");
   revalidatePath("/usage/device");
   return { status };
@@ -74,6 +78,7 @@ export async function updateUsageSettingsAction(
   if (!operation.ok) {
     return { ok: false, code: "failed", reference: operation.reference };
   }
+  updateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG);
   /* 同一 usage_settings 行,多处挂载(用量/设置/个人主页)——全部重验证 */
   revalidatePath("/usage");
   revalidatePath("/settings");
@@ -111,6 +116,7 @@ export async function manageUsageDeviceAction(
     return { ok: false, code: "failed", reference: operation.reference };
   }
   if (!operation.value.found) return { ok: false, code: "not_found" };
+  if (mode !== "revoke") updateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG);
   revalidatePath("/usage");
   return { ok: true, affectedRows: operation.value.affectedRows };
 }
@@ -131,6 +137,7 @@ export async function deleteAllUsageAction(
   if (!operation.ok) {
     return { ok: false, code: "failed", reference: operation.reference };
   }
+  updateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG);
   revalidatePath("/usage");
   return { ok: true, affectedRows: operation.value };
 }

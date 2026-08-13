@@ -7,6 +7,12 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { getLocale } from "@/src/lib/i18n-server";
 import { t } from "@/src/lib/i18n";
+import {
+  PUBLIC_FEATURED_CACHE_TAG,
+  PUBLIC_POSTS_CACHE_TAG,
+  PUBLIC_USERS_CACHE_TAG,
+  PUBLIC_WORKS_CACHE_TAG,
+} from "@/src/lib/cache-tags";
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "@/src/lib/db";
@@ -41,6 +47,13 @@ function targetTypeOf(raw: string): ModTargetType | null {
 /* 治理动作后作废公共面缓存:列表/详情/首页精选/管理台。 */
 function revalidateAfterContent(id: number, type: ModTargetType) {
   updateTag(HOME_CACHE_TAG);
+  if (type === "post" || type === "work") {
+    updateTag(PUBLIC_FEATURED_CACHE_TAG);
+  }
+  if (type === "post" || type === "comment") {
+    updateTag(PUBLIC_POSTS_CACHE_TAG);
+  }
+  if (type === "work") updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/community");
   revalidatePath("/works");
   revalidatePath("/awesome");
@@ -160,6 +173,7 @@ export async function resetProfileAction(formData: FormData): Promise<ModResult>
     return { ok: false, error: t(locale, "err.generic") };
   const ok = await resetUserProfile(user.id, targetId, reason);
   if (!ok) return { ok: false, error: t(locale, "err.generic") };
+  updateTag(PUBLIC_USERS_CACHE_TAG);
   revalidatePath("/admin");
   return { ok: true };
 }
@@ -192,6 +206,7 @@ export async function setRoleAction(formData: FormData): Promise<ModResult> {
     return { ok: false, error: t(locale, "err.forbidden") };
   const ok = await setUserRole(user.id, targetId, nextRole);
   if (!ok) return { ok: false, error: t(locale, "err.generic") };
+  updateTag(PUBLIC_USERS_CACHE_TAG);
   revalidatePath("/admin");
   return { ok: true };
 }

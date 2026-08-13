@@ -2,10 +2,12 @@
 
 /* 设置页写操作:资料(显示名/handle/简介/头像 URL)与 AI 回复偏好。
    全部先过 session,再做字段校验;handle 唯一性在查询层排除自己。 */
+import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { isAllowedAvatarUrl } from "@/src/lib/avatar-urls";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
+import { PUBLIC_USERS_CACHE_TAG } from "@/src/lib/cache-tags";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { updateAiPrefs, updateProfile, updateProfilePrivacy } from "@/src/lib/users";
@@ -56,6 +58,7 @@ export async function updateProfileAction(
   if (r === "taken") return { error: t(locale, "err.handleTaken") };
   if (r === "invalid") return { error: t(locale, "err.handleInvalid") };
   if (r === "avatar_invalid") return { error: t(locale, "err.avatarHostInvalid") };
+  updateTag(PUBLIC_USERS_CACHE_TAG);
   return { ok: true };
 }
 

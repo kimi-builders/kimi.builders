@@ -278,7 +278,7 @@ async function main() {
     // —— 一致性:parser 产物 = 服务端聚合 ——
     const overview = await getUsageOverview(userId, filters());
     const expected = FIXTURE.expected;
-    assert.equal(overview.meta.diagnostics.statements, 15);
+    assert.equal(overview.meta.diagnostics.statements, 7);
     assert.ok(overview.meta.diagnostics.rowsFetched > 0);
     assert.equal(overview.totals.inputTokens, expected.input);
     assert.equal(overview.totals.cacheWriteInputTokens, expected.cacheWrite);
@@ -292,6 +292,17 @@ async function main() {
     assert.equal(overview.totals.activeSeconds, expected.activeSeconds);
     assert.equal(overview.lifetimeTokens, expected.total);
     assert.equal(overview.records.total, 3); // 同日 × 3 来源/模型
+    const beyondLastPage = await getUsageOverview(userId, filters({ page: "9999" }));
+    assert.deepEqual(beyondLastPage.records.rows, []);
+    assert.equal(beyondLastPage.records.total, 3);
+    assert.equal(beyondLastPage.meta.diagnostics.statements, 8); // 空越界页才 fallback count
+    const emptyFirstPage = await getUsageOverview(
+      userId,
+      filters({ models: "model-that-does-not-exist" }),
+    );
+    assert.deepEqual(emptyFirstPage.records.rows, []);
+    assert.equal(emptyFirstPage.records.total, 0);
+    assert.equal(emptyFirstPage.meta.diagnostics.statements, 7);
     assert.equal(overview.totals.activeDevices, 1);
     const gridTotal = (grid: number[][]) => grid.flat().reduce((sum, value) => sum + value, 0);
     assert.equal(gridTotal(overview.heatmap.inputTokens), expected.input);
@@ -451,7 +462,7 @@ async function main() {
       filters({ projects: "demo-app" }, false),
     );
     assert.equal(projectOff.totals.totalTokens, expected.total);
-    assert.equal(projectOff.meta.diagnostics.statements, 14);
+    assert.equal(projectOff.meta.diagnostics.statements, 7);
 
     // —— 设备 B + 设备筛选 + 组合 ——
     const deviceB = await provisionDevice(userId, "integration B");

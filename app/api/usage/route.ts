@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { PUBLIC_USAGE_LEADERBOARD_CACHE_TAG } from "@/src/lib/cache-tags";
 import { authenticateUsageRequest, usageUnauthorized } from "@/src/lib/usage/auth";
 import { deleteAllUsage } from "@/src/lib/usage/device";
 import { parseUsageFilters } from "@/src/lib/usage/filters";
@@ -40,5 +42,6 @@ export async function DELETE(request: Request) {
     return noStoreJson({ ok: false, error: "confirmation_required" }, { status: 400 });
   }
   const deleted = await deleteAllUsage(user.id);
+  revalidateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG, { expire: 0 });
   return noStoreJson({ ok: true, deleted });
 }
