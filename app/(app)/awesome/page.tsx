@@ -5,6 +5,7 @@
    收录口径见 awesome.intro(放宽:参与即可);推荐规则见右栏。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { SquarePen, Star } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
@@ -17,6 +18,7 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 import { AGENTS } from "@/src/lib/agents";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -39,6 +41,8 @@ export default async function AwesomePage({
   searchParams: Promise<{ sort?: string; agent?: string; kind?: string; scope?: string }>;
 }) {
   const { sort, agent, kind, scope } = await searchParams;
+  const requestHeaders = await headers();
+  trackEvent("awesome_view", { kind: "page", id: "awesome" }, { headers: requestHeaders });
   const currentSort = sort === "hot" ? "hot" : "new";
   const csv = (value?: string) => (value ?? "").split(",").filter(Boolean);
   const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));

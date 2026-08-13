@@ -4,12 +4,14 @@
    结构:资料页风格的概览 + 我的排名 + 可切换的总榜/Agent/模型单一主榜。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { ShieldCheck, Trophy } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import AutoScrollNav from "@/components/AutoScrollNav";
 import Avatar from "@/components/Avatar";
 import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
+import { trackEvent } from "@/src/lib/analytics";
 import {
   SEG_ITEM,
   SEG_ITEM_IDLE,
@@ -212,6 +214,12 @@ export default async function UsageLeaderboardPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const raw = await searchParams;
+  const requestHeaders = await headers();
+  trackEvent(
+    "leaderboard_view",
+    { kind: "page", id: "leaderboard" },
+    { headers: requestHeaders },
+  );
   const param = (value: string | string[] | undefined): string => {
     const v = Array.isArray(value) ? value[0] : value;
     return v && v.trim() ? v : "";

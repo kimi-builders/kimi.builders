@@ -9,7 +9,10 @@
    精选/取消精选的 action 里 updateTag("home") 即时作废(见 src/lib/home.ts);
    海报主体仍是静态标记。 */
 import Link from "next/link";
+import { headers } from "next/headers";
 import AuthChip from "@/components/AuthChip";
+import { TrackClick } from "@/app/(app)/_components/track";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber } from "@/src/lib/format";
 import { getHomeData, type HomeFeaturedItem } from "@/src/lib/home";
@@ -51,7 +54,16 @@ function FeaturedCard({
           {t(locale, "featured.badge")}
         </span>
       </div>
-      {title}
+      <TrackClick
+        payload={{
+          event: "featured_click",
+          target_kind: f.kind,
+          target_id: String(f.id),
+          meta: { position: "home" },
+        }}
+      >
+        {title}
+      </TrackClick>
       {f.excerpt && (
         <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-grey">
           {f.excerpt}
@@ -86,6 +98,8 @@ export default async function Home({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { auth_error: authError } = await searchParams;
+  const requestHeaders = await headers();
+  trackEvent("home_view", { kind: "page", id: "home" }, { headers: requestHeaders });
   const user = await getSessionUser();
   const [locale, home] = await Promise.all([
     getLocale(user),
@@ -211,52 +225,79 @@ export default async function Home({
           {t(locale, "home.join")}
         </h2>
         <div className="mt-8 grid gap-4 text-left sm:grid-cols-3">
-          <a
-            href="https://github.com/kimi-builders/discussions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+          <TrackClick
+            payload={{
+              event: "join_click",
+              target_kind: "slot",
+              target_id: "discussions",
+              meta: { slot: "discussions" },
+            }}
           >
-            <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
-              GitHub Discussions
-            </h3>
-            <p className="mt-2 text-xs leading-relaxed text-grey">
-              {t(locale, "home.joinDisc")}
-            </p>
-            <span className="mt-3 inline-block font-mono text-[11px] text-blue">
-              {t(locale, "home.joinDiscCta")} →
-            </span>
-          </a>
-          <a
-            href="https://github.com/kimi-builders/awesome-kimi-builders"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+            <a
+              href="https://github.com/kimi-builders/discussions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+            >
+              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
+                GitHub Discussions
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-grey">
+                {t(locale, "home.joinDisc")}
+              </p>
+              <span className="mt-3 inline-block font-mono text-[11px] text-blue">
+                {t(locale, "home.joinDiscCta")} →
+              </span>
+            </a>
+          </TrackClick>
+          <TrackClick
+            payload={{
+              event: "join_click",
+              target_kind: "slot",
+              target_id: "awesome",
+              meta: { slot: "awesome" },
+            }}
           >
-            <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
-              Awesome Kimi Builders
-            </h3>
-            <p className="mt-2 text-xs leading-relaxed text-grey">
-              {t(locale, "home.joinAwesome")}
-            </p>
-            <span className="mt-3 inline-block font-mono text-[11px] text-blue">
-              {t(locale, "home.joinAwesomeCta")} →
-            </span>
-          </a>
-          <a
-            href="mailto:hi@kimi.builders"
-            className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+            <a
+              href="https://github.com/kimi-builders/awesome-kimi-builders"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+            >
+              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
+                Awesome Kimi Builders
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-grey">
+                {t(locale, "home.joinAwesome")}
+              </p>
+              <span className="mt-3 inline-block font-mono text-[11px] text-blue">
+                {t(locale, "home.joinAwesomeCta")} →
+              </span>
+            </a>
+          </TrackClick>
+          <TrackClick
+            payload={{
+              event: "join_click",
+              target_kind: "slot",
+              target_id: "mail",
+              meta: { slot: "mail" },
+            }}
           >
-            <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
-              hi@kimi.builders
-            </h3>
-            <p className="mt-2 text-xs leading-relaxed text-grey">
-              {t(locale, "home.joinMail")}
-            </p>
-            <span className="mt-3 inline-block font-mono text-[11px] text-blue">
-              hi@kimi.builders →
-            </span>
-          </a>
+            <a
+              href="mailto:hi@kimi.builders"
+              className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+            >
+              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
+                hi@kimi.builders
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-grey">
+                {t(locale, "home.joinMail")}
+              </p>
+              <span className="mt-3 inline-block font-mono text-[11px] text-blue">
+                hi@kimi.builders →
+              </span>
+            </a>
+          </TrackClick>
         </div>
       </section>
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
 import { Download, LoaderCircle, Share2, ShieldCheck, X } from "lucide-react";
+import { trackBeacon } from "@/app/(app)/_components/track";
 import {
   USAGE_SHARE_RANGES,
   type UsageShareRange,
@@ -51,6 +52,12 @@ export default function UsageShareDialog({
   }
 
   async function downloadPoster() {
+    trackBeacon({
+      event: "poster_download",
+      target_kind: "surface",
+      target_id: "usage",
+      meta: { surface: "usage" },
+    });
     setSharing(true);
     setError(false);
     try {

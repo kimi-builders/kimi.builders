@@ -6,6 +6,10 @@
    (?download=1 附件头直接下载);无值时行为完全不变。 */
 import { useState } from "react";
 import { Check, ImageDown, Share2 } from "lucide-react";
+import {
+  trackBeacon,
+  type PosterSurface,
+} from "@/app/(app)/_components/track";
 import { t, type Locale } from "@/src/lib/i18n";
 
 export default function ShareButton({
@@ -13,11 +17,13 @@ export default function ShareButton({
   title,
   locale,
   posterHref,
+  posterSurface,
 }: {
   path: string;
   title: string;
   locale: Locale;
   posterHref?: string;
+  posterSurface?: PosterSurface;
 }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -46,13 +52,21 @@ export default function ShareButton({
         <button
           type="button"
           aria-label={t(locale, "post.posterAria")}
-          onClick={() =>
+          onClick={() => {
+            if (posterSurface) {
+              trackBeacon({
+                event: "poster_download",
+                target_kind: "surface",
+                target_id: posterSurface,
+                meta: { surface: posterSurface },
+              });
+            }
             window.open(
               `${posterHref}${posterHref.includes("?") ? "&" : "?"}download=1`,
               "_blank",
               "noopener,noreferrer",
-            )
-          }
+            );
+          }}
           className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-blue"
         >
           <ImageDown size={14} />

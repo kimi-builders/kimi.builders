@@ -6,6 +6,7 @@
    作者已 opt-in 公开用量时,卡片带「已验证构建投入」徽章(见 works-page)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { GalleryVerticalEnd, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
@@ -17,6 +18,7 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 import { AGENTS } from "@/src/lib/agents";
+import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
@@ -35,6 +37,8 @@ export default async function WorksPage({
   searchParams: Promise<{ sort?: string; agent?: string; kind?: string }>;
 }) {
   const { sort, agent, kind } = await searchParams;
+  const requestHeaders = await headers();
+  trackEvent("works_view", { kind: "page", id: "works" }, { headers: requestHeaders });
   const currentSort = sort === "hot" ? "hot" : "new";
   const csv = (value?: string) => (value ?? "").split(",").filter(Boolean);
   const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));
