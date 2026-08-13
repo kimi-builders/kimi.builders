@@ -135,6 +135,8 @@ export interface UsageOverview {
     trend: UsageTrendDay[];
   };
   heatmap: UsageHeatmap;
+  /* 热图「单周」模式的周网格;未开启时为 null。 */
+  weekHeatmap: UsageHeatmap | null;
   distributions: {
     source: UsageDistribution;
     model: UsageDistribution;
@@ -165,6 +167,8 @@ export interface UsageOverview {
   };
   activeDevices: number;
   lastSyncAt: Date | null;
+  /* 最早一条 bucket 事实的时间;热图周翻页的下界。 */
+  firstDataAt: Date | null;
   meta: {
     pricingVersions: string[];
     unpricedModels: string[];

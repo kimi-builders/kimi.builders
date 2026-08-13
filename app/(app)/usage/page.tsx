@@ -25,6 +25,12 @@ import {
   USAGE_WEEKDAYS_ZH,
   type UsageHeatMetric,
 } from "@/src/lib/usage/heatmap";
+import {
+  parseWeekKey,
+  weekKeyFor,
+  weekLabel,
+  weekWindowFor,
+} from "@/src/lib/usage/week";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
@@ -462,9 +468,18 @@ export default async function UsagePage({
     uploadProject: settings.uploadProject,
     tzOffsetMinutes: tz,
   });
+  /* 热图双模式:heatmode=week 时按 heatweek(用户时区的周一日期)另取单周网格,
+     页面其余区块仍跟随主范围。 */
+  const heatModeParam = Array.isArray(raw.heatmode) ? raw.heatmode[0] : raw.heatmode;
+  const heatWeekParam = Array.isArray(raw.heatweek) ? raw.heatweek[0] : raw.heatweek;
+  /* 以主范围终点为「本周」锚点(预设范围≈请求时刻;历史自定义范围翻到其末尾所在周)。 */
+  const currentWeek = weekWindowFor(filters.to.getTime(), tz);
+  const activeWeek = heatModeParam === "week"
+    ? parseWeekKey(heatWeekParam, tz) ?? currentWeek
+    : null;
 
   const [overviewLoad, deviceLoad] = await Promise.all([
-    captureUsageOperation("usage.dashboard.overview", () => getUsageOverview(user.id, filters), {
+    captureUsageOperation("usage.dashboard.overview", () => getUsageOverview(user.id, filters, { heatWeek: activeWeek }), {
       slowMs: 1_500,
       metadata: { rangeDays: filters.days, pageSize: filters.pageSize },
       summarize: (value) => ({
@@ -876,7 +891,32 @@ export default async function UsagePage({
     .map((value) => value.trim())
     .filter(Boolean);
   const currency = USAGE_DISPLAY_CURRENCIES[ccy];
-  const topSlots = heatTopSlots(overview.heatmap, heatMetric, 5);
+  const heatModeItems = [
+    {
+      key: "aggregate",
+      label: zh ? "聚合" : "Aggregate",
+      href: hrefWith(query, { heatmode: null, heatweek: null }),
+      active: activeWeek === null,
+    },
+    {
+      key: "week",
+      label: zh ? "单周" : "Week",
+      href: hrefWith(query, { heatmode: "week", heatweek: weekKeyFor(currentWeek.fromUtcMs, tz) }),
+      active: activeWeek !== null,
+    },
+  ];
+  const firstWeekMs = overview.firstDataAt
+    ? weekWindowFor(overview.firstDataAt.getTime(), tz).fromUtcMs
+    : null;
+  const canPrevWeek = activeWeek !== null && firstWeekMs !== null && activeWeek.fromUtcMs > firstWeekMs;
+  const canNextWeek = activeWeek !== null && activeWeek.fromUtcMs < currentWeek.fromUtcMs;
+  const weekPagerHref = (weeks: number) =>
+    hrefWith(query, {
+      heatmode: "week",
+      heatweek: weekKeyFor((activeWeek ?? currentWeek).fromUtcMs + weeks * 7 * 86_400_000, tz),
+    });
+  const activeHeatmap = activeWeek !== null && overview.weekHeatmap ? overview.weekHeatmap : overview.heatmap;
+  const topSlots = heatTopSlots(activeHeatmap, heatMetric, 5);
   const weekdayNames = zh ? USAGE_WEEKDAYS_ZH : USAGE_WEEKDAYS_EN;
   const pad2 = (value: number) => String(value).padStart(2, "0");
 
@@ -1037,16 +1077,45 @@ export default async function UsagePage({
                 {zh ? "分时活跃" : "Activity heatmap"}
               </h2>
               <p className="mt-1 text-[11px] text-grey">
-                {zh
-                  ? "星期 × 本地小时 · 新版 Collector 精确到小时"
-                  : "Weekday × local hour · exact hourly facts from current collectors"}
+                {activeWeek !== null
+                  ? `${weekLabel(activeWeek.fromUtcMs, tz, zh)} · ${zh ? "单周实际用量" : "single-week actuals"}`
+                  : zh
+                    ? "聚合 · 星期 × 本地小时 · 窗口跟随所选范围"
+                    : "Aggregate · weekday × local hour · follows the selected range"}
               </p>
             </div>
-            <SegLinks items={heatSwitch} label={zh ? "热图指标" : "Heatmap metric"} />
+            <div className="flex flex-wrap items-center gap-2">
+              <SegLinks items={heatModeItems} label={zh ? "热图模式" : "Heatmap mode"} />
+              <SegLinks items={heatSwitch} label={zh ? "热图指标" : "Heatmap metric"} />
+            </div>
           </div>
+          {activeWeek !== null ? (
+            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[11px]">
+              {canPrevWeek ? (
+                <Link href={weekPagerHref(-1)} scroll={false} className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey hover:border-blue hover:text-paper">
+                  ← {zh ? "上一周" : "Previous week"}
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey/40">← {zh ? "上一周" : "Previous week"}</span>
+              )}
+              <span className="text-paper">{weekLabel(activeWeek.fromUtcMs, tz, zh)}</span>
+              {canNextWeek ? (
+                <Link href={weekPagerHref(1)} scroll={false} className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey hover:border-blue hover:text-paper">
+                  {zh ? "下一周" : "Next week"} →
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey/40">{zh ? "下一周" : "Next week"} →</span>
+              )}
+              {activeWeek.fromUtcMs !== currentWeek.fromUtcMs ? (
+                <Link href={hrefWith(query, { heatmode: "week", heatweek: weekKeyFor(currentWeek.fromUtcMs, tz) })} scroll={false} className="inline-flex min-h-8 items-center px-1.5 text-blue hover:underline">
+                  {zh ? "回到本周" : "This week"}
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
           <div className="mt-4">
             <UsageHeatmapGrid
-              heatmap={overview.heatmap}
+              heatmap={activeHeatmap}
               metric={heatMetric}
               tzLabel={gmtLabel(filters.tzOffsetMinutes)}
               zh={zh}
@@ -1059,7 +1128,11 @@ export default async function UsagePage({
             {zh ? "最活跃时段" : "Busiest slots"}
           </h2>
           <p className="mt-1 text-[11px] text-grey">
-            {zh ? "TOP 5 · 所选范围 · 随热图指标联动" : "TOP 5 · selected range · follows heatmap metric"}
+            {activeWeek !== null
+              ? `TOP 5 · ${weekLabel(activeWeek.fromUtcMs, tz, zh)} · ${zh ? "随热图指标联动" : "follows heatmap metric"}`
+              : zh
+                ? "TOP 5 · 聚合 · 随热图指标联动"
+                : "TOP 5 · aggregate · follows heatmap metric"}
           </p>
           {topSlots.length === 0 ? (
             <p className="mt-4 text-xs text-grey">

@@ -40,6 +40,7 @@ import {
 } from "./pricing";
 import type {
   UsageDistribution,
+  UsageHeatmap,
   UsageOverview,
   UsagePricingMatch,
   UsageRecordRow,
@@ -348,8 +349,11 @@ function emptyTotals(): UsageTotals {
 export async function getUsageOverview(
   userId: number,
   filters: UsageFilters,
+  options?: { heatWeek?: { fromUtcMs: number; toUtcMs: number } | null },
 ): Promise<UsageOverview> {
   const pool = getPool();
+  /* 热图「单周」模式:额外取所选自然周的事实行,不影响主范围聚合。 */
+  const heatWeek = options?.heatWeek ?? null;
   const pricesPromise = loadModelPrices(pool);
 
   const rangeOnly: UsageFilters = {
@@ -396,14 +400,18 @@ export async function getUsageOverview(
   };
   const bucketEnvelopeFilters: UsageFilters = {
     ...filters,
-    from: new Date(Math.min(prevFilters.from.getTime(), weeklyFilters.from.getTime())),
-    to: filters.to,
+    from: new Date(Math.min(
+      prevFilters.from.getTime(),
+      weeklyFilters.from.getTime(),
+      heatWeek ? heatWeek.fromUtcMs : Number.POSITIVE_INFINITY,
+    )),
+    to: heatWeek && heatWeek.toUtcMs > filters.to.getTime() ? new Date(heatWeek.toUtcMs) : filters.to,
   };
   const bucketEnvelope = bucketFilterSql(userId, bucketEnvelopeFilters);
   const sessionEnvelopeFilters: UsageFilters = {
     ...filters,
-    from: prevFilters.from,
-    to: filters.to,
+    from: heatWeek && heatWeek.fromUtcMs < prevFilters.from.getTime() ? new Date(heatWeek.fromUtcMs) : prevFilters.from,
+    to: heatWeek && heatWeek.toUtcMs > filters.to.getTime() ? new Date(heatWeek.toUtcMs) : filters.to,
   };
   const sessionEnvelope = sessionFilterSql(userId, sessionEnvelopeFilters);
 
@@ -535,7 +543,7 @@ export async function getUsageOverview(
         `WITH scoped AS (
            SELECT b.input_tokens, b.cache_write_input_tokens,
                   b.cache_read_input_tokens, b.output_tokens,
-                  b.reasoning_output_tokens, b.updated_at,
+                  b.reasoning_output_tokens, b.updated_at, b.bucket_start,
                   (${lifetimeBucket.where}) AS in_lifetime
            FROM usage_buckets b
            WHERE b.user_id = ?
@@ -552,6 +560,7 @@ export async function getUsageOverview(
            SUM(CASE WHEN in_lifetime THEN reasoning_output_tokens ELSE 0 END)
              AS reasoning_output_tokens,
            MAX(updated_at) AS bucket_last_sync,
+           MIN(bucket_start) AS first_sample_at,
            (SELECT MAX(s.updated_at) FROM usage_sessions s WHERE s.user_id = ?)
              AS session_last_sync
          FROM scoped`,
@@ -576,6 +585,7 @@ export async function getUsageOverview(
   const bucketRows: RowDataPacket[] = [];
   const prevBucketRows: RowDataPacket[] = [];
   const weeklyRows: RowDataPacket[] = [];
+  const weekBucketRows: RowDataPacket[] = [];
   for (const row of bucketEnvelopeRows) {
     const timestamp = new Date(row.sample_at as string).getTime();
     if (timestamp >= filters.from.getTime() && timestamp < filters.to.getTime()) {
@@ -586,6 +596,9 @@ export async function getUsageOverview(
     }
     if (timestamp >= weeklyFilters.from.getTime() && timestamp < weeklyFilters.to.getTime()) {
       weeklyRows.push(row);
+    }
+    if (heatWeek && timestamp >= heatWeek.fromUtcMs && timestamp < heatWeek.toUtcMs) {
+      weekBucketRows.push(row);
     }
   }
   const prevSessionRows = sessionRows;
@@ -703,6 +716,12 @@ export async function getUsageOverview(
   for (const item of byDay.values()) item.totalTokens = totalOf(item);
   totals.totalTokens = totalOf(totals);
   const lifetimeTokens = lifetimeRows[0] ? totalOf(tokensOf(lifetimeRows[0])) : 0;
+  const firstDataAt = (() => {
+    const value = lifetimeRows[0]?.first_sample_at as string | Date | null | undefined;
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  })();
   // 范围内活跃设备 = bucket ∪ session 事实里的去重 device_id
   totals.activeDevices = new Set(
     [
@@ -767,23 +786,38 @@ export async function getUsageOverview(
     (weekday as number) <= 6 &&
     (hour as number) >= 0 &&
     (hour as number) <= 23;
-  /* bucketRows 已保留事实时间；热图直接复用它，避免为相同 Token 再扫描一次范围。 */
-  for (const row of bucketRows) {
-    const sampleAt = new Date(row.sample_at as string);
-    const local = new Date(sampleAt.getTime() + filters.tzOffsetMinutes * 60_000);
-    const weekday = (local.getUTCDay() + 6) % 7;
-    const hour = local.getUTCHours();
-    if (!inGrid(weekday, hour)) continue;
-    const tokens = tokensOf(row);
-    heatmap.hasData[weekday][hour] = true;
-    heatmap.tokens[weekday][hour] += totalOf(tokens);
-    heatmap.inputTokens[weekday][hour] += tokens.inputTokens;
-    heatmap.cacheWriteInputTokens[weekday][hour] += tokens.cacheWriteInputTokens;
-    heatmap.cacheReadInputTokens[weekday][hour] += tokens.cacheReadInputTokens;
-    heatmap.outputTokens[weekday][hour] += tokens.outputTokens;
-    heatmap.reasoningOutputTokens[weekday][hour] += tokens.reasoningOutputTokens;
-    heatmap.costMicros[weekday][hour] +=
-      num(row.stored_cost_micros) + estimateRow(row, tokens).micros;
+  /* bucketRows 已保留事实时间；热图直接复用它，避免为相同 Token 再扫描一次范围。
+     单周热图复用同一填充逻辑，行由包络分类得出。 */
+  const fillBucketHeatmap = (target: UsageHeatmap, rows: RowDataPacket[]) => {
+    for (const row of rows) {
+      const sampleAt = new Date(row.sample_at as string);
+      const local = new Date(sampleAt.getTime() + filters.tzOffsetMinutes * 60_000);
+      const weekday = (local.getUTCDay() + 6) % 7;
+      const hour = local.getUTCHours();
+      if (!inGrid(weekday, hour)) continue;
+      const tokens = tokensOf(row);
+      target.hasData[weekday][hour] = true;
+      target.tokens[weekday][hour] += totalOf(tokens);
+      target.inputTokens[weekday][hour] += tokens.inputTokens;
+      target.cacheWriteInputTokens[weekday][hour] += tokens.cacheWriteInputTokens;
+      target.cacheReadInputTokens[weekday][hour] += tokens.cacheReadInputTokens;
+      target.outputTokens[weekday][hour] += tokens.outputTokens;
+      target.reasoningOutputTokens[weekday][hour] += tokens.reasoningOutputTokens;
+      target.costMicros[weekday][hour] +=
+        num(row.stored_cost_micros) + estimateRow(row, tokens).micros;
+    }
+  };
+  fillBucketHeatmap(heatmap, bucketRows);
+  /* 单周热图：session 事实按周窗口由聚合函数自行裁剪；scratch totals 只作占位。 */
+  const weekHeatmap = heatWeek ? createEmptyUsageHeatmap() : null;
+  if (heatWeek && weekHeatmap) {
+    fillBucketHeatmap(weekHeatmap, weekBucketRows);
+    aggregateUsageSessionRows(
+      sessionRows,
+      { ...filters, from: new Date(heatWeek.fromUtcMs), to: new Date(heatWeek.toUtcMs) },
+      { sessions: 0, messages: 0, userMessages: 0, activeSeconds: 0, durationSeconds: 0 },
+      { heatmap: weekHeatmap },
+    );
   }
   const trend = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
 
@@ -1060,6 +1094,8 @@ export async function getUsageOverview(
     },
     previous,
     heatmap,
+    weekHeatmap,
+    firstDataAt,
     distributions,
     records: {
       rows: records,
