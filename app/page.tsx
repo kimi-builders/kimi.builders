@@ -15,6 +15,7 @@ import { compactNumber } from "@/src/lib/format";
 import { getHomeData, type HomeFeaturedItem } from "@/src/lib/home";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { LocaleToggle } from "./(app)/_components/pref-controls";
 
 const AUTH_ERRORS: Record<string, I18nKey> = {
   state_mismatch: "home.errState",
@@ -106,6 +107,11 @@ export default async function Home({
       {/* ---- 海报区:hero + 主 CTA(全页视觉焦点)---- */}
       <section className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <div className="absolute right-5 top-5 flex items-center gap-4 font-mono text-xs">
+          {/* 首页也要语言切换:复用壳内同一控件(cookie + html.lang + refresh) */}
+          <LocaleToggle
+            withLabel
+            className="flex items-center gap-1.5 text-grey transition-colors hover:text-paper"
+          />
           <AuthChip />
         </div>
         {typeof authError === "string" && (
