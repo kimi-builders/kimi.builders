@@ -13,7 +13,6 @@ const SOURCE_LABELS: Record<string, string> = {
   cursor: "Cursor",
   zcode: "Zcode",
   workbuddy: "WorkBuddy",
-  codebuddy: "CodeBuddy",
   "pi-coding-agent": "Pi Agent",
 };
 

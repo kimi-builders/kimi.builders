@@ -40,9 +40,10 @@ const ICONS = {
   cline: ClineMono,
   gemini: GeminiColor,
   qoder: QoderColor,
-  /* 智谱 Z.ai / 腾讯 / Pi:ZAI 与 Pi 只有 Mono(currentColor 跟随主题) */
+  /* 智谱 Z.ai / 腾讯 / Pi:ZAI 与 Pi 只有 Mono(currentColor 跟随主题);
+     WorkBuddy 暂无独立标,沿用同产品 CodeBuddy 品牌标 */
   zcode: ZaiMono,
-  codebuddy: CodeBuddyColor,
+  workbuddy: CodeBuddyColor,
   "pi-agent": PiMono,
   "pi-coding-agent": PiMono,
 } as const;

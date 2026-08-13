@@ -28,11 +28,13 @@ test("modelFamilyName: unknown id falls back to the raw id", () => {
   assert.ok(!isModelFamily("some-custom-model"));
 });
 
-test("agents registry: zcode / codebuddy / pi-agent present, qwen stays a model family", () => {
+test("agents registry: zcode / workbuddy / pi-agent present, qwen stays a model family", () => {
   const ids = AGENTS.map((a) => a.id);
-  for (const id of ["zcode", "codebuddy", "pi-agent", "qoder"]) {
+  for (const id of ["zcode", "workbuddy", "pi-agent", "qoder"]) {
     assert.ok(ids.includes(id as never), `agent ${id}`);
   }
+  /* WorkBuddy = 腾讯主推名;codebuddy 并入 workbuddy,不再单列 */
+  assert.ok(!ids.includes("codebuddy" as never), "codebuddy is folded into workbuddy");
   assert.ok(!ids.includes("qwen" as never), "qwen is a model family, not an agent");
   assert.ok(isModelFamily("qwen"));
 });

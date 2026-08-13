@@ -19,8 +19,8 @@ export const AGENTS = [
   { id: "qoder", name: "Qoder" },
   /* 智谱国际版(Z.ai)的编码 Agent;图标用 zai 标 */
   { id: "zcode", name: "Zcode" },
-  /* 腾讯 CodeBuddy */
-  { id: "codebuddy", name: "CodeBuddy" },
+  /* 腾讯 WorkBuddy(前 CodeBuddy 改名/主推名;collector 上报同 id) */
+  { id: "workbuddy", name: "WorkBuddy" },
   /* Pi Agent */
   { id: "pi-agent", name: "Pi Agent" },
 ] as const;
