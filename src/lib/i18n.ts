@@ -829,8 +829,16 @@ const DICT = {
   /* ---- 关于页(/about)---- */
   "about.title": { zh: "关于", en: "About" },
   "about.who": {
-    zh: "kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方)。这里聚着用 Kimi 搭实际东西的人 —— Agent、自动化工作流、提示词工程,什么实在聊什么。",
-    en: "kimi.builders is a non-commercial community of builders using Kimi (unofficial). People here build real things with Kimi — agents, automation workflows, prompt engineering.",
+    zh: "kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方)。这里聚着用 Kimi 构建、创造、生成实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着构建者声明的 token 投入。",
+    en: "kimi.builders is a non-commercial, user-built community of builders using Kimi (unofficial). It gathers people who build, create and generate real things with Kimi — agent writers, workflow automators, prompt crafters — and the works they ship, each carrying the builder's declared token investment.",
+  },
+  "about.whoMore": {
+    zh: "这里没有空话和营销稿:跑通的工作流、踩过的坑、能复用的提示词,都值得留下;你卡住的地方,多半有人刚蹚过。",
+    en: "No fluff, no marketing: workflows that actually run, pitfalls already mapped, prompts worth reusing. Whatever you're stuck on, someone here just got through it.",
+  },
+  "about.quote": {
+    zh: "一次好的构建,既是一件作品的终点,也是更多好作品的指路牌。",
+    en: "A good build is the end of one work, and a signpost to many more.",
   },
   "about.whatTitle": { zh: "这里有什么", en: "What's here" },
   "about.whatCommunity": {
