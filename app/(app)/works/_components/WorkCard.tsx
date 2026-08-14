@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { ExternalLink, Heart } from "lucide-react";
 import { agentName } from "@/src/lib/agents";
+import { awesomeToneFor } from "@/src/lib/cover-tones";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
@@ -80,13 +81,15 @@ export default function WorkCard({
       />
       <div className="shrink-0 border-b border-line sm:w-[220px] sm:self-stretch sm:border-b-0 sm:border-r">
         {/* 封面 = 配图第一张(表单承诺的语义);无配图才回落旧的 screenshot_url 外链,
-            再空则 WorkScreenshot 兜底「名称砖」(主题面或作者选定的固定色) */}
+            再空则 WorkScreenshot 兜底「名称砖」:作品=作者选定色/theme,
+            Awesome=按类型族指派(awesomeToneFor) */}
         <WorkScreenshot
           url={w.imageKeys[0] ? mediaUrl(w.imageKeys[0]) : w.screenshotUrl}
           name={w.name}
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={kindLabel}
-          tone={w.coverTone}
+          kindId={w.kind}
+          tone={w.source === "awesome" ? awesomeToneFor(w.kind) : w.coverTone}
           fit={w.coverFit}
           embedded
           fill

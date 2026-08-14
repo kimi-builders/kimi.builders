@@ -26,3 +26,26 @@ export function coverToneName(id: string, zh: boolean): string {
   const tone = COVER_TONES.find((item) => item.id === id) ?? COVER_TONES[0];
   return zh ? tone.zh : tone.en;
 }
+
+/* Awesome 条目的砖色(awesome 无媒体、无表单色板):按「类型族」定色,
+   复用上面五个固定色——一套色板,两条指派路径(作品墙=用户自选,
+   Awesome=类型族)。绿=应用,蓝=工具,梅子=智能体,赭石=内容,石墨=其他。 */
+const KIND_TONE: Record<string, CoverToneId> = {
+  app: "moss",
+  miniapp: "moss",
+  website: "moss",
+  cli: "abyss",
+  sdk: "abyss",
+  extension: "abyss",
+  bot: "plum",
+  skill: "plum",
+  prompt: "rust",
+  slides: "rust",
+  demo: "rust",
+  content: "rust",
+  other: "slate",
+};
+
+export function awesomeToneFor(kind: string): CoverToneId {
+  return KIND_TONE[kind] ?? "slate";
+}
