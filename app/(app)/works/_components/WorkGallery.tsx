@@ -12,10 +12,13 @@ export default function WorkGallery({
   keys,
   name,
   locale,
+  fit = "cover",
 }: {
   keys: string[];
   name: string;
   locale: Locale;
+  /* 封面适配(20260908):cover=裁切填满(默认),contain=补边完整(竖屏图不拦腰裁) */
+  fit?: string;
 }) {
   const [active, setActive] = useState<number | null>(null);
   const close = useCallback(() => setActive(null), []);
@@ -58,7 +61,9 @@ export default function WorkGallery({
         <img
           src={mediaUrl(cover)}
           alt={name}
-          className="aspect-video w-full rounded-2xl border border-line object-cover"
+          className={`aspect-video w-full rounded-2xl border border-line ${
+            fit === "contain" ? "bg-moon object-contain" : "object-cover"
+          }`}
         />
       </button>
       {rest.length > 0 && (

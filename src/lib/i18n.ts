@@ -595,7 +595,7 @@ const DICT = {
     en: "Per-user, per-device authorization is coming next; you will be able to connect, inspect, and revoke devices here.",
   },
   "usage.lastSync": { zh: "最近同步:{t}", en: "Last synced {t}" },
-  "works.submit": { zh: "提交作品", en: "Submit work" },
+  "works.submit": { zh: "发布作品", en: "Publish work" },
   "works.empty": {
     zh: "还没有作品。来挂第一个 —— 你用 Kimi 做的东西值得被看到。",
     en: "No works yet. Hang the first one — what you built with Kimi deserves to be seen.",
@@ -606,7 +606,7 @@ const DICT = {
     zh: "确定删除这个作品?",
     en: "Delete this work?",
   },
-  "works.newTitle": { zh: "提交作品", en: "Submit work" },
+  "works.newTitle": { zh: "发布作品", en: "Publish work" },
   "works.editTitle": { zh: "编辑作品", en: "Edit work" },
   "works.name": { zh: "作品名称", en: "Name" },
   "works.tagline": { zh: "一句话亮点", en: "One-line pitch" },
@@ -641,8 +641,8 @@ const DICT = {
     en: "By default your work only appears on your wall; tick to also list it on Awesome (shown publicly).",
   },
   "works.loginRequired": {
-    zh: "登录后提交作品:",
-    en: "Log in to submit your work:",
+    zh: "登录后发布作品:",
+    en: "Log in to publish your work:",
   },
   "err.workName": { zh: "作品名称必填", en: "Name is required" },
   "err.workNameLong": {
@@ -1115,7 +1115,7 @@ const DICT = {
     zh: "把你用 AI 构建的项目挑一个展示到作品页。",
     en: "Pick something you built with AI and show it on the works wall.",
   },
-  "prof.emptyWorksCta": { zh: "上架作品", en: "Submit work" },
+  "prof.emptyWorksCta": { zh: "上架作品", en: "Publish work" },
   "prof.usage30": { zh: "近 30 天 TOKEN", en: "30D TOKENS" },
   "prof.dailyTrend": { zh: "每日趋势", en: "Daily trend" },
   "prof.usageHit": { zh: "缓存命中率", en: "CACHE HIT" },
@@ -1223,6 +1223,18 @@ const DICT = {
     zh: "也可以直接拖入或粘贴图片;拖动缩略图调整顺序。",
     en: "You can also drop or paste images; drag thumbnails to reorder.",
   },
+  "works.coverFit": { zh: "封面适配", en: "Cover fit" },
+  "works.coverFitCover": { zh: "裁切填满", en: "Crop to fill" },
+  "works.coverFitContain": { zh: "补边完整", en: "Pad to fit" },
+  "works.coverFitHint": {
+    zh: "竖屏截图建议补边——完整显示,不被拦腰裁。",
+    en: "Pad tall screenshots so nothing gets cropped.",
+  },
+  "works.coverTone": { zh: "封面风格(无配图时生效)", en: "Cover style (no images)" },
+  "works.coverToneHint": {
+    zh: "没传配图时,列表封面是一块统一风格的名称砖;选定固定色后不随主题切换。",
+    en: "Without images, the wall cover is a generated name tile. A fixed color won't follow the theme.",
+  },
   "works.imageRemove": { zh: "删除这张图", en: "Remove this image" },
   "works.coverBadge": { zh: "封面", en: "COVER" },
   "works.uploading": { zh: "上传中…", en: "Uploading…" },
@@ -1255,7 +1267,7 @@ const DICT = {
     zh: "社区成员用 Kimi 构建的真实作品。构建投入徽章为作者声明制:作者自报、系统按可验证总量封顶。",
     en: "Real projects members built with Kimi. Token badges are author-claimed, capped by verifiable totals.",
   },
-  "rail.worksSubmit": { zh: "提交作品", en: "Submit your work" },
+  "rail.worksSubmit": { zh: "发布作品", en: "Publish your work" },
   "rail.worksTop": { zh: "热门作品", en: "TOP WORKS" },
   "rail.worksTopEmpty": { zh: "还没有作品,来提交第一个。", en: "No works yet — submit the first." },
   "rail.relatedWorks": { zh: "相关作品", en: "RELATED WORKS" },
@@ -1441,12 +1453,12 @@ const DICT = {
   "mod.toastHidden": { zh: "已屏蔽", en: "Hidden" },
   "mod.toastUnhidden": { zh: "已解除屏蔽", en: "Unhidden" },
   "err.muted": {
-    zh: "你已被禁言,{d} 解除;期间不能发帖、评论或提交作品。",
-    en: "You are muted until {d}; posting, commenting, and submitting works are disabled.",
+    zh: "你已被禁言,{d} 解除;期间不能发帖、评论或发布作品。",
+    en: "You are muted until {d}; posting, commenting, and publishing works are disabled.",
   },
   "err.mutedForever": {
-    zh: "你已被永久禁言;期间不能发帖、评论或提交作品。",
-    en: "You are permanently muted; posting, commenting, and submitting works are disabled.",
+    zh: "你已被永久禁言;期间不能发帖、评论或发布作品。",
+    en: "You are permanently muted; posting, commenting, and publishing works are disabled.",
   },
 } as const;
 

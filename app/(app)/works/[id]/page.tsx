@@ -290,18 +290,27 @@ export default async function WorkPage({
         </span>
       </div>
 
-      <div className="mt-5">
-        {/* 有配图走图集(封面大图 + 缩略图);无配图回落外链截图,再空为名称砖 */}
-        {work.imageKeys.length > 0 ? (
-          <WorkGallery keys={work.imageKeys} name={work.name} locale={locale} />
-        ) : (
-          <WorkScreenshot
-            url={work.screenshotUrl}
-            name={work.name}
-            logoUrl={work.logoKey ? mediaUrl(work.logoKey) : ""}
-          />
-        )}
-      </div>
+      {/* 媒体区:有配图走图集(封面大图 + 缩略图);只有存量外链截图则单张直出;
+          都没有就不渲染——生成的名称砖是列表封面的兜底,详情页头部已有
+          logo + 名称,再放同一块砖是重复(20260908) */}
+      {(work.imageKeys.length > 0 || work.screenshotUrl) && (
+        <div className="mt-5">
+          {work.imageKeys.length > 0 ? (
+            <WorkGallery
+              keys={work.imageKeys}
+              name={work.name}
+              locale={locale}
+              fit={work.coverFit}
+            />
+          ) : (
+            <WorkScreenshot
+              url={work.screenshotUrl}
+              name={work.name}
+              logoUrl={work.logoKey ? mediaUrl(work.logoKey) : ""}
+            />
+          )}
+        </div>
+      )}
 
       {/* 正文 + 右侧信息栏:<xl 内联显示(窄屏折行);≥xl 由右栏元数据卡取代
           (右栏注册表 work kind),正文占满正常阅读列宽 */}

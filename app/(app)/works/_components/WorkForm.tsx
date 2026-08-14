@@ -7,7 +7,8 @@
    自填型号(回车添加)依赖 JS,删除键同样。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
@@ -120,16 +121,25 @@ export default function WorkForm({
     suggested: { label: string; tokens: number } | null;
   };
   /* 媒体回填(20260826_work_media):编辑时由服务端 mediaUrl 拼好 URL 传入;
-     仅「我的作品」路径渲染上传区(awesome 推荐条目服务端强制置空) */
+     仅「我的作品」路径渲染上传区(awesome 推荐条目服务端强制置空)。
+     tone/fit(20260908):名称砖色调与封面适配回填 */
   media?: {
     logo: MediaRef | null;
     images: MediaRef[];
+    tone?: string;
+    fit?: string;
   };
 }) {
   const [state, formAction, pending] = useActionState<WorkFormState | null, FormData>(
     action,
     null,
   );
+  /* 保存成功:客户端导航落详情页(完整页 = 普通跳转;弹窗 = 整条路由树重解析,
+     @modal 插槽随之卸载)。action 里 redirect() 只转背景页,弹窗不会关 */
+  const router = useRouter();
+  useEffect(() => {
+    if (state?.ok && state.workId) router.push(`/works/${state.workId}`);
+  }, [state, router]);
   const checkedAgents = new Set(
     initial ? initial.agents : ["kimi"], // 新表单默认勾 Kimi
   );
@@ -306,6 +316,8 @@ export default function WorkForm({
           locale={locale}
           initialLogo={media?.logo ?? null}
           initialImages={media?.images ?? []}
+          initialTone={media?.tone ?? "theme"}
+          initialFit={media?.fit ?? "cover"}
         />
       )}
 

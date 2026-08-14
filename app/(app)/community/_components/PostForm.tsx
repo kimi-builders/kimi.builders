@@ -5,6 +5,7 @@
    底栏 hint + primary 发布。提交走 server action(createPostAction),校验错误就地显示。
    完整页(/community/new)与弹窗(@modal)共用,RouteModal 已提供圆角壳。 */
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import {
@@ -78,6 +79,13 @@ export default function PostForm({
     PostFormState | null,
     FormData
   >(createPostAction, null);
+
+  /* 保存成功:客户端导航落详情页(完整页 = 普通跳转;弹窗 = 整条路由树重解析,
+     @modal 插槽随之卸载)。action 里 redirect() 只转背景页,弹窗不会关 */
+  const router = useRouter();
+  useEffect(() => {
+    if (state?.ok && state.postId) router.push(`/community/${state.postId}`);
+  }, [state, router]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

@@ -4,7 +4,8 @@
    帖子结构,保持简单);保存走 server action,成功回详情页。
    视觉与发帖表单(PostForm)同套语言:标签 + rounded-lg 输入 + 自绘 chevron 下拉。 */
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 import { CATEGORIES } from "@/src/lib/categories";
 import { t, type Locale } from "@/src/lib/i18n";
 import { updatePostAction, type PostFormState } from "../actions";
@@ -35,6 +36,12 @@ export default function PostEditForm({
     PostFormState | null,
     FormData
   >(updatePostAction, null);
+
+  /* 同发帖:保存成功由客户端导航落详情页,弹窗随之卸载 */
+  const router = useRouter();
+  useEffect(() => {
+    if (state?.ok && state.postId) router.push(`/community/${state.postId}`);
+  }, [state, router]);
 
   return (
     <form action={formAction} className="mt-5 space-y-4">

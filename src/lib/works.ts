@@ -59,6 +59,10 @@ export interface WorkRow {
      DB 只存 key,公开 URL 渲染时由 storage.ts mediaUrl 拼接 */
   logoKey: string;
   imageKeys: string[];
+  /* 20260908:名称砖色调(theme=跟随主题,其余为 cover-tones 注册表固定色)+
+     封面适配(cover=裁切填满 / contain=补边完整) */
+  coverTone: string;
+  coverFit: string;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -106,6 +110,8 @@ function mapWork(r: RowDataPacket): WorkRow {
     alsoAwesome: !!r.also_awesome,
     logoKey: r.logo_key ?? "",
     imageKeys: parseStrArray(r.image_keys),
+    coverTone: r.cover_tone ?? "theme",
+    coverFit: r.cover_fit === "contain" ? "contain" : "cover",
   };
 }
 
@@ -113,7 +119,8 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.screenshot_url, w.tags, w.agents, w.source, w.visibility, w.hidden_at, w.hidden_reason,
        w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
-       w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys`;
+       w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys,
+       w.cover_tone, w.cover_fit`;
 
 /* 可见性谓词(20260828):私密=仅作者(推荐人)本人可见。
    公共上下文(右栏/精选/海报/统计)恒用 PUBLIC_ONLY;列表/详情带 viewerId 放行作者本人。
@@ -500,6 +507,10 @@ export interface WorkFields {
   /* 20260826_work_media;action 层已做形状 + 前缀校验(isWorkLogoKey/areWorkImageKeys) */
   logoKey: string;
   imageKeys: string[];
+  /* 20260908;action 层已做白名单校验(isCoverTone / cover|contain)。
+     awesome 条目无媒体,服务端强制默认值 */
+  coverTone: string;
+  coverFit: string;
 }
 
 /* ---- 作品媒体 key 校验(20260826_work_media)----
@@ -520,8 +531,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys, cover_tone, cover_fit)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -548,6 +559,9 @@ export async function createWork(
       source === "awesome" || f.imageKeys.length === 0
         ? null
         : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
+      /* 名称砖色调/适配同媒体:awesome 条目强制默认 */
+      source === "awesome" ? "theme" : f.coverTone.slice(0, 16),
+      source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
     ],
   );
   return Number(res.insertId);
@@ -563,7 +577,7 @@ export async function updateWork(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
        tags = ?, agents = ?, source = ?, visibility = ?, author_label = ?, claimed_tokens = ?,
        status = ?, models = ?, kind = ?, description_md = ?, scope = ?, also_awesome = ?,
-       logo_key = ?, image_keys = ?
+       logo_key = ?, image_keys = ?, cover_tone = ?, cover_fit = ?
      WHERE id = ? AND user_id = ?`,
     [
       f.name.slice(0, 120),
@@ -588,6 +602,8 @@ export async function updateWork(
       source === "awesome" || f.imageKeys.length === 0
         ? null
         : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
+      source === "awesome" ? "theme" : f.coverTone.slice(0, 16),
+      source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
       workId,
       userId,
     ],

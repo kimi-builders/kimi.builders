@@ -8,7 +8,6 @@
    顶/踩走纯乐观更新(只落库、不作废路径):分数展示本来就是客户端态,避免每票都刷新全站。 */
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { setUserLocale } from "@/src/lib/auth/users";
 import {
@@ -59,6 +58,10 @@ export interface PostFormState {
   error?: string;
   /* 限流(P1-5):超限时带上的等待秒数,客户端可直接展示 error 文案 */
   retryAfterSeconds?: number;
+  /* 保存成功由客户端 router.push 落详情页——action 里 redirect() 只会转背景页,
+     拦截路由的 @modal 插槽不随之卸载(2026-08-14 实测) */
+  ok?: boolean;
+  postId?: number;
 }
 
 export interface MutationResult {
@@ -128,11 +131,12 @@ export async function createPostAction(
     options,
   });
   /* 入队 AI 回帖:本帖开关 + 作者全局开关都开才排(v2 决策 3)。
-     enqueue 内部用 after(),必须在 redirect 抛出前调用。 */
+     enqueue 内部用 after(),必须在 return 之前调用。 */
   if (aiReply && user.aiRepliesEnabled) await enqueueAiReply(postId);
   updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath("/community");
-  redirect(`/community/${postId}`);
+  /* 落详情页:不在 action 里 redirect(弹窗插槽不随转);由客户端 router.push */
+  return { ok: true, postId };
 }
 
 export async function createCommentAction(
@@ -326,7 +330,7 @@ export async function updatePostAction(
   updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community");
-  redirect(`/community/${postId}`);
+  return { ok: true, postId };
 }
 
 /* 删除不 redirect:由客户端 toast 后自行跳转;作废 feed 预取,否则回列表看到旧卡片。 */

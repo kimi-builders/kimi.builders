@@ -1,12 +1,13 @@
 "use server";
 
 /* 作品库写操作:提交 / 编辑 / 删除(作者自助,归属校验在查询层 WHERE)。
-   模式同社区:useActionState 的表单返回 { error? } 后 redirect;
+   模式同社区:useActionState 的表单返回 { error? / ok+workId }——保存成功由
+   客户端 router.push 落详情页(action 里 redirect 转不走弹窗插槽);
    删除返回 MutationResult 由客户端 toast + 跳回列表。
    末尾两个精选操作是编辑(admin/mod)定夺,不做归属校验(每周精选 v0)。 */
 import { revalidatePath, updateTag } from "next/cache";
-import { redirect } from "next/navigation";
 import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
+import { isCoverTone } from "@/src/lib/cover-tones";
 import { isWorkKind } from "@/src/lib/work-kinds";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
@@ -53,6 +54,10 @@ import {
 
 export interface WorkFormState {
   error?: string;
+  /* 保存成功由客户端 router.push 落详情页——action 里 redirect() 只会转背景页,
+     拦截路由的 @modal 插槽不随之卸载(2026-08-14 实测) */
+  ok?: boolean;
+  workId?: number;
 }
 
 export interface MutationResult {
@@ -118,6 +123,11 @@ function readFields(formData: FormData) {
        解析失败 = null,交给 validate 报错(不静默吞掉手搓值) */
     logoKey: String(formData.get("logoKey") || "").trim(),
     imageKeys: parseWorkImageKeysInput(String(formData.get("imageKeys") || "")),
+    /* 名称砖色调 + 封面适配(20260908):白名单收敛,非法值回落默认 */
+    coverTone: isCoverTone(String(formData.get("coverTone") || ""))
+      ? String(formData.get("coverTone"))
+      : "theme",
+    coverFit: String(formData.get("coverFit")) === "contain" ? "contain" : "cover",
   };
 }
 
@@ -196,8 +206,8 @@ export async function createWorkAction(
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
-  /* 落详情页:弹窗模式下跳列表(=弹窗底下的当前页)弹窗不会关,跳新页面才关掉 */
-  redirect(`/works/${newWorkId}`);
+  /* 落详情页:不在 action 里 redirect(弹窗插槽不随转);由客户端 router.push */
+  return { ok: true, workId: newWorkId };
 }
 
 export async function updateWorkAction(
@@ -227,8 +237,8 @@ export async function updateWorkAction(
   updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
-  /* 同新建:落详情页,弹窗随之关闭 */
-  redirect(`/works/${workId}`);
+  /* 同新建:客户端 router.push 落详情页,弹窗随之关闭 */
+  return { ok: true, workId };
 }
 
 export async function deleteWorkAction(

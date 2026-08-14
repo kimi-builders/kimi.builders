@@ -42,6 +42,8 @@ function work(): WorkRow {
     alsoAwesome: false,
     logoKey: "logo.png",
     imageKeys: ["one.png"],
+    coverTone: "theme",
+    coverFit: "cover",
   };
 }
 

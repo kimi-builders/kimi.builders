@@ -56,6 +56,8 @@ function fields(overrides: Partial<WorkFields> = {}): WorkFields {
     scope: null,
     logoKey: "",
     imageKeys: [],
+    coverTone: "theme",
+    coverFit: "cover",
     ...overrides,
   };
 }

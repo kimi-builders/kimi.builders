@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import ImageCropDialog from "@/components/ImageCropDialog";
+import { COVER_TONES, coverToneName } from "@/src/lib/cover-tones";
 import { t, type Locale } from "@/src/lib/i18n";
 import { uploadMedia } from "@/src/lib/upload";
 import { WORK_IMAGE_MAX } from "@/src/lib/work-media";
@@ -36,11 +37,21 @@ export default function WorkMediaFields({
   locale,
   initialLogo = null,
   initialImages = [],
+  initialTone = "theme",
+  initialFit = "cover",
 }: {
   locale: Locale;
   initialLogo?: MediaRef | null;
   initialImages?: MediaRef[];
+  /* 20260908:名称砖色调(theme=跟随主题)+ 封面适配(cover/contain)回填 */
+  initialTone?: string;
+  initialFit?: string;
 }) {
+  const [tone, setTone] = useState(initialTone);
+  const [fit, setFit] = useState(initialFit === "contain" ? "contain" : "cover");
+  /* 适配自动建议:第一张竖屏图上传成功时建议「补边」;用户手动选过就不再插手 */
+  const fitTouched = useRef(initialFit === "contain");
+  const fitSuggestedFor = useRef<string | null>(null);
   const [logo, setLogo] = useState<MediaRef | null>(initialLogo);
   const [crop, setCrop] = useState<{ src: string; img: HTMLImageElement } | null>(null);
   const [images, setImages] = useState<ImageItem[]>(() =>
@@ -175,11 +186,29 @@ export default function WorkMediaFields({
 
   const doneKeys = images.filter((it) => it.status === "ok" && it.key).map((it) => it.key);
 
+  /* 适配自动建议:第一张(=封面)图明显高瘦(h > w×1.15)时建议「补边完整」;
+     每张首图只建议一次,用户手动选过(fitTouched)就不再改 */
+  const firstOkUrl = images.find((it) => it.status === "ok" && it.url)?.url ?? null;
+  useEffect(() => {
+    if (!firstOkUrl || fitTouched.current) return;
+    if (fitSuggestedFor.current === firstOkUrl) return;
+    fitSuggestedFor.current = firstOkUrl;
+    const img = new Image();
+    img.onload = () => {
+      if (!fitTouched.current && img.naturalHeight > img.naturalWidth * 1.15) {
+        setFit("contain");
+      }
+    };
+    img.src = firstOkUrl;
+  }, [firstOkUrl]);
+
   return (
     <div className="space-y-4">
       {/* 提交载体:只落上传完成的 key(上传中/失败的条目不随表单提交) */}
       <input type="hidden" name="logoKey" value={logo?.key ?? ""} readOnly />
       <input type="hidden" name="imageKeys" value={JSON.stringify(doneKeys)} readOnly />
+      <input type="hidden" name="coverTone" value={tone} readOnly />
+      <input type="hidden" name="coverFit" value={fit} readOnly />
 
       {/* ---- Logo:方形预览 + 客户端裁剪上传 ---- */}
       <div>
@@ -376,6 +405,77 @@ export default function WorkMediaFields({
           </div>
         )}
       </div>
+
+      {/* ---- 封面适配(有配图时生效):裁切填满 / 补边完整 ---- */}
+      {images.length > 0 && (
+        <div>
+          <span className="mb-1.5 block text-[11.5px] text-grey">
+            {t(locale, "works.coverFit")}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {(["cover", "contain"] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={fit === id}
+                onClick={() => {
+                  fitTouched.current = true;
+                  setFit(id);
+                }}
+                className={`rounded-lg border px-2.5 py-1.5 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  fit === id
+                    ? "border-blue bg-blue/10 text-blue"
+                    : "border-line bg-bg text-grey hover:border-paper/30 hover:text-paper"
+                }`}
+              >
+                {t(locale, id === "cover" ? "works.coverFitCover" : "works.coverFitContain")}
+              </button>
+            ))}
+          </div>
+          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            {t(locale, "works.coverFitHint")}
+          </span>
+        </div>
+      )}
+
+      {/* ---- 封面风格(无配图时的名称砖)---- */}
+      {images.length === 0 && (
+        <div>
+          <span className="mb-1.5 block text-[11.5px] text-grey">
+            {t(locale, "works.coverTone")}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {COVER_TONES.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={tone === item.id}
+                onClick={() => setTone(item.id)}
+                title={coverToneName(item.id, locale === "zh")}
+                className={`flex h-8 items-center gap-1.5 rounded-lg border px-2 text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  tone === item.id
+                    ? "border-blue bg-blue/10 text-blue"
+                    : "border-line text-grey hover:border-paper/30 hover:text-paper"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-3.5 rounded-[4px] border border-line"
+                  style={
+                    item.hex
+                      ? { background: item.hex }
+                      : { background: "linear-gradient(135deg, #1f1f1f 50%, #f5f5f5 50%)" }
+                  }
+                />
+                {coverToneName(item.id, locale === "zh")}
+              </button>
+            ))}
+          </div>
+          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            {t(locale, "works.coverToneHint")}
+          </span>
+        </div>
+      )}
 
       {crop && (
         <ImageCropDialog

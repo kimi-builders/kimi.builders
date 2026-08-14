@@ -80,11 +80,14 @@ export default function WorkCard({
       />
       <div className="shrink-0 border-b border-line sm:w-[220px] sm:self-stretch sm:border-b-0 sm:border-r">
         {/* 封面 = 配图第一张(表单承诺的语义);无配图才回落旧的 screenshot_url 外链,
-            再空则 WorkScreenshot 兜底「名称砖」(moon 面 + Title Case 产品名) */}
+            再空则 WorkScreenshot 兜底「名称砖」(主题面或作者选定的固定色) */}
         <WorkScreenshot
           url={w.imageKeys[0] ? mediaUrl(w.imageKeys[0]) : w.screenshotUrl}
           name={w.name}
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
+          kindLabel={kindLabel}
+          tone={w.coverTone}
+          fit={w.coverFit}
           embedded
           fill
         />

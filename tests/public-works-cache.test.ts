@@ -40,6 +40,8 @@ function work(overrides: Partial<WorkRow> = {}): WorkRow {
     alsoAwesome: false,
     logoKey: "",
     imageKeys: [],
+    coverTone: "theme",
+    coverFit: "cover",
     ...overrides,
   };
 }

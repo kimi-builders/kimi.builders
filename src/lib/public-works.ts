@@ -97,6 +97,10 @@ export interface PublicWorkDto {
   scope: string;
   logoKey: string;
   imageKeys: string[];
+  /* 20260908:名称砖色调/封面适配——列表渲染要用,DTO 必须携带;
+     水合时对旧缓存负载给默认值兜底 */
+  coverTone: string;
+  coverFit: string;
 }
 
 export interface PublicWorksPageDto {
@@ -138,6 +142,8 @@ function publicWorkDto(work: WorkRow): PublicWorkDto | null {
     scope: work.scope,
     logoKey: work.logoKey,
     imageKeys: work.imageKeys,
+    coverTone: work.coverTone,
+    coverFit: work.coverFit,
   };
 }
 
@@ -154,8 +160,11 @@ export function hydratePublicWorksPage(dto: PublicWorksPageDto): WorksPage {
   return {
     works: dto.works.map((work) => ({
       ...work,
-      /* 公共清单 DTO 不带收录开关(展示用不到),水合时补默认值 */
+      /* 公共清单 DTO 不带收录开关(展示用不到),水合时补默认值;
+         20260908 前的旧缓存负载没有 cover_tone/cover_fit,同样补默认 */
       alsoAwesome: false,
+      coverTone: work.coverTone ?? "theme",
+      coverFit: work.coverFit === "contain" ? "contain" : "cover",
       createdAt: new Date(work.createdAt),
       featuredAt: work.featuredAt === null ? null : new Date(work.featuredAt),
     })),
