@@ -42,7 +42,7 @@ export default function WorkCommentForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl border border-line bg-bg/40 p-3 sm:p-4">
+    <form onSubmit={submit} className="mt-4 space-y-3 border-t border-line pt-4">
       <input type="hidden" name="work_id" value={workId} />
       <MarkdownEditor
         name="body"

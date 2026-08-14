@@ -336,7 +336,7 @@ export default function CommentSection({
     <li
       key={c.id}
       id={`comment-${c.id}`}
-      className={`scroll-mt-24 ${!nested ? "rounded-xl border border-line bg-bg/40 p-4" : ""} ${
+      className={`scroll-mt-24 ${!nested ? "py-4" : ""} ${
         c.score <= -3 ? "opacity-55" : ""
       }`}
       title={c.score <= -3 ? t(locale, "post.dimmed") : undefined}
@@ -414,7 +414,8 @@ export default function CommentSection({
       <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
         {t(locale, "post.comments", { n: total })}
       </h2>
-      <ul className="mt-5 space-y-3">{allThreads.map((c) => row(c, false))}</ul>
+      {/* 评论行不再套圆角盒: hairline 分隔,融进外层卡片(圆角套圆角显乱) */}
+      <ul className="mt-3 divide-y divide-line">{allThreads.map((c) => row(c, false))}</ul>
 
       {cursor !== null && (
         <button
@@ -430,7 +431,7 @@ export default function CommentSection({
       )}
 
       {loggedIn ? (
-        <form ref={formRef} onSubmit={submitComment} className="mt-6 space-y-3 rounded-xl border border-line bg-bg/40 p-3 sm:p-4">
+        <form ref={formRef} onSubmit={submitComment} className="mt-4 space-y-3 border-t border-line pt-4">
           <input type="hidden" name="post_id" value={postId} />
           {replyTo && (
             <>
@@ -466,7 +467,7 @@ export default function CommentSection({
           </button>
         </form>
       ) : (
-        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
+        <p className="mt-4 border-t border-line pt-4 text-sm text-grey">
           {t(locale, "post.loginToComment")}
           <a
             href="/api/auth/github"

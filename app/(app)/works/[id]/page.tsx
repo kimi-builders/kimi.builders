@@ -429,8 +429,8 @@ export default async function WorkPage({
             {t(locale, "works.noComments")}
           </p>
         ) : (
-          /* LoadMore 在容器内:追加页直接落进 space-y 流(同作品墙网格语义) */
-          <div className="mt-6 space-y-6">
+          /* LoadMore 在容器内:追加页直接落进分隔流;评论行不套圆角盒,hairline 分隔 */
+          <div className="mt-4 divide-y divide-line">
             {comments.nodes}
             {/* key 带首屏规模与游标:发/删评论触发 refresh 后首屏一变即 remount,
                 已追加的页作废(同作品墙/评论区语义) */}
@@ -445,7 +445,7 @@ export default async function WorkPage({
         {user ? (
           <WorkCommentForm workId={workId} locale={locale} />
         ) : (
-          <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
+          <p className="mt-4 border-t border-line pt-4 text-sm text-grey">
             {t(locale, "post.loginToComment")}
             <a
               href="/api/auth/github"

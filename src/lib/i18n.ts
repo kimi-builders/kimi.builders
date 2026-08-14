@@ -1107,12 +1107,12 @@ const DICT = {
     en: "Log in to support this work",
   },
   "works.discuss": {
-    zh: "与作者聊聊这个作品",
-    en: "Chat with the author about this work",
+    zh: "与构建者聊聊这个作品",
+    en: "Chat with the builder about this work",
   },
   "works.noComments": {
-    zh: "还没有评论。说点什么吧——第一个开口的,作者记得最牢。",
-    en: "No comments yet — say something; the author remembers the first voice.",
+    zh: "还没有评论。说点什么吧——第一个开口的,构建者记得最牢。",
+    en: "No comments yet — say something; the builder remembers the first voice.",
   },
   "works.authorChip": { zh: "作者", en: "AUTHOR" },
   "works.notFound": {

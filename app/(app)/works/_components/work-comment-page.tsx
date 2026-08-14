@@ -36,7 +36,7 @@ export async function loadWorkComments(
       const canDelete =
         !!user && (c.userId === user.id || workAuthorId === user.id);
       return (
-        <div key={c.id} id={`work-comment-${c.id}`} className="scroll-mt-24 rounded-xl border border-line bg-bg/40 p-4">
+        <div key={c.id} id={`work-comment-${c.id}`} className="scroll-mt-24 py-4">
           <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
             {c.handle ? (
               <>
