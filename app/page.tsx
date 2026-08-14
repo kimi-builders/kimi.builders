@@ -169,7 +169,7 @@ export default async function Home({
             <Link
               key={href}
               href={href}
-              className="inline-flex w-32 items-center justify-center rounded-lg border border-line py-2 text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex w-32 items-center justify-center border border-line py-2 text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, key)}
             </Link>
