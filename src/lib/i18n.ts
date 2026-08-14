@@ -954,10 +954,6 @@ const DICT = {
   "works.galleryOpen": { zh: "查看大图", en: "View full image" },
   "works.galleryPrev": { zh: "上一张", en: "Previous" },
   "works.galleryNext": { zh: "下一张", en: "Next" },
-  "works.slogan": {
-    zh: "所有人向所有人学习,所有人支持所有人构建。",
-    en: "Everyone learns from everyone. Everyone builds with everyone.",
-  },
   "works.badgeTitle": {
     zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
     en: "Declared by the author, capped by their verifiable total — not precise metering",

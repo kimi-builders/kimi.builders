@@ -152,12 +152,12 @@ export default async function Home({
         <p className="mt-2 text-sm text-grey">{t(locale, "home.heroSub")}</p>
         <Link
           href="/community"
-          className="mt-12 bg-blue px-10 py-3.5 font-mono text-sm font-semibold tracking-widest text-bg transition-opacity hover:opacity-85"
+          className="mt-12 inline-flex w-72 items-center justify-center bg-blue py-3.5 font-mono text-sm font-semibold tracking-widest text-bg transition-opacity hover:opacity-85"
         >
           {t(locale, "home.cta")} →
         </Link>
-        {/* 站点入口:主 CTA 下的安静链接排,给首次到访者一张地图 */}
-        <nav className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[11px] tracking-wider text-grey">
+        {/* 站点入口:主 CTA 下的边框按钮排,固定宽度(中英同宽,一眼可点) */}
+        <nav className="mt-6 flex flex-wrap items-center justify-center gap-2.5 font-mono text-[11px] tracking-wider">
           {(
             [
               ["/community", "nav.community"],
@@ -169,7 +169,7 @@ export default async function Home({
             <Link
               key={href}
               href={href}
-              className="transition-colors hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex w-32 items-center justify-center rounded-lg border border-line py-2 text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, key)}
             </Link>

@@ -36,10 +36,9 @@ export default async function AboutPage() {
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-grey">
         {t(locale, "about.whoMore")}
       </p>
-      <div className="mt-5 space-y-1.5 border-l-2 border-blue pl-3 font-mono text-[12px] leading-relaxed">
-        <p className="text-paper">{t(locale, "works.slogan")}</p>
-        <p className="text-grey">{t(locale, "about.quote")}</p>
-      </div>
+      <p className="mt-5 border-l-2 border-blue pl-3 font-mono text-[12px] leading-relaxed text-paper">
+        {t(locale, "about.quote")}
+      </p>
 
       <h2 className="mt-8 font-mono text-[11px] tracking-[0.25em] text-grey">
         {t(locale, "about.whatTitle")}
