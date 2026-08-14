@@ -7,14 +7,13 @@
    自填型号(回车添加)依赖 JS,删除键同样。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
-import { ImageUp, LoaderCircle, Plus, X } from "lucide-react";
+import { useActionState, useState } from "react";
+import { Plus, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { isModelFamily, MODEL_FAMILIES, modelFamilyName } from "@/src/lib/model-families";
-import { uploadMedia } from "@/src/lib/upload";
 import { WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
 import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
@@ -143,27 +142,6 @@ export default function WorkForm({
     (initial?.models ?? []).filter((m) => !isModelFamily(m)),
   );
   const [modelInput, setModelInput] = useState("");
-  /* 封面图 URL:可手贴外链,也可「上传」落自家 CDN 后回填;
-     broken 仅影响小预览(外链失效时不至于挂破图) */
-  const [shotUrl, setShotUrl] = useState(initial?.screenshotUrl ?? "");
-  const [shotUploading, setShotUploading] = useState(false);
-  const [shotError, setShotError] = useState(false);
-  const [shotBroken, setShotBroken] = useState(false);
-  const shotFile = useRef<HTMLInputElement>(null);
-  const uploadShot = async (file: File | undefined) => {
-    if (!file || !file.type.startsWith("image/")) return;
-    setShotUploading(true);
-    setShotError(false);
-    try {
-      const ref = await uploadMedia(file, "image");
-      setShotUrl(ref.url);
-      setShotBroken(false);
-    } catch {
-      setShotError(true);
-    } finally {
-      setShotUploading(false);
-    }
-  };
   const addCustomModel = () => {
     const value = modelInput.trim().slice(0, 40);
     if (!value) return;
@@ -315,83 +293,11 @@ export default function WorkForm({
         </div>
       </div>
 
-      <div>
-        <label htmlFor="work-shot" className={labelCls}>
-          {t(locale, "works.shot")}
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            id="work-shot"
-            name="screenshot_url"
-            type="url"
-            value={shotUrl}
-            onChange={(e) => {
-              setShotUrl(e.target.value);
-              setShotError(false);
-              setShotBroken(false);
-            }}
-            placeholder="https://…"
-            maxLength={500}
-            className={`${inputCls} font-mono`}
-          />
-          <button
-            type="button"
-            onClick={() => shotFile.current?.click()}
-            disabled={shotUploading}
-            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
-          >
-            {shotUploading ? (
-              <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <ImageUp size={12} aria-hidden="true" />
-            )}
-            {shotUploading ? t(locale, "works.uploading") : t(locale, "works.shotUpload")}
-          </button>
-        </div>
-        <input
-          ref={shotFile}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            void uploadShot(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-        />
-        {shotUrl.trim() && (
-          <div className="mt-2 flex items-center gap-2">
-            {shotBroken ? (
-              <span className="flex h-16 w-28 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
-                <ImageUp size={16} aria-hidden="true" />
-              </span>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={shotUrl}
-                alt=""
-                onError={() => setShotBroken(true)}
-                className="h-16 w-28 rounded-lg border border-line object-cover"
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setShotUrl("");
-                setShotBroken(false);
-              }}
-              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-            >
-              <X size={11} aria-hidden="true" />
-              {t(locale, "works.shotClear")}
-            </button>
-          </div>
-        )}
-        {shotError && (
-          <p role="alert" className="mt-1.5 text-xs text-blue">
-            {t(locale, "err.uploadFailed")}
-          </p>
-        )}
-      </div>
+      {/* 封面语义已并入配图第一张(WorkMediaFields);旧的「封面图 URL」文本框退役。
+          编辑存量条目时用隐藏字段原样带回 screenshot_url,不清空历史外链 */}
+      {initial?.screenshotUrl && (
+        <input type="hidden" name="screenshot_url" value={initial.screenshotUrl} />
+      )}
 
       {/* Logo + 配图上传(20260826_work_media):仅「我的作品」;推荐站外项目不渲染
           (组件卸载后隐藏字段不提交,服务端对 awesome 条目再强制置空) */}

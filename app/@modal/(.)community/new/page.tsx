@@ -10,7 +10,15 @@ export default async function NewPostModalPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
   return (
-    <RouteModal title={t(locale, "form.pageTitle")} closeLabel={t(locale, "modal.close")}>
+    <RouteModal
+      title={t(locale, "form.pageTitle")}
+      closeLabel={t(locale, "modal.close")}
+      dirtyGuard={{
+        title: t(locale, "modal.dirtyTitle"),
+        keep: t(locale, "modal.keepEditing"),
+        discard: t(locale, "modal.discardClose"),
+      }}
+    >
       <NewPostContent showTitle={false} />
     </RouteModal>
   );

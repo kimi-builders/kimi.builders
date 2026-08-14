@@ -272,6 +272,12 @@ const DICT = {
   "login.errCredentials": { zh: "邮箱或密码不正确", en: "Incorrect email or password." },
   "login.errToken": { zh: "重置链接无效或已过期,请重新发起", en: "This reset link is invalid or expired — request a new one." },
   "modal.close": { zh: "关闭", en: "Close" },
+  "modal.dirtyTitle": {
+    zh: "放弃已填写的内容?",
+    en: "Discard what you've written?",
+  },
+  "modal.keepEditing": { zh: "继续填写", en: "Keep editing" },
+  "modal.discardClose": { zh: "放弃并关闭", en: "Discard & close" },
   /* ---- 表单错误 ---- */
   "err.login": { zh: "请先登录", en: "Please log in first" },
   "err.unknownType": { zh: "未知帖子类型", en: "Unknown post type" },
@@ -606,9 +612,6 @@ const DICT = {
   "works.tagline": { zh: "一句话亮点", en: "One-line pitch" },
   "works.url": { zh: "体验地址", en: "Live URL" },
   "works.repoUrl": { zh: "开源仓库", en: "Repository" },
-  "works.shot": { zh: "封面图 URL(可选)", en: "Cover image URL (optional)" },
-  "works.shotUpload": { zh: "上传", en: "Upload" },
-  "works.shotClear": { zh: "清除", en: "Clear" },
   "works.tags": { zh: "标签", en: "Tags" },
   "works.tagsHint": {
     zh: "逗号分隔,最多 5 个",
@@ -1212,8 +1215,8 @@ const DICT = {
   "works.logoZoom": { zh: "缩放", en: "Zoom" },
   "works.cropApply": { zh: "裁剪并上传", en: "Crop & upload" },
   "works.images": {
-    zh: "配图(最多 9 张,第一张为封面)",
-    en: "Images (up to 9, first is the cover)",
+    zh: "配图(最多 9 张,第一张就是作品墙封面)",
+    en: "Images (up to 9 — the first becomes the wall cover)",
   },
   "works.imagesAdd": { zh: "点击选择配图", en: "Click to add images" },
   "works.imagesHint": {

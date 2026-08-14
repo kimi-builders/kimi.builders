@@ -6,6 +6,8 @@ export const WORK_KINDS = [
   { id: "website", zh: "网站", en: "Website", tint: "bg-blue/10 text-blue" },
   { id: "extension", zh: "插件 / 扩展", en: "Extension", tint: "bg-blue/10 text-blue" },
   { id: "cli", zh: "CLI 工具", en: "CLI", tint: "bg-blue/10 text-blue" },
+  { id: "sdk", zh: "SDK / 库", en: "SDK / Lib", tint: "bg-blue/10 text-blue" },
+  { id: "bot", zh: "机器人", en: "Bot", tint: "bg-blue/10 text-blue" },
   { id: "skill", zh: "Agent SKILL", en: "Agent SKILL", tint: "bg-blue/10 text-blue" },
   { id: "prompt", zh: "Prompt 合集", en: "Prompts", tint: "bg-blue/10 text-blue" },
   { id: "slides", zh: "演示稿", en: "Slides", tint: "bg-blue/10 text-blue" },

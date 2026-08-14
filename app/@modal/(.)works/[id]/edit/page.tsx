@@ -15,7 +15,15 @@ export default async function EditWorkModalPage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   return (
-    <RouteModal title={t(locale, "works.editTitle")} closeLabel={t(locale, "modal.close")}>
+    <RouteModal
+      title={t(locale, "works.editTitle")}
+      closeLabel={t(locale, "modal.close")}
+      dirtyGuard={{
+        title: t(locale, "modal.dirtyTitle"),
+        keep: t(locale, "modal.keepEditing"),
+        discard: t(locale, "modal.discardClose"),
+      }}
+    >
       <EditWorkContent params={params} showTitle={false} />
     </RouteModal>
   );
