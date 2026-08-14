@@ -22,6 +22,11 @@ export default async function WorksRail({
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
     <>
+      {/* 社区口号:所有人向所有人学习,所有人支持所有人构建 */}
+      <p className="border-l-2 border-blue pl-3 font-mono text-[11px] leading-relaxed text-grey">
+        {t(locale, "works.slogan")}
+      </p>
+
       <Widget
         title={t(locale, "works.statsTitle")}
         note={t(locale, "works.statsNote")}

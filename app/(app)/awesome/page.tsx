@@ -126,7 +126,7 @@ export default async function AwesomePage({
           filters={[
             {
               key: "agent",
-              label: "Agent",
+              label: t(locale, "works.agents"),
               options: AGENTS.map((a) => ({
                 value: a.id,
                 label: a.name,

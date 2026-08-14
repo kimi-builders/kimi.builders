@@ -611,7 +611,6 @@ const DICT = {
   },
   /* 信息行用的短标签(表单标签带填写指引,太长) */
   "works.tagsShort": { zh: "标签", en: "Tags" },
-  "works.agentsShort": { zh: "Agent", en: "Agents" },
   "works.hint": {
     zh: "链接和仓库至少填一个;提交后展示在作品墙,可随时编辑或撤下。",
     en: "Add at least a URL or a repo link. It lands on the wall right away and you can edit or take it down anytime.",
@@ -646,7 +645,7 @@ const DICT = {
     zh: "只能编辑自己的作品",
     en: "You can only edit your own works",
   },
-  "works.agents": { zh: "构建 Agent", en: "Build agents" },
+  "works.agents": { zh: "参与构建 Agent", en: "Build agents" },
   "works.agentsHint": {
     zh: "可多选。Kimi Code 指终端 / IDE 编程 Agent；Kimi Agent 指 kimi.com、Kimi App / Kimi Work 中的通用 Agent；Agent Swarm 指并行多 Agent 模式。",
     en: "Multi-select. Kimi Code is the terminal/IDE coding agent; Kimi Agent is the general agent in kimi.com, Kimi App, and Kimi Work; Agent Swarm is the parallel multi-agent mode.",
@@ -717,7 +716,7 @@ const DICT = {
   "works.emptyCta": { zh: "上架第一件作品 →", en: "List your first work →" },
   "works.emptyQuota": { zh: "可声明额度 {n}", en: "Claimable {n}" },
   "works.statWorks": { zh: "上架作品", en: "works" },
-  "works.statAuthors": { zh: "作者", en: "authors" },
+  "works.statAuthors": { zh: "构建者", en: "builders" },
   "works.clearFilters": { zh: "清除筛选", en: "Clear filters" },
   "works.removeFilter": { zh: "移除筛选 {name}", en: "Remove filter {name}" },
   "works.statClaimed": { zh: "声明投入", en: "claimed" },
@@ -905,6 +904,10 @@ const DICT = {
   "works.galleryOpen": { zh: "查看大图", en: "View full image" },
   "works.galleryPrev": { zh: "上一张", en: "Previous" },
   "works.galleryNext": { zh: "下一张", en: "Next" },
+  "works.slogan": {
+    zh: "所有人向所有人学习,所有人支持所有人构建。",
+    en: "Everyone learns from everyone. Everyone builds with everyone.",
+  },
   "works.badgeTitle": {
     zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
     en: "Declared by the author, capped by their verifiable total — not precise metering",
@@ -1109,7 +1112,7 @@ const DICT = {
     en: "This work doesn't exist, or the author took it down.",
   },
   "works.backToWorks": { zh: "返回作品墙", en: "Back to works" },
-  "works.sideAuthor": { zh: "作者", en: "AUTHOR" },
+  "works.sideAuthor": { zh: "构建者", en: "BUILDER" },
   "works.sideLinks": { zh: "链接", en: "LINKS" },
   "works.sideInfo": { zh: "信息", en: "INFO" },
   "works.sideModels": { zh: "开发模型", en: "MODELS" },

@@ -119,7 +119,7 @@ export default async function WorksPage({
           filters={[
             {
               key: "agent",
-              label: "Agent",
+              label: t(locale, "works.agents"),
               options: AGENTS.map((a) => ({
                 value: a.id,
                 label: a.name,

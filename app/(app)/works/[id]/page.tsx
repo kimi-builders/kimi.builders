@@ -343,7 +343,7 @@ export default async function WorkPage({
             )}
             {work.agents.length > 0 && (
               <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
-                <dt className="shrink-0 text-grey">{t(locale, "works.agentsShort")}</dt>
+                <dt className="shrink-0 text-grey">{t(locale, "works.agents")}</dt>
                 <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
                   {work.agents.map((a) => (
                     <span key={a} className="inline-flex items-center gap-1">
