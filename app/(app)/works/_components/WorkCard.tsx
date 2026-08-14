@@ -89,7 +89,11 @@ export default function WorkCard({
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={kindLabel}
           kindId={w.kind}
-          tone={w.source === "awesome" ? awesomeToneFor(w.kind) : w.coverTone}
+          tone={
+            w.source === "awesome" && w.coverTone === "theme"
+              ? awesomeToneFor(w.kind)
+              : w.coverTone
+          }
           fit={w.coverFit}
           embedded
           fill

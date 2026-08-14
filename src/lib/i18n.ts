@@ -1235,6 +1235,11 @@ const DICT = {
     zh: "没传配图时,列表封面是一块统一风格的名称砖;选定固定色后不随主题切换。",
     en: "Without images, the wall cover is a generated name tile. A fixed color won't follow the theme.",
   },
+  "works.coverToneAwesome": { zh: "封面风格", en: "Cover style" },
+  "works.coverToneAwesomeHint": {
+    zh: "不选则按类型定色(应用绿/工具杏黄/智能体枫红/内容赤陶/其他石墨);选定后固定,不随主题切换。",
+    en: "Unset = color by kind family (apps moss, tools apricot, agents maple, content terracotta, other graphite). A picked color is fixed and won't follow the theme.",
+  },
   "works.imageRemove": { zh: "删除这张图", en: "Remove this image" },
   "works.coverBadge": { zh: "封面", en: "COVER" },
   "works.uploading": { zh: "上传中…", en: "Uploading…" },

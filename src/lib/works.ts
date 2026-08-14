@@ -559,8 +559,9 @@ export async function createWork(
       source === "awesome" || f.imageKeys.length === 0
         ? null
         : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
-      /* 名称砖色调/适配同媒体:awesome 条目强制默认 */
-      source === "awesome" ? "theme" : f.coverTone.slice(0, 16),
+      /* 名称砖色调同媒体(20260914 起 awesome 也可选定,不选则渲染侧按类型族定色);
+         适配仅作品墙条目有意义(awesome 无配图) */
+      f.coverTone.slice(0, 16),
       source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
     ],
   );
@@ -602,7 +603,7 @@ export async function updateWork(
       source === "awesome" || f.imageKeys.length === 0
         ? null
         : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
-      source === "awesome" ? "theme" : f.coverTone.slice(0, 16),
+      f.coverTone.slice(0, 16),
       source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
       workId,
       userId,

@@ -377,3 +377,20 @@ html[data-theme="light"] .theme-card-light {
     color-mix(in srgb, var(--color-paper) 5%, var(--color-bg))
   );
 }
+
+/* 名称砖 · theme 档(20260914):不用中性 moon——深色取首页门面的深空
+   #0E0E13 + 品牌纸 #EFE8DC,浅色取温暖白 + 暖墨;与品牌资产同一色系。 */
+.work-cover-tile {
+  background: #0e0e13;
+  color: #efe8dc;
+}
+.work-cover-tile .work-cover-tile__eyebrow {
+  color: #9a9aa5;
+}
+:root[data-theme="light"] .work-cover-tile {
+  background: #f4eee4;
+  color: #26221b;
+}
+:root[data-theme="light"] .work-cover-tile .work-cover-tile__eyebrow {
+  color: #6b6355;
+}

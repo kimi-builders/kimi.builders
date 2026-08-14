@@ -21,6 +21,7 @@ import ModelIcon from "@/components/ModelIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import MarkdownEditor from "../../_components/MarkdownEditor";
+import CoverToneField from "./CoverToneField";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -489,6 +490,12 @@ export default function WorkForm({
               ))}
             </div>
           </fieldset>
+          {/* Awesome 条目也能定封面风格(20260914):不选则按类型族定色 */}
+          <CoverToneField
+            locale={locale}
+            initialTone={media?.tone ?? "theme"}
+            forAwesome
+          />
         </>
       )}
 

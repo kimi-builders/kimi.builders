@@ -14,10 +14,10 @@ import {
   X,
 } from "lucide-react";
 import ImageCropDialog from "@/components/ImageCropDialog";
-import { COVER_TONES, coverToneName } from "@/src/lib/cover-tones";
 import { t, type Locale } from "@/src/lib/i18n";
 import { uploadMedia } from "@/src/lib/upload";
 import { WORK_IMAGE_MAX } from "@/src/lib/work-media";
+import CoverToneField from "./CoverToneField";
 
 export interface MediaRef {
   key: string;
@@ -47,7 +47,6 @@ export default function WorkMediaFields({
   initialTone?: string;
   initialFit?: string;
 }) {
-  const [tone, setTone] = useState(initialTone);
   const [fit, setFit] = useState(initialFit === "contain" ? "contain" : "cover");
   /* 适配自动建议:第一张竖屏图上传成功时建议「补边」;用户手动选过就不再插手 */
   const fitTouched = useRef(initialFit === "contain");
@@ -207,7 +206,6 @@ export default function WorkMediaFields({
       {/* 提交载体:只落上传完成的 key(上传中/失败的条目不随表单提交) */}
       <input type="hidden" name="logoKey" value={logo?.key ?? ""} readOnly />
       <input type="hidden" name="imageKeys" value={JSON.stringify(doneKeys)} readOnly />
-      <input type="hidden" name="coverTone" value={tone} readOnly />
       <input type="hidden" name="coverFit" value={fit} readOnly />
 
       {/* ---- Logo:方形预览 + 客户端裁剪上传 ---- */}
@@ -440,41 +438,7 @@ export default function WorkMediaFields({
 
       {/* ---- 封面风格(无配图时的名称砖)---- */}
       {images.length === 0 && (
-        <div>
-          <span className="mb-1.5 block text-[11.5px] text-grey">
-            {t(locale, "works.coverTone")}
-          </span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {COVER_TONES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={tone === item.id}
-                onClick={() => setTone(item.id)}
-                title={coverToneName(item.id, locale === "zh")}
-                className={`flex h-8 items-center gap-1.5 rounded-lg border px-2 text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  tone === item.id
-                    ? "border-blue bg-blue/10 text-blue"
-                    : "border-line text-grey hover:border-paper/30 hover:text-paper"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className="size-3.5 rounded-[4px] border border-line"
-                  style={
-                    item.hex
-                      ? { background: item.hex }
-                      : { background: "linear-gradient(135deg, #1f1f1f 50%, #f5f5f5 50%)" }
-                  }
-                />
-                {coverToneName(item.id, locale === "zh")}
-              </button>
-            ))}
-          </div>
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-            {t(locale, "works.coverToneHint")}
-          </span>
-        </div>
+        <CoverToneField locale={locale} initialTone={initialTone} />
       )}
 
       {crop && (
