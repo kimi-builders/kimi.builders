@@ -133,11 +133,20 @@ async function main() {
     const strangerWall = await getWorksPage({ viewerId: stranger });
     assert.ok(!strangerWall.works.some((w) => w.id === privWork));
 
-    /* 2. Awesome:匿名见公开推荐 + 编辑收录,不见私密推荐;推荐人本人见 */
+    /* 2. Awesome:匿名见公开推荐 + 编辑收录,不见私密推荐;推荐人本人见;
+          成员作品默认不进 Awesome,勾选「同时收录」才出现(20260906) */
     const anonAwesome = await getAwesomeWorksPage();
     assert.ok(anonAwesome.works.some((w) => w.id === pubAwesome));
     assert.ok(anonAwesome.works.some((w) => w.id === editorial));
     assert.ok(!anonAwesome.works.some((w) => w.id === privAwesome));
+    assert.ok(!anonAwesome.works.some((w) => w.id === pubWork));
+    const pubListed = await createWork(
+      author,
+      fields({ name: "公开作品-同步收录", alsoAwesome: true }),
+    );
+    workIds.push(pubListed);
+    const awesomeAfter = await getAwesomeWorksPage();
+    assert.ok(awesomeAfter.works.some((w) => w.id === pubListed));
     const authorAwesome = await getAwesomeWorksPage({ viewerId: author });
     assert.ok(authorAwesome.works.some((w) => w.id === privAwesome));
 
@@ -150,7 +159,8 @@ async function main() {
     assert.equal(await getWorkShareSnapshot(privWork), null);
     assert.ok(await getWorkShareSnapshot(pubWork));
 
-    /* 4. 个人主页作品页签 + 计数:self 含私密,访客只公开 */
+    /* 4. 个人主页作品页签 + 计数:self 含私密,访客只公开
+          (第 2 节多了一个「同步收录」的公开作品:3/2) */
     const selfWorks = await getUserWorks(author, true);
     const guestWorks = await getUserWorks(author, false);
     assert.ok(selfWorks.some((w) => w.id === privWork));
@@ -158,8 +168,8 @@ async function main() {
     const countQ = (self: boolean) => userWorksCountQuery(author, self);
     const [selfCount] = await pool.query(countQ(true).sql, countQ(true).args);
     const [guestCount] = await pool.query(countQ(false).sql, countQ(false).args);
-    assert.equal(Number((selfCount as { n: number }[])[0]?.n), 2);
-    assert.equal(Number((guestCount as { n: number }[])[0]?.n), 1);
+    assert.equal(Number((selfCount as { n: number }[])[0]?.n), 3);
+    assert.equal(Number((guestCount as { n: number }[])[0]?.n), 2);
 
     /* 5. 公共上下文:相关作品 / 右栏热门 / 墙统计 均不含私密 */
     const related = await getRelatedWorks({ id: pubWork, userId: author, agents: ["kimi"] });

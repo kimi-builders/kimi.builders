@@ -81,6 +81,7 @@ export default async function EditWorkContent({
           kind: work.kind,
           descriptionMd: work.descriptionMd,
           scope: work.scope,
+          alsoAwesome: work.alsoAwesome,
         }}
         claim={{
           initial: work.claimedTokens,

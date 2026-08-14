@@ -110,6 +110,8 @@ export default function WorkForm({
     kind: string;
     descriptionMd: string;
     scope: string;
+    /* 同时收录 Awesome 回填(20260906) */
+    alsoAwesome?: boolean;
   };
   /* 声明制上下文:空 = 不渲染声明字段( awesome 推荐等同理,服务端也会强制 null) */
   claim?: {
@@ -634,9 +636,16 @@ export default function WorkForm({
         </div>
       )}
 
-      {/* 私密开关:我的作品 / 推荐站外项目都可用(推荐人即作者);
-          user_id 为 NULL 的编辑收录条目不经本表单,恒 public */}
+      {/* 私密开关 + 同时收录 Awesome(仅「我的作品」;推荐条目恒在 Awesome,无需开关) */}
       <div className="space-y-2.5 pt-1">
+        {kind === "site" && (
+          <CheckBox
+            name="also_awesome"
+            defaultChecked={initial?.alsoAwesome}
+            label={t(locale, "works.alsoAwesome")}
+            hint={t(locale, "works.alsoAwesomeHint")}
+          />
+        )}
         <CheckBox
           name="private"
           defaultChecked={initial?.visibility === "private"}

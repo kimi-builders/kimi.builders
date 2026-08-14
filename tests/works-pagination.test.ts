@@ -16,7 +16,7 @@ test("page sizes keep the previous fixed limits, over-fetching one", () => {
     new RegExp(`LIMIT ${WORKS_PAGE_SIZE + 1}`),
   );
   assert.match(
-    worksPageQuery({ source: "all" }).sql,
+    worksPageQuery({ source: "awesome" }).sql,
     new RegExp(`LIMIT ${AWESOME_PAGE_SIZE + 1}`),
   );
 });
@@ -35,16 +35,16 @@ test("id cursor appends a keyset predicate after the existing filters", () => {
 });
 
 test("awesome keeps the agent JSON filter and can combine it with the cursor", () => {
-  const withAgent = worksPageQuery({ source: "all", agents: ["kimi-cli"] });
+  const withAgent = worksPageQuery({ source: "awesome", agents: ["kimi-cli"] });
   assert.match(withAgent.sql, /JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\)/);
   assert.deepEqual(withAgent.args, ["kimi-cli"]);
-  const both = worksPageQuery({ source: "all", agents: ["kimi-cli"], after: "7" });
+  const both = worksPageQuery({ source: "awesome", agents: ["kimi-cli"], after: "7" });
   /* 单个 agent 也是 OR 链包装(括号形式) */
   assert.match(both.sql, /\(JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\)\) AND w\.id < \?/);
   assert.deepEqual(both.args, ["kimi-cli", 7]);
   /* awesome 无筛选时只剩可见性谓词(公开条目;登录浏览者另放行自己的私密条目) */
   assert.equal(
-    worksPageQuery({ source: "all" }).sql.includes("WHERE w.visibility = 'public'"),
+    worksPageQuery({ source: "awesome" }).sql.includes("WHERE w.visibility = 'public'"),
     true,
   );
 });
@@ -82,7 +82,7 @@ test("hot sort orders by votes with a composite (votes|id) keyset cursor", () =>
 });
 
 test("awesome scope filter narrows by inclusion scope", () => {
-  const { sql, args } = worksPageQuery({ source: "all", scope: "eco" });
+  const { sql, args } = worksPageQuery({ source: "awesome", scope: "eco" });
   assert.match(sql, /w\.scope = \?/);
   assert.deepEqual(args, ["eco"]);
 });

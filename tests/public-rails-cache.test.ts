@@ -39,6 +39,7 @@ function work(): WorkRow {
     kind: "app",
     descriptionMd: "A long description",
     scope: "",
+    alsoAwesome: false,
     logoKey: "logo.png",
     imageKeys: ["one.png"],
   };

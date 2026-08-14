@@ -177,6 +177,7 @@ CREATE TABLE IF NOT EXISTS works (
   models JSON NULL COMMENT '开发模型(家族键或自填型号文本)',
   description_md TEXT NULL COMMENT '作品描述(Markdown);NULL 时详情页用 tagline',
   scope VARCHAR(16) NULL COMMENT 'Awesome 收录口径:base/eco/part;仅 awesome 条目',
+  also_awesome TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'site 作品勾选后同时进 Awesome 清单(20260906)',
   -- kind 由 20260825_work_kind.sql 引入(该迁移同时 DROP platforms),已有库执行该迁移
   kind VARCHAR(24) NOT NULL DEFAULT 'app' COMMENT '作品类型:app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other',
   -- logo_key/image_keys 由 20260826_work_media.sql 引入,已有库执行该迁移

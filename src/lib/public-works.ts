@@ -154,6 +154,8 @@ export function hydratePublicWorksPage(dto: PublicWorksPageDto): WorksPage {
   return {
     works: dto.works.map((work) => ({
       ...work,
+      /* 公共清单 DTO 不带收录开关(展示用不到),水合时补默认值 */
+      alsoAwesome: false,
       createdAt: new Date(work.createdAt),
       featuredAt: work.featuredAt === null ? null : new Date(work.featuredAt),
     })),

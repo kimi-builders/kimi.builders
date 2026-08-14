@@ -624,6 +624,14 @@ const DICT = {
     zh: "不进作品墙、Awesome 与右栏统计,详情页和分享海报仅自己可开",
     en: "Hidden from the wall, Awesome, and rail stats; only you can open its page or poster",
   },
+  "works.alsoAwesome": {
+    zh: "同时收录到 Awesome",
+    en: "Also list on Awesome",
+  },
+  "works.alsoAwesomeHint": {
+    zh: "默认只进你的作品墙;勾选后同时出现在 Awesome 清单(公开展示构建者)。",
+    en: "By default your work only appears on your wall; tick to also list it on Awesome (shown publicly).",
+  },
   "works.loginRequired": {
     zh: "登录后提交作品:",
     en: "Log in to submit your work:",

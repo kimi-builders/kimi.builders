@@ -53,6 +53,8 @@ export interface WorkRow {
   descriptionMd: string;
   /* Awesome 收录口径:base/eco/part;仅 awesome 条目,作品墙恒 "" */
   scope: string;
+  /* 20260906:成员作品勾选「同时收录到 Awesome」;awesome 条目恒在清单内,此列无意义 */
+  alsoAwesome: boolean;
   /* 20260826_work_media:Logo 存储 key(空 = 无)+ 配图 key 数组(≤9,第一张 = 封面)。
      DB 只存 key,公开 URL 渲染时由 storage.ts mediaUrl 拼接 */
   logoKey: string;
@@ -101,6 +103,7 @@ function mapWork(r: RowDataPacket): WorkRow {
     kind: r.kind ?? "app",
     descriptionMd: r.description_md ?? "",
     scope: r.scope ?? "",
+    alsoAwesome: !!r.also_awesome,
     logoKey: r.logo_key ?? "",
     imageKeys: parseStrArray(r.image_keys),
   };
@@ -110,7 +113,7 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.screenshot_url, w.tags, w.agents, w.source, w.visibility, w.hidden_at, w.hidden_reason,
        w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
-       w.status, w.models, w.kind, w.description_md, w.scope, w.logo_key, w.image_keys`;
+       w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys`;
 
 /* 可见性谓词(20260828):私密=仅作者(推荐人)本人可见。
    公共上下文(右栏/精选/海报/统计)恒用 PUBLIC_ONLY;列表/详情带 viewerId 放行作者本人。
@@ -118,6 +121,10 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
 const VISIBILITY_PUBLIC = "w.visibility = 'public'";
 /* 治理屏蔽谓词(20260830):公共上下文恒过滤;作者本人视角另行放行。 */
 const HIDDEN_PUBLIC = "w.hidden_at IS NULL";
+
+/* Awesome 清单谓词(20260906):推荐条目(source=awesome)+ 作者勾选「同时收录」的
+   成员作品(also_awesome=1)。列表查询与右栏统计共用,保证两边数字一致。 */
+const AWESOME_LISTED = "(w.source = 'awesome' OR w.also_awesome = 1)";
 
 /* 单条目的可见性判定(详情页/海报/互动 action 共用):
    被屏蔽 → 仅作者或 admin/mod(治理评审需要);否则公开或本人。 */
@@ -177,7 +184,7 @@ export function decodeWorksCursor(
 }
 
 export function worksPageQuery(opts: {
-  source: "site" | "all";
+  source: "site" | "awesome";
   sort?: WorksSort;
   agents?: string[];
   kinds?: string[];
@@ -199,6 +206,8 @@ export function worksPageQuery(opts: {
     where.push(HIDDEN_PUBLIC);
   }
   if (opts.source === "site") where.push("w.source = 'site'");
+  /* Awesome 清单(20260906):见 AWESOME_LISTED——普通作品不再自动出现在 Awesome */
+  if (opts.source === "awesome") where.push(AWESOME_LISTED);
   /* 参与 Agent 多选:任一命中即可(JSON 数组成员,OR 链) */
   if (opts.agents && opts.agents.length > 0) {
     where.push(`(${opts.agents.map(() => "JSON_CONTAINS(w.agents, JSON_QUOTE(?))").join(" OR ")})`);
@@ -272,7 +281,8 @@ export async function getWorksPage(
   );
 }
 
-/* /awesome:全部来源;Agent/类型/收录口径过滤 + 排序。可见性口径同上。 */
+/* /awesome:推荐条目 + 勾选「同时收录」的成员作品(20260906 起不再全量混入);
+   Agent/类型/收录口径过滤 + 排序。可见性口径同上。 */
 export async function getAwesomeWorksPage(
   opts: {
     sort?: WorksSort;
@@ -286,7 +296,7 @@ export async function getAwesomeWorksPage(
   const sort = opts.sort === "hot" ? "hot" : "new";
   return runWorksPage(
     worksPageQuery({
-      source: "all",
+      source: "awesome",
       sort,
       agents: opts.agents,
       kinds: opts.kinds,
@@ -485,6 +495,8 @@ export interface WorkFields {
   descriptionMd: string;
   /* awesome 收录口径(base/eco/part);作品墙条目恒 null */
   scope: string | null;
+  /* 20260906:site 作品勾选「同时收录到 Awesome」;awesome 条目恒在清单内,服务端对它们强制 0 */
+  alsoAwesome?: boolean;
   /* 20260826_work_media;action 层已做形状 + 前缀校验(isWorkLogoKey/areWorkImageKeys) */
   logoKey: string;
   imageKeys: string[];
@@ -508,8 +520,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, logo_key, image_keys)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -529,6 +541,8 @@ export async function createWork(
       f.kind,
       f.descriptionMd || null,
       source === "awesome" ? f.scope : null,
+      /* 同时收录 Awesome:仅 site 作品有意义,awesome 条目恒在清单内 */
+      source === "site" && f.alsoAwesome ? 1 : 0,
       /* 媒体同声明:仅作品墙条目,awesome 强制为空 */
       source === "awesome" ? "" : f.logoKey.slice(0, 255),
       source === "awesome" || f.imageKeys.length === 0
@@ -548,7 +562,7 @@ export async function updateWork(
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
        tags = ?, agents = ?, source = ?, visibility = ?, author_label = ?, claimed_tokens = ?,
-       status = ?, models = ?, kind = ?, description_md = ?, scope = ?,
+       status = ?, models = ?, kind = ?, description_md = ?, scope = ?, also_awesome = ?,
        logo_key = ?, image_keys = ?
      WHERE id = ? AND user_id = ?`,
     [
@@ -568,6 +582,8 @@ export async function updateWork(
       f.kind,
       f.descriptionMd || null,
       source === "awesome" ? f.scope : null,
+      /* 同时收录 Awesome:仅 site 作品有意义,awesome 条目恒在清单内 */
+      source === "site" && f.alsoAwesome ? 1 : 0,
       source === "awesome" ? "" : f.logoKey.slice(0, 255),
       source === "awesome" || f.imageKeys.length === 0
         ? null
@@ -737,7 +753,7 @@ export async function getWorksAgentStats(
   const [rows] = await getPool().query<RowDataPacket[]>(
     source === "site"
       ? `SELECT w.agents FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`
-      : `SELECT w.agents FROM works w WHERE w.source = 'awesome' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
+      : `SELECT w.agents FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
   );
   const counts = new Map<string, number>();
   for (const r of rows) {
@@ -759,7 +775,7 @@ export async function getAwesomeStats(): Promise<{
   recommenders: number;
 }> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE w.source = 'awesome' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
+    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
   );
   const agentSet = new Set<string>();
   const recommenderSet = new Set<number>();
@@ -785,7 +801,7 @@ export async function getAwesomeScopeStats(): Promise<{
   part: number;
 }> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.scope, COUNT(*) AS n FROM works w WHERE w.source = 'awesome' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.scope`,
+    `SELECT w.scope, COUNT(*) AS n FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.scope`,
   );
   const out = { base: 0, eco: 0, part: 0 };
   for (const r of rows) {

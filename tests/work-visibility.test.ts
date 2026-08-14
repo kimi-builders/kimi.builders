@@ -16,8 +16,9 @@ test("worksPageQuery: anonymous sees public, non-hidden only (wall and awesome)"
   const wall = worksPageQuery({ source: "site" });
   assert.match(wall.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND w\.source = 'site'/);
   assert.deepEqual(wall.args, []);
-  const awesome = worksPageQuery({ source: "all" });
-  assert.match(awesome.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL/);
+  /* Awesome 清单(20260906):推荐条目 ∪ 作者勾选「同时收录」的成员作品 */
+  const awesome = worksPageQuery({ source: "awesome" });
+  assert.match(awesome.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND \(w\.source = 'awesome' OR w\.also_awesome = 1\)/);
   assert.deepEqual(awesome.args, []);
 });
 
@@ -27,7 +28,7 @@ test("worksPageQuery: viewer additionally sees their own private/hidden entries"
   assert.match(sql, /\(w\.hidden_at IS NULL OR w\.user_id = \?\)/);
   assert.deepEqual(args, [7, 7]);
   /* 可见性谓词在最前,其余过滤/游标依次排后 */
-  const both = worksPageQuery({ source: "all", viewerId: 7, kinds: ["app"], after: "9" });
+  const both = worksPageQuery({ source: "awesome", viewerId: 7, kinds: ["app"], after: "9" });
   assert.deepEqual(both.args, [7, 7, "app", 9]);
 });
 

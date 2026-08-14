@@ -101,6 +101,8 @@ function readFields(formData: FormData) {
     visibility: (formData.get("private") === "on" ? "private" : "public") as
       | "public"
       | "private",
+    /* 同时收录 Awesome(20260906):仅「我的作品」有意;推荐条目恒在 Awesome */
+    alsoAwesome: formData.get("also_awesome") === "on",
     /* 表单意图(我的作品/推荐站外项目):authorLabel 非空才是 awesome 条目,
        intent 只用于校验提示(推荐但没填原作者 → 明确报错而不是静默当成作品) */
     intent: String(formData.get("kind") || "site") === "awesome" ? "awesome" : "site",

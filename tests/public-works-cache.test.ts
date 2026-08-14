@@ -37,6 +37,7 @@ function work(overrides: Partial<WorkRow> = {}): WorkRow {
     kind: "app",
     descriptionMd: "Description",
     scope: "",
+    alsoAwesome: false,
     logoKey: "",
     imageKeys: [],
     ...overrides,
@@ -81,7 +82,7 @@ test("public works cache scope is bounded to anonymous page one", () => {
 });
 
 test("anonymous works SQL is public and non-hidden before DTO serialization", () => {
-  for (const source of ["site", "all"] as const) {
+  for (const source of ["site", "awesome"] as const) {
     const { sql } = worksPageQuery({ source, sort: "new" });
     assert.match(sql, /w\.visibility = 'public'/);
     assert.match(sql, /w\.hidden_at IS NULL/);
