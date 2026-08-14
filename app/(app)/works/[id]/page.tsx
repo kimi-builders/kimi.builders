@@ -291,7 +291,7 @@ export default async function WorkPage({
       </div>
 
       <div className="mt-5">
-        {/* 有配图走图集(封面大图 + 缩略图);无配图保持原单张外链截图 */}
+        {/* 有配图走图集(封面大图 + 缩略图);无配图回落外链截图,再空为名称砖 */}
         {work.imageKeys.length > 0 ? (
           <WorkGallery keys={work.imageKeys} name={work.name} locale={locale} />
         ) : (
@@ -299,7 +299,6 @@ export default async function WorkPage({
             url={work.screenshotUrl}
             name={work.name}
             logoUrl={work.logoKey ? mediaUrl(work.logoKey) : ""}
-            kindLabel={workKindLabel(work.kind, locale === "zh")}
           />
         )}
       </div>
