@@ -804,6 +804,7 @@ const DICT = {
     en: "Explore together, build together — the community is growing.",
   },
   "home.cta": { zh: "进入社区", en: "Enter the community" },
+  "home.entryLeaderboard": { zh: "用量榜", en: "Leaderboard" },
   "home.tokens": { zh: "累计 tokens", en: "total tokens" },
   "home.featured": { zh: "本周精选", en: "PICKS OF THE WEEK" },
   "home.featuredSub": {
@@ -812,10 +813,10 @@ const DICT = {
   },
   "home.join": { zh: "入群 / 订阅", en: "JOIN & FOLLOW" },
   "home.joinDisc": {
-    zh: "问答、想法、日常讨论都在 GitHub Discussions,欢迎随时开帖。",
-    en: "Questions, ideas and day-to-day talk live in GitHub Discussions — jump in anytime.",
+    zh: "社区的源码、知识库与路线图都在 GitHub 组织,欢迎来逛。",
+    en: "Our code, knowledge base and roadmap live in the GitHub org — come by anytime.",
   },
-  "home.joinDiscCta": { zh: "参与讨论", en: "Join discussions" },
+  "home.joinDiscCta": { zh: "访问组织首页", en: "Visit the org" },
   "home.joinAwesome": {
     zh: "全世界用 Kimi 构建的项目清单,你的作品也值得上榜。",
     en: "Projects built with Kimi around the world — yours belongs on the list too.",
@@ -824,6 +825,34 @@ const DICT = {
   "home.joinMail": {
     zh: "合作、反馈、投稿,或者只是想聊聊,都欢迎写信。",
     en: "Collaboration, feedback, submissions — or just say hi.",
+  },
+  /* ---- 关于页(/about)---- */
+  "about.title": { zh: "关于", en: "About" },
+  "about.who": {
+    zh: "kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方)。这里聚着用 Kimi 搭实际东西的人 —— Agent、自动化工作流、提示词工程,什么实在聊什么。",
+    en: "kimi.builders is a non-commercial community of builders using Kimi (unofficial). People here build real things with Kimi — agents, automation workflows, prompt engineering.",
+  },
+  "about.whatTitle": { zh: "这里有什么", en: "What's here" },
+  "about.whatCommunity": {
+    zh: "社区 —— 问答、讨论、踩坑与经验。",
+    en: "Community — Q&A, discussions, pitfalls and lessons.",
+  },
+  "about.whatWorks": {
+    zh: "作品墙 —— 成员用 AI 构建的真实作品,带构建者声明投入的徽章。",
+    en: "Works — real things members built with AI, carrying the builder's declared-effort badge.",
+  },
+  "about.whatAwesome": {
+    zh: "Awesome —— 全世界用 Kimi 构建的项目清单。",
+    en: "Awesome — projects built with Kimi around the world.",
+  },
+  "about.whatUsage": {
+    zh: "用量中心 —— Collector 同步 token 与活跃数据;默认私密,榜单自愿公开。",
+    en: "Usage — token and activity stats synced by the Collector; private by default, leaderboards opt-in.",
+  },
+  "about.linksTitle": { zh: "联系与链接", en: "Links" },
+  "about.disclaimer": {
+    zh: "kimi.builders 与 Moonshot AI(月之暗面)无隶属、赞助或背书关系。",
+    en: "kimi.builders is not affiliated with, sponsored, or endorsed by Moonshot AI.",
   },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },

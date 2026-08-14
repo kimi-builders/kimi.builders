@@ -156,6 +156,25 @@ export default async function Home({
         >
           {t(locale, "home.cta")} →
         </Link>
+        {/* 站点入口:主 CTA 下的安静链接排,给首次到访者一张地图 */}
+        <nav className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[11px] tracking-wider text-grey">
+          {(
+            [
+              ["/community", "nav.community"],
+              ["/works", "nav.works"],
+              ["/awesome", "nav.awesome"],
+              ["/usage/leaderboard", "home.entryLeaderboard"],
+            ] as const
+          ).map(([href, key]) => (
+            <Link
+              key={href}
+              href={href}
+              className="transition-colors hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              {t(locale, key)}
+            </Link>
+          ))}
+        </nav>
       </section>
 
       {/* ---- 数据条:成员 / 帖子 / 评论 / 全站 token 累计(真实数据)---- */}
@@ -229,18 +248,18 @@ export default async function Home({
             payload={{
               event: "join_click",
               target_kind: "slot",
-              target_id: "discussions",
-              meta: { slot: "discussions" },
+              target_id: "org",
+              meta: { slot: "org" },
             }}
           >
             <a
-              href="https://github.com/kimi-builders/discussions"
+              href="https://github.com/kimi-builders"
               target="_blank"
               rel="noopener noreferrer"
               className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
-                GitHub Discussions
+                GitHub
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-grey">
                 {t(locale, "home.joinDisc")}

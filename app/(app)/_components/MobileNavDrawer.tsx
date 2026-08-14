@@ -197,7 +197,7 @@ export default function MobileNavDrawer({
               <GithubIcon size={17} />
               GitHub
             </a>
-            <Link href="/" onClick={close} className={itemClass(false)}>
+            <Link href="/about" onClick={close} className={itemClass(false)}>
               <Info size={17} aria-hidden="true" />
               {t(locale, "nav.about")}
             </Link>

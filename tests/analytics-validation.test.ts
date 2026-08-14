@@ -42,8 +42,8 @@ const LEGAL = [
   {
     event: "join_click",
     target_kind: "slot",
-    target_id: "discussions",
-    meta: { slot: "discussions" },
+    target_id: "org",
+    meta: { slot: "org" },
   },
 ] as const;
 

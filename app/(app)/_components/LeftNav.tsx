@@ -135,7 +135,7 @@ export default function LeftNav({
           <GithubIcon size={15} />
           <span className="nav-label">GitHub</span>
         </a>
-        <Link prefetch={false} href="/" title={t(locale, "nav.about")} className={itemCls(false)}>
+        <Link prefetch={false} href="/about" title={t(locale, "nav.about")} className={itemCls(false)}>
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>

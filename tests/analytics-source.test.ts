@@ -101,7 +101,7 @@ test("all requested click surfaces send only fixed beacon payloads", () => {
 
   const home = source("app/page.tsx");
   assert.match(home, /event: "featured_click"[\s\S]*position: "home"/);
-  for (const slot of ["discussions", "awesome", "mail"]) {
+  for (const slot of ["org", "awesome", "mail"]) {
     assert.match(home, new RegExp(`event: "join_click"[\\s\\S]*target_id: "${slot}"`));
   }
   assert.match(

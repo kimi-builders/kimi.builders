@@ -233,9 +233,9 @@ async function main() {
       {
         event: "join_click",
         targetKind: "slot",
-        targetId: "discussions",
+        targetId: "org",
         viewer: viewerA,
-        meta: { slot: "discussions" },
+        meta: { slot: "org" },
         createdAt: recentCreatedAt,
       },
     ];

@@ -48,7 +48,7 @@ type EventRule = {
 
 const PROFILE_TABS = ["posts", "comments", "works", "usage", "tools", "prefs"] as const;
 const POSTER_SURFACES = ["profile", "post", "work", "usage"] as const;
-const JOIN_SLOTS = ["discussions", "awesome", "mail"] as const;
+const JOIN_SLOTS = ["org", "awesome", "mail"] as const;
 
 export const ANALYTICS_EVENT_RULES: Record<AnalyticsEvent, EventRule> = {
   home_view: { targetKinds: ["page"], targetIds: ["home"] },

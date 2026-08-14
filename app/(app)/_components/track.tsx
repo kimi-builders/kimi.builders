@@ -28,8 +28,8 @@ export type AnalyticsBeaconPayload =
   | {
       event: "join_click";
       target_kind: "slot";
-      target_id: "discussions" | "awesome" | "mail";
-      meta: { slot: "discussions" | "awesome" | "mail" };
+      target_id: "org" | "awesome" | "mail";
+      meta: { slot: "org" | "awesome" | "mail" };
     };
 
 const ENDPOINT = "/api/analytics/event";
