@@ -7,11 +7,13 @@ import type { FeedPage, FeedPost } from "./posts";
 export interface PublicFeedCacheScope {
   sort: "hot" | "new";
   category: CategoryId | null;
+  solved: boolean;
 }
 
 export interface PublicFeedScopeInput {
   sort: string;
   category?: string;
+  solved?: boolean;
   subscriberId?: number;
   viewerId?: number;
   after?: string;
@@ -34,6 +36,7 @@ export function publicFeedCacheScope(
   return {
     sort: input.sort === "new" ? "new" : "hot",
     category,
+    solved: input.solved === true,
   };
 }
 
@@ -50,6 +53,7 @@ export interface PublicFeedPostDto {
   score: number;
   commentCount: number;
   createdAt: string;
+  solvedAt: string | null;
   handle: string;
   name: string;
   avatarUrl: string;
@@ -79,6 +83,7 @@ function publicPostDto(post: FeedPost): PublicFeedPostDto | null {
     score: post.score,
     commentCount: post.commentCount,
     createdAt: post.createdAt.toISOString(),
+    solvedAt: post.solvedAt ? post.solvedAt.toISOString() : null,
     handle: post.handle,
     name: post.name,
     avatarUrl: post.avatarUrl,
@@ -101,6 +106,7 @@ export function hydratePublicFeedPage(dto: PublicFeedPageDto): FeedPage {
     posts: dto.posts.map((post) => ({
       ...post,
       createdAt: new Date(post.createdAt),
+      solvedAt: post.solvedAt === null ? null : new Date(post.solvedAt),
     })),
     nextCursor: dto.nextCursor,
   };

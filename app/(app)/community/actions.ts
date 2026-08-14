@@ -40,6 +40,7 @@ import {
   setCommentReactionForViewer,
   setPostReactionForViewer,
   setPostVisibility,
+  setPostSolved,
   toggleSubscribeForViewer,
   updateComment,
   updatePost,
@@ -357,6 +358,23 @@ export async function setPostVisibilityAction(
   if (ok) {
     updateTag(PUBLIC_POSTS_CACHE_TAG);
     updateTag(PUBLIC_FEATURED_CACHE_TAG);
+    revalidatePath(`/community/${postId}`);
+    revalidatePath("/community");
+  }
+  return { ok };
+}
+
+/* 已解决开关(20260907):作者本人或治理(在 setPostSolved 里判);feed 与详情同步 */
+export async function setPostSolvedAction(
+  formData: FormData,
+): Promise<MutationResult> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
+  const postId = Number(formData.get("post_id"));
+  if (!postId) return { ok: false };
+  const ok = await setPostSolved(user, postId, formData.get("solved") === "1");
+  if (ok) {
+    updateTag(PUBLIC_POSTS_CACHE_TAG);
     revalidatePath(`/community/${postId}`);
     revalidatePath("/community");
   }

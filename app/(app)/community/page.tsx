@@ -21,36 +21,45 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { loadMorePostsAction } from "./actions";
 import { loadFeedCards } from "./_components/feed-page";
-import { CATEGORY_DOT, CATEGORY_TINT } from "./_components/PostCard";
+import { CATEGORY_DOT } from "./_components/PostCard";
 
 export default async function CommunityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; cat?: string; sub?: string }>;
+  searchParams: Promise<{ sort?: string; cat?: string; sub?: string; solved?: string }>;
 }) {
-  const { sort, cat, sub } = await searchParams;
+  const { sort, cat, sub, solved } = await searchParams;
   const currentSort = sort === "new" ? "new" : "hot";
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const subOnly = sub === "1" && !!user;
+  const solvedOnly = solved === "1";
   const feed = await loadFeedCards(
     {
       sort: currentSort,
       category: cat,
+      solved: solvedOnly,
       subscriberId: subOnly ? user.id : undefined,
       viewerId: user?.id,
     },
     locale,
   );
 
-  const feedHref = (changes: { sort?: string; cat?: string | null; sub?: string | null }) => {
+  const feedHref = (changes: {
+    sort?: string;
+    cat?: string | null;
+    sub?: string | null;
+    solved?: string | null;
+  }) => {
     const params = new URLSearchParams();
     const nextSort = changes.sort ?? currentSort;
     const nextCat = changes.cat === undefined ? cat : changes.cat;
     const nextSub = changes.sub === undefined ? (subOnly ? "1" : null) : changes.sub;
+    const nextSolved = changes.solved === undefined ? (solvedOnly ? "1" : null) : changes.solved;
     if (nextSort !== "hot") params.set("sort", nextSort);
     if (nextCat) params.set("cat", nextCat);
     if (nextSub) params.set("sub", nextSub);
+    if (nextSolved) params.set("solved", nextSolved);
     const qs = params.toString();
     return qs ? `/community?${qs}` : "/community";
   };
@@ -95,19 +104,17 @@ export default async function CommunityPage({
             </Link>
           ))}
         </nav>
-        {/* 话题 pills:cat 参数的快捷形态;移动端放不下时横向滑动 */}
+        {/* 话题 tabs:无框纯文本(安静化,20260813);移动端放不下时横向滑动 */}
         <nav
           aria-label={t(locale, "feed.topicsAll")}
-          className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto"
+          className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-3 overflow-x-auto font-mono text-[11.5px]"
         >
           <Link
             href={feedHref({ cat: null })}
             scroll={false}
             aria-current={!cat ? "page" : undefined}
-            className={`inline-flex h-7 shrink-0 items-center rounded-full border px-3 text-[11.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-              !cat
-                ? "border-blue/50 bg-blue/10 font-semibold text-blue"
-                : "border-line text-grey hover:border-paper/30 hover:text-paper"
+            className={`shrink-0 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+              !cat ? "font-semibold text-paper" : "text-grey hover:text-paper"
             }`}
           >
             {t(locale, "feed.topicsAll")}
@@ -120,17 +127,26 @@ export default async function CommunityPage({
                 href={feedHref({ cat: c.id })}
                 scroll={false}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[11.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  active
-                    ? `border-transparent font-semibold ${CATEGORY_TINT[c.id] ?? CATEGORY_TINT.chat}`
-                    : "border-line text-grey hover:border-paper/30 hover:text-paper"
+                className={`inline-flex shrink-0 items-center gap-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  active ? "font-semibold text-paper" : "text-grey hover:text-paper"
                 }`}
               >
-                <i className={`size-[5px] rounded-full ${CATEGORY_DOT[c.id] ?? CATEGORY_DOT.chat}`} />
+                <i className={`size-[5px] rounded-full ${active ? (CATEGORY_DOT[c.id] ?? CATEGORY_DOT.chat) : "bg-grey/60"}`} />
                 {categoryLabel(locale, c.id)}
               </Link>
             );
           })}
+          {/* 只看已解决(20260907):同类问题先在这里找答案 */}
+          <Link
+            href={feedHref({ solved: solvedOnly ? null : "1" })}
+            scroll={false}
+            aria-current={solvedOnly ? "page" : undefined}
+            className={`shrink-0 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+              solvedOnly ? "font-semibold text-blue" : "text-grey hover:text-blue"
+            }`}
+          >
+            ✓ {t(locale, "feed.solvedOnly")}
+          </Link>
         </nav>
       </div>
 

@@ -29,6 +29,8 @@ export interface FeedPost {
   score: number;
   commentCount: number;
   createdAt: Date;
+  /* 已解决(20260907):非空 = 已解决;feed 可只看已解决 */
+  solvedAt: Date | null;
   handle: string;
   name: string;
   avatarUrl: string;
@@ -240,6 +242,7 @@ function mapFeed(r: RowDataPacket): FeedPost {
     score: Number(r.score),
     commentCount: Number(r.comment_count),
     createdAt: r.created_at,
+    solvedAt: r.solved_at ?? null,
     handle: r.handle,
     name: r.name,
     avatarUrl: r.avatar_url,
@@ -297,6 +300,8 @@ function hotExpr(asOf: number): string {
 export function feedPageQuery(opts: {
   sort: "hot" | "new";
   category?: string;
+  /* 只看已解决(20260907):solved_at 非空的帖子 */
+  solved?: boolean;
   subscriberId?: number;
   viewerId?: number;
   cursor?: FeedCursor | null;
@@ -328,6 +333,7 @@ export function feedPageQuery(opts: {
     where.push("p.category = ?");
     args.push(opts.category);
   }
+  if (opts.solved) where.push("p.solved_at IS NOT NULL");
   const hot = opts.sort === "hot" && !opts.subscriberId;
   let selectHot = "";
   let order: string;
@@ -350,6 +356,7 @@ export function feedPageQuery(opts: {
   return {
     sql: `SELECT p.id, p.type, p.category, p.title, LEFT(p.body_md, 500) AS body_excerpt,
             p.visibility, p.hidden_at, p.hidden_reason, p.score, p.comment_count, p.created_at, p.ai_reply,
+            p.solved_at,
             u.handle, u.name, u.avatar_url, u.role${selectHot}
      FROM posts p ${join}
      WHERE ${where.join(" AND ")}
@@ -366,6 +373,7 @@ export interface FeedPage {
 export async function getFeedPage(opts: {
   sort: "hot" | "new";
   category?: string;
+  solved?: boolean;
   subscriberId?: number;
   viewerId?: number;
   after?: string;
@@ -398,7 +406,7 @@ export const getPost = cache(async (id: number): Promise<PostDetail | null> => {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.id, p.user_id, p.type, p.category, p.title, p.body_md, p.link_url,
             p.lang, p.ai_reply, p.visibility, p.hidden_at, p.hidden_reason, p.score, p.comment_count,
-            p.view_count, p.created_at, p.edited_at,
+            p.view_count, p.created_at, p.edited_at, p.solved_at,
             u.handle, u.name, u.avatar_url, u.role
      FROM posts p JOIN users u ON u.id = p.user_id
      WHERE p.id = ? AND p.deleted_at IS NULL LIMIT 1`,
@@ -1199,6 +1207,21 @@ export async function setPostVisibility(
   const [res] = await getPool().query<ResultSetHeader>(
     "UPDATE posts SET visibility = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
     [visibility, postId, userId],
+  );
+  return res.affectedRows > 0;
+}
+
+/* 已解决开关(20260907):作者本人或治理(admin/mod);affectedRows=0 即越权/已删。 */
+export async function setPostSolved(
+  actor: { id: number; role: string },
+  postId: number,
+  solved: boolean,
+): Promise<boolean> {
+  const mod = canModerate(actor.role);
+  const [res] = await getPool().query<ResultSetHeader>(
+    `UPDATE posts SET solved_at = ${solved ? "NOW()" : "NULL"}
+     WHERE id = ? AND deleted_at IS NULL ${mod ? "" : "AND user_id = ?"}`,
+    mod ? [postId] : [postId, actor.id],
   );
   return res.affectedRows > 0;
 }

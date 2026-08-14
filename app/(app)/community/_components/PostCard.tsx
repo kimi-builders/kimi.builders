@@ -14,16 +14,7 @@ import type { FeedPost } from "@/src/lib/posts";
 import FeedShareButton from "./FeedShareButton";
 import VoteCluster from "./VoteCluster";
 
-/* 分类 chip 配色(tint 底 + 彩字);feedbar 话题 pill 的激活态同款。 */
-export const CATEGORY_TINT: Record<string, string> = {
-  chat: "bg-blue/10 text-blue",
-  showcase: "bg-blue/10 text-blue",
-  help: "bg-blue/10 text-blue",
-  feedback: "bg-blue/10 text-blue",
-  announcement: "bg-paper/[0.07] text-grey",
-};
-
-/* 话题 pill 的色点(与 chip tint 同 hue)。 */
+/* 话题 tab 的色点(active 态用)。 */
 export const CATEGORY_DOT: Record<string, string> = {
   chat: "bg-blue",
   showcase: "bg-blue",
@@ -71,9 +62,9 @@ export default function PostCard({
           </Link>
           <span className="text-[11.5px] text-grey/80">· {relTime(p.createdAt, locale)}</span>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2 font-mono text-[11px]">
           {p.visibility === "private" && (
-            <span className="rounded-md border border-line px-1.5 py-px font-mono text-[10px] text-paper">
+            <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
               {t(locale, "post.private")}
             </span>
           )}
@@ -86,11 +77,14 @@ export default function PostCard({
               {t(locale, "mod.hiddenBadge")}
             </span>
           )}
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${CATEGORY_TINT[p.category] ?? CATEGORY_TINT.chat}`}
-          >
-            # {categoryLabel(locale, p.category)}
-          </span>
+          {/* 已解决:安静的蓝字 token(20260907) */}
+          {p.solvedAt && (
+            <span className="inline-flex items-center gap-1 text-blue">
+              ✓ {t(locale, "post.solved")}
+            </span>
+          )}
+          {/* 类别:纯文本 token,不再是 pill */}
+          <span className="text-grey"># {categoryLabel(locale, p.category)}</span>
         </div>
       </div>
 
@@ -158,7 +152,7 @@ export default function PostCard({
           copiedLabel={t(locale, "post.copied")}
         />
         {p.aiReply && (
-          <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-blue/30 bg-blue/10 px-2.5 py-1 text-[11px] text-blue">
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] text-blue">
             <Bot size={12} aria-hidden="true" />
             {t(locale, "post.aiJoin")}
           </span>

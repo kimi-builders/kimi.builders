@@ -22,6 +22,7 @@ function post(overrides: Partial<FeedPost> = {}): FeedPost {
     score: 3,
     commentCount: 2,
     createdAt: new Date("2026-08-12T12:00:00.000Z"),
+    solvedAt: null,
     handle: "builder",
     name: "Builder",
     avatarUrl: "/avatar.svg",
@@ -35,14 +36,21 @@ test("public feed cache scope is bounded to anonymous page one", () => {
   assert.deepEqual(publicFeedCacheScope({ sort: "new", category: "showcase" }), {
     sort: "new",
     category: "showcase",
+    solved: false,
   });
+  assert.deepEqual(
+    publicFeedCacheScope({ sort: "new", category: "showcase", solved: true }),
+    { sort: "new", category: "showcase", solved: true },
+  );
   assert.deepEqual(publicFeedCacheScope({ sort: "not-a-sort", category: "not-a-category" }), {
     sort: "hot",
     category: null,
+    solved: false,
   });
   assert.deepEqual(publicFeedCacheScope({ sort: "hot", category: "x".repeat(10_000) }), {
     sort: "hot",
     category: null,
+    solved: false,
   });
   assert.equal(publicFeedCacheScope({ sort: "hot", viewerId: 7 }), null);
   assert.equal(publicFeedCacheScope({ sort: "hot", subscriberId: 7 }), null);

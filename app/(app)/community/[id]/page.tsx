@@ -96,7 +96,13 @@ export default async function PostPage({
           <ArrowLeft size={13} aria-hidden="true" />
           {t(locale, "nav.community")}
         </Link>
-        <span className="rounded-full bg-blue/10 px-2.5 py-1 text-blue"># {categoryLabel(locale, post.category)}</span>
+        <span className="font-mono text-[11px] text-grey"># {categoryLabel(locale, post.category)}</span>
+        {/* 已解决(20260907):安静的蓝字 token,同精选同级 */}
+        {post.solvedAt && (
+          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-blue">
+            ✓ {t(locale, "post.solved")}
+          </span>
+        )}
         {post.visibility === "private" && (
           <span
             className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper"
@@ -249,6 +255,7 @@ export default async function PostPage({
           <PostOwnerActions
             postId={post.id}
             visibility={post.visibility}
+            solved={!!post.solvedAt}
             locale={locale}
           />
         )}

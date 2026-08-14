@@ -37,6 +37,7 @@ function postDetail(overrides: Partial<PostDetail> = {}): PostDetail {
     score: 12,
     commentCount: 5,
     createdAt: new Date("2026-08-01T00:00:00Z"),
+    solvedAt: null,
     handle: "aklman",
     name: "Aklman Zhapar",
     avatarUrl: "",

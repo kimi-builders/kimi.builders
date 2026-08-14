@@ -1,26 +1,49 @@
 "use client";
 
-/* 帖子作者自助操作:编辑(独立页)/ 公开⇄私密 / 删除(confirm 后软删)。
-   仅作者本人渲染(服务端判断)。操作链路:等待态 → toast 反馈 →
-   可见性切换后 router.refresh();删除成功后 toast + 回 feed。 */
+/* 帖子作者自助操作:编辑(独立页)/ 已解决开关 / 公开⇄私密 / 删除(confirm 后软删)。
+   仅作者本人渲染(服务端判断);治理也可开/关已解决。操作链路:等待态 → toast 反馈 →
+   可见性/已解决切换后 router.refresh();删除成功后 toast + 回 feed。 */
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
-import { deletePostAction, setPostVisibilityAction } from "../actions";
+import { deletePostAction, setPostSolvedAction, setPostVisibilityAction } from "../actions";
 
 export default function PostOwnerActions({
   postId,
   visibility,
+  solved = false,
   locale,
 }: {
   postId: number;
   visibility: string;
+  solved?: boolean;
   locale: Locale;
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState<"vis" | "del" | null>(null);
+  const [busy, setBusy] = useState<"vis" | "del" | "solved" | null>(null);
+
+  const toggleSolved = async () => {
+    if (busy) return;
+    setBusy("solved");
+    try {
+      const fd = new FormData();
+      fd.set("post_id", String(postId));
+      fd.set("solved", solved ? "0" : "1");
+      const res = await setPostSolvedAction(fd);
+      if (!res.ok) {
+        toast(t(locale, "toast.failed"));
+        return;
+      }
+      toast(t(locale, solved ? "post.unsolvedToast" : "post.solvedToast"));
+      router.refresh();
+    } catch {
+      toast(t(locale, "toast.failed"));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const toggleVisibility = async () => {
     if (busy) return;
@@ -74,6 +97,16 @@ export default function PostOwnerActions({
       <Link href={`/community/${postId}/edit`} className={btn}>
         {t(locale, "post.edit")}
       </Link>
+      <button
+        type="button"
+        onClick={toggleSolved}
+        disabled={busy !== null}
+        className={btn}
+      >
+        {busy === "solved"
+          ? t(locale, "post.submitting")
+          : t(locale, solved ? "post.unmarkSolved" : "post.markSolved")}
+      </button>
       <button
         type="button"
         onClick={toggleVisibility}

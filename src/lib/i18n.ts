@@ -98,7 +98,12 @@ const DICT = {
     en: "Write a comment (Markdown supported)…",
   },
   "post.comment": { zh: "评论", en: "Comment" },
-  "post.loginToComment": {
+  "post.solved": { zh: "已解决", en: "Solved" },
+  "post.markSolved": { zh: "标记已解决", en: "Mark solved" },
+  "post.unmarkSolved": { zh: "取消已解决", en: "Unmark solved" },
+  "post.solvedToast": { zh: "已标记为已解决", en: "Marked as solved" },
+  "post.unsolvedToast": { zh: "已取消已解决标记", en: "Solved mark removed" },
+  "feed.solvedOnly": { zh: "已解决", en: "Solved" },  "post.loginToComment": {
     zh: "登录后参与评论:",
     en: "Log in to join the discussion:",
   },

@@ -17,6 +17,7 @@ export async function loadFeedCards(
   opts: {
     sort: "hot" | "new";
     category?: string;
+    solved?: boolean;
     subscriberId?: number;
     viewerId?: number;
     after?: string;

@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS posts (
   -- hidden_* 由 20260830_moderation.sql 引入,已有库执行该迁移
   hidden_at DATETIME NULL COMMENT '屏蔽时间;NULL=未屏蔽(治理:公开侧不可见,作者可见带标注)',
   hidden_by BIGINT UNSIGNED NULL COMMENT '执行屏蔽的管理员 users.id',
+  solved_at DATETIME NULL COMMENT '解决时间;NULL=未解决(20260907,作者/治理可切换)',
   hidden_reason VARCHAR(280) NULL COMMENT '屏蔽原因(展示给作者/管理面)',
   -- featured_* 由 20260817_featured.sql 引入,已有库执行该迁移
   featured_at DATETIME NULL COMMENT '精选时间;NULL=未精选(每周精选 v0)',

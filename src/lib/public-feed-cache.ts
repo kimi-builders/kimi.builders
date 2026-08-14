@@ -20,12 +20,14 @@ export const PUBLIC_FEED_REVALIDATE_SECONDS = 30;
 async function loadAnonymousFirstPageDto(
   sort: "hot" | "new",
   categoryKey: PublicFeedCacheScope["category"],
+  solved: boolean,
 ): Promise<PublicFeedPageDto> {
   /* No viewer, subscriber, or cursor is accepted here. feedPageQuery therefore
      applies public + non-hidden predicates before the database returns rows. */
   const page = await getFeedPage({
     sort,
     category: categoryKey ?? undefined,
+    solved,
   });
   return toPublicFeedPageDto(page);
 }
@@ -47,10 +49,12 @@ export async function getPublicFeedFirstPage(
   const bounded = publicFeedCacheScope({
     sort: scope.sort,
     category: scope.category ?? undefined,
+    solved: scope.solved,
   });
   const dto = await getCachedAnonymousFirstPageDto(
     bounded?.sort ?? "hot",
     bounded?.category ?? null,
+    bounded?.solved ?? false,
   );
   return hydratePublicFeedPage(dto);
 }

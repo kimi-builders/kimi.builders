@@ -7,6 +7,12 @@ import {
   feedPageQuery,
 } from "../src/lib/posts";
 
+/* 已解决过滤(20260907):solved=true 追加 solved_at 谓词 */
+test("feedPageQuery: solved filter adds the solved_at predicate", () => {
+  assert.match(feedPageQuery({ sort: "new", solved: true }).sql, /p\.solved_at IS NOT NULL/);
+  assert.doesNotMatch(feedPageQuery({ sort: "new" }).sql, /solved_at IS NOT NULL/);
+});
+
 test("page size is 50 posts per page, over-fetching one", () => {
   assert.equal(FEED_PAGE_SIZE, 50);
   const { sql } = feedPageQuery({ sort: "hot", asOf: 1_760_000_000 });
