@@ -65,6 +65,7 @@ import UsageManagementPanels from "./_components/UsageManagementPanels";
 import UsageMethodologyDialog from "./_components/UsageMethodologyDialog";
 import UsageRecordsSection from "./_components/UsageRecordsSection";
 import UsageShareDialog from "./_components/UsageShareDialog";
+import UsageSyncDialog from "./_components/UsageSyncDialog";
 import {
   UsageHeatmapGrid,
   UsageTrendChart,
@@ -577,6 +578,7 @@ export default async function UsagePage({
         {overview && hasUsageHistory && (
           <UsageShareDialog zh={zh} tzOffsetMinutes={filters.tzOffsetMinutes} />
         )}
+        {overview && hasUsageHistory && <UsageSyncDialog zh={zh} />}
         <Link
           href="/usage/device"
           className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
@@ -854,7 +856,7 @@ export default async function UsagePage({
         </div>
       </div>
       <code className="shrink-0 rounded-lg border border-line bg-bg px-3 py-2 font-mono text-[11px] text-paper">
-        npx @kimi-builders/usage sync
+        npx @kimi.builders/usage@latest sync
       </code>
     </aside>
   ) : null;
