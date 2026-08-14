@@ -12,6 +12,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import MarkdownEditor from "@/app/(app)/_components/MarkdownEditor";
 import { useRouter } from "next/navigation";
 import { ArrowBigUp, ChevronDown, ChevronUp, X } from "lucide-react";
 import { visibleReplyCount } from "@/src/lib/community-draft";
@@ -344,12 +345,13 @@ export default function CommentSection({
       {editingId === c.id ? (
         <form onSubmit={(e) => saveEdit(e, c.id)} className="mt-2 space-y-2">
           <input type="hidden" name="comment_id" value={c.id} />
-          <textarea
+          <MarkdownEditor
             name="body"
+            locale={locale}
             rows={3}
             required
             defaultValue={c.bodyMd}
-            className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm text-paper focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
+            inputCls="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm text-paper focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
           />
           <div className="flex gap-3 font-mono text-[11px]">
             <button
@@ -446,13 +448,14 @@ export default function CommentSection({
               </p>
             </>
           )}
-          <textarea
-            ref={taRef}
+          <MarkdownEditor
+            textareaRef={taRef}
             name="body"
+            locale={locale}
             rows={4}
             required
             placeholder={t(locale, "post.commentPh")}
-            className="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
+            inputCls="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
           />
           <button
             type="submit"

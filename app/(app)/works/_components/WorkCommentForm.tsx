@@ -4,6 +4,7 @@
    成功 → toast + 清空 + router.refresh() 换新列表;失败文案由 action 带回(含限流等待秒数)。 */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import MarkdownEditor from "@/app/(app)/_components/MarkdownEditor";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { createWorkCommentAction } from "../actions";
@@ -43,12 +44,13 @@ export default function WorkCommentForm({
   return (
     <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl border border-line bg-bg/40 p-3 sm:p-4">
       <input type="hidden" name="work_id" value={workId} />
-      <textarea
+      <MarkdownEditor
         name="body"
+        locale={locale}
         rows={3}
         required
         placeholder={t(locale, "post.commentPh")}
-        className="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
+        inputCls="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
       />
       <button
         type="submit"

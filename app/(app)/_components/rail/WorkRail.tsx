@@ -7,6 +7,8 @@
 import Link from "next/link";
 import { ExternalLink, Heart, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import AgentIcon from "@/components/AgentIcon";
+import ModelIcon from "@/components/ModelIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
@@ -118,8 +120,13 @@ export default async function WorkRail({
           {work.agents.length > 0 && (
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
               <dt className="shrink-0 text-grey">{t(locale, "works.agentsShort")}</dt>
-              <dd className="min-w-0 truncate text-right text-paper">
-                {work.agents.map(agentName).join(", ")}
+              <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
+                {work.agents.map((a) => (
+                  <span key={a} className="inline-flex items-center gap-1">
+                    <AgentIcon id={a} size={11} />
+                    {agentName(a)}
+                  </span>
+                ))}
               </dd>
             </div>
           )}
@@ -133,8 +140,13 @@ export default async function WorkRail({
           {work.models.length > 0 && (
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
               <dt className="shrink-0 text-grey">{t(locale, "works.sideModels")}</dt>
-              <dd className="min-w-0 truncate text-right text-paper">
-                {work.models.map((m) => modelFamilyName(m, locale)).join(", ")}
+              <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
+                {work.models.map((m) => (
+                  <span key={m} className="inline-flex items-center gap-1">
+                    <ModelIcon id={m} size={11} />
+                    {modelFamilyName(m, locale)}
+                  </span>
+                ))}
               </dd>
             </div>
           )}

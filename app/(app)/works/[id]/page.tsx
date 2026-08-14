@@ -7,10 +7,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { ArrowLeft, ExternalLink, GalleryVerticalEnd, Heart } from "lucide-react";
+import { ArrowLeft, ExternalLink, GalleryVerticalEnd, Heart, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import Markdown from "@/components/Markdown";
+import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
@@ -291,7 +293,7 @@ export default async function WorkPage({
       <div className="mt-5">
         {/* 有配图走图集(封面大图 + 缩略图);无配图保持原单张外链截图 */}
         {work.imageKeys.length > 0 ? (
-          <WorkGallery keys={work.imageKeys} name={work.name} />
+          <WorkGallery keys={work.imageKeys} name={work.name} locale={locale} />
         ) : (
           <WorkScreenshot
             url={work.screenshotUrl}
@@ -342,8 +344,13 @@ export default async function WorkPage({
             {work.agents.length > 0 && (
               <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
                 <dt className="shrink-0 text-grey">{t(locale, "works.agentsShort")}</dt>
-                <dd className="min-w-0 truncate text-right text-paper">
-                  {work.agents.map(agentName).join(", ")}
+                <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
+                  {work.agents.map((a) => (
+                    <span key={a} className="inline-flex items-center gap-1">
+                      <AgentIcon id={a} size={11} />
+                      {agentName(a)}
+                    </span>
+                  ))}
                 </dd>
               </div>
             )}
@@ -357,8 +364,13 @@ export default async function WorkPage({
             {work.models.length > 0 && (
               <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
                 <dt className="shrink-0 text-grey">{t(locale, "works.sideModels")}</dt>
-                <dd className="min-w-0 truncate text-right text-paper">
-                  {work.models.map((m) => modelFamilyName(m, locale)).join(", ")}
+                <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
+                  {work.models.map((m) => (
+                    <span key={m} className="inline-flex items-center gap-1">
+                      <ModelIcon id={m} size={11} />
+                      {modelFamilyName(m, locale)}
+                    </span>
+                  ))}
                 </dd>
               </div>
             )}
@@ -412,7 +424,8 @@ export default async function WorkPage({
           {t(locale, "post.comments", { n: comments.total })}
         </h2>
         {comments.nodes.length === 0 ? (
-          <p className="mt-5 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
+          <p className="mt-5 flex items-center justify-center gap-2 py-6 text-center text-sm text-grey">
+            <MessageCircle size={15} className="text-grey/70" aria-hidden="true" />
             {t(locale, "works.noComments")}
           </p>
         ) : (

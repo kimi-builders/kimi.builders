@@ -18,6 +18,7 @@ import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
 import type { WorkRow } from "@/src/lib/works";
 import Avatar from "@/components/Avatar";
+import AgentIcon from "@/components/AgentIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkOwnerActions from "./WorkOwnerActions";
@@ -116,7 +117,15 @@ export default function WorkCard({
             {kindLabel}
           </span>
           {w.agents.length > 0 && (
-            <span className="truncate">· {w.agents.map(agentName).join(", ")}</span>
+            <span className="inline-flex min-w-0 items-center gap-1">
+              ·
+              {w.agents.map((a) => (
+                <span key={a} className="inline-flex shrink-0 items-center gap-1">
+                  <AgentIcon id={a} size={11} />
+                  {agentName(a)}
+                </span>
+              ))}
+            </span>
           )}
           {w.tags.length > 0 && (
             <span className="truncate">· {w.tags.slice(0, 3).join(", ")}</span>

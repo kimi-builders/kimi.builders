@@ -60,6 +60,8 @@ export default function MarkdownEditor({
   defaultValue,
   value,
   onChange,
+  textareaRef: externalRef,
+  required,
   inputCls,
 }: {
   locale: Locale;
@@ -70,6 +72,9 @@ export default function MarkdownEditor({
   defaultValue?: string;
   value?: string;
   onChange?: (value: string) => void;
+  /* 需要聚焦等 DOM 操作时把内部 textarea 引用交出去(如评论表单的回复聚焦) */
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+  required?: boolean;
   inputCls: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -188,11 +193,15 @@ export default function MarkdownEditor({
         />
       </div>
       <textarea
-        ref={textareaRef}
+        ref={(el) => {
+          textareaRef.current = el;
+          if (externalRef) externalRef.current = el;
+        }}
         id={id}
         name={name}
         rows={rows}
         placeholder={placeholder}
+        required={required}
         {...(controlled
           ? { value, onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => onChange?.(event.target.value) }
           : { defaultValue })}

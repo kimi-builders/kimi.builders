@@ -604,9 +604,10 @@ const DICT = {
   "works.shot": { zh: "封面图 URL(可选)", en: "Cover image URL (optional)" },
   "works.shotUpload": { zh: "上传", en: "Upload" },
   "works.shotClear": { zh: "清除", en: "Clear" },
-  "works.tags": {
-    zh: "标签(逗号分隔,最多 5 个)",
-    en: "Tags (comma separated, max 5)",
+  "works.tags": { zh: "标签", en: "Tags" },
+  "works.tagsHint": {
+    zh: "逗号分隔,最多 5 个",
+    en: "Comma separated, max 5",
   },
   /* 信息行用的短标签(表单标签带填写指引,太长) */
   "works.tagsShort": { zh: "标签", en: "Tags" },
@@ -645,7 +646,7 @@ const DICT = {
     zh: "只能编辑自己的作品",
     en: "You can only edit your own works",
   },
-  "works.agents": { zh: "参与的 Agent", en: "Agents involved" },
+  "works.agents": { zh: "构建 Agent", en: "Build agents" },
   "works.agentsHint": {
     zh: "可多选。Kimi Code 指终端 / IDE 编程 Agent；Kimi Agent 指 kimi.com、Kimi App / Kimi Work 中的通用 Agent；Agent Swarm 指并行多 Agent 模式。",
     en: "Multi-select. Kimi Code is the terminal/IDE coding agent; Kimi Agent is the general agent in kimi.com, Kimi App, and Kimi Work; Agent Swarm is the parallel multi-agent mode.",
@@ -695,7 +696,7 @@ const DICT = {
   "works.statusBuilding": { zh: "打磨中", en: "Building" },
   "works.statusReleased": { zh: "已上线", en: "Live" },
   "works.statusArchived": { zh: "不再维护", en: "Sunset" },
-  "works.models": { zh: "用过的模型(可多选,非必填)", en: "Models used (multi, optional)" },
+  "works.models": { zh: "模型(可多选)", en: "Models (multi-select)" },
   "works.modelsHint": {
     zh: "这次开发用到的模型,没列出的可自行添加",
     en: "Models used; add your own if unlisted",
@@ -897,10 +898,13 @@ const DICT = {
   "prof.usage": { zh: "用量", en: "Usage" },
   "prof.noWorks": { zh: "还没有作品。", en: "No works yet." },
   "works.badge": {
-    zh: "声明投入 {n}",
-    en: "Declared {n}",
+    zh: "声明投入 {n} tokens",
+    en: "Declared {n} tokens",
   },
   "works.declared": { zh: "声明投入", en: "Declared" },
+  "works.galleryOpen": { zh: "查看大图", en: "View full image" },
+  "works.galleryPrev": { zh: "上一张", en: "Previous" },
+  "works.galleryNext": { zh: "下一张", en: "Next" },
   "works.badgeTitle": {
     zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
     en: "Declared by the author, capped by their verifiable total — not precise metering",
@@ -1096,8 +1100,8 @@ const DICT = {
     en: "Chat with the author about this work",
   },
   "works.noComments": {
-    zh: "还没有评论 —— 来问作者第一个问题。",
-    en: "No comments yet — ask the author the first question.",
+    zh: "还没有评论。说点什么吧——第一个开口的,作者记得最牢。",
+    en: "No comments yet — say something; the author remembers the first voice.",
   },
   "works.authorChip": { zh: "作者", en: "AUTHOR" },
   "works.notFound": {
@@ -1113,8 +1117,8 @@ const DICT = {
   "works.published": { zh: "发布时间", en: "Published" },
   /* ---- 作品用量声明制(20260822_work_claims;独立分区,降低合并冲突面) ---- */
   "works.claim": {
-    zh: "构建投入声明(可选)",
-    en: "Claimed build effort (optional)",
+    zh: "构建投入(可选)",
+    en: "Build effort (optional)",
   },
   "works.claimPh": { zh: "如 612M、1.2B", en: "e.g. 612M, 1.2B" },
   "works.claimHint": {

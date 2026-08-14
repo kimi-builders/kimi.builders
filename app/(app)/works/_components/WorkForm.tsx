@@ -430,6 +430,9 @@ export default function WorkForm({
           placeholder="kimi, web, tool"
           className={`${inputCls} font-mono`}
         />
+        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          {t(locale, "works.tagsHint")}
+        </span>
       </div>
 
       <fieldset>
