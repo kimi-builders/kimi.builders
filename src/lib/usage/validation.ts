@@ -150,7 +150,7 @@ function project(value: unknown, field: string, settings: UsageSettings): string
 
 function clientMeta(value: unknown): UsageClientMetaV2 {
   const input = record(value, "client");
-  const surfaces = new Set(["cli", "daemon", "mac-app", "windows-app"]);
+  const surfaces = new Set(["cli", "daemon", "local-dashboard", "mac-app", "windows-app"]);
   const platforms = new Set(["darwin", "linux", "win32"]);
   const surface = text(input.surface, "client.surface", 20);
   const platform = text(input.platform, "client.platform", 16);

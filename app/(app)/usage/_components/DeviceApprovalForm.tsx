@@ -7,6 +7,7 @@ import {
   decideUsageDeviceAction,
   type DeviceDecisionState,
 } from "../actions";
+import DeviceCodeUrlCleanup from "../device/_components/DeviceCodeUrlCleanup";
 
 const initialState: DeviceDecisionState = {};
 
@@ -25,6 +26,7 @@ export default function DeviceApprovalForm({
   if (state.status === "approved") {
     return (
       <div className="mt-6 border border-blue/40 bg-blue/5 p-4">
+        <DeviceCodeUrlCleanup />
         <p className="font-mono text-sm font-semibold text-paper">
           {zh ? "设备已连接" : "Device connected"}
         </p>
@@ -43,6 +45,7 @@ export default function DeviceApprovalForm({
   if (state.status === "denied") {
     return (
       <div className="mt-6 border border-line bg-card p-4 text-sm text-grey">
+        <DeviceCodeUrlCleanup />
         {zh ? "已拒绝本次连接请求。" : "This connection request was denied."}
       </div>
     );

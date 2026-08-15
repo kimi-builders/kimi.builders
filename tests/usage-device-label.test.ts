@@ -47,6 +47,7 @@ test("platform and surface labels use product language instead of Node enums", (
   assert.equal(usagePlatformLabel("win32"), "Windows");
   assert.equal(usageSurfaceLabel("cli"), "CLI");
   assert.equal(usageSurfaceLabel("daemon"), "Background sync");
+  assert.equal(usageSurfaceLabel("local-dashboard"), "Local Dashboard");
 });
 
 test("device detail keeps terminal, OS, Collector, and parser versions separate", () => {

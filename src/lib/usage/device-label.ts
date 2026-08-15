@@ -40,6 +40,8 @@ export function usageSurfaceLabel(surface: unknown): string {
   switch (text(surface).toLowerCase()) {
     case "daemon":
       return "Background sync";
+    case "local-dashboard":
+      return "Local Dashboard";
     case "mac-app":
       return "macOS App";
     case "windows-app":

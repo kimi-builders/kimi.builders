@@ -16,7 +16,7 @@ import { parseUsageAgentVersions, usageDeviceDisplayName } from "./device-label"
 const DEVICE_CODE_TTL_SECONDS = 10 * 60;
 const DEVICE_POLL_INTERVAL_SECONDS = 5;
 const VALID_PLATFORMS = new Set(["darwin", "linux", "win32", "unknown"]);
-const VALID_SURFACES = new Set(["cli", "daemon", "mac-app", "windows-app"]);
+const VALID_SURFACES = new Set(["cli", "daemon", "local-dashboard", "mac-app", "windows-app"]);
 
 function cleanLabel(value: unknown, fallback: string, maxLength = 80): string {
   if (typeof value !== "string") return fallback;
@@ -368,6 +368,51 @@ export async function revokeUsageDevice(
     const [rows] = await connection.query<RowDataPacket[]>(
       "SELECT id FROM usage_devices WHERE user_id = ? AND public_id = ? LIMIT 1 FOR UPDATE",
       [userId, publicId],
+    );
+    const row = rows[0];
+    if (!row) {
+      await connection.rollback();
+      return false;
+    }
+    await connection.query(
+      "UPDATE usage_devices SET revoked_at = COALESCE(revoked_at, UTC_TIMESTAMP(3)) WHERE id = ?",
+      [row.id],
+    );
+    await connection.query(
+      "UPDATE usage_api_keys SET revoked_at = COALESCE(revoked_at, UTC_TIMESTAMP(3)) WHERE device_id = ?",
+      [row.id],
+    );
+    if (deleteData) {
+      await connection.query("DELETE FROM usage_sessions WHERE user_id = ? AND device_id = ?", [
+        userId,
+        row.id,
+      ]);
+      await connection.query("DELETE FROM usage_buckets WHERE user_id = ? AND device_id = ?", [
+        userId,
+        row.id,
+      ]);
+    }
+    await connection.commit();
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function revokeUsageDeviceById(
+  userId: number,
+  deviceId: number,
+  deleteData = false,
+): Promise<boolean> {
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query<RowDataPacket[]>(
+      "SELECT id FROM usage_devices WHERE user_id = ? AND id = ? LIMIT 1 FOR UPDATE",
+      [userId, deviceId],
     );
     const row = rows[0];
     if (!row) {

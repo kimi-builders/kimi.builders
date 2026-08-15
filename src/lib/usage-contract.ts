@@ -148,7 +148,7 @@ export interface UsageQuotaSnapshotV2 {
   unit: "tokens" | "credits" | "requests" | "currency" | "percent";
 }
 
-export type UsageClientSurface = "cli" | "daemon" | "mac-app" | "windows-app";
+export type UsageClientSurface = "cli" | "daemon" | "local-dashboard" | "mac-app" | "windows-app";
 
 export interface UsageClientMetaV2 {
   surface: UsageClientSurface;

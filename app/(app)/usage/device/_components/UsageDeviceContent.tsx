@@ -10,7 +10,9 @@ import {
   usageSurfaceLabel,
 } from "@/src/lib/usage/device-label";
 import { normalizeUserCode } from "@/src/lib/usage/crypto";
+import CopyUsageCommandButton from "../../_components/CopyUsageCommandButton";
 import DeviceApprovalForm from "../../_components/DeviceApprovalForm";
+import DeviceCodeUrlCleanup from "./DeviceCodeUrlCleanup";
 
 export default async function UsageDeviceContent({
   searchParams,
@@ -46,36 +48,71 @@ export default async function UsageDeviceContent({
       </p>
 
       {!code && (
-        <form method="get" className="mt-7 border border-line bg-card p-4">
-          <label htmlFor="usage-device-code" className="font-mono text-[11px] tracking-[0.18em] text-grey">
-            {zh ? "终端验证码" : "TERMINAL CODE"}
-          </label>
-          <p id="usage-device-code-help" className="mt-1 text-[11px] leading-relaxed text-grey">
-            {zh ? "输入 Collector 在终端显示的 8 位验证码。" : "Enter the 8-character code shown by the Collector."}
-          </p>
-          <div className="mt-2 flex gap-2">
-            <input
-              id="usage-device-code"
-              name="code"
-              placeholder="ABCD-EFGH"
-              autoCapitalize="characters"
-              autoComplete="one-time-code"
-              aria-describedby="usage-device-code-help"
-              minLength={8}
-              maxLength={9}
-              pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}"
-              required
-              className="min-h-11 min-w-0 flex-1 border border-line bg-bg px-3 font-mono text-sm uppercase tracking-[0.14em] text-paper outline-none focus:border-blue"
-            />
-            <button className="min-h-11 border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
-              {zh ? "继续" : "Continue"}
-            </button>
-          </div>
-        </form>
+        <>
+          {/* 连接新设备(2026-08-14):先有命令再有码——没发起过请求的人
+              到这一步不会卡住;命令行样式与「同步数据」弹窗一致 */}
+          <section className="mt-7 rounded-xl border border-line bg-card p-4">
+            <h2 className="font-mono text-[11px] tracking-[0.18em] text-grey">
+              {zh ? "连接新设备" : "CONNECT A NEW DEVICE"}
+            </h2>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-grey">
+              {zh
+                ? "还没有验证码?在终端运行 init——它会打印 8 位验证码并打开本页:"
+                : "No code yet? Run init in your terminal — it prints the 8-character code and opens this page:"}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="w-10 shrink-0 font-mono text-[11px] text-grey">
+                {zh ? "连接" : "Link"}
+              </span>
+              <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
+                <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-3 py-2 font-mono text-[11px] text-paper">
+                  npx @kimi.builders/usage@latest init
+                </code>
+                <CopyUsageCommandButton
+                  command="npx @kimi.builders/usage@latest init"
+                  zh={zh}
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-grey/80">
+              {zh
+                ? "项目名默认不上传;同步 Key 可随时在「设备」里撤销。"
+                : "Project names stay off by default; revoke a sync key anytime under Devices."}
+            </p>
+          </section>
+
+          <form method="get" className="mt-4 rounded-xl border border-line bg-card p-4">
+            <label htmlFor="usage-device-code" className="font-mono text-[11px] tracking-[0.18em] text-grey">
+              {zh ? "终端验证码" : "TERMINAL CODE"}
+            </label>
+            <p id="usage-device-code-help" className="mt-1 text-[11px] leading-relaxed text-grey">
+              {zh ? "输入 Collector 在终端显示的 8 位验证码。" : "Enter the 8-character code shown by the Collector."}
+            </p>
+            <div className="mt-2 flex gap-2">
+              <input
+                id="usage-device-code"
+                name="code"
+                placeholder="ABCD-EFGH"
+                autoCapitalize="characters"
+                autoComplete="one-time-code"
+                aria-describedby="usage-device-code-help"
+                minLength={8}
+                maxLength={9}
+                pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}"
+                required
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 font-mono text-sm uppercase tracking-[0.14em] text-paper outline-none focus:border-blue"
+              />
+              <button className="min-h-11 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+                {zh ? "继续" : "Continue"}
+              </button>
+            </div>
+          </form>
+        </>
       )}
 
       {code && !preview && (
-        <div className="mt-7 border border-line bg-card p-4">
+        <div className="mt-7 rounded-xl border border-line bg-card p-4">
+          <DeviceCodeUrlCleanup />
           <p className="text-sm text-paper">{zh ? "验证码无效或不存在。" : "Code not found."}</p>
           <p className="mt-2 text-xs leading-relaxed text-grey">
             {zh ? "请回到终端重新运行 init。" : "Return to the terminal and run init again."}
@@ -85,7 +122,8 @@ export default async function UsageDeviceContent({
 
       {preview && (
         <>
-          <section className="mt-7 border border-line bg-card p-4">
+          {preview.status !== "pending" ? <DeviceCodeUrlCleanup /> : null}
+          <section className="mt-7 rounded-xl border border-line bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="font-mono text-[11px] tracking-[0.18em] text-grey">
@@ -112,7 +150,7 @@ export default async function UsageDeviceContent({
           </section>
 
           <section className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="border border-line p-4">
+            <div className="rounded-xl border border-line p-4">
               <ShieldCheck size={16} className="text-blue" />
               <h2 className="mt-3 text-sm font-medium text-paper">
                 {zh ? "独立、可撤销的设备 Key" : "Independent, revocable device key"}
@@ -123,7 +161,7 @@ export default async function UsageDeviceContent({
                   : "Scoped to usage sync and device data; it stops working immediately when revoked."}
               </p>
             </div>
-            <div className="border border-line p-4">
+            <div className="rounded-xl border border-line p-4">
               <Database size={16} className="text-blue" />
               <h2 className="mt-3 text-sm font-medium text-paper">
                 {zh ? "只上传统计数据" : "Metrics only"}
@@ -137,7 +175,7 @@ export default async function UsageDeviceContent({
           </section>
 
           {preview.status === "approved" || preview.status === "delivered" ? (
-            <div className="mt-6 border border-blue/40 bg-blue/5 p-4">
+            <div className="mt-6 rounded-xl border border-blue/40 bg-blue/5 p-4">
               <p className="font-mono text-sm font-semibold text-paper">
                 {zh ? "设备已连接" : "Device connected"}
               </p>
@@ -151,7 +189,7 @@ export default async function UsageDeviceContent({
               </a>
             </div>
           ) : !user ? (
-            <div className="mt-6 border-l-2 border-blue bg-blue/5 p-4">
+            <div className="mt-6 rounded-xl border-l-2 border-blue bg-blue/5 p-4">
               <p className="text-sm text-paper">{zh ? "登录后批准这个设备。" : "Sign in to approve this device."}</p>
               <div className="mt-3 flex flex-wrap gap-2 font-mono text-xs">
                 <a
@@ -175,7 +213,7 @@ export default async function UsageDeviceContent({
               locale={locale}
             />
           ) : (
-            <div className="mt-6 border border-line bg-card p-4 text-sm text-grey">
+            <div className="mt-6 rounded-xl border border-line bg-card p-4 text-sm text-grey">
               {zh ? `这次请求当前状态：${preview.status}` : `This request is currently ${preview.status}.`}
             </div>
           )}

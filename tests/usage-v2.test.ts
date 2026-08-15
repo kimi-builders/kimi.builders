@@ -72,6 +72,12 @@ test("v2 contract keeps cache categories disjoint", () => {
   assert.equal(parsed.buckets[0].cacheReadInputTokens, 4);
 });
 
+test("v2 contract accepts local Dashboard initiated syncs", () => {
+  const value = payload();
+  value.client.surface = "local-dashboard";
+  assert.equal(validateUsageIngest(value, settings).client.surface, "local-dashboard");
+});
+
 test("v2 contract preserves factual device, model, effort, and Agent version metadata", () => {
   const value = payload() as ReturnType<typeof payload> & {
     client: ReturnType<typeof payload>["client"] & {
