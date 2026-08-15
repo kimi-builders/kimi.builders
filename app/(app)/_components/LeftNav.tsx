@@ -35,8 +35,8 @@ const SECTIONS = [
   { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog, hidden: false },
   { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn, hidden: false },
   { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
-  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
+  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
   { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false, hidden: NAV_HIDDEN.demoNight },
 ] as const;
 

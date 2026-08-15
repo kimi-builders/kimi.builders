@@ -441,6 +441,8 @@ export default async function UsagePage({
           <div className="mt-3 flex flex-wrap gap-2">
             <a href="/api/auth/github?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">GitHub</a>
             <a href="/api/auth/google?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">Google</a>
+            {/* 邮箱入口去 /login(登录/注册/找回都在那里),回跳 /usage */}
+            <a href="/login?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">{zh ? "邮箱" : "Email"}</a>
           </div>
         </div>
       </div>
