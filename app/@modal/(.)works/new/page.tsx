@@ -13,6 +13,7 @@ export default async function NewWorkModalPage() {
     <RouteModal
       title={t(locale, "works.newTitle")}
       closeLabel={t(locale, "modal.close")}
+      widthCls="w-[min(94vw,56rem)]"
       dirtyGuard={{
         title: t(locale, "modal.dirtyTitle"),
         keep: t(locale, "modal.keepEditing"),

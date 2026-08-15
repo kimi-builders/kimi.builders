@@ -66,6 +66,7 @@ export default async function EditWorkContent({
         action={updateWorkAction}
         locale={locale}
         workId={work.id}
+        modal={!showTitle}
         initial={{
           name: work.name,
           tagline: work.tagline,

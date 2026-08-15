@@ -25,6 +25,7 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { modelFamilyName } from "@/src/lib/model-families";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
+import { getWorksSource } from "@/src/lib/works-view-server";
 import {
   canViewWork,
   claimBadgeOf,
@@ -56,8 +57,8 @@ export async function generateMetadata({
   return { title: `${work.name} — kimi.builders` };
 }
 
-/* 不存在/已撤下:友好文案 + 回作品墙,不硬 404。 */
-function WorkGone({ locale }: { locale: Locale }) {
+/* 不存在/已撤下:友好文案 + 回来源列表(来源记忆优先,20260919)。 */
+function WorkGone({ locale, href, label }: { locale: Locale; href: string; label: string }) {
   return (
     <div className="mt-10 rounded-2xl border border-line bg-card p-8 text-center">
       <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-line bg-moon text-blue">
@@ -67,11 +68,11 @@ function WorkGone({ locale }: { locale: Locale }) {
         {t(locale, "works.notFound")}
       </p>
       <Link
-        href="/works"
+        href={href}
         className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue"
       >
         <ArrowLeft size={13} aria-hidden="true" />
-        {t(locale, "works.backToWorks")}
+        {label}
       </Link>
     </div>
   );
@@ -86,12 +87,21 @@ export default async function WorkPage({
   const workId = Number(id);
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  if (!Number.isInteger(workId) || workId <= 0) return <WorkGone locale={locale} />;
+  /* 来源列表记忆(proxy 写的 kb-works-src):「返回」回用户来的那个列表;
+     详情页有 work 时按 work.source 回落,不存在/撤下时只能回落 /works */
+  const fromList = await getWorksSource();
+  const goneHref = fromList === "awesome" ? "/awesome" : "/works";
+  const goneLabel = t(
+    locale,
+    fromList === "awesome" ? "works.backToAwesome" : "works.backToWorks",
+  );
+  if (!Number.isInteger(workId) || workId <= 0)
+    return <WorkGone locale={locale} href={goneHref} label={goneLabel} />;
   const work = await getWorkDetail(workId);
   /* 私密作品对他人按「不存在」处理;被屏蔽作品仅作者与 admin/mod 可开(治理评审),
      其余按同一友好文案(与已删/不存在一致,不构成存在性 oracle)。 */
   if (!work || !canViewWork(work, user))
-    return <WorkGone locale={locale} />;
+    return <WorkGone locale={locale} href={goneHref} label={goneLabel} />;
   const requestHeaders = await headers();
   trackEvent("work_view", { kind: "work", id: workId }, { headers: requestHeaders });
 
@@ -122,14 +132,15 @@ export default async function WorkPage({
           {work.hiddenReason ? ` — ${work.hiddenReason}` : ""}
         </p>
       )}
-      {/* 面包屑:作品(awesome 条目回 /awesome)/ 名称 */}
+      {/* 面包屑:来源列表记忆优先(成员作品也会出现在 /awesome,按 work.source
+          猜会把从 Awesome 来的用户送回作品墙),无记忆回落 work.source */}
       <div className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
         <Link
-          href={work.source === "awesome" ? "/awesome" : "/works"}
+          href={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
         >
           <ArrowLeft size={13} aria-hidden="true" />
-          {t(locale, work.source === "awesome" ? "nav.awesome" : "nav.works")}
+          {t(locale, (fromList ?? work.source) === "awesome" ? "nav.awesome" : "nav.works")}
         </Link>
         <span className="truncate">{work.name}</span>
       </div>
@@ -289,7 +300,7 @@ export default async function WorkPage({
               <WorkOwnerActions
                 workId={work.id}
                 locale={locale}
-                redirectTo={work.source === "awesome" ? "/awesome" : "/works"}
+                redirectTo={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
               />
             </span>
           )}

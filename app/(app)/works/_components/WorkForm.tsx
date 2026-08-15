@@ -6,19 +6,30 @@
    意图(我的作品/推荐)创建时定死,编辑不再可切(静默转换是误操作,20260919);
    媒体区与 awesome 字段常驻挂载、按意图显隐——切换不丢已填/已传内容。
    服务端校验错误会滚动到错误条(长表单防「看似无反应」)。
+   分组重排 + 实时预览(20260919):字段按 基本信息→媒体→推荐信息→详情→发布选项
+   分五个小节;顶部实时渲染网格卡预览(复用 WorkScreenshot,与列表同一渲染路径)。
    Agent/平台/模型家族芯片是原生 checkbox(has-checked 着色),无 JS 可提交;
    自填型号(回车添加)依赖 JS,删除键同样。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { Plus, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
+import { awesomeToneFor } from "@/src/lib/cover-tones";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { isModelFamily, MODEL_FAMILIES, modelFamilyName } from "@/src/lib/model-families";
 import { WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
+import { WORKS_SRC_COOKIE } from "@/src/lib/works-view";
 import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
@@ -32,7 +43,8 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 import type { WorkFormState } from "../actions";
-import WorkMediaFields, { type MediaRef } from "./WorkMediaFields";
+import WorkMediaFields, { type MediaPreviewState, type MediaRef } from "./WorkMediaFields";
+import WorkScreenshot from "./WorkScreenshot";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
@@ -52,13 +64,92 @@ const STATUSES = [
   { id: "archived", key: "works.statusArchived" },
 ] as const;
 
-
-
 const SCOPES = [
   { id: "base", key: "awesome.scopeBase", hintKey: "awesome.scopeBaseHint" },
   { id: "eco", key: "awesome.scopeEco", hintKey: "awesome.scopeEcoHint" },
   { id: "part", key: "awesome.scopePart", hintKey: "awesome.scopePartHint" },
 ] as const;
+
+/* 表单小节(20260919):轻量分组——mono 小标题 + hairline 分隔,不再是一根
+   15 段直线;first = 首节(无上分隔线)。 */
+function Section({
+  title,
+  first = false,
+  children,
+}: {
+  title: string;
+  first?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className={`space-y-4 ${first ? "" : "border-t border-line pt-5"}`}>
+      <h3 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-grey/70">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+/* 实时卡片预览(20260919):网格卡同款结构——封面/名称砖 + 标题 + 一句话 + 类型行。
+   复用 WorkScreenshot(与列表完全同一渲染路径,所见即所得);cover 空 = 名称砖,
+   awesome 意图按类型族定色(与列表口径一致)。空值给占位文案,卡片不塌。 */
+function WorkFormPreview({
+  locale,
+  name,
+  tagline,
+  workKind,
+  intent,
+  coverUrl,
+  logoUrl,
+  tone,
+  fit,
+}: {
+  locale: Locale;
+  name: string;
+  tagline: string;
+  workKind: string;
+  intent: "site" | "awesome";
+  coverUrl: string | null;
+  logoUrl: string | null;
+  tone: string;
+  fit: string;
+}) {
+  const zh = locale === "zh";
+  const kindLabel = workKindLabel(workKind, zh);
+  const toneFor =
+    intent === "awesome" && tone === "theme" ? awesomeToneFor(workKind) : tone;
+  const placeholder = zh ? "作品名称" : "Work name";
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-card">
+      <WorkScreenshot
+        url={coverUrl ?? ""}
+        name={name || placeholder}
+        logoUrl={logoUrl ?? ""}
+        kindLabel={kindLabel}
+        kindId={workKind}
+        tone={toneFor}
+        fit={fit}
+        embedded
+        variant="grid"
+      />
+      <div className="p-4">
+        <h2 className="truncate text-[15px] font-semibold leading-snug text-paper">
+          {name || <span className="text-grey/60">{placeholder}</span>}
+        </h2>
+        <p className="mt-1 line-clamp-2 min-h-[2.6em] text-[13px] leading-relaxed text-grey">
+          {tagline || (
+            <span className="text-grey/50">{zh ? "一句话介绍…" : "Tagline…"}</span>
+          )}
+        </p>
+        <div className="mt-2.5 flex items-center gap-1 font-mono text-[11px] text-grey">
+          <WorkKindIcon id={workKind} size={11} />
+          {kindLabel}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* 自绘复选框(私密开关):与发帖页同一套 CheckboxControl 样式,无 JS 可提交。 */
 function CheckBox({
@@ -88,6 +179,47 @@ const CLAIM_LADDER = [
   100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 50_000_000, 100_000_000,
 ] as const;
 
+/* 与服务端 parseTagsInput 同口径(actions.ts):逗号/空格分隔,去 #,
+   ≤5 个,每个 ≤24 字——表单里 chip 预览按同一规则解析,所见即所存 */
+function parseTagsPreview(raw: string): string[] {
+  return raw
+    .split(/[,,\s]+/)
+    .map((s) => s.trim().replace(/^#/, ""))
+    .filter(Boolean)
+    .slice(0, 5)
+    .map((s) => s.slice(0, 24));
+}
+
+/* 字数计数器(20260919):贴在标签行右端,接近上限不再「打不进字莫名其妙」 */
+function LabelWithCount({
+  htmlFor,
+  label,
+  count,
+  max,
+  required,
+}: {
+  htmlFor?: string;
+  label: string;
+  count: number;
+  max: number;
+  required?: boolean;
+}) {
+  return (
+    <span className="mb-1.5 flex items-baseline justify-between">
+      {/* 不用共享 labelCls(自带 mb-1.5):外层 wrapper 已有下间距,叠双份会
+          比别的字段多出一截 */}
+      <label htmlFor={htmlFor} className="block text-[11.5px] text-grey">
+        {label} {required && <span className="text-blue">*</span>}
+      </label>
+      <span
+        className={`font-mono text-[10.5px] ${count > max * 0.9 ? "text-blue" : "text-grey/60"}`}
+      >
+        {count}/{max}
+      </span>
+    </span>
+  );
+}
+
 export default function WorkForm({
   action,
   locale,
@@ -95,6 +227,7 @@ export default function WorkForm({
   initial,
   claim,
   media,
+  modal = false,
 }: {
   action: (prev: WorkFormState | null, formData: FormData) => Promise<WorkFormState>;
   locale: Locale;
@@ -134,18 +267,23 @@ export default function WorkForm({
     tone?: string;
     fit?: string;
   };
+  /* 弹窗场景(20260919):取消 = router.back() 关窗回原处,而不是跳 /works */
+  modal?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<WorkFormState | null, FormData>(
     action,
     null,
   );
   /* 保存成功:客户端导航落详情页(完整页 = 普通跳转;弹窗 = 整条路由树重解析,
-     @modal 插槽随之卸载)。action 里 redirect() 只转背景页,弹窗不会关 */
+     @modal 插槽随之卸载)。action 里 redirect() 只转背景页,弹窗不会关。
+     用 replace 不用 push(20260919 验收):action 的 revalidatePath 会失效
+     客户端路由缓存,浏览器回退时拦截态弹窗恢复不出来、裸表单以整页重现——
+     而且已提交的表单本来就不该能通过回退再次进入(POST-redirect 惯例) */
   const router = useRouter();
   useEffect(() => {
-    if (state?.ok && state.workId) router.push(`/works/${state.workId}`);
+    if (state?.ok && state.workId) router.replace(`/works/${state.workId}`);
   }, [state, router]);
-  /* 服务端校验错误(20260919):滚动到错误条——表单 15+ 个字段块,弹窗里错误
+  /* 服务端校验错误(20260919):滚动到错误条——表单分组后仍很长,弹窗里错误
      渲染在折叠线外,不滚过去用户只会看到「按钮恢复可点、毫无反应」 */
   const errorRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
@@ -160,11 +298,46 @@ export default function WorkForm({
   const [kind, setKind] = useState<"site" | "awesome">(
     initial?.authorLabel ? "awesome" : "site",
   );
+  /* 预览受控值(20260919):名称/一句话/类型在预览里实时出现 */
+  const [name, setName] = useState(initial?.name ?? "");
+  const [tagline, setTagline] = useState(initial?.tagline ?? "");
+  const [workKind, setWorkKind] = useState(initial?.kind ?? "app");
+  /* 详情字段受控:计数器与 tags chip 预览需要实时值 */
+  const [desc, setDesc] = useState(initial?.descriptionMd ?? "");
+  const [tagsInput, setTagsInput] = useState(initial?.tags.join(", ") ?? "");
+  /* 服务端同口径解析;raw 全量计数用于超限提示 */
+  const parsedTags = parseTagsPreview(tagsInput);
+  const rawTagCount = tagsInput
+    .split(/[,,\s]+/)
+    .map((s) => s.trim().replace(/^#/, ""))
+    .filter(Boolean).length;
+  /* Agent 选中数:checkbox 仍非受控(无 JS 可提交),容器 onChange 事件委托计数 */
+  const [agentsCount, setAgentsCount] = useState(checkedAgents.size);
+  /* 媒体预览快照:初始取回填,之后由 WorkMediaFields 上报 */
+  const [mediaPreview, setMediaPreview] = useState<MediaPreviewState>({
+    coverUrl: media?.cover?.url ?? null,
+    logoUrl: media?.logo?.url ?? null,
+    fit: media?.fit ?? "cover",
+  });
+  /* 色调(两条 CoverToneField 都上报;内部状态各自保留,这里只喂预览) */
+  const [tone, setTone] = useState(media?.tone ?? "theme");
   /* 自填型号(非家族预设的文本项) */
   const [customModels, setCustomModels] = useState<string[]>(
     (initial?.models ?? []).filter((m) => !isModelFamily(m)),
   );
   const [modelInput, setModelInput] = useState("");
+  /* 完整页「取消」的目标:来源列表记忆优先——useSyncExternalStore 客户端快照
+     读 cookie(服务端快照 null,水合后升级,不在 effect 里 setState);
+     无记忆按当前意图回落——awesome 表单不该把人送回作品墙 */
+  const srcHint = useSyncExternalStore(
+    () => () => undefined,
+    () =>
+      document.cookie.match(
+        new RegExp(`(?:^|;\\s*)${WORKS_SRC_COOKIE}=(awesome|works)`),
+      )?.[1] ?? null,
+    () => null,
+  );
+  const cancelHref = (srcHint ?? kind) === "awesome" ? "/awesome" : "/works";
   const addCustomModel = () => {
     const value = modelInput.trim().slice(0, 40);
     if (!value) return;
@@ -189,9 +362,27 @@ export default function WorkForm({
     : [];
 
   return (
-    <form action={formAction} className="mt-5 space-y-4">
+    <form action={formAction} className="mt-5 space-y-5">
       {workId && <input type="hidden" name="work_id" value={workId} />}
       <input type="hidden" name="kind" value={kind} />
+
+      {/* 实时预览:网格卡同款,所见即所得(封面/名称砖随下面的字段实时变) */}
+      <div>
+        <span className={labelCls}>{t(locale, "works.preview")}</span>
+        <div className="max-w-[280px]">
+          <WorkFormPreview
+            locale={locale}
+            name={name}
+            tagline={tagline}
+            workKind={workKind}
+            intent={kind}
+            coverUrl={mediaPreview.coverUrl}
+            logoUrl={mediaPreview.logoUrl}
+            tone={tone}
+            fit={mediaPreview.fit}
+          />
+        </div>
+      </div>
 
       {/* 我的作品 / 推荐站外项目:意图在创建时定死——编辑存量条目不再显示切换器
           (20260919)。编辑中切换会把 awesome 推荐静默转成「我的作品」(原作者/口径
@@ -217,391 +408,441 @@ export default function WorkForm({
         </div>
       )}
 
-      <div>
-        <label htmlFor="work-name" className={labelCls}>
-          {t(locale, "works.name")} <span className="text-blue">*</span>
-        </label>
-        <input
-          id="work-name"
-          name="name"
-          defaultValue={initial?.name}
-          maxLength={120}
-          required
-          className={inputCls}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="work-tagline" className={labelCls}>
-          {t(locale, "works.tagline")}
-        </label>
-        <textarea
-          id="work-tagline"
-          name="tagline"
-          rows={2}
-          defaultValue={initial?.tagline}
-          maxLength={300}
-          className={`${inputCls} resize-y`}
-        />
-      </div>
-
-      <div>
-        <span className={labelCls}>{t(locale, "works.status")}</span>
-        <div className="flex flex-wrap gap-1.5">
-          {STATUSES.map((s) => (
-            <label key={s.id} className={chipCls}>
-              <input
-                type="radio"
-                name="status"
-                value={s.id}
-                defaultChecked={(initial?.status ?? "released") === s.id}
-                className={choiceInputCls}
-              />
-              {t(locale, s.key)}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <fieldset>
-        <span className={labelCls}>
-          {t(locale, "works.kind")} <span className="text-blue">*</span>
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {WORK_KINDS.map((k) => (
-            <label key={k.id} className={chipCls}>
-              <input
-                type="radio"
-                name="work_kind"
-                value={k.id}
-                defaultChecked={(initial?.kind ?? "app") === k.id}
-                className={choiceInputCls}
-              />
-              <WorkKindIcon id={k.id} size={14} />
-              {workKindLabel(k.id, locale === "zh")}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* ---- 一、基本信息 ---- */}
+      <Section first title={t(locale, "works.secBasic")}>
         <div>
-          <label htmlFor="work-url" className={labelCls}>
-            {t(locale, "works.url")}
-          </label>
+          <LabelWithCount htmlFor="work-name" label={t(locale, "works.name")} count={name.length} max={120} required />
           <input
-            id="work-url"
-            name="url"
-            type="url"
-            defaultValue={initial?.url}
-            placeholder="https://…"
-            maxLength={500}
-            className={`${inputCls} font-mono`}
-          />
-        </div>
-        <div>
-          <label htmlFor="work-repo" className={labelCls}>
-            {t(locale, "works.repoUrl")}
-          </label>
-          <input
-            id="work-repo"
-            name="repo_url"
-            type="url"
-            defaultValue={initial?.repoUrl}
-            placeholder="https://github.com/…"
-            maxLength={500}
-            className={`${inputCls} font-mono`}
-          />
-        </div>
-      </div>
-
-      {/* 封面语义已并入配图第一张(WorkMediaFields);旧的「封面图 URL」文本框退役。
-          编辑存量条目时用隐藏字段原样带回 screenshot_url,不清空历史外链 */}
-      {initial?.screenshotUrl && (
-        <input type="hidden" name="screenshot_url" value={initial.screenshotUrl} />
-      )}
-
-      {/* Logo + 封面 + 配图上传(20260826_work_media):常驻挂载,awesome 意图下
-          inactive(CSS 隐藏、不提交)——切换意图不丢已上传状态(20260919);
-          服务端对 awesome 条目再强制置空 */}
-      <WorkMediaFields
-        locale={locale}
-        initialLogo={media?.logo ?? null}
-        initialImages={media?.images ?? []}
-        initialCover={media?.cover ?? null}
-        initialTone={media?.tone ?? "theme"}
-        initialFit={media?.fit ?? "cover"}
-        inactive={kind !== "site"}
-      />
-
-      <div>
-        <label htmlFor="work-desc" className={labelCls}>
-          {t(locale, "works.desc")}
-        </label>
-        <MarkdownEditor
-          id="work-desc"
-          name="description_md"
-          locale={locale}
-          rows={6}
-          defaultValue={initial?.descriptionMd}
-          inputCls={inputCls}
-        />
-        <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
-          <span>{t(locale, "form.mdHint")}</span>
-          <span>{t(locale, "form.mdSupport")}</span>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="work-tags" className={labelCls}>
-          {t(locale, "works.tags")}
-        </label>
-        <input
-          id="work-tags"
-          name="tags"
-          defaultValue={initial?.tags.join(", ")}
-          placeholder="kimi, web, tool"
-          className={`${inputCls} font-mono`}
-        />
-        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-          {t(locale, "works.tagsHint")}
-        </span>
-      </div>
-
-      <fieldset>
-        <span className={labelCls}>
-          {t(locale, "works.agents")} <span className="text-blue">*</span>
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {AGENTS.map((a) => (
-            <label key={a.id} className={chipCls}>
-              <input
-                type="checkbox"
-                name="agents"
-                value={a.id}
-                defaultChecked={checkedAgents.has(a.id)}
-                className={choiceInputCls}
-              />
-              <AgentIcon id={a.id} size={14} />
-              {a.name}
-            </label>
-          ))}
-        </div>
-        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-          {t(locale, "works.agentsHint")}
-        </span>
-      </fieldset>
-
-      <fieldset>
-        <span className={labelCls}>{t(locale, "works.models")}</span>
-        <div className="flex flex-wrap gap-1.5">
-          {MODEL_FAMILIES.map((m) => (
-            <label key={m.id} className={chipCls}>
-              <input
-                type="checkbox"
-                name="models"
-                value={m.id}
-                defaultChecked={initial?.models.includes(m.id)}
-                className={choiceInputCls}
-              />
-              <ModelIcon id={m.id} size={14} />
-              {modelFamilyName(m.id, locale)}
-            </label>
-          ))}
-          {/* 自填型号(纯文本 chip,可删) */}
-          {customModels.map((m) => (
-            <span
-              key={m}
-              className="inline-flex items-center gap-1 rounded-lg border border-blue bg-blue/10 px-2.5 py-1.5 text-xs text-blue"
-            >
-              <input type="hidden" name="models" value={m} />
-              {m}
-              <button
-                type="button"
-                onClick={() => setCustomModels((current) => current.filter((x) => x !== m))}
-                aria-label={m}
-                className="text-blue/70 hover:text-blue"
-              >
-                <X size={11} aria-hidden="true" />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <input
-            value={modelInput}
-            onChange={(e) => setModelInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addCustomModel();
-              }
-            }}
-            placeholder={t(locale, "works.modelsPh")}
-            maxLength={40}
-            className={`${inputCls} max-w-64 font-mono`}
-          />
-          <button
-            type="button"
-            onClick={addCustomModel}
-            className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper"
-          >
-            <Plus size={12} aria-hidden="true" />
-            {t(locale, "form.addOpt").replace(/^\+?\s*/, "")}
-          </button>
-        </div>
-        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-          {t(locale, "works.modelsHint")}
-        </span>
-      </fieldset>
-
-
-      {/* 推荐站外项目字段(原作者 + 收录口径):常驻挂载、CSS 隐藏(20260919)——
-          切换意图不丢已填内容;非激活时控件摘掉 name(无名控件不随表单提交),
-          残留的 author_label 不会把「我的作品」误变成 awesome 条目
-          (服务端按 author_label 非空分流) */}
-      <div className={`space-y-4 ${kind === "awesome" ? "" : "hidden"}`}>
-        {kind === "awesome" && (
-          <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-[11px] leading-relaxed text-grey">
-            {t(locale, "awesome.rulesBody")}
-          </p>
-        )}
-        <div>
-          <label htmlFor="work-author" className={labelCls}>
-            {t(locale, "works.authorLabel")} <span className="text-blue">*</span>
-          </label>
-          <input
-            id="work-author"
-            name={kind === "awesome" ? "author_label" : undefined}
-            defaultValue={initial?.authorLabel}
+            id="work-name"
+            name="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             maxLength={120}
-            placeholder={t(locale, "works.authorLabelPh")}
+            required
             className={inputCls}
           />
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-            {t(locale, "works.authorLabelHint")}
-          </span>
         </div>
+
+        <div>
+          <LabelWithCount htmlFor="work-tagline" label={t(locale, "works.tagline")} count={tagline.length} max={300} />
+          <textarea
+            id="work-tagline"
+            name="tagline"
+            rows={2}
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+            maxLength={300}
+            className={`${inputCls} resize-y`}
+          />
+        </div>
+
         <fieldset>
           <span className={labelCls}>
-            {t(locale, "awesome.scope")} <span className="text-blue">*</span>
+            {t(locale, "works.kind")} <span className="text-blue">*</span>
           </span>
-          <div className="grid gap-1.5 sm:grid-cols-3">
-            {SCOPES.map((s) => (
-              <label
-                key={s.id}
-                className="relative cursor-pointer rounded-lg border border-line bg-bg px-3 py-2.5 transition-colors hover:border-paper/30 has-checked:border-blue has-checked:bg-blue/10 has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue"
-              >
+          <div className="flex flex-wrap gap-1.5">
+            {WORK_KINDS.map((k) => (
+              <label key={k.id} className={chipCls}>
                 <input
                   type="radio"
-                  name={kind === "awesome" ? "scope" : undefined}
-                  value={s.id}
-                  defaultChecked={initial?.scope === s.id}
+                  name="work_kind"
+                  value={k.id}
+                  checked={workKind === k.id}
+                  onChange={() => setWorkKind(k.id)}
                   className={choiceInputCls}
                 />
-                <span className="flex items-center gap-1.5 text-xs font-medium text-paper">
-                  <WorkScopeIcon id={s.id} size={14} />
-                  <span>{t(locale, s.key)}</span>
-                </span>
-                <span className="mt-0.5 block text-[10.5px] leading-relaxed text-grey">
-                  {t(locale, s.hintKey)}
-                </span>
+                <WorkKindIcon id={k.id} size={14} />
+                {workKindLabel(k.id, locale === "zh")}
               </label>
             ))}
           </div>
         </fieldset>
-      </div>
-      {/* Awesome 条目也能定封面风格(20260914):不选则按类型族定色;
-          常驻挂载(与作品侧 CoverToneField 互斥激活,见 CoverToneField.inactive) */}
-      <CoverToneField
-        locale={locale}
-        initialTone={media?.tone ?? "theme"}
-        forAwesome
-        inactive={kind !== "awesome"}
-      />
 
-      {kind === "site" && claim && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="work-url" className={labelCls}>
+              {t(locale, "works.url")}
+            </label>
+            <input
+              id="work-url"
+              name="url"
+              type="url"
+              defaultValue={initial?.url}
+              placeholder="https://…"
+              maxLength={500}
+              className={`${inputCls} font-mono`}
+            />
+          </div>
+          <div>
+            <label htmlFor="work-repo" className={labelCls}>
+              {t(locale, "works.repoUrl")}
+            </label>
+            <input
+              id="work-repo"
+              name="repo_url"
+              type="url"
+              defaultValue={initial?.repoUrl}
+              placeholder="https://github.com/…"
+              maxLength={500}
+              className={`${inputCls} font-mono`}
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* 旧的「封面图 URL」退役;编辑存量条目时用隐藏字段原样带回 screenshot_url,
+          不清空历史外链 */}
+      {initial?.screenshotUrl && (
+        <input type="hidden" name="screenshot_url" value={initial.screenshotUrl} />
+      )}
+
+      {/* ---- 二、媒体(仅「我的作品」;常驻挂载,awesome 意图下整节隐藏) ---- */}
+      <div className={kind === "site" ? "block" : "hidden"}>
+        <Section title={t(locale, "works.secMedia")}>
+          <WorkMediaFields
+            locale={locale}
+            initialLogo={media?.logo ?? null}
+            initialImages={media?.images ?? []}
+            initialCover={media?.cover ?? null}
+            initialTone={media?.tone ?? "theme"}
+            initialFit={media?.fit ?? "cover"}
+            inactive={kind !== "site"}
+            onPreviewChange={setMediaPreview}
+            onToneChange={setTone}
+          />
+        </Section>
+      </div>
+
+      {/* ---- 三、推荐信息(仅「推荐站外项目」;常驻挂载,site 意图下整节隐藏) ---- */}
+      <div className={kind === "awesome" ? "block" : "hidden"}>
+        <Section title={t(locale, "works.secRecommend")}>
+          {/* 控件摘掉 name(无名控件不随表单提交):残留的 author_label 不会把
+              「我的作品」误变成 awesome 条目(服务端按 author_label 非空分流) */}
+          {kind === "awesome" && (
+            <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-[11px] leading-relaxed text-grey">
+              {t(locale, "awesome.rulesBody")}
+            </p>
+          )}
+          <div>
+            <label htmlFor="work-author" className={labelCls}>
+              {t(locale, "works.authorLabel")} <span className="text-blue">*</span>
+            </label>
+            <input
+              id="work-author"
+              name={kind === "awesome" ? "author_label" : undefined}
+              defaultValue={initial?.authorLabel}
+              maxLength={120}
+              placeholder={t(locale, "works.authorLabelPh")}
+              className={inputCls}
+            />
+            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+              {t(locale, "works.authorLabelHint")}
+            </span>
+          </div>
+          <fieldset>
+            <span className={labelCls}>
+              {t(locale, "awesome.scope")} <span className="text-blue">*</span>
+            </span>
+            <div className="grid gap-1.5 sm:grid-cols-3">
+              {SCOPES.map((s) => (
+                <label
+                  key={s.id}
+                  className="relative cursor-pointer rounded-lg border border-line bg-bg px-3 py-2.5 transition-colors hover:border-paper/30 has-checked:border-blue has-checked:bg-blue/10 has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue"
+                >
+                  <input
+                    type="radio"
+                    name={kind === "awesome" ? "scope" : undefined}
+                    value={s.id}
+                    defaultChecked={initial?.scope === s.id}
+                    className={choiceInputCls}
+                  />
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-paper">
+                    <WorkScopeIcon id={s.id} size={14} />
+                    <span>{t(locale, s.key)}</span>
+                  </span>
+                  <span className="mt-0.5 block text-[10.5px] leading-relaxed text-grey">
+                    {t(locale, s.hintKey)}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {/* Awesome 条目也能定封面风格(20260914):不选则按类型族定色;
+              常驻挂载(与作品侧 CoverToneField 互斥激活,见 CoverToneField.inactive) */}
+          <CoverToneField
+            locale={locale}
+            initialTone={media?.tone ?? "theme"}
+            forAwesome
+            inactive={kind !== "awesome"}
+            onToneChange={setTone}
+          />
+        </Section>
+      </div>
+
+      {/* ---- 四、详情 ---- */}
+      <Section title={t(locale, "works.secDetail")}>
         <div>
-          <label htmlFor="work-claim" className={labelCls}>
-            {t(locale, "works.claim")}
+          <LabelWithCount htmlFor="work-desc" label={t(locale, "works.desc")} count={desc.length} max={10000} />
+          <MarkdownEditor
+            id="work-desc"
+            name="description_md"
+            locale={locale}
+            rows={6}
+            value={desc}
+            onChange={setDesc}
+            inputCls={inputCls}
+          />
+          <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
+            <span>{t(locale, "form.mdHint")}</span>
+            <span>{t(locale, "form.mdSupport")}</span>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="work-tags" className={labelCls}>
+            {t(locale, "works.tags")}
           </label>
           <input
-            id="work-claim"
-            name="claimed_tokens"
-            value={claimValue}
-            onChange={(event) => setClaimValue(event.target.value)}
-            placeholder={t(locale, "works.claimPh")}
-            maxLength={24}
-            disabled={!claim.hasUsage}
-            className={`${inputCls} font-mono disabled:opacity-40`}
+            id="work-tags"
+            name="tags"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="kimi, web, tool"
+            className={`${inputCls} font-mono`}
           />
-          {claim.hasUsage && claimOptions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {claimOptions.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  aria-pressed={claimValue === String(v)}
-                  onClick={() => setClaimValue(String(v))}
-                  className={`rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                    claimValue === String(v)
-                      ? "border-blue bg-blue/10 text-blue"
-                      : "border-line text-grey hover:border-blue/50 hover:text-paper"
-                  }`}
+          {/* chip 预览(20260919):按服务端同口径解析——所见即所存;
+              超 5 个红字提示(多的不保存),单条超 24 字截断显示 */}
+          {(parsedTags.length > 0 || rawTagCount > 5) && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {parsedTags.map((tag, i) => (
+                <span
+                  key={`${tag}-${i}`}
+                  title={tag}
+                  className="rounded-md border border-line px-1.5 py-px font-mono text-[10px] text-grey"
                 >
-                  {compactNumber(v, locale)}
-                </button>
+                  {tag.length > 24 ? `${tag.slice(0, 24)}…` : tag}
+                </span>
               ))}
+              {rawTagCount > 5 && (
+                <span className="font-mono text-[10px] text-red-400">
+                  {t(locale, "works.tagsOver", { n: rawTagCount })}
+                </span>
+              )}
             </div>
           )}
           <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-            {claim.hasUsage ? (
-              <>
-                {t(locale, "works.claimHint")}{" "}
-                {t(locale, "works.claimRemaining", {
-                  n: compactNumber(claim.remaining, locale),
-                })}
-                {claim.suggested &&
-                  ` ${t(locale, "works.claimSuggest", {
-                    label: claim.suggested.label,
-                    n: compactNumber(claim.suggested.tokens, locale),
-                  })}`}
-              </>
-            ) : (
-              <>
-                {t(locale, "works.claimNoUsage")}{" "}
-                <Link
-                  href="/usage"
-                  className="text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-                >
-                  {t(locale, "works.claimNoUsageCta")}
-                </Link>
-              </>
-            )}
+            {t(locale, "works.tagsHint")}
           </span>
         </div>
-      )}
 
-      {/* 私密开关 + 同时收录 Awesome(仅「我的作品」;推荐条目恒在 Awesome,无需开关) */}
-      <div className="space-y-2.5 pt-1">
-        {kind === "site" && (
-          <CheckBox
-            name="also_awesome"
-            defaultChecked={initial?.alsoAwesome}
-            label={t(locale, "works.alsoAwesome")}
-            hint={t(locale, "works.alsoAwesomeHint")}
-          />
+        <fieldset>
+          <span className={labelCls}>
+            {t(locale, "works.agents")} <span className="text-blue">*</span>
+          </span>
+          {/* 容器 onChange 事件委托计数:checkbox 仍非受控(无 JS 可提交),
+              0 选中时提前红字提示,不等服务端报错(20260919) */}
+          <div
+            className="flex flex-wrap gap-1.5"
+            onChange={(e) => {
+              const box = e.currentTarget;
+              setAgentsCount(
+                box.querySelectorAll<HTMLInputElement>("input[name='agents']:checked").length,
+              );
+            }}
+          >
+            {AGENTS.map((a) => (
+              <label key={a.id} className={chipCls}>
+                <input
+                  type="checkbox"
+                  name="agents"
+                  value={a.id}
+                  defaultChecked={checkedAgents.has(a.id)}
+                  className={choiceInputCls}
+                />
+                <AgentIcon id={a.id} size={14} />
+                {a.name}
+              </label>
+            ))}
+          </div>
+          {agentsCount === 0 ? (
+            <span className="mt-1 block text-[11px] leading-relaxed text-red-400">
+              {t(locale, "err.workNoAgent")}
+            </span>
+          ) : (
+            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+              {t(locale, "works.agentsHint")}
+            </span>
+          )}
+        </fieldset>
+
+        <fieldset>
+          <span className={labelCls}>{t(locale, "works.models")}</span>
+          <div className="flex flex-wrap gap-1.5">
+            {MODEL_FAMILIES.map((m) => (
+              <label key={m.id} className={chipCls}>
+                <input
+                  type="checkbox"
+                  name="models"
+                  value={m.id}
+                  defaultChecked={initial?.models.includes(m.id)}
+                  className={choiceInputCls}
+                />
+                <ModelIcon id={m.id} size={14} />
+                {modelFamilyName(m.id, locale)}
+              </label>
+            ))}
+            {/* 自填型号(纯文本 chip,可删) */}
+            {customModels.map((m) => (
+              <span
+                key={m}
+                className="inline-flex items-center gap-1 rounded-lg border border-blue bg-blue/10 px-2.5 py-1.5 text-xs text-blue"
+              >
+                <input type="hidden" name="models" value={m} />
+                {m}
+                <button
+                  type="button"
+                  onClick={() => setCustomModels((current) => current.filter((x) => x !== m))}
+                  aria-label={m}
+                  className="text-blue/70 hover:text-blue"
+                >
+                  <X size={11} aria-hidden="true" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              value={modelInput}
+              onChange={(e) => setModelInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCustomModel();
+                }
+              }}
+              placeholder={t(locale, "works.modelsPh")}
+              maxLength={40}
+              className={`${inputCls} max-w-64 font-mono`}
+            />
+            <button
+              type="button"
+              onClick={addCustomModel}
+              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper"
+            >
+              <Plus size={12} aria-hidden="true" />
+              {t(locale, "form.addOpt").replace(/^\+?\s*/, "")}
+            </button>
+          </div>
+          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            {t(locale, "works.modelsHint")}
+          </span>
+        </fieldset>
+      </Section>
+
+      {/* ---- 五、发布选项:状态/声明/收录与私密(次要选择收尾) ---- */}
+      <Section title={t(locale, "works.secPublish")}>
+        <div>
+          <span className={labelCls}>{t(locale, "works.status")}</span>
+          <div className="flex flex-wrap gap-1.5">
+            {STATUSES.map((s) => (
+              <label key={s.id} className={chipCls}>
+                <input
+                  type="radio"
+                  name="status"
+                  value={s.id}
+                  defaultChecked={(initial?.status ?? "released") === s.id}
+                  className={choiceInputCls}
+                />
+                {t(locale, s.key)}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {kind === "site" && claim && (
+          <div>
+            <label htmlFor="work-claim" className={labelCls}>
+              {t(locale, "works.claim")}
+            </label>
+            <input
+              id="work-claim"
+              name="claimed_tokens"
+              value={claimValue}
+              onChange={(event) => setClaimValue(event.target.value)}
+              placeholder={t(locale, "works.claimPh")}
+              maxLength={24}
+              disabled={!claim.hasUsage}
+              className={`${inputCls} font-mono disabled:opacity-40`}
+            />
+            {claim.hasUsage && claimOptions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {claimOptions.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    aria-pressed={claimValue === String(v)}
+                    onClick={() => setClaimValue(String(v))}
+                    className={`rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                      claimValue === String(v)
+                        ? "border-blue bg-blue/10 text-blue"
+                        : "border-line text-grey hover:border-blue/50 hover:text-paper"
+                    }`}
+                  >
+                    {compactNumber(v, locale)}
+                  </button>
+                ))}
+              </div>
+            )}
+            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+              {claim.hasUsage ? (
+                <>
+                  {t(locale, "works.claimHint")}{" "}
+                  {t(locale, "works.claimRemaining", {
+                    n: compactNumber(claim.remaining, locale),
+                  })}
+                  {claim.suggested &&
+                    ` ${t(locale, "works.claimSuggest", {
+                      label: claim.suggested.label,
+                      n: compactNumber(claim.suggested.tokens, locale),
+                    })}`}
+                </>
+              ) : (
+                <>
+                  {t(locale, "works.claimNoUsage")}{" "}
+                  <Link
+                    href="/usage"
+                    className="text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+                  >
+                    {t(locale, "works.claimNoUsageCta")}
+                  </Link>
+                </>
+              )}
+            </span>
+          </div>
         )}
-        <CheckBox
-          name="private"
-          defaultChecked={initial?.visibility === "private"}
-          label={t(locale, "works.formPrivate")}
-          hint={t(locale, "works.formPrivateHint")}
-        />
-      </div>
-      <p className="text-[11px] leading-relaxed text-grey/80">
-        {t(locale, "works.hint")}
-      </p>
+
+        {/* 私密开关 + 同时收录 Awesome(仅「我的作品」;推荐条目恒在 Awesome,无需开关) */}
+        <div className="space-y-2.5">
+          {kind === "site" && (
+            <CheckBox
+              name="also_awesome"
+              defaultChecked={initial?.alsoAwesome}
+              label={t(locale, "works.alsoAwesome")}
+              hint={t(locale, "works.alsoAwesomeHint")}
+            />
+          )}
+          <CheckBox
+            name="private"
+            defaultChecked={initial?.visibility === "private"}
+            label={t(locale, "works.formPrivate")}
+            hint={t(locale, "works.formPrivateHint")}
+          />
+        </div>
+        <p className="text-[11px] leading-relaxed text-grey/80">
+          {t(locale, "works.hint")}
+        </p>
+      </Section>
+
       {state?.error && (
         <p
           ref={errorRef}
@@ -613,12 +854,24 @@ export default function WorkForm({
         </p>
       )}
       <div className="flex items-center gap-3 border-t border-line pt-4">
-        <Link
-          href="/works"
-          className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-        >
-          {t(locale, "post.cancel")}
-        </Link>
+        {/* 弹窗场景:取消 = router.back() 关窗回原处(RouteModal 监听 URL 变化
+            静默关窗);完整页 = 回来源列表(记忆优先,否则按意图) */}
+        {modal ? (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "post.cancel")}
+          </button>
+        ) : (
+          <Link
+            href={cancelHref}
+            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "post.cancel")}
+          </Link>
+        )}
         <button
           type="submit"
           disabled={pending}

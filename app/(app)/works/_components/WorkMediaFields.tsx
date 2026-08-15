@@ -28,6 +28,13 @@ export interface MediaRef {
   url: string;
 }
 
+/* 媒体预览快照(20260919):表单层实时卡片预览所需的最小集合 */
+export interface MediaPreviewState {
+  coverUrl: string | null;
+  logoUrl: string | null;
+  fit: string;
+}
+
 /* 配图条目:key 空 = 未上传完;file 留给失败重试。 */
 interface ImageItem {
   id: number;
@@ -45,6 +52,8 @@ export default function WorkMediaFields({
   initialTone = "theme",
   initialFit = "cover",
   inactive = false,
+  onPreviewChange,
+  onToneChange,
 }: {
   locale: Locale;
   initialLogo?: MediaRef | null;
@@ -56,9 +65,15 @@ export default function WorkMediaFields({
   initialFit?: string;
   /* 20260919:true = 推荐站外项目意图:UI 隐藏但保持挂载(状态不丢),不提交 */
   inactive?: boolean;
+  /* 封面/logo/适配变化上报(实时预览);回调传 stable setter,不触发循环 */
+  onPreviewChange?: (state: MediaPreviewState) => void;
+  /* 色调选择上报(透传给内部 CoverToneField) */
+  onToneChange?: (tone: string) => void;
 }) {
   const [cover, setCover] = useState<MediaRef | null>(initialCover);
   const [coverUploading, setCoverUploading] = useState(false);
+  /* 封面 16:9 裁剪(20260919):比例不合时先进裁剪框定构图 */
+  const [coverCrop, setCoverCrop] = useState<{ src: string; img: HTMLImageElement } | null>(null);
   const [fit, setFit] = useState(initialFit === "contain" ? "contain" : "cover");
   /* 适配自动建议:第一张竖屏图上传成功时建议「补边」;用户手动选过就不再插手 */
   const fitTouched = useRef(initialFit === "contain");
@@ -119,6 +134,56 @@ export default function WorkMediaFields({
     );
     setLogo(ref);
     closeCrop();
+  };
+
+  /* ---- 封面上传(16:9 裁剪,20260919)---- */
+  const uploadCover = async (file: File) => {
+    setCoverUploading(true);
+    try {
+      setCover(await uploadMedia(file, "image"));
+    } catch {
+      /* 上传失败要出声(20260919):静默失败看起来像「传上了但没显示」 */
+      toast(t(locale, "works.uploadFailed"));
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  /* 封面选图:列表封面恒定按 16:9 展示——比例已≈16/9 直传(免打扰),
+     否则先进裁剪框定构图,免得竖图被拦腰裁 */
+  const pickCover = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const src = URL.createObjectURL(file);
+    blobs.current.add(src);
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      if (Math.abs(ratio - 16 / 9) <= 0.02) {
+        blobs.current.delete(src);
+        URL.revokeObjectURL(src);
+        void uploadCover(file);
+      } else {
+        setCoverCrop({ src, img });
+      }
+    };
+    img.onerror = () => {
+      blobs.current.delete(src);
+      URL.revokeObjectURL(src);
+    };
+    img.src = src;
+  };
+
+  const closeCoverCrop = () => {
+    if (coverCrop) {
+      blobs.current.delete(coverCrop.src);
+      URL.revokeObjectURL(coverCrop.src);
+    }
+    setCoverCrop(null);
+  };
+
+  const applyCoverCrop = async (blob: Blob) => {
+    await uploadCover(new File([blob], "cover.png", { type: "image/png" }));
+    closeCoverCrop();
   };
 
   /* ---- 配图 ---- */
@@ -213,6 +278,16 @@ export default function WorkMediaFields({
     };
     img.src = firstOkUrl;
   }, [firstOkUrl]);
+
+  /* 预览上报(20260919):封面/logo/适配任一变化即同步表单层的实时预览;
+     onPreviewChange 是父层 setState(引用恒定),deps 里带上也不会循环 */
+  useEffect(() => {
+    onPreviewChange?.({
+      coverUrl: cover?.url ?? null,
+      logoUrl: logo?.url ?? null,
+      fit,
+    });
+  }, [cover, logo, fit, onPreviewChange]);
 
   return (
     <div className={inactive ? "hidden" : "space-y-4"}>
@@ -327,20 +402,9 @@ export default function WorkMediaFields({
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
+          onChange={(e) => {
+            pickCover(e.target.files?.[0]);
             e.target.value = "";
-            if (!file || !file.type.startsWith("image/")) return;
-            setCoverUploading(true);
-            try {
-              setCover(await uploadMedia(file, "image"));
-            } catch {
-              /* 上传失败要出声(20260919):静默失败看起来像「传上了但没显示」,
-                  用户不知道要重试 */
-              toast(t(locale, "works.uploadFailed"));
-            } finally {
-              setCoverUploading(false);
-            }
           }}
         />
         <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
@@ -522,7 +586,12 @@ export default function WorkMediaFields({
 
       {/* ---- 封面风格(未上传封面时的名称砖)---- */}
       {!cover ? (
-        <CoverToneField locale={locale} initialTone={initialTone} inactive={inactive} />
+        <CoverToneField
+          locale={locale}
+          initialTone={initialTone}
+          inactive={inactive}
+          onToneChange={onToneChange}
+        />
       ) : (
         /* 有上传封面时不显示色板,但隐藏字段要把已选色调带回去——
            否则编辑一次就被重置成 theme(2026-08-14);inactive 不提交 */
@@ -542,6 +611,24 @@ export default function WorkMediaFields({
           errorLabel={t(locale, "err.uploadFailed")}
           onCancel={closeCrop}
           onApply={applyCrop}
+        />
+      )}
+
+      {/* 封面裁剪(16:9):与 logo 同一交互,裁剪框固定 16:9 */}
+      {coverCrop && (
+        <ImageCropDialog
+          img={coverCrop.img}
+          src={coverCrop.src}
+          aspect={16 / 9}
+          title={t(locale, "works.coverCropTitle")}
+          hint={t(locale, "works.coverCropHint")}
+          zoomLabel={t(locale, "works.logoZoom")}
+          cancelLabel={t(locale, "post.cancel")}
+          applyLabel={t(locale, "works.cropApply")}
+          busyLabel={t(locale, "works.uploading")}
+          errorLabel={t(locale, "err.uploadFailed")}
+          onCancel={closeCoverCrop}
+          onApply={applyCoverCrop}
         />
       )}
     </div>

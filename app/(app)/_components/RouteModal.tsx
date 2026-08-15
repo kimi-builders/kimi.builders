@@ -15,11 +15,14 @@ export default function RouteModal({
   title,
   closeLabel,
   dirtyGuard,
+  widthCls = "w-[min(94vw,46rem)]",
   children,
 }: {
   title: string;
   closeLabel: string;
   dirtyGuard?: { title: string; keep: string; discard: string };
+  /* 弹窗宽度(20260919):默认 46rem;宽表单(作品发布/编辑)传 56rem */
+  widthCls?: string;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -78,7 +81,7 @@ export default function RouteModal({
       onClick={(event) => {
         if (event.target === event.currentTarget) requestClose();
       }}
-      className="fixed inset-0 m-auto max-h-[86vh] w-[min(94vw,46rem)] overflow-clip rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75"
+      className={`fixed inset-0 m-auto max-h-[86vh] ${widthCls} overflow-clip rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75`}
     >
       <div className="flex items-center justify-between border-b border-line bg-card px-5 py-4">
         <h2 className="font-mono text-sm font-semibold tracking-[0.06em]">{title}</h2>

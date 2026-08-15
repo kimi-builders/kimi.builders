@@ -58,6 +58,7 @@ export default async function NewWorkContent({
       <WorkForm
         action={createWorkAction}
         locale={locale}
+        modal={!showTitle}
         claim={{
           initial: null,
           hasUsage: allowance.total > 0,
