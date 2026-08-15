@@ -98,6 +98,9 @@ async function main() {
     "../db/migrations/20260809_usage_prices_v2.sql",
     "../db/migrations/20260810_usage_prices_v3.sql",
     "../db/migrations/20260811_usage_prices_v4.sql",
+    "../db/migrations/20260919_usage_prices_v5.sql",
+    "../db/migrations/20260919_usage_prices_v5_repair.sql",
+    "../db/migrations/20260919_usage_prices_v6.sql",
   ]
     .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
     .join("\n;\n");
@@ -155,8 +158,8 @@ async function main() {
             SUM(pricing_source_url <> '' AND verified_at IS NOT NULL) AS verified_count
        FROM usage_model_prices`,
   );
-  assert.equal(Number(priceCount[0].count), 48); // v1–v4 42 + GPT-5.6 long-context 5 + kimi-for-coding(20260915)
-  assert.equal(Number(priceCount[0].verified_count), 48);
+  assert.equal(Number(priceCount[0].count), 72); // v1–v4 42 + GPT-5.6 long-context 5 + kimi-for-coding(20260915) + 2026-08-15 快照 v5 16 + v6 8
+  assert.equal(Number(priceCount[0].verified_count), 72);
   const [correctedPrices] = await pool.query<RowDataPacket[]>(
     `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok
        FROM usage_model_prices
