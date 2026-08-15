@@ -197,6 +197,7 @@ function workRow(overrides: Partial<WorkRow> = {}): WorkRow {
     imageKeys: [],
     coverTone: "theme",
     coverFit: "cover",
+    coverKey: "",
     ...overrides,
   };
 }

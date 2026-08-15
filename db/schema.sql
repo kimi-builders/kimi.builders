@@ -183,9 +183,10 @@ CREATE TABLE IF NOT EXISTS works (
   kind VARCHAR(24) NOT NULL DEFAULT 'app' COMMENT '作品类型:app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other',
   -- logo_key/image_keys 由 20260826_work_media.sql 引入,已有库执行该迁移
   logo_key VARCHAR(255) NOT NULL DEFAULT '' COMMENT '作品 Logo 存储 key(空=无;URL 渲染时拼接)',
-  image_keys JSON NULL COMMENT '配图 key JSON 数组(image/ 前缀,≤9;第一张为封面)',
-  -- cover_tone/cover_fit 由 20260908_works_cover_tone_fit.sql 引入;
-  -- 20260914 起固定色档为暖纯色(apricot/terracotta/maple/moss/graphite)
+  image_keys JSON NULL COMMENT '配图 key JSON 数组(image/ 前缀,≤9;展示在详情页图集)',
+  -- cover_key 由 20260916 引入:独立列表封面(空=走色卡名称砖);
+  -- cover_tone/cover_fit 由 20260908 引入;20260916 起色档为 绿/蓝/红/黑 纯平色卡
+  cover_key VARCHAR(255) NOT NULL DEFAULT '' COMMENT '独立列表封面(image/ 前缀);空=走色卡名称砖',
   cover_tone VARCHAR(16) NOT NULL DEFAULT 'theme' COMMENT '名称砖色调:theme=跟随主题,其余为注册表固定色 id',
   cover_fit VARCHAR(8) NOT NULL DEFAULT 'cover' COMMENT '封面适配:cover=裁切填满,contain=补边完整',
   KEY idx_source (source, created_at),

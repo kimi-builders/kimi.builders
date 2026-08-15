@@ -123,10 +123,11 @@ export default function WorkForm({
   };
   /* 媒体回填(20260826_work_media):编辑时由服务端 mediaUrl 拼好 URL 传入;
      仅「我的作品」路径渲染上传区(awesome 推荐条目服务端强制置空)。
-     tone/fit(20260908):名称砖色调与封面适配回填 */
+     cover(20260916)/tone/fit(20260908):独立封面、名称砖色调与适配回填 */
   media?: {
     logo: MediaRef | null;
     images: MediaRef[];
+    cover?: MediaRef | null;
     tone?: string;
     fit?: string;
   };
@@ -317,6 +318,7 @@ export default function WorkForm({
           locale={locale}
           initialLogo={media?.logo ?? null}
           initialImages={media?.images ?? []}
+          initialCover={media?.cover ?? null}
           initialTone={media?.tone ?? "theme"}
           initialFit={media?.fit ?? "cover"}
         />

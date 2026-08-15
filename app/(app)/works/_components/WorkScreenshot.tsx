@@ -42,8 +42,8 @@ export default function WorkScreenshot({
   const [logoFailed, setLogoFailed] = useState(false);
   const mediaCls = fill ? "aspect-video sm:aspect-auto sm:h-full" : "aspect-video";
   if (!url || failed) {
-    /* 名称砖:固定色 = 暗色暖纯色档(纸字不随主题变);
-       theme = .work-cover-tile(深空/温暖白,跟随主题) */
+    /* 名称砖:固定色 = 纯平色卡(纸字不随主题变);
+       theme = .work-cover-tile(深空/站点白,跟随主题) */
     const hex = coverToneHex(tone);
     return (
       <div
@@ -52,18 +52,6 @@ export default function WorkScreenshot({
           hex ? "" : "work-cover-tile"
         } ${mediaCls} ${fill ? "sm:min-h-36" : ""} ${embedded ? "" : "rounded-2xl border border-line"}`}
       >
-        {hex && (
-          /* 织纹 + 顶部高光: Laracasts 色卡的颗粒感,压在纸字之下不抢戏 */
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 0.07), transparent 55%), repeating-conic-gradient(rgb(255 255 255 / 0.028) 0% 25%, transparent 0% 50%)",
-              backgroundSize: "100% 100%, 18px 18px",
-            }}
-          />
-        )}
         {kindLabel && (
           <span
             className={`absolute left-3.5 top-3 flex items-center gap-1 font-mono text-[9.5px] uppercase tracking-[0.16em] ${

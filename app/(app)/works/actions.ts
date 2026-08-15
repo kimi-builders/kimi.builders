@@ -38,6 +38,7 @@ import {
   getClaimAllowance,
   getWork,
   isWorkLogoKey,
+  isWorkMediaKey,
   parseClaimInput,
   parseWorkImageKeysInput,
   toggleWorkVote,
@@ -123,6 +124,8 @@ function readFields(formData: FormData) {
        解析失败 = null,交给 validate 报错(不静默吞掉手搓值) */
     logoKey: String(formData.get("logoKey") || "").trim(),
     imageKeys: parseWorkImageKeysInput(String(formData.get("imageKeys") || "")),
+    /* 独立列表封面(20260916):空=走色卡;非空必须是 image/ 前缀的合法媒体 key */
+    coverKey: String(formData.get("coverKey") || "").trim(),
     /* 名称砖色调 + 封面适配(20260908):白名单收敛,非法值回落默认 */
     coverTone: isCoverTone(String(formData.get("coverTone") || ""))
       ? String(formData.get("coverTone"))
@@ -150,9 +153,14 @@ function validate(
   if (f.intent === "awesome" && !f.authorLabel) return t(locale, "err.workAuthorRequired");
   /* awesome 条目必须有收录口径(推荐规则:公开展示推荐人,口径必填) */
   if (f.authorLabel && !f.scope) return t(locale, "err.workNoScope");
-  /* 媒体 key:形状 + 前缀白名单(logo 仅 logo/,配图 ≤9 且仅 image/) */
+  /* 媒体 key:形状 + 前缀白名单(logo 仅 logo/,配图 ≤9 且仅 image/,封面同理) */
   if (!isWorkLogoKey(f.logoKey)) return t(locale, "err.workLogoKey");
   if (f.imageKeys === null || !areWorkImageKeys(f.imageKeys))
+    return t(locale, "err.workImageKeys");
+  if (
+    f.coverKey !== "" &&
+    !(isWorkMediaKey(f.coverKey) && f.coverKey.startsWith("image/"))
+  )
     return t(locale, "err.workImageKeys");
   return null;
 }

@@ -1,16 +1,16 @@
-/* 名称砖色调注册表(20260908_works_cover_tone_fit;20260914 换暖纯色系):
-   无配图作品的列表封面。theme = 跟随主题(深空/温暖白,globals.css
-   .work-cover-tile);其余为用户指定的固定暖纯色——选定后不随主题切换,
-   全部收敛在「暗底 + 纸字 #EFE8DC 可读」的中低明度区间。
+/* 名称砖色调注册表(20260908 引入;20260916 起为 跟随主题/绿/蓝/红/黑 纯平色卡,
+   参考 Laracasts 礼物卡的绿卡/蓝卡/红卡/黑卡):
+   无上传封面作品的列表封面。theme = 跟随主题(深空/站点白,globals.css
+   .work-cover-tile);其余为固定纯平色——选定后不随主题切换,
+   全部保证纸字 #EFE8DC 可读。
    增删色档只需改这里:表单色板与 works.cover_tone 白名单都读注册表。
-   旧色档 id(slate/abyss/plum/rust)由迁移 20260914 映射到相近新色。 */
+   旧色档 id 由迁移 20260916 映射到绿/蓝/红/黑。 */
 export const COVER_TONES = [
   { id: "theme", hex: null, zh: "跟随主题", en: "Theme" },
-  { id: "apricot", hex: "#8A5A1E", zh: "杏黄", en: "Apricot" },
-  { id: "terracotta", hex: "#A04A2E", zh: "赤陶", en: "Terracotta" },
-  { id: "maple", hex: "#9C3B45", zh: "枫红", en: "Maple" },
-  { id: "moss", hex: "#556B2F", zh: "苔绿", en: "Moss" },
-  { id: "graphite", hex: "#3F444C", zh: "石墨", en: "Graphite" },
+  { id: "green", hex: "#2E6B4E", zh: "绿卡", en: "Green" },
+  { id: "blue", hex: "#2456A6", zh: "蓝卡", en: "Blue" },
+  { id: "red", hex: "#A63642", zh: "红卡", en: "Red" },
+  { id: "black", hex: "#26262B", zh: "黑卡", en: "Black" },
 ] as const;
 
 export type CoverToneId = (typeof COVER_TONES)[number]["id"];
@@ -30,24 +30,24 @@ export function coverToneName(id: string, zh: boolean): string {
 }
 
 /* Awesome 条目的砖色(awesome 无媒体、色板未选时):按「类型族」定色,
-   复用上面五个固定色——一套色板,两条指派路径(作品墙=用户自选,
-   Awesome=类型族)。绿=应用,杏黄=工具,枫红=智能体,赤陶=内容,石墨=其他。 */
+   复用上面四张色卡——一套色板,两条指派路径(作品墙=用户自选,
+   Awesome=类型族)。绿=应用,蓝=工具,红=智能体,黑=内容与其他。 */
 const KIND_TONE: Record<string, CoverToneId> = {
-  app: "moss",
-  miniapp: "moss",
-  website: "moss",
-  cli: "apricot",
-  sdk: "apricot",
-  extension: "apricot",
-  bot: "maple",
-  skill: "maple",
-  prompt: "terracotta",
-  slides: "terracotta",
-  demo: "terracotta",
-  content: "terracotta",
-  other: "graphite",
+  app: "green",
+  miniapp: "green",
+  website: "green",
+  cli: "blue",
+  sdk: "blue",
+  extension: "blue",
+  bot: "red",
+  skill: "red",
+  prompt: "black",
+  slides: "black",
+  demo: "black",
+  content: "black",
+  other: "black",
 };
 
 export function awesomeToneFor(kind: string): CoverToneId {
-  return KIND_TONE[kind] ?? "graphite";
+  return KIND_TONE[kind] ?? "black";
 }

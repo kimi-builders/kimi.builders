@@ -93,6 +93,7 @@ export default async function EditWorkContent({
         media={{
           logo: work.logoKey ? { key: work.logoKey, url: mediaUrl(work.logoKey) } : null,
           images: work.imageKeys.map((k) => ({ key: k, url: mediaUrl(k) })),
+          cover: work.coverKey ? { key: work.coverKey, url: mediaUrl(work.coverKey) } : null,
           tone: work.coverTone,
           fit: work.coverFit,
         }}

@@ -44,6 +44,7 @@ function work(): WorkRow {
     imageKeys: ["one.png"],
     coverTone: "theme",
     coverFit: "cover",
+    coverKey: "",
   };
 }
 

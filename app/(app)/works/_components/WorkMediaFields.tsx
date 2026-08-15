@@ -37,16 +37,21 @@ export default function WorkMediaFields({
   locale,
   initialLogo = null,
   initialImages = [],
+  initialCover = null,
   initialTone = "theme",
   initialFit = "cover",
 }: {
   locale: Locale;
   initialLogo?: MediaRef | null;
   initialImages?: MediaRef[];
+  /* 20260916:独立列表封面(image/ key;空=走色卡名称砖) */
+  initialCover?: MediaRef | null;
   /* 20260908:名称砖色调(theme=跟随主题)+ 封面适配(cover/contain)回填 */
   initialTone?: string;
   initialFit?: string;
 }) {
+  const [cover, setCover] = useState<MediaRef | null>(initialCover);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [fit, setFit] = useState(initialFit === "contain" ? "contain" : "cover");
   /* 适配自动建议:第一张竖屏图上传成功时建议「补边」;用户手动选过就不再插手 */
   const fitTouched = useRef(initialFit === "contain");
@@ -65,6 +70,7 @@ export default function WorkMediaFields({
   const nextId = useRef(initialImages.length + 1);
   const fileInput = useRef<HTMLInputElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
+  const coverInput = useRef<HTMLInputElement>(null);
   const [dropActive, setDropActive] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -206,6 +212,7 @@ export default function WorkMediaFields({
       {/* 提交载体:只落上传完成的 key(上传中/失败的条目不随表单提交) */}
       <input type="hidden" name="logoKey" value={logo?.key ?? ""} readOnly />
       <input type="hidden" name="imageKeys" value={JSON.stringify(doneKeys)} readOnly />
+      <input type="hidden" name="coverKey" value={cover?.key ?? ""} readOnly />
       <input type="hidden" name="coverFit" value={fit} readOnly />
 
       {/* ---- Logo:方形预览 + 客户端裁剪上传 ---- */}
@@ -258,7 +265,76 @@ export default function WorkMediaFields({
         />
       </div>
 
-      {/* ---- 配图:点击/拖入/粘贴添加,拖拽排序,第一张 = 封面 ---- */}
+      {/* ---- 封面:独立列表封面(20260916);不传则列表用下方色卡的名称砖 ---- */}
+      <div>
+        <span className="mb-1.5 block text-[11.5px] text-grey">
+          {t(locale, "works.cover")}
+        </span>
+        <div className="flex items-center gap-3">
+          {cover ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={cover.url}
+              alt=""
+              className="h-16 w-28 rounded-lg border border-line object-cover"
+            />
+          ) : (
+            <span className="flex h-16 w-28 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
+              <ImagePlus size={18} aria-hidden="true" />
+            </span>
+          )}
+          <span className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => coverInput.current?.click()}
+              disabled={coverUploading}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+            >
+              {coverUploading ? (
+                <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <ImagePlus size={12} aria-hidden="true" />
+              )}
+              {coverUploading
+                ? t(locale, "works.uploading")
+                : t(locale, cover ? "works.logoChange" : "works.coverUpload")}
+            </button>
+            {cover && (
+              <button
+                type="button"
+                onClick={() => setCover(null)}
+                className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              >
+                {t(locale, "works.logoRemove")}
+              </button>
+            )}
+          </span>
+        </div>
+        <input
+          ref={coverInput}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file || !file.type.startsWith("image/")) return;
+            setCoverUploading(true);
+            try {
+              setCover(await uploadMedia(file, "image"));
+            } catch {
+              /* 上传失败不落地状态,用户重试即可 */
+            } finally {
+              setCoverUploading(false);
+            }
+          }}
+        />
+        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          {t(locale, "works.coverHint")}
+        </span>
+      </div>
+
+      {/* ---- 配图:点击/拖入/粘贴添加,拖拽排序,展示在详情页图集 ---- */}
       <div>
         <span className="mb-1.5 flex items-baseline justify-between text-[11.5px] text-grey">
           <span>{t(locale, "works.images")}</span>
@@ -351,12 +427,6 @@ export default function WorkMediaFields({
                   draggable={false}
                   className="h-full w-full object-cover"
                 />
-                {/* 封面徽标:第一张即封面(顺序即语义) */}
-                {i === 0 && (
-                  <span className="absolute left-1 top-1 rounded bg-blue px-1 py-px font-mono text-[9.5px] font-semibold text-white">
-                    {t(locale, "works.coverBadge")}
-                  </span>
-                )}
                 <span className="pointer-events-none absolute bottom-1 left-1 text-grey/0 transition-colors group-hover:text-white/70">
                   <GripVertical size={12} aria-hidden="true" />
                 </span>
@@ -404,8 +474,8 @@ export default function WorkMediaFields({
         )}
       </div>
 
-      {/* ---- 封面适配(有配图时生效):裁切填满 / 补边完整 ---- */}
-      {images.length > 0 && (
+      {/* ---- 封面适配(有上传封面或配图时生效):裁切填满 / 补边完整 ---- */}
+      {(cover || images.length > 0) && (
         <div>
           <span className="mb-1.5 block text-[11.5px] text-grey">
             {t(locale, "works.coverFit")}
@@ -436,11 +506,11 @@ export default function WorkMediaFields({
         </div>
       )}
 
-      {/* ---- 封面风格(无配图时的名称砖)---- */}
-      {images.length === 0 ? (
+      {/* ---- 封面风格(未上传封面时的名称砖)---- */}
+      {!cover ? (
         <CoverToneField locale={locale} initialTone={initialTone} />
       ) : (
-        /* 有配图时不显示色板,但隐藏字段要把已选色调带回去——
+        /* 有上传封面时不显示色板,但隐藏字段要把已选色调带回去——
            否则编辑一次就被重置成 theme(2026-08-14) */
         <input type="hidden" name="coverTone" value={initialTone} readOnly />
       )}
