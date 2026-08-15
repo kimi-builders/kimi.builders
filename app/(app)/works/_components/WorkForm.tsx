@@ -3,12 +3,15 @@
 /* 作品提交/编辑共用表单(Kimi Design + linux.do 参考):名称必填,链接/仓库至少其一,
    至少标一个参与的 Agent(服务端校验)。推荐站外项目(填了原作者)= awesome 条目,
    必须再选收录口径;作品墙条目可填构建投入声明。
+   意图(我的作品/推荐)创建时定死,编辑不再可切(静默转换是误操作,20260919);
+   媒体区与 awesome 字段常驻挂载、按意图显隐——切换不丢已填/已传内容。
+   服务端校验错误会滚动到错误条(长表单防「看似无反应」)。
    Agent/平台/模型家族芯片是原生 checkbox(has-checked 着色),无 JS 可提交;
    自填型号(回车添加)依赖 JS,删除键同样。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
@@ -142,6 +145,14 @@ export default function WorkForm({
   useEffect(() => {
     if (state?.ok && state.workId) router.push(`/works/${state.workId}`);
   }, [state, router]);
+  /* 服务端校验错误(20260919):滚动到错误条——表单 15+ 个字段块,弹窗里错误
+     渲染在折叠线外,不滚过去用户只会看到「按钮恢复可点、毫无反应」 */
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (state?.error) {
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [state?.error]);
   const checkedAgents = new Set(
     initial ? initial.agents : ["kimi"], // 新表单默认勾 Kimi
   );
@@ -182,29 +193,28 @@ export default function WorkForm({
       {workId && <input type="hidden" name="work_id" value={workId} />}
       <input type="hidden" name="kind" value={kind} />
 
-      {/* 我的作品 / 推荐站外项目 */}
-      <div className={SEG_WRAP} role="group" aria-label={t(locale, "works.kindSite")}>
-        {(
-          [
-            { id: "site", key: "works.kindSite" },
-            { id: "awesome", key: "works.kindAwesome" },
-          ] as const
-        ).map((k) => (
-          <button
-            key={k.id}
-            type="button"
-            onClick={() => setKind(k.id)}
-            aria-pressed={kind === k.id}
-            className={`${SEG_ITEM} ${kind === k.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
-          >
-            {t(locale, k.key)}
-          </button>
-        ))}
-      </div>
-      {kind === "awesome" && (
-        <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-[11px] leading-relaxed text-grey">
-          {t(locale, "awesome.rulesBody")}
-        </p>
+      {/* 我的作品 / 推荐站外项目:意图在创建时定死——编辑存量条目不再显示切换器
+          (20260919)。编辑中切换会把 awesome 推荐静默转成「我的作品」(原作者/口径
+          随字段失效丢空),误操作后果不可见 */}
+      {!workId && (
+        <div className={SEG_WRAP} role="group" aria-label={t(locale, "works.kindSite")}>
+          {(
+            [
+              { id: "site", key: "works.kindSite" },
+              { id: "awesome", key: "works.kindAwesome" },
+            ] as const
+          ).map((k) => (
+            <button
+              key={k.id}
+              type="button"
+              onClick={() => setKind(k.id)}
+              aria-pressed={kind === k.id}
+              className={`${SEG_ITEM} ${kind === k.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+            >
+              {t(locale, k.key)}
+            </button>
+          ))}
+        </div>
       )}
 
       <div>
@@ -311,18 +321,18 @@ export default function WorkForm({
         <input type="hidden" name="screenshot_url" value={initial.screenshotUrl} />
       )}
 
-      {/* Logo + 配图上传(20260826_work_media):仅「我的作品」;推荐站外项目不渲染
-          (组件卸载后隐藏字段不提交,服务端对 awesome 条目再强制置空) */}
-      {kind === "site" && (
-        <WorkMediaFields
-          locale={locale}
-          initialLogo={media?.logo ?? null}
-          initialImages={media?.images ?? []}
-          initialCover={media?.cover ?? null}
-          initialTone={media?.tone ?? "theme"}
-          initialFit={media?.fit ?? "cover"}
-        />
-      )}
+      {/* Logo + 封面 + 配图上传(20260826_work_media):常驻挂载,awesome 意图下
+          inactive(CSS 隐藏、不提交)——切换意图不丢已上传状态(20260919);
+          服务端对 awesome 条目再强制置空 */}
+      <WorkMediaFields
+        locale={locale}
+        initialLogo={media?.logo ?? null}
+        initialImages={media?.images ?? []}
+        initialCover={media?.cover ?? null}
+        initialTone={media?.tone ?? "theme"}
+        initialFit={media?.fit ?? "cover"}
+        inactive={kind !== "site"}
+      />
 
       <div>
         <label htmlFor="work-desc" className={labelCls}>
@@ -446,60 +456,69 @@ export default function WorkForm({
       </fieldset>
 
 
-      {kind === "awesome" && (
-        <>
-          <div>
-            <label htmlFor="work-author" className={labelCls}>
-              {t(locale, "works.authorLabel")} <span className="text-blue">*</span>
-            </label>
-            <input
-              id="work-author"
-              name="author_label"
-              defaultValue={initial?.authorLabel}
-              maxLength={120}
-              placeholder={t(locale, "works.authorLabelPh")}
-              className={inputCls}
-            />
-            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-              {t(locale, "works.authorLabelHint")}
-            </span>
-          </div>
-          <fieldset>
-            <span className={labelCls}>
-              {t(locale, "awesome.scope")} <span className="text-blue">*</span>
-            </span>
-            <div className="grid gap-1.5 sm:grid-cols-3">
-              {SCOPES.map((s) => (
-                <label
-                  key={s.id}
-                  className="relative cursor-pointer rounded-lg border border-line bg-bg px-3 py-2.5 transition-colors hover:border-paper/30 has-checked:border-blue has-checked:bg-blue/10 has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue"
-                >
-                  <input
-                    type="radio"
-                    name="scope"
-                    value={s.id}
-                    defaultChecked={initial?.scope === s.id}
-                    className={choiceInputCls}
-                  />
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-paper">
-                    <WorkScopeIcon id={s.id} size={14} />
-                    <span>{t(locale, s.key)}</span>
-                  </span>
-                  <span className="mt-0.5 block text-[10.5px] leading-relaxed text-grey">
-                    {t(locale, s.hintKey)}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {/* Awesome 条目也能定封面风格(20260914):不选则按类型族定色 */}
-          <CoverToneField
-            locale={locale}
-            initialTone={media?.tone ?? "theme"}
-            forAwesome
+      {/* 推荐站外项目字段(原作者 + 收录口径):常驻挂载、CSS 隐藏(20260919)——
+          切换意图不丢已填内容;非激活时控件摘掉 name(无名控件不随表单提交),
+          残留的 author_label 不会把「我的作品」误变成 awesome 条目
+          (服务端按 author_label 非空分流) */}
+      <div className={`space-y-4 ${kind === "awesome" ? "" : "hidden"}`}>
+        {kind === "awesome" && (
+          <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-[11px] leading-relaxed text-grey">
+            {t(locale, "awesome.rulesBody")}
+          </p>
+        )}
+        <div>
+          <label htmlFor="work-author" className={labelCls}>
+            {t(locale, "works.authorLabel")} <span className="text-blue">*</span>
+          </label>
+          <input
+            id="work-author"
+            name={kind === "awesome" ? "author_label" : undefined}
+            defaultValue={initial?.authorLabel}
+            maxLength={120}
+            placeholder={t(locale, "works.authorLabelPh")}
+            className={inputCls}
           />
-        </>
-      )}
+          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            {t(locale, "works.authorLabelHint")}
+          </span>
+        </div>
+        <fieldset>
+          <span className={labelCls}>
+            {t(locale, "awesome.scope")} <span className="text-blue">*</span>
+          </span>
+          <div className="grid gap-1.5 sm:grid-cols-3">
+            {SCOPES.map((s) => (
+              <label
+                key={s.id}
+                className="relative cursor-pointer rounded-lg border border-line bg-bg px-3 py-2.5 transition-colors hover:border-paper/30 has-checked:border-blue has-checked:bg-blue/10 has-focus-visible:outline has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue"
+              >
+                <input
+                  type="radio"
+                  name={kind === "awesome" ? "scope" : undefined}
+                  value={s.id}
+                  defaultChecked={initial?.scope === s.id}
+                  className={choiceInputCls}
+                />
+                <span className="flex items-center gap-1.5 text-xs font-medium text-paper">
+                  <WorkScopeIcon id={s.id} size={14} />
+                  <span>{t(locale, s.key)}</span>
+                </span>
+                <span className="mt-0.5 block text-[10.5px] leading-relaxed text-grey">
+                  {t(locale, s.hintKey)}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+      {/* Awesome 条目也能定封面风格(20260914):不选则按类型族定色;
+          常驻挂载(与作品侧 CoverToneField 互斥激活,见 CoverToneField.inactive) */}
+      <CoverToneField
+        locale={locale}
+        initialTone={media?.tone ?? "theme"}
+        forAwesome
+        inactive={kind !== "awesome"}
+      />
 
       {kind === "site" && claim && (
         <div>
@@ -584,7 +603,14 @@ export default function WorkForm({
         {t(locale, "works.hint")}
       </p>
       {state?.error && (
-        <p role="alert" className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">{state.error}</p>
+        <p
+          ref={errorRef}
+          role="alert"
+          tabIndex={-1}
+          className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper"
+        >
+          {state.error}
+        </p>
       )}
       <div className="flex items-center gap-3 border-t border-line pt-4">
         <Link

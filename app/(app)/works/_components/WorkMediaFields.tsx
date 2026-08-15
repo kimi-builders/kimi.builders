@@ -1,9 +1,12 @@
 "use client";
 
 /* 作品媒体字段(20260826_work_media):Logo(客户端裁剪后上传)+ 配图(≤9,第一张 = 封面)。
-   仅「我的作品」路径渲染(WorkForm 按 kind 条件挂载);awesome 推荐条目不出现,
+   仅「我的作品」路径激活(WorkForm 传 inactive 控制);awesome 推荐条目隐藏,
    服务端也强制置空。提交走隐藏字段:logoKey 单 key,imageKeys 为 key 的 JSON 数组;
    上传中/失败的配图不进隐藏字段(不提交半截状态)。
+   inactive(20260919):常驻挂载、CSS 隐藏——切换「我的作品/推荐站外项目」意图
+   不卸载组件,已上传的 logo/封面/配图状态不丢;隐藏字段随之不提交
+   (服务端对 awesome 条目本来就强制置空,双保险)。
    上传统一打 POST /api/upload(kind=logo|image),裁剪/拖拽/排序全手写,无三方库。 */
 import { useEffect, useRef, useState } from "react";
 import {
@@ -15,6 +18,7 @@ import {
 } from "lucide-react";
 import ImageCropDialog from "@/components/ImageCropDialog";
 import { t, type Locale } from "@/src/lib/i18n";
+import { toast } from "@/src/lib/toast";
 import { uploadMedia } from "@/src/lib/upload";
 import { WORK_IMAGE_MAX } from "@/src/lib/work-media";
 import CoverToneField from "./CoverToneField";
@@ -40,6 +44,7 @@ export default function WorkMediaFields({
   initialCover = null,
   initialTone = "theme",
   initialFit = "cover",
+  inactive = false,
 }: {
   locale: Locale;
   initialLogo?: MediaRef | null;
@@ -49,6 +54,8 @@ export default function WorkMediaFields({
   /* 20260908:名称砖色调(theme=跟随主题)+ 封面适配(cover/contain)回填 */
   initialTone?: string;
   initialFit?: string;
+  /* 20260919:true = 推荐站外项目意图:UI 隐藏但保持挂载(状态不丢),不提交 */
+  inactive?: boolean;
 }) {
   const [cover, setCover] = useState<MediaRef | null>(initialCover);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -208,12 +215,17 @@ export default function WorkMediaFields({
   }, [firstOkUrl]);
 
   return (
-    <div className="space-y-4">
-      {/* 提交载体:只落上传完成的 key(上传中/失败的条目不随表单提交) */}
-      <input type="hidden" name="logoKey" value={logo?.key ?? ""} readOnly />
-      <input type="hidden" name="imageKeys" value={JSON.stringify(doneKeys)} readOnly />
-      <input type="hidden" name="coverKey" value={cover?.key ?? ""} readOnly />
-      <input type="hidden" name="coverFit" value={fit} readOnly />
+    <div className={inactive ? "hidden" : "space-y-4"}>
+      {/* 提交载体:只落上传完成的 key(上传中/失败的条目不随表单提交);
+          inactive 时不渲染(服务端对 awesome 条目强制置空,双保险) */}
+      {!inactive && (
+        <>
+          <input type="hidden" name="logoKey" value={logo?.key ?? ""} readOnly />
+          <input type="hidden" name="imageKeys" value={JSON.stringify(doneKeys)} readOnly />
+          <input type="hidden" name="coverKey" value={cover?.key ?? ""} readOnly />
+          <input type="hidden" name="coverFit" value={fit} readOnly />
+        </>
+      )}
 
       {/* ---- Logo:方形预览 + 客户端裁剪上传 ---- */}
       <div>
@@ -323,7 +335,9 @@ export default function WorkMediaFields({
             try {
               setCover(await uploadMedia(file, "image"));
             } catch {
-              /* 上传失败不落地状态,用户重试即可 */
+              /* 上传失败要出声(20260919):静默失败看起来像「传上了但没显示」,
+                  用户不知道要重试 */
+              toast(t(locale, "works.uploadFailed"));
             } finally {
               setCoverUploading(false);
             }
@@ -508,11 +522,11 @@ export default function WorkMediaFields({
 
       {/* ---- 封面风格(未上传封面时的名称砖)---- */}
       {!cover ? (
-        <CoverToneField locale={locale} initialTone={initialTone} />
+        <CoverToneField locale={locale} initialTone={initialTone} inactive={inactive} />
       ) : (
         /* 有上传封面时不显示色板,但隐藏字段要把已选色调带回去——
-           否则编辑一次就被重置成 theme(2026-08-14) */
-        <input type="hidden" name="coverTone" value={initialTone} readOnly />
+           否则编辑一次就被重置成 theme(2026-08-14);inactive 不提交 */
+        !inactive && <input type="hidden" name="coverTone" value={initialTone} readOnly />
       )}
 
       {crop && (
