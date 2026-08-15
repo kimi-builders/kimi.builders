@@ -1,6 +1,7 @@
 import type { RowDataPacket } from "mysql2";
 import type { SessionUser } from "../auth/session";
 import { getPool } from "../db";
+import { compactNumber } from "../format";
 import { usageCacheHitRate } from "../usage-contract";
 import { bucketFilterSql, parseUsageFilters, type UsageFilters } from "./filters";
 import { usageSourceLabel } from "./labels";
@@ -455,7 +456,7 @@ export async function getUsageShareSnapshot(input: {
             ? "TODAY'S BUILD PULSE"
             : "24H BUILD PULSE",
         subline: zh
-          ? `${overview.totals.requests.toLocaleString("zh-CN")} 次请求 · 峰值按小时`
+          ? `${compactNumber(overview.totals.requests, "zh")} 次请求 · 峰值按小时`
           : `${overview.totals.requests.toLocaleString("en-US")} REQUESTS · HOURLY PEAK`,
         columns: Math.max(1, hourCells.length),
         rows: 1,

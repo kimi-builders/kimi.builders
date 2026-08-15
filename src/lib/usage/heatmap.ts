@@ -1,3 +1,4 @@
+import { compactNumber } from "../format";
 import type { UsageMetric } from "./filters";
 import type { UsageHeatmap } from "./query-types";
 
@@ -54,11 +55,8 @@ export interface UsageCurrencySpec {
   symbol: string;
 }
 
-function compact(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 function durationText(seconds: number, zh: boolean): string {
@@ -81,7 +79,7 @@ export function heatMetricText(
   }
   if (metric === "duration") return durationText(value, zh);
   if (metric === "prompts") {
-    return zh ? `${compact(value)} 条用户消息` : `${compact(value)} user messages`;
+    return zh ? `${compact(value, zh)} 条用户消息` : `${compact(value, zh)} user messages`;
   }
-  return `${compact(value)} tokens`;
+  return `${compact(value, zh)} tokens`;
 }

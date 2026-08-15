@@ -6,6 +6,7 @@
    会话管线,社交面只公开 token 总量这一个聚合数字。
    可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。 */
 import { useState } from "react";
+import { compactNumber } from "@/src/lib/format";
 
 const WEEKDAY_LONG_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WEEKDAY_LONG_EN = [
@@ -18,11 +19,8 @@ const WEEKDAY_LONG_EN = [
   "Sunday",
 ];
 
-function compact(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 /* 与用量看板 page.tsx 的 gmtLabel 同款:tzOffsetMinutes = 本地 − UTC 的分钟数。 */
@@ -95,7 +93,7 @@ export default function SocialUsageHeatmap({
                         <button
                           key={hour}
                           type="button"
-                          aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${compact(value)} tokens`}
+                          aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${compact(value, zh)} tokens`}
                           className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
                           onMouseEnter={() => setHovered({ weekday, hour })}
                           onFocus={() => setHovered({ weekday, hour })}
@@ -118,7 +116,7 @@ export default function SocialUsageHeatmap({
                 {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
               </div>
               <div className="mt-1 font-mono text-[11px] text-paper">
-                {compact(grid[hovered.weekday][hovered.hour])} tokens
+                {compact(grid[hovered.weekday][hovered.hour], zh)} tokens
               </div>
             </div>
           )}
@@ -157,7 +155,7 @@ export default function SocialUsageHeatmap({
                       <span className="truncate text-paper">
                         {longNames[item.weekday]} {String(item.hour).padStart(2, "0")}:00
                       </span>
-                      <span className="shrink-0 text-grey">{compact(item.value)}</span>
+                      <span className="shrink-0 text-grey">{compact(item.value, zh)}</span>
                     </span>
                     <span className="mt-0.5 block font-mono text-[9px] text-grey/65">tokens</span>
                   </span>

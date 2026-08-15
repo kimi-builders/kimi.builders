@@ -100,7 +100,7 @@ export default function UsageShareDialog({
         aria-haspopup="dialog"
         className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
       >
-        <Share2 size={13} aria-hidden="true" /> {zh ? "分享战绩" : "Share stats"}
+        <Share2 size={13} aria-hidden="true" /> {zh ? "分享用量" : "Share usage"}
       </button>
       <dialog
         ref={dialogRef}
@@ -113,7 +113,7 @@ export default function UsageShareDialog({
         <div className="flex items-start justify-between gap-4 border-b border-line bg-moon px-4 py-4 sm:px-5">
           <div>
             <h3 id="usage-share-title" className="font-mono text-sm font-semibold">
-              {zh ? "生成用量战绩海报" : "Create a usage share card"}
+              {zh ? "生成用量分享海报" : "Create a usage share card"}
             </h3>
             <p className="mt-2 max-w-2xl text-xs leading-relaxed text-grey">
               {zh
@@ -159,7 +159,7 @@ export default function UsageShareDialog({
                   key={imageHref}
                   unoptimized
                   src={imageHref}
-                  alt={zh ? `${labels[range].zh}用量战绩海报预览` : `${labels[range].en} usage share card preview`}
+                  alt={zh ? `${labels[range].zh}用量分享海报预览` : `${labels[range].en} usage share card preview`}
                   width={1080}
                   height={1440}
                   className="h-full w-full object-contain"

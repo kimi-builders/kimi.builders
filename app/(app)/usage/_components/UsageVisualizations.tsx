@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FocusEvent, type MouseEvent, type ReactNode } from "react";
+import { compactNumber } from "@/src/lib/format";
 import type { UsageGranularity, UsageMetric, UsageRangeLabel } from "@/src/lib/usage/filters";
 import {
   heatGridFor,
@@ -25,11 +26,8 @@ const FILL_REASONING = "#fbbf24"; // amber-400
 const FILL_COST = "var(--color-blue)";
 const FILL_DURATION = "color-mix(in srgb, var(--color-blue) 70%, transparent)";
 
-function compact(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 function duration(seconds: number, zh: boolean): string {
@@ -63,7 +61,7 @@ function metricText(
 ): string {
   if (metric === "cost") return fmtCost(item.costMicros, currency);
   if (metric === "duration") return duration(item.activeSeconds, zh);
-  return `${compact(item.totalTokens)} tokens`;
+  return `${compact(item.totalTokens, zh)} tokens`;
 }
 
 function axisTickText(
@@ -78,7 +76,7 @@ function axisTickText(
     const hours = value / 3600;
     return hours >= 1 ? `${hours >= 10 ? Math.round(hours) : hours.toFixed(1)}h` : `${Math.round(value / 60)}m`;
   }
-  return compact(value);
+  return compact(value, zh);
 }
 
 function trendAxisLabel(
@@ -119,7 +117,7 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
             <i className={`h-1.5 w-1.5 shrink-0 ${row.color}`} />
             {row.label}
           </dt>
-          <dd className="text-paper">{compact(row.value)}</dd>
+          <dd className="text-paper">{compact(row.value, zh)}</dd>
         </div>
       ))}
     </dl>
@@ -456,8 +454,8 @@ export function UsageWeeklyTrend({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] text-grey">
-        <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0)}</strong></span>
-        <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0)}</strong></span>
+        <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0, zh)}</strong></span>
+        <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0, zh)}</strong></span>
         <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-emerald-400" : "text-red-400"}>
           {percentDelta(current?.totalTokens ?? 0, previous?.totalTokens ?? 0)}
         </span>
@@ -605,14 +603,14 @@ export function UsageHeatmapGrid({
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
           </div>
           <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
-            <span className="text-paper">{compact(cell.totalTokens)} tokens</span>
+            <span className="text-paper">{compact(cell.totalTokens, zh)} tokens</span>
             <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(cell)}</span>
           </div>
           <TokenBreakdown item={cell} zh={zh} />
           <div className="mt-2 border-t border-line pt-2 font-mono text-[10px] text-grey">
             {zh ? "估费" : "Cost"} {fmtCost(heatmap.costMicros[hovered.weekday][hovered.hour], currency)} ·{" "}
             {zh ? "活跃" : "Active"} {duration(heatmap.activeSeconds[hovered.weekday][hovered.hour], zh)} ·{" "}
-            {compact(heatmap.prompts[hovered.weekday][hovered.hour])}{" "}
+            {compact(heatmap.prompts[hovered.weekday][hovered.hour], zh)}{" "}
             {zh ? "条用户消息" : "user messages"}
           </div>
         </div>

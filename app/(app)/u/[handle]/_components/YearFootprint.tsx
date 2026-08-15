@@ -9,6 +9,7 @@
    可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。 */
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { compactNumber } from "@/src/lib/format";
 import type {
   FootprintCell,
   FootprintGrid,
@@ -23,12 +24,9 @@ const MONTH_SHORT_EN = [
 /* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值。 */
 const STEPS = ["bg-blue/15", "bg-blue/30", "bg-blue/45", "bg-blue/60", "bg-blue/80", "bg-blue"];
 
-/* 与用量中心同一套 B/M/k 紧凑格式(同一数字两个页面读法一致)。 */
-function compact(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
+/* 与用量中心同一套紧凑格式(compactNumber:zh 万/亿,en K/M/B,两页读法一致)。 */
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 function stepClassOf(cell: FootprintCell, max: number): string {
@@ -71,7 +69,7 @@ export default function YearFootprint({
       type="button"
       aria-label={
         cell.tokens > 0
-          ? `${cell.date} · ${compact(cell.tokens)} tokens`
+          ? `${cell.date} · ${compact(cell.tokens, zh)} tokens`
           : `${cell.date} · ${zh ? "未活跃" : "inactive"}`
       }
       className={`aspect-square w-full rounded-[2.5px] transition-transform hover:z-10 hover:scale-[1.35] focus-visible:outline focus-visible:outline-1 focus-visible:outline-blue ${stepClassOf(cell, max)}`}
@@ -183,7 +181,7 @@ export default function YearFootprint({
         >
           <div className="font-mono text-[11px] font-semibold text-paper">{hovered.date}</div>
           <div className="mt-1 font-mono text-[11px] text-paper">
-            {hovered.tokens > 0 ? `${compact(hovered.tokens)} tokens` : zh ? "未活跃" : "Inactive"}
+            {hovered.tokens > 0 ? `${compact(hovered.tokens, zh)} tokens` : zh ? "未活跃" : "Inactive"}
           </div>
         </div>
       )}
@@ -201,7 +199,7 @@ export default function YearFootprint({
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:ml-auto">
           <span>
             {zh ? "近一年" : "Last year"}{" "}
-            <b className="font-semibold text-paper">{compact(summary.totalTokens)}</b>
+            <b className="font-semibold text-paper">{compact(summary.totalTokens, zh)}</b>
           </span>
           <span>
             {zh ? "活跃" : "Active"}{" "}
@@ -211,7 +209,7 @@ export default function YearFootprint({
           <span>
             {zh ? "单日峰值" : "Peak day"}{" "}
             <b className="font-semibold text-paper" title={summary.peakDay ?? undefined}>
-              {compact(summary.peakTokens)}
+              {compact(summary.peakTokens, zh)}
             </b>
           </span>
           <span>

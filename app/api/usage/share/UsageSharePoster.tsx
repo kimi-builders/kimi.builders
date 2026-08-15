@@ -1,3 +1,4 @@
+import { compactNumber } from "@/src/lib/format";
 import type { UsageShareFlow, UsageShareSnapshot } from "@/src/lib/usage/share";
 import {
   POSTER_FONT_FAMILY,
@@ -36,11 +37,8 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 const WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WEEKDAYS_EN = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
 
-function compact(value: number): string {
-  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return Math.round(value).toLocaleString("en-US");
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 function dollars(micros: number): string {
@@ -120,7 +118,7 @@ function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
           {zh ? "输入" : "INPUT"}
         </div>
         <div style={{ display: "flex", marginTop: 4, color: palette.paper, fontSize: 19, fontWeight: 700 }}>
-          {compact(flow.inputTokens)}
+          {compact(flow.inputTokens, zh)}
         </div>
       </div>
       <div style={{ display: "flex", position: "absolute", left: 222, top: 84, flexDirection: "column" }}>
@@ -128,7 +126,7 @@ function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
           {zh ? "缓存读" : "CACHE READ"}
         </div>
         <div style={{ display: "flex", marginTop: 3, color: palette.greenInk, fontSize: 34, fontWeight: 800 }}>
-          {compact(flow.cacheReadTokens)}
+          {compact(flow.cacheReadTokens, zh)}
         </div>
       </div>
       <div style={{ display: "flex", position: "absolute", right: 0, top: 22, flexDirection: "column", alignItems: "flex-start" }}>
@@ -136,7 +134,7 @@ function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
           {zh ? "输出" : "OUTPUT"}
         </div>
         <div style={{ display: "flex", marginTop: 3, color: palette.blueBright, fontSize: 19, fontWeight: 700 }}>
-          {compact(flow.outputTokens)}
+          {compact(flow.outputTokens, zh)}
         </div>
       </div>
       <div style={{ display: "flex", position: "absolute", right: 0, top: 96, flexDirection: "column", alignItems: "flex-start" }}>
@@ -144,7 +142,7 @@ function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
           {zh ? "推理" : "REASONING"}
         </div>
         <div style={{ display: "flex", marginTop: 3, color: palette.amber, fontSize: 19, fontWeight: 700 }}>
-          {compact(flow.reasoningTokens)}
+          {compact(flow.reasoningTokens, zh)}
         </div>
       </div>
     </div>
@@ -174,8 +172,8 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const ticks = [0, 1, 2, 3, 4].map((step) => (maximum * step) / 4);
   /* 退化数据(max≤1)下 compact 刻度会撞车(1,1,1,0,0):相邻去重,只标首个。 */
   const tickLabels = ticks.map((tick, index) => {
-    const text = compact(tick);
-    return index > 0 && text === compact(ticks[index - 1]) ? null : text;
+    const text = compact(tick, zh);
+    return index > 0 && text === compact(ticks[index - 1], zh) ? null : text;
   });
 
   let maPath: string | null = null;
@@ -585,7 +583,7 @@ function MetricsBand({ snapshot }: { snapshot: UsageShareSnapshot }) {
     {
       icon: "peak",
       label: zh ? `${snapshot.peakLabel} PEAK` : snapshot.peakLabel,
-      value: compact(snapshot.peakTokens),
+      value: compact(snapshot.peakTokens, zh),
       color: palette.paper,
     },
     {
@@ -692,7 +690,7 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
                     {safeMetric(tool.label, 12)}
                   </div>
                   <div style={{ display: "flex", marginTop: 4, color: palette.muted, fontSize: 12 }}>
-                    {compact(tool.tokens)} · {(tool.share * 100).toFixed(0)}%
+                    {compact(tool.tokens, zh)} · {(tool.share * 100).toFixed(0)}%
                   </div>
                 </div>
               </div>
@@ -752,7 +750,7 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
               whiteSpace: "nowrap",
             }}
           >
-            {`${compact(snapshot.topModelTokens)} · ${(snapshot.topModelShare * 100).toFixed(0)}%`}
+            {`${compact(snapshot.topModelTokens, zh)} · ${(snapshot.topModelShare * 100).toFixed(0)}%`}
           </div>
         </div>
       </div>
@@ -836,14 +834,16 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", fontSize: 104, lineHeight: 0.84, fontWeight: 800, letterSpacing: -5 }}>
-            {compact(snapshot.totalTokens)}
+            {compact(snapshot.totalTokens, zh)}
           </div>
           <div style={{ display: "flex", marginTop: 20, alignItems: "baseline" }}>
             <div style={{ display: "flex", color: palette.paper, fontSize: 22, fontWeight: 700, letterSpacing: 4 }}>
               {zh ? `${snapshot.rangeLabel} TOKEN` : `${snapshot.rangeLabelEn} TOKENS`}
             </div>
             <div style={{ display: "flex", marginLeft: 20, color: palette.muted, fontSize: 15, letterSpacing: 1 }}>
-              LIFETIME {compact(snapshot.lifetimeTokens)} · {snapshot.requests.toLocaleString("en-US")} REQUESTS
+              {zh
+                ? `累计 ${compact(snapshot.lifetimeTokens, zh)} · ${compactNumber(snapshot.requests, "zh")} 次请求`
+                : `LIFETIME ${compact(snapshot.lifetimeTokens, zh)} · ${snapshot.requests.toLocaleString("en-US")} REQUESTS`}
             </div>
           </div>
         </div>

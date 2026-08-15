@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import { compactNumber } from "@/src/lib/format";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDetail } from "@/src/lib/usage/model-meta";
@@ -21,11 +22,8 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 
-function compact(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 interface UsageRecordCurrency {
@@ -241,39 +239,39 @@ export default function UsageRecordsSection({
   columns.push({
     id: "input",
     header: zh ? "输入(含缓存写)" : "INPUT+CW",
-    cell: (row) => compact(row.inputTokens + row.cacheWriteInputTokens),
+    cell: (row) => compact(row.inputTokens + row.cacheWriteInputTokens, zh),
   });
   if (enabled.has("cacheWrite")) {
     columns.push({
       id: "cacheWrite",
       header: zh ? "缓存写" : "CACHE W",
-      cell: (row) => compact(row.cacheWriteInputTokens),
+      cell: (row) => compact(row.cacheWriteInputTokens, zh),
     });
   }
   columns.push(
     {
       id: "cacheRead",
       header: zh ? "缓存读" : "CACHE R",
-      cell: (row) => compact(row.cacheReadInputTokens),
+      cell: (row) => compact(row.cacheReadInputTokens, zh),
     },
     {
       id: "output",
       header: zh ? "输出" : "OUTPUT",
-      cell: (row) => compact(row.outputTokens),
+      cell: (row) => compact(row.outputTokens, zh),
     },
   );
   if (enabled.has("reasoning")) {
     columns.push({
       id: "reasoning",
       header: zh ? "推理" : "REASON",
-      cell: (row) => compact(row.reasoningOutputTokens),
+      cell: (row) => compact(row.reasoningOutputTokens, zh),
     });
   }
   columns.push(
     {
       id: "total",
       header: zh ? "总 TOKEN" : "TOTAL",
-      cell: (row) => compact(row.totalTokens),
+      cell: (row) => compact(row.totalTokens, zh),
     },
     {
       id: "hitRate",
@@ -291,7 +289,7 @@ export default function UsageRecordsSection({
     {
       id: "requests",
       header: zh ? "请求" : "REQS",
-      cell: (row) => compact(row.requests),
+      cell: (row) => compact(row.requests, zh),
     },
     {
       id: "cost",
@@ -402,8 +400,8 @@ export default function UsageRecordsSection({
                   </span>
                 </div>
                 <div className="mt-2 font-mono text-[11px] text-grey">
-                  {compact(row.totalTokens)} tokens · {recordCost(row, zh, currency)} · {zh ? "命中率" : "hit"}{" "}
-                  {formatHitRate(usageCacheHitRate(row))} · {compact(row.requests)} {zh ? "次请求" : "req"}
+                  {compact(row.totalTokens, zh)} tokens · {recordCost(row, zh, currency)} · {zh ? "命中率" : "hit"}{" "}
+                  {formatHitRate(usageCacheHitRate(row))} · {compact(row.requests, zh)} {zh ? "次请求" : "req"}
                 </div>
                 {row.modelDisplayName !== row.model && (
                   <div className="mt-1 truncate font-mono text-[9px] text-grey/70">raw model: {row.model}</div>
@@ -415,8 +413,8 @@ export default function UsageRecordsSection({
                     {enabled.has("effort") && <p>{zh ? "推理强度" : "Effort"} {row.reasoningEffort || "—"}</p>}
                     {enabled.has("agentVersion") && <p>{zh ? "Agent 版本" : "Agent version"} {row.agentVersion || "—"}</p>}
                     {enabled.has("modelProvider") && <p>{zh ? "模型供应方" : "Model provider"} {row.modelProvider || "—"}</p>}
-                    {enabled.has("cacheWrite") && <p>{zh ? "缓存写" : "Cache write"} {compact(row.cacheWriteInputTokens)}</p>}
-                    {enabled.has("reasoning") && <p>{zh ? "推理" : "Reasoning"} {compact(row.reasoningOutputTokens)}</p>}
+                    {enabled.has("cacheWrite") && <p>{zh ? "缓存写" : "Cache write"} {compact(row.cacheWriteInputTokens, zh)}</p>}
+                    {enabled.has("reasoning") && <p>{zh ? "推理" : "Reasoning"} {compact(row.reasoningOutputTokens, zh)}</p>}
                   </div>
                 )}
               </li>

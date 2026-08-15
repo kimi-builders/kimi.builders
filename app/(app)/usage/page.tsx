@@ -6,7 +6,7 @@ import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from 
 import AgentIcon from "@/components/AgentIcon";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { relTime } from "@/src/lib/format";
+import { compactNumber, relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
@@ -74,11 +74,8 @@ import {
 
 export const metadata: Metadata = { title: "用量 — kimi.builders" };
 
-function compact(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
+function compact(value: number, zh: boolean): string {
+  return compactNumber(value, zh ? "zh" : "en");
 }
 
 function duration(seconds: number, zh: boolean): string {
@@ -390,7 +387,7 @@ function DistributionCard({
                     </span>
                   </span>
                   <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
-                    {compact(row.tokens)} · {Math.round(pct)}%
+                    {compact(row.tokens, zh)} · {Math.round(pct)}%
                   </span>
                   <span className="w-[86px] shrink-0 text-right font-mono text-[11px] text-grey">
                     {row.hasUnpriced && row.costMicros === 0 ? (
@@ -755,7 +752,7 @@ export default async function UsagePage({
   const stripCells: StripCellSpec[] = [
     {
       label: zh ? "峰值 TOKEN" : "PEAK TOKENS",
-      value: compact(peak?.totalTokens ?? 0),
+      value: compact(peak?.totalTokens ?? 0, zh),
       note: peakNote,
     },
     {
@@ -774,20 +771,20 @@ export default async function UsagePage({
     },
     {
       label: zh ? "会话数" : "SESSIONS",
-      value: compact(totals.sessions),
+      value: compact(totals.sessions, zh),
       note: `${totals.activeDevices} ${zh ? "台活跃设备" : "active devices"}`,
       cur: totals.sessions,
       prev: previous.sessions,
     },
     {
       label: zh ? "总消息数" : "MESSAGES",
-      value: compact(totals.messages),
+      value: compact(totals.messages, zh),
       cur: totals.messages,
       prev: previous.messages,
     },
     {
       label: zh ? "用户消息" : "USER MSGS",
-      value: compact(totals.userMessages),
+      value: compact(totals.userMessages, zh),
       cur: totals.userMessages,
       prev: previous.userMessages,
     },
@@ -798,16 +795,16 @@ export default async function UsagePage({
     },
     {
       label: zh ? "请求数" : "REQUESTS",
-      value: compact(totals.requests),
+      value: compact(totals.requests, zh),
     },
     {
       label: zh ? "累计 TOKEN" : "LIFETIME TOKENS",
-      value: compact(overview.lifetimeTokens),
+      value: compact(overview.lifetimeTokens, zh),
       note: zh ? "全部已同步历史 · 保留维度筛选" : "all synced history · dimension filters apply",
     },
     {
       label: zh ? "推理" : "REASONING",
-      value: compact(totals.reasoningOutputTokens),
+      value: compact(totals.reasoningOutputTokens, zh),
     },
   ];
 
@@ -947,19 +944,19 @@ export default async function UsagePage({
           pill={<DeltaPill cur={totals.costMicros} prev={previous.costMicros} zh={zh} />}
           caption={
             zh
-              ? `vs 上一周期 · 覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} 使用估算假设` : ""}`
-              : `vs previous period · ${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens)} assumed` : ""}`
+              ? `vs 上一周期 · 覆盖 ${pricingCoverage} Token · ${unpricedCount} 未定价 / ${partialCount} 部分定价${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens, zh)} 使用估算假设` : ""}`
+              : `vs previous period · ${pricingCoverage} token coverage · ${unpricedCount} unpriced / ${partialCount} partial${overview.meta.assumedTokens > 0 ? ` · ${compact(overview.meta.assumedTokens, zh)} assumed` : ""}`
           }
         />
         <HeroCard
           label={zh ? "总 Token" : "Total tokens"}
           help={<UsageMethodologyDialog kind="tokens" compact {...methodologyProps} />}
-          value={compact(totals.totalTokens)}
+          value={compact(totals.totalTokens, zh)}
           pill={<DeltaPill cur={totals.totalTokens} prev={previous.totalTokens} zh={zh} />}
           caption={
             zh
-              ? `输入 ${compact(inputWithCacheWrite)} · 输出 ${compact(totals.outputTokens)} · 缓存读 ${compact(totals.cacheReadInputTokens)}`
-              : `Input ${compact(inputWithCacheWrite)} · output ${compact(totals.outputTokens)} · cache read ${compact(totals.cacheReadInputTokens)}`
+              ? `输入 ${compact(inputWithCacheWrite, zh)} · 输出 ${compact(totals.outputTokens, zh)} · 缓存读 ${compact(totals.cacheReadInputTokens, zh)}`
+              : `Input ${compact(inputWithCacheWrite, zh)} · output ${compact(totals.outputTokens, zh)} · cache read ${compact(totals.cacheReadInputTokens, zh)}`
           }
         />
         <HeroCard
@@ -969,8 +966,8 @@ export default async function UsagePage({
           pill={hitRate !== null ? <HitRatePill rate={hitRate} zh={zh} /> : undefined}
           caption={
             zh
-              ? `缓存写 ${compact(totals.cacheWriteInputTokens)} · 命中率越高，费用越低`
-              : `Cache write ${compact(totals.cacheWriteInputTokens)} · higher hit rate, lower cost`
+              ? `缓存写 ${compact(totals.cacheWriteInputTokens, zh)} · 命中率越高，费用越低`
+              : `Cache write ${compact(totals.cacheWriteInputTokens, zh)} · higher hit rate, lower cost`
           }
         />
       </section>
