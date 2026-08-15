@@ -1,7 +1,6 @@
-/* Vercel Cron: 每日 03:17 UTC 按 usage_settings.retention_days 清理过期用量数据。
-   注意:Vercel Hobby 计划只支持每日 cron —— 本任务是每日,无需调整;
-   CRON_SECRET 需在 Vercel 环境变量配置,Vercel 调用时会自动带上
-   Authorization: Bearer <CRON_SECRET>。 */
+/* 服务器 crontab(每日 03:17 UTC):按 usage_settings.retention_days 清理过期用量数据。
+   由服务器 cron-call.sh 携带 Authorization: Bearer <CRON_SECRET> 调用
+   (原 Vercel Cron 已迁移,vercel.json 同步删除)。 */
 import { applyUsageRetention } from "@/src/lib/usage/retention";
 
 export async function GET(request: Request) {

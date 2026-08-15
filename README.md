@@ -10,8 +10,9 @@
 
 - **框架**：Next.js 16（App Router · Turbopack）+ React 19 + TypeScript
 - **样式**：Tailwind CSS v4，品牌令牌见 `app/globals.css`
-- **数据库**：MySQL（`mysql2` 连接池，见 `src/lib/db.ts`）；表结构定义在 `db/schema.sql`
-- **部署**：Vercel
+- **数据库**：MySQL（`mysql2` 连接池，见 `src/lib/db.ts`）；表结构定义在 `db/schema.sql`，演进走 `db/migrations/`（`npm run db:migrate`）
+- **包管理**：npm（唯一锁文件 `package-lock.json`，CI 用 `npm ci`）
+- **部署**：自托管 —— GitHub Actions（`.github/workflows/deploy.yml`）构建 standalone 产物，rsync 到服务器，先跑数据库迁移再 PM2 原子重启（`ops/deploy-release.sh`），最后按 `/api/health` 的版本号校验本次提交已上线。定时任务在服务器 crontab：`cron-call.sh` 携带 `CRON_SECRET` 调用 `/api/cron/*`（AI 回帖重试每 10 分钟、用量/分析清理每日、数据库备份每日）
 
 ## 目录结构
 
