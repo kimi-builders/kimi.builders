@@ -620,7 +620,7 @@ export default async function UsagePage({
       <div className="usage-dashboard">
         {header}
         <UsageFirstRun
-          hasAuthorizedDevice={(devices?.length ?? 0) > 0}
+          hasAuthorizedDevice={devices?.some((device) => !device.revokedAt) ?? false}
           currentRange={overview.range}
           tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
           tzOffsetMinutes={overview.meta.tzOffsetMinutes}

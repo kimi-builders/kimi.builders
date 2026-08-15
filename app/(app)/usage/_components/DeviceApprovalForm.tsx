@@ -32,8 +32,8 @@ export default function DeviceApprovalForm({
         </p>
         <p className="mt-2 text-xs leading-relaxed text-grey">
           {zh
-            ? "可以返回终端了。API Key 只会在那里显示并保存一次。"
-            : "Return to your terminal. The API key is delivered and stored there only once."}
+            ? "可以返回本地看板或终端了。设备 Key 只会交付并保存一次。"
+            : "Return to the local dashboard or terminal. The device key is delivered and stored only once."}
         </p>
         <a href="/usage" className="mt-4 inline-flex min-h-11 items-center text-sm text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           {zh ? "返回用量看板 →" : "Back to usage →"}
@@ -88,8 +88,8 @@ export default function DeviceApprovalForm({
       {(state.error || state.status) && (
         <p role="alert" className="border-l-2 border-red-500 pl-3 text-xs text-red-400">
           {zh
-            ? "验证码不可用、已过期，或登录状态已失效。请在终端重新开始连接。"
-            : "The code is unavailable or expired, or your session ended. Restart linking in the terminal."}
+            ? "验证码不可用、已过期，或登录状态已失效。请在本地看板或终端重新开始连接。"
+            : "The code is unavailable or expired, or your session ended. Restart linking in the local dashboard or terminal."}
         </p>
       )}
 

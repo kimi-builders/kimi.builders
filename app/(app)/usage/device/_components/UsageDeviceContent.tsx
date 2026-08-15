@@ -10,6 +10,12 @@ import {
   usageSurfaceLabel,
 } from "@/src/lib/usage/device-label";
 import { normalizeUserCode } from "@/src/lib/usage/crypto";
+import {
+  USAGE_DASHBOARD_COMMAND,
+  USAGE_INIT_COMMAND,
+  usageDashboardConnectionGuide,
+  usageInitMeaning,
+} from "@/src/lib/usage/device-onboarding";
 import CopyUsageCommandButton from "../../_components/CopyUsageCommandButton";
 import DeviceApprovalForm from "../../_components/DeviceApprovalForm";
 import DeviceCodeUrlCleanup from "./DeviceCodeUrlCleanup";
@@ -27,6 +33,8 @@ export default async function UsageDeviceContent({
   const rawCode = (await searchParams).code;
   const code = normalizeUserCode(Array.isArray(rawCode) ? rawCode[0] ?? "" : rawCode ?? "");
   const preview = code ? await getDeviceAuthorizationPreview(code) : null;
+  const previewStatus = preview?.status;
+  const remainingMinutes = preview ? Math.ceil(preview.expiresInSeconds / 60) : 0;
   const suggestedDeviceName = preview ? usageDeviceDisplayName(preview) : "";
   const returnTo = `/usage/device${code ? `?code=${encodeURIComponent(code)}` : ""}`;
 
@@ -43,50 +51,59 @@ export default async function UsageDeviceContent({
       )}
       <p className="mt-3 text-sm leading-relaxed text-grey">
         {zh
-          ? "只批准你刚刚在终端发起的请求。kimi.builders 永远不会要求你的 Kimi、Moonshot 或其他供应商凭据。"
-          : "Only approve a request you just started in your terminal. kimi.builders never asks for Kimi, Moonshot, or other provider credentials."}
+          ? "只批准你刚刚在本地看板或终端发起的请求。kimi.builders 永远不会要求你的 Kimi、Moonshot 或其他供应商凭据。"
+          : "Only approve a request you just started in your local dashboard or terminal. kimi.builders never asks for Kimi, Moonshot, or other provider credentials."}
       </p>
 
       {!code && (
         <>
-          {/* 连接新设备(2026-08-14):先有命令再有码——没发起过请求的人
-              到这一步不会卡住;命令行样式与「同步数据」弹窗一致 */}
+          {/* 连接新设备:本地看板是新手主路径;init 保留为自动化/终端等价入口。 */}
           <section className="mt-7 rounded-xl border border-line bg-card p-4">
             <h2 className="font-mono text-[11px] tracking-[0.18em] text-grey">
               {zh ? "连接新设备" : "CONNECT A NEW DEVICE"}
             </h2>
             <p className="mt-1.5 text-[11px] leading-relaxed text-grey">
-              {zh
-                ? "还没有验证码?在终端运行 init——它会打印 8 位验证码并打开本页:"
-                : "No code yet? Run init in your terminal — it prints the 8-character code and opens this page:"}
+              {usageDashboardConnectionGuide(zh)}
             </p>
             <div className="mt-2 flex items-center gap-2">
               <span className="w-10 shrink-0 font-mono text-[11px] text-grey">
-                {zh ? "连接" : "Link"}
+                {zh ? "看板" : "UI"}
               </span>
               <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
                 <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-3 py-2 font-mono text-[11px] text-paper">
-                  npx @kimi.builders/usage@latest init
+                  {USAGE_DASHBOARD_COMMAND}
                 </code>
                 <CopyUsageCommandButton
-                  command="npx @kimi.builders/usage@latest init"
+                  command={USAGE_DASHBOARD_COMMAND}
                   zh={zh}
                 />
               </div>
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-grey/80">
-              {zh
-                ? "项目名默认不上传;同步 Key 可随时在「设备」里撤销。"
-                : "Project names stay off by default; revoke a sync key anytime under Devices."}
-            </p>
+            <details className="mt-3 border-t border-line pt-3">
+              <summary className="cursor-pointer font-mono text-[11px] text-grey hover:text-paper">
+                {zh ? "终端备用方式" : "CLI fallback"}
+              </summary>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="w-10 shrink-0 font-mono text-[11px] text-grey">CLI</span>
+                <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
+                  <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-3 py-2 font-mono text-[11px] text-paper">
+                    {USAGE_INIT_COMMAND}
+                  </code>
+                  <CopyUsageCommandButton command={USAGE_INIT_COMMAND} zh={zh} />
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-grey/80">
+                {usageInitMeaning(zh)}
+              </p>
+            </details>
           </section>
 
           <form method="get" className="mt-4 rounded-xl border border-line bg-card p-4">
             <label htmlFor="usage-device-code" className="font-mono text-[11px] tracking-[0.18em] text-grey">
-              {zh ? "终端验证码" : "TERMINAL CODE"}
+              {zh ? "连接验证码" : "CONNECTION CODE"}
             </label>
             <p id="usage-device-code-help" className="mt-1 text-[11px] leading-relaxed text-grey">
-              {zh ? "输入 Collector 在终端显示的 8 位验证码。" : "Enter the 8-character code shown by the Collector."}
+              {zh ? "输入本地看板或 Collector 显示的 8 位验证码。" : "Enter the 8-character code shown by the local dashboard or Collector."}
             </p>
             <div className="mt-2 flex gap-2">
               <input
@@ -115,14 +132,14 @@ export default async function UsageDeviceContent({
           <DeviceCodeUrlCleanup />
           <p className="text-sm text-paper">{zh ? "验证码无效或不存在。" : "Code not found."}</p>
           <p className="mt-2 text-xs leading-relaxed text-grey">
-            {zh ? "请回到终端重新运行 init。" : "Return to the terminal and run init again."}
+            {zh ? "请回到本地看板重新生成，或在终端重新运行 init。" : "Generate a new code in the local dashboard, or run init again in the terminal."}
           </p>
         </div>
       )}
 
       {preview && (
         <>
-          {preview.status !== "pending" ? <DeviceCodeUrlCleanup /> : null}
+          {previewStatus !== "pending" ? <DeviceCodeUrlCleanup /> : null}
           <section className="mt-7 rounded-xl border border-line bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -137,7 +154,7 @@ export default async function UsageDeviceContent({
                 {usageSurfaceLabel(preview.surface)} · {usagePlatformLabel(preview.platform)}
               </span>
             </div>
-            <dl className="mt-4 grid gap-3 border-t border-line pt-4 text-xs sm:grid-cols-2">
+            <dl className="mt-4 grid gap-3 border-t border-line pt-4 text-xs sm:grid-cols-3">
               <div>
                 <dt className="text-grey">{zh ? "客户端" : "Client"}</dt>
                 <dd className="mt-1 text-paper">{preview.clientName}</dd>
@@ -146,6 +163,16 @@ export default async function UsageDeviceContent({
                 <dt className="text-grey">{zh ? "建议设备名" : "Suggested device"}</dt>
                 <dd className="mt-1 text-paper">{suggestedDeviceName}</dd>
               </div>
+              {(previewStatus === "pending" || previewStatus === "expired") && (
+                <div>
+                  <dt className="text-grey">{zh ? "验证码有效期" : "Code lifetime"}</dt>
+                  <dd className="mt-1 text-paper">
+                    {previewStatus === "expired"
+                      ? (zh ? "已过期" : "Expired")
+                      : (zh ? `约 ${remainingMinutes} 分钟` : `About ${remainingMinutes} min`)}
+                  </dd>
+                </div>
+              )}
             </dl>
           </section>
 
@@ -174,15 +201,15 @@ export default async function UsageDeviceContent({
             </div>
           </section>
 
-          {preview.status === "approved" || preview.status === "delivered" ? (
+          {previewStatus === "approved" || previewStatus === "delivered" ? (
             <div className="mt-6 rounded-xl border border-blue/40 bg-blue/5 p-4">
               <p className="font-mono text-sm font-semibold text-paper">
                 {zh ? "设备已连接" : "Device connected"}
               </p>
               <p className="mt-2 text-xs leading-relaxed text-grey">
                 {zh
-                  ? "可以返回终端了。设备 Key 只会在那里交付并保存一次。"
-                  : "Return to your terminal. The device key is delivered and stored there only once."}
+                  ? "可以返回本地看板或终端了。设备 Key 只会交付并保存一次。"
+                  : "Return to the local dashboard or terminal. The device key is delivered and stored only once."}
               </p>
               <a href="/usage" className="mt-4 inline-flex min-h-11 items-center text-sm text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
                 {zh ? "返回用量看板 →" : "Back to usage →"}
@@ -206,7 +233,7 @@ export default async function UsageDeviceContent({
                 </a>
               </div>
             </div>
-          ) : preview.status === "pending" ? (
+          ) : previewStatus === "pending" ? (
             <DeviceApprovalForm
               userCode={code!}
               suggestedName={suggestedDeviceName}
@@ -214,7 +241,7 @@ export default async function UsageDeviceContent({
             />
           ) : (
             <div className="mt-6 rounded-xl border border-line bg-card p-4 text-sm text-grey">
-              {zh ? `这次请求当前状态：${preview.status}` : `This request is currently ${preview.status}.`}
+              {zh ? `这次请求当前状态：${previewStatus}` : `This request is currently ${previewStatus}.`}
             </div>
           )}
         </>

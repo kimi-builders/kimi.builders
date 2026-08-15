@@ -1,10 +1,18 @@
 "use client";
 
 /* 「同步数据」弹窗(2026-08-14):已同步用户的日常入口——单次同步 / 后台服务
-   四条管理命令 / 连接新设备。命令口径与 usage-cli README 一致
-   (npx @kimi.builders/usage@latest …),复制按钮复用 CopyUsageCommandButton。 */
+   四条管理命令 / 连接新设备。连接和上传是两个明确步骤。
+   分工:sync/daemon 命令由本文件的 PKG 拼接;dashboard/init 与口径文案走
+   src/lib/usage/device-onboarding.ts(单一事实源)。
+   复制按钮复用 CopyUsageCommandButton。 */
 import { useRef } from "react";
 import { RefreshCw, X } from "lucide-react";
+import {
+  USAGE_DASHBOARD_COMMAND,
+  USAGE_INIT_COMMAND,
+  usageDashboardConnectionGuide,
+  usageInitMeaning,
+} from "@/src/lib/usage/device-onboarding";
 import CopyUsageCommandButton from "./CopyUsageCommandButton";
 
 const PKG = "npx @kimi.builders/usage@latest";
@@ -101,13 +109,17 @@ export default function UsageSyncDialog({ zh }: { zh: boolean }) {
             <h3 className="font-mono text-[11px] tracking-[0.14em] text-grey">
               {zh ? "连接新设备" : "CONNECT A NEW DEVICE"}
             </h3>
-            <div className="mt-2">
-              <CommandRow label={zh ? "连接" : "Link"} command={`${PKG} init`} zh={zh} />
+            <p className="mt-1 text-[11.5px] leading-relaxed text-grey">
+              {usageDashboardConnectionGuide(zh)}
+            </p>
+            <div className="mt-2 space-y-2">
+              <CommandRow label={zh ? "看板" : "UI"} command={USAGE_DASHBOARD_COMMAND} zh={zh} />
+              <CommandRow label={zh ? "终端" : "CLI"} command={USAGE_INIT_COMMAND} zh={zh} />
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-grey">
-              {zh
-                ? "项目名默认不上传;同步 Key 可随时在「设备」里撤销。"
-                : "Project names stay off by default; revoke a sync key anytime under Devices."}
+              {usageInitMeaning(zh)} {zh
+                ? "设备 Key 可随时在“设备”中撤销。"
+                : "Revoke the device key anytime under Devices."}
             </p>
           </section>
         </div>

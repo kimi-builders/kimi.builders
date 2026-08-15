@@ -42,6 +42,7 @@ export interface DeviceAuthorizationPreview {
   surface: string;
   status: string;
   expiresAt: Date;
+  expiresInSeconds: number;
 }
 
 export async function createDeviceAuthorization(input: Record<string, unknown>): Promise<{
@@ -101,7 +102,13 @@ export async function getDeviceAuthorizationPreview(
   const userCode = normalizeUserCode(rawUserCode);
   if (!userCode) return null;
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT client_name, requested_device_name, platform, surface, status, expires_at
+    `SELECT client_name, requested_device_name, platform, surface,
+            CASE
+              WHEN status = 'pending' AND expires_at <= UTC_TIMESTAMP(3) THEN 'expired'
+              ELSE status
+            END AS status,
+            expires_at,
+            GREATEST(0, TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(3), expires_at)) AS expires_in_seconds
      FROM usage_device_codes
      WHERE user_code_hash = ?
      LIMIT 1`,
@@ -116,6 +123,7 @@ export async function getDeviceAuthorizationPreview(
     surface: String(row.surface),
     status: String(row.status),
     expiresAt: row.expires_at as Date,
+    expiresInSeconds: Number(row.expires_in_seconds),
   };
 }
 

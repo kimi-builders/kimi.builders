@@ -155,8 +155,8 @@ async function main() {
             SUM(pricing_source_url <> '' AND verified_at IS NOT NULL) AS verified_count
        FROM usage_model_prices`,
   );
-  assert.equal(Number(priceCount[0].count), 47); // v1–v4 42 + GPT-5.6 long-context 5
-  assert.equal(Number(priceCount[0].verified_count), 47);
+  assert.equal(Number(priceCount[0].count), 48); // v1–v4 42 + GPT-5.6 long-context 5 + kimi-for-coding(20260915)
+  assert.equal(Number(priceCount[0].verified_count), 48);
   const [correctedPrices] = await pool.query<RowDataPacket[]>(
     `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok
        FROM usage_model_prices

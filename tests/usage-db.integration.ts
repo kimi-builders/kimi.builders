@@ -7,6 +7,7 @@ import {
   decideDeviceAuthorization,
   exchangeDeviceCode,
   revokeUsageDevice,
+  revokeUsageDeviceById,
 } from "../src/lib/usage/device";
 import { ingestUsage } from "../src/lib/usage/ingest";
 import { getUsageDashboard } from "../src/lib/usage/query";
@@ -171,8 +172,9 @@ async function main() {
   );
   assert.equal((await getUsageDashboard(userId, 7)).totals.totalTokens, 20);
 
-  assert.equal(await revokeUsageDevice(userId, token.deviceId, false), true);
+  assert.equal(await revokeUsageDeviceById(userId, principal.deviceId, false), true);
   assert.equal(await authenticateUsageRequest(request, "ingest"), null);
+  assert.equal(await revokeUsageDevice(userId, token.deviceId, false), true);
   } finally {
     await pool.query("DELETE FROM users WHERE id = ?", [userId]);
     await pool.end();

@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { CalendarRange, KeyRound, SearchX, ShieldCheck } from "lucide-react";
+import {
+  USAGE_DASHBOARD_COMMAND,
+  USAGE_INIT_COMMAND,
+  USAGE_SYNC_COMMAND,
+  usageInitMeaning,
+  usageSyncMeaning,
+} from "@/src/lib/usage/device-onboarding";
 import CopyUsageCommandButton from "./CopyUsageCommandButton";
 import UsageMethodologyDialog from "./UsageMethodologyDialog";
 
@@ -16,10 +23,7 @@ export function UsageFirstRun({
   tzOffsetMinutes: number;
   zh: boolean;
 }) {
-  const localCmd = "npx @kimi.builders/usage@latest dashboard";
-  const command = hasAuthorizedDevice
-    ? "npx @kimi.builders/usage@latest sync"
-    : "npx @kimi.builders/usage@latest init";
+  const command = hasAuthorizedDevice ? USAGE_SYNC_COMMAND : USAGE_INIT_COMMAND;
   /* 与 usage-cli README「支持的本地用量来源」一致:11 个自动扫描 + Cursor 显式启用 */
   const sources = [
     "Kimi Code", "Claude Code", "Codex", "OpenCode", "Gemini CLI", "Antigravity",
@@ -62,9 +66,9 @@ export function UsageFirstRun({
               </p>
               <div className="mt-2 flex min-w-0 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
                 <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-4 py-3 font-mono text-xs text-paper">
-                  {localCmd}
+                  {USAGE_DASHBOARD_COMMAND}
                 </code>
-                <CopyUsageCommandButton command={localCmd} zh={zh} />
+                <CopyUsageCommandButton command={USAGE_DASHBOARD_COMMAND} zh={zh} />
               </div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-grey/80">
                 {zh
@@ -83,9 +87,7 @@ export function UsageFirstRun({
                 <CopyUsageCommandButton command={command} zh={zh} />
               </div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-grey/80">
-                {zh
-                  ? "init 一次完成设备连接与首传;之后用 sync 增量同步。"
-                  : "init links this device and does the first upload; sync keeps it incrementally updated."}
+                {hasAuthorizedDevice ? usageSyncMeaning(zh) : usageInitMeaning(zh)}
               </p>
             </div>
           </div>
@@ -108,15 +110,15 @@ export function UsageFirstRun({
           <ol className="mt-5 grid gap-3 text-sm text-grey sm:grid-cols-3">
             <li className="border-l-2 border-blue/60 pl-3">
               <span className="block font-mono text-[11px] text-blue">01</span>
-              <span className="mt-1 block">{zh ? "检测本地日志并预览字段" : "Detect logs and preview fields"}</span>
+              <span className="mt-1 block">{zh ? "打开本地看板并选择 Agent 扫描范围" : "Open the local dashboard and choose agent scan scope"}</span>
             </li>
             <li className="border-l-2 border-blue/60 pl-3">
               <span className="block font-mono text-[11px] text-blue">02</span>
-              <span className="mt-1 block">{zh ? "在浏览器批准这台设备" : "Approve this device in the browser"}</span>
+              <span className="mt-1 block">{zh ? "连接并批准设备，此时仍未上传" : "Connect and approve the device; nothing is uploaded yet"}</span>
             </li>
             <li className="border-l-2 border-blue/60 pl-3">
               <span className="block font-mono text-[11px] text-blue">03</span>
-              <span className="mt-1 block">{zh ? "完成幂等增量同步" : "Complete an idempotent sync"}</span>
+              <span className="mt-1 block">{zh ? "选择社区同步范围，再开始增量同步" : "Choose community scope, then start incremental sync"}</span>
             </li>
           </ol>
 
