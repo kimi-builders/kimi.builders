@@ -25,9 +25,11 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { isWorkKind, WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
 import { getClaimAllowance } from "@/src/lib/works";
+import { getWorksView } from "@/src/lib/works-view-server";
 import { loadMoreWorksAction } from "./actions";
 import { loadWorksCards } from "./_components/works-page";
 import WorksFilterBar from "./_components/WorksFilterBar";
+import WorksViewToggle from "./_components/WorksViewToggle";
 
 export const metadata: Metadata = { title: "作品库 — kimi.builders" };
 
@@ -46,8 +48,10 @@ export default async function WorksPage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const zh = locale === "zh";
+  /* 视图偏好(cookie):grid=封面墙(两/三列),list=行式(默认) */
+  const view = await getWorksView();
   const page = await loadWorksCards(
-    { awesome: false, sort: currentSort, agents: activeAgents, kinds: activeKinds },
+    { awesome: false, sort: currentSort, agents: activeAgents, kinds: activeKinds, view },
     user,
     locale,
   );
@@ -138,6 +142,8 @@ export default async function WorksPage({
           ]}
           selected={{ agent: activeAgents, kind: activeKinds }}
         />
+        {/* 视图切换:行式 / 封面墙(cookie 持久,两页共用) */}
+        <WorksViewToggle locale={locale} view={view} />
       </div>
 
       {page.nodes.length === 0 ? (
@@ -176,12 +182,16 @@ export default async function WorksPage({
           )}
         </div>
       ) : (
-        <div className="mt-5 grid gap-4">
+        <div
+          className={`mt-5 grid gap-4 ${
+            view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
+          }`}
+        >
           {page.nodes}
           {/* key 带首屏规模与游标:卡片行内删除触发 refresh 后首屏一变即 remount,
-              已追加的页作废(同 CommentSection 语义) */}
+              已追加的页作废(同 CommentSection 语义);视图切换同理 remount */}
           <LoadMore
-            key={`works-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
+            key={`works-${view}-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
             initialCursor={page.nextCursor}
             load={loadMoreWorksAction.bind(null, {
               awesome: false,

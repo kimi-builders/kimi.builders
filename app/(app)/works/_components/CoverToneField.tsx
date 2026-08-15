@@ -38,12 +38,17 @@ export default function CoverToneField({
                 : "border-line text-grey hover:border-paper/30 hover:text-paper"
             }`}
           >
+            {/* swatch 与名称砖同源:.work-tone-* 随主题换色,所见即所得 */}
             <span
               aria-hidden="true"
-              className="size-3.5 rounded-[4px] border border-line"
+              className={
+                item.dark
+                  ? `work-tone work-tone-${item.id} size-3.5 rounded-[4px] border border-line`
+                  : "size-3.5 rounded-[4px] border border-line"
+              }
               style={
-                item.hex
-                  ? { background: item.hex }
+                item.dark
+                  ? undefined
                   : { background: "linear-gradient(135deg, #0e0e13 50%, #f4eee4 50%)" }
               }
             />

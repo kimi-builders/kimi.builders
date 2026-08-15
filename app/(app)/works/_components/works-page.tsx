@@ -12,6 +12,7 @@ import { canModerate } from "@/src/lib/featured";
 import type { Locale } from "@/src/lib/i18n";
 import { getPublicWorksFirstPage } from "@/src/lib/public-works-cache";
 import { publicWorksCacheScope } from "@/src/lib/public-works";
+import type { WorksView } from "@/src/lib/works-view";
 import { getVerifiableTokenTotals } from "@/src/lib/usage/verifiable";
 import {
   claimBadgeOf,
@@ -21,6 +22,7 @@ import {
   getWorksPage,
 } from "@/src/lib/works";
 import WorkCard from "./WorkCard";
+import WorkGridCard from "./WorkGridCard";
 
 export interface WorksPageData {
   nodes: ReactNode[];
@@ -34,6 +36,7 @@ export async function loadWorksCards(
     agents?: string[];
     kinds?: string[];
     scope_?: string;
+    view?: WorksView;
   },
   user: SessionUser | null,
   locale: Locale,
@@ -69,9 +72,12 @@ export async function loadWorksCards(
   const myPaused = user
     ? claimsPaused(totals.get(user.id) ?? 0, claimSums.get(user.id) ?? 0)
     : false;
+  /* 视图(20260918):grid=封面墙(WorkGridCard),list=行式(WorkCard,默认);
+     /u/[handle] 不传 view,恒为行式 */
+  const Card = scope.view === "grid" ? WorkGridCard : WorkCard;
   return {
     nodes: page.works.map((w) => (
-      <WorkCard
+      <Card
         key={w.id}
         work={w}
         locale={locale}

@@ -394,3 +394,57 @@ html[data-theme="light"] .theme-card-light {
 :root[data-theme="light"] .work-cover-tile .work-cover-tile__eyebrow {
   color: var(--color-grey);
 }
+
+/* 名称砖 · 固定色档(20260918 双主题 + 降饱和统一色温;红档同日下线):色值与
+   主题切换都在 CSS——深色取降饱和深调(冷白文字,全站同一套白),浅色取同色相
+   淡染(色档深色文字),深色块不再贴浅底。色档 id 与 src/lib/cover-tones.ts
+   注册表一一对应。
+   .work-tone 公共层:底部渐变给纯平色一点层次;文字冷白 88%,eyebrow 走继承
+   降不透明度。 */
+.work-tone {
+  position: relative;
+  color: rgb(255 255 255 / 0.88);
+}
+.work-tone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.28), transparent 36%);
+}
+.work-tone .work-tone__eyebrow {
+  color: inherit;
+  opacity: 0.55;
+}
+.work-tone .work-tone__logo {
+  border-color: rgb(255 255 255 / 0.15);
+}
+.work-tone-green {
+  background: #1e4d3a;
+}
+.work-tone-blue {
+  background: #153e75;
+}
+.work-tone-black {
+  background: #232329;
+}
+:root[data-theme="light"] .work-tone {
+  color: #3a3a42;
+}
+:root[data-theme="light"] .work-tone::after {
+  background: linear-gradient(to top, rgb(255 255 255 / 0.4), transparent 36%);
+}
+:root[data-theme="light"] .work-tone .work-tone__logo {
+  border-color: rgb(0 0 0 / 0.12);
+}
+:root[data-theme="light"] .work-tone-green {
+  background: #e3ede7;
+  color: #1e4d3a;
+}
+:root[data-theme="light"] .work-tone-blue {
+  background: #e2ebf8;
+  color: #153e75;
+}
+:root[data-theme="light"] .work-tone-black {
+  background: #ececef;
+}

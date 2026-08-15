@@ -27,6 +27,7 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
+import { getWorksView } from "@/src/lib/works-view-server";
 import {
   areWorkImageKeys,
   canViewWork,
@@ -341,6 +342,8 @@ export async function loadMoreWorksAction(
     scope.scope_ && ["base", "eco", "part"].includes(scope.scope_)
       ? scope.scope_
       : undefined;
+  /* 视图随 cookie(与首屏同源):「加载更多」追加的卡片与首屏同版式 */
+  const view = await getWorksView();
   const data = await loadWorksCards(
     {
       awesome: scope.awesome,
@@ -348,6 +351,7 @@ export async function loadMoreWorksAction(
       agents,
       kinds,
       scope_: scopeFilter,
+      view,
     },
     user,
     locale,

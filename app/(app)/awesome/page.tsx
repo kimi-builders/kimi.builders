@@ -23,9 +23,11 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { isWorkKind, WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
+import { getWorksView } from "@/src/lib/works-view-server";
 import { loadMoreWorksAction } from "../works/actions";
 import { loadWorksCards } from "../works/_components/works-page";
 import WorksFilterBar from "../works/_components/WorksFilterBar";
+import WorksViewToggle from "../works/_components/WorksViewToggle";
 
 export const metadata: Metadata = { title: "Awesome — kimi.builders" };
 
@@ -51,6 +53,8 @@ export default async function AwesomePage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const zh = locale === "zh";
+  /* 视图偏好(cookie,与 /works 共用):grid=封面墙,list=行式(默认) */
+  const view = await getWorksView();
   const page = await loadWorksCards(
     {
       awesome: true,
@@ -58,6 +62,7 @@ export default async function AwesomePage({
       agents: activeAgents,
       kinds: activeKinds,
       scope_: activeScope,
+      view,
     },
     user,
     locale,
@@ -159,6 +164,8 @@ export default async function AwesomePage({
             scope: activeScope ? [activeScope] : [],
           }}
         />
+        {/* 视图切换:行式 / 封面墙(cookie 持久,与 /works 共用偏好) */}
+        <WorksViewToggle locale={locale} view={view} />
       </div>
 
       {page.nodes.length === 0 ? (
@@ -169,10 +176,14 @@ export default async function AwesomePage({
           </p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-4">
+        <div
+          className={`mt-5 grid gap-4 ${
+            view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
+          }`}
+        >
           {page.nodes}
           <LoadMore
-            key={`awesome-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${activeScope ?? ""}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
+            key={`awesome-${view}-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${activeScope ?? ""}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
             initialCursor={page.nextCursor}
             load={loadMoreWorksAction.bind(null, {
               awesome: true,

@@ -276,10 +276,10 @@ export default function WorkMediaFields({
             <img
               src={cover.url}
               alt=""
-              className="h-16 w-28 rounded-lg border border-line object-cover"
+              className="h-24 w-40 rounded-lg border border-line object-cover"
             />
           ) : (
-            <span className="flex h-16 w-28 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
+            <span className="flex h-24 w-40 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
               <ImagePlus size={18} aria-hidden="true" />
             </span>
           )}
