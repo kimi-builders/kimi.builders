@@ -63,9 +63,13 @@ export default async function WorkRail({
             类型/模型/标签/链接/发布/支持/评论 */}
         <dl className="font-mono text-[11px]">
           <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
-            <dt className="text-grey">{t(locale, "works.sideAuthor")}</dt>
+            <dt className="text-grey">
+              {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
+            </dt>
             <dd className="min-w-0 text-paper">
-              {work.handle ? (
+              {work.source === "awesome" && work.authorLabel ? (
+                <span className="truncate">{work.authorLabel}</span>
+              ) : work.handle ? (
                 <Link
                   href={`/u/${work.handle}`}
                   className="flex items-center gap-1.5 transition-colors hover:text-blue"

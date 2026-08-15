@@ -437,8 +437,12 @@ export default function WorkMediaFields({
       )}
 
       {/* ---- 封面风格(无配图时的名称砖)---- */}
-      {images.length === 0 && (
+      {images.length === 0 ? (
         <CoverToneField locale={locale} initialTone={initialTone} />
+      ) : (
+        /* 有配图时不显示色板,但隐藏字段要把已选色调带回去——
+           否则编辑一次就被重置成 theme(2026-08-14) */
+        <input type="hidden" name="coverTone" value={initialTone} readOnly />
       )}
 
       {crop && (

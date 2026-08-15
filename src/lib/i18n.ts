@@ -770,6 +770,7 @@ const DICT = {
     en: "External recommendations must name the original author/team (linked to their GitHub profile). Awesome entries never appear on your works wall and carry no claim badge. Built it yourself? Submit to the works wall.",
   },
   "awesome.agentDist": { zh: "Agent 分布", en: "AGENT BREAKDOWN" },
+  "awesome.recommenderShort": { zh: "推荐人", en: "rec. by" },
   "awesome.agentDistNote": { zh: "按参与项目数", en: "by items" },
   /* ---- 编辑精选(每周精选 v0)---- */
   "featured.badge": { zh: "编辑精选", en: "EDITOR'S PICK" },
@@ -1161,6 +1162,10 @@ const DICT = {
   },
   "works.backToWorks": { zh: "返回作品墙", en: "Back to works" },
   "works.sideAuthor": { zh: "构建者", en: "BUILDER" },
+  "works.sideOriginalAuthor": { zh: "原作者", en: "AUTHOR" },
+  "works.metaKind": { zh: "类型", en: "TYPE" },
+  "works.metaAgents": { zh: "参与构建", en: "BUILT WITH" },
+  "works.metaScope": { zh: "收录", en: "SCOPE" },
   "works.sideLinks": { zh: "链接", en: "LINKS" },
   "works.sideInfo": { zh: "信息", en: "INFO" },
   "works.sideModels": { zh: "开发模型", en: "MODELS" },

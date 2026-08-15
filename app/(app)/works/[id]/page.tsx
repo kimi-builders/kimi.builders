@@ -151,7 +151,36 @@ export default async function WorkPage({
       {/* meta 行:作者 · 时间 · 类型 · 口径/状态 · 声明投入(蓝) · ★精选(蓝);
           私密/屏蔽保留警示 pill(仅作者/治理可见) */}
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[11px] text-grey">
-        {work.handle ? (
+        {work.source === "awesome" && work.authorLabel ? (
+          <>
+            {/* 原作者可点跳 GitHub 主页(句柄形状校验,非句柄降级纯文本);
+                推荐人在详情页保留(列表卡片不显示,2026-08-14 决定) */}
+            {/^[A-Za-z0-9-]{1,39}$/.test(work.authorLabel) ? (
+              <a
+                href={`https://github.com/${work.authorLabel}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-paper transition-colors hover:text-blue"
+              >
+                {t(locale, "awesome.by", { name: work.authorLabel })}
+              </a>
+            ) : (
+              <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
+            )}
+            {work.handle && (
+              <span className="inline-flex items-center gap-1.5">
+                · {t(locale, "awesome.recommenderShort")}
+                <Avatar url={work.avatarUrl} handle={work.handle} size={20} />
+                <Link
+                  href={`/u/${work.handle}`}
+                  className="text-paper transition-colors hover:text-blue"
+                >
+                  @{work.handle}
+                </Link>
+              </span>
+            )}
+          </>
+        ) : work.handle ? (
           <span className="inline-flex items-center gap-1.5">
             <Avatar url={work.avatarUrl} handle={work.handle} size={20} />
             <Link
@@ -326,9 +355,13 @@ export default async function WorkPage({
         <aside className="border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 xl:hidden">
           <dl className="font-mono text-[11px]">
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
-              <dt className="text-grey">{t(locale, "works.sideAuthor")}</dt>
+              <dt className="text-grey">
+                {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
+              </dt>
               <dd className="min-w-0 text-paper">
-                {work.handle ? (
+                {work.source === "awesome" && work.authorLabel ? (
+                  <span className="truncate">{work.authorLabel}</span>
+                ) : work.handle ? (
                   <Link
                     href={`/u/${work.handle}`}
                     className="flex items-center gap-1.5 transition-colors hover:text-blue"

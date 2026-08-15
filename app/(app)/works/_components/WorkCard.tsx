@@ -108,8 +108,8 @@ export default function WorkCard({
             {w.tagline}
           </p>
         )}
-        {/* meta 区:分类 / Agent / 收录口径分三行(2026-08-14 起,原来一条混排会折行);
-            蓝只给声明投入与精选;私密/屏蔽保留警示 pill(仅作者/治理可见) */}
+        {/* meta 区:分类 / Agent / 收录口径分三行,每行带 mute 小标签
+            (类型/参与构建/收录——一眼可读,2026-08-14);蓝只给声明投入与精选 */}
         <div className="mb-4 mt-2.5 flex min-w-0 flex-col gap-1 font-mono text-[11px] text-grey">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {w.visibility === "private" && (
@@ -125,6 +125,7 @@ export default function WorkCard({
                 {t(locale, "mod.hiddenBadge")}
               </span>
             )}
+            <span className="shrink-0 text-grey/55">{t(locale, "works.metaKind")}</span>
             <span className="inline-flex shrink-0 items-center gap-1">
               <WorkKindIcon id={w.kind} size={11} />
               {kindLabel}
@@ -136,6 +137,7 @@ export default function WorkCard({
           </span>
           {w.agents.length > 0 && (
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="shrink-0 text-grey/55">{t(locale, "works.metaAgents")}</span>
               {w.agents.map((a) => (
                 <span key={a} className="inline-flex shrink-0 items-center gap-1">
                   <AgentIcon id={a} size={11} />
@@ -146,7 +148,12 @@ export default function WorkCard({
           )}
           {(scopeLabel || (claimBadge !== null && claimBadge > 0) || w.featuredAt) && (
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              {scopeLabel && <span className="shrink-0">{scopeLabel}</span>}
+              {scopeLabel && (
+                <>
+                  <span className="shrink-0 text-grey/55">{t(locale, "works.metaScope")}</span>
+                  <span className="shrink-0">{scopeLabel}</span>
+                </>
+              )}
               {claimBadge !== null && claimBadge > 0 && (
                 <span
                   className="shrink-0 text-blue"
