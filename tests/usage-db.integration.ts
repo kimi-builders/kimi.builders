@@ -185,5 +185,6 @@ main()
   .then(() => console.log("usage DB integration: passed"))
   .catch((error) => {
     console.error(error);
-    process.exitCode = 1;
+    /* 同 usage-phase2:失败硬退出,池子未关不能把 CI 挂到超时 */
+    process.exit(1);
   });

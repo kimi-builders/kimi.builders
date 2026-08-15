@@ -98,6 +98,10 @@ async function main() {
     "../db/migrations/20260809_usage_prices_v2.sql",
     "../db/migrations/20260810_usage_prices_v3.sql",
     "../db/migrations/20260811_usage_prices_v4.sql",
+    /* 20260915/20260917 必须在清单里:fresh-install 链路(schema.sql + init-ledger)
+       的价格行全部来自这份重放清单,漏了就比钉数少行(CI 曾因此 47≠48 挂死) */
+    "../db/migrations/20260915_usage_price_kimi_for_coding.sql",
+    "../db/migrations/20260917_kimi_for_coding_price_source.sql",
     "../db/migrations/20260919_usage_prices_v5.sql",
     "../db/migrations/20260919_usage_prices_v5_repair.sql",
     "../db/migrations/20260919_usage_prices_v6.sql",
@@ -636,5 +640,7 @@ main()
   .then(() => console.log("usage phase2 DB integration: passed"))
   .catch((error) => {
     console.error(error);
-    process.exitCode = 1;
+    /* 必须硬退出:断言在 try/finally 之外失败时池子未关,事件循环不干,
+       process.exitCode 式退出会在 CI 上挂到 6h 超时(20260815 起连续 4 次) */
+    process.exit(1);
   });
