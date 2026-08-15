@@ -766,10 +766,9 @@ const DICT = {
   "awesome.scopeNote": { zh: "满足任一即可", en: "any one qualifies" },
   "awesome.rulesTitle": { zh: "推荐规则", en: "RULES" },
   "awesome.rulesBody": {
-    zh: "推荐站外项目时必须填写原作者/团队,收录后公开展示推荐人;Awesome 项目不进你的作品墙,也不显示构建投入徽章。社区成员自己做的项目请去作品墙提交。",
-    en: "External recommendations must name the original author/team; the recommender is shown publicly. Awesome entries never appear on your works wall and carry no claim badge. Built it yourself? Submit to the works wall.",
+    zh: "推荐站外项目时必须填写原作者/团队(可点跳到其 GitHub 主页);Awesome 项目不进你的作品墙,也不显示构建投入徽章。社区成员自己做的项目请去作品墙提交。",
+    en: "External recommendations must name the original author/team (linked to their GitHub profile). Awesome entries never appear on your works wall and carry no claim badge. Built it yourself? Submit to the works wall.",
   },
-  "awesome.recommender": { zh: "推荐人 @{handle}", en: "rec. by @{handle}" },
   "awesome.agentDist": { zh: "Agent 分布", en: "AGENT BREAKDOWN" },
   "awesome.agentDistNote": { zh: "按参与项目数", en: "by items" },
   /* ---- 编辑精选(每周精选 v0)---- */

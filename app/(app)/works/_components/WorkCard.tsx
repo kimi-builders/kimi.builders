@@ -108,28 +108,34 @@ export default function WorkCard({
             {w.tagline}
           </p>
         )}
-        {/* meta 行:mono 灰字一条;蓝只给声明投入与精选;私密/屏蔽保留警示 pill(仅作者/治理可见) */}
-        <div className="mb-4 mt-2.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-grey">
-          {w.visibility === "private" && (
-            <span className={`${CHIP} border border-line text-grey`}>
-              {t(locale, "works.private")}
+        {/* meta 区:分类 / Agent / 收录口径分三行(2026-08-14 起,原来一条混排会折行);
+            蓝只给声明投入与精选;私密/屏蔽保留警示 pill(仅作者/治理可见) */}
+        <div className="mb-4 mt-2.5 flex min-w-0 flex-col gap-1 font-mono text-[11px] text-grey">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            {w.visibility === "private" && (
+              <span className={`${CHIP} border border-line text-grey`}>
+                {t(locale, "works.private")}
+              </span>
+            )}
+            {w.hiddenAt && (
+              <span
+                className={`${CHIP} border border-red-400/60 text-red-400`}
+                title={w.hiddenReason ?? undefined}
+              >
+                {t(locale, "mod.hiddenBadge")}
+              </span>
+            )}
+            <span className="inline-flex shrink-0 items-center gap-1">
+              <WorkKindIcon id={w.kind} size={11} />
+              {kindLabel}
             </span>
-          )}
-          {w.hiddenAt && (
-            <span
-              className={`${CHIP} border border-red-400/60 text-red-400`}
-              title={w.hiddenReason ?? undefined}
-            >
-              {t(locale, "mod.hiddenBadge")}
-            </span>
-          )}
-          <span className="inline-flex shrink-0 items-center gap-1">
-            <WorkKindIcon id={w.kind} size={11} />
-            {kindLabel}
+            {statusLabel && <span className="shrink-0">· {statusLabel}</span>}
+            {w.tags.length > 0 && (
+              <span className="truncate">· {w.tags.slice(0, 3).join(", ")}</span>
+            )}
           </span>
           {w.agents.length > 0 && (
-            <span className="inline-flex min-w-0 items-center gap-1">
-              ·
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               {w.agents.map((a) => (
                 <span key={a} className="inline-flex shrink-0 items-center gap-1">
                   <AgentIcon id={a} size={11} />
@@ -138,25 +144,25 @@ export default function WorkCard({
               ))}
             </span>
           )}
-          {w.tags.length > 0 && (
-            <span className="truncate">· {w.tags.slice(0, 3).join(", ")}</span>
-          )}
-          {scopeLabel && <span className="shrink-0">· {scopeLabel}</span>}
-          {statusLabel && <span className="shrink-0">· {statusLabel}</span>}
-          {claimBadge !== null && claimBadge > 0 && (
-            <span
-              className="shrink-0 text-blue"
-              title={t(locale, "works.badgeTitle")}
-            >
-              · {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
-            </span>
-          )}
-          {w.featuredAt && (
-            <span
-              className="shrink-0 text-blue"
-              title={w.featuredReason ?? undefined}
-            >
-              · ★ {t(locale, "featured.badge")}
+          {(scopeLabel || (claimBadge !== null && claimBadge > 0) || w.featuredAt) && (
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {scopeLabel && <span className="shrink-0">{scopeLabel}</span>}
+              {claimBadge !== null && claimBadge > 0 && (
+                <span
+                  className="shrink-0 text-blue"
+                  title={t(locale, "works.badgeTitle")}
+                >
+                  {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
+                </span>
+              )}
+              {w.featuredAt && (
+                <span
+                  className="shrink-0 text-blue"
+                  title={w.featuredReason ?? undefined}
+                >
+                  ★ {t(locale, "featured.badge")}
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -164,12 +170,19 @@ export default function WorkCard({
         <div className="mt-auto flex items-center gap-3 border-t border-line pt-3 font-mono text-[11px] text-grey">
           {w.source === "awesome" && w.authorLabel ? (
             <span className="min-w-0 truncate">
-              {t(locale, "awesome.by", { name: w.authorLabel })}
-              {w.handle && (
-                <span className="text-grey/70">
-                  {" · "}
-                  {t(locale, "awesome.recommender", { handle: w.handle })}
-                </span>
+              {/* 原作者 = GitHub 作者/团队,可点跳到 GitHub 主页(句柄形状校验,
+                  非句柄的自由文本降级为纯文本);推荐人按 2026-08-14 决定暂不展示 */}
+              {/^[A-Za-z0-9-]{1,39}$/.test(w.authorLabel) ? (
+                <a
+                  href={`https://github.com/${w.authorLabel}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative z-10 transition-colors hover:text-blue"
+                >
+                  {t(locale, "awesome.by", { name: w.authorLabel })}
+                </a>
+              ) : (
+                t(locale, "awesome.by", { name: w.authorLabel })
               )}
             </span>
           ) : w.handle ? (
