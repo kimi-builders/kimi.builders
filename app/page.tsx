@@ -324,10 +324,20 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ---- 免责声明:两行,随 UI 语言切换 ---- */}
-      <footer className="mx-auto max-w-xl px-6 pb-10 pt-4 text-center text-xs leading-relaxed text-grey">
-        <p>{t(locale, "home.footerLine1")}</p>
-        <p className="mt-1">{t(locale, "home.footerLine2")}</p>
+      {/* ---- 页脚:发丝线收束 + 品牌回声 + 免责声明(随 UI 语言)。
+          容器与数据条/精选/入群同宽(max-w-4xl)落在同一栅格;
+          KIMI.BUILDERS 用页面 section 标签的 mono 大字距语气,蓝点呼应主 wordmark;
+          免责两行做轻层级:社区声明 text-grey,法律声明再降一档 ---- */}
+      <footer className="border-t border-line">
+        <div className="mx-auto max-w-4xl px-6 py-12">
+          <p className="text-center font-mono text-[11px] tracking-[0.3em] text-grey">
+            KIMI<span className="text-blue">.</span>BUILDERS
+          </p>
+          <div className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed">
+            <p className="text-grey">{t(locale, "home.footerLine1")}</p>
+            <p className="mt-1 text-grey/70">{t(locale, "home.footerLine2")}</p>
+          </div>
+        </div>
       </footer>
     </main>
   );
