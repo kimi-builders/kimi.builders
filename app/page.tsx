@@ -155,9 +155,9 @@ export default async function Home({
               />
             </Link>
           )}
-          <ThemeToggle className={iconBtn} />
+          <ThemeToggle locale={locale} className={iconBtn} />
           <VibeToggle locale={locale} className={iconBtn} />
-          <LocaleToggle className={iconBtn} />
+          <LocaleToggle locale={locale} className={iconBtn} />
           <span className="ml-1.5 flex items-center gap-3">
             <AuthChip />
           </span>

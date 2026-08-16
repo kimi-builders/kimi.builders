@@ -1378,6 +1378,10 @@ const DICT = {
   },
   /* ---- 壳层改版:固定顶栏 + 右栏上下文化(2026-08-10;独立分区,降低合并冲突面) ---- */
   "topbar.notif": { zh: "消息通知", en: "Notifications" },
+  /* 顶栏/首页右上角偏好开关的提示与无障碍名(20260816 起 t() 单语,不再双语并排) */
+  "topbar.theme": { zh: "切换主题", en: "Toggle theme" },
+  "topbar.vibe": { zh: "切换视觉气质", en: "Toggle visual style" },
+  "topbar.lang": { zh: "切换语言", en: "Switch language" },
   "rail.postMeta": { zh: "帖子信息", en: "POST INFO" },
   "rail.board": { zh: "板块", en: "Board" },
   "rail.relatedPosts": { zh: "相关帖子", en: "RELATED POSTS" },

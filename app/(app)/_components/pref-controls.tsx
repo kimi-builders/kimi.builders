@@ -42,10 +42,12 @@ function writeCookie(name: string, value: string) {
 
 /* 主题:纯客户端翻转(cookie-only 偏好,无需任何服务器往返)。 */
 export function ThemeToggle({
+  locale,
   className,
   withLabel = false,
   iconSize = 15,
 }: {
+  locale: Locale;
   className?: string;
   withLabel?: boolean;
   iconSize?: number;
@@ -54,10 +56,10 @@ export function ThemeToggle({
     <form action={setThemeAction}>
       <button
         type="submit"
-        data-tip="切换主题 / Toggle theme"
+        data-tip={t(locale, "topbar.theme")}
         data-tip-side="bottom"
         data-tip-align="right"
-        aria-label="切换主题 / Toggle theme"
+        aria-label={t(locale, "topbar.theme")}
         onClick={(e) => {
           e.preventDefault();
           const el = document.documentElement;
@@ -83,9 +85,11 @@ export function ThemeToggle({
 /* 语言:客户端翻 cookie + html.lang,然后 refresh 拉 SSR 新文案;
    登录用户的账号偏好(AI 回帖语言第一优先级)后台写入,不阻塞界面。 */
 export function LocaleToggle({
+  locale,
   className,
   withLabel = false,
 }: {
+  locale: Locale;
   className?: string;
   withLabel?: boolean;
 }) {
@@ -95,10 +99,10 @@ export function LocaleToggle({
     <form action={setLocaleAction}>
       <button
         type="submit"
-        data-tip="切换语言 / Switch language"
+        data-tip={t(locale, "topbar.lang")}
         data-tip-side="bottom"
         data-tip-align="right"
-        aria-label="切换语言 / Switch language"
+        aria-label={t(locale, "topbar.lang")}
         onClick={(e) => {
           e.preventDefault();
           const el = document.documentElement;
@@ -211,10 +215,10 @@ export function VibeToggle({
     <form action={setVibeAction}>
       <button
         type="submit"
-        data-tip="切换视觉气质 / Toggle visual style"
+        data-tip={t(locale, "topbar.vibe")}
         data-tip-side="bottom"
         data-tip-align="right"
-        aria-label="切换视觉气质 / Toggle visual style"
+        aria-label={t(locale, "topbar.vibe")}
         onClick={(e) => {
           e.preventDefault();
           const el = document.documentElement;

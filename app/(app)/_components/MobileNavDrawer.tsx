@@ -222,9 +222,9 @@ export default function MobileNavDrawer({
           </div>
 
           <div className="border-t border-line px-2 py-3">
-            <ThemeToggle withLabel className={`${itemClass(false)} w-full`} />
+            <ThemeToggle withLabel locale={locale} className={`${itemClass(false)} w-full`} />
             <VibeToggle withLabel locale={locale} className={`${itemClass(false)} w-full`} />
-            <LocaleToggle withLabel className={`${itemClass(false)} w-full`} />
+            <LocaleToggle withLabel locale={locale} className={`${itemClass(false)} w-full`} />
             <a href="https://github.com/kimi-builders" className={itemClass(false)}>
               <GithubIcon size={17} />
               GitHub
