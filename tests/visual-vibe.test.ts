@@ -16,11 +16,15 @@ test("globals.css: poster vibe zeroes radius/shadow and flattens card wash", () 
   const css = read("app/globals.css");
   assert.match(css, /:root\[data-vibe="poster"\]\s*\{[\s\S]*?--radius-2xl: 0px/);
   assert.match(css, /--radius-lg: 0px/);
+  /* 裸 rounded 与 rounded-4xl 不在 xs…3xl 序列里,归零须显式列出(20260816 补漏) */
+  assert.match(css, /:root\[data-vibe="poster"\]\s*\{[\s\S]*?--radius: 0px/);
+  assert.match(css, /--radius-4xl: 0px/);
   /* 投影置空必须只灭 --tw-shadow 一项(ring/焦点环走独立变量,不得波及) */
   assert.match(css, /:root\[data-vibe="poster"\][^{]*\{[\s\S]*?--tw-shadow: 0 0 #0000/);
   assert.match(css, /:root\[data-vibe="poster"\]\s*\{[\s\S]*?--color-card:/);
-  /* 首页海报作用域就近重声明令牌,poster 的降档必须显式跟进 */
-  assert.match(css, /:root\[data-vibe="poster"\] \[data-theme-scope="dark"\]/);
+  /* 首页海报作用域(跟随 UI 主题,scope="poster")就近重声明令牌,
+     poster 的降档必须显式跟进 */
+  assert.match(css, /:root\[data-vibe="poster"\] \[data-theme-scope="poster"\]/);
   /* 设置页气质卡激活态 */
   assert.match(css, /html\[data-vibe="poster"\] \.vibe-card-poster/);
 });

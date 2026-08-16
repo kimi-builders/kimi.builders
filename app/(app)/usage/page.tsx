@@ -1066,13 +1066,13 @@ export default async function UsagePage({
         </div>
       </section>
 
-      {/* 分时活跃 + 最活跃时段 */}
+      {/* 用量热力图 + 最活跃时段 */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.9fr_1fr]">
         <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-[13px] font-semibold text-paper">
-                {zh ? "分时活跃" : "Activity heatmap"}
+                {zh ? "用量热力图" : "Activity heatmap"}
               </h2>
               <p className="mt-1 text-[11px] text-grey">
                 {activeWeek !== null
