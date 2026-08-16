@@ -104,10 +104,12 @@ export default async function CommunityPage({
             </Link>
           ))}
         </nav>
-        {/* 话题 tabs:无框纯文本(安静化,20260813);移动端放不下时横向滑动 */}
+        {/* 话题 tabs:无框纯文本(安静化,20260813)。移动端与作品/Awesome 的
+            筛选行同处理(20260815):整行换行展示、左对齐,不再横向滚动
+            (滚动行在窄屏挤成一团、与排序行相互侵入);桌面维持单行横滑 */}
         <nav
           aria-label={t(locale, "feed.topicsAll")}
-          className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-3 overflow-x-auto font-mono text-[11.5px]"
+          className="scrollbar-none order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[11.5px] sm:order-none sm:min-w-0 sm:flex-1 sm:flex-nowrap sm:overflow-x-auto"
         >
           <Link
             href={feedHref({ cat: null })}
@@ -144,7 +146,7 @@ export default async function CommunityPage({
           href={feedHref({ solved: solvedOnly ? null : "1" })}
           scroll={false}
           aria-current={solvedOnly ? "page" : undefined}
-          className={`inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 ${
+          className={`ml-auto inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 ${
             solvedOnly
               ? "border-blue/60 bg-blue/10 font-semibold text-blue"
               : "border-line text-grey hover:border-blue/50 hover:text-blue"

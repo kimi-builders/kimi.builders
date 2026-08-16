@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 import { CATEGORIES } from "@/src/lib/categories";
 import { t, type Locale } from "@/src/lib/i18n";
 import { updatePostAction, type PostFormState } from "../actions";
@@ -52,18 +53,26 @@ export default function PostEditForm({
           <label htmlFor="edit-category" className={labelCls}>
             {t(locale, "form.topic")} <span className="text-blue">*</span>
           </label>
-          <select
-            id="edit-category"
-            name="category"
-            defaultValue={initialCategory}
-            className={`${inputCls} cursor-pointer`}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id} className="bg-bg">
-                {locale === "zh" ? c.zh : c.en}
-              </option>
-            ))}
-          </select>
+          {/* 同发帖表单:原生 select 换自绘箭头(与筛选下拉同款) */}
+          <div className="relative">
+            <select
+              id="edit-category"
+              name="category"
+              defaultValue={initialCategory}
+              className={`${inputCls} cursor-pointer appearance-none pr-9`}
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id} className="bg-bg">
+                  {locale === "zh" ? c.zh : c.en}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={13}
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-grey"
+            />
+          </div>
         </div>
         <div>
           <label htmlFor="edit-title" className={labelCls}>

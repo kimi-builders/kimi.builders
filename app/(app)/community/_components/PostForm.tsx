@@ -6,7 +6,7 @@
    完整页(/community/new)与弹窗(@modal)共用,RouteModal 已提供圆角壳。 */
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, X } from "lucide-react";
+import { ChevronDown, Trash2, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import {
   SEG_ITEM,
@@ -198,19 +198,28 @@ export default function PostForm({
           <label htmlFor="post-category" className={labelCls}>
             {t(locale, "form.topic")} <span className="text-blue">*</span>
           </label>
-          <select
-            id="post-category"
-            name="category"
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className={`${inputCls} cursor-pointer`}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id} className="bg-bg">
-                {locale === "zh" ? c.zh : c.en}
-              </option>
-            ))}
-          </select>
+          {/* 原生 select 外观与站点语言不符(20260815):appearance-none + 自绘
+              ChevronDown(与筛选下拉同款),箭头位置与输入框内边距对齐 */}
+          <div className="relative">
+            <select
+              id="post-category"
+              name="category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className={`${inputCls} cursor-pointer appearance-none pr-9`}
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id} className="bg-bg">
+                  {locale === "zh" ? c.zh : c.en}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={13}
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-grey"
+            />
+          </div>
         </div>
         <div>
           <label htmlFor="post-title" className={labelCls}>
