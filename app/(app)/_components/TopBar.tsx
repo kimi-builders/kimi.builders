@@ -45,7 +45,9 @@ export default function TopBar({
         {loggedIn && (
           <Link
             href="/community/notifications"
-            title={t(locale, "topbar.notif")}
+            data-tip={t(locale, "topbar.notif")}
+            data-tip-side="bottom"
+            data-tip-align="right"
             aria-label={t(locale, "topbar.notif")}
             className={`relative ${iconBtn}`}
           >

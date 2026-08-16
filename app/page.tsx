@@ -1,7 +1,10 @@
 /* 首页完整版(P0-1):海报(hero + 主 CTA)→ 数据条 → 本周精选(无精选回落
    7 日热门,两者皆空则不渲染)→ 入群/订阅 → 免责声明。
-   保持 data-theme-scope="dark" 海报皮肤(硬边细线、蓝强调、mono 大字距),
-   新区块全部走令牌,不硬编码色值;新文案全部双语(i18n.ts)。
+   海报皮肤双主题(data-theme-scope="poster"):跟随 <html data-theme> 在
+   夜幕/纸感两套暖纸令牌间切换(globals.css 的 poster 块),硬边细线、蓝强调、
+   mono 大字距;hero Logo 双版本按主题二选一(only-dark/only-light)。
+   右上角控件与壳内 TopBar 同一控件集/顺序/形态(搜索 → 通知 → 主题 → 气质 →
+   语言 → 登录态),iconBtn 两处同步。
    hero 用 SMIL 动画版 Logo(双星 8s 绕轨,<img> 内 SMIL 现代浏览器可播),
    alt 随 UI 语言本地化(P2-9);右上角登录态由 AuthChip 渲染。
    渲染策略:AuthChip 读 cookies + searchParams,路由级 ISR 不成立,所以
@@ -10,15 +13,23 @@
    海报主体仍是静态标记。 */
 import Link from "next/link";
 import { headers } from "next/headers";
+import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import CountUpStat from "@/components/CountUpStat";
+import UnreadBadge from "@/components/UnreadBadge";
 import { TrackClick } from "@/app/(app)/_components/track";
+import GlobalSearch from "./(app)/_components/GlobalSearch";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getHomeData, type HomeFeaturedItem } from "@/src/lib/home";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { LocaleToggle } from "./(app)/_components/pref-controls";
+import { getUnreadNotificationCount } from "@/src/lib/posts";
+import { LocaleToggle, ThemeToggle, VibeToggle } from "./(app)/_components/pref-controls";
+
+/* 右上角控件键:与 (app)/_components/TopBar 的 iconBtn 同一形态,两侧改要同步 */
+const iconBtn =
+  "flex h-9 w-9 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
 
 const AUTH_ERRORS: Record<string, I18nKey> = {
   state_mismatch: "home.errState",
@@ -101,10 +112,13 @@ export default async function Home({
   const requestHeaders = await headers();
   trackEvent("home_view", { kind: "page", id: "home" }, { headers: requestHeaders });
   const user = await getSessionUser();
-  const [locale, home] = await Promise.all([
+  const [locale, home, unread] = await Promise.all([
     getLocale(user),
     /* DB 不可用时海报照常落地:数据条/精选位整体不渲染,不拖垮首页门面 */
     getHomeData().catch(() => null),
+    /* 通知角标初值:与 (app)/layout 同一来源(铃铛仅登录后显示);
+       DB 抖动时降级为 0,不拖垮海报门面(同 getHomeData 的容错思路) */
+    user ? getUnreadNotificationCount(user.id).catch(() => 0) : 0,
   ]);
 
   const stats = home
@@ -117,27 +131,56 @@ export default async function Home({
     : null;
 
   return (
-    <main data-theme-scope="dark" className="bg-bg">
+    <main data-theme-scope="poster" className="bg-bg">
       {/* ---- 海报区:hero + 主 CTA(全页视觉焦点)---- */}
       <section className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <div className="absolute right-5 top-5 flex items-center gap-4 font-mono text-xs">
-          {/* 首页也要语言切换:复用壳内同一控件(cookie + html.lang + refresh) */}
-          <LocaleToggle
-            withLabel
-            className="flex items-center gap-1.5 text-grey transition-colors hover:text-paper"
-          />
-          <AuthChip />
+        {/* 右上角控件:与壳内 TopBar 同一控件集、同一顺序、同一 iconBtn 形态;
+            flex-wrap 兜底超窄屏。主题切换翻 <html data-theme>,海报双肤即时生效 */}
+        <div className="absolute right-5 top-5 flex max-w-[calc(100vw-2.5rem)] flex-wrap items-center justify-end gap-1.5 font-mono text-xs">
+          <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
+          {user && (
+            <Link
+              href="/community/notifications"
+              data-tip={t(locale, "topbar.notif")}
+              data-tip-side="bottom"
+              data-tip-align="right"
+              aria-label={t(locale, "topbar.notif")}
+              className={`relative ${iconBtn}`}
+            >
+              <Bell size={15} />
+              <UnreadBadge
+                initial={unread}
+                locale={locale}
+                className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg"
+              />
+            </Link>
+          )}
+          <ThemeToggle className={iconBtn} />
+          <VibeToggle locale={locale} className={iconBtn} />
+          <LocaleToggle className={iconBtn} />
+          <span className="ml-1.5 flex items-center gap-3">
+            <AuthChip />
+          </span>
         </div>
         {typeof authError === "string" && (
           <p className="absolute top-16 font-mono text-xs text-blue">
             {t(locale, AUTH_ERRORS[authError] ?? "home.errGeneric")}
           </p>
         )}
+        {/* 双 Logo 按 UI 主题二选一(only-dark/only-light):夜幕版/纸感版,
+            两版 SVG 画布底色与海报 bg 令牌一致(#0E0E13 / #F6F2EA),拼合无缝 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/logo-animated.svg"
           alt={t(locale, "home.logoAlt")}
-          className="h-44 w-44"
+          className="only-dark h-44 w-44"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/logo-animated-light.svg"
+          alt=""
+          aria-hidden="true"
+          className="only-light h-44 w-44"
         />
         <h1 className="mt-10 font-mono text-4xl font-semibold tracking-wide">
           kimi<span className="text-blue">.</span>builders

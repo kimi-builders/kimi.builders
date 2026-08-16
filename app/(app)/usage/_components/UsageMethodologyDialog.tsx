@@ -82,7 +82,7 @@ export default function UsageMethodologyDialog({
         onClick={() => dialogRef.current?.showModal()}
         aria-label={title}
         aria-haspopup="dialog"
-        title={title}
+        data-tip={compact ? title : undefined}
         className={
           compact
             ? "inline-flex size-7 shrink-0 items-center justify-center text-grey/70 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"

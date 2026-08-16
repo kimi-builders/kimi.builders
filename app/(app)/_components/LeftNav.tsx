@@ -91,8 +91,10 @@ export default function LeftNav({
     return pathname.startsWith(href);
   };
 
+  /* rail-tip:菜单项的 data-tip 提示仅收起态(图标轨)右弹;展开态有文案不弹
+     (globals.css 的 .rail-tip 规则) */
   const itemCls = (active: boolean) =>
-    `nav-item flex items-center gap-3 border-l-2 px-3 py-2 font-mono text-xs transition-colors ${
+    `nav-item rail-tip flex items-center gap-3 border-l-2 px-3 py-2 font-mono text-xs transition-colors ${
       active
         ? "border-blue text-paper"
         : "border-transparent text-grey hover:text-paper"
@@ -106,8 +108,9 @@ export default function LeftNav({
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
       <Link prefetch={false}
         href={gate("/community/new")}
-        title={t(locale, "nav.post")}
-        className="nav-item flex items-center justify-center gap-2 rounded-lg bg-blue py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        data-tip={t(locale, "nav.post")}
+        data-tip-side="right"
+        className="nav-item rail-tip flex items-center justify-center gap-2 rounded-lg bg-blue py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <SquarePen size={14} className="shrink-0" />
         <span className="nav-label">{t(locale, "nav.post")}</span>
@@ -125,7 +128,8 @@ export default function LeftNav({
             <Link prefetch={false}
               key={s.href}
               href={href}
-              title={t(locale, s.key)}
+              data-tip={t(locale, s.key)}
+              data-tip-side="right"
               className={itemCls(isActive(s.href))}
             >
               <Icon size={15} className="shrink-0" />
@@ -138,7 +142,8 @@ export default function LeftNav({
         {profileHref && (
           <Link prefetch={false}
             href={profileHref}
-            title={t(locale, "nav.profile")}
+            data-tip={t(locale, "nav.profile")}
+            data-tip-side="right"
             className={itemCls(pathname.startsWith("/u/"))}
           >
             <User size={15} className="shrink-0" />
@@ -153,7 +158,8 @@ export default function LeftNav({
                 <Link prefetch={false}
                   key={s.href}
                   href={s.href}
-                  title={t(locale, s.key)}
+                  data-tip={`${t(locale, s.key)} · ${t(locale, "nav.soon")}`}
+                  data-tip-side="right"
                   className={`${itemCls(isActive(s.href))} opacity-75`}
                 >
                   <Icon size={15} className="shrink-0" />
@@ -174,7 +180,8 @@ export default function LeftNav({
         {moderator && (
           <Link prefetch={false}
             href="/admin"
-            title={t(locale, "nav.admin")}
+            data-tip={t(locale, "nav.admin")}
+            data-tip-side="right"
             className={itemCls(pathname.startsWith("/admin"))}
           >
             <ShieldCheck size={15} className="shrink-0" />
@@ -183,7 +190,8 @@ export default function LeftNav({
         )}
         <Link prefetch={false}
           href={gate("/settings")}
-          title={t(locale, "nav.settings")}
+          data-tip={t(locale, "nav.settings")}
+          data-tip-side="right"
           className={itemCls(pathname.startsWith("/settings"))}
         >
           <Settings size={15} className="shrink-0" />
@@ -191,13 +199,14 @@ export default function LeftNav({
         </Link>
         <a
           href="https://github.com/kimi-builders"
-          title="GitHub"
+          data-tip="GitHub"
+          data-tip-side="right"
           className={itemCls(false)}
         >
           <GithubIcon size={15} />
           <span className="nav-label">GitHub</span>
         </a>
-        <Link prefetch={false} href="/about" title={t(locale, "nav.about")} className={itemCls(false)}>
+        <Link prefetch={false} href="/about" data-tip={t(locale, "nav.about")} data-tip-side="right" className={itemCls(false)}>
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>

@@ -115,7 +115,9 @@ export default function GlobalSearch({
       <button
         type="button"
         onClick={open}
-        title={t(locale, "search.open")}
+        data-tip={t(locale, "search.open")}
+        data-tip-side="bottom"
+        data-tip-align="right"
         aria-label={t(locale, "search.open")}
         className={className}
       >

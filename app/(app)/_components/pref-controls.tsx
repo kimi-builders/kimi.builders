@@ -54,7 +54,9 @@ export function ThemeToggle({
     <form action={setThemeAction}>
       <button
         type="submit"
-        title="切换主题 / Toggle theme"
+        data-tip="切换主题 / Toggle theme"
+        data-tip-side="bottom"
+        data-tip-align="right"
         aria-label="切换主题 / Toggle theme"
         onClick={(e) => {
           e.preventDefault();
@@ -93,7 +95,9 @@ export function LocaleToggle({
     <form action={setLocaleAction}>
       <button
         type="submit"
-        title="切换语言 / Switch language"
+        data-tip="切换语言 / Switch language"
+        data-tip-side="bottom"
+        data-tip-align="right"
         aria-label="切换语言 / Switch language"
         onClick={(e) => {
           e.preventDefault();
@@ -132,7 +136,8 @@ export function NavToggle({
     <form action={toggleNavAction}>
       <button
         type="submit"
-        title={`${t(locale, "nav.collapse")} / ${t(locale, "nav.expand")}`}
+        data-tip={`${t(locale, "nav.collapse")} / ${t(locale, "nav.expand")}`}
+        data-tip-side="right"
         aria-label="收起或展开导航 / Collapse or expand navigation"
         onClick={(e) => {
           e.preventDefault();
@@ -141,7 +146,7 @@ export function NavToggle({
           el.dataset.nav = next;
           writeCookie("kb_nav", next);
         }}
-        className={className}
+        className={`${className} rail-tip`}
       >
         <PanelLeftClose size={13} className="shrink-0 only-nav-full" />
         <PanelLeftOpen size={13} className="shrink-0 only-nav-collapsed" />
@@ -166,7 +171,8 @@ export function SidebarToggle({
     <form action={toggleSidebarAction}>
       <button
         type="submit"
-        title={`${t(locale, "side.hide")} / ${t(locale, "side.show")}`}
+        data-tip={`${t(locale, "side.hide")} / ${t(locale, "side.show")}`}
+        data-tip-side="right"
         aria-label="隐藏或显示右侧栏 / Hide or show the sidebar"
         onClick={(e) => {
           e.preventDefault();
@@ -175,7 +181,7 @@ export function SidebarToggle({
           el.dataset.sidebar = next;
           writeCookie("kb_sidebar", next);
         }}
-        className={className}
+        className={`${className} rail-tip`}
       >
         <PanelRightClose size={13} className="shrink-0 only-sidebar-full" />
         <PanelRightOpen size={13} className="shrink-0 only-sidebar-hidden" />
@@ -205,7 +211,9 @@ export function VibeToggle({
     <form action={setVibeAction}>
       <button
         type="submit"
-        title="切换视觉气质 / Toggle visual style"
+        data-tip="切换视觉气质 / Toggle visual style"
+        data-tip-side="bottom"
+        data-tip-align="right"
         aria-label="切换视觉气质 / Toggle visual style"
         onClick={(e) => {
           e.preventDefault();

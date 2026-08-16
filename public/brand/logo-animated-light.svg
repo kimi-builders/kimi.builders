@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <!-- ============================================================
+    kimi.builders · 标志动画演示·亮色版(SMIL,浏览器直接打开可播)
+    与 logo-animated.svg 同参数、同动画语义,仅做「暖纸日间版」换色:
+      · 画布/令牌对齐首页亮色海报 bg #F6F2EA(globals.css 的
+        [data-theme="light"] [data-theme-scope="poster"] 块)
+      · 奶油纸色(#EFE8DC 系)全部换成暖墨(#2B2620 系),
+        蓝星保持 #1783FF;月亮盘改暖灰纸面,月牙仍是最亮面(受光语义不变)
+      · 双星同角速度沿轨道行进(θ 增大方向),周期 8s
+      · Δθ=13° 恒定 —— 纸星始终领先蓝星一步:「并肩」不是队形变化,是始终同行
+      · earthshine 0.72↔1 同周期呼吸 —— 光持续照进暗面
+    视频重制(AE 等)以本文件的参数注释 + logo-mark.svg 的规格为准;
+    遮挡关系(星绕到月后)在视频里可做真 3D 遮挡,logo 循环里始终在前。
+  ============================================================ -->
+  <defs>
+    <mask id="crescent-cut">
+      <circle cx="500" cy="480" r="270" fill="#fff"/>
+      <circle cx="451" cy="459" r="256" fill="#000"/>
+    </mask>
+    <radialGradient id="earthshine" gradientUnits="userSpaceOnUse" cx="301" cy="395" r="330">
+      <stop offset="0" stop-color="#2B2620" stop-opacity="0.10"/>
+      <stop offset="0.55" stop-color="#2B2620" stop-opacity="0.035"/>
+      <stop offset="1" stop-color="#2B2620" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="crescent-light" gradientUnits="userSpaceOnUse" x1="748" y1="586" x2="680" y2="555">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F3EDDF"/>
+    </linearGradient>
+    <path id="orbit-motion" d="m 0 0 a 408 131 -14 1 1 -676.6 291.2 a 408 131 -14 1 1 676.6 -291.2" fill="none"/>
+  </defs>
+
+  <rect width="1000" height="1000" fill="#F6F2EA"/>
+
+  <g id="orbit">
+    <ellipse cx="500" cy="480" rx="408" ry="131" transform="rotate(-14 500 480)"
+             fill="none" stroke="#2B2620" stroke-opacity="0.26" stroke-width="1.8"/>
+  </g>
+
+  <g id="moon">
+    <circle id="moon-disc" cx="500" cy="480" r="270" fill="#E9E2D2"
+            stroke="#2B2620" stroke-opacity="0.08" stroke-width="2.3"/>
+    <circle id="moon-earthshine" cx="500" cy="480" r="270" fill="url(#earthshine)">
+      <animate attributeName="opacity" values="0.72;1;0.72" keyTimes="0;0.5;1"
+               dur="8s" repeatCount="indefinite"/>
+    </circle>
+    <g id="moon-terrain" stroke="#2B2620" stroke-opacity="0.08" stroke-width="2" fill="none">
+      <circle cx="400" cy="380" r="46"/>
+      <circle cx="330" cy="500" r="30"/>
+      <circle cx="470" cy="300" r="24"/>
+    </g>
+  </g>
+
+  <g id="crescent">
+    <circle cx="500" cy="480" r="270" fill="url(#crescent-light)" mask="url(#crescent-cut)"/>
+  </g>
+
+  <g id="orbit-near">
+    <path d="M 767.0 520.3 A 408 131 -14 0 1 283.2 640.9" fill="none"
+          stroke="#2B2620" stroke-opacity="0.26" stroke-width="1.8"/>
+  </g>
+
+  <g id="star-blue">
+    <animateMotion dur="8s" repeatCount="indefinite" begin="0s">
+      <mpath href="#orbit-motion"/>
+    </animateMotion>
+    <!-- 绕到月后(远弧 θ∈[232.3°,307.7°])时被月亮遮挡:抵达月缘前 0.18s 渐隐,穿出月缘后 0.18s 渐显 -->
+    <animate attributeName="opacity" values="1;1;0;0;1;1"
+             keyTimes="0;0.6979;0.7204;0.9296;0.9321;1"
+             dur="8s" repeatCount="indefinite"/>
+    <circle cx="838.3" cy="334.4" r="21" fill="#1783FF" opacity="0.18"/>
+    <circle cx="838.3" cy="334.4" r="10.5" fill="#1783FF"/>
+  </g>
+  <g id="star-paper">
+    <animateMotion dur="8s" repeatCount="indefinite" begin="-0.289s">
+      <mpath href="#orbit-motion"/>
+    </animateMotion>
+    <animate attributeName="opacity" values="1;1;0;0;1;1"
+             keyTimes="0;0.6618;0.6843;0.8935;0.9160;1"
+             dur="8s" repeatCount="indefinite"/>
+    <circle cx="876.5" cy="353.5" r="21" fill="#2B2620" opacity="0.10"/>
+    <circle cx="876.5" cy="353.5" r="10.5" fill="#2B2620"/>
+  </g>
+</svg>

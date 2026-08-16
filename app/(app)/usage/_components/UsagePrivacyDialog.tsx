@@ -17,7 +17,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
         onClick={() => dialogRef.current?.showModal()}
         aria-label={title}
         aria-haspopup="dialog"
-        title={title}
+        data-tip={title}
         className="inline-flex size-7 shrink-0 items-center justify-center text-grey/70 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <CircleHelp size={12} />
