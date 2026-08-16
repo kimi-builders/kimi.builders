@@ -64,6 +64,7 @@ import UsageExportDialog from "./_components/UsageExportDialog";
 import UsageLoadErrorCard from "./_components/UsageLoadErrorCard";
 import UsageManagementPanels from "./_components/UsageManagementPanels";
 import UsageMethodologyDialog from "./_components/UsageMethodologyDialog";
+import UsagePrivacyDialog from "./_components/UsagePrivacyDialog";
 import UsageRecordsSection from "./_components/UsageRecordsSection";
 import UsageShareDialog from "./_components/UsageShareDialog";
 import UsageSyncDialog from "./_components/UsageSyncDialog";
@@ -515,71 +516,71 @@ export default async function UsagePage({
   });
 
   const header = (
-    <header className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-start sm:justify-between">
-      <div>
+    <header className="flex flex-col gap-4 border-b border-line pb-6">
+      {/* 标题行:标题左、操作按钮右;状态条不再挤在标题列里(与按钮抢宽,
+          英文偏长时被逐项折成多行),而是独占下方整行,中英文都是稳定一行 */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
           <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量中心" : "Usage center"}
+          {/* 隐私边界说明收进弹窗(原页头常驻副标题,太占位);摘要仍在下方状态条「默认私有」 */}
+          <UsagePrivacyDialog zh={zh} />
         </h1>
-        <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
-          {zh
-            ? "Kimi-first，多 Agent 兼容。这里只接收 token、时间与计数，不接收对话内容、完整路径或供应商凭据。"
-            : "Kimi-first and multi-agent ready. Only token, timing, and count metrics are accepted—never conversations, full paths, or provider credentials."}
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey" role="status" aria-live="polite">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck size={13} className="text-emerald-400" aria-hidden="true" />
-            {zh ? "默认私有" : "Private by default"}
-          </span>
-          <span aria-hidden="true">·</span>
-          <span className="flex items-center gap-1.5">
-            <i className="usage-pulse-dot shrink-0" aria-hidden="true" />
-            {lastSyncAt
-              ? zh
-                ? `最近同步 ${relTime(lastSyncAt, locale)}`
-                : `Synced ${relTime(lastSyncAt, locale)}`
-              : zh
-                ? "尚未同步"
-                : "Not synced yet"}
-          </span>
-          {staleSync && (
-            <span className="rounded-md border border-amber-500/40 px-1.5 py-0.5 text-amber-400">
-              {zh ? `超过 ${USAGE_STALE_AFTER_HOURS} 小时未同步` : `Not synced for ${USAGE_STALE_AFTER_HOURS}+ hours`}
-            </span>
+        <div className="grid w-full shrink-0 grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
+          {overview && hasUsageHistory && (
+            <UsageMethodologyDialog
+              zh={zh}
+              pricingMatches={overview.meta.pricingMatches}
+              pricingCoverage={`${(overview.meta.pricingCoverage * 100).toFixed(1)}%`}
+              pricingVersions={overview.meta.pricingVersions.join("、")}
+              assumedTokens={overview.meta.assumedTokens}
+              currentRange={overview.range}
+              tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
+              tzOffsetMinutes={overview.meta.tzOffsetMinutes}
+            />
           )}
+          {overview && hasUsageHistory && (
+            <UsageExportDialog
+              csvHref={`/api/usage/export?format=csv&${exportSuffix}`}
+              jsonHref={`/api/usage/export?format=json&${exportSuffix}`}
+              filteredRecordCount={overview.records.total}
+              rangeLabel={overview.range.label}
+              zh={zh}
+            />
+          )}
+          {overview && hasUsageHistory && (
+            <UsageShareDialog zh={zh} tzOffsetMinutes={filters.tzOffsetMinutes} />
+          )}
+          {overview && hasUsageHistory && <UsageSyncDialog zh={zh} />}
+          <Link
+            href="/usage/device"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
+          >
+            <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
+          </Link>
         </div>
       </div>
-      <div className="grid w-full shrink-0 grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
-        {overview && hasUsageHistory && (
-          <UsageMethodologyDialog
-            zh={zh}
-            pricingMatches={overview.meta.pricingMatches}
-            pricingCoverage={`${(overview.meta.pricingCoverage * 100).toFixed(1)}%`}
-            pricingVersions={overview.meta.pricingVersions.join("、")}
-            assumedTokens={overview.meta.assumedTokens}
-            currentRange={overview.range}
-            tzLabel={gmtLabel(overview.meta.tzOffsetMinutes)}
-            tzOffsetMinutes={overview.meta.tzOffsetMinutes}
-          />
+      {/* 各段 nowrap:段内永不折断;整段只在手机窄屏换行 */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey" role="status" aria-live="polite">
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <ShieldCheck size={13} className="text-emerald-400" aria-hidden="true" />
+          {zh ? "默认私有" : "Private by default"}
+        </span>
+        <span aria-hidden="true" className="whitespace-nowrap">·</span>
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <i className="usage-pulse-dot shrink-0" aria-hidden="true" />
+          {lastSyncAt
+            ? zh
+              ? `最近同步 ${relTime(lastSyncAt, locale)}`
+              : `Synced ${relTime(lastSyncAt, locale)}`
+            : zh
+              ? "尚未同步"
+              : "Not synced yet"}
+        </span>
+        {staleSync && (
+          <span className="whitespace-nowrap rounded-md border border-amber-500/40 px-1.5 py-0.5 text-amber-400">
+            {zh ? `超过 ${USAGE_STALE_AFTER_HOURS} 小时未同步` : `Not synced for ${USAGE_STALE_AFTER_HOURS}+ hours`}
+          </span>
         )}
-        {overview && hasUsageHistory && (
-          <UsageExportDialog
-            csvHref={`/api/usage/export?format=csv&${exportSuffix}`}
-            jsonHref={`/api/usage/export?format=json&${exportSuffix}`}
-            filteredRecordCount={overview.records.total}
-            rangeLabel={overview.range.label}
-            zh={zh}
-          />
-        )}
-        {overview && hasUsageHistory && (
-          <UsageShareDialog zh={zh} tzOffsetMinutes={filters.tzOffsetMinutes} />
-        )}
-        {overview && hasUsageHistory && <UsageSyncDialog zh={zh} />}
-        <Link
-          href="/usage/device"
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
-        >
-          <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
-        </Link>
       </div>
     </header>
   );
