@@ -74,7 +74,7 @@ export default async function CommunityWidgets({
           action={
             <Link
               href="/usage/leaderboard"
-              className="font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "side.lbFull")}
             </Link>
@@ -114,7 +114,7 @@ export default async function CommunityWidgets({
                 </Link>
                 <span className="min-w-0 flex-1 truncate text-xs text-paper">
                   {lbMe.name || lbMe.handle}{" "}
-                  <span className="font-mono text-[10px] text-grey">{t(locale, "side.lbYou")}</span>
+                  <span className="font-mono text-[11px] text-grey">{t(locale, "side.lbYou")}</span>
                 </span>
                 <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-blue">
                   {compact(lbMe.totalTokens)}
@@ -165,7 +165,7 @@ export default async function CommunityWidgets({
                     {f.reason}
                   </p>
                   {f.editorHandle && (
-                    <p className="mt-0.5 font-mono text-[10px] text-grey">
+                    <p className="mt-0.5 font-mono text-[11px] text-grey">
                       {t(locale, "featured.by", { handle: f.editorHandle })}
                     </p>
                   )}
@@ -185,10 +185,10 @@ export default async function CommunityWidgets({
           >
             {demoNight.event.title}
           </Link>
-          <p className="mt-1 font-mono text-[10px] text-blue">
+          <p className="mt-1 font-mono text-[11px] text-blue">
             {formatEventTime(demoNight.event.startsAt)}
           </p>
-          <p className="mt-1.5 font-mono text-[10px] text-grey">
+          <p className="mt-1.5 font-mono text-[11px] text-grey">
             {t(locale, "dn.rosterCount", { n: demoNight.rsvpCount })}
             {" · "}
             {demoNight.rsvped
@@ -205,7 +205,7 @@ export default async function CommunityWidgets({
           <ul className="space-y-2.5">
             {data.hot.map((h, i) => (
               <li key={h.id} className="flex items-baseline gap-2 text-xs">
-                <span className="shrink-0 font-mono text-[10px] text-grey">
+                <span className="shrink-0 font-mono text-[11px] text-grey">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <Link
@@ -214,7 +214,7 @@ export default async function CommunityWidgets({
                 >
                   {h.title}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
                   <MessageCircle size={11} />
                   {h.commentCount}
                 </span>
@@ -235,7 +235,7 @@ export default async function CommunityWidgets({
               <div className="font-mono text-lg font-semibold text-paper">
                 {s.n}
               </div>
-              <div className="mt-0.5 font-mono text-[10px] text-grey">
+              <div className="mt-0.5 font-mono text-[11px] text-grey">
                 {s.l}
               </div>
             </div>
@@ -261,7 +261,7 @@ export default async function CommunityWidgets({
             </Link>
           ))}
         </div>
-        <p className="mt-2 font-mono text-[10px] leading-relaxed text-grey">
+        <p className="mt-2 font-mono text-[11px] leading-relaxed text-grey">
           {data.newMembers.map((m) => `@${m.handle}`).join(" ")}
         </p>
       </Widget>

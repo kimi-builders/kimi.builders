@@ -39,7 +39,7 @@ export default async function AwesomeRail({
           ].map((s) => (
             <div key={s.l}>
               <div className="font-mono text-lg font-semibold text-paper">{s.n}</div>
-              <div className="mt-0.5 font-mono text-[10px] text-grey">{s.l}</div>
+              <div className="mt-0.5 font-mono text-[11px] text-grey">{s.l}</div>
             </div>
           ))}
         </div>
@@ -61,7 +61,7 @@ export default async function AwesomeRail({
                   <span className="block text-xs text-paper transition-colors group-hover:text-blue">
                     {t(locale, s.labelKey)}
                   </span>
-                  <span className="mt-0.5 block text-[10.5px] text-grey/80">
+                  <span className="mt-0.5 block text-[11px] text-grey/80">
                     {t(locale, s.hintKey)}
                   </span>
                 </span>
@@ -92,7 +92,7 @@ export default async function AwesomeRail({
                     style={{ width: `${Math.max((a.count / agentMax) * 100, 4)}%` }}
                   />
                 </span>
-                <span className="shrink-0 font-mono text-[10px] text-grey">{a.count}</span>
+                <span className="shrink-0 font-mono text-[11px] text-grey">{a.count}</span>
               </li>
             ))}
           </ul>

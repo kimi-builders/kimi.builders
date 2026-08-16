@@ -90,7 +90,7 @@ export default function YearFootprint({
           {monthLabels.map((m) => (
             <span
               key={`${m.weekIndex + weekOffset}-${m.month}`}
-              className="absolute top-0 font-mono text-[9px] text-grey"
+              className="absolute top-0 font-mono text-[10.5px] text-grey"
               style={{ left: `${(m.weekIndex / weeks.length) * 100}%` }}
             >
               {monthText(m.month)}
@@ -98,7 +98,7 @@ export default function YearFootprint({
           ))}
         </div>
         <div className="mt-1 flex gap-1.5">
-          <div className="grid w-4 shrink-0 grid-rows-7 gap-[3px] text-[9px] text-grey">
+          <div className="grid w-4 shrink-0 grid-rows-7 gap-[3px] text-[10.5px] text-grey">
             {["一", "", "三", "", "五", "", "日"].map((label, index) => (
               <span key={index} className="flex items-center justify-center">
                 {zh ? label : ["Mo", "", "We", "", "Fr", "", "Su"][index]}
@@ -142,7 +142,7 @@ export default function YearFootprint({
           >
             <ChevronLeft size={13} aria-hidden="true" />
           </button>
-          <span className="font-mono text-[10px] text-grey" aria-live="polite">
+          <span className="font-mono text-[11px] text-grey" aria-live="polite">
             {pageRange(pages[page])}
           </span>
           <button
@@ -186,7 +186,7 @@ export default function YearFootprint({
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[10px] text-grey">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[11px] text-grey">
         <span className="flex items-center gap-1.5">
           {zh ? "少" : "Less"}
           <span className="flex gap-[3px]">

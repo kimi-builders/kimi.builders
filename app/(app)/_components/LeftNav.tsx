@@ -68,7 +68,7 @@ export default function LeftNav({
 
   /* 「界面」双键共用的紧凑盒样式;form 等宽由 globals.css 的 .panel-pair 规则给。 */
   const pairBtnCls =
-    "flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-1.5 font-mono text-[10px] text-grey transition-colors hover:border-blue hover:text-blue";
+    "flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-1.5 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-blue";
 
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
@@ -82,7 +82,10 @@ export default function LeftNav({
       </Link>
 
       <nav className="mt-6 space-y-1">
-        {SECTIONS.filter((s) => !s.hidden).map((s) => {
+        {/* SOON 降权(20260815 评审):未就绪板块移到可用板块之后,细线分组
+            + 降不透明度——导航位次是重要性的信号,占位项不再占黄金位。
+            收起态(rail)下分组细线仍在,SOON 徽标保留(item 级标注)。 */}
+        {SECTIONS.filter((s) => !s.hidden && !s.soon).map((s) => {
           const Icon = s.icon;
           /* 用量需登录:未登录直链登录弹窗(其余板块公开浏览) */
           const href = s.href === "/usage" ? gate(s.href) : s.href;
@@ -96,11 +99,6 @@ export default function LeftNav({
               <Icon size={15} className="shrink-0" />
               <span className="nav-label flex flex-1 items-center">
                 {t(locale, s.key)}
-                {s.soon && (
-                  <span className="ml-auto font-mono text-[9px] tracking-wider text-grey/70">
-                    {t(locale, "nav.soon")}
-                  </span>
-                )}
               </span>
             </Link>
           );
@@ -114,6 +112,29 @@ export default function LeftNav({
             <User size={15} className="shrink-0" />
             <span className="nav-label">{t(locale, "nav.profile")}</span>
           </Link>
+        )}
+        {SECTIONS.filter((s) => !s.hidden && s.soon).length > 0 && (
+          <div className="mt-3 space-y-1 border-t border-line pt-3">
+            {SECTIONS.filter((s) => !s.hidden && s.soon).map((s) => {
+              const Icon = s.icon;
+              return (
+                <Link prefetch={false}
+                  key={s.href}
+                  href={s.href}
+                  title={t(locale, s.key)}
+                  className={`${itemCls(pathname.startsWith(s.href))} opacity-75`}
+                >
+                  <Icon size={15} className="shrink-0" />
+                  <span className="nav-label flex flex-1 items-center">
+                    {t(locale, s.key)}
+                    <span className="ml-auto font-mono text-[10.5px] tracking-wider text-grey/70">
+                      {t(locale, "nav.soon")}
+                    </span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </nav>
 
@@ -151,7 +172,7 @@ export default function LeftNav({
         {/* 「界面」双键:左=收起导航(PanelLeft*),右=隐藏侧栏(PanelRight*);
             左栏收起时纵排成图标键(globals.css 的 .panel-pair 规则) */}
         <div className="pt-3">
-          <p className="nav-label px-3 pb-1.5 font-mono text-[9px] tracking-[0.16em] text-grey/60">
+          <p className="nav-label px-3 pb-1.5 font-mono text-[10.5px] tracking-[0.16em] text-grey/60">
             {t(locale, "side.display")}
           </p>
           <div className="panel-pair flex gap-1.5">

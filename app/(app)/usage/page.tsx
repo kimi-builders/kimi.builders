@@ -213,7 +213,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const title = zh ? "环比上一等长周期" : "vs the previous equal-length period";
   if (prev <= 0) {
     return (
-      <span className="font-mono text-[10px] text-grey" title={title}>
+      <span className="font-mono text-[11px] text-grey" title={title}>
         —
       </span>
     );
@@ -221,7 +221,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const pct = ((cur - prev) / prev) * 100;
   return (
     <span
-      className={`font-mono text-[10px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
+      className={`font-mono text-[11px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
       title={title}
     >
       {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
@@ -360,7 +360,7 @@ function DistributionCard({
     <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-paper">{title}</h3>
-        <span className="font-mono text-[10px] text-grey/80">
+        <span className="font-mono text-[11px] text-grey/80">
           {byCost ? (zh ? "按估费" : "by cost") : zh ? "按 Token" : "by tokens"}
         </span>
       </div>
@@ -974,7 +974,7 @@ export default async function UsagePage({
       <section className="mt-3 grid grid-cols-2 rounded-2xl border border-line bg-card sm:grid-cols-3 lg:grid-cols-5">
         {stripCells.map((cellItem) => (
           <div key={cellItem.label} title={cellItem.title} className={STRIP_CELL}>
-            <div className="flex items-center gap-0.5 text-[10px] tracking-[0.08em] text-grey/80">
+            <div className="flex items-center gap-0.5 text-[11px] tracking-[0.08em] text-grey/80">
               <span className="truncate">{cellItem.label}</span>
               {cellItem.help === "duration" && (
                 <UsageMethodologyDialog kind="duration" compact {...methodologyProps} />
@@ -989,7 +989,7 @@ export default async function UsagePage({
                 deltaNote(cellItem.cur, cellItem.prev, zh)}
             </div>
             {cellItem.note && (
-              <div className="mt-0.5 truncate font-mono text-[9.5px] text-grey/70" title={cellItem.note}>
+              <div className="mt-0.5 truncate font-mono text-[10.5px] text-grey/70" title={cellItem.note}>
                 {cellItem.note}
               </div>
             )}
@@ -997,7 +997,7 @@ export default async function UsagePage({
         ))}
       </section>
       {bucketOnlyFiltersActive && (
-        <p className="mt-2 text-[10px] text-grey/80">
+        <p className="mt-2 text-[11px] text-grey/80">
           {zh
             ? "会话指标不按模型或推理强度拆分"
             : "Session metrics are not split by model or effort"}

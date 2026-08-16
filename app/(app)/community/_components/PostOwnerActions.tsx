@@ -33,13 +33,13 @@ export default function PostOwnerActions({
       fd.set("solved", solved ? "0" : "1");
       const res = await setPostSolvedAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, solved ? "post.unsolvedToast" : "post.solvedToast"));
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(null);
     }
@@ -55,7 +55,7 @@ export default function PostOwnerActions({
       fd.set("visibility", next);
       const res = await setPostVisibilityAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(
@@ -63,7 +63,7 @@ export default function PostOwnerActions({
       );
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(null);
     }
@@ -78,14 +78,14 @@ export default function PostOwnerActions({
       fd.set("post_id", String(postId));
       const res = await deletePostAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         setBusy(null);
         return;
       }
       toast(t(locale, "toast.deleted"));
       router.push("/community");
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
       setBusy(null);
     }
   };

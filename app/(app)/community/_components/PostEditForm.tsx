@@ -110,7 +110,7 @@ export default function PostEditForm({
           placeholder={t(locale, "form.bodyText")}
           inputCls={inputCls}
         />
-        <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
+        <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>
           <span>{t(locale, "form.mdSupport")}</span>
         </div>

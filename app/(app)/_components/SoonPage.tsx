@@ -26,13 +26,13 @@ export default function SoonPage({
         </span>
         <div>
           <h1 className="font-mono text-lg font-semibold text-paper">{name}</h1>
-          <p className="font-mono text-[10px] tracking-[0.25em] text-blue">
+          <p className="font-mono text-[11px] tracking-[0.25em] text-blue">
             {t(locale, "soon.headline")}
           </p>
         </div>
       </div>
       <p className="mt-4 text-sm leading-relaxed text-grey">{desc}</p>
-      <h2 className="mt-6 font-mono text-[10px] tracking-[0.25em] text-grey">
+      <h2 className="mt-6 font-mono text-[11px] tracking-[0.25em] text-grey">
         {t(locale, "soon.planned")}
       </h2>
       <ul className="mt-3 space-y-2">

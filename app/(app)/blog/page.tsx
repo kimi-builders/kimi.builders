@@ -26,7 +26,7 @@ export default async function BlogPage() {
   const locale = await getLocale(user);
   /* 板块未就绪(src/lib/upcoming.ts):整页换「正在路上」,不查库 */
   if (UPCOMING.blog) {
-    return <SoonPanel title={t(locale, "nav.blog")} locale={locale} />;
+    return <SoonPanel title={t(locale, "nav.blog")} locale={locale} expect={t(locale, "soon.blogExpect")} />;
   }
   const items = await listArticles("letter", locale);
   /* 编辑入口:admin/mod 可见,action 层再校验一次 */
@@ -35,7 +35,7 @@ export default async function BlogPage() {
   return (
     <div>
       <header className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <p className="font-mono text-[10px] tracking-[0.25em] text-blue">
+        <p className="font-mono text-[11px] tracking-[0.25em] text-blue">
           {t(locale, "blog.sub")}
         </p>
         <div className="mt-2 flex items-baseline gap-4">
@@ -61,7 +61,7 @@ export default async function BlogPage() {
         <div className="mt-4 space-y-3">
           {items.map((a) => (
             <article key={a.slug} className="rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20">
-              <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-grey">
+              <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.25em] text-grey">
                 <span>{monthLabel(a.publishedAt)}</span>
                 {a.fallback && (
                   <span className="rounded-md border border-line px-1.5 py-px text-paper">

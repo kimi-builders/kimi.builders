@@ -82,7 +82,7 @@ function CountTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[360px] table-fixed border-collapse">
         <caption className="sr-only">{caption}</caption>
-        <thead className="border-b border-line bg-paper/[0.02] font-mono text-[10px] tracking-[0.1em] text-grey">
+        <thead className="border-b border-line bg-paper/[0.02] font-mono text-[11px] tracking-[0.1em] text-grey">
           <tr>
             <th scope="col" className="px-4 py-2.5 text-left font-medium sm:px-5">
               {labelHeader}
@@ -201,7 +201,7 @@ function FeaturedTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[440px] table-fixed border-collapse">
         <caption className="sr-only">{t(locale, "analytics.featuredTitle")}</caption>
-        <thead className="border-b border-line bg-paper/[0.02] font-mono text-[10px] tracking-[0.1em] text-grey">
+        <thead className="border-b border-line bg-paper/[0.02] font-mono text-[11px] tracking-[0.1em] text-grey">
           <tr>
             <th scope="col" className="px-4 py-2.5 text-left font-medium sm:px-5">
               {t(locale, "analytics.colTarget")}
@@ -226,7 +226,7 @@ function FeaturedTable({
                   className="px-4 py-2.5 text-left font-medium text-paper sm:px-5"
                 >
                   <span>{featuredPositionLabel(position, locale)}</span>
-                  <span className="ml-2 text-[10px] font-normal text-grey">
+                  <span className="ml-2 text-[11px] font-normal text-grey">
                     {t(locale, "analytics.groupClicks", {
                       n: numberText(positionTotal, locale),
                     })}
@@ -340,10 +340,10 @@ export default async function AnalyticsInsights({
               <p className="mt-3 font-mono text-2xl font-semibold leading-none text-paper">
                 {numberText(row.total, locale)}
               </p>
-              <p className="mt-1 font-mono text-[9px] tracking-[0.08em] text-grey/80">
+              <p className="mt-1 font-mono text-[10.5px] tracking-[0.08em] text-grey/80">
                 {t(locale, "analytics.eventTotal")}
               </p>
-              <p className="mt-2 font-mono text-[10px] text-grey">
+              <p className="mt-2 font-mono text-[11px] text-grey">
                 {t(locale, "analytics.visitorDaysValue", {
                   n: numberText(row.uniqueViewers, locale),
                 })}

@@ -470,7 +470,7 @@ export function UsageWeeklyTrend({
         plotHeight={140}
         tooltipTitle={(item) => `${item.day} → ${weekEnd(item.day)}`}
         tooltipNote={(item, index) => (
-          <div className="mt-1 font-mono text-[10px] text-grey">
+          <div className="mt-1 font-mono text-[11px] text-grey">
             {zh ? "环比" : "WoW"} {percentDelta(item.totalTokens, trend[index - 1]?.totalTokens ?? 0)}
           </div>
         )}
@@ -539,7 +539,7 @@ export function UsageHeatmapGrid({
           <div className="space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-5 shrink-0 text-center font-mono text-[10px] text-grey">
+                <span className="w-5 shrink-0 text-center font-mono text-[11px] text-grey">
                   {shortNames[weekday]}
                 </span>
                 <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
@@ -581,7 +581,7 @@ export function UsageHeatmapGrid({
             <span className="w-5 shrink-0" />
             <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
               {Array.from({ length: 24 }, (_, hour) => (
-                <span key={hour} className="text-center font-mono text-[9px] text-grey">
+                <span key={hour} className="text-center font-mono text-[10.5px] text-grey">
                   {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
                 </span>
               ))}
@@ -607,7 +607,7 @@ export function UsageHeatmapGrid({
             <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(cell)}</span>
           </div>
           <TokenBreakdown item={cell} zh={zh} />
-          <div className="mt-2 border-t border-line pt-2 font-mono text-[10px] text-grey">
+          <div className="mt-2 border-t border-line pt-2 font-mono text-[11px] text-grey">
             {zh ? "估费" : "Cost"} {fmtCost(heatmap.costMicros[hovered.weekday][hovered.hour], currency)} ·{" "}
             {zh ? "活跃" : "Active"} {duration(heatmap.activeSeconds[hovered.weekday][hovered.hour], zh)} ·{" "}
             {compact(heatmap.prompts[hovered.weekday][hovered.hour], zh)}{" "}
@@ -616,7 +616,7 @@ export function UsageHeatmapGrid({
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] text-grey">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] text-grey">
         <span className="flex items-center gap-1.5">
           {zh ? "少" : "Less"}
           <span className="flex gap-[3px]">

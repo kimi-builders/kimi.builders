@@ -89,7 +89,7 @@ export default function UsageManagementPanels({
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {device.revokedAt ? (
-                        <span className="rounded-md border border-line px-2 py-1 font-mono text-[10px] text-grey">
+                        <span className="rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
                           {zh ? "已撤销" : "Revoked"}
                         </span>
                       ) : null}

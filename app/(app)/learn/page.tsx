@@ -17,7 +17,7 @@ export default async function LearnPage() {
   const locale = await getLocale(user);
   /* 板块未就绪(src/lib/upcoming.ts):整页换「正在路上」,不查库 */
   if (UPCOMING.learn) {
-    return <SoonPanel title={t(locale, "nav.learn")} locale={locale} />;
+    return <SoonPanel title={t(locale, "nav.learn")} locale={locale} expect={t(locale, "soon.learnExpect")} />;
   }
   const items = await listArticles("guide", locale);
 
@@ -66,7 +66,7 @@ export default async function LearnPage() {
                       </Link>
                     </span>
                     {a.fallback && (
-                      <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
+                      <span className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper">
                         {t(locale, a.locale === "zh" ? "art.langZh" : "art.langEn")}
                       </span>
                     )}

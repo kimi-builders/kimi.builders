@@ -222,7 +222,7 @@ export default async function SettingsContent({
                       <p className="flex items-center gap-2 text-[13px] font-medium text-paper">
                         {p === "github" ? "GitHub" : "Google"}
                         <span
-                          className={`rounded-full border px-2 py-0.5 font-mono text-[10px] ${
+                          className={`rounded-full border px-2 py-0.5 font-mono text-[11px] ${
                             linkedAccount
                               ? "border-blue/30 bg-blue/10 text-blue"
                               : "border-line text-grey"

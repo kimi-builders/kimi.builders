@@ -31,7 +31,7 @@ export default function SubscribeButton({
       toast(t(locale, next ? "toast.subscribed" : "toast.unsubscribed"));
     } catch {
       setSubscribed(!next);
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       busy.current = false;
     }

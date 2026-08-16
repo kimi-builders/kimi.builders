@@ -150,7 +150,7 @@ export default async function UsageDeviceContent({
                   {code}
                 </div>
               </div>
-              <span className="border border-line px-2 py-1 font-mono text-[10px] text-grey">
+              <span className="border border-line px-2 py-1 font-mono text-[11px] text-grey">
                 {usageSurfaceLabel(preview.surface)} · {usagePlatformLabel(preview.platform)}
               </span>
             </div>

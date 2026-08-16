@@ -245,7 +245,7 @@ export function ThemeCards({ locale }: { locale: Locale }) {
           </span>
           <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
             {t(locale, "set.themeDark")}
-            <span className="rounded border border-line px-1 text-[9px] text-grey">
+            <span className="rounded border border-line px-1 text-[10.5px] text-grey">
               {t(locale, "set.themeDefault")}
             </span>
           </span>

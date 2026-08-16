@@ -25,7 +25,7 @@ export default async function BlogRail({ locale }: { locale: Locale }) {
                 >
                   {a.title}
                 </Link>
-                <p className="mt-0.5 font-mono text-[10px] text-grey">
+                <p className="mt-0.5 font-mono text-[11px] text-grey">
                   {monthLabel(a.publishedAt)}
                 </p>
               </li>
@@ -39,7 +39,7 @@ export default async function BlogRail({ locale }: { locale: Locale }) {
           <p className="text-xs leading-relaxed text-grey">
             {t(locale, "home.featuredSub")}
           </p>
-          <p className="mt-2 font-mono text-[10px] leading-relaxed text-grey">
+          <p className="mt-2 font-mono text-[11px] leading-relaxed text-grey">
             {editors.map((h) => `@${h}`).join(" ")}
           </p>
         </Widget>

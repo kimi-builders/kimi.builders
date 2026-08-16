@@ -172,7 +172,7 @@ export default function UsageShareDialog({
           </div>
 
           <aside className="flex flex-col border-t border-line bg-bg p-4 lg:border-l lg:border-t-0 lg:p-5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-grey">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-grey">
               {zh ? "分享范围" : "Share range"}
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2" role="radiogroup" aria-label={zh ? "分享范围" : "Share range"}>

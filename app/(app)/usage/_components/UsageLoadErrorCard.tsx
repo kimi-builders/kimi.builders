@@ -28,7 +28,7 @@ export default function UsageLoadErrorCard({
               ? "其他已成功加载的内容仍然保留。重试后若继续出现，请把错误编号发给维护者。"
               : "Other successfully loaded content remains available. If retrying does not help, send the error reference to the maintainer."}
           </p>
-          <p className="mt-2 font-mono text-[10px] text-grey">{reference}</p>
+          <p className="mt-2 font-mono text-[11px] text-grey">{reference}</p>
           <button
             type="button"
             disabled={pending}

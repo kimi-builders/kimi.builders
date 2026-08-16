@@ -74,7 +74,7 @@ export default function SocialUsageHeatmap({
                 <span className={`${weekdayLabelWidth} shrink-0`} />
                 <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
                   {Array.from({ length: 24 }, (_, hour) => (
-                    <span key={hour} className="text-center font-mono text-[9px] text-grey">
+                    <span key={hour} className="text-center font-mono text-[10.5px] text-grey">
                       {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
                     </span>
                   ))}
@@ -84,7 +84,7 @@ export default function SocialUsageHeatmap({
                 {grid.map((row, weekday) => (
                   <div key={weekday} className="flex items-center gap-1.5">
                     <span
-                      className={`${weekdayLabelWidth} shrink-0 text-left font-mono text-[10px] text-grey`}
+                      className={`${weekdayLabelWidth} shrink-0 text-left font-mono text-[11px] text-grey`}
                     >
                       {longNames[weekday]}
                     </span>
@@ -121,7 +121,7 @@ export default function SocialUsageHeatmap({
             </div>
           )}
 
-          <p className="mt-3 font-mono text-[10px] text-grey">
+          <p className="mt-3 font-mono text-[11px] text-grey">
             {zh
               ? `时区:${gmtLabel(tzOffsetMinutes)}(浏览器本地)· 全部时间的 token 分布`
               : `Timezone: ${gmtLabel(tzOffsetMinutes)} (browser local) · all-time token distribution`}
@@ -135,9 +135,9 @@ export default function SocialUsageHeatmap({
           <p className="font-mono text-[11px] font-semibold text-paper">
             {zh ? "最活跃时段" : "Busiest slots"}
           </p>
-          <p className="mt-1 font-mono text-[9px] tracking-[0.14em] text-grey/70">TOKEN TOP 5</p>
+          <p className="mt-1 font-mono text-[10.5px] tracking-[0.14em] text-grey/70">TOKEN TOP 5</p>
           {top.length === 0 ? (
-            <p className="mt-5 text-[10px] text-grey">
+            <p className="mt-5 text-[11px] text-grey">
               {zh ? "还没有用量数据" : "No usage data yet"}
             </p>
           ) : (
@@ -147,17 +147,17 @@ export default function SocialUsageHeatmap({
                   key={`${item.weekday}-${item.hour}`}
                   className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 border-b border-line/70 pb-2 last:border-b-0 last:pb-0"
                 >
-                  <span className="font-mono text-[10px] text-blue">
+                  <span className="font-mono text-[11px] text-blue">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0">
-                    <span className="flex items-baseline justify-between gap-2 font-mono text-[10px]">
+                    <span className="flex items-baseline justify-between gap-2 font-mono text-[11px]">
                       <span className="truncate text-paper">
                         {longNames[item.weekday]} {String(item.hour).padStart(2, "0")}:00
                       </span>
                       <span className="shrink-0 text-grey">{compact(item.value, zh)}</span>
                     </span>
-                    <span className="mt-0.5 block font-mono text-[9px] text-grey/65">tokens</span>
+                    <span className="mt-0.5 block font-mono text-[10.5px] text-grey/65">tokens</span>
                   </span>
                 </li>
               ))}

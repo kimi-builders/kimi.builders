@@ -52,7 +52,9 @@ test("nav surfaces: SOON badge for gated, hidden for nav-hidden", () => {
       source.includes("hidden: NAV_HIDDEN.demoNight"),
       `${path} demoNight hidden`,
     );
-    assert.match(source, /\.filter\(\(\w+\) => !\w+\.hidden\)/, `${path} filters hidden`);
+    /* 20260815 评审:LeftNav 把分区拆成 live/soon 两组渲染,过滤谓词是
+       复合表达式(!s.hidden && !s.soon),只钉「hidden 必须被过滤」的语义 */
+    assert.match(source, /\.filter\(\(\w+\) => !\w+\.hidden/, `${path} filters hidden`);
   }
   const search = read("app/(app)/_components/GlobalSearch.tsx");
   assert.ok(search.includes("soon(locale, UPCOMING.learn)"), "search learn soon");

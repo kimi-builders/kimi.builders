@@ -105,7 +105,7 @@ export default async function PostPage({
         )}
         {post.visibility === "private" && (
           <span
-            className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper"
+            className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper"
             title={t(locale, "post.privateHint")}
           >
             {t(locale, "post.private")}
@@ -113,7 +113,7 @@ export default async function PostPage({
         )}
         {post.hiddenAt && (
           <span
-            className="rounded-md border border-red-400/60 px-1.5 py-px text-[10px] text-red-400"
+            className="rounded-md border border-red-400/60 px-1.5 py-px text-[11px] text-red-400"
             title={post.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}
@@ -122,7 +122,7 @@ export default async function PostPage({
         {/* 编辑精选徽章:理由 + 定夺编辑放在 title(硬边描边芯片,对齐「私密」标) */}
         {postFeatured && (
           <span
-            className="rounded-md border border-blue/60 px-1.5 py-px text-[10px] text-blue"
+            className="rounded-md border border-blue/60 px-1.5 py-px text-[11px] text-blue"
             title={`${postFeatured.reason}${
               postFeatured.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: postFeatured.editorHandle })}`

@@ -91,7 +91,7 @@ export default function AiPrefsForm({
     } catch {
       setMine(mine);
       setShow(show);
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

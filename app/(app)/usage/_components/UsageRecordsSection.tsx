@@ -185,7 +185,7 @@ export default function UsageRecordsSection({
         <span>
           <span className="block truncate">{row.modelDisplayName}</span>
           {row.modelDisplayName !== row.model && (
-            <span className="block truncate text-[9px] text-grey">{row.model}</span>
+            <span className="block truncate text-[10.5px] text-grey">{row.model}</span>
           )}
         </span>
       ),
@@ -280,7 +280,7 @@ export default function UsageRecordsSection({
         const rate = usageCacheHitRate(row);
         if (rate === null) return <span className="text-grey">—</span>;
         return (
-          <span className="rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[10px] text-emerald-400">
+          <span className="rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[11px] text-emerald-400">
             {formatHitRate(rate)}
           </span>
         );
@@ -404,7 +404,7 @@ export default function UsageRecordsSection({
                   {formatHitRate(usageCacheHitRate(row))} · {compact(row.requests, zh)} {zh ? "次请求" : "req"}
                 </div>
                 {row.modelDisplayName !== row.model && (
-                  <div className="mt-1 truncate font-mono text-[9px] text-grey/70">raw model: {row.model}</div>
+                  <div className="mt-1 truncate font-mono text-[10.5px] text-grey/70">raw model: {row.model}</div>
                 )}
                 {enabled.size > 0 && (
                   <div className="mt-1 space-y-0.5 font-mono text-[11px] text-grey">

@@ -138,7 +138,7 @@ export default function MarkdownEditor({
         ta.setSelectionRange(r.selectionEnd, r.selectionEnd);
       });
     } catch {
-      toast(t(locale, "err.uploadFailed"));
+      toast(t(locale, "err.uploadFailed"), "error");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";

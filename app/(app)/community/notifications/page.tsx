@@ -79,7 +79,7 @@ export default async function NotificationsPage() {
                     {n.postTitle}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-[10px] text-grey">
+                <span className="shrink-0 font-mono text-[11px] text-grey">
                   {relTime(n.createdAt, locale)}
                 </span>
               </Link>

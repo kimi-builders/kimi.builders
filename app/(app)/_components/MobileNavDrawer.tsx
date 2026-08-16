@@ -126,7 +126,9 @@ export default function MobileNavDrawer({
             </Link>
 
             <nav aria-label={t(locale, "nav.menu")} className="mt-4 space-y-1">
-              {SECTIONS.filter((section) => !section.hidden).map((section) => {
+              {/* SOON 降权(20260815 评审,与桌面 LeftNav 一致):未就绪板块
+                  移到分组细线之后,不再占据列表头部 */}
+              {SECTIONS.filter((section) => !section.hidden && !section.soon).map((section) => {
                 const Icon = section.icon;
                 const active = pathname.startsWith(section.href);
                 /* 用量需登录:未登录直链登录弹窗(其余板块公开浏览) */
@@ -142,15 +144,34 @@ export default function MobileNavDrawer({
                   >
                     <Icon size={17} className="shrink-0" aria-hidden="true" />
                     <span>{t(locale, section.key)}</span>
-                    {section.soon && (
-                      <span className="ml-auto text-[9px] tracking-wider text-grey/70">
-                        {t(locale, "nav.soon")}
-                      </span>
-                    )}
                   </Link>
                 );
               })}
             </nav>
+
+            {SECTIONS.some((section) => !section.hidden && section.soon) && (
+              <nav aria-label={t(locale, "nav.soon")} className="mt-2 space-y-1 border-t border-line pt-2">
+                {SECTIONS.filter((section) => !section.hidden && section.soon).map((section) => {
+                  const Icon = section.icon;
+                  const active = pathname.startsWith(section.href);
+                  return (
+                    <Link
+                      key={section.href}
+                      href={section.href}
+                      onClick={close}
+                      aria-current={active ? "page" : undefined}
+                      className={`${itemClass(active)} opacity-75`}
+                    >
+                      <Icon size={17} className="shrink-0" aria-hidden="true" />
+                      <span>{t(locale, section.key)}</span>
+                      <span className="ml-auto text-[10.5px] tracking-wider text-grey/70">
+                        {t(locale, "nav.soon")}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
             <div className="mx-4 my-4 border-t border-line" />
 

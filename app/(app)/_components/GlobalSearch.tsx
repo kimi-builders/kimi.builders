@@ -149,7 +149,7 @@ export default function GlobalSearch({
           </button>
         </div>
         <div className="max-h-[min(62vh,32rem)] overflow-y-auto p-2">
-          <h2 id={`${mode}-search-title`} className="px-3 pb-2 pt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-grey">
+          <h2 id={`${mode}-search-title`} className="px-3 pb-2 pt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-grey">
             {query ? t(locale, "search.results") : t(locale, "search.jumpTo")}
           </h2>
           {results.length > 0 ? (
@@ -177,7 +177,7 @@ export default function GlobalSearch({
             </div>
           )}
         </div>
-        <p className="border-t border-line px-4 py-2 text-right font-mono text-[10px] text-grey/70">
+        <p className="border-t border-line px-4 py-2 text-right font-mono text-[11px] text-grey/70">
           {t(locale, "search.shortcut")}
         </p>
       </dialog>

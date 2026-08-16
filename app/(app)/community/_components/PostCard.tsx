@@ -64,14 +64,14 @@ export default function PostCard({
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2 font-mono text-[11px]">
           {p.visibility === "private" && (
-            <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
+            <span className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper">
               {t(locale, "post.private")}
             </span>
           )}
           {/* 被屏蔽标:feed 只向作者本人放行被屏蔽帖,徽章天然只有作者可见 */}
           {p.hiddenAt && (
             <span
-              className="rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[10px] text-red-400"
+              className="rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[11px] text-red-400"
               title={p.hiddenReason ?? undefined}
             >
               {t(locale, "mod.hiddenBadge")}
@@ -95,7 +95,7 @@ export default function PostCard({
         >
           {p.title}
           {p.type !== "text" && (
-            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
+            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[11px] font-normal text-grey">
               {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
             </span>
           )}

@@ -261,7 +261,7 @@ async function AdminUserList({
                 </Link>
                 <span className="ml-2 font-mono text-[11px] text-grey">@{u.handle}</span>
               </span>
-              <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-grey">
+              <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[11px] text-grey">
                 <span
                   className={`rounded-md px-1.5 py-px ${
                     u.role === "member" ? "bg-paper/[0.07]" : "bg-blue/10 text-blue"

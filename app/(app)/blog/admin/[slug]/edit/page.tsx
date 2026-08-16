@@ -48,7 +48,7 @@ export default async function EditArticlePage({
       <h1 className="font-mono text-lg font-semibold">
         {t(locale, "artf.editTitle")}
         {!article.publishedAt && (
-          <span className="ml-3 rounded-md border border-line px-1.5 py-px align-middle font-mono text-[10px] tracking-wider text-grey">
+          <span className="ml-3 rounded-md border border-line px-1.5 py-px align-middle font-mono text-[11px] tracking-wider text-grey">
             {t(locale, "art.draft")}
           </span>
         )}

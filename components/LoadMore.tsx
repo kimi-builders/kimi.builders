@@ -39,13 +39,13 @@ export default function LoadMore<T extends string | number>({
     try {
       const res = await load(cursor);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       setExtra((prev) => [...prev, ...res.nodes]);
       setCursor(res.nextCursor);
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

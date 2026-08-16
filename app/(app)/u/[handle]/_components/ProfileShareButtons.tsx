@@ -27,7 +27,7 @@ export default function ProfileShareButtons({
           /* 剪贴板被拒(权限/非安全上下文)就静默 */
         }
       }}
-      className={`inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 font-mono text-[10px] whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3 sm:text-[11px] ${
+      className={`inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 font-mono text-[11px] whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3 sm:text-[11px] ${
         copied ? "text-blue" : "text-grey hover:text-paper"
       }`}
     >

@@ -156,7 +156,7 @@ export default async function WorksPage({
           </h2>
           {allowance && allowance.total > 0 && (
             <p className="mt-2">
-              <span className="inline-flex items-center rounded-full border border-blue/30 bg-blue/10 px-2.5 py-0.5 font-mono text-[10.5px] font-semibold text-blue">
+              <span className="inline-flex items-center rounded-full border border-blue/30 bg-blue/10 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-blue">
                 {t(locale, "works.emptyQuota", {
                   n: `${compactNumber(allowance.remaining, locale)} tokens`,
                 })}
@@ -183,7 +183,7 @@ export default async function WorksPage({
         </div>
       ) : (
         <div
-          className={`mt-5 grid gap-4 ${
+          className={`stagger-in mt-5 grid gap-4 ${
             view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
           }`}
         >

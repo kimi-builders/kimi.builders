@@ -70,7 +70,9 @@ export default function MobileTabBar({
               key={tab.href}
               href={tab.href}
               aria-current={tab.active ? "page" : undefined}
-              className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 font-mono text-[10px] transition-colors ${
+              /* 标签字体走系统 sans(20260815 评审):JetBrains Mono 无中文字形,
+                 中文标签 fallback 混排基线不齐;tab 文案中英皆有,sans 两端都稳 */
+              className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[11px] transition-colors ${
                 tab.primary
                   ? "text-blue"
                   : tab.active

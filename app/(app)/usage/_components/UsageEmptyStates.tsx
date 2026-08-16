@@ -50,11 +50,11 @@ export function UsageFirstRun({
           </p>
           <div className="mt-3 flex max-w-3xl flex-wrap gap-1.5">
             {sources.map((s) => (
-              <span key={s} className="rounded-md border border-line bg-bg px-2 py-1 font-mono text-[10px] text-grey">
+              <span key={s} className="rounded-md border border-line bg-bg px-2 py-1 font-mono text-[11px] text-grey">
                 {s}
               </span>
             ))}
-            <span className="rounded-md border border-dashed border-line px-2 py-1 font-mono text-[10px] text-grey/80">
+            <span className="rounded-md border border-dashed border-line px-2 py-1 font-mono text-[11px] text-grey/80">
               {zh ? "Cursor(CSV 显式启用)" : "Cursor (explicit CSV)"}
             </span>
           </div>
@@ -100,7 +100,7 @@ export function UsageFirstRun({
               loading="lazy"
               className="w-full"
             />
-            <figcaption className="border-t border-line px-4 py-2.5 font-mono text-[10.5px] text-grey">
+            <figcaption className="border-t border-line px-4 py-2.5 font-mono text-[11px] text-grey">
               {zh
                 ? "本地看板实拍——由真实本机 Agent 日志生成,不是设计稿"
                 : "The local dashboard, rendered from real local agent logs — not a mockup"}

@@ -226,7 +226,7 @@ export default async function WorkRail({
                 >
                   {r.name}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
                   <Heart size={11} />
                   {r.voteCount}
                 </span>

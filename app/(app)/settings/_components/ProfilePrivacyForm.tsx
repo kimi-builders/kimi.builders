@@ -76,7 +76,7 @@ export default function ProfilePrivacyForm({
       setAvatar(avatar);
       setName(name);
       setBio(bio);
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

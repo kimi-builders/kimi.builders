@@ -101,7 +101,7 @@ export default async function LoginContent({
       )}
 
       {!emailOnly && (
-        <div className="my-5 flex items-center gap-3 font-mono text-[10px] text-grey">
+        <div className="my-5 flex items-center gap-3 font-mono text-[11px] text-grey">
           <span className="h-px flex-1 bg-line" />
           {t(locale, "login.emailDivider")}
           <span className="h-px flex-1 bg-line" />
@@ -138,19 +138,19 @@ export default async function LoginContent({
         <form method="POST" action="/api/auth/email/login" className="mt-4 space-y-3">
           <input type="hidden" name="next" value={next} />
           <div>
-            <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="email">
+            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="email">
               {t(locale, "auth.email")}
             </label>
             <input id="email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
             <div className="mb-1 flex items-baseline justify-between">
-              <label className="block font-mono text-[10px] text-grey" htmlFor="password">
+              <label className="block font-mono text-[11px] text-grey" htmlFor="password">
                 {t(locale, "login.password")}
               </label>
               <Link
                 href="/login?mode=forgot"
-                className="font-mono text-[10px] text-grey transition-colors hover:text-paper"
+                className="font-mono text-[11px] text-grey transition-colors hover:text-paper"
               >
                 {t(locale, "login.forgot")}
               </Link>
@@ -167,25 +167,25 @@ export default async function LoginContent({
         <form method="POST" action="/api/auth/email/register" className="mt-4 space-y-3">
           <input type="hidden" name="next" value={next} />
           <div>
-            <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-email">
+            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-email">
               {t(locale, "auth.email")}
             </label>
             <input id="reg-email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-name">
+            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-name">
               {t(locale, "login.displayName")}
             </label>
             <input id="reg-name" name="name" type="text" maxLength={64} autoComplete="nickname" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-password">
+            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-password">
               {t(locale, "login.password8")}
             </label>
             <input id="reg-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reg-password2">
+            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-password2">
               {t(locale, "login.confirmPassword")}
             </label>
             <input id="reg-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
@@ -204,7 +204,7 @@ export default async function LoginContent({
             </p>
             <Link
               href="/login?mode=forgot"
-              className="inline-block font-mono text-[10px] text-grey transition-colors hover:text-paper"
+              className="inline-block font-mono text-[11px] text-grey transition-colors hover:text-paper"
             >
               <span className="inline-flex items-center gap-1.5">
                 {t(locale, "login.resend")}
@@ -218,7 +218,7 @@ export default async function LoginContent({
               {t(locale, "login.forgotIntro")}
             </p>
             <div>
-              <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="forgot-email">
+              <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="forgot-email">
                 {t(locale, "auth.email")}
               </label>
               <input id="forgot-email" name="email" type="email" required autoComplete="email" className={inputCls} />
@@ -227,7 +227,7 @@ export default async function LoginContent({
               <Mail size={12} className="mr-1 inline" /> {t(locale, "login.sendReset")}
             </button>
             {/* 重置规则(20260919 收编于此,原先全局底栏与登录/注册无关) */}
-            <p className="font-mono text-[10px] leading-relaxed text-grey/80">
+            <p className="font-mono text-[11px] leading-relaxed text-grey/80">
               · {t(locale, "login.resetRule")}
               <br />· {t(locale, "login.resetContact")}
             </p>
@@ -239,13 +239,13 @@ export default async function LoginContent({
           <form method="POST" action="/api/auth/email/reset" className="mt-4 space-y-3">
             <input type="hidden" name="token" value={token} />
             <div>
-              <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reset-password">
+              <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reset-password">
                 {t(locale, "login.newPassword8")}
               </label>
               <input id="reset-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
             </div>
             <div>
-              <label className="mb-1 block font-mono text-[10px] text-grey" htmlFor="reset-password2">
+              <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reset-password2">
                 {t(locale, "login.confirmNewPassword")}
               </label>
               <input id="reset-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
@@ -261,7 +261,7 @@ export default async function LoginContent({
             </p>
             <Link
               href="/login?mode=forgot"
-              className="inline-block font-mono text-[10px] text-grey transition-colors hover:text-paper"
+              className="inline-block font-mono text-[11px] text-grey transition-colors hover:text-paper"
             >
               <span className="inline-flex items-center gap-1.5">
                 {t(locale, "login.requestNew")}
@@ -272,7 +272,7 @@ export default async function LoginContent({
         ))}
 
       {(mode === "forgot" || mode === "reset") && (
-        <p className="mt-4 font-mono text-[10px]">
+        <p className="mt-4 font-mono text-[11px]">
           <Link href="/login" className="inline-flex items-center gap-1.5 text-grey transition-colors hover:text-paper">
             <ArrowLeft size={12} aria-hidden="true" />
             {t(locale, "login.backSignIn")}

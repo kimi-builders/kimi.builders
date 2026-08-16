@@ -143,7 +143,7 @@ export default function WorkMediaFields({
       setCover(await uploadMedia(file, "image"));
     } catch {
       /* 上传失败要出声(20260919):静默失败看起来像「传上了但没显示」 */
-      toast(t(locale, "works.uploadFailed"));
+      toast(t(locale, "works.uploadFailed"), "error");
     } finally {
       setCoverUploading(false);
     }
@@ -416,7 +416,7 @@ export default function WorkMediaFields({
       <div>
         <span className="mb-1.5 flex items-baseline justify-between text-[11.5px] text-grey">
           <span>{t(locale, "works.images")}</span>
-          <span className="font-mono text-[10.5px] text-grey/70">
+          <span className="font-mono text-[11px] text-grey/70">
             {images.length}/{WORK_IMAGE_MAX}
           </span>
         </span>
@@ -448,7 +448,7 @@ export default function WorkMediaFields({
           <span className="text-[11.5px] text-grey">
             {t(locale, "works.imagesAdd")}
           </span>
-          <span className="text-[10.5px] leading-relaxed text-grey/70">
+          <span className="text-[11px] leading-relaxed text-grey/70">
             {t(locale, "works.imagesHint")}
           </span>
         </div>
@@ -517,14 +517,14 @@ export default function WorkMediaFields({
                   <X size={11} aria-hidden="true" />
                 </button>
                 {it.status === "uploading" && (
-                  <span className="absolute inset-0 flex items-center justify-center gap-1 bg-black/55 font-mono text-[10px] text-white/85">
+                  <span className="absolute inset-0 flex items-center justify-center gap-1 bg-black/55 font-mono text-[11px] text-white/85">
                     <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
                     {t(locale, "works.uploading")}
                   </span>
                 )}
                 {it.status === "error" && (
                   <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/65">
-                    <span className="font-mono text-[10px] text-blue">
+                    <span className="font-mono text-[11px] text-blue">
                       {t(locale, "works.uploadFailed")}
                     </span>
                     {it.file && (
@@ -538,7 +538,7 @@ export default function WorkMediaFields({
                           );
                           void upload(it.id, it.file as File);
                         }}
-                        className="inline-flex items-center gap-1 rounded border border-line bg-bg px-1.5 py-0.5 font-mono text-[10px] text-paper hover:border-blue"
+                        className="inline-flex items-center gap-1 rounded border border-line bg-bg px-1.5 py-0.5 font-mono text-[11px] text-paper hover:border-blue"
                       >
                         <RefreshCw size={10} aria-hidden="true" />
                         {t(locale, "works.retry")}

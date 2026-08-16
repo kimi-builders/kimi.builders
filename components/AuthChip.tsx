@@ -43,26 +43,14 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
     );
   }
   return (
-    <>
-      <span className="text-grey">{t(locale, "auth.login")}</span>
-      <a
-        href="/api/auth/github"
-        className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
-      >
-        GitHub
-      </a>
-      <a
-        href="/api/auth/google"
-        className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
-      >
-        Google
-      </a>
-      <Link
-        href="/login"
-        className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
-      >
-        {t(locale, "auth.email")}
-      </Link>
-    </>
+    /* 单一登录入口(20260815 评审):登录方式的选择属于登录弹窗的语境,
+       浏览语境里并排 GitHub/Google/邮箱只会堆高顶栏噪音;弹窗内三式齐全。
+       Link 软导航 → 应用内 /login 拦截成弹窗,首页上下文同样命中。 */
+    <Link
+      href="/login"
+      className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
+    >
+      {t(locale, "auth.login")}
+    </Link>
   );
 }

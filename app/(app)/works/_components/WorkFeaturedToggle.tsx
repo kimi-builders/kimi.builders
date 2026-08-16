@@ -32,7 +32,7 @@ export default function WorkFeaturedToggle({
       fd.set("reason", reason);
       const res = await featureWorkAction(fd);
       if (!res.ok) {
-        toast(res.error ?? t(locale, "toast.failed"));
+        toast(res.error ?? t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.featured"));
@@ -40,7 +40,7 @@ export default function WorkFeaturedToggle({
       setReason("");
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }
@@ -54,13 +54,13 @@ export default function WorkFeaturedToggle({
       fd.set("work_id", String(workId));
       const res = await unfeatureWorkAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.unfeatured"));
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

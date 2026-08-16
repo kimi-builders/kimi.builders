@@ -38,11 +38,11 @@ export default function WorkVoteButton({
       /* 服务端拒绝(限流等):回滚乐观态,限流文案带等待秒数 */
       if (!res.ok) {
         setState(prev);
-        toast(res.error || t(locale, "toast.failed"));
+        toast(res.error || t(locale, "toast.failed"), "error");
       }
     } catch {
       setState(prev);
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       busy.current = false;
     }

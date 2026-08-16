@@ -43,7 +43,7 @@ export default async function WorksRail({
           ].map((s) => (
             <div key={s.l}>
               <div className="font-mono text-lg font-semibold text-paper">{s.n}</div>
-              <div className="mt-0.5 font-mono text-[10px] text-grey">{s.l}</div>
+              <div className="mt-0.5 font-mono text-[11px] text-grey">{s.l}</div>
             </div>
           ))}
         </div>
@@ -102,7 +102,7 @@ export default async function WorksRail({
                     style={{ width: `${Math.max((a.count / agentMax) * 100, 4)}%` }}
                   />
                 </span>
-                <span className="shrink-0 font-mono text-[10px] text-grey">{a.count}</span>
+                <span className="shrink-0 font-mono text-[11px] text-grey">{a.count}</span>
               </li>
             ))}
           </ul>
@@ -116,7 +116,7 @@ export default async function WorksRail({
           <ul className="space-y-2.5">
             {top.map((w, i) => (
               <li key={w.id} className="flex items-baseline gap-2 text-xs">
-                <span className="shrink-0 font-mono text-[10px] text-grey">
+                <span className="shrink-0 font-mono text-[11px] text-grey">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <Link
@@ -125,7 +125,7 @@ export default async function WorksRail({
                 >
                   {w.name}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
                   <ArrowBigUp size={11} />
                   {w.voteCount}
                 </span>
@@ -133,7 +133,7 @@ export default async function WorksRail({
             ))}
           </ul>
         )}
-        <p className="mt-3 border-t border-line pt-3 text-[10.5px] leading-relaxed text-grey/80">
+        <p className="mt-3 border-t border-line pt-3 text-[11px] leading-relaxed text-grey/80">
           {t(locale, "works.claimNote")}{" "}
           <Link
             href="/awesome"

@@ -136,18 +136,21 @@ export default async function CommunityPage({
               </Link>
             );
           })}
-          {/* 只看已解决(20260907):同类问题先在这里找答案 */}
-          <Link
-            href={feedHref({ solved: solvedOnly ? null : "1" })}
-            scroll={false}
-            aria-current={solvedOnly ? "page" : undefined}
-            className={`shrink-0 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-              solvedOnly ? "font-semibold text-blue" : "text-grey hover:text-blue"
-            }`}
-          >
-            ✓ {t(locale, "feed.solvedOnly")}
-          </Link>
         </nav>
+        {/* 只看已解决(20260907;20260815 评审移位):状态维度筛选,不属于话题——
+            从话题行移到排序行,用有框 pill 与无边框话题区分两种心智模型 */}
+        <Link
+          href={feedHref({ solved: solvedOnly ? null : "1" })}
+          scroll={false}
+          aria-current={solvedOnly ? "page" : undefined}
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+            solvedOnly
+              ? "border-blue/60 bg-blue/10 font-semibold text-blue"
+              : "border-line text-grey hover:border-blue/50 hover:text-blue"
+          }`}
+        >
+          ✓ {t(locale, "feed.solvedOnly")}
+        </Link>
       </div>
 
       {feed.nodes.length === 0 ? (
@@ -158,7 +161,7 @@ export default async function CommunityPage({
           </p>
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
+        <div className="stagger-in mt-4 space-y-3">
           {feed.nodes}
           <LoadMore
             key={`${currentSort}-${cat ?? ""}-${subOnly ? "sub" : ""}-${locale}`}

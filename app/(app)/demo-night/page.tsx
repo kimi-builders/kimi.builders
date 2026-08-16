@@ -85,7 +85,7 @@ export default async function DemoNightPage() {
 
       {/* ---- 当前场 ---- */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <h2 className="font-mono text-[10px] tracking-[0.25em] text-grey">
+        <h2 className="font-mono text-[11px] tracking-[0.25em] text-grey">
           {t(locale, "dn.upcoming")}
         </h2>
         {summary ? (
@@ -137,7 +137,7 @@ export default async function DemoNightPage() {
             </div>
 
             <div className="mt-5 border-t border-line pt-4">
-              <p className="font-mono text-[10px] tracking-[0.25em] text-grey">
+              <p className="font-mono text-[11px] tracking-[0.25em] text-grey">
                 {t(locale, "dn.roster")} ·{" "}
                 {t(locale, "dn.rosterCount", { n: summary.rsvpCount })}
               </p>
@@ -151,7 +151,7 @@ export default async function DemoNightPage() {
 
       {/* ---- 往期归档 ---- */}
       <section className="mt-8">
-        <h2 className="font-mono text-[10px] tracking-[0.25em] text-grey">
+        <h2 className="font-mono text-[11px] tracking-[0.25em] text-grey">
           {t(locale, "dn.archive")}
         </h2>
         {archive.length === 0 ? (

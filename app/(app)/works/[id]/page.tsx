@@ -251,13 +251,13 @@ export default async function WorkPage({
           </span>
         )}
         {work.visibility === "private" && (
-          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-[10px] font-medium text-grey">
+          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-[11px] font-medium text-grey">
             {t(locale, "works.private")}
           </span>
         )}
         {work.hiddenAt && (
           <span
-            className="inline-block rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[10px] font-medium text-red-400"
+            className="inline-block rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[11px] font-medium text-red-400"
             title={work.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}

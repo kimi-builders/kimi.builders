@@ -23,7 +23,7 @@ export default function UsageError({
         请求没有修改你的数据。请重试；如果问题持续出现，可将下方错误编号发给维护者。
         Your data was not changed. Retry, or send the error reference to the maintainer.
       </p>
-      {error.digest && <p className="mt-3 font-mono text-[10px] text-grey">{error.digest}</p>}
+      {error.digest && <p className="mt-3 font-mono text-[11px] text-grey">{error.digest}</p>}
       <button
         type="button"
         onClick={reset}

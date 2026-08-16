@@ -177,7 +177,7 @@ export default async function AwesomePage({
         </div>
       ) : (
         <div
-          className={`mt-5 grid gap-4 ${
+          className={`stagger-in mt-5 grid gap-4 ${
             view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
           }`}
         >

@@ -111,7 +111,7 @@ export default function CommentSection({
     try {
       const res = await loadMoreCommentsAction(postId, cursor);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       setExtra((prev) => ({
@@ -121,7 +121,7 @@ export default function CommentSection({
       }));
       setCursor(res.nextCursor);
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setLoadingMore(false);
     }
@@ -145,7 +145,7 @@ export default function CommentSection({
     try {
       const res = await createCommentAction(fd);
       if (!res.ok) {
-        toast(res.error || t(locale, "toast.failed"));
+        toast(res.error || t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.commented"));
@@ -153,7 +153,7 @@ export default function CommentSection({
       form.reset();
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setPosting(false);
     }
@@ -168,14 +168,14 @@ export default function CommentSection({
     try {
       const res = await updateCommentAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.saved"));
       setEditingId(null);
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusyId(null);
     }
@@ -191,13 +191,13 @@ export default function CommentSection({
       fd.set("comment_id", String(id));
       const res = await deleteCommentAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.deleted"));
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusyId(null);
     }
@@ -216,13 +216,13 @@ export default function CommentSection({
       fd.set("reason", reason);
       const res = await hideContentAction(fd);
       if (!res.ok) {
-        toast(res.error || t(locale, "toast.failed"));
+        toast(res.error || t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "mod.toastHidden"));
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusyId(null);
     }
@@ -247,12 +247,12 @@ export default function CommentSection({
         <span className="text-paper">{c.author}</span>
       )}
       {c.isAi && (
-        <span className="rounded-md border border-blue px-1.5 py-px text-[9px] tracking-wider text-blue">
+        <span className="rounded-md border border-blue px-1.5 py-px text-[10.5px] tracking-wider text-blue">
           AI
         </span>
       )}
       {c.hidden && (
-        <span className="rounded-md border border-red-400/60 px-1.5 py-px text-[9px] tracking-wider text-red-400">
+        <span className="rounded-md border border-red-400/60 px-1.5 py-px text-[10.5px] tracking-wider text-red-400">
           {t(locale, "mod.hiddenBadge")}
         </span>
       )}

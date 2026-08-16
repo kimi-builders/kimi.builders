@@ -59,14 +59,14 @@ export default function ArticleForm({
       fd.set("id", String(initial.id));
       const res = await deleteArticleAction(fd);
       if (!res.ok) {
-        toast(res.error ?? t(locale, "toast.failed"));
+        toast(res.error ?? t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.deleted"));
       router.push(initial.kind === "guide" ? "/learn" : "/blog");
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setDeleting(false);
     }

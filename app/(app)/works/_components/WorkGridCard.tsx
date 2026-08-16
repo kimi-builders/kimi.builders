@@ -106,7 +106,7 @@ export default function WorkGridCard({
         </div>
         <WorkCardFooter work={w} locale={locale} meId={meId} compact />
         {claimPaused && meId !== null && w.userId === meId && (
-          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[10px] leading-relaxed text-grey">
+          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[11px] leading-relaxed text-grey">
             {t(locale, "works.claimPaused")}
           </p>
         )}

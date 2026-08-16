@@ -165,7 +165,7 @@ export default function PostForm({
           <button
             type="button"
             onClick={clearDraft}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[10px] text-grey transition-colors hover:bg-card hover:text-paper"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[11px] text-grey transition-colors hover:bg-card hover:text-paper"
           >
             <Trash2 size={12} aria-hidden="true" />
             {t(locale, "form.clearDraft")}
@@ -303,7 +303,7 @@ export default function PostForm({
           placeholder={t(locale, type === "text" ? "form.bodyText" : "form.bodyOpt")}
           inputCls={inputCls}
         />
-        <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
+        <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>
           <span>{t(locale, "form.mdSupport")}</span>
         </div>

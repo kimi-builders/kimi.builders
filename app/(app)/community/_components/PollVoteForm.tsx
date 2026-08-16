@@ -28,13 +28,13 @@ export default function PollVoteForm({
     try {
       const res = await votePollAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.voted"));
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setPending(false);
     }

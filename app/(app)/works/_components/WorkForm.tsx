@@ -83,7 +83,7 @@ function Section({
 }) {
   return (
     <section className={`space-y-4 ${first ? "" : "border-t border-line pt-5"}`}>
-      <h3 className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-grey/70">
+      <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
         {title}
       </h3>
       {children}
@@ -212,7 +212,7 @@ function LabelWithCount({
         {label} {required && <span className="text-blue">*</span>}
       </label>
       <span
-        className={`font-mono text-[10.5px] ${count > max * 0.9 ? "text-blue" : "text-grey/60"}`}
+        className={`font-mono text-[11px] ${count > max * 0.9 ? "text-blue" : "text-grey/60"}`}
       >
         {count}/{max}
       </span>
@@ -560,7 +560,7 @@ export default function WorkForm({
                     <WorkScopeIcon id={s.id} size={14} />
                     <span>{t(locale, s.key)}</span>
                   </span>
-                  <span className="mt-0.5 block text-[10.5px] leading-relaxed text-grey">
+                  <span className="mt-0.5 block text-[11px] leading-relaxed text-grey">
                     {t(locale, s.hintKey)}
                   </span>
                 </label>
@@ -592,7 +592,7 @@ export default function WorkForm({
             onChange={setDesc}
             inputCls={inputCls}
           />
-          <div className="mt-1.5 flex items-center justify-between font-mono text-[10.5px] text-grey/70">
+          <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
             <span>{t(locale, "form.mdHint")}</span>
             <span>{t(locale, "form.mdSupport")}</span>
           </div>
@@ -618,13 +618,13 @@ export default function WorkForm({
                 <span
                   key={`${tag}-${i}`}
                   title={tag}
-                  className="rounded-md border border-line px-1.5 py-px font-mono text-[10px] text-grey"
+                  className="rounded-md border border-line px-1.5 py-px font-mono text-[11px] text-grey"
                 >
                   {tag.length > 24 ? `${tag.slice(0, 24)}…` : tag}
                 </span>
               ))}
               {rawTagCount > 5 && (
-                <span className="font-mono text-[10px] text-red-400">
+                <span className="font-mono text-[11px] text-red-400">
                   {t(locale, "works.tagsOver", { n: rawTagCount })}
                 </span>
               )}
@@ -782,7 +782,7 @@ export default function WorkForm({
                     type="button"
                     aria-pressed={claimValue === String(v)}
                     onClick={() => setClaimValue(String(v))}
-                    className={`rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                    className={`rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                       claimValue === String(v)
                         ? "border-blue bg-blue/10 text-blue"
                         : "border-line text-grey hover:border-blue/50 hover:text-paper"

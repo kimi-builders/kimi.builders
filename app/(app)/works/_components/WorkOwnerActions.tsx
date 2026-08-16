@@ -35,14 +35,14 @@ export default function WorkOwnerActions({
       fd.set("work_id", String(workId));
       const res = await deleteWorkAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.deleted"));
       if (redirectTo) router.push(redirectTo);
       else router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

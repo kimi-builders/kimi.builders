@@ -56,7 +56,7 @@ export default async function GuidePage({
         </Link>
         <span>{monthLabel(article.publishedAt)}</span>
         {article.fallback && (
-          <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
+          <span className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper">
             {t(locale, article.locale === "zh" ? "art.langZh" : "art.langEn")}
           </span>
         )}

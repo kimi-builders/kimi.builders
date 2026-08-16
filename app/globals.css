@@ -10,7 +10,9 @@
   --color-moon: #1f1f1f;
   --color-paper: rgb(255 255 255 / 0.84);
   --color-blue: #1a88ff;
-  --color-grey: rgb(255 255 255 / 0.56);
+  /* grey 0.56→0.62(20260815 评审):10-11px 小字在 #121212 上约 4.5:1 踩 WCAG AA 线,
+     提到 0.62 ≈ 6.4:1,小字号场景留出安全余量;层级观感几乎不变。 */
+  --color-grey: rgb(255 255 255 / 0.62);
   --color-line: rgb(255 255 255 / 0.12);
   --color-card: rgb(255 255 255 / 0.05);
 
@@ -33,7 +35,7 @@
   --color-moon: #f5f5f5;
   --color-paper: rgb(0 0 0 / 0.9);
   --color-blue: #1783ff;
-  --color-grey: rgb(0 0 0 / 0.6);
+  --color-grey: rgb(0 0 0 / 0.62);
   --color-line: rgb(0 0 0 / 0.13);
   --color-card: rgb(0 0 0 / 0.03);
 }
@@ -251,6 +253,42 @@ html[data-theme="light"] .theme-card-light {
 }
 .kb-toast {
   animation: kb-toast-in 0.16s ease-out;
+}
+
+/* ---- 首屏列表入场(20260815 评审):前 8 项 50ms 递增上浮淡入,
+   建立「内容在流动」的感知;「加载更多」追加的项(nth-child>8)不参与,
+   追加重放会显得刻意。容器加 .stagger-in 即可,纯 CSS 无组件改动。 ---- */
+@keyframes kb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stagger-in > *:nth-child(1) { animation: kb-rise 0.4s ease-out both; }
+.stagger-in > *:nth-child(2) { animation: kb-rise 0.4s ease-out 50ms both; }
+.stagger-in > *:nth-child(3) { animation: kb-rise 0.4s ease-out 100ms both; }
+.stagger-in > *:nth-child(4) { animation: kb-rise 0.4s ease-out 150ms both; }
+.stagger-in > *:nth-child(5) { animation: kb-rise 0.4s ease-out 200ms both; }
+.stagger-in > *:nth-child(6) { animation: kb-rise 0.4s ease-out 250ms both; }
+.stagger-in > *:nth-child(7) { animation: kb-rise 0.4s ease-out 300ms both; }
+.stagger-in > *:nth-child(8) { animation: kb-rise 0.4s ease-out 350ms both; }
+
+/* ---- 全局动效降级(20260815 评审):前庭敏感用户对所有 CSS 动效/过渡的
+   统一出口,替代逐组件零散处理(此前仅 usage-pulse 一处有降级)。
+   SMIL(logo 双星绕轨)不受 CSS 管辖,属恒定慢速轨道运动,保留。 ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Keep compact horizontal filter rows touch-scrollable without a desktop gutter. */

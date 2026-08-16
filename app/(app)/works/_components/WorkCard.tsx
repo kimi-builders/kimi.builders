@@ -25,7 +25,7 @@ import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkCardFooter from "./WorkCardFooter";
 import WorkScreenshot from "./WorkScreenshot";
 
-const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-[10px] font-medium";
+const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-[11px] font-medium";
 
 /* 状态标签:meta 行纯文本 token(不再是 pill 芯片);两种卡片共用。 */
 export function statusLabelOf(status: string, locale: Locale): string | null {
@@ -200,7 +200,7 @@ export default function WorkCard({
         <WorkCardFooter work={w} locale={locale} meId={meId} />
         {/* 声明超额提示(声明制):仅作者本人可见,引导去编辑页重新分配 */}
         {claimPaused && meId !== null && w.userId === meId && (
-          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[10px] leading-relaxed text-grey">
+          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[11px] leading-relaxed text-grey">
             {t(locale, "works.claimPaused")}
           </p>
         )}

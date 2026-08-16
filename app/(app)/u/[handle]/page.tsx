@@ -292,7 +292,7 @@ export default async function ProfilePage({
             <h1 className="flex flex-wrap items-center gap-2.5 text-[22px] font-semibold tracking-[0.1px] text-paper sm:text-[26px]">
               {view.displayName}
               {profile.role !== "member" && (
-                <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-[0.16em] text-blue">
+                <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-[10.5px] font-bold tracking-[0.16em] text-blue">
                   {profile.role.toUpperCase()}
                 </span>
               )}
@@ -335,7 +335,7 @@ export default async function ProfilePage({
                   href={`${posterHref}?download=1`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 font-mono text-[10px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 font-mono text-[11px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
                 >
                   {t(locale, "prof.poster")}
                 </a>
@@ -343,7 +343,7 @@ export default async function ProfilePage({
               {self && (
                 <Link
                   href="/settings"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 font-mono text-[10px] font-semibold whitespace-nowrap text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 font-mono text-[11px] font-semibold whitespace-nowrap text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
                 >
                   {t(locale, "prof.edit")}
                 </Link>
@@ -356,44 +356,44 @@ export default async function ProfilePage({
           {usageStatsReady ? (
             <>
               <div className={`${STRIP_CELL} lg:!pl-0`}>
-                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                <div className="text-[11px] tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statTotal")}
                 </div>
                 <div className="mt-1.5 font-mono text-[25px] font-semibold leading-none tracking-[-0.5px] text-blue">
                   {compact(snapshotAll.lifetimeTokens)}
                 </div>
-                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statTotalSub", {
                     v: `$${(snapshotAll.costMicros / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                   })}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                <div className="text-[11px] tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statActiveDays")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
                   {fsum.activeDays} <span className="text-[11px] font-medium text-grey">{zh ? "天" : "days"}</span>
                 </div>
-                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statActiveDaysSub")}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                <div className="text-[11px] tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statStreak")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
                   {fsum.streak.current} <span className="text-[11px] font-medium text-grey">{zh ? "天" : "days"}</span>
                 </div>
-                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statStreakSub", {
                     n: snapshotAll.streakWeeks.current || snapshotAll.streakWeeks.longest,
                   })}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                <div className="text-[11px] tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statHitRate")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-emerald-400">
@@ -401,18 +401,18 @@ export default async function ProfilePage({
                     ? "—"
                     : `${(snapshotAll.cacheHitRate * 100).toFixed(1)}%`}
                 </div>
-                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statHitRateSub", { v: compact(snapshotAll.flow.cacheReadTokens) })}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[10px] tracking-[0.05em] text-grey/80">
+                <div className="text-[11px] tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statRequests")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
                   {snapshotAll.requests.toLocaleString("en-US")}
                 </div>
-                <div className="mt-1 font-mono text-[9.5px] text-grey/70">
+                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statRequestsSub", { n: snapshotAll.sessions.toLocaleString("en-US") })}
                 </div>
               </div>
@@ -425,7 +425,7 @@ export default async function ProfilePage({
                 { n: stats.likes, l: t(locale, "prof.likes") },
               ].map((s) => (
                 <div key={s.l} className={STRIP_CELL}>
-                  <div className="text-[10px] tracking-[0.05em] text-grey/80">{s.l}</div>
+                  <div className="text-[11px] tracking-[0.05em] text-grey/80">{s.l}</div>
                   <div className="mt-1.5 font-mono text-lg font-semibold text-paper">{s.n}</div>
                 </div>
               ))}
@@ -443,7 +443,7 @@ export default async function ProfilePage({
                 <h2 className="text-[13px] font-semibold text-paper">
                   {t(locale, "prof.footprint")}
                 </h2>
-                <span className="font-mono text-[10px] text-grey/80">
+                <span className="font-mono text-[11px] text-grey/80">
                   {t(locale, "prof.footprintHint")}
                 </span>
               </div>
@@ -476,7 +476,7 @@ export default async function ProfilePage({
                     {item.label}
                     {item.count !== null && (
                       <span
-                        className={`rounded-full border px-1.5 py-0.5 font-mono text-[10px] ${
+                        className={`rounded-full border px-1.5 py-0.5 font-mono text-[11px] ${
                           active
                             ? "border-blue/40 bg-blue/10 text-blue"
                             : "border-line bg-paper/[0.04] text-grey"
@@ -507,13 +507,13 @@ export default async function ProfilePage({
                         <span>{relTime(p.createdAt, locale)}</span>
                         <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">
                           {p.visibility === "private" && (
-                            <span className="rounded-md border border-line px-1.5 py-px text-[10px] text-paper">
+                            <span className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper">
                               {t(locale, "post.private")}
                             </span>
                           )}
                           {p.hiddenAt && (
                             <span
-                              className="rounded-md border border-red-400/60 px-1.5 py-px text-[10px] text-red-400"
+                              className="rounded-md border border-red-400/60 px-1.5 py-px text-[11px] text-red-400"
                               title={p.hiddenReason ?? undefined}
                             >
                               {t(locale, "mod.hiddenBadge")}
@@ -530,7 +530,7 @@ export default async function ProfilePage({
                           >
                             {p.title}
                             {p.type !== "text" && (
-                              <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] font-normal text-grey">
+                              <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[11px] font-normal text-grey">
                                 {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
                               </span>
                             )}
@@ -548,7 +548,7 @@ export default async function ProfilePage({
                         >
                           <span className="line-clamp-3">{p.excerpt}</span>
                           {p.type !== "text" && (
-                            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10px] text-grey">
+                            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[11px] text-grey">
                               {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
                             </span>
                           )}
@@ -598,7 +598,7 @@ export default async function ProfilePage({
                         <span className="mx-2">·</span>
                         {relTime(c.createdAt, locale)}
                         {c.hidden && (
-                          <span className="ml-2 rounded-md border border-red-400/60 px-1.5 py-px text-[10px] text-red-400">
+                          <span className="ml-2 rounded-md border border-red-400/60 px-1.5 py-px text-[11px] text-red-400">
                             {t(locale, "mod.hiddenBadge")}
                           </span>
                         )}
@@ -643,13 +643,13 @@ export default async function ProfilePage({
                   <div>
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="rounded-xl border border-line bg-bg p-3.5">
-                        <div className="text-[10px] text-grey/80">{t(locale, "prof.usage30")}</div>
+                        <div className="text-[11px] text-grey/80">{t(locale, "prof.usage30")}</div>
                         <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
                           {compact(snapshot30.totalTokens)}
                         </div>
                       </div>
                       <div className="rounded-xl border border-line bg-bg p-3.5">
-                        <div className="text-[10px] text-grey/80">{t(locale, "prof.usageHit")}</div>
+                        <div className="text-[11px] text-grey/80">{t(locale, "prof.usageHit")}</div>
                         <div className="mt-1.5 font-mono text-[17px] font-semibold text-emerald-400">
                           {snapshot30.cacheHitRate === null
                             ? "—"
@@ -657,7 +657,7 @@ export default async function ProfilePage({
                         </div>
                       </div>
                       <div className="rounded-xl border border-line bg-bg p-3.5">
-                        <div className="text-[10px] text-grey/80">{t(locale, "prof.usageActive")}</div>
+                        <div className="text-[11px] text-grey/80">{t(locale, "prof.usageActive")}</div>
                         <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
                           {durationText(snapshot30.activeSeconds, zh)}
                         </div>
@@ -692,7 +692,7 @@ export default async function ProfilePage({
                         />
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] text-grey">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
                       <span>{t(locale, "prof.usageNote")}</span>
                       {self && (
                         <Link
@@ -707,7 +707,7 @@ export default async function ProfilePage({
                 )}
                 {heatmap && (
                   <div className={snapshot30 ? "mt-5 border-t border-line pt-4" : undefined}>
-                    <p className="mb-3 font-mono text-[10px] text-grey/80">
+                    <p className="mb-3 font-mono text-[11px] text-grey/80">
                       {zh ? "星期 × 本地小时 · 全部时间" : "Weekday × local hour · all time"}
                     </p>
                     <SocialUsageHeatmap grid={heatmap} tzOffsetMinutes={tz} zh={zh} />

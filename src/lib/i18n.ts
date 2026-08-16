@@ -46,6 +46,8 @@ const DICT = {
   "state.errorTitle": { zh: "这一页暂时没有响应", en: "This page stopped responding" },
   "state.errorBody": { zh: "你的数据没有丢失。可以重新尝试,或先返回首页。", en: "Your data is safe. Try the request again, or return home for now." },
   "state.retry": { zh: "重新尝试", en: "Try again" },
+  /* ---- 加载态(慢加载自救提示) ---- */
+  "load.slow": { zh: "这一页加载得比平时久,可以再等一下或重试。", en: "This page is taking longer than usual. Wait a moment or retry." },
   /* ---- 右栏 ---- */
   "side.browse": { zh: "浏览社区", en: "BROWSE" },
   "side.all": { zh: "全部讨论", en: "All threads" },
@@ -502,6 +504,15 @@ const DICT = {
     en: "Too many attempts — try again later",
   },
   "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
+  "soon.follow": { zh: "关注 GitHub 获取上线动态", en: "Follow GitHub for launch updates" },
+  "soon.blogExpect": {
+    zh: "创刊号正在筹备:社区精选、作品背后的构建故事,以及编辑部给 Kimi 官方的一封信。",
+    en: "Issue #1 is in the works: community picks, build stories, and the editors’ letter to Kimi.",
+  },
+  "soon.learnExpect": {
+    zh: "第一批策划制学习路径正在撰稿:从 Kimi 入门到 Agent 实战的编号指南。",
+    en: "The first curated learning paths are being written: numbered guides from Kimi basics to agent practice.",
+  },
   "soon.body": {
     zh: "这个板块还在准备中,内容好了就开门。先去社区逛逛,或把你想看的题材发帖告诉我们。",
     en: "This section is still being prepared. Meanwhile, browse the community — or post what you'd like to see here.",

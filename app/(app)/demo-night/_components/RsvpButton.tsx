@@ -38,7 +38,7 @@ export default function RsvpButton({
       router.refresh();
     } catch {
       setRsvped(!next);
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       busy.current = false;
     }

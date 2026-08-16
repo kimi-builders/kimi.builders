@@ -8,7 +8,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import type { ModContentRow, ModLogRow } from "@/src/lib/moderation";
 import ModToolbar from "./ModToolbar";
 
-const BADGE = "rounded-md px-1.5 py-px font-mono text-[10px] font-medium";
+const BADGE = "rounded-md px-1.5 py-px font-mono text-[11px] font-medium";
 
 export function contentHref(row: ModContentRow): string {
   if (row.type === "post") return `/community/${row.id}`;
@@ -102,7 +102,7 @@ export function renderLogRows(rows: ModLogRow[], locale: Locale): ReactNode[] {
       <span className="shrink-0 text-paper">
         {r.actorHandle ? `@${r.actorHandle}` : "—"}
       </span>
-      <span className="shrink-0 rounded-md bg-blue/10 px-1.5 py-px text-[10px] font-medium text-blue">
+      <span className="shrink-0 rounded-md bg-blue/10 px-1.5 py-px text-[11px] font-medium text-blue">
         {t(locale, ACTION_KEY[r.action] ?? "admin.actHide")}
       </span>
       <span className="min-w-0 truncate text-grey">

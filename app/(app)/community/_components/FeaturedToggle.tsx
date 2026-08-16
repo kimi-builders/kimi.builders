@@ -32,7 +32,7 @@ export default function FeaturedToggle({
       fd.set("reason", reason);
       const res = await featurePostAction(fd);
       if (!res.ok) {
-        toast(res.error ?? t(locale, "toast.failed"));
+        toast(res.error ?? t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.featured"));
@@ -40,7 +40,7 @@ export default function FeaturedToggle({
       setReason("");
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }
@@ -54,13 +54,13 @@ export default function FeaturedToggle({
       fd.set("post_id", String(postId));
       const res = await unfeaturePostAction(fd);
       if (!res.ok) {
-        toast(t(locale, "toast.failed"));
+        toast(t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.unfeatured"));
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

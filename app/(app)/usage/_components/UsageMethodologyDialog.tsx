@@ -122,7 +122,7 @@ export default function UsageMethodologyDialog({
               <h3 className="font-mono text-xs font-semibold text-paper">{zh ? "Token 与图表" : "Tokens and charts"}</h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="border border-line bg-card p-3">
-                  <div className="font-mono text-[10px] text-paper">TOTAL TOKENS</div>
+                  <div className="font-mono text-[11px] text-paper">TOTAL TOKENS</div>
                   <p className="mt-1.5">
                     {zh
                       ? "输入 + 缓存写 + 缓存读 + 可见输出 + 推理输出。趋势图用同一份五类事实，输出与推理即使占比很小也保留最小可见高度。"
@@ -130,7 +130,7 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
                 <div className="border border-line bg-card p-3">
-                  <div className="font-mono text-[10px] text-paper">
+                  <div className="font-mono text-[11px] text-paper">
                     {zh ? "累计 TOKEN" : "LIFETIME TOKENS"}
                   </div>
                   <p className="mt-1.5">
@@ -140,7 +140,7 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
                 <div className="border border-line bg-card p-3">
-                  <div className="font-mono text-[10px] text-paper">PEAK TOKENS</div>
+                  <div className="font-mono text-[11px] text-paper">PEAK TOKENS</div>
                   <p className="mt-1.5">
                     {zh
                       ? "当前日期范围内，按当前趋势粒度（小时/日/自然周）最高的一个时间格，不是单次请求峰值。"
@@ -148,7 +148,7 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
                 <div className="border border-line bg-card p-3">
-                  <div className="font-mono text-[10px] text-paper">WEEKLY / HEATMAP</div>
+                  <div className="font-mono text-[11px] text-paper">WEEKLY / HEATMAP</div>
                   <p className="mt-1.5">
                     {zh
                       ? "自然周固定为本地周一 00:00 到下周一 00:00。热图把所选日期范围内相同星期与小时累加，不代表某一个具体日期。"
@@ -156,7 +156,7 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
                 <div className="border border-line bg-card p-3 sm:col-span-2">
-                  <div className="font-mono text-[10px] text-paper">
+                  <div className="font-mono text-[11px] text-paper">
                     {zh ? "模型、推理强度与版本" : "MODEL, EFFORT & VERSION"}
                   </div>
                   <p className="mt-1.5">
@@ -184,17 +184,17 @@ export default function UsageMethodologyDialog({
                     : `${compactTokens(assumedTokens, locale)} tokens use an explicitly disclosed pricing assumption (for example, missing context tier or cache-write TTL in historical data). Assumptions do not change token totals, only estimate precision.`}
                 </p>
               ) : null}
-              <code className="mt-3 block overflow-x-auto border border-line bg-card p-3 font-mono text-[10px] text-paper">
+              <code className="mt-3 block overflow-x-auto border border-line bg-card p-3 font-mono text-[11px] text-paper">
                 cost = Σ(tokens ÷ 1,000,000 × category API rate)
               </code>
-              <p className="mt-2 text-[10px]">
+              <p className="mt-2 text-[11px]">
                 {zh
                   ? "匹配顺序：精确模型名 → 最长前缀 → 来源限定 → 上下文档位 → 生效时间。* 表示供应商未单列该类价格：普通缓存写回退输入价，推理回退输出价；Claude 缓存写按日志中的 5 分钟/1 小时 TTL 分别计价。缓存读没有价格时不回退并标记部分定价。"
                   : "Match order: exact name → longest prefix → source restriction → context tier → effective window. * means the provider does not publish a separate category: generic cache write falls back to input and reasoning to output. Claude cache writes use the logged 5-minute/1-hour TTL. Missing cache-read price does not fall back and is marked partial."}
               </p>
 
               <div className="mt-4 overflow-x-auto border border-line">
-                <table className="w-full min-w-[1180px] border-collapse font-mono text-[10px]">
+                <table className="w-full min-w-[1180px] border-collapse font-mono text-[11px]">
                   <thead className="bg-card text-left text-grey">
                     <tr>
                       <th className="px-3 py-2 font-normal">{zh ? "模型" : "MODEL"}</th>
@@ -225,7 +225,7 @@ export default function UsageMethodologyDialog({
                           >
                             <span className="block truncate">{row.modelDisplayName}</span>
                             {row.modelDisplayName !== row.model && (
-                              <span className="block truncate text-[9px] text-grey">{row.model}</span>
+                              <span className="block truncate text-[10.5px] text-grey">{row.model}</span>
                             )}
                           </td>
                           <td className={`max-w-[180px] truncate px-3 py-2 ${row.matchedPattern ? "text-emerald-400" : "text-grey"}`} title={row.matchedPattern ?? undefined}>
@@ -233,7 +233,7 @@ export default function UsageMethodologyDialog({
                           </td>
                           <td className="px-3 py-2 text-grey">
                             {row.contextTier || (zh ? "未知上下文" : "unknown context")}
-                            <span className="block text-[9px]">{row.processingTier || "standard"}</span>
+                            <span className="block text-[10.5px]">{row.processingTier || "standard"}</span>
                           </td>
                           <td className="px-3 py-2 text-right">{rate(row.inputPerMtok, false)}</td>
                           <td className="px-3 py-2 text-right">{rate(row.cacheWritePerMtok, row.cacheWriteFallback)}</td>
@@ -256,7 +256,7 @@ export default function UsageMethodologyDialog({
                             ) : null}
                             {row.verifiedAt ? <span className="ml-1">· {row.verifiedAt}</span> : null}
                             {row.assumptions.length > 0 ? (
-                              <span className="block text-[9px] text-amber-300">
+                              <span className="block text-[10.5px] text-amber-300">
                                 {row.assumptions.map((assumption) =>
                                   assumption === "short-context"
                                     ? (zh ? "假设短上下文" : "short-context assumed")
@@ -281,7 +281,7 @@ export default function UsageMethodologyDialog({
               <h3 className="font-mono text-xs font-semibold text-paper">{zh ? "会话时长" : "Session time"}</h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="border-l-2 border-blue pl-3">
-                  <div className="font-mono text-[10px] text-paper">{zh ? "活跃时长" : "ACTIVE TIME"}</div>
+                  <div className="font-mono text-[11px] text-paper">{zh ? "活跃时长" : "ACTIVE TIME"}</div>
                   <p className="mt-1.5">
                     {zh
                       ? "按用户发起的 turn 统计 AI/Agent 实际产生活动的事件间隔；同一 turn 内每段间隔最多计 5 分钟，排除排队等待和首 Token 延迟。不同 Agent 日志精度不同，因此这是跨 Agent 可比的近似值。"
@@ -289,7 +289,7 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
                 <div className="border-l-2 border-paper/50 pl-3">
-                  <div className="font-mono text-[10px] text-paper">{zh ? "投入时长" : "ENGAGED TIME"}</div>
+                  <div className="font-mono text-[11px] text-paper">{zh ? "投入时长" : "ENGAGED TIME"}</div>
                   <p className="mt-1.5">
                     {zh
                       ? "会话内相邻事件跨度之和，包含思考、阅读和查看代码；每段空闲间隔最多计 30 分钟，不包含会话之间的间隔。Collector v0.4 起按 UTC 小时存储完整切片，跨日或跨筛选边界时只计范围内切片；旧数据会明确使用兼容降级口径。"
@@ -297,7 +297,7 @@ export default function UsageMethodologyDialog({
                   </p>
                 </div>
               </div>
-              <p className="mt-3 text-[10px]">
+              <p className="mt-3 text-[11px]">
                 {zh ? "会话日志没有逐会话模型或推理强度字段，因此会话数、消息数与时长不会按模型或推理强度拆分；请求时 Agent 版本可用时会参与会话筛选。" : "Session logs do not carry per-session model or reasoning-effort fields, so sessions, messages, and time are not split by those filters. Request-time Agent version applies to sessions when available."}
               </p>
             </section>
@@ -306,16 +306,16 @@ export default function UsageMethodologyDialog({
           {sections.includes("changes") && (
             <section className={sections[0] === "changes" ? "" : "mt-7 border-t border-line pt-6"}>
               <h3 className="font-mono text-xs font-semibold text-paper">{zh ? "变化百分比" : "Change percentage"}</h3>
-              <code className="mt-3 block overflow-x-auto border border-line bg-card p-3 font-mono text-[10px] text-paper">
+              <code className="mt-3 block overflow-x-auto border border-line bg-card p-3 font-mono text-[11px] text-paper">
                 change = (current − previous) ÷ previous × 100%
               </code>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div>
-                  <div className="font-mono text-[10px] text-paper">{zh ? "当前周期" : "CURRENT"}</div>
+                  <div className="font-mono text-[11px] text-paper">{zh ? "当前周期" : "CURRENT"}</div>
                   <p className="mt-1">{formatUsageLocalDateTime(currentRange.from, locale, tzOffsetMinutes)} → {formatUsageLocalDateTime(currentRange.to, locale, tzOffsetMinutes)}</p>
                 </div>
                 <div>
-                  <div className="font-mono text-[10px] text-paper">{zh ? "上一等长周期" : "PREVIOUS EQUAL PERIOD"}</div>
+                  <div className="font-mono text-[11px] text-paper">{zh ? "上一等长周期" : "PREVIOUS EQUAL PERIOD"}</div>
                   <p className="mt-1">{formatUsageLocalDateTime(previousRange.from, locale, tzOffsetMinutes)} → {formatUsageLocalDateTime(previousRange.to, locale, tzOffsetMinutes)}</p>
                 </div>
               </div>

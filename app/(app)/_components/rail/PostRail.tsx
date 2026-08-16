@@ -46,7 +46,7 @@ export default async function PostRail({
             <span className="block truncate text-xs text-paper">
               @{post.handle}
             </span>
-            <span className="block truncate font-mono text-[10px] text-grey">
+            <span className="block truncate font-mono text-[11px] text-grey">
               {relTime(post.createdAt, locale)}
             </span>
           </span>
@@ -89,7 +89,7 @@ export default async function PostRail({
                 >
                   {r.title}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
                   <MessageCircle size={11} />
                   {r.commentCount}
                 </span>

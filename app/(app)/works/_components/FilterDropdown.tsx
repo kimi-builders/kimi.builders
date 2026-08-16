@@ -120,20 +120,20 @@ export default function FilterDropdown({
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1 w-56 overflow-hidden rounded-lg border border-line bg-moon shadow-xl">
           <div className="flex items-center justify-between border-b border-line px-3 py-1.5">
-            <span className="font-mono text-[10px] text-grey">
+            <span className="font-mono text-[11px] text-grey">
               {zh ? "不勾选表示不限" : "No selection means any"}
             </span>
             <button
               type="button"
               onClick={() => setDraft([])}
-              className="min-h-8 px-2 font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-8 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "不限" : "Any"}
             </button>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {options.length === 0 ? (
-              <p className="px-3 py-3 text-[10px] text-grey">
+              <p className="px-3 py-3 text-[11px] text-grey">
                 {zh ? "暂无可选项" : "No options"}
               </p>
             ) : (

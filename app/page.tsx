@@ -11,10 +11,10 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import AuthChip from "@/components/AuthChip";
+import CountUpStat from "@/components/CountUpStat";
 import { TrackClick } from "@/app/(app)/_components/track";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { compactNumber } from "@/src/lib/format";
 import { getHomeData, type HomeFeaturedItem } from "@/src/lib/home";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -46,7 +46,7 @@ function FeaturedCard({
   );
   return (
     <article className="border border-line bg-card p-5 text-left">
-      <div className="flex items-center gap-2 font-mono text-[10px]">
+      <div className="flex items-center gap-2 font-mono text-[11px]">
         <span className="border border-line px-1.5 py-px text-grey">
           {t(locale, f.kind === "post" ? "featured.kindPost" : "featured.kindWork")}
         </span>
@@ -74,7 +74,7 @@ function FeaturedCard({
           {f.reason}
         </p>
       )}
-      <div className="mt-3 flex items-center justify-between gap-3 font-mono text-[10px] text-grey">
+      <div className="mt-3 flex items-center justify-between gap-3 font-mono text-[11px] text-grey">
         {f.authorHref ? (
           <Link href={f.authorHref} className="truncate transition-colors hover:text-blue">
             {f.author}
@@ -184,7 +184,7 @@ export default async function Home({
             {stats.map((s) => (
               <div key={s.l} className="text-center">
                 <div className="font-mono text-3xl font-semibold tracking-wide">
-                  {compactNumber(s.n, locale)}
+                  <CountUpStat value={s.n} locale={locale} />
                 </div>
                 <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-grey">
                   {s.l}

@@ -53,7 +53,7 @@ export async function loadWorkComments(
               <span className="text-paper">#{c.userId}</span>
             )}
             {isAuthor && (
-              <span className="rounded-md border border-blue/60 px-1.5 py-px text-[9px] tracking-wider text-blue">
+              <span className="rounded-md border border-blue/60 px-1.5 py-px text-[10.5px] tracking-wider text-blue">
                 {t(locale, "works.authorChip")}
               </span>
             )}

@@ -28,14 +28,14 @@ export default function WorkCommentForm({
     try {
       const res = await createWorkCommentAction(fd);
       if (!res.ok) {
-        toast(res.error || t(locale, "toast.failed"));
+        toast(res.error || t(locale, "toast.failed"), "error");
         return;
       }
       toast(t(locale, "toast.commented"));
       form.reset();
       router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setPosting(false);
     }

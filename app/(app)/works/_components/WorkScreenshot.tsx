@@ -61,7 +61,7 @@ export default function WorkScreenshot({
       >
         {kindLabel && (
           <span
-            className={`absolute left-3.5 top-3 z-[1] flex items-center gap-1 font-mono text-[9.5px] uppercase tracking-[0.16em] ${
+            className={`absolute left-3.5 top-3 z-[1] flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-[0.16em] ${
               toneCls ? "work-tone__eyebrow" : "work-cover-tile__eyebrow"
             }`}
           >

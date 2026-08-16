@@ -45,14 +45,14 @@ export default function ModToolbar({
     try {
       const res = await action(fd);
       if (!res.ok) {
-        toast(res.error || t(locale, "toast.failed"));
+        toast(res.error || t(locale, "toast.failed"), "error");
         return;
       }
       toast(okToast);
       if (after) after();
       else router.refresh();
     } catch {
-      toast(t(locale, "toast.failed"));
+      toast(t(locale, "toast.failed"), "error");
     } finally {
       setBusy(false);
     }

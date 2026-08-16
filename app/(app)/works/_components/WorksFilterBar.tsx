@@ -92,7 +92,7 @@ export default function WorksFilterBar({
             return (
               <span
                 key={`${item.key}-${item.value}`}
-                className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-paper"
+                className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-paper"
               >
                 <span className="shrink-0 text-grey">{item.label}</span>
                 <span className="max-w-40 truncate">{labelOf(item.key, item.value)}</span>

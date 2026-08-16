@@ -191,7 +191,7 @@ export default function DeviceManagementDialog({
               <p className="mt-2">
                 {zh ? "如需从本机历史恢复，删除后在该设备执行：" : "To restore locally available history later, run:"}
               </p>
-              <code className="mt-1 block whitespace-pre-wrap font-mono text-[10px] text-paper">
+              <code className="mt-1 block whitespace-pre-wrap font-mono text-[11px] text-paper">
                 npx @kimi.builders/usage@latest reset --local{"\n"}npx @kimi.builders/usage@latest sync
               </code>
             </div>

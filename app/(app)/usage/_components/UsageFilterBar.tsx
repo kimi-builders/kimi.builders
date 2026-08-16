@@ -120,20 +120,20 @@ function DimensionDropdown({
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-lg border border-line bg-moon shadow-xl sm:w-64">
           <div className="flex items-center justify-between border-b border-line px-3 py-1.5">
-            <span className="font-mono text-[10px] text-grey">
+            <span className="font-mono text-[11px] text-grey">
               {zh ? "不勾选表示不限" : "No selection means any"}
             </span>
             <button
               type="button"
               onClick={() => setDraft([])}
-              className="min-h-11 px-2 font-mono text-[10px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "不限" : "Any"}
             </button>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {dimension.entries.length === 0 ? (
-              <p className="px-3 py-3 text-[10px] text-grey">
+              <p className="px-3 py-3 text-[11px] text-grey">
                 {zh ? "该范围内无可选项" : "No options in range"}
               </p>
             ) : (
@@ -450,7 +450,7 @@ export default function UsageFilterBar({
             aria-label={zh ? "开始日期" : "From date"}
             className={dateInputClass}
           />
-          <span className="font-mono text-[10px] text-grey">→</span>
+          <span className="font-mono text-[11px] text-grey">→</span>
           <input
             type="date"
             name="to"
@@ -467,7 +467,7 @@ export default function UsageFilterBar({
             {zh ? "应用" : "Apply"}
           </button>
           {customError && (
-            <span className="font-mono text-[10px] text-red-400">
+            <span className="font-mono text-[11px] text-red-400">
               {zh ? "需要 开始 ≤ 结束" : "From must be on or before To"}
             </span>
           )}
@@ -481,7 +481,7 @@ export default function UsageFilterBar({
               return (
                 <span
                   key={dimension.key}
-                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-paper"
+                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-paper"
                 >
                   <span className="shrink-0 text-grey">{dimension.label}</span>
                   <span>×{selected.length}</span>
@@ -502,7 +502,7 @@ export default function UsageFilterBar({
               return (
                 <span
                   key={`${dimension.key}-${value}`}
-                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[10px] text-paper"
+                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-paper"
                 >
                   <span className="shrink-0 text-grey">{dimension.label}</span>
                   <span className="max-w-40 truncate">{chipLabel(dimension, value)}</span>
