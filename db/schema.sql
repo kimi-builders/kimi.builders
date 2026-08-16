@@ -189,6 +189,8 @@ CREATE TABLE IF NOT EXISTS works (
   cover_key VARCHAR(255) NOT NULL DEFAULT '' COMMENT '独立列表封面(image/ 前缀);空=走色卡名称砖',
   cover_tone VARCHAR(16) NOT NULL DEFAULT 'theme' COMMENT '名称砖色调:theme=跟随主题,其余为注册表固定色 id',
   cover_fit VARCHAR(8) NOT NULL DEFAULT 'cover' COMMENT '封面适配:cover=裁切填满,contain=补边完整',
+  -- ai_reply 由 20260816_work_ai_summon.sql 引入,已有库执行该迁移
+  ai_reply TINYINT(1) NOT NULL DEFAULT 1 COMMENT '允许 AI 参与本作品评论区(@kimi 召唤)',
   KEY idx_source (source, created_at),
   KEY idx_hidden (hidden_at),
   KEY idx_featured (featured_at),
@@ -415,8 +417,11 @@ CREATE TABLE IF NOT EXISTS post_subscriptions (
 -- attempts/last_attempt_at 由 20260816_ai_reply_retry.sql 引入,已有库执行该迁移。
 CREATE TABLE IF NOT EXISTS ai_reply_jobs (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  post_id BIGINT UNSIGNED NOT NULL,
+  post_id BIGINT UNSIGNED NULL,
   comment_id BIGINT UNSIGNED NULL COMMENT '触发回复的评论;NULL=回复帖子本身',
+  kind VARCHAR(16) NOT NULL DEFAULT 'auto' COMMENT 'auto=回帖 chain=接话 mention=召唤(20260816)',
+  work_id BIGINT UNSIGNED NULL COMMENT '作品召唤目标(post 任务为 NULL)',
+  work_comment_id BIGINT UNSIGNED NULL COMMENT '触发召唤的作品评论',
   status VARCHAR(16) NOT NULL DEFAULT 'pending' COMMENT 'pending/done/failed/skipped',
   error VARCHAR(500) NOT NULL DEFAULT '',
   attempts INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '已执行次数(含手动重跑)',
@@ -424,17 +429,22 @@ CREATE TABLE IF NOT EXISTS ai_reply_jobs (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed_at DATETIME NULL,
   KEY idx_status (status, created_at),
-  CONSTRAINT fk_job_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+  CONSTRAINT fk_job_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
+  CONSTRAINT fk_job_work FOREIGN KEY (work_id) REFERENCES works (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 消息通知(评论了关注的帖子 / 回复了我的评论;actor NULL = AI 或系统)
+-- work_id/work_comment_id 由 20260816_work_ai_summon.sql 引入(作品召唤回复通知),
+-- 同迁移把 post_id/comment_id 放宽为 NULL(work 通知不绑帖子),已有库执行该迁移。
 CREATE TABLE IF NOT EXISTS notifications (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL COMMENT '接收者',
   actor_id BIGINT UNSIGNED NULL COMMENT '触发者;NULL=AI/系统',
   type VARCHAR(16) NOT NULL DEFAULT 'comment' COMMENT 'comment/reply',
-  post_id BIGINT UNSIGNED NOT NULL,
-  comment_id BIGINT UNSIGNED NOT NULL COMMENT '触达锚点 /community/<post>#comment-<id>',
+  post_id BIGINT UNSIGNED NULL,
+  comment_id BIGINT UNSIGNED NULL COMMENT '触达锚点 /community/<post>#comment-<id>',
+  work_id BIGINT UNSIGNED NULL COMMENT '作品通知目标(post 通知为 NULL)',
+  work_comment_id BIGINT UNSIGNED NULL COMMENT '作品评论锚点 /works/<id>#work-comment-<cid>',
   read_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_user_unread (user_id, read_at),
@@ -503,7 +513,8 @@ CREATE TABLE IF NOT EXISTS demo_rsvps (
 -- 作品互动(P1-2):支持 + 单层评论。
 -- 由 20260821_work_interactions.sql 引入,已有库执行该迁移。
 -- 支持只有「顶」没有踩,再点取消;复合主键天然幂等。
--- 评论单层、软删;评论作者本人或作品作者可删(权限钉在 SQL WHERE),AI 不介入。
+-- 评论单层、软删;评论作者本人或作品作者可删(权限钉在 SQL WHERE)。
+-- AI 评论(is_ai=1, user_id NULL)由 20260816_work_ai_summon.sql 引入(@kimi 召唤)。
 -- works.vote_count / comment_count 为冗余计数(同 posts 模式),写路径维护。
 -- ---------------------------------------------------------------------------
 
@@ -520,7 +531,8 @@ CREATE TABLE IF NOT EXISTS work_votes (
 CREATE TABLE IF NOT EXISTS work_comments (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   work_id BIGINT UNSIGNED NOT NULL,
-  user_id BIGINT UNSIGNED NOT NULL COMMENT '评论作者;AI 不介入作品评论(无 is_ai)',
+  user_id BIGINT UNSIGNED NULL COMMENT '评论作者;NULL=AI',
+  is_ai TINYINT(1) NOT NULL DEFAULT 0,
   body TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME NULL,

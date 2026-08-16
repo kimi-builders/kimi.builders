@@ -535,3 +535,16 @@ html[data-vibe="soft"] .vibe-card-soft {
 :root[data-theme="light"] .work-tone-black {
   background: #ececef;
 }
+
+/* @kimi 召唤词高亮(20260816):正文/评论里的 @kimi 包成蓝色 chip,
+   参照评论 AI 徽章的 blue 描边规格;rehypeKimiMention 注入。
+   圆角走 var(--radius-md) 跟随 vibe(poster 下归零)。 */
+.mention-kimi {
+  display: inline-block;
+  border: 1px solid rgb(59 130 246 / 0.45);
+  border-radius: var(--radius-md);
+  padding: 0 4px;
+  color: var(--color-blue);
+  background: rgb(59 130 246 / 0.08);
+  font-weight: 500;
+}

@@ -25,6 +25,8 @@ import {
 import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { enqueueAiWorkMention } from "@/src/lib/ai-reply";
+import { hasKimiMention } from "@/src/lib/mention-kimi";
 import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import { getWorksView } from "@/src/lib/works-view-server";
@@ -67,6 +69,9 @@ export interface MutationResult {
   error?: string;
   /* 限流(P1-5):超限时带上的等待秒数,客户端可直接展示 error 文案 */
   retryAfterSeconds?: number;
+  /* AI 召唤结果(20260816 PR2,与社区同形):评论里 @kimi 时给客户端 toast 用;
+     评论本身照常发布,该字段只说明召唤是否成立 */
+  aiNote?: "summoned" | "aiDisabled" | "rate";
 }
 
 /* 标签:逗号/空格分隔,≤5 个,每个 ≤24 字。 */
@@ -110,6 +115,8 @@ function readFields(formData: FormData) {
       | "private",
     /* 同时收录 Awesome(20260906):仅「我的作品」有意;推荐条目恒在 Awesome */
     alsoAwesome: formData.get("also_awesome") === "on",
+    /* 允许 AI 参与评论区(20260816 召唤):checkbox 提交 "on";不勾 = 关 */
+    aiReply: formData.get("ai_reply") === "on",
     /* 表单意图(我的作品/推荐站外项目):authorLabel 非空才是 awesome 条目,
        intent 只用于校验提示(推荐但没填原作者 → 明确报错而不是静默当成作品) */
     intent: String(formData.get("kind") || "site") === "awesome" ? "awesome" : "site",
@@ -364,7 +371,8 @@ export async function loadMoreWorksAction(
 /* ---- 详情互动(P1-2):支持 toggle + 单层评论 ----
    支持走纯乐观更新(只落库、不作废路径,同社区顶踩);评论 mutation 后由客户端
    router.refresh() 换当前页数据,这里 revalidatePath 作废详情页预取缓存。
-   评论从简:不发通知、不排 AI 任务;删除权限(评论作者/作品作者)钉在 SQL WHERE。 */
+   人类评论不发通知(从简);@kimi 召唤(20260816 PR2)排 AI 任务,
+   AI 回复落库时通知 召唤者+作品作者;删除权限(评论作者/作品作者/治理)钉在 SQL。 */
 
 export async function toggleWorkVoteAction(
   formData: FormData,
@@ -417,10 +425,28 @@ export async function createWorkCommentAction(
       error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
       retryAfterSeconds: rate.retryAfterSeconds,
     };
-  await createWorkComment(workId, user.id, body);
+  const created = await createWorkComment(workId, user.id, body);
+  /* @kimi 召唤(20260816 PR2,语义同社区评论召唤):duplicate 不触发(网络重试
+     不刷双倍 AI 回复);地盘 = 作品 ai_reply 开关(作者全局开关在执行侧复查,
+     awesome 站外条目无作者、仅作品开关);召唤另计独立限流(ai_summon 20/小时),
+     超限不召唤但评论照常发布。enqueue 内部用 after(),必须在 return 之前调用。 */
+  let aiNote: MutationResult["aiNote"];
+  if (!created.duplicate && hasKimiMention(body) && user.aiRepliesEnabled) {
+    if (!work.aiReply) {
+      aiNote = "aiDisabled";
+    } else {
+      const summonRate = await consumeCommunityRateLimit(user.id, "ai_summon");
+      if (!summonRate.allowed) {
+        aiNote = "rate";
+      } else {
+        await enqueueAiWorkMention(workId, created.id);
+        aiNote = "summoned";
+      }
+    }
+  }
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath(`/works/${workId}`);
-  return { ok: true };
+  return aiNote ? { ok: true, aiNote } : { ok: true };
 }
 
 export async function deleteWorkCommentAction(
@@ -431,8 +457,11 @@ export async function deleteWorkCommentAction(
   const commentId = Number(formData.get("comment_id"));
   const workId = Number(formData.get("work_id"));
   if (!Number.isSafeInteger(commentId) || commentId <= 0) return { ok: false };
-  /* 权限(评论作者本人或作品作者)在 SQL WHERE;affectedRows=0 即越权/已删 */
-  const ok = await deleteWorkComment(user.id, commentId);
+  /* 权限(评论作者本人或作品作者;治理免归属,20260816 召唤起用于清 AI 评论)
+     钉在 SQL WHERE;affectedRows=0 即越权/已删 */
+  const ok = await deleteWorkComment(user.id, commentId, {
+    moderator: canModerate(user.role),
+  });
   if (ok) {
     updateTag(PUBLIC_WORKS_CACHE_TAG);
     if (Number.isSafeInteger(workId) && workId > 0)

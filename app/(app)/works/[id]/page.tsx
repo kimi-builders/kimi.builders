@@ -2,7 +2,8 @@
    声明投入/★精选;私密/屏蔽警示 pill)+ 操作条(体验/支持/分享/作者与治理操作)
    + 图集 + 长描述 + label/value hairline 信息栏(<xl 内联;≥xl 由右栏 Work Info 卡取代,
    见右栏注册表 work kind)+ 底部单层评论区。
-   浏览无需登录;支持/评论需登录(comment/vote 配额限流)。AI 不介入作品评论。
+   浏览无需登录;支持/评论需登录(comment/vote 配额限流)。评论里 @kimi 可召唤
+   Kimi 小筑(20260816;作品 ai_reply 开关 + 召唤限流,ai_summon 配额)。
    不存在/已删作品给友好文案,不 404 硬错。 */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -477,7 +478,8 @@ export default async function WorkPage({
       </div>
       </article>
 
-      {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删) */}
+      {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删,
+              AI 评论(召唤)另放行治理) */}
       <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
         <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
           {t(locale, "works.discuss")} ·{" "}

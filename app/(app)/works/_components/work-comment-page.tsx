@@ -3,12 +3,15 @@
    (同 works-page / comment-page 的模式)。
    从简模型:单层(无楼中楼);作品作者的发言带「作者」芯片;删除入口(评论作者本人
    或作品作者)在服务端算出 canDelete 才渲染,action 层再用 SQL 权限兜底一次。
-   AI 不介入作品评论:无 is_ai 态,也不触发 ai_reply_jobs。 */
+   AI 评论(20260816 召唤):BOT_NAME + 瓷砖头像 + 蓝边 AI 徽章,无主页链接;
+   删除入口仅作品作者/治理可见;viewer 关了 show_ai_replies 时查询侧整行滤掉。 */
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import Markdown from "@/components/Markdown";
+import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import type { SessionUser } from "@/src/lib/auth/session";
+import { canModerate } from "@/src/lib/featured";
 import { relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getWorkCommentsPage } from "@/src/lib/works";
@@ -27,18 +30,36 @@ export async function loadWorkComments(
   locale: Locale,
   after = 0,
 ): Promise<WorkCommentPageData> {
-  const page = await getWorkCommentsPage(workId, after);
+  const page = await getWorkCommentsPage(workId, after, {
+    showAi: user ? user.showAiReplies : true,
+  });
   return {
     total: page.total,
     nextCursor: page.nextCursor,
     nodes: page.comments.map((c) => {
       const isAuthor = workAuthorId !== null && c.userId === workAuthorId;
-      const canDelete =
-        !!user && (c.userId === user.id || workAuthorId === user.id);
+      /* AI 评论无「评论作者」可归属:删除入口只给作品作者/治理(清 AI 评论) */
+      const canDelete = c.isAi
+        ? !!user && (workAuthorId === user.id || canModerate(user.role))
+        : !!user && (c.userId === user.id || workAuthorId === user.id);
       return (
         <div key={c.id} id={`work-comment-${c.id}`} className="scroll-mt-24 py-4">
           <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
-            {c.handle ? (
+            {c.isAi ? (
+              <>
+                <Avatar
+                  url={BOT_AVATAR}
+                  handle={BOT_NAME}
+                  size={20}
+                  square
+                  className="h-5 w-5"
+                />
+                <span className="text-paper">{BOT_NAME}</span>
+                <span className="rounded-md border border-blue px-1.5 py-px text-[10.5px] tracking-wider text-blue">
+                  AI
+                </span>
+              </>
+            ) : c.handle ? (
               <>
                 <Avatar url={c.avatarUrl} handle={c.handle} size={20} />
                 <Link

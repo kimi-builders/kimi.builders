@@ -25,6 +25,7 @@ import { HOME_CACHE_TAG } from "@/src/lib/home";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { enqueueAiReply } from "@/src/lib/ai-reply";
+import { hasKimiMention } from "@/src/lib/mention-kimi";
 import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import {
@@ -68,6 +69,9 @@ export interface MutationResult {
   ok: boolean;
   error?: string;
   retryAfterSeconds?: number;
+  /* AI 召唤结果(20260816):评论里 @kimi 时给客户端 toast 用;
+     评论本身照常发布,该字段只说明召唤是否成立 */
+  aiNote?: "summoned" | "aiDisabled" | "rate";
 }
 
 export async function createPostAction(
@@ -130,9 +134,12 @@ export async function createPostAction(
     visibility,
     options,
   });
-  /* 入队 AI 回帖:本帖开关 + 作者全局开关都开才排(v2 决策 3)。
+  /* 入队 AI 回帖:本帖开关勾选、或正文 @kimi 召唤(作者本人即召唤者,
+     勾选与否都回——与自动回帖合并为一条,kind=mention);作者全局开关最大。
      enqueue 内部用 after(),必须在 return 之前调用。 */
-  if (aiReply && user.aiRepliesEnabled) await enqueueAiReply(postId);
+  const mentioned = hasKimiMention(body);
+  if ((aiReply || mentioned) && user.aiRepliesEnabled)
+    await enqueueAiReply(postId, null, mentioned ? "mention" : "auto");
   updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath("/community");
   /* 落详情页:不在 action 里 redirect(弹窗插槽不随转);由客户端 router.push */
@@ -175,14 +182,31 @@ export async function createCommentAction(
   /* 回复了 AI 的评论 → 触发 AI 接话(带对话链上下文)。
      门槛:帖子允许 AI + 回帖人全局允许 AI;链路深度上限在执行侧。
      重复提交(duplicate)不再触发——否则网络重试会刷出双倍 AI 回复。 */
+  let aiNote: MutationResult["aiNote"];
   if (!created.duplicate && parent?.isAi && user.aiRepliesEnabled) {
     const post = await getPost(postId);
-    if (post?.aiReply) await enqueueAiReply(postId, created.id);
+    if (post?.aiReply) await enqueueAiReply(postId, created.id, "chain");
+  } else if (!created.duplicate && hasKimiMention(body) && user.aiRepliesEnabled) {
+    /* @kimi 召唤(20260816):与 chain 互斥(回复 AI 且 @kimi 只接话)。
+       地盘规则:帖主关了本帖 AI 参与则召唤不成立(aiNote 告知召唤者);
+       召唤另计独立限流(ai_summon 20/小时),超限不召唤但评论照常发布。 */
+    const post = await getPost(postId);
+    if (!post?.aiReply) {
+      aiNote = "aiDisabled";
+    } else {
+      const summonRate = await consumeCommunityRateLimit(user.id, "ai_summon");
+      if (!summonRate.allowed) {
+        aiNote = "rate";
+      } else {
+        await enqueueAiReply(postId, created.id, "mention");
+        aiNote = "summoned";
+      }
+    }
   }
   updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community"); /* feed 卡片上的评论数 */
-  return { ok: true };
+  return aiNote ? { ok: true, aiNote } : { ok: true };
 }
 
 /* 评论「加载更多」:只读,不落库不作废缓存。返回服务端渲染好的一页

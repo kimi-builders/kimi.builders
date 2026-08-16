@@ -1,6 +1,6 @@
-/* 消息页:关注的帖子有新评论 / 我的评论被回复,按时间倒序;
-   链接锚到具体评论(#comment-<id>)。打开页面即全部标记已读。
-   actor 为空 = Kimi 小筑(AI),用 bot 头像和名字展示。 */
+/* 消息页:关注的帖子有新评论 / 我的评论被回复 / 作品召唤被 AI 回应(20260816),
+   按时间倒序;链接锚到具体评论(#comment-<id> / #work-comment-<id>)。
+   打开页面即全部标记已读。actor 为空 = Kimi 小筑(AI),用 bot 头像和名字展示。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
@@ -53,10 +53,17 @@ export default async function NotificationsPage() {
         </div>
       ) : (
         <ul className="mt-6 space-y-3">
-          {items.map((n) => (
+          {items.map((n) => {
+            /* work 分支(20260816 作品召唤):AI 回复作品评论,
+               锚到 /works/<id>#work-comment-<cid>;其余同 post 通知 */
+            const isWork = n.workId !== null;
+            const href = isWork
+              ? `/works/${n.workId}#work-comment-${n.workCommentId}`
+              : `/community/${n.postId}#comment-${n.commentId}`;
+            return (
             <li key={n.id}>
               <Link
-                href={`/community/${n.postId}#comment-${n.commentId}`}
+                href={href}
                 className="flex items-start gap-3 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:border-paper/20"
               >
                 <Avatar
@@ -72,11 +79,13 @@ export default async function NotificationsPage() {
                       {n.actorHandle ? `@${n.actorHandle}` : BOT_NAME}
                     </span>{" "}
                     <span className="text-grey">
-                      {t(locale, n.type === "reply" ? "notif.reply" : "notif.comment")}
+                      {isWork
+                        ? t(locale, "notif.workReply", { name: n.workName ?? "" })
+                        : t(locale, n.type === "reply" ? "notif.reply" : "notif.comment")}
                     </span>
                   </p>
                   <p className="mt-1 truncate font-mono text-[11px] text-grey">
-                    {n.postTitle}
+                    {isWork ? n.workName : n.postTitle}
                   </p>
                 </div>
                 <span className="shrink-0 font-mono text-[11px] text-grey">
@@ -84,7 +93,8 @@ export default async function NotificationsPage() {
                 </span>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

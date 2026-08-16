@@ -66,6 +66,8 @@ export interface WorkRow {
      封面适配(cover=裁切填满 / contain=补边完整) */
   coverTone: string;
   coverFit: string;
+  /* 20260816_work_ai_summon:允许 AI 参与本作品评论区(@kimi 召唤;默认开) */
+  aiReply: boolean;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -116,6 +118,7 @@ function mapWork(r: RowDataPacket): WorkRow {
     coverKey: r.cover_key ?? "",
     coverTone: r.cover_tone ?? "theme",
     coverFit: r.cover_fit === "contain" ? "contain" : "cover",
+    aiReply: !!r.ai_reply,
   };
 }
 
@@ -124,7 +127,7 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
        w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys,
-       w.cover_key, w.cover_tone, w.cover_fit`;
+       w.cover_key, w.cover_tone, w.cover_fit, w.ai_reply`;
 
 /* 可见性谓词(20260828):私密=仅作者(推荐人)本人可见。
    公共上下文(右栏/精选/海报/统计)恒用 PUBLIC_ONLY;列表/详情带 viewerId 放行作者本人。
@@ -518,6 +521,8 @@ export interface WorkFields {
      awesome 条目适配无意义,服务端强制默认 */
   coverTone: string;
   coverFit: string;
+  /* 允许 AI 参与评论区(20260816 召唤):checkbox 提交 "on",缺省 = 关 */
+  aiReply: boolean;
 }
 
 /* ---- 作品媒体 key 校验(20260826_work_media)----
@@ -538,8 +543,8 @@ export async function createWork(
 ): Promise<number> {
   const source = f.authorLabel ? "awesome" : "site";
   const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys, cover_key, cover_tone, cover_fit)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys, cover_key, cover_tone, cover_fit, ai_reply)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       f.name.slice(0, 120),
@@ -571,6 +576,7 @@ export async function createWork(
       source === "awesome" ? "" : f.coverKey.slice(0, 255),
       f.coverTone.slice(0, 16),
       source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
+      f.aiReply ? 1 : 0,
     ],
   );
   return Number(res.insertId);
@@ -586,7 +592,7 @@ export async function updateWork(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
        tags = ?, agents = ?, source = ?, visibility = ?, author_label = ?, claimed_tokens = ?,
        status = ?, models = ?, kind = ?, description_md = ?, scope = ?, also_awesome = ?,
-       logo_key = ?, image_keys = ?, cover_key = ?, cover_tone = ?, cover_fit = ?
+       logo_key = ?, image_keys = ?, cover_key = ?, cover_tone = ?, cover_fit = ?, ai_reply = ?
      WHERE id = ? AND user_id = ?`,
     [
       f.name.slice(0, 120),
@@ -614,6 +620,7 @@ export async function updateWork(
       source === "awesome" ? "" : f.coverKey.slice(0, 255),
       f.coverTone.slice(0, 16),
       source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
+      f.aiReply ? 1 : 0,
       workId,
       userId,
     ],
@@ -637,7 +644,8 @@ export async function deleteWork(
    支持:只有「顶」没有踩,再点取消;复合主键 (work_id, user_id) 天然幂等。
    评论:单层(无楼中楼)、软删;评论作者本人或作品作者可删,权限钉在 SQL WHERE。
    冗余计数 vote_count / comment_count 随写路径维护,减侧 GREATEST 兜底(并发不击穿 0)。
-   AI 不介入作品评论(无 is_ai、不触发 ai_reply_jobs)。 */
+   AI 评论(20260816 召唤):is_ai=1 + user_id NULL,由 ai_reply_jobs 消费写入,
+   不经 createWorkComment;viewer 关掉 show_ai_replies 时查询侧滤掉。 */
 
 export interface WorkDetail extends WorkRow {
   /* 精选定夺编辑(featured_by)的 handle;未精选/账号已注销 → null */
@@ -932,7 +940,9 @@ export async function toggleWorkVote(
 export interface WorkCommentRow {
   id: number;
   workId: number;
-  userId: number;
+  /* 评论作者;NULL = AI(20260816 召唤) */
+  userId: number | null;
+  isAi: boolean;
   body: string;
   createdAt: Date;
   handle: string | null;
@@ -946,24 +956,33 @@ export const WORK_COMMENT_PAGE_SIZE = 50;
 export function workCommentPageQuery(
   workId: number,
   after: number,
+  /* showAi=false(viewer 关了 show_ai_replies)时滤掉 AI 评论;与 count 查询同口径 */
+  opts: { showAi?: boolean } = {},
 ): { sql: string; args: number[] } {
+  const showAi = opts.showAi ?? true;
   return {
-    sql: `SELECT c.id, c.work_id, c.user_id, c.body, c.created_at,
+    sql: `SELECT c.id, c.work_id, c.user_id, c.is_ai, c.body, c.created_at,
             u.handle, u.avatar_url
      FROM work_comments c LEFT JOIN users u ON u.id = c.user_id
      WHERE c.work_id = ? AND c.deleted_at IS NULL AND c.id > ?
+           ${showAi ? "" : "AND c.is_ai = 0"}
      ORDER BY c.id ASC LIMIT ${WORK_COMMENT_PAGE_SIZE + 1}`,
     args: [workId, after],
   };
 }
 
-/* 可见评论总数:与 workCommentPageQuery 同口径(滤软删),两者必须一起改。 */
-export function workCommentCountQuery(workId: number): {
+/* 可见评论总数:与 workCommentPageQuery 同口径(滤软删 + AI 过滤),两者必须一起改。 */
+export function workCommentCountQuery(
+  workId: number,
+  opts: { showAi?: boolean } = {},
+): {
   sql: string;
   args: number[];
 } {
+  const showAi = opts.showAi ?? true;
   return {
-    sql: "SELECT COUNT(*) AS n FROM work_comments WHERE work_id = ? AND deleted_at IS NULL",
+    sql: `SELECT COUNT(*) AS n FROM work_comments
+          WHERE work_id = ? AND deleted_at IS NULL ${showAi ? "" : "AND is_ai = 0"}`,
     args: [workId],
   };
 }
@@ -977,9 +996,10 @@ export interface WorkCommentPage {
 export async function getWorkCommentsPage(
   workId: number,
   after = 0,
+  opts: { showAi?: boolean } = {},
 ): Promise<WorkCommentPage> {
-  const count = workCommentCountQuery(workId);
-  const page = workCommentPageQuery(workId, after);
+  const count = workCommentCountQuery(workId, opts);
+  const page = workCommentPageQuery(workId, after, opts);
   const pool = getPool();
   const [countRows, rows] = await Promise.all([
     pool.query<RowDataPacket[]>(count.sql, count.args).then(([r]) => r),
@@ -993,7 +1013,8 @@ export async function getWorkCommentsPage(
     comments: kept.map((r) => ({
       id: Number(r.id),
       workId: Number(r.work_id),
-      userId: Number(r.user_id),
+      userId: r.user_id === null ? null : Number(r.user_id),
+      isAi: !!r.is_ai,
       body: r.body,
       createdAt: r.created_at,
       handle: r.handle ?? null,
@@ -1007,8 +1028,25 @@ export async function getWorkCommentsPage(
   };
 }
 
-/* 发评论:插入 + 冗余计数 +1(两条语句,同社区 createComment 的非事务取舍);
-   不发通知、不排 AI 任务(作品评论从简)。 */
+/* 服务端幂等(20260816,对齐社区 createCommentForVisiblePost):同人同作品同文
+   60 秒内的重复提交视为已提交——客户端 posting 防抖之外的网络重试/刷新重提
+   不出重楼,也不再触发召唤。 */
+export function workCommentDuplicateQuery(
+  workId: number,
+  userId: number,
+  body: string,
+): { sql: string; args: (string | number)[] } {
+  return {
+    sql: `SELECT id FROM work_comments
+     WHERE work_id = ? AND user_id = ? AND body = ? AND deleted_at IS NULL
+       AND created_at > TIMESTAMPADD(SECOND, -60, UTC_TIMESTAMP(3))
+     LIMIT 1`,
+    args: [workId, userId, body.slice(0, 10000)],
+  };
+}
+
+/* 发评论:60s 去重 → 插入 + 冗余计数 +1(两条语句,同社区 createComment 的非事务取舍);
+   不发通知(人类评论从简)。AI 评论由 ai-reply.ts 直接写入(is_ai=1, user_id NULL)。 */
 export function workCommentInsertQuery(
   workId: number,
   userId: number,
@@ -1020,43 +1058,102 @@ export function workCommentInsertQuery(
   };
 }
 
+export interface WorkCommentCreated {
+  id: number;
+  /* 命中 60s 去重时置位(幂等成功,不产生新行);action 层据此跳过召唤触发 */
+  duplicate: boolean;
+}
+
 export async function createWorkComment(
   workId: number,
   userId: number,
   body: string,
-): Promise<number> {
+): Promise<WorkCommentCreated> {
   const pool = getPool();
+  const dupQ = workCommentDuplicateQuery(workId, userId, body);
+  const [dup] = await pool.query<RowDataPacket[]>(dupQ.sql, dupQ.args);
+  if (dup[0]) return { id: Number(dup[0].id), duplicate: true };
   const ins = workCommentInsertQuery(workId, userId, body);
   const [res] = await pool.query<ResultSetHeader>(ins.sql, ins.args);
   await pool.query(
     "UPDATE works SET comment_count = comment_count + 1 WHERE id = ?",
     [workId],
   );
-  return Number(res.insertId);
+  return { id: Number(res.insertId), duplicate: false };
+}
+
+/* AI 回复作品评论后的通知(20260816 召唤):召唤触发者 + 作品作者
+   (触发者即作者本人时 Set 去重只发一条;awesome 站外条目无作者,只发触发者)。
+   actor NULL = AI;type='reply',work 目标列落库,渲染侧锚到
+   /works/<id>#work-comment-<cid>。 */
+export async function notifyOnWorkComment(input: {
+  workId: number;
+  workCommentId: number;
+  actorId: number | null;
+  /* 触发召唤的那条评论;AI 回复的「父」语义挂在它上面 */
+  triggerCommentId: number | null;
+}): Promise<void> {
+  const pool = getPool();
+  const recipients = new Set<number>();
+  if (input.triggerCommentId !== null) {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT user_id FROM work_comments WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+      [input.triggerCommentId],
+    );
+    const uid = rows[0]?.user_id;
+    if (uid !== null && uid !== undefined && Number(uid) !== input.actorId)
+      recipients.add(Number(uid));
+  }
+  const [wrows] = await pool.query<RowDataPacket[]>(
+    "SELECT user_id FROM works WHERE id = ? LIMIT 1",
+    [input.workId],
+  );
+  const authorId = wrows[0]?.user_id;
+  if (
+    authorId !== null &&
+    authorId !== undefined &&
+    Number(authorId) !== input.actorId
+  )
+    recipients.add(Number(authorId));
+  if (recipients.size === 0) return;
+  const rows = [...recipients].map((uid) => [
+    uid,
+    input.actorId,
+    "reply",
+    input.workId,
+    input.workCommentId,
+  ]);
+  await pool.query(
+    "INSERT INTO notifications (user_id, actor_id, type, work_id, work_comment_id) VALUES ?",
+    [rows],
+  );
 }
 
 /* 删评论(软删):评论作者本人或作品作者可删,权限钉在 WHERE(c.user_id 或
    w.user_id);多表 UPDATE 一条语句同时把 works.comment_count 减 1。
+   moderator=true(20260816 召唤,治理清 AI 评论)免归属校验。
    affectedRows = 0 → 不存在/已删/越权,调用方按失败处理。 */
 export function workCommentDeleteQuery(
   commentId: number,
   userId: number,
+  opts: { moderator?: boolean } = {},
 ): { sql: string; args: number[] } {
+  const perm = opts.moderator ? "" : " AND (c.user_id = ? OR w.user_id = ?)";
   return {
     sql: `UPDATE work_comments c JOIN works w ON w.id = c.work_id
      SET c.deleted_at = NOW(),
          w.comment_count = GREATEST(0, CAST(w.comment_count AS SIGNED) - 1)
-     WHERE c.id = ? AND c.deleted_at IS NULL
-           AND (c.user_id = ? OR w.user_id = ?)`,
-    args: [commentId, userId, userId],
+     WHERE c.id = ? AND c.deleted_at IS NULL${perm}`,
+    args: opts.moderator ? [commentId] : [commentId, userId, userId],
   };
 }
 
 export async function deleteWorkComment(
   userId: number,
   commentId: number,
+  opts: { moderator?: boolean } = {},
 ): Promise<boolean> {
-  const q = workCommentDeleteQuery(commentId, userId);
+  const q = workCommentDeleteQuery(commentId, userId, opts);
   const [res] = await getPool().query<ResultSetHeader>(q.sql, q.args);
   return res.affectedRows > 0;
 }

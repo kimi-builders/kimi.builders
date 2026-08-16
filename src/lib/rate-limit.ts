@@ -11,7 +11,7 @@ import { usageHmac } from "./usage/crypto";
 
 type Queryable = Pool | PoolConnection;
 
-export type CommunityRateAction = "post" | "comment" | "vote" | "upload";
+export type CommunityRateAction = "post" | "comment" | "vote" | "upload" | "ai_summon";
 
 export interface CommunityRateResult {
   allowed: boolean;
@@ -19,7 +19,8 @@ export interface CommunityRateResult {
   retryAfterSeconds: number;
 }
 
-/* 限额(P1-5):发帖 10/小时、评论 30/小时、顶踩投票 120/小时、上传 30/小时;固定窗口 1 小时 */
+/* 限额(P1-5):发帖 10/小时、评论 30/小时、顶踩投票 120/小时、上传 30/小时、
+   AI 召唤(@kimi)20/小时(20260816);固定窗口 1 小时 */
 export const COMMUNITY_RATE_WINDOW_SECONDS = 60 * 60;
 
 export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
@@ -27,6 +28,7 @@ export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
   comment: 30,
   vote: 120,
   upload: 30,
+  ai_summon: 20,
 };
 
 /* 限流键:scope = community:<action>,同一用户不同 action 各自独立计数 */

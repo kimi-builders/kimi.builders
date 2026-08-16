@@ -45,6 +45,7 @@ function work(): WorkRow {
     coverTone: "theme",
     coverFit: "cover",
     coverKey: "",
+    aiReply: true,
   };
 }
 

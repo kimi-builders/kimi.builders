@@ -83,6 +83,7 @@ export default async function EditWorkContent({
           descriptionMd: work.descriptionMd,
           scope: work.scope,
           alsoAwesome: work.alsoAwesome,
+          aiReply: work.aiReply,
         }}
         claim={{
           initial: work.claimedTokens,

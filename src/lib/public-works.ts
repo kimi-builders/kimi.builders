@@ -162,9 +162,10 @@ export function hydratePublicWorksPage(dto: PublicWorksPageDto): WorksPage {
   return {
     works: dto.works.map((work) => ({
       ...work,
-      /* 公共清单 DTO 不带收录开关(展示用不到),水合时补默认值;
+      /* 公共清单 DTO 不带收录开关/AI 开关(展示用不到),水合时补默认值;
          20260908 前的旧缓存负载没有 cover_tone/cover_fit,同样补默认 */
       alsoAwesome: false,
+      aiReply: true,
       coverTone: work.coverTone ?? "theme",
       coverFit: work.coverFit === "contain" ? "contain" : "cover",
       coverKey: work.coverKey ?? "",

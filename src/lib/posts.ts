@@ -1296,9 +1296,14 @@ export async function getUnreadNotificationCount(userId: number): Promise<number
 export interface NotificationRow {
   id: number;
   type: string;
-  postId: number;
+  /* post 通知目标;work 通知(20260816 作品召唤)为 null */
+  postId: number | null;
   postTitle: string;
-  commentId: number;
+  commentId: number | null;
+  /* work 通知目标(作品召唤回复);post 通知为 null */
+  workId: number | null;
+  workCommentId: number | null;
+  workName: string | null;
   createdAt: Date;
   actorHandle: string | null;
   actorAvatar: string | null;
@@ -1308,12 +1313,15 @@ export async function getNotifications(
   userId: number,
 ): Promise<NotificationRow[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT n.id, n.type, n.post_id, n.comment_id, n.created_at,
+    `SELECT n.id, n.type, n.post_id, n.comment_id, n.work_id, n.work_comment_id,
+            n.created_at,
             p.title, LEFT(p.body_md, 200) AS body_excerpt,
+            w.name AS work_name,
             u.handle AS actor_handle, u.avatar_url AS actor_avatar
      FROM notifications n
      LEFT JOIN users u ON u.id = n.actor_id
-     JOIN posts p ON p.id = n.post_id
+     LEFT JOIN posts p ON p.id = n.post_id
+     LEFT JOIN works w ON w.id = n.work_id
      WHERE n.user_id = ?
      ORDER BY n.id DESC LIMIT 50`,
     [userId],
@@ -1321,9 +1329,13 @@ export async function getNotifications(
   return rows.map((r) => ({
     id: Number(r.id),
     type: r.type,
-    postId: Number(r.post_id),
+    postId: r.post_id === null ? null : Number(r.post_id),
     postTitle: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
-    commentId: Number(r.comment_id),
+    commentId: r.comment_id === null ? null : Number(r.comment_id),
+    workId: r.work_id === null ? null : Number(r.work_id),
+    workCommentId:
+      r.work_comment_id === null ? null : Number(r.work_comment_id),
+    workName: r.work_name ?? null,
     createdAt: r.created_at,
     actorHandle: r.actor_handle,
     actorAvatar: r.actor_avatar,

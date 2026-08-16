@@ -96,8 +96,21 @@ const DICT = {
   /* ---- 帖子详情 ---- */
   "post.comments": { zh: "{n} 条评论", en: "{n} comments" },
   "post.commentPh": {
-    zh: "写下你的评论(支持 Markdown)…",
-    en: "Write a comment (Markdown supported)…",
+    zh: "写下你的评论(支持 Markdown;@kimi 可召唤小筑回答)…",
+    en: "Write a comment (Markdown; @kimi to summon the bot)…",
+  },
+  /* @kimi 召唤结果 toast(20260816):评论照常发布,召唤是否成立单独提示 */
+  "post.aiSummoned": {
+    zh: "已召唤 Kimi 小筑,TA 稍后回复",
+    en: "Kimi bot summoned — reply incoming",
+  },
+  "post.aiSummonDisabled": {
+    zh: "帖主已关闭 AI 参与,召唤未生效",
+    en: "The author has disabled AI here — summon ignored",
+  },
+  "post.aiSummonRate": {
+    zh: "召唤太频繁了,稍后再试",
+    en: "Summoning too often — try again later",
   },
   "post.comment": { zh: "评论", en: "Comment" },
   "post.solved": { zh: "已解决", en: "Solved" },
@@ -168,6 +181,11 @@ const DICT = {
   },
   "notif.comment": { zh: "评论了你关注的帖子", en: "commented on a post you follow" },
   "notif.reply": { zh: "回复了你的评论", en: "replied to your comment" },
+  /* 作品召唤回复(20260816 PR2):AI 回应作品评论区的 @kimi */
+  "notif.workReply": {
+    zh: "回复了你在《{name}》的召唤",
+    en: "answered your summon on “{name}”",
+  },
   "notif.loginRequired": { zh: "登录后查看消息:", en: "Log in to see notifications:" },
   /* ---- 发帖 ---- */
   "form.pageTitle": { zh: "发帖", en: "New post" },
@@ -176,8 +194,8 @@ const DICT = {
   "form.poll": { zh: "投票", en: "Poll" },
   "form.title": { zh: "标题(可选)", en: "Title (optional)" },
   "form.bodyText": {
-    zh: "正文(支持 Markdown)",
-    en: "Body (Markdown supported)",
+    zh: "正文(支持 Markdown;@kimi 可召唤小筑回答)",
+    en: "Body (Markdown; @kimi to summon the bot)",
   },
   "form.bodyOpt": {
     zh: "补充说明(可选,支持 Markdown)",
@@ -664,6 +682,15 @@ const DICT = {
   "works.alsoAwesomeHint": {
     zh: "默认只进你的作品墙;勾选后同时出现在 Awesome 清单(公开展示构建者)。",
     en: "By default your work only appears on your wall; tick to also list it on Awesome (shown publicly).",
+  },
+  /* AI 参与评论区开关(20260816 召唤):默认开;关掉后评论里 @kimi 不生效 */
+  "works.aiReply": {
+    zh: "允许 Kimi 小筑参与评论区",
+    en: "Let Kimi bot join the comments",
+  },
+  "works.aiReplyHint": {
+    zh: "评论里 @kimi 可召唤小筑点评 / 答疑;关闭后召唤不生效",
+    en: "@kimi in a comment summons the bot for feedback or answers; off = summons ignored",
   },
   "err.workName": { zh: "作品名称必填", en: "Name is required" },
   "err.workNameLong": {

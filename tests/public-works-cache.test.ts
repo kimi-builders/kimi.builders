@@ -43,6 +43,7 @@ function work(overrides: Partial<WorkRow> = {}): WorkRow {
     coverTone: "theme",
     coverFit: "cover",
     coverKey: "",
+    aiReply: true,
     ...overrides,
   };
 }

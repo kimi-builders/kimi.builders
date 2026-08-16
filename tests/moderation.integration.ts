@@ -127,7 +127,7 @@ async function main() {
       screenshotUrl: "", tags: [], agents: ["kimi"], authorLabel: "", visibility: "public",
       claimedTokens: null, status: "released", models: [], kind: "app",
       descriptionMd: "", scope: null, logoKey: "", imageKeys: [],
-      coverTone: "theme", coverFit: "cover", coverKey: "",
+      coverTone: "theme", coverFit: "cover", coverKey: "", aiReply: true,
     };
     const workId = await createWork(member, wFields);
     workIds.push(workId);

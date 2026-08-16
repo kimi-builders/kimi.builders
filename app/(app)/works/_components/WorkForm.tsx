@@ -300,6 +300,8 @@ export default function WorkForm({
     scope: string;
     /* 同时收录 Awesome 回填(20260906) */
     alsoAwesome?: boolean;
+    /* AI 参与评论区开关回填(20260816 召唤);新建默认开 */
+    aiReply?: boolean;
   };
   /* 声明制上下文:空 = 不渲染声明字段( awesome 推荐等同理,服务端也会强制 null) */
   claim?: {
@@ -908,7 +910,8 @@ export default function WorkForm({
           </div>
         )}
 
-        {/* 私密开关 + 同时收录 Awesome(仅「我的作品」;推荐条目恒在 Awesome,无需开关) */}
+        {/* 私密开关 + AI 参与评论区(20260816 召唤)+ 同时收录 Awesome
+            (仅「我的作品」;推荐条目恒在 Awesome,无需开关) */}
         <div className="space-y-2.5">
           {kind === "site" && (
             <CheckBox
@@ -918,6 +921,12 @@ export default function WorkForm({
               hint={t(locale, "works.alsoAwesomeHint")}
             />
           )}
+          <CheckBox
+            name="ai_reply"
+            defaultChecked={initial?.aiReply ?? true}
+            label={t(locale, "works.aiReply")}
+            hint={t(locale, "works.aiReplyHint")}
+          />
           <CheckBox
             name="private"
             defaultChecked={initial?.visibility === "private"}

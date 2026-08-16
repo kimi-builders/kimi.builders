@@ -149,6 +149,10 @@ export default function CommentSection({
         return;
       }
       toast(t(locale, "toast.commented"));
+      /* @kimi 召唤结果(20260816):评论照常发出,召唤是否成立单独提示 */
+      if (res.aiNote === "summoned") toast(t(locale, "post.aiSummoned"));
+      else if (res.aiNote === "aiDisabled") toast(t(locale, "post.aiSummonDisabled"));
+      else if (res.aiNote === "rate") toast(t(locale, "post.aiSummonRate"));
       setReplyTo(null);
       form.reset();
       router.refresh();

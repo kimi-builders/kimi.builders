@@ -59,6 +59,7 @@ function fields(overrides: Partial<WorkFields> = {}): WorkFields {
     coverTone: "theme",
     coverFit: "cover",
     coverKey: "",
+    aiReply: true,
     ...overrides,
   };
 }
