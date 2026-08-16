@@ -312,7 +312,7 @@ export default async function WorkPage({
               hidden={!!work.hiddenAt}
               isAdmin={user.role === "admin"}
               locale={locale}
-              redirectAfter={work.source === "awesome" ? "/awesome" : "/works"}
+              redirectAfter={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
             />
           )}
           <ShareButton
