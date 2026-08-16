@@ -411,23 +411,6 @@ export default function UsageFilterBar({
             </button>
           )}
           {moreOpen && secondaryDimensions.map(renderDropdown)}
-          {activeCount > 0 && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => pushParams({
-                sources: null,
-                models: null,
-                efforts: null,
-                agentVersions: null,
-                projects: null,
-                devices: null,
-              })}
-              className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9"
-            >
-              {zh ? "清除筛选" : "Clear filters"}
-            </button>
-          )}
           {pending && (
             <span role="status" className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[11px] text-grey sm:min-h-9">
               <LoaderCircle size={12} className="motion-safe:animate-spin" aria-hidden="true" />
@@ -474,53 +457,60 @@ export default function UsageFilterBar({
         </form>
       )}
 
+      {/* 筛选结果分组(20260815 与作品/Awesome 同步):维度名每组一次(蓝),
+          后接各选中值 token(可单个移除),Agent 维度带图标;组内值可换行。
+          取代旧的「每条 chip 重复维度名 / 超 2 个折叠 ×N」模式。
+          清除入口随行——移动端不展开筛选面板也能一键清除。 */}
       {activeCount > 0 && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          {activeSelections.flatMap(({ dimension, selected }) => {
-            if (selected.length > 2) {
-              return (
-                <span
-                  key={dimension.key}
-                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-paper"
-                >
-                  <span className="shrink-0 text-grey">{dimension.label}</span>
-                  <span>×{selected.length}</span>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => pushParams({ [dimension.key]: null })}
-                    aria-label={zh ? `清除${dimension.label}筛选` : `Clear ${dimension.label} filter`}
-                    className="flex size-6 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+        <div className="mt-2.5 flex flex-wrap items-start gap-2">
+          {activeSelections.map(({ dimension, selected }) => (
+            <span
+              key={dimension.key}
+              className="flex min-h-11 max-w-full flex-wrap items-center gap-x-1 gap-y-1.5 rounded-lg border border-blue/40 bg-blue/10 pr-1 pl-3 font-mono text-[11px] sm:min-h-9"
+            >
+              <span className="shrink-0 text-blue">{dimension.label}</span>
+              {selected.map((value) => {
+                const rest = selected.filter((item) => item !== value);
+                return (
+                  <span
+                    key={`${dimension.key}-${value}`}
+                    className="flex min-h-7 items-center gap-1 rounded-md px-1.5 text-paper"
                   >
-                    <X size={10} />
-                  </button>
-                </span>
-              );
-            }
-            return selected.map((value) => {
-              const rest = selected.filter((item) => item !== value);
-              return (
-                <span
-                  key={`${dimension.key}-${value}`}
-                  className="flex max-w-full items-center gap-1.5 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-paper"
-                >
-                  <span className="shrink-0 text-grey">{dimension.label}</span>
-                  <span className="max-w-40 truncate">{chipLabel(dimension, value)}</span>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => pushParams({
-                      [dimension.key]: rest.length > 0 ? rest.join(",") : null,
-                    })}
-                    aria-label={zh ? `移除筛选 ${chipLabel(dimension, value)}` : `Remove filter ${chipLabel(dimension, value)}`}
-                    className="flex size-6 shrink-0 items-center justify-center text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
-                  >
-                    <X size={10} />
-                  </button>
-                </span>
-              );
-            });
-          })}
+                    {dimension.withIcons && <AgentIcon id={value} size={12} />}
+                    <span className="max-w-36 truncate">{chipLabel(dimension, value)}</span>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() =>
+                        pushParams({
+                          [dimension.key]: rest.length > 0 ? rest.join(",") : null,
+                        })
+                      }
+                      aria-label={zh ? `移除筛选 ${chipLabel(dimension, value)}` : `Remove filter ${chipLabel(dimension, value)}`}
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full text-grey transition-colors hover:bg-blue/20 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:size-6"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                );
+              })}
+            </span>
+          ))}
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => pushParams({
+              sources: null,
+              models: null,
+              efforts: null,
+              agentVersions: null,
+              projects: null,
+              devices: null,
+            })}
+            className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9"
+          >
+            {zh ? "清除筛选" : "Clear filters"}
+          </button>
         </div>
       )}
     </div>
