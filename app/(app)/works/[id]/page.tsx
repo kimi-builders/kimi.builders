@@ -159,8 +159,9 @@ export default async function WorkPage({
           {work.name}
         </h1>
       </div>
-      {/* meta 行:作者 · 时间 · 类型 · 口径/状态 · 声明投入(蓝) · ★精选(蓝);
-          私密/屏蔽保留警示 pill(仅作者/治理可见) */}
+      {/* meta 拆两层(20260815 打磨):身份行 = 作者/原作者+推荐人 · 时间
+          (信息同族才同行);属性 chips = 类型/口径/状态/声明(蓝)/★精选(蓝)
+          ——徽章化后移动端换行自然对齐,不再 · 分隔挤成参差多行 */}
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[11px] text-grey">
         {work.source === "awesome" && work.authorLabel ? (
           <>
@@ -205,51 +206,6 @@ export default async function WorkPage({
           <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
         )}
         <span>· {relTime(work.createdAt, locale)}</span>
-        <span className="inline-flex items-center gap-1">
-          · <WorkKindIcon id={work.kind} size={11} />
-          {workKindLabel(work.kind, locale === "zh")}
-        </span>
-        {work.scope && (
-          <span>
-            · {t(
-              locale,
-              work.scope === "eco"
-                ? "awesome.scopeEco"
-                : work.scope === "part"
-                  ? "awesome.scopePart"
-                  : "awesome.scopeBase",
-            )}
-          </span>
-        )}
-        {work.status !== "released" && (
-          <span>
-            · {t(
-              locale,
-              work.status === "planning"
-                ? "works.statusPlanning"
-                : work.status === "building"
-                  ? "works.statusBuilding"
-                  : "works.statusArchived",
-            )}
-          </span>
-        )}
-        {claimBadge !== null && (
-          <span className="text-blue" title={t(locale, "works.badgeTitle")}>
-            · {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
-          </span>
-        )}
-        {work.featuredAt && (
-          <span
-            className="text-blue"
-            title={`${work.featuredReason ?? ""}${
-              work.editorHandle
-                ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
-                : ""
-            }`}
-          >
-            · ★ {t(locale, "featured.badge")}
-          </span>
-        )}
         {work.visibility === "private" && (
           <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-[11px] font-medium text-grey">
             {t(locale, "works.private")}
@@ -264,15 +220,66 @@ export default async function WorkPage({
           </span>
         )}
       </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
+          <WorkKindIcon id={work.kind} size={11} />
+          {workKindLabel(work.kind, locale === "zh")}
+        </span>
+        {work.scope && (
+          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
+            {t(
+              locale,
+              work.scope === "eco"
+                ? "awesome.scopeEco"
+                : work.scope === "part"
+                  ? "awesome.scopePart"
+                  : "awesome.scopeBase",
+            )}
+          </span>
+        )}
+        {work.status !== "released" && (
+          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
+            {t(
+              locale,
+              work.status === "planning"
+                ? "works.statusPlanning"
+                : work.status === "building"
+                  ? "works.statusBuilding"
+                  : "works.statusArchived",
+            )}
+          </span>
+        )}
+        {claimBadge !== null && (
+          <span
+            className="inline-flex items-center rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-[11px] text-blue"
+            title={t(locale, "works.badgeTitle")}
+          >
+            {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
+          </span>
+        )}
+        {work.featuredAt && (
+          <span
+            className="inline-flex items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-[11px] text-blue"
+            title={`${work.featuredReason ?? ""}${
+              work.editorHandle
+                ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
+                : ""
+            }`}
+          >
+            ★ {t(locale, "featured.badge")}
+          </span>
+        )}
+      </div>
 
-      {/* 操作条(媒体之上):体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除 */}
+      {/* 操作条(媒体之上):体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除。
+          移动端(20260815 打磨):CTA 全宽独占一行,操作重心突出;支持/分享次行。 */}
       <div className="mt-5 flex flex-wrap items-center gap-2.5">
         {work.url && (
           <a
             href={work.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue max-sm:w-full max-sm:justify-center"
           >
             <ExternalLink size={13} />
             {t(locale, "works.tryIt")}
@@ -352,9 +359,10 @@ export default async function WorkPage({
         </div>
       )}
 
-      {/* 正文 + 右侧信息栏:<xl 内联显示(窄屏折行);≥xl 由右栏元数据卡取代
-          (右栏注册表 work kind),正文占满正常阅读列宽 */}
-      <div className="mt-10 grid gap-8 sm:grid-cols-[1fr_220px] xl:grid-cols-1">
+      {/* 正文 + 信息栏:<xl 信息栏沉底两列网格(20260815 打磨:原 220px 侧栏
+          在 640–1023px 视口把正文挤到 ~360px,阅读局促;沉底后正文独占全宽,
+          信息行按两列排布压缩高度);≥xl 由右栏元数据卡取代(右栏注册表 work kind) */}
+      <div className="mt-10 space-y-8">
         <div>
           {/* 长描述优先(20260824 新增 description_md),缺省回退 tagline */}
           {(work.descriptionMd || work.tagline) && (
@@ -362,9 +370,9 @@ export default async function WorkPage({
           )}
         </div>
 
-        {/* 内联信息栏(<xl):与右栏同款 label/value hairline 行 */}
-        <aside className="border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 xl:hidden">
-          <dl className="font-mono text-[11px]">
+        {/* 内联信息栏(<xl):与右栏同款 label/value hairline 行,sm 起两列 */}
+        <aside className="border-t border-line pt-5 xl:hidden">
+          <dl className="grid gap-x-8 font-mono text-[11px] sm:grid-cols-2">
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
               <dt className="text-grey">
                 {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
@@ -497,20 +505,16 @@ export default async function WorkPage({
         {user ? (
           <WorkCommentForm workId={workId} locale={locale} />
         ) : (
+          /* 未登录(20260815 收敛):单一登录入口(弹窗带回跳),
+             与全站登录模式一致,不再裸排 OAuth 链接 */
           <p className="mt-4 border-t border-line pt-4 text-sm text-grey">
             {t(locale, "post.loginToComment")}
-            <a
-              href="/api/auth/github"
+            <Link
+              href={`/login?next=${encodeURIComponent(`/works/${workId}#comments`)}`}
               className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
             >
-              GitHub
-            </a>
-            <a
-              href="/api/auth/google"
-              className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-            >
-              Google
-            </a>
+              {t(locale, "auth.login")}
+            </Link>
           </p>
         )}
       </section>
