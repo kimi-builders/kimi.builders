@@ -14,7 +14,7 @@
 
 # production
 /build
-/docs
+/local-dev-docs
 
 # misc
 .DS_Store
