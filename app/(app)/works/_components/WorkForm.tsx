@@ -6,8 +6,14 @@
    意图(我的作品/推荐)创建时定死,编辑不再可切(静默转换是误操作,20260919);
    媒体区与 awesome 字段常驻挂载、按意图显隐——切换不丢已填/已传内容。
    服务端校验错误会滚动到错误条(长表单防「看似无反应」)。
-   分组重排 + 实时预览(20260919):字段按 基本信息→媒体→推荐信息→详情→发布选项
-   分五个小节;顶部实时渲染网格卡预览(复用 WorkScreenshot,与列表同一渲染路径)。
+   发布体验打磨(20260815):长表单「全展开 15 段」的压迫感拆成三层——
+   ① 必填集中:agents* 上移进 01 基本信息,与名称/类型/链接同屏;
+   ② 可选收纳:媒体/模型/发布选项改原生 <details> 折叠(默认收起,编辑带回
+      数据自动展开;无 JS 仍可展开提交,收起时字段照常随表单提交);
+   ③ 动作常驻:提交栏 sticky 常驻底部,新建按钮文案「发布作品」;
+   加小节编号 01–05 与「最小路径」提示。分组/实时预览(20260919)沿用:
+   字段按 基本信息→媒体→推荐信息→详情→发布选项 分节;顶部实时渲染网格卡预览
+   (复用 WorkScreenshot,与列表同一渲染路径)。
    Agent/平台/模型家族芯片是原生 checkbox(has-checked 着色),无 JS 可提交;
    自填型号(回车添加)依赖 JS,删除键同样。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
@@ -21,7 +27,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
 import { awesomeToneFor } from "@/src/lib/cover-tones";
@@ -71,23 +77,67 @@ const SCOPES = [
 ] as const;
 
 /* 表单小节(20260919):轻量分组——mono 小标题 + hairline 分隔,不再是一根
-   15 段直线;first = 首节(无上分隔线)。 */
+   15 段直线;first = 首节(无上分隔线)。
+   编号(20260815 发布体验打磨):01–05 mono 序号,长表单的定位感。
+   可选节折叠(CollapseSection,20260815):媒体/模型/发布选项是纯可选增强,
+   原生 <details> 收起(无 JS 也能展开与提交;收起时字段仍在 DOM、照常提交);
+   编辑带回数据时 defaultOpen 自动展开——新建走最小路径,编辑不丢任何上下文。 */
 function Section({
   title,
+  step,
   first = false,
   children,
 }: {
   title: string;
+  step?: number;
   first?: boolean;
   children: ReactNode;
 }) {
   return (
     <section className={`space-y-4 ${first ? "" : "border-t border-line pt-5"}`}>
       <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
+        {step != null && <span className="mr-1.5 text-blue/80">{String(step).padStart(2, "0")}</span>}
         {title}
       </h3>
       {children}
     </section>
+  );
+}
+
+function CollapseSection({
+  title,
+  step,
+  optionalLabel,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  step?: number;
+  /* 「可选」标记:调用方传本地化文案 */
+  optionalLabel?: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group border-t border-line pt-5">
+      <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70 transition-colors group-open:text-grey">
+          {step != null && <span className="mr-1.5 text-blue/80">{String(step).padStart(2, "0")}</span>}
+          {title}
+          {optionalLabel && (
+            <span className="ml-2 rounded-[2px] border border-line px-1 py-px text-[10.5px] font-normal normal-case tracking-normal text-grey/60">
+              {optionalLabel}
+            </span>
+          )}
+        </h3>
+        <ChevronDown
+          size={13}
+          aria-hidden="true"
+          className="shrink-0 text-grey/60 transition-transform group-open:rotate-180"
+        />
+      </summary>
+      <div className="mt-4 space-y-4">{children}</div>
+    </details>
   );
 }
 
@@ -386,30 +436,37 @@ export default function WorkForm({
 
       {/* 我的作品 / 推荐站外项目:意图在创建时定死——编辑存量条目不再显示切换器
           (20260919)。编辑中切换会把 awesome 推荐静默转成「我的作品」(原作者/口径
-          随字段失效丢空),误操作后果不可见 */}
+          随字段失效丢空),误操作后果不可见。
+          最小路径提示(20260815):一句话交代「最少要填什么」,
+          长表单的压迫感来自不知道哪些能跳过 */}
       {!workId && (
-        <div className={SEG_WRAP} role="group" aria-label={t(locale, "works.kindSite")}>
-          {(
-            [
-              { id: "site", key: "works.kindSite" },
-              { id: "awesome", key: "works.kindAwesome" },
-            ] as const
-          ).map((k) => (
-            <button
-              key={k.id}
-              type="button"
-              onClick={() => setKind(k.id)}
-              aria-pressed={kind === k.id}
-              className={`${SEG_ITEM} ${kind === k.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
-            >
-              {t(locale, k.key)}
-            </button>
-          ))}
+        <div>
+          <div className={SEG_WRAP} role="group" aria-label={t(locale, "works.kindSite")}>
+            {(
+              [
+                { id: "site", key: "works.kindSite" },
+                { id: "awesome", key: "works.kindAwesome" },
+              ] as const
+            ).map((k) => (
+              <button
+                key={k.id}
+                type="button"
+                onClick={() => setKind(k.id)}
+                aria-pressed={kind === k.id}
+                className={`${SEG_ITEM} ${kind === k.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+              >
+                {t(locale, k.key)}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11.5px] leading-relaxed text-grey/80">
+            {t(locale, "works.minPath")}
+          </p>
         </div>
       )}
 
-      {/* ---- 一、基本信息 ---- */}
-      <Section first title={t(locale, "works.secBasic")}>
+      {/* ---- 01 基本信息:必填集中(name/type/agents)+ 链接二选一 ---- */}
+      <Section first step={1} title={t(locale, "works.secBasic")}>
         <div>
           <LabelWithCount htmlFor="work-name" label={t(locale, "works.name")} count={name.length} max={120} required />
           <input
@@ -488,6 +545,104 @@ export default function WorkForm({
             />
           </div>
         </div>
+
+        {/* 参与构建的 Agent(必填,20260815 上移进基本信息):原先埋在第四节
+            「详情」里,必填项应与 name/type 同屏;容器 onChange 事件委托计数,
+            checkbox 仍非受控(无 JS 可提交),0 选中时提前红字提示 */}
+        <fieldset>
+          <span className={labelCls}>
+            {t(locale, "works.agents")} <span className="text-blue">*</span>
+          </span>
+          <div
+            className="flex flex-wrap gap-1.5"
+            onChange={(e) => {
+              const box = e.currentTarget;
+              setAgentsCount(
+                box.querySelectorAll<HTMLInputElement>("input[name='agents']:checked").length,
+              );
+            }}
+          >
+            {AGENTS.map((a) => (
+              <label key={a.id} className={chipCls}>
+                <input
+                  type="checkbox"
+                  name="agents"
+                  value={a.id}
+                  defaultChecked={checkedAgents.has(a.id)}
+                  className={choiceInputCls}
+                />
+                <AgentIcon id={a.id} size={14} />
+                {a.name}
+              </label>
+            ))}
+          </div>
+          {agentsCount === 0 ? (
+            <span className="mt-1 block text-[11px] leading-relaxed text-red-400">
+              {t(locale, "err.workNoAgent")}
+            </span>
+          ) : (
+            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+              {t(locale, "works.agentsHint")}
+            </span>
+          )}
+        </fieldset>
+      </Section>
+
+      {/* ---- 02 详情介绍:desc + tags(高频填写字段,保持常开) ---- */}
+      <Section title={t(locale, "works.secDetail")} step={2}>
+        <div>
+          <LabelWithCount htmlFor="work-desc" label={t(locale, "works.desc")} count={desc.length} max={10000} />
+          <MarkdownEditor
+            id="work-desc"
+            name="description_md"
+            locale={locale}
+            rows={6}
+            value={desc}
+            onChange={setDesc}
+            inputCls={inputCls}
+          />
+          <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
+            <span>{t(locale, "form.mdHint")}</span>
+            <span>{t(locale, "form.mdSupport")}</span>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="work-tags" className={labelCls}>
+            {t(locale, "works.tags")}
+          </label>
+          <input
+            id="work-tags"
+            name="tags"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="kimi, web, tool"
+            className={`${inputCls} font-mono`}
+          />
+          {/* chip 预览(20260919):按服务端同口径解析——所见即所存;
+              超 5 个红字提示(多的不保存),单条超 24 字截断显示 */}
+          {(parsedTags.length > 0 || rawTagCount > 5) && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {parsedTags.map((tag, i) => (
+                <span
+                  key={`${tag}-${i}`}
+                  title={tag}
+                  className="rounded-md border border-line px-1.5 py-px font-mono text-[11px] text-grey"
+                >
+                  {tag.length > 24 ? `${tag.slice(0, 24)}…` : tag}
+                </span>
+              ))}
+              {rawTagCount > 5 && (
+                <span className="font-mono text-[11px] text-red-400">
+                  {t(locale, "works.tagsOver", { n: rawTagCount })}
+                </span>
+              )}
+            </div>
+          )}
+          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            {t(locale, "works.tagsHint")}
+          </span>
+        </div>
       </Section>
 
       {/* 旧的「封面图 URL」退役;编辑存量条目时用隐藏字段原样带回 screenshot_url,
@@ -496,9 +651,15 @@ export default function WorkForm({
         <input type="hidden" name="screenshot_url" value={initial.screenshotUrl} />
       )}
 
-      {/* ---- 二、媒体(仅「我的作品」;常驻挂载,awesome 意图下整节隐藏) ---- */}
+      {/* ---- 03 媒体素材(仅「我的作品」;常驻挂载,awesome 意图下整节隐藏;
+              纯可选增强,默认折叠,编辑带回媒体时展开 ---- */}
       <div className={kind === "site" ? "block" : "hidden"}>
-        <Section title={t(locale, "works.secMedia")}>
+        <CollapseSection
+          title={t(locale, "works.secMedia")}
+          step={3}
+          optionalLabel={t(locale, "works.optional")}
+          defaultOpen={Boolean(media && (media.logo || media.cover || media.images.length > 0))}
+        >
           <WorkMediaFields
             locale={locale}
             initialLogo={media?.logo ?? null}
@@ -510,12 +671,13 @@ export default function WorkForm({
             onPreviewChange={setMediaPreview}
             onToneChange={setTone}
           />
-        </Section>
+        </CollapseSection>
       </div>
 
-      {/* ---- 三、推荐信息(仅「推荐站外项目」;常驻挂载,site 意图下整节隐藏) ---- */}
+      {/* ---- 03 推荐信息(仅「推荐站外项目」;含必填字段,可见时常开;
+              常驻挂载,site 意图下整节隐藏 ---- */}
       <div className={kind === "awesome" ? "block" : "hidden"}>
-        <Section title={t(locale, "works.secRecommend")}>
+        <Section title={t(locale, "works.secRecommend")} step={3}>
           {/* 控件摘掉 name(无名控件不随表单提交):残留的 author_label 不会把
               「我的作品」误变成 awesome 条目(服务端按 author_label 非空分流) */}
           {kind === "awesome" && (
@@ -579,102 +741,14 @@ export default function WorkForm({
         </Section>
       </div>
 
-      {/* ---- 四、详情 ---- */}
-      <Section title={t(locale, "works.secDetail")}>
-        <div>
-          <LabelWithCount htmlFor="work-desc" label={t(locale, "works.desc")} count={desc.length} max={10000} />
-          <MarkdownEditor
-            id="work-desc"
-            name="description_md"
-            locale={locale}
-            rows={6}
-            value={desc}
-            onChange={setDesc}
-            inputCls={inputCls}
-          />
-          <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
-            <span>{t(locale, "form.mdHint")}</span>
-            <span>{t(locale, "form.mdSupport")}</span>
-          </div>
-        </div>
 
-        <div>
-          <label htmlFor="work-tags" className={labelCls}>
-            {t(locale, "works.tags")}
-          </label>
-          <input
-            id="work-tags"
-            name="tags"
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="kimi, web, tool"
-            className={`${inputCls} font-mono`}
-          />
-          {/* chip 预览(20260919):按服务端同口径解析——所见即所存;
-              超 5 个红字提示(多的不保存),单条超 24 字截断显示 */}
-          {(parsedTags.length > 0 || rawTagCount > 5) && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              {parsedTags.map((tag, i) => (
-                <span
-                  key={`${tag}-${i}`}
-                  title={tag}
-                  className="rounded-md border border-line px-1.5 py-px font-mono text-[11px] text-grey"
-                >
-                  {tag.length > 24 ? `${tag.slice(0, 24)}…` : tag}
-                </span>
-              ))}
-              {rawTagCount > 5 && (
-                <span className="font-mono text-[11px] text-red-400">
-                  {t(locale, "works.tagsOver", { n: rawTagCount })}
-                </span>
-              )}
-            </div>
-          )}
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-            {t(locale, "works.tagsHint")}
-          </span>
-        </div>
-
-        <fieldset>
-          <span className={labelCls}>
-            {t(locale, "works.agents")} <span className="text-blue">*</span>
-          </span>
-          {/* 容器 onChange 事件委托计数:checkbox 仍非受控(无 JS 可提交),
-              0 选中时提前红字提示,不等服务端报错(20260919) */}
-          <div
-            className="flex flex-wrap gap-1.5"
-            onChange={(e) => {
-              const box = e.currentTarget;
-              setAgentsCount(
-                box.querySelectorAll<HTMLInputElement>("input[name='agents']:checked").length,
-              );
-            }}
-          >
-            {AGENTS.map((a) => (
-              <label key={a.id} className={chipCls}>
-                <input
-                  type="checkbox"
-                  name="agents"
-                  value={a.id}
-                  defaultChecked={checkedAgents.has(a.id)}
-                  className={choiceInputCls}
-                />
-                <AgentIcon id={a.id} size={14} />
-                {a.name}
-              </label>
-            ))}
-          </div>
-          {agentsCount === 0 ? (
-            <span className="mt-1 block text-[11px] leading-relaxed text-red-400">
-              {t(locale, "err.workNoAgent")}
-            </span>
-          ) : (
-            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-              {t(locale, "works.agentsHint")}
-            </span>
-          )}
-        </fieldset>
-
+      {/* ---- 04 模型(可选增强,默认折叠;编辑带回模型时展开) ---- */}
+      <CollapseSection
+        title={t(locale, "works.models")}
+        step={4}
+        optionalLabel={t(locale, "works.optional")}
+        defaultOpen={(initial?.models ?? []).length > 0}
+      >
         <fieldset>
           <span className={labelCls}>{t(locale, "works.models")}</span>
           <div className="flex flex-wrap gap-1.5">
@@ -737,10 +811,21 @@ export default function WorkForm({
             {t(locale, "works.modelsHint")}
           </span>
         </fieldset>
-      </Section>
+      </CollapseSection>
 
-      {/* ---- 五、发布选项:状态/声明/收录与私密(次要选择收尾) ---- */}
-      <Section title={t(locale, "works.secPublish")}>
+      {/* ---- 05 发布选项:状态/声明/收录与私密(次要选择收尾;默认折叠,
+              编辑带回非默认状态时展开) ---- */}
+      <CollapseSection
+        title={t(locale, "works.secPublish")}
+        step={5}
+        optionalLabel={t(locale, "works.optional")}
+        defaultOpen={Boolean(
+          workId &&
+            (initial?.visibility === "private" ||
+              (initial?.status && initial.status !== "released") ||
+              claim?.initial != null),
+        )}
+      >
         <div>
           <span className={labelCls}>{t(locale, "works.status")}</span>
           <div className="flex flex-wrap gap-1.5">
@@ -841,7 +926,7 @@ export default function WorkForm({
         <p className="text-[11px] leading-relaxed text-grey/80">
           {t(locale, "works.hint")}
         </p>
-      </Section>
+      </CollapseSection>
 
       {state?.error && (
         <p
@@ -853,7 +938,17 @@ export default function WorkForm({
           {state.error}
         </p>
       )}
-      <div className="flex items-center gap-3 border-t border-line pt-4">
+      {/* 粘性提交栏(20260815 发布体验打磨):长表单里发布按钮常驻可视区,
+          不再滚丢;负边距吃掉容器的横向/纵向 padding,贴弹窗/主列边缘。
+          弹窗容器 px-5 py-5;完整页主列 px-4 py-6 lg:px-6 lg:py-8,
+          移动端抬升 bottom-20 避让底部标签栏。 */}
+      <div
+        className={`sticky z-10 -mx-5 mb-[-1.25rem] flex items-center gap-3 border-t border-line bg-bg/95 px-5 py-3 backdrop-blur ${
+          modal
+            ? "bottom-0"
+            : "bottom-20 -mx-4 px-4 mb-[-1.5rem] sm:-mx-6 sm:px-6 lg:bottom-0 lg:mb-[-2rem]"
+        }`}
+      >
         {/* 弹窗场景:取消 = router.back() 关窗回原处(RouteModal 监听 URL 变化
             静默关窗);完整页 = 回来源列表(记忆优先,否则按意图) */}
         {modal ? (
@@ -877,7 +972,12 @@ export default function WorkForm({
           disabled={pending}
           className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
         >
-          {pending ? t(locale, "set.saving") : t(locale, "set.save")}
+          {/* 新建 = 发布(动作语义),编辑 = 保存 */}
+          {pending
+            ? t(locale, "set.saving")
+            : workId
+              ? t(locale, "set.save")
+              : t(locale, "works.submit")}
         </button>
       </div>
     </form>

@@ -1289,6 +1289,13 @@ const DICT = {
   "works.viewList": { zh: "行式列表", en: "Row list" },
   "works.viewGrid": { zh: "封面墙", en: "Cover grid" },
   "works.preview": { zh: "卡片预览(随下方字段实时更新)", en: "Card preview (live)" },
+  /* 最小路径提示(20260815 发布体验打磨):必填集中 + 可选折叠后,
+     一句话交代「最少要填什么」,消解长表单的压迫感 */
+  "works.minPath": {
+    zh: "最少只需:名称、类型、一个链接,并勾选参与构建的 Agent;其余都可以后补。",
+    en: "Bare minimum: name, type, one link, plus one agent — everything else can come later.",
+  },
+  "works.optional": { zh: "可选", en: "Optional" },
   "works.secBasic": { zh: "基本信息", en: "Basics" },
   "works.secMedia": { zh: "媒体素材", en: "Media" },
   "works.secRecommend": { zh: "推荐信息", en: "Recommendation" },
