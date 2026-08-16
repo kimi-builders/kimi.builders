@@ -11,6 +11,7 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { getLinkedAccounts, getOwnProfile } from "@/src/lib/users";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import GithubIcon from "../../_components/GithubIcon";
+import LoginGate from "../../_components/LoginGate";
 import { LocaleSeg, ThemeCards } from "../../_components/pref-controls";
 import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
@@ -69,27 +70,14 @@ export default async function SettingsContent({
             {t(locale, "set.title")}
           </h1>
         )}
-        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
-          {t(locale, "set.loginRequired")}
-          <a
-            href="/api/auth/github"
-            className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            GitHub
-          </a>
-          <a
-            href="/api/auth/google"
-            className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            Google
-          </a>
-          <a
-            href="/login"
-            className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            {t(locale, "auth.email")}
-          </a>
-        </p>
+        {/* 未登录:统一登录引导卡(20260919) */}
+        <div className={showTitle ? "mt-6" : ""}>
+          <LoginGate
+            locale={locale}
+            title={t(locale, "gate.settings")}
+            next="/settings"
+          />
+        </div>
       </div>
     );
   }

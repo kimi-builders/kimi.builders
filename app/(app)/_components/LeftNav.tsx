@@ -44,13 +44,20 @@ export default function LeftNav({
   locale,
   profileHref,
   moderator = false,
+  loggedIn = false,
 }: {
   locale: Locale;
   profileHref?: string;
   /* admin/mod:底部工具组多「管理」入口(20260830 治理) */
   moderator?: boolean;
+  /* 未登录(20260919):受限项(发帖/用量/设置)直链 /login?next=…——
+     应用内点击即弹登录弹窗,登录后回跳目标页,不再先进页面看各自的登录门 */
+  loggedIn?: boolean;
 }) {
   const pathname = usePathname();
+  /* 未登录时受限入口的目标(登录弹窗带回跳);工具入口(关于/GitHub)不受限 */
+  const gate = (path: string) =>
+    loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
 
   const itemCls = (active: boolean) =>
     `nav-item flex items-center gap-3 border-l-2 px-3 py-2 font-mono text-xs transition-colors ${
@@ -66,7 +73,7 @@ export default function LeftNav({
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
       <Link prefetch={false}
-        href="/community/new"
+        href={gate("/community/new")}
         title={t(locale, "nav.post")}
         className="nav-item flex items-center justify-center gap-2 rounded-lg bg-blue py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
@@ -77,10 +84,12 @@ export default function LeftNav({
       <nav className="mt-6 space-y-1">
         {SECTIONS.filter((s) => !s.hidden).map((s) => {
           const Icon = s.icon;
+          /* 用量需登录:未登录直链登录弹窗(其余板块公开浏览) */
+          const href = s.href === "/usage" ? gate(s.href) : s.href;
           return (
             <Link prefetch={false}
               key={s.href}
-              href={s.href}
+              href={href}
               title={t(locale, s.key)}
               className={itemCls(pathname.startsWith(s.href))}
             >
@@ -120,7 +129,7 @@ export default function LeftNav({
           </Link>
         )}
         <Link prefetch={false}
-          href="/settings"
+          href={gate("/settings")}
           title={t(locale, "nav.settings")}
           className={itemCls(pathname.startsWith("/settings"))}
         >

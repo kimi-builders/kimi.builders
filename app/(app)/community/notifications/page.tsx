@@ -6,6 +6,7 @@ import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import { Bell } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
+import LoginGate from "@/app/(app)/_components/LoginGate";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import { relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
@@ -19,26 +20,19 @@ export default async function NotificationsPage() {
   const locale = await getLocale(user);
 
   if (!user) {
+    /* 未登录:统一登录引导卡(20260919) */
     return (
       <div>
         <h1 className="font-mono text-lg font-semibold">
           {t(locale, "notif.title")}
         </h1>
-        <p className="mt-8 rounded-2xl border border-line bg-card p-5 text-sm text-grey">
-          {t(locale, "notif.loginRequired")}
-          <a
-            href="/api/auth/github"
-            className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            GitHub
-          </a>
-          <a
-            href="/api/auth/google"
-            className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            Google
-          </a>
-        </p>
+        <div className="mt-8">
+          <LoginGate
+            locale={locale}
+            title={t(locale, "gate.notif")}
+            next="/community/notifications"
+          />
+        </div>
       </div>
     );
   }

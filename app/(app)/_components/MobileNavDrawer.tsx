@@ -42,6 +42,7 @@ export default function MobileNavDrawer({
   profileHref,
   moderator = false,
   account,
+  loggedIn = false,
 }: {
   locale: Locale;
   unread?: number;
@@ -50,9 +51,14 @@ export default function MobileNavDrawer({
   moderator?: boolean;
   /* 登录态块(头像 + @handle + 退出 / 登录入口),由服务端父组件组合进来。 */
   account?: ReactNode;
+  /* 未登录(20260919):受限项(发帖/用量/通知/设置)直链 /login?next=… */
+  loggedIn?: boolean;
 }) {
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  /* 未登录时受限入口的目标(登录弹窗带回跳) */
+  const gate = (path: string) =>
+    loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
 
   useEffect(() => {
     dialogRef.current?.close();
@@ -111,7 +117,7 @@ export default function MobileNavDrawer({
               </div>
             )}
             <Link
-              href="/community/new"
+              href={gate("/community/new")}
               onClick={close}
               className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
@@ -123,10 +129,13 @@ export default function MobileNavDrawer({
               {SECTIONS.filter((section) => !section.hidden).map((section) => {
                 const Icon = section.icon;
                 const active = pathname.startsWith(section.href);
+                /* 用量需登录:未登录直链登录弹窗(其余板块公开浏览) */
+                const href =
+                  section.href === "/usage" ? gate(section.href) : section.href;
                 return (
                   <Link
                     key={section.href}
-                    href={section.href}
+                    href={href}
                     onClick={close}
                     aria-current={active ? "page" : undefined}
                     className={itemClass(active)}
@@ -147,7 +156,7 @@ export default function MobileNavDrawer({
 
             <nav aria-label={zhOrEn(locale, "账号", "Account")} className="space-y-1">
               <Link
-                href="/community/notifications"
+                href={gate("/community/notifications")}
                 onClick={close}
                 className={itemClass(pathname.startsWith("/community/notifications"))}
               >
@@ -162,7 +171,7 @@ export default function MobileNavDrawer({
                 {t(locale, "notif.title")}
               </Link>
               <Link
-                href={profileHref ?? "/settings"}
+                href={profileHref ?? gate("/settings")}
                 onClick={close}
                 className={itemClass(pathname.startsWith("/u/"))}
               >
@@ -170,7 +179,7 @@ export default function MobileNavDrawer({
                 {t(locale, "nav.profile")}
               </Link>
               <Link
-                href="/settings"
+                href={gate("/settings")}
                 onClick={close}
                 className={itemClass(pathname.startsWith("/settings"))}
               >

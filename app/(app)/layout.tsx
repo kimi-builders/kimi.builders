@@ -44,7 +44,7 @@ export default async function AppLayout({
   const railKey = railDecisionKey(rail);
   return (
     <div>
-      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} />
+      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} loggedIn={!!user} />
       {/* 桌面固定顶栏(≥lg);内容区 lg:pt-14 让位 */}
       <TopBar locale={locale} unread={unread} loggedIn={!!user} />
       {/* 三栏统一收进 1320 居中容器:栏间距固定,宽屏只剩两侧等宽留白,
@@ -52,7 +52,7 @@ export default async function AppLayout({
       <div className="mx-auto flex w-full max-w-[1320px] items-start gap-6 lg:pt-14">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
-          <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} />
+          <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} loggedIn={!!user} />
         </Suspense>
         {/* 主列在容器内靠左;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
             wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding) */}
@@ -72,7 +72,7 @@ export default async function AppLayout({
         )}
       </div>
       <Suspense fallback={null}>
-        <MobileTabBar locale={locale} profileHref={profileHref} />
+        <MobileTabBar locale={locale} profileHref={profileHref} loggedIn={!!user} />
       </Suspense>
       {/* 软导航跨上下文时让布局重估右栏/列宽(同 decision 不全树重取) */}
       <RailRefresher />

@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import LoginGate from "@/app/(app)/_components/LoginGate";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
@@ -426,6 +427,7 @@ export default async function UsagePage({
   const zh = locale === "zh";
 
   if (!user) {
+    /* 未登录:统一登录引导卡(20260919,直开/刷新的兜底;侧栏入口已直链弹窗) */
     return (
       <div>
         <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
@@ -437,13 +439,7 @@ export default async function UsagePage({
             : "A Kimi-first usage center for AI coding agents. Data stays private and only metrics are uploaded."}
         </p>
         <div className="mt-8">
-          <p className="text-sm text-grey">{zh ? "登录后连接设备：" : "Sign in to connect a device:"}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <a href="/api/auth/github?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">GitHub</a>
-            <a href="/api/auth/google?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">Google</a>
-            {/* 邮箱入口去 /login(登录/注册/找回都在那里),回跳 /usage */}
-            <a href="/login?next=%2Fusage" className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">{zh ? "邮箱" : "Email"}</a>
-          </div>
+          <LoginGate locale={locale} title={t(locale, "gate.usage")} next="/usage" />
         </div>
       </div>
     );

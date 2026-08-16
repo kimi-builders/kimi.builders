@@ -1,7 +1,9 @@
 /* 发帖主体:完整页(/community/new)与弹窗(@modal/(.)community/new)共用。
    showTitle=false 时收起 h1(弹窗自带标题栏)。
-   登录门槛在服务端,表单交互(PostForm)在客户端。 */
+   登录门槛在服务端,表单交互(PostForm)在客户端;
+   未登录 = 统一登录引导卡(20260919,与全站登录门同一张脸)。 */
 import { getSessionUser } from "@/src/lib/auth/session";
+import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import PostForm from "../../_components/PostForm";
@@ -23,15 +25,13 @@ export default async function NewPostContent({
       {user ? (
         <PostForm aiDefault={user.aiRepliesEnabled} locale={locale} />
       ) : (
-        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
-          {t(locale, "form.loginRequired")}
-          <a href="/api/auth/github" className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
-            GitHub
-          </a>
-          <a href="/api/auth/google" className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">
-            Google
-          </a>
-        </p>
+        <div className={showTitle ? "mt-6" : ""}>
+          <LoginGate
+            locale={locale}
+            title={t(locale, "gate.post")}
+            next="/community/new"
+          />
+        </div>
       )}
     </div>
   );

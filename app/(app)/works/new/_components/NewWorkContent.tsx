@@ -4,6 +4,7 @@
    新作品尚无名字可匹配,建议预填值留空(编辑页按作品名匹配项目分布)。 */
 import { SquarePen } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
+import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getClaimAllowance } from "@/src/lib/works";
@@ -26,21 +27,14 @@ export default async function NewWorkContent({
             {t(locale, "works.newTitle")}
           </h1>
         )}
-        <p className="mt-6 rounded-xl border border-line bg-bg/40 p-4 text-sm text-grey">
-          {t(locale, "works.loginRequired")}
-          <a
-            href="/api/auth/github"
-            className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            GitHub
-          </a>
-          <a
-            href="/api/auth/google"
-            className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
-          >
-            Google
-          </a>
-        </p>
+        {/* 未登录:统一登录引导卡(20260919) */}
+        <div className={showTitle ? "mt-6" : ""}>
+          <LoginGate
+            locale={locale}
+            title={t(locale, "gate.work")}
+            next="/works/new"
+          />
+        </div>
       </div>
     );
   }

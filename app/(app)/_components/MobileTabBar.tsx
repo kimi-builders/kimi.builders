@@ -12,11 +12,17 @@ import { t, type Locale } from "@/src/lib/i18n";
 export default function MobileTabBar({
   locale,
   profileHref,
+  loggedIn = false,
 }: {
   locale: Locale;
   profileHref?: string;
+  /* 未登录(20260919):受限项(发帖/用量/我的)直链登录弹窗,登录后回跳 */
+  loggedIn?: boolean;
 }) {
   const pathname = usePathname();
+  /* 未登录时受限入口的目标(登录弹窗带回跳) */
+  const gate = (path: string) =>
+    loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
   const tabs = [
     {
       href: "/community",
@@ -35,20 +41,20 @@ export default function MobileTabBar({
       active: pathname.startsWith("/works"),
     },
     {
-      href: "/community/new",
+      href: gate("/community/new"),
       icon: SquarePen,
       key: "nav.post" as const,
       active: pathname.startsWith("/community/new"),
       primary: true,
     },
     {
-      href: "/usage",
+      href: gate("/usage"),
       icon: BarChart3,
       key: "nav.usage" as const,
       active: pathname.startsWith("/usage"),
     },
     {
-      href: profileHref ?? "/settings",
+      href: profileHref ?? gate("/settings"),
       icon: User,
       key: "nav.profile" as const,
       active: pathname.startsWith("/u/") || pathname.startsWith("/settings"),
