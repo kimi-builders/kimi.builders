@@ -95,8 +95,8 @@ test("forgot: 无论邮箱是否注册都回 sent=1(不泄露注册状态)", () 
   const src = sourceOf("auth/email/forgot");
   assertOrder(src, "isSameOrigin(req)", "req.formData()", "同源校验先于表单解析");
   assertOrder(src, "consumeUsageRateLimit(", "req.formData()", "限速先于表单解析");
-  /* 查库结果只决定发不发信,成功出口只有 sent=1 */
-  assert.ok(src.includes('back(req, { sent: "1" })'));
+  /* 查库结果只决定发不发信,成功出口只有 sent=1(next 只是透传的回跳目标) */
+  assert.ok(src.includes('back(req, { ...extras, sent: "1" })'));
   assertOrder(src, "issuePasswordResetToken(", 'sent: "1"', "发信分支不改变对外口径");
 });
 

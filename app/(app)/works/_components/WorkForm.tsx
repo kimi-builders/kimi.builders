@@ -943,12 +943,14 @@ export default function WorkForm({
       {/* 粘性提交栏(20260815 发布体验打磨):长表单里发布按钮常驻可视区,
           不再滚丢;负边距吃掉容器的横向/纵向 padding,贴弹窗/主列边缘。
           弹窗容器 px-5 py-5;完整页主列 px-4 py-6 lg:px-6 lg:py-8,
-          移动端抬升 bottom-20 避让底部标签栏。 */}
+          移动端抬升 bottom-20 避让底部标签栏。
+          两套负边距/padding 互斥写(20260816):同优先级冲突类靠生成顺序定胜负,
+          与书写顺序无关,并排写会得到两边都不预期的值。 */}
       <div
-        className={`sticky z-10 -mx-5 mb-[-1.25rem] flex items-center gap-3 border-t border-line bg-bg/95 px-5 py-3 backdrop-blur ${
+        className={`sticky z-10 flex items-center gap-3 border-t border-line bg-bg/95 py-3 backdrop-blur ${
           modal
-            ? "bottom-0"
-            : "bottom-20 -mx-4 px-4 mb-[-1.5rem] sm:-mx-6 sm:px-6 lg:bottom-0 lg:mb-[-2rem]"
+            ? "bottom-0 -mx-5 mb-[-1.25rem] px-5"
+            : "bottom-20 -mx-4 mb-[-1.5rem] px-4 sm:-mx-6 sm:px-6 lg:bottom-0 lg:mb-[-2rem]"
         }`}
       >
         {/* 弹窗场景:取消 = router.back() 关窗回原处(RouteModal 监听 URL 变化

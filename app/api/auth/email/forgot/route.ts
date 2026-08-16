@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { isValidEmail, normalizeEmail } from "@/src/lib/auth/password";
 import { issuePasswordResetToken } from "@/src/lib/auth/password-reset";
+import { safeReturnTo } from "@/src/lib/auth/return-to";
 import { findEmailAccount } from "@/src/lib/auth/users";
 import { renderPasswordResetMail } from "@/src/lib/email-templates";
 import { sendMail } from "@/src/lib/mailer";
@@ -23,14 +24,19 @@ function back(req: NextRequest, params: Record<string, string>): NextResponse {
    拼邮件链接,防 Host 头注入劫持重置链接。 */
 
 export async function POST(req: NextRequest) {
-  if (!isSameOrigin(req)) return back(req, { error: "invalid_origin" });
+  /* next 透传(20260816):从 action URL query 带来(同源/限速先于表单解析,
+     不从表单体读),经校验后随回跳 URL 与邮件重置链接一起带走 */
+  const next = safeReturnTo(new URL(req.url).searchParams.get("next"));
+  const extras: Record<string, string> = next === "/" ? {} : { next };
+
+  if (!isSameOrigin(req)) return back(req, { ...extras, error: "invalid_origin" });
   const allowed = await consumeUsageRateLimit({
     scope: "auth-email-forgot",
     identity: requestIdentity(req),
     limit: 5,
     windowSeconds: 3600,
   });
-  if (!allowed) return back(req, { error: "rate_limited" });
+  if (!allowed) return back(req, { ...extras, error: "rate_limited" });
 
   const form = await req.formData();
   const email = normalizeEmail(String(form.get("email") ?? ""));
@@ -39,10 +45,10 @@ export async function POST(req: NextRequest) {
   if (account) {
     const token = await issuePasswordResetToken(account.id);
     const siteUrl = canonicalOrigin(req);
-    const resetUrl = `${siteUrl}/login/reset?token=${token}`;
+    const resetUrl = `${siteUrl}/login/reset?token=${token}${next === "/" ? "" : `&next=${encodeURIComponent(next)}`}`;
     const mail = renderPasswordResetMail({ resetUrl, siteUrl });
     const sent = await sendMail({ to: email, ...mail });
     if (!sent.ok) console.error(`forgot password: mail to user ${account.id} failed: ${sent.error}`);
   }
-  return back(req, { sent: "1" });
+  return back(req, { ...extras, sent: "1" });
 }

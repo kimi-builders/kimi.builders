@@ -41,7 +41,8 @@
 }
 
 /* ---- 视觉气质(20260815 拍板):工程棱角 poster(默认) / 圆润经典 soft ----
-   Tailwind v4 的 rounded-* 全部解析为 var(--radius-*),投影经 --tw-shadow
+   Tailwind v4 的 rounded-* 全部解析为 var(--radius-*)(裸 rounded 例外,
+   走裸 --radius),投影经 --tw-shadow
    组合——气质切换只需覆盖变量,全站组件零改动跟随(与主题色同一手法):
    poster = 圆角归零 + 投影置空 + 卡片涂层降档(纯细线分隔,hover 微反馈保留);
    rounded-full 是字面量,头像/角标/开关/×钮等功能圆按规格保留。
@@ -49,6 +50,9 @@
    未分层规则优先于 utilities 层,与上方 .leftnav 注释同一依据。
    切换器见 pref-controls 的 VibeToggle:cookie kb_vibe + <html data-vibe> 乐观 UI。 */
 :root[data-vibe="poster"] {
+  /* 裸 rounded 解析为 var(--radius)、rounded-4xl 走 --radius-4xl,
+     两者不在 --radius-xs…3xl 序列里,归零必须显式列出(20260816 补漏) */
+  --radius: 0px;
   --radius-xs: 0px;
   --radius-sm: 0px;
   --radius-md: 0px;
@@ -56,6 +60,7 @@
   --radius-xl: 0px;
   --radius-2xl: 0px;
   --radius-3xl: 0px;
+  --radius-4xl: 0px;
   --color-card: rgb(255 255 255 / 0.02);
 }
 :root[data-theme="light"][data-vibe="poster"] {

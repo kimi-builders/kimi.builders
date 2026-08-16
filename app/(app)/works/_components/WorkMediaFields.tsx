@@ -455,7 +455,9 @@ export default function WorkMediaFields({
           ) : (
             <CoverToneField
               locale={locale}
-              initialTone={initialTone}
+              /* 回填用「最近一次选择」而非原始值(20260815 修复):组件随 tab
+                 挂载/卸载,传 initialTone 会让切档回来静默丢已选色调 */
+              initialTone={toneState}
               inactive={inactive}
               hideLabel
               onToneChange={handleTone}

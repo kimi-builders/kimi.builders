@@ -72,6 +72,9 @@ export default async function LoginContent({
   const sent = (Array.isArray(sp.sent) ? sp.sent[0] : sp.sent) === "1";
   /* OAuth 与页签只属于登录/注册(forgot/reset 是纯邮箱流) */
   const emailOnly = mode === "forgot" || mode === "reset";
+  /* next 透传(20260816 补):忘记密码/重置/返回登录全链路携带,
+     否则从这些页面回来登录后回跳目标丢失 */
+  const nextQuery = next === "/" ? "" : `&next=${encodeURIComponent(next)}`;
 
   const inputCls =
     "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue focus:ring-4 focus:ring-blue/10";
@@ -135,8 +138,9 @@ export default async function LoginContent({
       )}
 
       {mode === "login" && (
-        <form method="POST" action="/api/auth/email/login" className="mt-4 space-y-3">
-          <input type="hidden" name="next" value={next} />
+        /* next 走 action URL query:路由在校验/限速前不解析表单(安全顺序),
+           只从 query 读回跳目标 */
+        <form method="POST" action={`/api/auth/email/login${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
           <div>
             <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="email">
               {t(locale, "auth.email")}
@@ -149,7 +153,7 @@ export default async function LoginContent({
                 {t(locale, "login.password")}
               </label>
               <Link
-                href="/login?mode=forgot"
+                href={`/login?mode=forgot${nextQuery}`}
                 className="font-mono text-[11px] text-grey transition-colors hover:text-paper"
               >
                 {t(locale, "login.forgot")}
@@ -164,8 +168,7 @@ export default async function LoginContent({
       )}
 
       {mode === "register" && (
-        <form method="POST" action="/api/auth/email/register" className="mt-4 space-y-3">
-          <input type="hidden" name="next" value={next} />
+        <form method="POST" action={`/api/auth/email/register${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
           <div>
             <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-email">
               {t(locale, "auth.email")}
@@ -203,7 +206,7 @@ export default async function LoginContent({
               {t(locale, "login.forgotSent")}
             </p>
             <Link
-              href="/login?mode=forgot"
+              href={`/login?mode=forgot${nextQuery}`}
               className="inline-block font-mono text-[11px] text-grey transition-colors hover:text-paper"
             >
               <span className="inline-flex items-center gap-1.5">
@@ -213,7 +216,7 @@ export default async function LoginContent({
             </Link>
           </div>
         ) : (
-          <form method="POST" action="/api/auth/email/forgot" className="mt-4 space-y-3">
+          <form method="POST" action={`/api/auth/email/forgot${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
             <p className="text-[11px] leading-relaxed text-grey">
               {t(locale, "login.forgotIntro")}
             </p>
@@ -236,7 +239,7 @@ export default async function LoginContent({
 
       {mode === "reset" &&
         (token ? (
-          <form method="POST" action="/api/auth/email/reset" className="mt-4 space-y-3">
+          <form method="POST" action={`/api/auth/email/reset${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
             <input type="hidden" name="token" value={token} />
             <div>
               <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reset-password">
@@ -260,7 +263,7 @@ export default async function LoginContent({
               {t(locale, "login.errToken")}
             </p>
             <Link
-              href="/login?mode=forgot"
+              href={`/login?mode=forgot${nextQuery}`}
               className="inline-block font-mono text-[11px] text-grey transition-colors hover:text-paper"
             >
               <span className="inline-flex items-center gap-1.5">
@@ -273,7 +276,7 @@ export default async function LoginContent({
 
       {(mode === "forgot" || mode === "reset") && (
         <p className="mt-4 font-mono text-[11px]">
-          <Link href="/login" className="inline-flex items-center gap-1.5 text-grey transition-colors hover:text-paper">
+          <Link href={`/login${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="inline-flex items-center gap-1.5 text-grey transition-colors hover:text-paper">
             <ArrowLeft size={12} aria-hidden="true" />
             {t(locale, "login.backSignIn")}
           </Link>

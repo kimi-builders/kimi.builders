@@ -665,10 +665,6 @@ const DICT = {
     zh: "默认只进你的作品墙;勾选后同时出现在 Awesome 清单(公开展示构建者)。",
     en: "By default your work only appears on your wall; tick to also list it on Awesome (shown publicly).",
   },
-  "works.loginRequired": {
-    zh: "登录后发布作品:",
-    en: "Log in to publish your work:",
-  },
   "err.workName": { zh: "作品名称必填", en: "Name is required" },
   "err.workNameLong": {
     zh: "名称太长了(120 字以内)",

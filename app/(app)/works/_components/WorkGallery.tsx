@@ -26,7 +26,12 @@ export default function WorkGallery({
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState<number | null>(null);
   const touchX = useRef<number | null>(null);
+  /* 横滑切图后浏览器仍会派发一次 click——标记吞掉,否则滑完即误开灯箱 */
+  const swiped = useRef(false);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  /* 缩略图滚入视野只在用户切换后执行:首渲染不滚,避免带锚点/滚动恢复进入时
+     scrollIntoView 连带滚动页面祖先(20260816 修复) */
+  const thumbMounted = useRef(false);
 
   const step = useCallback(
     (d: number) => {
@@ -58,8 +63,12 @@ export default function WorkGallery({
     };
   }, [zoom, closeZoom, stepZoom]);
 
-  /* 缩略图行自动滚到当前张(scrollbar-none 容器,scrollIntoView 只影响自身) */
+  /* 缩略图行自动滚到当前张(仅在用户切换后;scrollbar-none 容器,只影响自身) */
   useEffect(() => {
+    if (!thumbMounted.current) {
+      thumbMounted.current = true;
+      return;
+    }
     thumbRefs.current[active]?.scrollIntoView({
       block: "nearest",
       inline: "nearest",
@@ -72,13 +81,25 @@ export default function WorkGallery({
 
   /* 移动端横滑:起止 X 差超过阈值判一次切换 */
   const onTouchStart = (e: React.TouchEvent) => {
+    swiped.current = false;
     touchX.current = e.touches[0].clientX;
   };
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchX.current == null || !multi) return;
     const dx = e.changedTouches[0].clientX - touchX.current;
-    if (Math.abs(dx) > 40) step(dx > 0 ? -1 : 1);
+    if (Math.abs(dx) > 40) {
+      step(dx > 0 ? -1 : 1);
+      swiped.current = true;
+    }
     touchX.current = null;
+  };
+  /* 横滑后的合成 click 不开灯箱(见 swiped 标记) */
+  const openZoom = () => {
+    if (swiped.current) {
+      swiped.current = false;
+      return;
+    }
+    setZoom(active);
   };
 
   return (
@@ -91,7 +112,7 @@ export default function WorkGallery({
       >
         <button
           type="button"
-          onClick={() => setZoom(active)}
+          onClick={openZoom}
           aria-label={t(locale, "works.galleryOpen")}
           className="block w-full cursor-zoom-in"
         >

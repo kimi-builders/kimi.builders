@@ -11,6 +11,7 @@ import { GalleryVerticalEnd, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import WorkKindIcon from "@/components/WorkKindIcon";
+import LoginGate from "@/app/(app)/_components/LoginGate";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -176,11 +177,10 @@ export default async function WorksPage({
               {t(locale, "works.emptyCta")}
             </Link>
           ) : (
-            <p className="mt-3 text-xs text-grey">
-              {t(locale, "works.loginRequired")}
-              <a href="/api/auth/github" className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">GitHub</a>
-              <a href="/api/auth/google" className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue">Google</a>
-            </p>
+            /* 统一登录引导卡(20260816 收编):与各受限页同源,带 next 回跳 */
+            <div className="mx-auto mt-4 max-w-sm text-left">
+              <LoginGate locale={locale} title={t(locale, "gate.work")} next="/works" />
+            </div>
           )}
         </div>
       ) : (
