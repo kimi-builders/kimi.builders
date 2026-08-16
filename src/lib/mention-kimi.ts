@@ -18,6 +18,21 @@ export function hasKimiMention(md: string): boolean {
   return MENTION_RE.test(stripped);
 }
 
+/* 自动补全(20260816):光标前紧跟 [@＠][\w-]{0,8} 且是 kimi 的前缀时,
+   返回待替换区间(start = @ 位置)与已输入 query;query="kimi" 完整输入后不再提示。 */
+export function kimiMentionAt(
+  value: string,
+  caret: number,
+): { start: number; query: string } | null {
+  const before = value.slice(0, caret);
+  const m = /(?:^|[^\w@])[@＠]([\w-]{0,8})$/.exec(before);
+  if (!m) return null;
+  const query = m[1];
+  if (!"kimi".startsWith(query.toLowerCase()) || query.toLowerCase() === "kimi")
+    return null;
+  return { start: caret - query.length - 1, query };
+}
+
 /* ---- rehype 插件(最小 hast 类型,不引 unist-util-visit 依赖)---- */
 
 interface HastText {

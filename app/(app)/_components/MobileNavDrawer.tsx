@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
+import UnreadBadge from "@/components/UnreadBadge";
 import GithubIcon from "./GithubIcon";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
 
@@ -183,11 +184,11 @@ export default function MobileNavDrawer({
               >
                 <span className="relative shrink-0">
                   <Bell size={17} aria-hidden="true" />
-                  {unread > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white">
-                      {unread > 99 ? "99+" : unread}
-                    </span>
-                  )}
+                  <UnreadBadge
+                    initial={unread}
+                    locale={locale}
+                    className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
+                  />
                 </span>
                 {t(locale, "notif.title")}
               </Link>

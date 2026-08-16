@@ -309,6 +309,7 @@ export default function PostForm({
           value={body}
           onChange={setBody}
           rows={type === "text" ? 7 : 4}
+          mentionKimi
           placeholder={t(locale, type === "text" ? "form.bodyText" : "form.bodyOpt")}
           inputCls={inputCls}
         />

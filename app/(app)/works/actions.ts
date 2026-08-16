@@ -72,6 +72,8 @@ export interface MutationResult {
   /* AI 召唤结果(20260816 PR2,与社区同形):评论里 @kimi 时给客户端 toast 用;
      评论本身照常发布,该字段只说明召唤是否成立 */
   aiNote?: "summoned" | "aiDisabled" | "rate";
+  /* 新评论 id(20260816):召唤成功后客户端按它轮询回复到达 */
+  commentId?: number;
 }
 
 /* 标签:逗号/空格分隔,≤5 个,每个 ≤24 字。 */
@@ -446,7 +448,7 @@ export async function createWorkCommentAction(
   }
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath(`/works/${workId}`);
-  return aiNote ? { ok: true, aiNote } : { ok: true };
+  return { ok: true, commentId: created.id, ...(aiNote ? { aiNote } : {}) };
 }
 
 export async function deleteWorkCommentAction(

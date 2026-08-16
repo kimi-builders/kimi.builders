@@ -72,6 +72,8 @@ export interface MutationResult {
   /* AI 召唤结果(20260816):评论里 @kimi 时给客户端 toast 用;
      评论本身照常发布,该字段只说明召唤是否成立 */
   aiNote?: "summoned" | "aiDisabled" | "rate";
+  /* 新评论 id(20260816):召唤成功后客户端按它轮询回复到达 */
+  commentId?: number;
 }
 
 export async function createPostAction(
@@ -206,7 +208,7 @@ export async function createCommentAction(
   updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
   revalidatePath("/community"); /* feed 卡片上的评论数 */
-  return aiNote ? { ok: true, aiNote } : { ok: true };
+  return { ok: true, commentId: created.id, ...(aiNote ? { aiNote } : {}) };
 }
 
 /* 评论「加载更多」:只读,不落库不作废缓存。返回服务端渲染好的一页

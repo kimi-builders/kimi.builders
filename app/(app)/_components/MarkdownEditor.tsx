@@ -3,7 +3,9 @@
 /* Markdown 编辑器:textarea + 轻量工具条(粗体/行内代码/标题/列表/链接/图片)。
    不上编辑器库:工具条只在选区两侧包/插语法;图片走 /api/upload(与作品媒体同通道),
    支持点击上传与直接粘贴图片。受控(value/onChange)与非受控(defaultValue + FormData)
-   两种父级都支持——写值走原生 setter + input 事件,两侧都同步。 */
+   两种父级都支持——写值走原生 setter + input 事件,两侧都同步。
+   mentionKimi(20260816):输入 @ 触发「@kimi 召唤」自动补全(Enter/Tab/点选插入,
+   Esc 关闭;匹配逻辑在 src/lib/mention-kimi.ts 的 kimiMentionAt,单测覆盖)。 */
 import { useRef, useState } from "react";
 import {
   Bold,
@@ -15,6 +17,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
+import { kimiMentionAt } from "@/src/lib/mention-kimi";
 import { toast } from "@/src/lib/toast";
 import { uploadMedia } from "@/src/lib/upload";
 
@@ -63,6 +66,7 @@ export default function MarkdownEditor({
   textareaRef: externalRef,
   required,
   inputCls,
+  mentionKimi = false,
 }: {
   locale: Locale;
   name: string;
@@ -76,11 +80,38 @@ export default function MarkdownEditor({
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   required?: boolean;
   inputCls: string;
+  /* @kimi 召唤自动补全(评论/正文编辑场景开启) */
+  mentionKimi?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  /* @ 补全候选:start = 待替换的 @ 位置 */
+  const [suggest, setSuggest] = useState<{ start: number } | null>(null);
   const controlled = value !== undefined;
+
+  /* 光标/内容变化后重算补全(读 textarea 实况,受控/非受控都准) */
+  const updateSuggest = () => {
+    if (!mentionKimi) return;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const hit = kimiMentionAt(ta.value, ta.selectionStart);
+    setSuggest(hit ? { start: hit.start } : null);
+  };
+
+  const insertMention = () => {
+    const ta = textareaRef.current;
+    if (!ta || !suggest) return;
+    const next =
+      ta.value.slice(0, suggest.start) + "@kimi " + ta.value.slice(ta.selectionStart);
+    writeValue(next);
+    setSuggest(null);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const caret = suggest.start + "@kimi ".length;
+      ta.setSelectionRange(caret, caret);
+    });
+  };
 
   /* 原生 setter + input 事件:受控父级收到 onChange,非受控父级走 FormData,都同步 */
   const writeValue = (next: string) => {
@@ -192,6 +223,19 @@ export default function MarkdownEditor({
           }}
         />
       </div>
+      <div className="relative">
+        {/* @kimi 召唤补全(mousedown 拦截保持焦点,点选不丢光标) */}
+        {suggest !== null && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={insertMention}
+            className="absolute -top-9 left-2 z-10 flex items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1.5 font-mono text-[11px] shadow-lg transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            <span className="text-blue">@kimi</span>
+            <span className="text-grey">{t(locale, "editor.summonKimiHint")}</span>
+          </button>
+        )}
       <textarea
         ref={(el) => {
           textareaRef.current = el;
@@ -206,6 +250,19 @@ export default function MarkdownEditor({
           ? { value, onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => onChange?.(event.target.value) }
           : { defaultValue })}
         className={`${inputCls} resize-y`}
+        onInput={updateSuggest}
+        onSelect={updateSuggest}
+        onBlur={() => setSuggest(null)}
+        onKeyDown={(event) => {
+          if (suggest === null) return;
+          if (event.key === "Enter" || event.key === "Tab") {
+            event.preventDefault();
+            insertMention();
+          } else if (event.key === "Escape") {
+            event.preventDefault();
+            setSuggest(null);
+          }
+        }}
         onPaste={(event) => {
           const file = [...(event.clipboardData?.files ?? [])].find((f) =>
             f.type.startsWith("image/"),
@@ -216,6 +273,7 @@ export default function MarkdownEditor({
           }
         }}
       />
+      </div>
     </div>
   );
 }

@@ -177,3 +177,34 @@ test("aiWorkReplySwitchesAllow 行为:开关矩阵(纯函数)", async () => {
     false,
   );
 });
+
+/* ---- 召唤状态/未读数轮询接口(20260816 体验优化)---- */
+
+test("status 路由:登录门禁 + 只查 mention 任务 + no-store", () => {
+  const src = readFileSync(
+    new URL("../app/api/ai-reply/status/route.ts", import.meta.url),
+    "utf8",
+  );
+  assertOrder(src, "getSessionUser()", "getPool()", "会话先于查询");
+  assert.match(src, /kind = 'mention'/);
+  assert.match(src, /Cache-Control/);
+});
+
+test("unread 路由:登录门禁 + 未读计数来源", () => {
+  const src = readFileSync(
+    new URL("../app/api/notifications/unread/route.ts", import.meta.url),
+    "utf8",
+  );
+  assertOrder(src, "getSessionUser()", "getUnreadNotificationCount(", "会话先于计数");
+});
+
+test("等待反馈接线:两个评论表单都轮询且都渲染占位行", () => {
+  for (const p of [
+    "../app/(app)/community/_components/CommentSection.tsx",
+    "../app/(app)/works/_components/WorkCommentForm.tsx",
+  ]) {
+    const src = readFileSync(new URL(p, import.meta.url), "utf8");
+    assert.match(src, /useSummonPending/, p);
+    assert.match(src, /SummonPendingRow/, p);
+  }
+});

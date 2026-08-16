@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
+import UnreadBadge from "@/components/UnreadBadge";
 import { t, type Locale } from "@/src/lib/i18n";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
 import GlobalSearch from "./GlobalSearch";
@@ -49,11 +50,11 @@ export default function TopBar({
             className={`relative ${iconBtn}`}
           >
             <Bell size={15} />
-            {unread > 0 && (
-              <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg">
-                {unread > 99 ? "99+" : unread}
-              </span>
-            )}
+            <UnreadBadge
+              initial={unread}
+              locale={locale}
+              className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg"
+            />
           </Link>
         )}
         <ThemeToggle className={iconBtn} />

@@ -89,7 +89,10 @@ export async function loadWorkComments(
               </span>
             )}
           </div>
-          <div className="mt-2">
+          {/* AI 评论浅蓝衬底(20260816,与社区评论同款):一眼可辨不抢戏 */}
+          <div
+            className={`mt-2 ${c.isAi ? "rounded-lg border border-blue/15 bg-blue/[0.04] px-3 py-2" : ""}`}
+          >
             <Markdown source={c.body} />
           </div>
         </div>

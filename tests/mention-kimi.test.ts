@@ -2,7 +2,7 @@
    词边界、全角 @、代码块剥离、渲染时 code/pre 跳过。 */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hasKimiMention, rehypeKimiMention } from "../src/lib/mention-kimi";
+import { hasKimiMention, kimiMentionAt, rehypeKimiMention } from "../src/lib/mention-kimi";
 
 test("mention: 句首/句中/标点后的 @kimi 命中", () => {
   assert.ok(hasKimiMention("@kimi 这个怎么用?"));
@@ -34,8 +34,7 @@ test("mention: 代码块与行内代码里的 @kimi 不触发", () => {
   assert.ok(hasKimiMention("```\n@kimi\n```\n外面的 @kimi 算数"));
 });
 
-/* 最小 hast 辅助:构造 element/text 树喂给插件 */
-type Node = {
+/* 最小 hast 辅助:构造 element/text 树喂给插件 */type Node = {
   type: string;
   tagName?: string;
   value?: string;
@@ -78,4 +77,21 @@ test("rehype: 无命中时树保持原样(引用不变)", () => {
   rehypeKimiMention()(tree as never);
   assert.equal(tree.children![0], p);
   assert.equal(p.children!.length, 1);
+});
+
+/* ---- kimiMentionAt:MarkdownEditor 自动补全的匹配逻辑 ---- */
+
+test("autocomplete: @ 及 kimi 前缀触发,光标必须在词尾", () => {
+  assert.deepEqual(kimiMentionAt("@", 1), { start: 0, query: "" });
+  assert.deepEqual(kimiMentionAt("@k", 2), { start: 0, query: "k" });
+  assert.deepEqual(kimiMentionAt("问下 @ki", 6), { start: 3, query: "ki" });
+  /* 光标后是空白(词已断开)不触发 */
+  assert.equal(kimiMentionAt("@ki x", 5), null);
+});
+
+test("autocomplete: 完整输入 / 非前缀 / 词中 @ 不触发", () => {
+  assert.equal(kimiMentionAt("@kimi", 5), null);
+  assert.equal(kimiMentionAt("@xy", 3), null);
+  assert.equal(kimiMentionAt("a@k", 3), null);
+  assert.equal(kimiMentionAt("没有符号", 4), null);
 });

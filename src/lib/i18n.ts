@@ -112,6 +112,17 @@ const DICT = {
     zh: "召唤太频繁了,稍后再试",
     en: "Summoning too often — try again later",
   },
+  /* 召唤等待反馈(20260816):正在输入占位 / 到达 / 失败 / 超时 */
+  "post.aiTyping": { zh: "正在输入…", en: "typing…" },
+  "post.aiReplied": { zh: "Kimi 小筑回复了", en: "Kimi bot replied" },
+  "post.aiReplyFailed": {
+    zh: "小筑暂时没能回复,稍后再 @ 一次试试",
+    en: "The bot couldn't reply — try @-ing again later",
+  },
+  "post.aiReplySlow": {
+    zh: "小筑回复较慢,稍后可到通知中心查看",
+    en: "The bot is slow — check notifications later",
+  },
   "post.comment": { zh: "评论", en: "Comment" },
   "post.solved": { zh: "已解决", en: "Solved" },
   "post.markSolved": { zh: "标记已解决", en: "Mark solved" },
@@ -181,6 +192,7 @@ const DICT = {
   },
   "notif.comment": { zh: "评论了你关注的帖子", en: "commented on a post you follow" },
   "notif.reply": { zh: "回复了你的评论", en: "replied to your comment" },
+  "notif.newToast": { zh: "收到一条新消息", en: "New notification" },
   /* 作品召唤回复(20260816 PR2):AI 回应作品评论区的 @kimi */
   "notif.workReply": {
     zh: "回复了你在《{name}》的召唤",
@@ -234,6 +246,10 @@ const DICT = {
   "editor.list": { zh: "列表", en: "List" },
   "editor.link": { zh: "链接", en: "Link" },
   "editor.image": { zh: "插入图片(或直接粘贴)", en: "Insert image (or paste)" },
+  "editor.summonKimiHint": {
+    zh: "召唤 Kimi 小筑(Tab 补全)",
+    en: "summon Kimi bot (Tab to complete)",
+  },
   "editor.boldPh": { zh: "粗体文本", en: "bold text" },
   "editor.codePh": { zh: "代码", en: "code" },
   "editor.headingPh": { zh: "标题", en: "Heading" },

@@ -25,9 +25,9 @@ import { getPool } from "./db";
 import { notifyOnComment } from "./posts";
 import { notifyOnWorkComment } from "./works";
 
-export const BOT_NAME = "Kimi 小筑";
-/* 小尺寸瓷砖标(月牙+双星放大,暗底):评论里 20px 也可辨,双主题稳定。 */
-export const BOT_AVATAR = "/brand/logo-tile.svg";
+/* 身份常量的唯一定义在 ./bot-identity(客户端可用);这里 re-export 兼容旧引用 */
+export { BOT_AVATAR, BOT_NAME } from "./bot-identity";
+import { BOT_NAME } from "./bot-identity";
 
 /* 一条对话链里 AI 最多接话次数(到顶就停在最后一条,不再接) */
 const MAX_AI_CHAIN = 8;
@@ -56,6 +56,7 @@ const SYSTEM_PROMPT_COMMENT = `你是 kimi.builders 社区的 AI 助手「${BOT_
 const SYSTEM_PROMPT_MENTION = `你是 kimi.builders 社区的 AI 助手「${BOT_NAME}」。kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方),成员在这里讨论怎么用 Kimi 构建东西。有用户在评论里 @ 了你并提问,规则:
 - {LANG_RULE}
 - 优先直接回答最后一条评论(召唤你的那条)里的问题:先给答案,再给依据或下一步;
+- 开头用「@对方名字」称呼召唤你的人(对话链最后一条的作者名);
 - 结合帖子内容与对话链,别答非所问;问题与帖子无关也照常回答,但可以一句带过;
 - 不要「你好」「希望对你有帮助」这类客套,不要 emoji 堆砌;
 - 不超过 250 字;给可执行的下一步;拿不准就说不确定,不编造。`;
@@ -65,6 +66,7 @@ const SYSTEM_PROMPT_MENTION = `你是 kimi.builders 社区的 AI 助手「${BOT_
 const SYSTEM_PROMPT_POST_MENTION = `你是 kimi.builders 社区的 AI 助手「${BOT_NAME}」。kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方),成员在这里讨论怎么用 Kimi 构建东西。作者发帖时在正文里 @ 了你,规则:
 - {LANG_RULE}
 - 重点回答正文里 @ 你之后提出的问题:先给答案,再给依据或可执行的下一步;
+- 开头用「@作者」称呼(作者名见下方「作者」一行);
 - 顺带回应帖子本身(一个真诚观点或建议),两部分自然衔接成一条回复;
 - 不要「你好」「希望对你有帮助」这类客套,不要 emoji 堆砌;
 - 不超过 300 字;拿不准就说不确定,不编造。`;
@@ -73,6 +75,7 @@ const SYSTEM_PROMPT_POST_MENTION = `你是 kimi.builders 社区的 AI 助手「$
 const SYSTEM_PROMPT_WORK_MENTION = `你是 kimi.builders 社区的 AI 助手「${BOT_NAME}」。kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方),成员在这里展示用 Kimi 构建的作品。有用户在作品评论区 @ 了你,规则:
 - {LANG_RULE}
 - 优先回应召唤你的那条评论:提问就先给答案再给依据;求点评就给一个真诚具体的点评加一个延伸建议;
+- 开头用「@对方名字」称呼召唤你的人(对话链最后一条的作者名);
 - 结合作品介绍与已有评论,别答非所问;
 - 不要「你好」「希望对你有帮助」这类客套,不要 emoji 堆砌;
 - 不超过 250 字;拿不准就说不确定,不编造。`;
@@ -184,7 +187,7 @@ export async function processAiReply(jobId: number): Promise<void> {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT j.post_id, j.comment_id, j.kind, j.work_id, j.work_comment_id,
               p.title, p.body_md, p.category, p.ai_reply,
-              p.lang AS post_lang, u.ai_replies_enabled, u.locale
+              p.lang AS post_lang, u.ai_replies_enabled, u.locale, u.handle AS author_handle
        FROM ai_reply_jobs j
        LEFT JOIN posts p ON p.id = j.post_id
        LEFT JOIN users u ON u.id = p.user_id
@@ -273,6 +276,11 @@ export async function processAiReply(jobId: number): Promise<void> {
         title: job.title,
         body: String(job.body_md ?? "").slice(0, 4000),
         convo: null,
+        /* 发帖召唤:带上作者名,prompt 让它开头 @ 回作者 */
+        author:
+          kind === "mention" && job.author_handle
+            ? `@${job.author_handle}`
+            : undefined,
       },
     );
     const [ins] = await pool.query<ResultSetHeader>(
@@ -416,7 +424,7 @@ async function callKimi(
   apiKey: string,
   systemPrompt: string,
   lang: "zh" | "en",
-  post: { category: string; title: string; body: string; convo: string | null },
+  post: { category: string; title: string; body: string; convo: string | null; author?: string },
   /* 语境名词(20260816 PR2):帖子(post 任务)/ 作品(work 任务);
      默认「帖子」,post 分支文案与之前逐字一致 */
   noun: "帖子" | "作品" = "帖子",
@@ -429,7 +437,7 @@ async function callKimi(
   const catLabel = noun === "作品" ? "类型" : "板块";
   const userContent =
     post.convo === null
-      ? `${catLabel}:${post.category}\n标题:${post.title || "(无标题)"}\n正文:\n${post.body}`
+      ? `${catLabel}:${post.category}\n标题:${post.title || "(无标题)"}\n${post.author ? `作者:${post.author}\n` : ""}正文:\n${post.body}`
       : `${catLabel}:${post.category}\n${noun}标题:${post.title || "(无标题)"}\n${noun}正文(节选):\n${post.body}\n\n对话链(从旧到新,最后一条是最新回复,你要接这条):\n${convoGuard(post.convo)}`;
   const res = await fetch("https://api.moonshot.cn/v1/chat/completions", {
     method: "POST",

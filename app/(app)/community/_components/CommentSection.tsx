@@ -9,10 +9,15 @@
    分页:首屏 SSR 第一页(按顶层评论计);「加载更多」走 server action 拿回同样
    渲染好的后续页直接追加,游标 = 已加载最后一个顶层评论 id。mutation 刷新后
    已追加的页作废,回到首屏第一页(与刷新前全量重取的行为一致)。 */
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import MarkdownEditor from "@/app/(app)/_components/MarkdownEditor";
+import {
+  SummonPendingRow,
+  useSummonPending,
+  type SummonTarget,
+} from "@/app/(app)/_components/summon-pending";
 import { useRouter } from "next/navigation";
 import { ArrowBigUp, ChevronDown, ChevronUp, X } from "lucide-react";
 import { visibleReplyCount } from "@/src/lib/community-draft";
@@ -89,6 +94,10 @@ export default function CommentSection({
   const taRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const loggedIn = meId !== null;
+  /* @kimi 召唤等待反馈(20260816):召唤成功 → 占位行 + 轮询,回复到达自动刷新 */
+  const [summon, setSummon] = useState<SummonTarget | null>(null);
+  const settleSummon = useCallback(() => setSummon(null), []);
+  useSummonPending({ target: summon, locale, onSettle: settleSummon });
 
   /* mutation 后 router.refresh() 会换来新的首屏 props:追加页作废,回到第一页
      (与刷新前全量重取的行为一致)。渲染期间比对前 props 重置,不走 effect。 */
@@ -150,8 +159,10 @@ export default function CommentSection({
       }
       toast(t(locale, "toast.commented"));
       /* @kimi 召唤结果(20260816):评论照常发出,召唤是否成立单独提示 */
-      if (res.aiNote === "summoned") toast(t(locale, "post.aiSummoned"));
-      else if (res.aiNote === "aiDisabled") toast(t(locale, "post.aiSummonDisabled"));
+      if (res.aiNote === "summoned") {
+        toast(t(locale, "post.aiSummoned"));
+        if (res.commentId) setSummon({ commentId: res.commentId });
+      } else if (res.aiNote === "aiDisabled") toast(t(locale, "post.aiSummonDisabled"));
       else if (res.aiNote === "rate") toast(t(locale, "post.aiSummonRate"));
       setReplyTo(null);
       form.reset();
@@ -377,7 +388,12 @@ export default function CommentSection({
           </div>
         </form>
       ) : (
-        <div className="mt-2">{c.body}</div>
+        /* AI 评论浅蓝衬底(20260816):与人类评论一眼可辨,但克制不抢戏 */
+        <div
+          className={`mt-2 ${c.isAi ? "rounded-lg border border-blue/15 bg-blue/[0.04] px-3 py-2" : ""}`}
+        >
+          {c.body}
+        </div>
       )}
       {actions(c)}
       {nested === false && (c as CommentThread).replies?.length > 0 && (() => {
@@ -421,6 +437,9 @@ export default function CommentSection({
       {/* 评论行不再套圆角盒: hairline 分隔,融进外层卡片(圆角套圆角显乱) */}
       <ul className="mt-3 divide-y divide-line">{allThreads.map((c) => row(c, false))}</ul>
 
+      {/* 召唤等待占位:AI 回复到达后轮询端自动 refresh 收走 */}
+      {summon !== null && <SummonPendingRow locale={locale} />}
+
       {cursor !== null && (
         <button
           type="button"
@@ -459,6 +478,7 @@ export default function CommentSection({
             locale={locale}
             rows={4}
             required
+            mentionKimi
             placeholder={t(locale, "post.commentPh")}
             inputCls="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
           />
