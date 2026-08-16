@@ -59,10 +59,13 @@ export default async function AppLayout({
           <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} loggedIn={!!user} worksSrc={worksSrc} />
         </Suspense>
         {/* 主列在容器内靠左;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
-            wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding) */}
+            wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding)。
+            maincol-rail 钩子:右栏隐藏时主列放宽(globals.css 的
+            html[data-sidebar="0"] 块,720 → 1000,与宽画布同宽,切菜单不跳);
+            wide 路由无右栏,不参与 */}
         <main
-          className={`w-full min-w-0 flex-1 px-4 py-6 pb-24 lg:border-x lg:border-line lg:px-6 lg:py-8 ${
-            rail.wide ? "lg:max-w-[1000px]" : "lg:max-w-[720px]"
+          className={`maincol w-full min-w-0 flex-1 px-4 py-6 pb-24 lg:border-x lg:border-line lg:px-6 lg:py-8 ${
+            rail.wide ? "lg:max-w-[1000px]" : "maincol-rail lg:max-w-[720px]"
           }`}
         >
           {children}

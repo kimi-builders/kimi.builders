@@ -253,9 +253,18 @@ html:not([data-nav="1"]) .only-nav-collapsed {
    (pref-controls 的 SidebarToggle),隐藏后不再留细轨重开按钮。
    哪些路由有右栏、主列多宽,由右栏注册表决定(app/(app)/_components/right-rail.ts
    的 railFor;usage/个人主页无右栏且主列放宽到 1000)——原 :has(> .usage-dashboard)
-   加宽 hack 已收编进注册表,布局壳不再靠内容嗅探。 */
-html[data-sidebar="0"] .rightsidebar .sidebar-full {
+   加宽 hack 已收编进注册表,布局壳不再靠内容嗅探。
+   隐藏时整列(含 gap-6 与 lg:ml-2)退出 flex 布局;主列放宽到 1000,与
+   usage / 个人主页的宽画布同宽——隐藏态下切菜单列宽不跳(不取恰好填满的
+   1072,多出的 72px 留给右侧留白)。
+   未加 layer,优先于 Tailwind utilities 层;仅 ≥xl 生效(右栏本就只在 xl 显示)。 */
+html[data-sidebar="0"] .railgate {
   display: none;
+}
+@media (min-width: 1280px) {
+  html[data-sidebar="0"] .maincol-rail {
+    max-width: 1000px;
+  }
 }
 /* 侧栏开关自身的图标/文案按态切换 */
 html[data-sidebar="0"] .only-sidebar-full {
