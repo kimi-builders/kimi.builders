@@ -21,7 +21,20 @@ knowledge — and an AI that actually lives in the community.
 - **Awesome list**: projects built with Kimi around the world, curated by the community.
 - **Usage center**: a local CLI collects token usage from Kimi Code and other agents and
   syncs it to your private dashboard — model breakdown, cost estimates, trends, and
-  shareable posters. Private by default.
+  shareable posters. Private by default. CLI:
+  [kimi-builders/usage](https://github.com/kimi-builders/usage).
+
+## Related projects
+
+- **[kimi-builders/usage](https://github.com/kimi-builders/usage)** — the usage
+  collector CLI (npm `@kimi.builders/usage`): reads the logs that Kimi Code,
+  Claude Code, Codex, OpenCode and other agents already keep on your machine, and
+  aggregates tokens, standard-API cost estimates, active time, and model/project
+  breakdowns. The local dashboard needs no account and works offline; syncing to this
+  site's usage center is opt-in (sanitized aggregates only).
+- **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** —
+  the community brand asset pack (moon + orbit + twin-star logo), vendored into
+  `public/brand/`.
 - **Monthly & knowledge base**: community monthly (`blog`), guides and tutorials
   (`learn`), and Demo Night event pages.
 - **i18n & theming**: Chinese/English toggle; dark/light themes plus two visual vibes

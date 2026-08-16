@@ -16,7 +16,17 @@
 - **作品墙**:成员展示用 Kimi 构建的作品,含截图九宫格、封面色调、构建投入(已验证 token 用量)。
 - **Awesome 清单**:收录全世界用 Kimi 构建的项目,社区成员共建。
 - **用量中心**:本地 CLI 采集 Kimi Code 等 Agent 的 token 用量,同步到个人看板——
-  模型分布、费用估算、趋势图、分享海报;数据默认私有。
+  模型分布、费用估算、趋势图、分享海报;数据默认私有。CLI 见
+  [kimi-builders/usage](https://github.com/kimi-builders/usage)。
+
+## 相关项目
+
+- **[kimi-builders/usage](https://github.com/kimi-builders/usage)** — 用量采集 CLI
+  (npm `@kimi.builders/usage`):读取 Kimi Code、Claude Code、Codex、OpenCode 等 Agent
+  已保存在本机的日志,汇总 Token、标准 API 费用估算、活跃时长、模型与项目分布;
+  本地看板无需账号、默认不联网,同步到本站用量中心是可选能力(仅脱敏聚合数据)。
+- **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** ——
+  社区品牌资产包(月球 + 轨道 + 双星 Logo),已内置于 `public/brand/`。
 - **月刊与知识库**:社区月刊(`blog`)、新手指南与教程(`learn`)、Demo Night 活动页。
 - **双语与双主题**:中文/English 一键切换;深色/浅色主题 + poster/soft 两种视觉气质。
 
