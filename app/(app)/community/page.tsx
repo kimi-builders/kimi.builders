@@ -138,12 +138,13 @@ export default async function CommunityPage({
           })}
         </nav>
         {/* 只看已解决(20260907;20260815 评审移位):状态维度筛选,不属于话题——
-            从话题行移到排序行,用有框 pill 与无边框话题区分两种心智模型 */}
+            从话题行移到排序行,用有框 pill 与无边框话题区分两种心智模型。
+            规格与工具行控件统一(rounded-lg + min-h-11 sm:min-h-9,20260815 二次打磨) */}
         <Link
           href={feedHref({ solved: solvedOnly ? null : "1" })}
           scroll={false}
           aria-current={solvedOnly ? "page" : undefined}
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+          className={`inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 ${
             solvedOnly
               ? "border-blue/60 bg-blue/10 font-semibold text-blue"
               : "border-line text-grey hover:border-blue/50 hover:text-blue"

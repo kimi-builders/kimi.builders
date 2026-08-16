@@ -86,8 +86,8 @@ const DICT = {
     en: "What's happening? (Markdown supported)",
   },
   "feed.empty": {
-    zh: "还没有帖子。来发第一帖 —— 你建的这个社区,第一条内容也该是你的。",
-    en: "No posts yet. Start the first thread — you built this place, the first word should be yours.",
+    zh: "还没有帖子。来发第一帖 —— 咱们自己的社区,第一条内容就等你了。",
+    en: "No posts yet. Start the first thread — this is our community, and the first word is waiting on you.",
   },
   "feed.emptySub": {
     zh: "还没有订阅任何帖子 —— 在帖子页点「订阅」,重点讨论就会聚到这里。",
@@ -737,12 +737,12 @@ const DICT = {
   "works.desc": { zh: "详细说说(支持 Markdown)", en: "Tell the story (Markdown)" },
   "works.wallTitle": { zh: "作品墙", en: "Works" },
   "works.wallIntro": {
-    zh: "社区成员用 AI 构建的真实作品 · 构建投入徽章 = 作者声明的 Token 投入,系统按可验证用量封顶",
-    en: "Real works built by members with AI · the build-investment badge is a declared token figure capped by verifiable usage",
+    zh: "社区成员用 Kimi 构建的真实作品;「声明投入」徽章由作者自行申报,并按可验证用量封顶。",
+    en: "Real works built by members with Kimi · the build-investment badge is a declared token figure capped by verifiable usage",
   },
   "works.emptyTitle": { zh: "你的作品墙还是空的", en: "Your works wall is empty" },
   "works.emptyBody": {
-    zh: "你的项目都在你的用量里跑着 Token,挑一个挂上来,领取构建投入徽章。",
+    zh: "你的项目早就在用量里烧着 Token 了,挑一个挂上来,领取构建投入徽章。",
     en: "Your projects are already burning tokens in your usage — list one and claim the badge.",
   },
   "works.emptyCta": { zh: "上架第一件作品 →", en: "List your first work →" },
@@ -830,21 +830,27 @@ const DICT = {
     zh: "编辑署名的人为定夺,不是算法。",
     en: "Signed by human editors — judgment, not algorithm.",
   },
-  "home.join": { zh: "入群 / 订阅", en: "JOIN & FOLLOW" },
+  "home.join": { zh: "参与 / 订阅", en: "JOIN & FOLLOW" },
   "home.joinDisc": {
     zh: "社区的源码、知识库与路线图都在 GitHub 组织,欢迎来逛。",
     en: "Our code, knowledge base and roadmap live in the GitHub org — come by anytime.",
   },
   "home.joinDiscCta": { zh: "访问组织首页", en: "Visit the org" },
   "home.joinAwesome": {
-    zh: "全世界用 Kimi 构建的项目清单,你的作品也值得上榜。",
-    en: "Projects built with Kimi around the world — yours belongs on the list too.",
+    zh: "全网 Kimi 生态项目精选,你的作品也值得上榜。",
+    en: "A curated selection of projects across the Kimi ecosystem — yours belongs on it too.",
   },
-  "home.joinAwesomeCta": { zh: "浏览清单", en: "Browse the list" },
+  "home.joinAwesomeCta": { zh: "浏览精选", en: "Browse the picks" },
   "home.joinMail": {
     zh: "合作、反馈、投稿,或者只是想聊聊,都欢迎写信。",
     en: "Collaboration, feedback, submissions — or just say hi.",
   },
+  "home.joinMailCta": { zh: "写信给我们", en: "Write to us" },
+  /* 首页入口按钮副文案(20260815):术语型入口(Awesome/用量榜)给首访用户一句预期 */
+  "home.subCommunity": { zh: "讨论 · 晒作品", en: "Discuss & share" },
+  "home.subWorks": { zh: "成员作品墙", en: "Member builds" },
+  "home.subAwesome": { zh: "生态项目精选", en: "Curated picks" },
+  "home.subLeaderboard": { zh: "Token 排行", en: "Token ranking" },
   /* ---- 关于页(/about)---- */
   "about.title": { zh: "关于", en: "About" },
   "about.who": {
@@ -890,6 +896,11 @@ const DICT = {
   "lb.intro": {
     zh: "打开了「参与社区榜」开关的成员,其周期聚合用量会出现在这里。",
     en: "Members who turned on leaderboard sharing have their period aggregates listed here.",
+  },
+  /* 未登录提示(20260815):榜单公开、个人看板需登录——把差异转成登录转化入口 */
+  "lb.signinHint": {
+    zh: "榜单人人可看;登录并连接设备后,这里还会出现你的个人用量与排名。",
+    en: "The board is public — sign in and connect a device to see your own usage and rank here.",
   },
   "lb.period7": { zh: "近 7 天", en: "7D" },
   "lb.period30": { zh: "近 30 天", en: "30D" },

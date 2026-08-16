@@ -9,8 +9,10 @@ import { LayoutGrid, List } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { WORKS_VIEW_COOKIE, type WorksView } from "@/src/lib/works-view";
 
+/* 高度统一(20260815):36/28 + 容器 8 = 外高 44/36,与排序 seg、筛选下拉
+   同规格(见 seg-classes.ts 注释) */
 const BTN =
-  "inline-flex size-8 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+  "inline-flex size-9 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:size-7";
 
 /* cookie 写在组件外:组件作用域内直接给 document.cookie 赋值会触发
    react-hooks/immutability(组件被假定可并发渲染,不许有可见副作用)。

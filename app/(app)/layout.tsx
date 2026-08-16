@@ -15,6 +15,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
 import { canModerate } from "@/src/lib/featured";
 import { getUnreadNotificationCount } from "@/src/lib/posts";
+import { getWorksSource } from "@/src/lib/works-view-server";
 import LeftNav from "./_components/LeftNav";
 import MobileTabBar from "./_components/MobileTabBar";
 import MobileTopBar from "./_components/MobileTopBar";
@@ -30,10 +31,13 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await getSessionUser();
-  const [locale, unread, headerStore] = await Promise.all([
+  const [locale, unread, headerStore, worksSrc] = await Promise.all([
     getLocale(user),
     user ? getUnreadNotificationCount(user.id) : 0,
     headers(),
+    /* 左栏「作品/Awesome」高亮的来源初值:详情页按浏览来源列表激活,
+       软导航后 LeftNav 自行读最新 cookie(布局不随软导航重渲染) */
+    getWorksSource(),
   ]);
   const profileHref = user ? `/u/${user.handle}` : undefined;
   /* 管理台入口:仅 admin/mod(20260830);/admin 路由本身服务端再 404 兜底 */
@@ -52,7 +56,7 @@ export default async function AppLayout({
       <div className="mx-auto flex w-full max-w-[1320px] items-start gap-6 lg:pt-14">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
-          <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} loggedIn={!!user} />
+          <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} loggedIn={!!user} worksSrc={worksSrc} />
         </Suspense>
         {/* 主列在容器内靠左;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
             wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding) */}

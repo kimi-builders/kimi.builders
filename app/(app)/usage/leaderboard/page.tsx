@@ -441,6 +441,19 @@ export default async function UsageLeaderboardPage({
         </div>
       </header>
 
+      {/* 未登录提示(20260815):榜单公开、个人看板需登录——把差异点明并转成登录入口 */}
+      {!user && (
+        <p className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl border border-line bg-card px-4 py-3 text-xs leading-relaxed text-grey sm:px-5">
+          <span>{t(locale, "lb.signinHint")}</span>
+          <Link
+            href="/login?next=%2Fusage"
+            className="shrink-0 font-mono text-[11px] font-semibold text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "gate.login")} →
+          </Link>
+        </p>
+      )}
+
       {user && settings !== null ? (
         <section
           aria-label={t(locale, "lb.mine")}

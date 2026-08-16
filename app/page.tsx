@@ -156,22 +156,26 @@ export default async function Home({
         >
           {t(locale, "home.cta")} →
         </Link>
-        {/* 站点入口:主 CTA 下的边框按钮排,固定宽度(中英同宽,一眼可点) */}
-        <nav className="mt-6 flex flex-wrap items-center justify-center gap-2.5 font-mono text-[11px] tracking-wider">
+        {/* 站点入口:主 CTA 下的边框按钮排,固定宽度(中英同宽,一眼可点);
+            术语型入口(Awesome/用量榜)带副文案,给首访用户一句预期(20260815) */}
+        <nav className="mt-6 flex flex-wrap items-stretch justify-center gap-2.5 font-mono text-[11px]">
           {(
             [
-              ["/community", "nav.community"],
-              ["/works", "nav.works"],
-              ["/awesome", "nav.awesome"],
-              ["/usage/leaderboard", "home.entryLeaderboard"],
+              ["/community", "nav.community", "home.subCommunity"],
+              ["/works", "nav.works", "home.subWorks"],
+              ["/awesome", "nav.awesome", "home.subAwesome"],
+              ["/usage/leaderboard", "home.entryLeaderboard", "home.subLeaderboard"],
             ] as const
-          ).map(([href, key]) => (
+          ).map(([href, key, subKey]) => (
             <Link
               key={href}
               href={href}
-              className="inline-flex w-32 items-center justify-center border border-line py-2 text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="flex w-32 flex-col items-center gap-1 border border-line px-2 py-2.5 text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
-              {t(locale, key)}
+              <span className="tracking-wider">{t(locale, key)}</span>
+              <span className="text-[10.5px] tracking-normal text-grey/70">
+                {t(locale, subKey)}
+              </span>
             </Link>
           ))}
         </nav>
@@ -313,7 +317,7 @@ export default async function Home({
                 {t(locale, "home.joinMail")}
               </p>
               <span className="mt-3 inline-block font-mono text-[11px] text-blue">
-                hi@kimi.builders →
+                {t(locale, "home.joinMailCta")} →
               </span>
             </a>
           </TrackClick>

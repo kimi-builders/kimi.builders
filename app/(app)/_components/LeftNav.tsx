@@ -10,6 +10,7 @@
    切换零网络;结构对两种状态常渲染。 */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useSyncExternalStore } from "react";
 import {
   BarChart3,
   BookOpen,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
+import { WORKS_SRC_COOKIE, type WorksSource } from "@/src/lib/works-view";
 import GithubIcon from "./GithubIcon";
 import { NavToggle, SidebarToggle } from "./pref-controls";
 
@@ -45,6 +47,7 @@ export default function LeftNav({
   profileHref,
   moderator = false,
   loggedIn = false,
+  worksSrc = null,
 }: {
   locale: Locale;
   profileHref?: string;
@@ -53,11 +56,40 @@ export default function LeftNav({
   /* 未登录(20260919):受限项(发帖/用量/设置)直链 /login?next=…——
      应用内点击即弹登录弹窗,登录后回跳目标页,不再先进页面看各自的登录门 */
   loggedIn?: boolean;
+  /* 来源列表 SSR 初值(layout 读 kb-works-src cookie):详情页 /works/[id]
+     同时服务作品/Awesome 两个列表,高亮按「用户从哪个列表进来」判定 */
+  worksSrc?: WorksSource | null;
 }) {
   const pathname = usePathname();
+  /* (app) layout 不随软导航重渲染,prop 只是首屏值;路由变化时读最新 cookie
+     (proxy 在 /works、/awesome 列表页响应里写入,到达详情页时已生效)。
+     与详情页「返回」链接(fromList)同一事实来源,两个入口永远指向同一列表。
+     cookie 没有变更事件,订阅为空操作:快照在每次渲染时重读,
+     pathname 变化(软导航)触发重渲染即取到新来源(模式同 app/error.tsx)。 */
+  const src = useSyncExternalStore(
+    useCallback(() => () => {}, []),
+    () => {
+      const match = document.cookie.match(
+        new RegExp(`(?:^|;\\s*)${WORKS_SRC_COOKIE}=(works|awesome)`),
+      );
+      return match ? match[1] : "";
+    },
+    () => worksSrc ?? "",
+  );
+  /* 详情页归属:来自 Awesome 的 /works/* 高亮 Awesome,否则高亮作品 */
+  const fromAwesome = pathname.startsWith("/works") && src === "awesome";
+
   /* 未登录时受限入口的目标(登录弹窗带回跳);工具入口(关于/GitHub)不受限 */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
+
+  /* 激活态:详情页 /works/[id] 按来源列表判定归属(见上方 fromAwesome),
+     其余路由按前缀;Awesome 在来自 Awesome 的作品详情里同样激活 */
+  const isActive = (href: string) => {
+    if (href === "/works") return pathname.startsWith("/works") && !fromAwesome;
+    if (href === "/awesome") return pathname.startsWith("/awesome") || fromAwesome;
+    return pathname.startsWith(href);
+  };
 
   const itemCls = (active: boolean) =>
     `nav-item flex items-center gap-3 border-l-2 px-3 py-2 font-mono text-xs transition-colors ${
@@ -94,7 +126,7 @@ export default function LeftNav({
               key={s.href}
               href={href}
               title={t(locale, s.key)}
-              className={itemCls(pathname.startsWith(s.href))}
+              className={itemCls(isActive(s.href))}
             >
               <Icon size={15} className="shrink-0" />
               <span className="nav-label flex flex-1 items-center">
@@ -122,7 +154,7 @@ export default function LeftNav({
                   key={s.href}
                   href={s.href}
                   title={t(locale, s.key)}
-                  className={`${itemCls(pathname.startsWith(s.href))} opacity-75`}
+                  className={`${itemCls(isActive(s.href))} opacity-75`}
                 >
                   <Icon size={15} className="shrink-0" />
                   <span className="nav-label flex flex-1 items-center">
