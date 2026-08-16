@@ -32,6 +32,12 @@ export async function setThemeToAction(formData: FormData): Promise<void> {
   store.set("kb_theme", formData.get("theme") === "light" ? "light" : "dark", PREF_COOKIE);
 }
 
+/* 视觉气质显式选择(设置页气质卡的无 JS 兜底;默认 poster)。 */
+export async function setVibeToAction(formData: FormData): Promise<void> {
+  const store = await cookies();
+  store.set("kb_vibe", formData.get("vibe") === "soft" ? "soft" : "poster", PREF_COOKIE);
+}
+
 export async function setLocaleToAction(formData: FormData): Promise<void> {
   const next = formData.get("locale") === "en" ? "en" : "zh";
   const store = await cookies();

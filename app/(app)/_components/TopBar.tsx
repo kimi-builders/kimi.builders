@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import { t, type Locale } from "@/src/lib/i18n";
-import { LocaleToggle, ThemeToggle } from "./pref-controls";
+import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
 import GlobalSearch from "./GlobalSearch";
 
 export default function TopBar({
@@ -57,6 +57,7 @@ export default function TopBar({
           </Link>
         )}
         <ThemeToggle className={iconBtn} />
+        <VibeToggle locale={locale} className={iconBtn} />
         <LocaleToggle className={iconBtn} />
         <span className="ml-1.5 flex items-center gap-3">
           <AuthChip />

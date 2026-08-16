@@ -40,6 +40,45 @@
   --color-card: rgb(0 0 0 / 0.03);
 }
 
+/* ---- 视觉气质(20260815 拍板):工程棱角 poster(默认) / 圆润经典 soft ----
+   Tailwind v4 的 rounded-* 全部解析为 var(--radius-*),投影经 --tw-shadow
+   组合——气质切换只需覆盖变量,全站组件零改动跟随(与主题色同一手法):
+   poster = 圆角归零 + 投影置空 + 卡片涂层降档(纯细线分隔,hover 微反馈保留);
+   rounded-full 是字面量,头像/角标/开关/×钮等功能圆按规格保留。
+   --tw-shadow 置空不触碰 ring/焦点环变量,选中态描边(leaderboard ring)不受影响。
+   未分层规则优先于 utilities 层,与上方 .leftnav 注释同一依据。
+   切换器见 pref-controls 的 VibeToggle:cookie kb_vibe + <html data-vibe> 乐观 UI。 */
+:root[data-vibe="poster"] {
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --color-card: rgb(255 255 255 / 0.02);
+}
+:root[data-theme="light"][data-vibe="poster"] {
+  --color-card: rgb(0 0 0 / 0.025);
+}
+/* 首页海报作用域会就近重声明令牌,盖掉 :root 级覆盖——须显式跟进降档 */
+:root[data-vibe="poster"] [data-theme-scope="dark"] {
+  --color-card: rgb(255 255 255 / 0.01);
+}
+/* 投影统一置空(0 0 #0000 与 Tailwind 空影初始值同形,只灭 --tw-shadow 一项) */
+:root[data-vibe="poster"] *,
+:root[data-vibe="poster"] ::before,
+:root[data-vibe="poster"] ::after {
+  --tw-shadow: 0 0 #0000;
+}
+/* 气质切换按钮的图标/文案按态显隐(模式同 only-dark/only-light) */
+:root[data-vibe="poster"] .only-soft {
+  display: none !important;
+}
+:root:not([data-vibe="poster"]) .only-poster {
+  display: none !important;
+}
+
 /* 强制暗色作用域:首页门面是「海报」,无论 UI 主题始终暗色,且保留品牌
    暖纸编辑色(不跟随 App UI 的官方中性灰)。
    在 wrapper 上重声明令牌,子树 var() 解析就近取这里的值。
@@ -235,8 +274,13 @@ html[lang="en"] .seg-en {
   background: var(--color-paper);
   color: var(--color-bg);
 }
+/* 设置页偏好控件的激活态:主题卡之外,气质卡同样跟随 <html> 直出属性 */
 html[data-theme="dark"] .theme-card-dark,
 html[data-theme="light"] .theme-card-light {
+  border-color: var(--color-blue);
+}
+html[data-vibe="poster"] .vibe-card-poster,
+html[data-vibe="soft"] .vibe-card-soft {
   border-color: var(--color-blue);
 }
 

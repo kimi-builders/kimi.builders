@@ -23,7 +23,7 @@ import {
 import { t, type Locale } from "@/src/lib/i18n";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 import GithubIcon from "./GithubIcon";
-import { LocaleToggle, ThemeToggle } from "./pref-controls";
+import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
 
 /* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
 const SECTIONS = [
@@ -222,6 +222,7 @@ export default function MobileNavDrawer({
 
           <div className="border-t border-line px-2 py-3">
             <ThemeToggle withLabel className={`${itemClass(false)} w-full`} />
+            <VibeToggle withLabel locale={locale} className={`${itemClass(false)} w-full`} />
             <LocaleToggle withLabel className={`${itemClass(false)} w-full`} />
             <a href="https://github.com/kimi-builders" className={itemClass(false)}>
               <GithubIcon size={17} />

@@ -444,6 +444,15 @@ const DICT = {
     zh: "主题即时切换并保存在本机,全站页面通用。",
     en: "Applies instantly, stored locally, used site-wide.",
   },
+  /* ---- 视觉气质(20260815 拍板:工程棱角默认 / 圆润经典可选)---- */
+  "set.vibe": { zh: "视觉气质", en: "Visual style" },
+  "set.vibeDefault": { zh: "默认", en: "Default" },
+  "set.vibeNote": {
+    zh: "工程棱角 = 直角、细线分隔、无投影的海报语言;圆润经典 = 圆角卡片与柔和投影。即时切换并保存在本机。",
+    en: "Sharp: square corners, hairline borders, no shadows. Classic: rounded cards with soft shadows. Applies instantly, stored locally.",
+  },
+  "vibe.poster": { zh: "工程棱角", en: "Sharp" },
+  "vibe.soft": { zh: "圆润经典", en: "Classic" },
   "set.account": { zh: "账号", en: "Account" },
   "set.linked": { zh: "已绑定的登录方式", en: "Linked sign-in methods" },
   "set.linkedBadge": { zh: "已绑定", en: "Linked" },

@@ -485,6 +485,14 @@ export async function setThemeAction(): Promise<void> {
   store.set("kb_theme", cur === "light" ? "dark" : "light", PREF_COOKIE);
 }
 
+/* 视觉气质(20260815 拍板):工程棱角 poster(默认) ⇄ 圆润经典 soft;
+   仅翻 cookie——气质是纯 CSS 变量跟随(globals.css 的 data-vibe 块)。 */
+export async function setVibeAction(): Promise<void> {
+  const store = await cookies();
+  const cur = store.get("kb_vibe")?.value === "soft" ? "soft" : "poster";
+  store.set("kb_vibe", cur === "soft" ? "poster" : "soft", PREF_COOKIE);
+}
+
 /* UI 语言:中 ⇄ EN 翻转;登录用户同步写进 users.locale
    (账号偏好同时是 AI 回帖语言的第一优先级)。 */
 export async function setLocaleAction(): Promise<void> {

@@ -12,7 +12,7 @@ import { getLinkedAccounts, getOwnProfile } from "@/src/lib/users";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import GithubIcon from "../../_components/GithubIcon";
 import LoginGate from "../../_components/LoginGate";
-import { LocaleSeg, ThemeCards } from "../../_components/pref-controls";
+import { LocaleSeg, ThemeCards, VibeCards } from "../../_components/pref-controls";
 import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
 import PasswordForm from "./PasswordForm";
@@ -141,6 +141,13 @@ export default async function SettingsContent({
                 <ThemeCards locale={locale} />
               </div>
               <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.themeNote")}</p>
+            </div>
+            <div className="border-t border-line pt-4">
+              <p className="text-[13px] font-medium text-paper">{t(locale, "set.vibe")}</p>
+              <div className="mt-3">
+                <VibeCards locale={locale} />
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.vibeNote")}</p>
             </div>
           </Panel>
 

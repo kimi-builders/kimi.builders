@@ -9,11 +9,13 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Circle,
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  Square,
   Sun,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -26,10 +28,11 @@ import {
   saveLocaleAction,
   setLocaleAction,
   setThemeAction,
+  setVibeAction,
   toggleNavAction,
   toggleSidebarAction,
 } from "../community/actions";
-import { setLocaleToAction, setThemeToAction } from "../settings/actions";
+import { setLocaleToAction, setThemeToAction, setVibeToAction } from "../settings/actions";
 
 const YEAR = 365 * 86400;
 
@@ -183,7 +186,90 @@ export function SidebarToggle({
   );
 }
 
-/* 语言分段(设置页「偏好」):seg 双键显式选择,激活态走 globals.css 的
+/* 视觉气质(20260815 拍板):工程棱角 poster(默认) ⇄ 圆润经典 soft。
+   纯客户端翻转(cookie-only);形态语言全在 globals.css 的 data-vibe 块
+   (圆角归零 / 投影置空 / 涂层降档),这里只翻 <html> 属性 + 写 cookie。
+   图标与文案显示「目标态」(同 ThemeToggle:暗色下显示 Sun)。 */
+export function VibeToggle({
+  locale,
+  className,
+  withLabel = false,
+  iconSize = 15,
+}: {
+  locale: Locale;
+  className?: string;
+  withLabel?: boolean;
+  iconSize?: number;
+}) {
+  return (
+    <form action={setVibeAction}>
+      <button
+        type="submit"
+        title="切换视觉气质 / Toggle visual style"
+        aria-label="切换视觉气质 / Toggle visual style"
+        onClick={(e) => {
+          e.preventDefault();
+          const el = document.documentElement;
+          const next = el.dataset.vibe === "soft" ? "poster" : "soft";
+          el.dataset.vibe = next;
+          writeCookie("kb_vibe", next);
+        }}
+        className={className}
+      >
+        <Circle size={iconSize} className="shrink-0 only-poster" />
+        <Square size={iconSize} className="shrink-0 only-soft" />
+        {withLabel && (
+          <>
+            <span className="nav-label only-poster">{t(locale, "vibe.soft")}</span>
+            <span className="nav-label only-soft">{t(locale, "vibe.poster")}</span>
+          </>
+        )}
+      </button>
+    </form>
+  );
+}
+
+/* 气质卡片(设置页「偏好」):工程棱角/圆润经典两张卡,激活态走 globals.css
+   的 html[data-vibe] 态类;预览小块用字面量圆角(rounded-[..] 任意值不经过
+   --radius-* 变量,海报模式下不会被归零,两种气质下预览都如实)。 */
+export function VibeCards({ locale }: { locale: Locale }) {
+  const pick = (next: "poster" | "soft") => (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    document.documentElement.dataset.vibe = next;
+    writeCookie("kb_vibe", next);
+  };
+  const card =
+    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+  return (
+    <div className="flex flex-wrap gap-3">
+      <form action={setVibeToAction} className="contents">
+        <button type="submit" name="vibe" value="poster" onClick={pick("poster")} className={`${card} vibe-card-poster`}>
+          <span className="flex h-16 items-center justify-center gap-1.5 rounded-[10px] border border-line bg-bg">
+            <span className="size-6 rounded-[1px] border border-blue bg-blue/10" />
+            <span className="size-6 rounded-[1px] border border-line bg-moon" />
+          </span>
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+            {t(locale, "vibe.poster")}
+            <span className="rounded-[2px] border border-line px-1 text-[10.5px] text-grey">
+              {t(locale, "set.vibeDefault")}
+            </span>
+          </span>
+        </button>
+        <button type="submit" name="vibe" value="soft" onClick={pick("soft")} className={`${card} vibe-card-soft`}>
+          <span className="flex h-16 items-center justify-center gap-1.5 rounded-[10px] border border-line bg-bg">
+            <span className="size-6 rounded-[8px] border border-blue bg-blue/10" />
+            <span className="size-6 rounded-[8px] border border-line bg-moon" />
+          </span>
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+            {t(locale, "vibe.soft")}
+          </span>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/* 语言分段(设置页「偏好」):seg 双键显式选择,激活态走 globals.css的
    html[lang] 态类(SSR 首屏即正确);逻辑与 LocaleToggle 同源(cookie +
    html.lang + refresh + 账号偏好后台写入)。 */
 export function LocaleSeg() {
