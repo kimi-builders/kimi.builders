@@ -1,6 +1,8 @@
 /* 名称砖色调注册表(20260908 引入;20260916 起为 跟随主题/绿/蓝/红/黑 纯平色卡;
    20260918 双主题化 + 降饱和统一色温,红档同日下线——实测观感不佳,存量 red
    由迁移 20260918 归并为黑):无上传封面作品的列表封面。
+   20260815:Awesome 的「按类型族定色」(应用绿/工具蓝,awesomeToneFor)下线——
+   theme 档与作品路径同义(跟随主题深空/站点白),两条路径一套语义,色板即所得。
    theme = 跟随主题(深空/站点白,globals.css .work-cover-tile);固定色 = 砖色
    随主题切换——深色取降饱和深调(与站点近黑底同一色温),浅色取同色相淡染
    (深色文字),色值都在 globals.css 的 .work-tone-* 类里(响应式跟随 data-theme,
@@ -29,28 +31,4 @@ export function coverToneClass(id: string): string | null {
 export function coverToneName(id: string, zh: boolean): string {
   const tone = COVER_TONES.find((item) => item.id === id) ?? COVER_TONES[0];
   return zh ? tone.zh : tone.en;
-}
-
-/* Awesome 条目的砖色(awesome 无媒体、色板未选时):按「类型族」定色,
-   复用上面三张色卡——一套色板,两条指派路径(作品墙=用户自选,
-   Awesome=类型族)。绿=应用,蓝=工具,黑=智能体/内容与其他
-   (红档 20260918 下线,原红的智能体族并入黑)。 */
-const KIND_TONE: Record<string, CoverToneId> = {
-  app: "green",
-  miniapp: "green",
-  website: "green",
-  cli: "blue",
-  sdk: "blue",
-  extension: "blue",
-  bot: "black",
-  skill: "black",
-  prompt: "black",
-  slides: "black",
-  demo: "black",
-  content: "black",
-  other: "black",
-};
-
-export function awesomeToneFor(kind: string): CoverToneId {
-  return KIND_TONE[kind] ?? "black";
 }

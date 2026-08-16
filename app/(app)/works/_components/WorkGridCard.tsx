@@ -7,7 +7,6 @@
    整卡覆盖链接 + 交互元素 z-10 的模式与行式卡相同(P1-2)。 */
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
-import { awesomeToneFor } from "@/src/lib/cover-tones";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
@@ -51,11 +50,7 @@ export default function WorkGridCard({
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={kindLabel}
           kindId={w.kind}
-          tone={
-            w.source === "awesome" && w.coverTone === "theme"
-              ? awesomeToneFor(w.kind)
-              : w.coverTone
-          }
+          tone={w.coverTone}
           fit={w.coverFit}
           embedded
           variant="grid"

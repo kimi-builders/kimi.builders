@@ -30,7 +30,6 @@ import {
 import { ChevronDown, Plus, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import { AGENTS } from "@/src/lib/agents";
-import { awesomeToneFor } from "@/src/lib/cover-tones";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { isModelFamily, MODEL_FAMILIES, modelFamilyName } from "@/src/lib/model-families";
@@ -149,7 +148,6 @@ function WorkFormPreview({
   name,
   tagline,
   workKind,
-  intent,
   coverUrl,
   logoUrl,
   tone,
@@ -159,7 +157,6 @@ function WorkFormPreview({
   name: string;
   tagline: string;
   workKind: string;
-  intent: "site" | "awesome";
   coverUrl: string | null;
   logoUrl: string | null;
   tone: string;
@@ -167,8 +164,8 @@ function WorkFormPreview({
 }) {
   const zh = locale === "zh";
   const kindLabel = workKindLabel(workKind, zh);
-  const toneFor =
-    intent === "awesome" && tone === "theme" ? awesomeToneFor(workKind) : tone;
+  /* theme 档两条路径同义(20260815):跟随主题;Awesome 按类型定色已下线 */
+  const toneFor = tone;
   const placeholder = zh ? "作品名称" : "Work name";
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-card">
@@ -278,10 +275,14 @@ export default function WorkForm({
   claim,
   media,
   modal = false,
+  defaultKind = "site",
 }: {
   action: (prev: WorkFormState | null, formData: FormData) => Promise<WorkFormState>;
   locale: Locale;
   workId?: number;
+  /* 新建意图默认(20260815):从 Awesome 入口打开时 = "awesome"(服务端读
+     kb-works-src 直出,无水合跳变);编辑不生效——意图由数据定死 */
+  defaultKind?: "site" | "awesome";
   initial?: {
     name: string;
     tagline: string;
@@ -344,9 +345,11 @@ export default function WorkForm({
   const checkedAgents = new Set(
     initial ? initial.agents : ["kimi"], // 新表单默认勾 Kimi
   );
-  /* 我的作品 / 推荐站外项目:推荐 = 填原作者 + 收录口径;作品 = 可声明投入 */
+  /* 我的作品 / 推荐站外项目:意图在创建时定死——编辑存量条目不再可切
+     (20260919,静默转换是误操作)。新建默认跟来源列表(20260815):
+     从 Awesome 入口进来直接落在「推荐站外项目」档 */
   const [kind, setKind] = useState<"site" | "awesome">(
-    initial?.authorLabel ? "awesome" : "site",
+    initial?.authorLabel ? "awesome" : defaultKind,
   );
   /* 预览受控值(20260919):名称/一句话/类型在预览里实时出现 */
   const [name, setName] = useState(initial?.name ?? "");
@@ -425,7 +428,6 @@ export default function WorkForm({
             name={name}
             tagline={tagline}
             workKind={workKind}
-            intent={kind}
             coverUrl={mediaPreview.coverUrl}
             logoUrl={mediaPreview.logoUrl}
             tone={tone}
@@ -729,8 +731,8 @@ export default function WorkForm({
               ))}
             </div>
           </fieldset>
-          {/* Awesome 条目也能定封面风格(20260914):不选则按类型族定色;
-              常驻挂载(与作品侧 CoverToneField 互斥激活,见 CoverToneField.inactive) */}
+          {/* Awesome 条目也能定封面风格(20260914);theme 档与作品路径同义
+              (20260815 按类型定色下线);常驻挂载(与作品侧互斥激活,见 inactive) */}
           <CoverToneField
             locale={locale}
             initialTone={media?.tone ?? "theme"}

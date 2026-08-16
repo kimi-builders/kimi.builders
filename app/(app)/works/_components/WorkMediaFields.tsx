@@ -21,6 +21,12 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { uploadMedia } from "@/src/lib/upload";
 import { WORK_IMAGE_MAX } from "@/src/lib/work-media";
+import {
+  SEG_ITEM,
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "@/components/seg-classes";
 import CoverToneField from "./CoverToneField";
 
 export interface MediaRef {
@@ -72,6 +78,19 @@ export default function WorkMediaFields({
 }) {
   const [cover, setCover] = useState<MediaRef | null>(initialCover);
   const [coverUploading, setCoverUploading] = useState(false);
+  /* 封面来源二选一(20260815):上传封面图 / 封面风格(名称砖色卡)。
+     初始随回填数据(有封面=图,无封面=色卡);上传成功自动切到图,
+     移除封面自动切回色卡——两种来源互斥,不再并排堆在一起。 */
+  const [coverMode, setCoverMode] = useState<"image" | "tone">(
+    initialCover ? "image" : "tone",
+  );
+  /* 最近一次色调选择(20260815):image 模式下色板不挂载,隐藏字段用它带回,
+     编辑「有封面的作品」不会把已选色调重置(承接 2026-08-14 的旧语义) */
+  const [toneState, setToneState] = useState(initialTone ?? "theme");
+  const handleTone = (v: string) => {
+    setToneState(v);
+    onToneChange?.(v);
+  };
   /* 封面 16:9 裁剪(20260919):比例不合时先进裁剪框定构图 */
   const [coverCrop, setCoverCrop] = useState<{ src: string; img: HTMLImageElement } | null>(null);
   const [fit, setFit] = useState(initialFit === "contain" ? "contain" : "cover");
@@ -140,7 +159,10 @@ export default function WorkMediaFields({
   const uploadCover = async (file: File) => {
     setCoverUploading(true);
     try {
-      setCover(await uploadMedia(file, "image"));
+      await uploadMedia(file, "image").then((ref) => {
+        setCover(ref);
+        setCoverMode("image");
+      });
     } catch {
       /* 上传失败要出声(20260919):静默失败看起来像「传上了但没显示」 */
       toast(t(locale, "works.uploadFailed"), "error");
@@ -352,50 +374,98 @@ export default function WorkMediaFields({
         />
       </div>
 
-      {/* ---- 封面:独立列表封面(20260916);不传则列表用下方色卡的名称砖 ---- */}
+      {/* ---- 封面(二选一 tab,20260815):上传封面图 / 封面风格(名称砖色卡)。
+          两种来源互斥——tab 切换代替「上传 + 条件色板」并排;色卡常驻挂载,
+          已选色调在两档间切换不丢,隐藏字段始终提交(有封面时服务端以封面优先) ---- */}
       <div>
         <span className="mb-1.5 block text-[11.5px] text-grey">
           {t(locale, "works.cover")}
         </span>
-        <div className="flex items-center gap-3">
-          {cover ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={cover.url}
-              alt=""
-              className="h-24 w-40 rounded-lg border border-line object-cover"
-            />
+        <div
+          className={`${SEG_WRAP} max-sm:w-full`}
+          role="group"
+          aria-label={t(locale, "works.cover")}
+        >
+          {(
+            [
+              { id: "image", key: "works.coverModeImage" },
+              { id: "tone", key: "works.coverModeTone" },
+            ] as const
+          ).map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setCoverMode(m.id)}
+              aria-pressed={coverMode === m.id}
+              className={`${SEG_ITEM} max-sm:flex-1 max-sm:justify-center ${
+                coverMode === m.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE
+              }`}
+            >
+              {t(locale, m.key)}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3">
+          {coverMode === "image" ? (
+            <div className="flex items-center gap-3">
+              {cover ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={cover.url}
+                  alt=""
+                  className="h-24 w-40 rounded-lg border border-line object-cover"
+                />
+              ) : (
+                <span className="flex h-24 w-40 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
+                  <ImagePlus size={18} aria-hidden="true" />
+                </span>
+              )}
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => coverInput.current?.click()}
+                  disabled={coverUploading}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+                >
+                  {coverUploading ? (
+                    <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <ImagePlus size={12} aria-hidden="true" />
+                  )}
+                  {coverUploading
+                    ? t(locale, "works.uploading")
+                    : t(locale, cover ? "works.logoChange" : "works.coverUpload")}
+                </button>
+                {cover && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCover(null);
+                      /* 移除封面后自然回到色卡来源 */
+                      setCoverMode("tone");
+                    }}
+                    className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                  >
+                    {t(locale, "works.logoRemove")}
+                  </button>
+                )}
+              </span>
+            </div>
           ) : (
-            <span className="flex h-24 w-40 items-center justify-center rounded-lg border border-dashed border-line text-grey/50">
-              <ImagePlus size={18} aria-hidden="true" />
+            <CoverToneField
+              locale={locale}
+              initialTone={initialTone}
+              inactive={inactive}
+              hideLabel
+              onToneChange={handleTone}
+            />
+          )}
+          {coverMode === "image" && (
+            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+              {t(locale, "works.coverHint")}
             </span>
           )}
-          <span className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => coverInput.current?.click()}
-              disabled={coverUploading}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
-            >
-              {coverUploading ? (
-                <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
-              ) : (
-                <ImagePlus size={12} aria-hidden="true" />
-              )}
-              {coverUploading
-                ? t(locale, "works.uploading")
-                : t(locale, cover ? "works.logoChange" : "works.coverUpload")}
-            </button>
-            {cover && (
-              <button
-                type="button"
-                onClick={() => setCover(null)}
-                className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-              >
-                {t(locale, "works.logoRemove")}
-              </button>
-            )}
-          </span>
         </div>
         <input
           ref={coverInput}
@@ -407,9 +477,6 @@ export default function WorkMediaFields({
             e.target.value = "";
           }}
         />
-        <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
-          {t(locale, "works.coverHint")}
-        </span>
       </div>
 
       {/* ---- 配图:点击/拖入/粘贴添加,拖拽排序,展示在详情页图集 ---- */}
@@ -584,18 +651,10 @@ export default function WorkMediaFields({
         </div>
       )}
 
-      {/* ---- 封面风格(未上传封面时的名称砖)---- */}
-      {!cover ? (
-        <CoverToneField
-          locale={locale}
-          initialTone={initialTone}
-          inactive={inactive}
-          onToneChange={onToneChange}
-        />
-      ) : (
-        /* 有上传封面时不显示色板,但隐藏字段要把已选色调带回去——
-           否则编辑一次就被重置成 theme(2026-08-14);inactive 不提交 */
-        !inactive && <input type="hidden" name="coverTone" value={initialTone} readOnly />
+      {/* 封面风格档在 image 模式下不挂载,隐藏字段带回最近一次选择;
+          tone 模式由 CoverToneField 自带隐藏字段提交(20260815 tab 化) */}
+      {coverMode === "image" && !inactive && (
+        <input type="hidden" name="coverTone" value={toneState} readOnly />
       )}
 
       {crop && (

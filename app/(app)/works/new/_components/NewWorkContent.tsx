@@ -7,6 +7,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { getWorksSource } from "@/src/lib/works-view-server";
 import { getClaimAllowance } from "@/src/lib/works";
 import { createWorkAction } from "../../actions";
 import WorkForm from "../../_components/WorkForm";
@@ -39,7 +40,13 @@ export default async function NewWorkContent({
     );
   }
 
-  const allowance = await getClaimAllowance(user.id);
+  const [allowance, src] = await Promise.all([
+    getClaimAllowance(user.id),
+    /* 新建意图默认跟来源列表(20260815):从 Awesome 的提交入口进来,
+       表单直接落在「推荐站外项目」档——服务端读 kb-works-src(proxy 在
+       列表页写入)直出,无水合跳变;与左栏高亮/详情页「返回」同一事实源 */
+    getWorksSource(),
+  ]);
 
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
@@ -53,6 +60,7 @@ export default async function NewWorkContent({
         action={createWorkAction}
         locale={locale}
         modal={!showTitle}
+        defaultKind={src === "awesome" ? "awesome" : "site"}
         claim={{
           initial: null,
           hasUsage: allowance.total > 0,

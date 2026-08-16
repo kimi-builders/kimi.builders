@@ -13,7 +13,6 @@
    claimPaused(仅作者本人为 true)时作者在自己的卡片上看到重新分配提示。 */
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
-import { awesomeToneFor } from "@/src/lib/cover-tones";
 import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
@@ -129,11 +128,7 @@ export default function WorkCard({
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={kindLabel}
           kindId={w.kind}
-          tone={
-            w.source === "awesome" && w.coverTone === "theme"
-              ? awesomeToneFor(w.kind)
-              : w.coverTone
-          }
+          tone={w.coverTone}
           fit={w.coverFit}
           embedded
           variant="row"

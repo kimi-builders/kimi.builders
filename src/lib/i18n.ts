@@ -1273,6 +1273,11 @@ const DICT = {
   },
   "works.cover": { zh: "封面(可选)", en: "Cover (optional)" },
   "works.coverUpload": { zh: "上传封面", en: "Upload cover" },
+  /* 封面来源二选一 tab(20260815):上传封面图 / 封面风格(名称砖色卡) */
+  "works.coverModeImage": { zh: "上传封面图", en: "Upload image" },
+  "works.coverModeTone": { zh: "封面风格", en: "Cover style" },
+  /* Awesome 色板 theme 档语义(20260815):与作品路径同义,跟随主题 */
+  "works.tilePreview": { zh: "名称砖", en: "Tile" },
   "works.coverHint": {
     zh: "列表卡片的封面;不上传则显示下方色卡的名称砖。",
     en: "The list cover; without one, the wall shows the tone tile below.",
@@ -1313,8 +1318,8 @@ const DICT = {
   },
   "works.coverToneAwesome": { zh: "封面风格", en: "Cover style" },
   "works.coverToneAwesomeHint": {
-    zh: "不选则按类型定色(应用绿/工具蓝/其余黑);砖色随主题切换明暗。",
-    en: "Unset = color by kind family (apps green, tools blue, everything else black). Tiles adapt to light/dark.",
+    zh: "Awesome 条目无配图,列表封面用所选色调的名称砖;不选则跟随主题(深空/站点白)。",
+    en: "Awesome entries without images use a name tile in the picked tone; unset follows the site theme.",
   },
   "works.imageRemove": { zh: "删除这张图", en: "Remove this image" },
   "works.uploading": { zh: "上传中…", en: "Uploading…" },
