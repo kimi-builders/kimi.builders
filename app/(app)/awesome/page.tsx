@@ -104,7 +104,9 @@ export default async function AwesomePage({
         )}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2.5">
+      {/* items-start(20260815 三次打磨):排序 seg 与筛选下拉常驻行顶部对齐,
+          筛选结果分组行在 WorksFilterBar 内部向下生长,工具位恒不动 */}
+      <div className="mt-5 flex flex-wrap items-start gap-2.5">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {(
             [
