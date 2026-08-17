@@ -1,4 +1,4 @@
--- S3-1 文章引擎:一张表同时承载 /blog 月刊《给 Kimi 官方的一封信》(kind='letter')
+-- S3-1 文章引擎:一张表同时承载 /blog 月刊(kind='letter')
 -- 与 /learn 策划制学习路径(kind='guide')。
 -- 双语版本 = 同 slug 两行不同 locale,唯一约束是 (slug, locale) 复合唯一——
 -- 同一 slug 允许中英各一行,也允许 letter/guide 复用同一 slug(路由树不同:/blog 与 /learn)。

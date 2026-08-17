@@ -21,6 +21,7 @@ import {
 import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { parseLetterPayload } from "@/src/lib/monthly";
 
 export interface ArticleFormState {
   error?: string;
@@ -59,11 +60,22 @@ export async function saveArticleAction(
   if (summary.length > ARTICLE_SUMMARY_MAX)
     return { error: t(locale, "err.artSummaryLong") };
   const bodyMd = String(formData.get("body") || "").trim();
-  if (!bodyMd) return { error: t(locale, "err.artBody") };
+  /* letter 的三层由数据组装(src/lib/monthly.ts),正文可空;guide 仍必填 */
+  if (!bodyMd && kind !== "letter") return { error: t(locale, "err.artBody") };
   const sortOrder = normalizeSortOrder(String(formData.get("sort_order") || ""));
   const publish = formData.get("publish") === "on";
 
-  const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder };
+  /* letter 期次元数据:空 = NULL(纯自动组装);非空走严格校验,错误就地提示 */
+  let payload: string | null = null;
+  if (kind === "letter") {
+    const parsed = parseLetterPayload(String(formData.get("payload") || ""));
+    if (!parsed.ok) return { error: `payload:${parsed.error}` };
+    payload = Object.keys(parsed.payload).length
+      ? JSON.stringify(parsed.payload)
+      : null;
+  }
+
+  const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder, payload };
   try {
     if (id) {
       const ok = await updateArticle(id, input, publish);

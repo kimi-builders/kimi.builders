@@ -6,7 +6,11 @@ import { getLocale } from "@/src/lib/i18n-server";
 import RouteModal from "@/app/(app)/_components/RouteModal";
 import NewWorkContent from "@/app/(app)/works/new/_components/NewWorkContent";
 
-export default async function NewWorkModalPage() {
+export default async function NewWorkModalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ path?: string | string[] }>;
+}) {
   const user = await getSessionUser();
   const locale = await getLocale(user);
   return (
@@ -20,7 +24,8 @@ export default async function NewWorkModalPage() {
         discard: t(locale, "modal.discardClose"),
       }}
     >
-      <NewWorkContent showTitle={false} />
+      {/* ?path=<slug> 毕业归因上下文同样透传(20260920) */}
+      <NewWorkContent showTitle={false} searchParams={searchParams} />
     </RouteModal>
   );
 }

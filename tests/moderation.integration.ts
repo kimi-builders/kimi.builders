@@ -128,6 +128,7 @@ async function main() {
       claimedTokens: null, status: "released", models: [], kind: "app",
       descriptionMd: "", scope: null, logoKey: "", imageKeys: [],
       coverTone: "theme", coverFit: "cover", coverKey: "", aiReply: true,
+      sourcePath: null,
     };
     const workId = await createWork(member, wFields);
     workIds.push(workId);

@@ -74,8 +74,13 @@ function cjkBoldFont(text: string): Promise<PosterFont | null> {
   return p;
 }
 
-/* 一张海报要用的全部字体;text = 动态文本 + 静态标签(POSTER_STATIC_TEXT)。 */
+/* 一张海报要用的全部字体;text = 动态文本 + 静态标签(POSTER_STATIC_TEXT)。
+   20260921 修订契约:CJK 子集拉取失败而文本确有 CJK 时,整组退回空数组
+   (路由不传 fonts,next/og 默认 Geist + 动态 Noto 400 接管)——
+   宁可字重弱,不可拉丁-only 出豆腐(与文件头注释的承诺一致)。 */
 export async function getPosterFonts(text: string): Promise<PosterFont[]> {
   const [latin, cjkBold] = await Promise.all([latinFonts(), cjkBoldFont(text)]);
+  const needsCjk = [...text].some((c) => CJK_RE.test(c));
+  if (needsCjk && !cjkBold) return [];
   return cjkBold ? [...latin, cjkBold] : latin;
 }

@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type PosterSurface = "profile" | "post" | "work" | "usage";
+export type PosterSurface = "profile" | "post" | "work" | "usage" | "letter";
 
 export type AnalyticsBeaconPayload =
   | {

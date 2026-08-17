@@ -68,6 +68,9 @@ export interface WorkRow {
   coverFit: string;
   /* 20260816_work_ai_summon:允许 AI 参与本作品评论区(@kimi 召唤;默认开) */
   aiReply: boolean;
+  /* 20260921_works_source_path:毕业归因——来源学习路径 slug(发布时写入,
+     编辑不再改);null = 非路径来源(知识库机械结构 plan §二.5) */
+  sourcePath: string | null;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -119,6 +122,7 @@ function mapWork(r: RowDataPacket): WorkRow {
     coverTone: r.cover_tone ?? "theme",
     coverFit: r.cover_fit === "contain" ? "contain" : "cover",
     aiReply: !!r.ai_reply,
+    sourcePath: r.source_path ?? null,
   };
 }
 
@@ -127,7 +131,7 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
        w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys,
-       w.cover_key, w.cover_tone, w.cover_fit, w.ai_reply`;
+       w.cover_key, w.cover_tone, w.cover_fit, w.ai_reply, w.source_path`;
 
 /* 可见性谓词(20260828):私密=仅作者(推荐人)本人可见。
    公共上下文(右栏/精选/海报/统计)恒用 PUBLIC_ONLY;列表/详情带 viewerId 放行作者本人。
@@ -336,6 +340,52 @@ export async function getUserWorks(
   return rows.map(mapWork);
 }
 
+/* ---- 毕业归因(20260920_works_source_path,知识库机械结构 plan §二.5)----
+   作品发布时可带来源路径 slug(/works/new?path=slug);路径详情页成就区显示
+   真实毕业作品,北极星 #5「路径毕业作品数」由此统计。 */
+
+/* 路径详情页成就区:该路径的公开毕业作品(公共上下文,仅公开未屏蔽的
+   site 条目——私密/被屏蔽作品不借路径页漏出,同右栏口径),新到旧。 */
+export function pathGraduatesQuery(
+  slug: string,
+  limit = 6,
+): { sql: string; args: string[] } {
+  const n = Math.max(1, Math.min(24, Math.floor(limit)));
+  return {
+    sql: `${SELECT_WORKS} WHERE w.source = 'site' AND w.source_path = ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} ORDER BY w.id DESC LIMIT ${n}`,
+    args: [slug],
+  };
+}
+
+export async function getPathGraduates(
+  slug: string,
+  limit = 6,
+): Promise<WorkRow[]> {
+  const q = pathGraduatesQuery(slug, limit);
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  return rows.map(mapWork);
+}
+
+/* 北极星 #5:各路径毕业作品数(公共上下文,同上口径;供月刊/分析用)。 */
+export function pathGraduationCountsQuery(): { sql: string; args: string[] } {
+  return {
+    sql: `SELECT w.source_path, COUNT(*) AS n FROM works w
+     WHERE w.source = 'site' AND w.source_path IS NOT NULL AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}
+     GROUP BY w.source_path`,
+    args: [],
+  };
+}
+
+export async function pathGraduationCounts(
+  db: Queryable = getPool(),
+): Promise<Map<string, number>> {
+  const q = pathGraduationCountsQuery();
+  const [rows] = await db.query<RowDataPacket[]>(q.sql, q.args);
+  const map = new Map<string, number>();
+  for (const r of rows) map.set(String(r.source_path), Number(r.n) || 0);
+  return map;
+}
+
 /* ---- 作品用量声明制(20260822_work_claims)----
    徽章语义(替换旧的「作者总量」徽章,原 badgeTokensOf 已移除):
    作者为自己的每个作品声明一个构建投入 token 数(claimed_tokens),
@@ -523,6 +573,9 @@ export interface WorkFields {
   coverFit: string;
   /* 允许 AI 参与评论区(20260816 召唤):checkbox 提交 "on",缺省 = 关 */
   aiReply: boolean;
+  /* 毕业归因来源路径 slug(20260920):action 层已按在册路径校验(normalizePathSlug,
+     非法置 null);仅 createWork 落库——归因在发布时定死,updateWork 不动它 */
+  sourcePath: string | null;
 }
 
 /* ---- 作品媒体 key 校验(20260826_work_media)----
@@ -537,15 +590,17 @@ export {
 } from "./work-media";
 import { WORK_IMAGE_MAX } from "./work-media";
 
-export async function createWork(
+/* INSERT 查询构建(纯函数,可单测):source_path 只在创建时落库(毕业归因 20260920;
+   awesome 推荐条目无来源路径语义,强制 null)。编辑走 updateWork,不改归因。 */
+export function workInsertQuery(
   userId: number,
   f: WorkFields,
-): Promise<number> {
+): { sql: string; args: (string | number | null)[] } {
   const source = f.authorLabel ? "awesome" : "site";
-  const [res] = await getPool().query<ResultSetHeader>(
-    `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys, cover_key, cover_tone, cover_fit, ai_reply)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
+  return {
+    sql: `INSERT INTO works (user_id, name, tagline, url, repo_url, screenshot_url, tags, agents, source, visibility, author_label, claimed_tokens, status, models, kind, description_md, scope, also_awesome, logo_key, image_keys, cover_key, cover_tone, cover_fit, ai_reply, source_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
       userId,
       f.name.slice(0, 120),
       f.tagline.slice(0, 300),
@@ -577,8 +632,17 @@ export async function createWork(
       f.coverTone.slice(0, 16),
       source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
       f.aiReply ? 1 : 0,
+      source === "awesome" ? null : f.sourcePath ? f.sourcePath.slice(0, 64) : null,
     ],
-  );
+  };
+}
+
+export async function createWork(
+  userId: number,
+  f: WorkFields,
+): Promise<number> {
+  const q = workInsertQuery(userId, f);
+  const [res] = await getPool().query<ResultSetHeader>(q.sql, q.args);
   return Number(res.insertId);
 }
 

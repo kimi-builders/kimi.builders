@@ -46,6 +46,7 @@ function work(): WorkRow {
     coverFit: "cover",
     coverKey: "",
     aiReply: true,
+    sourcePath: null,
   };
 }
 

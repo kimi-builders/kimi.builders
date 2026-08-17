@@ -276,6 +276,7 @@ export default function WorkForm({
   media,
   modal = false,
   defaultKind = "site",
+  sourcePath = null,
 }: {
   action: (prev: WorkFormState | null, formData: FormData) => Promise<WorkFormState>;
   locale: Locale;
@@ -283,6 +284,9 @@ export default function WorkForm({
   /* 新建意图默认(20260815):从 Awesome 入口打开时 = "awesome"(服务端读
      kb-works-src 直出,无水合跳变);编辑不生效——意图由数据定死 */
   defaultKind?: "site" | "awesome";
+  /* 毕业归因上下文(20260920):从路径详情页「发布毕业物」进入(/works/new?path=slug)
+     时带上——横幅说明 + 隐藏字段随表单提交,服务端按在册路径复检(normalizePathSlug) */
+  sourcePath?: { slug: string; text: string } | null;
   initial?: {
     name: string;
     tagline: string;
@@ -465,6 +469,18 @@ export default function WorkForm({
           </div>
           <p className="mt-2 text-[11.5px] leading-relaxed text-grey/80">
             {t(locale, "works.minPath")}
+          </p>
+        </div>
+      )}
+
+      {/* 来源路径上下文(毕业归因,20260920):横幅 + 隐藏字段随表单提交;
+          文案由服务端本地化传入(见 NewWorkContent);
+          仅「我的作品」意图显示——awesome 条目无来源路径语义,服务端也强制 null(20260921) */}
+      {sourcePath && kind === "site" && (
+        <div>
+          <input type="hidden" name="source_path" value={sourcePath.slug} />
+          <p className="rounded-xl border border-dashed border-blue/50 bg-blue/5 px-3 py-2 text-[11.5px] leading-relaxed text-paper/90">
+            {sourcePath.text}
           </p>
         </div>
       )}

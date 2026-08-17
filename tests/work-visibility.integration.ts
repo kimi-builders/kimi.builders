@@ -60,6 +60,7 @@ function fields(overrides: Partial<WorkFields> = {}): WorkFields {
     coverFit: "cover",
     coverKey: "",
     aiReply: true,
+    sourcePath: null,
     ...overrides,
   };
 }

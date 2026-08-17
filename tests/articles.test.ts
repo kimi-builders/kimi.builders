@@ -103,6 +103,7 @@ test("locale fallback: UI locale preferred per slug, missing language falls back
     authorHandle: "ed",
     publishedAt: new Date(Date.UTC(2026, 7, 1)),
     sortOrder: 0,
+    payloadRaw: null,
   });
   const rows = [
     row("a", "zh", "甲"), // 双语都有
@@ -140,6 +141,7 @@ const INPUT: ArticleInput = {
   summary: "摘要",
   bodyMd: "# 正文",
   sortOrder: 0,
+  payload: null,
 };
 
 test("insert: publish flag drives IF(?, NOW(), NULL) — NULL = draft", () => {
@@ -149,7 +151,17 @@ test("insert: publish flag drives IF(?, NOW(), NULL) — NULL = draft", () => {
   const draft = insertArticleQuery(7, INPUT, false);
   assert.equal(draft.args.at(-1), 0);
   /* 作者 = 署名编辑 */
-  assert.equal(draft.args[6], 7);
+  assert.equal(draft.args[7], 7);
+});
+
+test("insert/update: payload 走 CAST(? AS JSON),NULL = 纯自动组装", () => {
+  const withPayload: ArticleInput = { ...INPUT, payload: '{"response":"received"}' };
+  const ins = insertArticleQuery(7, withPayload, true);
+  assert.match(ins.sql, /CAST\(\? AS JSON\)/);
+  assert.equal(ins.args[6], '{"response":"received"}');
+  const upd = updateArticleQuery(9, INPUT, true);
+  assert.match(upd.sql, /payload = CAST\(\? AS JSON\)/);
+  assert.equal(upd.args[6], null);
 });
 
 test("update: publish keeps first publish time, unpublish resets to NULL (draft)", () => {

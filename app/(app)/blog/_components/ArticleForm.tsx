@@ -1,8 +1,9 @@
 "use client";
 
 /* 文章编辑表单(S3-1,admin/mod):slug/kind/locale/标题/摘要/sort_order/Markdown 正文
-   + 发布勾选(不勾=存草稿)。新建与编辑共用;编辑态带软删按钮。
-   提交走 server action(saveArticleAction),校验错误就地显示;风格对齐 PostForm。 */
+   + 发布勾选(不勾=存草稿)。kind=letter 额外带 payload 期次元数据(JSON,可留空;
+   校验在 action 层,错误就地显示)。新建与编辑共用;编辑态带软删按钮。
+   提交走 server action(saveArticleAction);风格对齐 PostForm。 */
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import CheckboxControl from "@/components/CheckboxControl";
@@ -33,6 +34,7 @@ export interface ArticleFormInitial {
   bodyMd: string;
   sortOrder: number;
   published: boolean;
+  payload: string;
 }
 
 export default function ArticleForm({
@@ -153,11 +155,38 @@ export default function ArticleForm({
         />
       )}
 
+      {kind === "letter" && (
+        <div>
+          <textarea
+            name="payload"
+            rows={6}
+            defaultValue={initial?.payload}
+            placeholder={
+              locale === "zh"
+                ? '期次元数据 payload(JSON,可留空 = 纯自动组装)\n例:{"governance":[{"title":"...","note":"...","rulingUrl":"/community/123"}]}'
+                : 'Issue payload (JSON; empty = fully assembled)\ne.g. {"governance":[{"title":"...","note":"...","rulingUrl":"/community/123"}]}'
+            }
+            className={`${inputCls} font-mono text-xs`}
+          />
+          <p className="mt-1.5 text-[11px] leading-relaxed text-grey/80">
+            {locale === "zh"
+              ? '可用字段:aiDisclosure({digest,facts,decisions} AI 参与披露)、governance([{title,note,rulingUrl}] 治理公示)。'
+              : 'Keys: aiDisclosure ({digest,facts,decisions} AI involvement), governance ([{title,note,rulingUrl}]).'}
+          </p>
+        </div>
+      )}
+
       <textarea
         name="body"
         rows={16}
         defaultValue={initial?.bodyMd}
-        placeholder={t(locale, "form.bodyText")}
+        placeholder={
+          kind === "letter"
+            ? locale === "zh"
+              ? "本月评鉴正文(Markdown 策展长文;留空则该节不渲染)"
+              : "The monthly review (Markdown; leave empty to skip that section)"
+            : t(locale, "form.bodyText")
+        }
         className={inputCls}
       />
 
@@ -170,7 +199,15 @@ export default function ArticleForm({
       </label>
 
       {state?.error && (
-        <p className="font-mono text-xs text-blue">{state.error}</p>
+        /* 对齐 WorkForm 的 alert 范式(20260921:此前用品牌蓝 text-blue,
+           蓝色在站内是链接/主色语义,不像错误) */
+        <p
+          role="alert"
+          tabIndex={-1}
+          className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper"
+        >
+          {state.error}
+        </p>
       )}
 
       <div className="flex items-center gap-4">

@@ -600,6 +600,48 @@ export async function getCommentsPage(
   };
 }
 
+/* 最新 N 条可见评论(知识库路径讨论闭环,20260920):软删/治理屏蔽滤掉,
+   AI 评论与详情页默认口径一致一并返回(is_ai 标记随行);
+   帖子本身的可见性由调用方先行校验(这里不再重复门禁)。
+   按 id 倒序取 N 条 = 最新优先(评论 id 随 created_at 单调)。 */
+export function latestCommentsQuery(
+  postId: number,
+  limit = 3,
+): { sql: string; args: number[] } {
+  const n = Math.max(1, Math.min(20, Math.floor(limit)));
+  return {
+    sql: `SELECT c.id, c.parent_id, c.user_id, c.is_ai, c.body_md, c.score,
+            c.created_at, c.edited_at, c.hidden_at,
+            u.handle, u.name, u.avatar_url
+     FROM comments c LEFT JOIN users u ON u.id = c.user_id
+     WHERE c.post_id = ? AND c.deleted_at IS NULL AND c.hidden_at IS NULL
+     ORDER BY c.id DESC LIMIT ${n}`,
+    args: [postId],
+  };
+}
+
+export async function getLatestComments(
+  postId: number,
+  limit = 3,
+): Promise<CommentRow[]> {
+  const q = latestCommentsQuery(postId, limit);
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  return rows.map((r) => ({
+    id: Number(r.id),
+    parentId: r.parent_id === null ? null : Number(r.parent_id),
+    userId: r.user_id === null ? null : Number(r.user_id),
+    isAi: !!r.is_ai,
+    bodyMd: r.body_md,
+    score: Number(r.score),
+    createdAt: r.created_at,
+    editedAt: r.edited_at ?? null,
+    hiddenAt: r.hidden_at ?? null,
+    handle: r.handle,
+    name: r.name,
+    avatarUrl: r.avatar_url,
+  }));
+}
+
 export async function createPost(input: {
   userId: number;
   type: "text" | "link" | "poll";

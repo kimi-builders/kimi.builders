@@ -191,9 +191,12 @@ CREATE TABLE IF NOT EXISTS works (
   cover_fit VARCHAR(8) NOT NULL DEFAULT 'cover' COMMENT '封面适配:cover=裁切填满,contain=补边完整',
   -- ai_reply 由 20260816_work_ai_summon.sql 引入,已有库执行该迁移
   ai_reply TINYINT(1) NOT NULL DEFAULT 1 COMMENT '允许 AI 参与本作品评论区(@kimi 召唤)',
+  -- source_path 由 20260921_works_source_path.sql 引入,已有库执行该迁移
+  source_path VARCHAR(64) NULL COMMENT '毕业归因:来源学习路径 slug(app/(app)/learn/_data.ts);NULL=非路径来源',
   KEY idx_source (source, created_at),
   KEY idx_hidden (hidden_at),
   KEY idx_featured (featured_at),
+  KEY idx_source_path (source_path),
   CONSTRAINT fk_work_user FOREIGN KEY (user_id) REFERENCES users (id),
   CONSTRAINT fk_work_featured FOREIGN KEY (featured_by) REFERENCES users (id),
   CONSTRAINT fk_work_hidden FOREIGN KEY (hidden_by) REFERENCES users (id)
@@ -464,6 +467,8 @@ CREATE TABLE IF NOT EXISTS articles (
   title VARCHAR(200) NOT NULL,
   summary VARCHAR(500) NOT NULL DEFAULT '' COMMENT '列表摘要',
   body_md MEDIUMTEXT COMMENT 'Markdown 正文',
+  -- payload 由 20260920_article_payload.sql 引入,已有库执行该迁移
+  payload JSON NULL COMMENT 'letter 期次元数据(src/lib/monthly.ts LetterPayload);NULL=纯自动组装',
   author_id BIGINT UNSIGNED NOT NULL COMMENT '署名编辑 users.id(admin/mod)',
   sort_order INT NOT NULL DEFAULT 0 COMMENT 'guide 的策划顺序(小的在前);letter 不用',
   published_at DATETIME NULL COMMENT '发布时间;NULL=草稿',

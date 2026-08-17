@@ -65,6 +65,7 @@ export default async function EditArticlePage({
           bodyMd: article.bodyMd,
           sortOrder: article.sortOrder,
           published: !!article.publishedAt,
+          payload: article.payload,
         }}
       />
     </div>

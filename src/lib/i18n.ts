@@ -32,7 +32,7 @@ const DICT = {
   "search.works": { zh: "社区成员构建的真实项目", en: "Real projects built by community members" },
   "search.awesome": { zh: "站内与站外精选项目", en: "Selected member and external projects" },
   "search.learn": { zh: "按路径阅读实用指南", en: "Practical guides in a curated path" },
-  "search.blog": { zh: "社区月刊与编辑精选", en: "Community letter and editor picks" },
+  "search.blog": { zh: "AI 月刊与编辑精选", en: "The AI monthly and editor picks" },
   "search.usage": { zh: "Token、成本与活跃度看板", en: "Token, cost, and activity dashboard" },
   "search.demoNightTitle": { zh: "Demo Night", en: "Demo Night" },
   "search.demoNight": { zh: "报名并查看社区展示活动", en: "Join and browse community showcase events" },
@@ -549,8 +549,8 @@ const DICT = {
   "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
   "soon.follow": { zh: "关注 GitHub 获取上线动态", en: "Follow GitHub for launch updates" },
   "soon.blogExpect": {
-    zh: "创刊号正在筹备:社区精选、作品背后的构建故事,以及编辑部给 Kimi 官方的一封信。",
-    en: "Issue #1 is in the works: community picks, build stories, and the editors’ letter to Kimi.",
+    zh: "创刊号正在筹备:Kimi 生态与 AI 世界的每月评鉴——新闻、资源、知识与作品,编辑署名。",
+    en: "Issue #1 is in the works: a monthly review of the Kimi ecosystem and the AI world — news, resources, knowledge and builds, signed by editors.",
   },
   "soon.learnExpect": {
     zh: "第一批策划制学习路径正在撰稿:从 Kimi 入门到 Agent 实战的编号指南。",
@@ -1080,12 +1080,8 @@ const DICT = {
   },
   "toast.rsvpCancelled": { zh: "已取消报名", en: "RSVP cancelled" },
   /* ---- S3-1:文章引擎(/blog 月刊 + /learn 策划路径;独立分区,降低合并冲突面) ---- */
-  "nav.blog": { zh: "月刊", en: "Letter" },
-  "blog.title": { zh: "给 Kimi 官方的一封信", en: "A Letter to Team Kimi" },
-  "blog.sub": {
-    zh: "月刊 · 编辑署名定夺,不是算法",
-    en: "Monthly · signed by named editors, not an algorithm",
-  },
+  "nav.blog": { zh: "月刊", en: "Monthly" },
+  "blog.title": { zh: "AI 月刊", en: "The AI Monthly" },
   "blog.empty": {
     zh: "创刊号筹备中 —— 编辑部正在汇总社区数据观察、用户痛点与精选作品,写好会署名发出,不拿空壳硬撑。",
     en: "Issue one is in the works — the editors are gathering community data, user pain points and featured builds, and will sign it when it ships. No empty shell in the meantime.",

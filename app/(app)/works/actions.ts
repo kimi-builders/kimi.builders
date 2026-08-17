@@ -30,6 +30,7 @@ import { hasKimiMention } from "@/src/lib/mention-kimi";
 import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import { getWorksView } from "@/src/lib/works-view-server";
+import { normalizePathSlug } from "@/app/(app)/learn/_data";
 import {
   areWorkImageKeys,
   canViewWork,
@@ -141,6 +142,8 @@ function readFields(formData: FormData) {
       ? String(formData.get("coverTone"))
       : "theme",
     coverFit: String(formData.get("coverFit")) === "contain" ? "contain" : "cover",
+    /* 毕业归因(20260920):隐藏字段 source_path 只信在册路径 slug,非法置 null */
+    sourcePath: normalizePathSlug(String(formData.get("source_path") || "")),
   };
 }
 

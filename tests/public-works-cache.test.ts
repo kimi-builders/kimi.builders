@@ -44,6 +44,7 @@ function work(overrides: Partial<WorkRow> = {}): WorkRow {
     coverFit: "cover",
     coverKey: "",
     aiReply: true,
+    sourcePath: null,
     ...overrides,
   };
 }

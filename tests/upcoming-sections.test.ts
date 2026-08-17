@@ -11,9 +11,11 @@ import { NAV_HIDDEN, UPCOMING } from "../src/lib/upcoming";
 const read = (path: string) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("upcoming flags: blog / learn / demoNight are gated until content is ready", () => {
-  /* 内容就绪后把对应项改 false 并清理分支——见 src/lib/upcoming.ts 注释 */
-  assert.deepEqual(UPCOMING, { blog: true, learn: true, demoNight: true });
+test("upcoming flags: blog open (real assembly); learn re-gated until curated data lands", () => {
+  /* blog 于 20260920 开闸(组装制接真,空态诚实);learn 于 20260921 重新关闸——
+     机制齐但 _data.ts 策展内容仍是占位(假外链/占位 ref),待真实数据再开。
+     demoNight 仍关闸。UPCOMING 分支保留在页面里,随时可重新开/关。 */
+  assert.deepEqual(UPCOMING, { blog: false, learn: true, demoNight: true });
 });
 
 test("nav-hidden flags: demoNight entries are removed, not just badged", () => {

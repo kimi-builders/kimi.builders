@@ -11,6 +11,9 @@ import type {
 export const POSTER_WIDTH = 1080;
 const POSTER_HEIGHT_STEPS = [960, 1080, 1200, 1320, 1440] as const;
 
+/* 月刊分节海报:内容经截取(定夺 ≤3、议题 ≤5、事实 7 项)恒满 1440,同用量海报。 */
+export const LETTER_POSTER_SIZE = { width: POSTER_WIDTH, height: 1440 } as const;
+
 export function snapPosterHeight(estimated: number): number {
   for (const step of POSTER_HEIGHT_STEPS) {
     if (estimated <= step) return step;

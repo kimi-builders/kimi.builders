@@ -1,5 +1,5 @@
 /* 文章引擎(S3-1):一张 articles 表承载两个分区 ——
-   /blog 月刊《给 Kimi 官方的一封信》(kind='letter')与 /learn 策划制学习路径(kind='guide')。
+   /blog 月刊(kind='letter')与 /learn 策划制学习路径(kind='guide')。
    双语版本 = 同 slug 两行不同 locale,(slug, locale) 复合唯一;列表按当前 UI 语言优先,
    缺失时回落另一语言并在卡片标注语言(pickArticleVersions 打 fallback 标)。
    published_at NULL = 草稿(前台不露出);撤稿 = 置回 NULL;软删 deleted_at 风格对齐 posts。
@@ -39,7 +39,8 @@ export function normalizeSortOrder(raw: string): number {
   return Math.min(n, ARTICLE_SORT_MAX);
 }
 
-/* 表单 → 库的输入契约(action 层校验后构造)。 */
+/* 表单 → 库的输入契约(action 层校验后构造)。
+   payload:letter 期次元数据 JSON 文本(src/lib/monthly.ts 校验),NULL=纯自动组装。 */
 export interface ArticleInput {
   slug: string;
   kind: ArticleKind;
@@ -48,9 +49,11 @@ export interface ArticleInput {
   summary: string;
   bodyMd: string;
   sortOrder: number;
+  payload: string | null;
 }
 
-/* 列表条目(月刊卡片 / 编号路径共用);fallback=实际语言≠UI 语言(卡片要标注)。 */
+/* 列表条目(月刊卡片 / 编号路径共用);fallback=实际语言≠UI 语言(卡片要标注)。
+   payloadRaw=articles.payload 原样值(驱动已解析 JSON;月刊组装在 monthly.ts 消费)。 */
 export interface ArticleListItem {
   id: number;
   slug: string;
@@ -61,13 +64,14 @@ export interface ArticleListItem {
   publishedAt: Date;
   sortOrder: number;
   fallback: boolean;
+  payloadRaw: unknown;
 }
 
 export interface ArticleDetail extends ArticleListItem {
   bodyMd: string;
 }
 
-/* 编辑表单初始值(含草稿:不看 published_at)。 */
+/* 编辑表单初始值(含草稿:不看 published_at)。payload=JSON 文本(textarea 直编)。 */
 export interface ArticleForEdit {
   id: number;
   slug: string;
@@ -78,10 +82,11 @@ export interface ArticleForEdit {
   bodyMd: string;
   sortOrder: number;
   publishedAt: Date | null;
+  payload: string;
 }
 
 const LIST_COLS = `a.id, a.slug, a.locale, a.title, a.summary, a.sort_order, a.published_at,
-         u.handle AS author_handle`;
+         a.payload, u.handle AS author_handle`;
 
 /* 列表:两种语言的已发布条目一起取出,语言去重在 JS 侧(pickArticleVersions)。
    letter 按发布时间倒序(新期在前);guide 按策划序号升序(01/02/03 的路径感)。 */
@@ -148,7 +153,7 @@ export function articleForEditQuery(
 ): { sql: string; args: string[] } {
   return {
     sql: `SELECT a.id, a.slug, a.kind, a.locale, a.title, a.summary, a.body_md,
-                 a.sort_order, a.published_at
+                 a.sort_order, a.published_at, a.payload
           FROM articles a
           WHERE a.slug = ? AND a.locale = ? AND a.deleted_at IS NULL
           LIMIT 1`,
@@ -156,16 +161,17 @@ export function articleForEditQuery(
   };
 }
 
-/* 新建:publish=true 立即发布(NOW()),否则存草稿(NULL)。 */
+/* 新建:publish=true 立即发布(NOW()),否则存草稿(NULL)。
+   payload 由 action 层校验过的 JSON 文本(或 NULL)直接落库。 */
 export function insertArticleQuery(
   authorId: number,
   input: ArticleInput,
   publish: boolean,
-): { sql: string; args: (string | number)[] } {
+): { sql: string; args: (string | number | null)[] } {
   return {
     sql: `INSERT INTO articles
-            (slug, kind, locale, title, summary, body_md, author_id, sort_order, published_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, IF(?, NOW(), NULL))`,
+            (slug, kind, locale, title, summary, body_md, payload, author_id, sort_order, published_at)
+          VALUES (?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, ?, IF(?, NOW(), NULL))`,
     args: [
       input.slug,
       input.kind,
@@ -173,6 +179,7 @@ export function insertArticleQuery(
       input.title.slice(0, ARTICLE_TITLE_MAX),
       input.summary.slice(0, ARTICLE_SUMMARY_MAX),
       input.bodyMd,
+      input.payload,
       authorId,
       input.sortOrder,
       publish ? 1 : 0,
@@ -186,11 +193,11 @@ export function updateArticleQuery(
   id: number,
   input: ArticleInput,
   publish: boolean,
-): { sql: string; args: (string | number)[] } {
+): { sql: string; args: (string | number | null)[] } {
   return {
     sql: `UPDATE articles
           SET slug = ?, kind = ?, locale = ?, title = ?, summary = ?,
-              body_md = ?, sort_order = ?,
+              body_md = ?, payload = CAST(? AS JSON), sort_order = ?,
               published_at = IF(?, COALESCE(published_at, NOW()), NULL)
           WHERE id = ? AND deleted_at IS NULL`,
     args: [
@@ -200,6 +207,7 @@ export function updateArticleQuery(
       input.title.slice(0, ARTICLE_TITLE_MAX),
       input.summary.slice(0, ARTICLE_SUMMARY_MAX),
       input.bodyMd,
+      input.payload,
       input.sortOrder,
       publish ? 1 : 0,
       id,
@@ -230,6 +238,7 @@ function mapListRow(r: RowDataPacket): Omit<ArticleListItem, "fallback"> {
     authorHandle: r.author_handle ?? "",
     publishedAt: r.published_at,
     sortOrder: Number(r.sort_order) || 0,
+    payloadRaw: r.payload ?? null,
   };
 }
 
@@ -277,6 +286,13 @@ export async function getArticleForEdit(
     bodyMd: r.body_md ?? "",
     sortOrder: Number(r.sort_order) || 0,
     publishedAt: r.published_at ?? null,
+    /* 编辑态给 JSON 文本(驱动可能已解析为对象);无 payload 给空串 */
+    payload:
+      r.payload === null || r.payload === undefined
+        ? ""
+        : typeof r.payload === "string"
+          ? r.payload
+          : JSON.stringify(r.payload, null, 2),
   };
 }
 
