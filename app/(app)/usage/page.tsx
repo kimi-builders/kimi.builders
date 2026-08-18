@@ -225,7 +225,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const pct = ((cur - prev) / prev) * 100;
   return (
     <span
-      className={`font-mono text-[11px] ${pct >= 0 ? "text-viz-green-soft" : "text-viz-red-soft"}`}
+      className={`font-mono text-[11px] ${pct >= 0 ? "text-viz-positive-text" : "text-viz-negative-text"}`}
       title={title}
     >
       {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}

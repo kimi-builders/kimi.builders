@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FocusEvent, type MouseEvent, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactNode } from "react";
 import { compactNumber } from "@/src/lib/format";
 import type { UsageGranularity, UsageMetric, UsageRangeLabel } from "@/src/lib/usage/filters";
 import {
@@ -121,28 +121,26 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
 }
 
 const TIP_WIDTH = 244;
+const TIP_HEIGHT = 236;
 
 /* 悬浮卡定位:优先放被 hover 柱子的右侧,其次左侧;两侧都放不下(柱宽/容器窄)
    才压到离柱子最远的角落——任何情况下都不盖住鼠标所在的数据位。 */
 function tooltipPos(
   event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>,
   viewport: HTMLDivElement | null,
-): { left: number; top: number } {
-  if (!viewport) return { left: 8, top: 12 };
+  tipWidth = TIP_WIDTH,
+  tipHeight = TIP_HEIGHT,
+): { left: number; top: number; arrowX: number } {
+  if (!viewport) return { left: 8, top: 12, arrowX: tipWidth / 2 };
   const viewportRect = viewport.getBoundingClientRect();
   const targetRect = event.currentTarget.getBoundingClientRect();
-  const barLeft = targetRect.left - viewportRect.left;
-  const barRight = targetRect.right - viewportRect.left;
-  const gap = 12;
-  if (viewportRect.width - barRight >= TIP_WIDTH + gap + 8)
-    return { left: barRight + gap, top: 12 };
-  if (barLeft >= TIP_WIDTH + gap + 8)
-    return { left: barLeft - gap - TIP_WIDTH, top: 12 };
-  const barCenter = (barLeft + barRight) / 2;
-  return {
-    left: barCenter < viewportRect.width / 2 ? viewportRect.width - TIP_WIDTH - 8 : 8,
-    top: 12,
-  };
+  const anchorX = targetRect.left - viewportRect.left + targetRect.width / 2;
+  const maxLeft = Math.max(8, viewportRect.width - tipWidth - 8);
+  const left = Math.min(maxLeft, Math.max(8, anchorX - tipWidth / 2));
+  const targetTop = targetRect.top - viewportRect.top;
+  const top = Math.max(tipHeight + 8 - viewportRect.top, targetTop - 10);
+  const arrowX = Math.min(tipWidth - 16, Math.max(16, anchorX - left));
+  return { left, top, arrowX };
 }
 
 /* 趋势图核心:SVG 总量柱(+可选均线)+ Y 网格线 + HTML 透明热区(保键盘可达)。
@@ -182,10 +180,10 @@ function TrendCore({
   }
 
   const n = trend.length;
-  const padL = 46;
-  const padR = 10;
-  const padT = 12;
-  const padB = 22;
+  const padL = metric === "cost" ? 76 : 64;
+  const padR = 18;
+  const padT = 20;
+  const padB = 26;
   /* slot 宽度按目标总宽自适应:少数几根柱子(如 12 周)更粗,30 天则紧凑。 */
   const slot = Math.max(22, Math.min(64, Math.floor((980 - padL - padR) / Math.max(1, n))));
   const plotW = n * slot;
@@ -218,7 +216,7 @@ function TrendCore({
   const active = hovered ? trend[hovered.index] : null;
 
   return (
-    <div ref={viewportRef} className="relative" onMouseLeave={() => setHovered(null)}>
+    <div ref={viewportRef} className={`relative ${hovered ? "z-30" : ""}`} onMouseLeave={() => setHovered(null)}>
       <div className="overflow-x-auto pb-1">
         {/* 容器窄于 viewBox 时整体等比缩放(width:100% + viewBox);窄于 560px 才横向滚动。 */}
         <div style={{ minWidth: Math.min(560, width) }}>
@@ -373,8 +371,8 @@ function TrendCore({
       {active && hovered && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
-          style={{ left: hovered.left, top: hovered.top }}
+          className="kb-data-tooltip pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+          style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
           <div className="font-mono text-[11px] font-semibold text-paper">
             {tooltipTitle ? tooltipTitle(active) : active.day}
@@ -449,7 +447,7 @@ export function UsageWeeklyTrend({
       <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] text-grey">
         <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0, zh)}</strong></span>
         <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0, zh)}</strong></span>
-        <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-viz-green-soft" : "text-viz-red-soft"}>
+        <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-viz-positive-text" : "text-viz-negative-text"}>
           {percentDelta(current?.totalTokens ?? 0, previous?.totalTokens ?? 0)}
         </span>
       </div>
@@ -503,7 +501,8 @@ export function UsageHeatmapGrid({
   zh: boolean;
   currency: UsageCurrencySpec;
 }) {
-  const [hovered, setHovered] = useState<{ weekday: number; hour: number } | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState<{ weekday: number; hour: number; left: number; top: number; arrowX: number } | null>(null);
   const [mobileHourStart, setMobileHourStart] = useState<0 | 12>(0);
   const grid = heatGridFor(heatmap, metric);
   const max = Math.max(0, ...grid.flat());
@@ -531,7 +530,7 @@ export function UsageHeatmapGrid({
     : null;
 
   return (
-    <div className="relative" onMouseLeave={() => setHovered(null)}>
+    <div ref={viewportRef} className={`relative ${hovered ? "z-30" : ""}`} onMouseLeave={() => setHovered(null)}>
       <div className="mb-3 grid grid-cols-2 rounded-lg border border-line p-0.5 sm:hidden">
         {([0, 12] as const).map((start) => (
           <button
@@ -578,7 +577,7 @@ export function UsageHeatmapGrid({
                         key={hour}
                         type="button"
                         aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${heatMetricText(metric, value, zh, currency)}`}
-                        className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${
+                        className={`aspect-square rounded-[3px] transition-[transform,filter,box-shadow] hover:z-10 hover:scale-110 hover:brightness-105 focus-visible:z-10 focus-visible:scale-110 focus-visible:outline focus-visible:outline-1 focus-visible:outline-blue ${
                           mobileVisible ? "" : "hidden sm:block"
                         } ${stepClass(value)}`}
                         style={
@@ -586,8 +585,8 @@ export function UsageHeatmapGrid({
                             ? { boxShadow: "0 0 0 1.5px var(--color-paper), 0 0 16px color-mix(in srgb, var(--color-viz-blue-electric) 45%, transparent)" }
                             : undefined
                         }
-                        onMouseEnter={() => setHovered({ weekday, hour })}
-                        onFocus={() => setHovered({ weekday, hour })}
+                        onMouseEnter={(event) => setHovered({ weekday, hour, ...tooltipPos(event, viewportRef.current, 252, 230) })}
+                        onFocus={(event) => setHovered({ weekday, hour, ...tooltipPos(event, viewportRef.current, 252, 230) })}
                         onBlur={() => setHovered(null)}
                       />
                     );
@@ -619,9 +618,8 @@ export function UsageHeatmapGrid({
            任何格子都不会被自己的数据卡挡住 */
         <div
           role="tooltip"
-          className={`pointer-events-none absolute top-5 z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl ${
-            hovered.hour >= 12 ? "left-1" : "right-1"
-          }`}
+          className="kb-data-tooltip pointer-events-none absolute z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+          style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
           <div className="font-mono text-[11px] font-semibold text-paper">
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00

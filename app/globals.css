@@ -27,6 +27,8 @@
   --color-viz-purple-soft: #dfc8f5;
   --color-viz-red-soft: #ffd1d4;
   --color-viz-green-soft: #b3f4a8;
+  --color-viz-negative-text: #ffd1d4;
+  --color-viz-positive-text: #b3f4a8;
   --color-viz-yellow-soft: #f4f9a7;
   --color-viz-neutral-strong: #121212;
   --color-viz-neutral-mid: #707070;
@@ -66,6 +68,8 @@
   --color-line: rgb(0 0 0 / 0.13);
   --color-card: rgb(0 0 0 / 0.03);
   --color-viz-surface: #ffffff;
+  --color-viz-negative-text: #a61b32;
+  --color-viz-positive-text: #25613b;
   --color-viz-axis: #707070;
   --color-viz-grid: rgb(112 112 112 / 0.22);
   --color-viz-sequential-1: #e1e3e6;
@@ -155,6 +159,31 @@
 /* poster 气质在亮色海报下的涂层降档(与上方暗色跟进同思路,放最后保优先) */
 :root[data-theme="light"][data-vibe="poster"] [data-theme-scope="poster"] {
   --color-card: rgb(0 0 0 / 0.018);
+}
+
+/* 数据提示卡统一贴近锚点上方。亮色使用 Kimi 式中性深灰浮层，
+   不再让白色卡片与浅色图表背景混在一起。 */
+.kb-data-tooltip {
+  transform: translateY(-100%);
+  transform-origin: bottom center;
+}
+.kb-data-tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: var(--tooltip-arrow-left, 50%);
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-viz-surface);
+}
+:root[data-theme="light"] .kb-data-tooltip {
+  --color-paper: #ffffff;
+  --color-grey: rgb(255 255 255 / 0.72);
+  --color-line: rgb(255 255 255 / 0.18);
+  --color-viz-surface: #4a4a4a;
 }
 
 /* 始终为纵向滚动条预留槽位。内容长短切换时三栏画布宽度不再变化，
