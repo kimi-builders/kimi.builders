@@ -16,6 +16,7 @@ import { headers } from "next/headers";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import CountUpStat from "@/components/CountUpStat";
+import { DataMeta } from "@/components/data-display";
 import UnreadBadge from "@/components/UnreadBadge";
 import { TrackClick } from "@/app/(app)/_components/track";
 import GlobalSearch from "./(app)/_components/GlobalSearch";
@@ -240,9 +241,10 @@ export default async function Home({
                   {s.l}
                 </div>
                 {index === 3 && (
-                  <div className="mt-2 text-[10.5px] text-grey/70">
-                    {locale === "zh" ? "公开成员累计" : "Public member total"}
-                  </div>
+                  <DataMeta
+                    items={[locale === "zh" ? "公开成员累计" : "Public member total"]}
+                    className="mt-2 justify-center"
+                  />
                 )}
               </div>
             ))}

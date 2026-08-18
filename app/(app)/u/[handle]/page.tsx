@@ -15,6 +15,7 @@ import {
   PenLine,
 } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import { InsightHeader, MetricCard } from "@/components/data-display";
 import Avatar from "@/components/Avatar";
 import { TrackClick } from "@/app/(app)/_components/track";
 import { trackEvent } from "@/src/lib/analytics";
@@ -22,6 +23,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { getPool } from "@/src/lib/db";
 import { relTime } from "@/src/lib/format";
+import { formatApproxUsdMicros } from "@/src/lib/data-display";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
@@ -364,7 +366,7 @@ export default async function ProfilePage({
                 </div>
                 <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statTotalSub", {
-                    v: `≈$${Math.round(snapshotAll.costMicros / 1e6).toLocaleString("en-US")}`,
+                    v: formatApproxUsdMicros(snapshotAll.costMicros),
                   })}
                 </div>
               </div>
@@ -642,34 +644,34 @@ export default async function ProfilePage({
                 {snapshot30 && (
                   <div>
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-xl border border-line bg-bg p-3.5">
-                        <div className="text-[11px] text-grey/80">{t(locale, "prof.usage30")}</div>
-                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
-                          {compact(snapshot30.totalTokens)}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-line bg-bg p-3.5">
-                        <div className="text-[11px] text-grey/80">{t(locale, "prof.usageHit")}</div>
-                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
-                          {snapshot30.cacheHitRate === null
-                            ? "—"
-                            : `${(snapshot30.cacheHitRate * 100).toFixed(1)}%`}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-line bg-bg p-3.5">
-                        <div className="text-[11px] text-grey/80">{t(locale, "prof.usageActive")}</div>
-                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
-                          {durationText(snapshot30.activeSeconds, zh)}
-                        </div>
-                      </div>
+                      <MetricCard
+                        label={t(locale, "prof.usage30")}
+                        value={compact(snapshot30.totalTokens)}
+                        accent
+                        meta={[zh ? "近 30 天累计" : "30-day total"]}
+                        className="p-3.5"
+                      />
+                      <MetricCard
+                        label={t(locale, "prof.usageHit")}
+                        value={snapshot30.cacheHitRate === null ? "—" : `${(snapshot30.cacheHitRate * 100).toFixed(1)}%`}
+                        meta={[zh ? "近 30 天输入侧" : "30-day input side"]}
+                        className="p-3.5"
+                      />
+                      <MetricCard
+                        label={t(locale, "prof.usageActive")}
+                        value={durationText(snapshot30.activeSeconds, zh)}
+                        meta={[zh ? "近 30 天累计" : "30-day total"]}
+                        className="p-3.5"
+                      />
                     </div>
                     {/* 近 30 天每日趋势:默认比较总量，构成信息在 Tooltip 中按需查看。 */}
                     <div className="mt-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h4 className="text-[13px] font-semibold text-paper">
-                          {zh ? "近 30 天 Token 趋势" : "30-day token trend"}
-                        </h4>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <InsightHeader
+                        headingLevel="h4"
+                        title={zh ? "近 30 天 Token 趋势" : "30-day token trend"}
+                        meta={[zh ? "与用量中心同步" : "Synced with usage center"]}
+                        actions={
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <span className="flex items-center gap-1.5 text-[11px] text-grey">
                             <i className="h-2 w-2 rounded-[2px] bg-blue" />
                             {zh ? "总 Token" : "Total tokens"}
@@ -679,7 +681,8 @@ export default async function ProfilePage({
                             {zh ? "7 日均值" : "7-day average"}
                           </span>
                         </div>
-                      </div>
+                        }
+                      />
                       <div className="mt-2">
                         <UsageTrendChart
                           trend={trend30}

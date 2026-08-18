@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import { InsightHeader, MetricCard } from "@/components/data-display";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -302,19 +303,15 @@ function HeroCard({
   caption: ReactNode;
 }) {
   return (
-    <article className="usage-hero rounded-2xl border border-line p-5">
-      <div className="flex items-center gap-0.5 text-xs text-grey">
-        <span className="truncate">{label}</span>
-        {help}
-      </div>
-      <div
-        className={`mt-3 font-mono text-[28px] font-semibold leading-none tracking-[-0.5px] ${valueClass ?? "text-paper"}`}
-      >
-        {value}
-      </div>
-      {pill}
-      <p className="mt-3 text-[11px] leading-relaxed text-grey">{caption}</p>
-    </article>
+    <MetricCard
+      className="usage-hero rounded-2xl bg-transparent p-5"
+      label={label}
+      labelAccessory={help}
+      value={value}
+      valueClassName={`!text-[28px] tracking-[-0.5px] ${valueClass ?? "text-paper"}`}
+      status={pill}
+      description={caption}
+    />
   );
 }
 
@@ -1002,16 +999,17 @@ export default async function UsagePage({
 
       {/* 趋势 */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-[13px] font-semibold text-paper">{trendTitle}</h2>
-            <p className="mt-1 text-[11px] text-grey">
+        <InsightHeader
+          title={trendTitle}
+          description={
+            <>
               {zh
                 ? `${gmtLabel(filters.tzOffsetMinutes)} · 30 分钟事实桶聚合`
                 : `${gmtLabel(filters.tzOffsetMinutes)} · 30-minute buckets`}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            </>
+          }
+          actions={
+            <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             {filters.metric === "tokens" && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="flex items-center gap-1.5 text-[11px] text-grey">
@@ -1026,7 +1024,8 @@ export default async function UsagePage({
             </span>
             <SegLinks items={trendSwitch} label={zh ? "趋势指标" : "Trend metric"} />
           </div>
-        </div>
+          }
+        />
         <div className="mt-4">
           <UsageTrendChart
             trend={trend}

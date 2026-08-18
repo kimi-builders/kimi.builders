@@ -7,11 +7,13 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { ShieldCheck, Trophy } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import { InsightHeader } from "@/components/data-display";
 import AutoScrollNav from "@/components/AutoScrollNav";
 import Avatar from "@/components/Avatar";
 import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
 import { trackEvent } from "@/src/lib/analytics";
+import { formatApproxUsdMicros } from "@/src/lib/data-display";
 import {
   SEG_ITEM,
   SEG_ITEM_IDLE,
@@ -54,11 +56,7 @@ function compact(value: number): string {
 
 /* 榜单估费来自自报聚合，默认使用约数，避免用小数位制造不必要的确定感。 */
 function fmtCost(micros: number): string {
-  const value = micros / 1e6;
-  if (value >= 1000) return `≈$${(value / 1000).toFixed(value >= 10000 ? 0 : 2)}k`;
-  if (value >= 100) return `≈$${Math.round(value)}`;
-  if (value >= 10) return `≈$${value.toFixed(1)}`;
-  return `≈$${value >= 0.01 ? value.toFixed(2) : value.toFixed(4)}`;
+  return formatApproxUsdMicros(micros, { compactLarge: true });
 }
 
 type BoardEntry = UsageLeaderboardEntry & { costMicros?: number };
@@ -523,19 +521,18 @@ export default async function UsageLeaderboardPage({
       ) : (
         <section className="mt-4 overflow-hidden rounded-2xl border border-line bg-card">
           <div className="border-b border-line p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold text-paper">{boardHeading}</h2>
-                <p className="mt-1 font-mono text-[11px] tracking-[0.08em] text-grey">
-                  {periodLabel} · {locale === "zh" ? `${activeEntries.length} 份公开样本` : `${activeEntries.length} public samples`}
-                </p>
-              </div>
-              <ShareButton
+            <InsightHeader
+              title={boardHeading}
+              meta={[
+                periodLabel,
+                locale === "zh" ? `${activeEntries.length} 份公开样本` : `${activeEntries.length} public samples`,
+              ]}
+              actions={<ShareButton
                 path={boardSharePath}
                 title={shareTitle(boardLabel, activeDetail)}
                 locale={locale}
-              />
-            </div>
+              />}
+            />
             <nav
               aria-label={t(locale, "lb.title")}
               className={`${SEG_WRAP} mt-4 max-sm:flex max-sm:w-full`}

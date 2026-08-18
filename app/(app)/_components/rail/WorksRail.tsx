@@ -5,7 +5,7 @@ import { ArrowBigUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
-import { compactNumber } from "@/src/lib/format";
+import { formatReportedCompact } from "@/src/lib/data-display";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getPublicWorksRail } from "@/src/lib/public-rails-cache";
 import { workKind, workKindLabel } from "@/src/lib/work-kinds";
@@ -37,12 +37,11 @@ export default async function WorksRail({
             { n: stats.works, l: t(locale, "works.statWorks") },
             { n: stats.authors, l: t(locale, "works.statAuthors") },
             {
-              n:
-                stats.claimedSum > 0
-                  ? compactNumber(stats.claimedSum, locale)
-                  : locale === "zh"
-                    ? "未申报"
-                    : "Not reported",
+              n: formatReportedCompact(
+                stats.claimedSum,
+                locale,
+                locale === "zh" ? "未申报" : "Not reported",
+              ),
               l: t(locale, "works.statClaimed"),
             },
             { n: stats.weeklyNew, l: t(locale, "works.statWeeklyNew") },
