@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import { InsightHeader, MetricCard } from "@/components/data-display";
+import UsageInsightPanel from "@/components/UsageInsightPanel";
 import Avatar from "@/components/Avatar";
 import { TrackClick } from "@/app/(app)/_components/track";
 import { trackEvent } from "@/src/lib/analytics";
@@ -24,6 +25,7 @@ import { categoryLabel } from "@/src/lib/categories";
 import { getPool } from "@/src/lib/db";
 import { relTime } from "@/src/lib/format";
 import { formatApproxUsdMicros } from "@/src/lib/data-display";
+import { buildUsageInsights } from "@/src/lib/usage/insights";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
@@ -664,6 +666,16 @@ export default async function ProfilePage({
                         className="p-3.5"
                       />
                     </div>
+                    <UsageInsightPanel
+                      className="mt-4"
+                      insights={buildUsageInsights({
+                        trend: trend30,
+                        currentTokens: snapshot30.totalTokens,
+                        cacheHitRate: snapshot30.cacheHitRate,
+                        zh,
+                      })}
+                      zh={zh}
+                    />
                     {/* 近 30 天每日趋势:默认比较总量，构成信息在 Tooltip 中按需查看。 */}
                     <div className="mt-4">
                       <InsightHeader

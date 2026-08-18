@@ -82,6 +82,39 @@ export interface UsageDistribution {
   totalCostMicros: number;
 }
 
+export interface UsageAttributionContributor {
+  key: string;
+  label: string;
+  tokens: number;
+  /* 在该维度已归因 Token 中的占比。 */
+  share: number;
+}
+
+export interface UsageAttributionDimension {
+  rows: UsageAttributionContributor[];
+  attributedTokens: number;
+  /* 该维度已归因 Token ÷ 当前切片全部 Token。 */
+  coverage: number;
+}
+
+export interface UsageAttributionSlice {
+  totalTokens: number;
+  agent: UsageAttributionDimension;
+  model: UsageAttributionDimension;
+  project: UsageAttributionDimension;
+  exactMeasurementCoverage: number;
+}
+
+export interface UsageAttributionPeak extends UsageAttributionSlice {
+  /* 与趋势粒度一致的峰值键（日、小时或自然周）；无用量时为 null。 */
+  key: string | null;
+}
+
+export interface UsageAttribution {
+  period: UsageAttributionSlice;
+  peak: UsageAttributionPeak;
+}
+
 export interface UsageRecordRow extends UsageTokenBreakdown {
   day: string;
   /* grain=bucket 时为桶起点（UTC ISO），day 粒度为 null。 */
@@ -143,6 +176,7 @@ export interface UsageOverview {
     project: UsageDistribution;
     device: UsageDistribution;
   };
+  attribution: UsageAttribution;
   records: {
     rows: UsageRecordRow[];
     total: number;

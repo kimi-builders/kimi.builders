@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import { InsightHeader, MetricCard } from "@/components/data-display";
+import UsageInsightPanel from "@/components/UsageInsightPanel";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -33,6 +34,7 @@ import {
   weekWindowFor,
 } from "@/src/lib/usage/week";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
+import { buildUsageInsights } from "@/src/lib/usage/insights";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
   USAGE_STALE_AFTER_HOURS,
@@ -996,6 +998,20 @@ export default async function UsagePage({
             : "Session metrics are not split by model or effort"}
         </p>
       )}
+
+      <UsageInsightPanel
+        className="mt-4"
+        insights={buildUsageInsights({
+          trend,
+          currentTokens: totals.totalTokens,
+          previousTokens: previous.totalTokens,
+          cacheHitRate: hitRate,
+          attribution: overview.attribution,
+          sourceLabel: usageSourceLabel,
+          zh,
+        })}
+        zh={zh}
+      />
 
       {/* 趋势 */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">

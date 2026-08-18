@@ -53,6 +53,11 @@ import {
 } from "./session-aggregate";
 
 export type {
+  UsageAttribution,
+  UsageAttributionContributor,
+  UsageAttributionDimension,
+  UsageAttributionPeak,
+  UsageAttributionSlice,
   UsageDistribution,
   UsageDistributionRow,
   UsageFilterOptions,
@@ -497,12 +502,13 @@ export async function getUsageOverview(
       .query<RowDataPacket[]>(
         `SELECT device_id, ${projectColumn} AS project_label,
                 source, model, model_canonical, model_provider,
-                context_tier, processing_tier,
+                context_tier, processing_tier, measurement,
                 bucket_start AS sample_at, ${TOKEN_SUMS}
          FROM usage_buckets
          WHERE ${bucketEnvelope.where}
          GROUP BY bucket_start, device_id, ${projectGroup}source, model,
-                  model_canonical, model_provider, context_tier, processing_tier`,
+                  model_canonical, model_provider, context_tier, processing_tier,
+                  measurement`,
         bucketEnvelope.params,
       )
       .then(([rows]) => rows),
@@ -1065,6 +1071,106 @@ export async function getUsageOverview(
     },
   );
 
+  // —— 联合归因：直接复用当前完整事实行集，不能由独立分布或分页明细反推。 ——
+  const buildAttributionSlice = (
+    rows: RowDataPacket[],
+  ): UsageOverview["attribution"]["period"] => {
+    const totalTokens = rows.reduce((sum, row) => sum + totalOf(tokensOf(row)), 0);
+    const buildDimension = (
+      keyOf: (row: RowDataPacket) => string | null,
+      labelOf: (row: RowDataPacket, key: string) => string,
+    ): UsageOverview["attribution"]["period"]["agent"] => {
+      const grouped = new Map<string, { label: string; tokens: number }>();
+      let attributedTokens = 0;
+      for (const row of rows) {
+        const key = keyOf(row);
+        if (!key) continue;
+        const tokens = totalOf(tokensOf(row));
+        attributedTokens += tokens;
+        const current = grouped.get(key);
+        if (current) {
+          current.tokens += tokens;
+        } else {
+          grouped.set(key, { label: labelOf(row, key), tokens });
+        }
+      }
+      const sorted = [...grouped.entries()]
+        .map(([key, value]) => ({ key, ...value }))
+        .sort((a, b) => b.tokens - a.tokens || a.key.localeCompare(b.key));
+      const visible = sorted.slice(0, 5);
+      const remainder = sorted.slice(5);
+      if (remainder.length > 0) {
+        visible.push({
+          key: "__other__",
+          label: "Other",
+          tokens: remainder.reduce((sum, row) => sum + row.tokens, 0),
+        });
+      }
+      return {
+        rows: visible.map((row) => ({
+          ...row,
+          share: attributedTokens > 0 ? row.tokens / attributedTokens : 0,
+        })),
+        attributedTokens,
+        coverage: totalTokens > 0 ? attributedTokens / totalTokens : 0,
+      };
+    };
+
+    const exactTokens = rows.reduce(
+      (sum, row) =>
+        String(row.measurement) === "exact"
+          ? sum + totalOf(tokensOf(row))
+          : sum,
+      0,
+    );
+    return {
+      totalTokens,
+      agent: buildDimension(
+        (row) => String(row.source ?? "").trim() || null,
+        (_row, key) => key,
+      ),
+      model: buildDimension(
+        (row) => {
+          const model = canonicalModelOf(row);
+          return model && model !== LEGACY_MODEL ? model : null;
+        },
+        (row, key) =>
+          usageModelDisplayName({
+            source: row.source,
+            model: row.model,
+            modelCanonical: key,
+            modelProvider: row.model_provider,
+          }),
+      ),
+      project: buildDimension(
+        (row) =>
+          filters.projectsEnabled
+            ? String(row.project_label ?? "").trim() || null
+            : null,
+        (_row, key) => key,
+      ),
+      exactMeasurementCoverage:
+        totalTokens > 0 ? exactTokens / totalTokens : 0,
+    };
+  };
+  const peakTrend = trend.reduce<UsageTrendDay | null>(
+    (best, item) => (!best || item.totalTokens > best.totalTokens ? item : best),
+    null,
+  );
+  const peakKey = peakTrend?.totalTokens ? peakTrend.day : null;
+  const peakRows = peakKey
+    ? bucketRows.filter(
+        (row) => trendKeyFromInstant(row.sample_at, filters) === peakKey,
+      )
+    : [];
+  const attribution: UsageOverview["attribution"] = {
+    period: buildAttributionSlice(bucketRows),
+    peak: {
+      ...buildAttributionSlice(peakRows),
+      key: peakKey,
+    },
+  };
+
   // —— 明细 ——
   const records = mapRecordRows(recordRows, prices);
 
@@ -1097,6 +1203,7 @@ export async function getUsageOverview(
     weekHeatmap,
     firstDataAt,
     distributions,
+    attribution,
     records: {
       rows: records,
       total: recordsTotal,
