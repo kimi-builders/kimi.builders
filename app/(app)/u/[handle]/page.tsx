@@ -15,7 +15,7 @@ import {
   PenLine,
 } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
-import { InsightHeader, MetricCard } from "@/components/data-display";
+import { ChartHeader, MetricCard } from "@/components/data-display";
 import UsageInsightPanel from "@/components/UsageInsightPanel";
 import Avatar from "@/components/Avatar";
 import { TrackClick } from "@/app/(app)/_components/track";
@@ -678,14 +678,15 @@ export default async function ProfilePage({
                     />
                     {/* 近 30 天每日趋势:默认比较总量，构成信息在 Tooltip 中按需查看。 */}
                     <div className="mt-4">
-                      <InsightHeader
+                      <ChartHeader
                         headingLevel="h4"
                         title={zh ? "近 30 天 Token 趋势" : "30-day token trend"}
-                        meta={[zh ? "与用量中心同步" : "Synced with usage center"]}
+                        source={zh ? "来源：公开聚合快照" : "Source: public aggregate snapshot"}
+                        meta={[zh ? "与用量中心同口径" : "Same basis as usage center"]}
                         actions={
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <span className="flex items-center gap-1.5 text-[11px] text-grey">
-                            <i className="h-2 w-2 rounded-[2px] bg-blue" />
+                            <i className="h-2 w-2 rounded-[2px] bg-viz-blue-primary" />
                             {zh ? "总 Token" : "Total tokens"}
                           </span>
                           <span className="flex items-center gap-1.5 text-[11px] text-grey">
@@ -748,19 +749,17 @@ export default async function ProfilePage({
                       <li key={tool.id} className="border-b border-line py-3 last:border-b-0">
                         <div className="flex items-center gap-3">
                           <span className="flex min-w-0 items-center gap-2 text-xs text-paper">
-                            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-line bg-paper/[0.04]">
-                              <AgentIcon id={tool.id} size={12} />
-                            </span>
+                            <AgentIcon id={tool.id} context="chart" />
                             <span className="truncate">{tool.label}</span>
                           </span>
                           <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
                             {compact(tool.tokens)} · {Math.round(pct)}%
                           </span>
                         </div>
-                        <div className="mt-1.5 h-1.5 rounded-full bg-paper/[0.06]">
+                        <div className="mt-1.5 h-1.5 bg-viz-grid">
                           <div
-                            className={`h-full rounded-full ${
-                              index === 0 ? "bg-gradient-to-r from-blue to-blue/40" : "bg-blue/70"
+                            className={`h-full rounded-[2px] ${
+                              index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"
                             }`}
                             style={{ width: `${Math.max((tool.tokens / topTokens) * 100, 2)}%` }}
                           />

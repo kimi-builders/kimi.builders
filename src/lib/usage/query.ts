@@ -56,6 +56,8 @@ export type {
   UsageAttribution,
   UsageAttributionContributor,
   UsageAttributionDimension,
+  UsageAttributionPair,
+  UsageAttributionPairGroup,
   UsageAttributionPeak,
   UsageAttributionSlice,
   UsageDistribution,
@@ -1116,6 +1118,74 @@ export async function getUsageOverview(
       };
     };
 
+    const agentKey = (row: RowDataPacket): string | null =>
+      String(row.source ?? "").trim() || null;
+    const agentLabel = (_row: RowDataPacket, key: string): string => key;
+    const modelKey = (row: RowDataPacket): string | null => {
+      const model = canonicalModelOf(row);
+      return model && model !== LEGACY_MODEL ? model : null;
+    };
+    const modelLabel = (row: RowDataPacket, key: string): string =>
+      usageModelDisplayName({
+        source: row.source,
+        model: row.model,
+        modelCanonical: key,
+        modelProvider: row.model_provider,
+      });
+    const projectKey = (row: RowDataPacket): string | null =>
+      filters.projectsEnabled
+        ? String(row.project_label ?? "").trim() || null
+        : null;
+    const projectLabel = (_row: RowDataPacket, key: string): string => key;
+    const buildPair = (
+      primaryKeyOf: (row: RowDataPacket) => string | null,
+      primaryLabelOf: (row: RowDataPacket, key: string) => string,
+      secondaryKeyOf: (row: RowDataPacket) => string | null,
+      secondaryLabelOf: (row: RowDataPacket, key: string) => string,
+    ): UsageOverview["attribution"]["period"]["pairs"]["agentModel"] => {
+      const grouped = new Map<
+        string,
+        Omit<UsageOverview["attribution"]["period"]["pairs"]["agentModel"]["rows"][number], "share">
+      >();
+      let attributedTokens = 0;
+      for (const row of rows) {
+        const primaryKey = primaryKeyOf(row);
+        const secondaryKey = secondaryKeyOf(row);
+        if (!primaryKey || !secondaryKey) continue;
+        const tokens = totalOf(tokensOf(row));
+        attributedTokens += tokens;
+        const key = `${primaryKey}\u0000${secondaryKey}`;
+        const current = grouped.get(key);
+        if (current) {
+          current.tokens += tokens;
+        } else {
+          grouped.set(key, {
+            primaryKey,
+            primaryLabel: primaryLabelOf(row, primaryKey),
+            secondaryKey,
+            secondaryLabel: secondaryLabelOf(row, secondaryKey),
+            tokens,
+          });
+        }
+      }
+      return {
+        rows: [...grouped.values()]
+          .sort(
+            (a, b) =>
+              b.tokens - a.tokens ||
+              a.primaryKey.localeCompare(b.primaryKey) ||
+              a.secondaryKey.localeCompare(b.secondaryKey),
+          )
+          .slice(0, 5)
+          .map((row) => ({
+            ...row,
+            share: attributedTokens > 0 ? row.tokens / attributedTokens : 0,
+          })),
+        attributedTokens,
+        coverage: totalTokens > 0 ? attributedTokens / totalTokens : 0,
+      };
+    };
+
     const exactTokens = rows.reduce(
       (sum, row) =>
         String(row.measurement) === "exact"
@@ -1125,30 +1195,14 @@ export async function getUsageOverview(
     );
     return {
       totalTokens,
-      agent: buildDimension(
-        (row) => String(row.source ?? "").trim() || null,
-        (_row, key) => key,
-      ),
-      model: buildDimension(
-        (row) => {
-          const model = canonicalModelOf(row);
-          return model && model !== LEGACY_MODEL ? model : null;
-        },
-        (row, key) =>
-          usageModelDisplayName({
-            source: row.source,
-            model: row.model,
-            modelCanonical: key,
-            modelProvider: row.model_provider,
-          }),
-      ),
-      project: buildDimension(
-        (row) =>
-          filters.projectsEnabled
-            ? String(row.project_label ?? "").trim() || null
-            : null,
-        (_row, key) => key,
-      ),
+      agent: buildDimension(agentKey, agentLabel),
+      model: buildDimension(modelKey, modelLabel),
+      project: buildDimension(projectKey, projectLabel),
+      pairs: {
+        agentModel: buildPair(agentKey, agentLabel, modelKey, modelLabel),
+        agentProject: buildPair(agentKey, agentLabel, projectKey, projectLabel),
+        modelProject: buildPair(modelKey, modelLabel, projectKey, projectLabel),
+      },
       exactMeasurementCoverage:
         totalTokens > 0 ? exactTokens / totalTokens : 0,
     };

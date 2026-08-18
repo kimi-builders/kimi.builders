@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Hexagon } from "lucide-react";
 
 export function DataMeta({
   items,
@@ -88,7 +89,86 @@ export function InsightHeader({
         {description ? <p className="mt-1 text-[11px] leading-relaxed text-grey">{description}</p> : null}
         <DataMeta items={meta} className="mt-1" />
       </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
+      {actions ? <div className="w-full min-w-0 sm:w-auto sm:shrink-0">{actions}</div> : null}
     </div>
+  );
+}
+
+export function ChartHeader({
+  title,
+  description,
+  source,
+  meta = [],
+  actions,
+  headingLevel = "h2",
+  className = "",
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  source?: ReactNode;
+  meta?: Array<ReactNode | null | false | undefined>;
+  actions?: ReactNode;
+  headingLevel?: "h2" | "h3" | "h4";
+  className?: string;
+}) {
+  return (
+    <InsightHeader
+      title={title}
+      description={description}
+      meta={[source, ...meta]}
+      actions={actions}
+      headingLevel={headingLevel}
+      className={`border-b border-dashed border-viz-grid pb-3 ${className}`}
+    />
+  );
+}
+
+export function ChartLegend({
+  items,
+  className = "",
+}: {
+  items: Array<{ label: ReactNode; color: string; icon?: ReactNode }>;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${className}`}>
+      {items.map((item, index) => (
+        <span key={index} className="inline-flex items-center gap-1.5 text-[11px] text-grey">
+          {item.icon ?? (
+            <Hexagon
+              size={10}
+              strokeWidth={1.5}
+              fill="currentColor"
+              aria-hidden="true"
+              style={{ color: item.color }}
+            />
+          )}
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function CoverageBadge({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  tone?: "good" | "attention" | "neutral";
+}) {
+  const toneClass =
+    tone === "good"
+      ? "border-viz-green-soft/45 bg-viz-green-soft/10"
+      : tone === "attention"
+        ? "border-viz-yellow-soft/45 bg-viz-yellow-soft/10"
+        : "border-line bg-paper/[0.025]";
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[10.5px] text-paper ${toneClass}`}>
+      <span className="text-grey">{label}</span>
+      <strong className="font-semibold">{value}</strong>
+    </span>
   );
 }

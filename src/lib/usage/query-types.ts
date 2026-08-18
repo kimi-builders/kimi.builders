@@ -97,11 +97,32 @@ export interface UsageAttributionDimension {
   coverage: number;
 }
 
+export interface UsageAttributionPair {
+  primaryKey: string;
+  primaryLabel: string;
+  secondaryKey: string;
+  secondaryLabel: string;
+  tokens: number;
+  /* 在该组合维度已归因 Token 中的占比。 */
+  share: number;
+}
+
+export interface UsageAttributionPairGroup {
+  rows: UsageAttributionPair[];
+  attributedTokens: number;
+  coverage: number;
+}
+
 export interface UsageAttributionSlice {
   totalTokens: number;
   agent: UsageAttributionDimension;
   model: UsageAttributionDimension;
   project: UsageAttributionDimension;
+  pairs: {
+    agentModel: UsageAttributionPairGroup;
+    agentProject: UsageAttributionPairGroup;
+    modelProject: UsageAttributionPairGroup;
+  };
   exactMeasurementCoverage: number;
 }
 

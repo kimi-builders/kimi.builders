@@ -50,12 +50,36 @@ const ICONS = {
 
 export default function AgentIcon({
   id,
-  size = 14,
+  size,
+  context = "inline",
+  className = "",
 }: {
   id: string;
   size?: number;
+  context?: "inline" | "chart" | "badge";
+  className?: string;
 }) {
   const Icon = ICONS[id as keyof typeof ICONS];
   if (!Icon) return null;
-  return <Icon size={size} />;
+  const opticalSize = size ?? (context === "inline" ? 14 : 12);
+  const glyph = <Icon size={opticalSize} />;
+  if (context === "inline") return glyph;
+
+  const kimiFamily = id === "kimi" || id === "kimi-agent" || id === "kimi-code";
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-grid shrink-0 place-items-center align-middle ${
+        context === "badge" ? "size-5" : "size-4"
+      } ${
+        kimiFamily
+          ? "rounded-[4px] border border-viz-neutral-mid/55 bg-viz-neutral-strong text-white"
+          : context === "badge"
+            ? "rounded-[4px] border border-line bg-paper/[0.04] text-paper"
+            : "text-paper"
+      } ${className}`}
+    >
+      {glyph}
+    </span>
+  );
 }

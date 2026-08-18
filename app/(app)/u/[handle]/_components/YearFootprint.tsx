@@ -22,7 +22,14 @@ const MONTH_SHORT_EN = [
 ];
 
 /* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值。 */
-const STEPS = ["bg-blue/15", "bg-blue/30", "bg-blue/45", "bg-blue/60", "bg-blue/80", "bg-blue"];
+const STEPS = [
+  "bg-viz-sequential-1",
+  "bg-viz-sequential-2",
+  "bg-viz-sequential-3",
+  "bg-viz-sequential-4",
+  "bg-viz-sequential-5",
+  "bg-viz-blue-primary",
+];
 
 /* 与用量中心同一套紧凑格式(compactNumber:zh 万/亿,en K/M/B,两页读法一致)。 */
 function compact(value: number, zh: boolean): string {

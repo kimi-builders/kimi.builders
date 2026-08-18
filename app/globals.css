@@ -9,12 +9,38 @@
   --color-bg: #121212;
   --color-moon: #1f1f1f;
   --color-paper: rgb(255 255 255 / 0.84);
-  --color-blue: #1a88ff;
+  --color-blue: #007cff;
+  --color-blue-text: #a0daf7;
   /* grey 0.56→0.62(20260815 评审):10-11px 小字在 #121212 上约 4.5:1 踩 WCAG AA 线,
      提到 0.62 ≈ 6.4:1,小字号场景留出安全余量;层级观感几乎不变。 */
   --color-grey: rgb(255 255 255 / 0.62);
   --color-line: rgb(255 255 255 / 0.12);
   --color-card: rgb(255 255 255 / 0.05);
+
+  /* Kimi 数据可视化语义色。品牌色、图表色和状态色分层，
+     组件不得再通过单一 blue 的透明度临时拼出色阶。 */
+  --color-viz-blue-deep: #002f5b;
+  --color-viz-blue-primary: #007cff;
+  --color-viz-blue-bright: #00a1ff;
+  --color-viz-blue-soft: #a0daf7;
+  --color-viz-blue-electric: #00f6ff;
+  --color-viz-purple-soft: #dfc8f5;
+  --color-viz-red-soft: #ffd1d4;
+  --color-viz-green-soft: #b3f4a8;
+  --color-viz-yellow-soft: #f4f9a7;
+  --color-viz-neutral-strong: #121212;
+  --color-viz-neutral-mid: #707070;
+  --color-viz-neutral-muted: #8d9390;
+  --color-viz-neutral-soft: #c3c3c3;
+  --color-viz-neutral-faint: #e1e3e6;
+  --color-viz-surface: #181818;
+  --color-viz-axis: #c3c3c3;
+  --color-viz-grid: rgb(195 195 195 / 0.18);
+  --color-viz-sequential-1: #002f5b;
+  --color-viz-sequential-2: #007cff;
+  --color-viz-sequential-3: #00a1ff;
+  --color-viz-sequential-4: #a0daf7;
+  --color-viz-sequential-5: #00f6ff;
 
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
@@ -34,10 +60,19 @@
   --color-bg: #fbfaf9;
   --color-moon: #f5f5f5;
   --color-paper: rgb(0 0 0 / 0.9);
-  --color-blue: #1783ff;
+  --color-blue: #007cff;
+  --color-blue-text: #002f5b;
   --color-grey: rgb(0 0 0 / 0.62);
   --color-line: rgb(0 0 0 / 0.13);
   --color-card: rgb(0 0 0 / 0.03);
+  --color-viz-surface: #ffffff;
+  --color-viz-axis: #707070;
+  --color-viz-grid: rgb(112 112 112 / 0.22);
+  --color-viz-sequential-1: #e1e3e6;
+  --color-viz-sequential-2: #a0daf7;
+  --color-viz-sequential-3: #00a1ff;
+  --color-viz-sequential-4: #007cff;
+  --color-viz-sequential-5: #002f5b;
 }
 
 /* ---- 视觉气质(20260815 拍板):工程棱角 poster(默认) / 圆润经典 soft ----
@@ -97,7 +132,7 @@
   --color-bg: #0e0e13;
   --color-moon: #1b1b25;
   --color-paper: #efe8dc;
-  --color-blue: #1783ff;
+  --color-blue: #007cff;
   --color-grey: #9a9aa5;
   --color-line: rgb(239 232 220 / 0.14);
   --color-card: rgb(255 255 255 / 0.015);
@@ -112,7 +147,7 @@
   --color-bg: #f6f2ea;
   --color-moon: #ece6d9;
   --color-paper: #2b2620;
-  --color-blue: #1783ff;
+  --color-blue: #007cff;
   --color-grey: #6f6a5f;
   --color-line: rgb(43 38 32 / 0.14);
   --color-card: rgb(0 0 0 / 0.022);

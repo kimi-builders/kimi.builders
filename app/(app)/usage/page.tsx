@@ -4,8 +4,9 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
-import { InsightHeader, MetricCard } from "@/components/data-display";
+import { ChartHeader, InsightHeader, MetricCard } from "@/components/data-display";
 import UsageInsightPanel from "@/components/UsageInsightPanel";
+import UsageAttributionSummary from "@/components/UsageAttributionSummary";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -224,7 +225,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const pct = ((cur - prev) / prev) * 100;
   return (
     <span
-      className={`font-mono text-[11px] ${pct >= 0 ? "text-emerald-400" : "text-red-400"}`}
+      className={`font-mono text-[11px] ${pct >= 0 ? "text-viz-green-soft" : "text-viz-red-soft"}`}
       title={title}
     >
       {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
@@ -252,10 +253,10 @@ function DeltaPill({ cur, prev, zh }: { cur: number; prev: number; zh: boolean }
 function HitRatePill({ rate, zh }: { rate: number; zh: boolean }) {
   const tone =
     rate >= 0.85
-      ? { text: zh ? "● 良好" : "● Good", cls: "bg-emerald-400/10 text-emerald-400" }
+      ? { text: zh ? "● 良好" : "● Good", cls: "bg-viz-green-soft/10 text-paper" }
       : rate >= 0.6
-        ? { text: zh ? "● 一般" : "● Fair", cls: "bg-amber-400/10 text-amber-400" }
-        : { text: zh ? "● 偏低" : "● Low", cls: "bg-red-400/10 text-red-400" };
+        ? { text: zh ? "● 一般" : "● Fair", cls: "bg-viz-yellow-soft/10 text-paper" }
+        : { text: zh ? "● 偏低" : "● Low", cls: "bg-viz-red-soft/10 text-paper" };
   return (
     <span className={`absolute right-4 top-4 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${tone.cls}`}>
       {tone.text}
@@ -374,11 +375,7 @@ function DistributionCard({
               <li key={row.key === "" ? "__empty__" : row.key} className="py-2">
                 <div className="flex items-center gap-3">
                   <span className="flex min-w-0 items-center gap-2 text-xs text-paper">
-                    {iconOf && (
-                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-line bg-paper/[0.04]">
-                        {iconOf(row)}
-                      </span>
-                    )}
+                    {iconOf?.(row)}
                     <span className="truncate" title={label}>
                       {label}
                     </span>
@@ -394,10 +391,10 @@ function DistributionCard({
                     )}
                   </span>
                 </div>
-                <div className="mt-1.5 h-1.5 rounded-full bg-paper/[0.06]">
+                <div className="mt-1.5 h-1.5 bg-viz-grid">
                   <div
-                    className={`h-full rounded-full ${
-                      index === 0 ? "bg-gradient-to-r from-blue to-blue/40" : "bg-blue/70"
+                    className={`h-full rounded-[2px] ${
+                      index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"
                     }`}
                     style={{ width: `${Math.max(pct, 1.5)}%` }}
                   />
@@ -1013,9 +1010,17 @@ export default async function UsagePage({
         zh={zh}
       />
 
+      <UsageAttributionSummary
+        attribution={overview.attribution}
+        totals={totals}
+        currency={currency}
+        sourceLabel={usageSourceLabel}
+        zh={zh}
+      />
+
       {/* 趋势 */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
-        <InsightHeader
+        <ChartHeader
           title={trendTitle}
           description={
             <>
@@ -1024,12 +1029,18 @@ export default async function UsagePage({
                 : `${gmtLabel(filters.tzOffsetMinutes)} · 30-minute buckets`}
             </>
           }
+          source={zh ? "来源：设备同步事实桶" : "Source: device-synced fact buckets"}
+          meta={[
+            zh
+              ? `生成于 ${new Date(overview.meta.generatedAt).toLocaleString("zh-CN")}`
+              : `Generated ${new Date(overview.meta.generatedAt).toLocaleString("en-US")}`,
+          ]}
           actions={
             <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             {filters.metric === "tokens" && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="flex items-center gap-1.5 text-[11px] text-grey">
-                  <i className="h-2 w-2 rounded-[2px] bg-blue" />
+                  <i className="h-2 w-2 rounded-[2px] bg-viz-blue-primary" />
                   {zh ? "总 Token" : "Total tokens"}
                 </span>
               </div>
@@ -1161,7 +1172,7 @@ export default async function UsagePage({
                   </div>
                   <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-blue to-blue/40"
+                      className="h-full rounded-[2px] bg-viz-blue-primary"
                       style={{ width: `${Math.max((slot.value / topSlots[0].value) * 100, 2)}%` }}
                     />
                   </div>
@@ -1191,7 +1202,7 @@ export default async function UsagePage({
           ccy={ccy}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : usageSourceLabel(row.key))}
           iconOf={(row) =>
-            row.key === "__other__" ? null : <AgentIcon id={row.key} size={12} />
+            row.key === "__other__" ? null : <AgentIcon id={row.key} context="chart" />
           }
         />
         <DistributionCard

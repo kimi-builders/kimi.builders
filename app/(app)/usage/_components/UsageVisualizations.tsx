@@ -19,8 +19,8 @@ const WEEKDAY_SHORT_EN = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 /* 趋势图默认只强调总量。输入、缓存、输出与推理构成保留在 Tooltip，
    避免高缓存占比长期用绿色淹没真正需要比较的 Token 总量。 */
-const FILL_COST = "var(--color-blue)";
-const FILL_DURATION = "color-mix(in srgb, var(--color-blue) 70%, transparent)";
+const FILL_COST = "var(--color-viz-blue-primary)";
+const FILL_DURATION = "var(--color-viz-blue-soft)";
 
 function compact(value: number, zh: boolean): string {
   return compactNumber(value, zh ? "zh" : "en");
@@ -99,11 +99,11 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
     {
       label: zh ? "输入(含缓存写)" : "Input (incl. cache write)",
       value: item.inputTokens + item.cacheWriteInputTokens,
-      color: "bg-blue",
+      color: "bg-viz-blue-primary",
     },
-    { label: zh ? "缓存读" : "Cache read", value: item.cacheReadInputTokens, color: "bg-emerald-400/80" },
-    { label: zh ? "输出" : "Output", value: item.outputTokens, color: "bg-paper/75" },
-    { label: zh ? "推理" : "Reasoning", value: item.reasoningOutputTokens, color: "bg-amber-400" },
+    { label: zh ? "缓存读" : "Cache read", value: item.cacheReadInputTokens, color: "bg-viz-blue-bright" },
+    { label: zh ? "输出" : "Output", value: item.outputTokens, color: "bg-viz-blue-soft" },
+    { label: zh ? "推理" : "Reasoning", value: item.reasoningOutputTokens, color: "bg-viz-purple-soft" },
   ];
   return (
     <dl className="mt-2 space-y-1 font-mono text-[11px]">
@@ -236,14 +236,15 @@ function TrendCore({
                     y1={y(tick)}
                     x2={width - padR}
                     y2={y(tick)}
-                    style={{ stroke: "var(--color-line)" }}
+                    style={{ stroke: "var(--color-viz-grid)" }}
+                    strokeDasharray={tick === 0 ? undefined : "2 4"}
                     strokeWidth={tick === 0 ? 1.2 : 1}
                   />
                   <text
                     x={padL - 8}
                     y={y(tick) + 3.5}
                     textAnchor="end"
-                    style={{ fill: "var(--color-grey)", font: `10px ${monoFont}` }}
+                    style={{ fill: "var(--color-viz-axis)", font: `10px ${monoFont}` }}
                   >
                     {axisTickText(metric, tick, zh, currency)}
                   </text>
@@ -255,7 +256,7 @@ function TrendCore({
                   y={padT}
                   width={slot}
                   height={plotHeight}
-                  style={{ fill: "color-mix(in srgb, var(--color-paper) 6%, transparent)" }}
+                  style={{ fill: "color-mix(in srgb, var(--color-viz-blue-soft) 8%, transparent)" }}
                 />
               )}
               {trend.map((item, index) => {
@@ -271,7 +272,7 @@ function TrendCore({
                       width={barW}
                       height={h}
                       rx={1}
-                      style={{ fill: value <= 0 ? "var(--color-card)" : "var(--color-blue)" }}
+                      style={{ fill: value <= 0 ? "var(--color-viz-grid)" : "var(--color-viz-blue-primary)" }}
                     />
                   );
                 }
@@ -296,13 +297,26 @@ function TrendCore({
                   />
                 );
               })}
+              {trend.map((item, index) =>
+                metricValue(item, metric) === max && max > 0 ? (
+                  <text
+                    key={`peak-${item.day}`}
+                    x={padL + index * slot + slot / 2}
+                    y={Math.max(10, y(max) - 5)}
+                    textAnchor="middle"
+                    style={{ fill: "var(--color-paper)", font: `600 10px ${monoFont}` }}
+                  >
+                    {axisTickText(metric, max, zh, currency)}
+                  </text>
+                ) : null,
+              )}
               {maPath && (
                 <path
                   d={maPath}
                   fill="none"
                   strokeWidth={1.6}
                   strokeDasharray="5 5"
-                  style={{ stroke: "var(--color-grey)" }}
+                  style={{ stroke: "var(--color-viz-neutral-muted)" }}
                 />
               )}
               {trend.map((item, index) =>
@@ -319,7 +333,7 @@ function TrendCore({
                     }
                     y={height - 6}
                     textAnchor={index === 0 ? "start" : index === n - 1 ? "end" : "middle"}
-                    style={{ fill: "var(--color-grey)", font: `9.5px ${monoFont}` }}
+                    style={{ fill: "var(--color-viz-axis)", font: `9.5px ${monoFont}` }}
                   >
                     {trendAxisLabel(item.day, granularity, rangeLabel)}
                   </text>
@@ -359,7 +373,7 @@ function TrendCore({
       {active && hovered && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-moon p-3 shadow-2xl"
+          className="pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
           style={{ left: hovered.left, top: hovered.top }}
         >
           <div className="font-mono text-[11px] font-semibold text-paper">
@@ -435,7 +449,7 @@ export function UsageWeeklyTrend({
       <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] text-grey">
         <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0, zh)}</strong></span>
         <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0, zh)}</strong></span>
-        <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-emerald-400" : "text-red-400"}>
+        <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-viz-green-soft" : "text-viz-red-soft"}>
           {percentDelta(current?.totalTokens ?? 0, previous?.totalTokens ?? 0)}
         </span>
       </div>
@@ -468,7 +482,13 @@ interface HeatTokenCell {
 }
 
 /* 6 档色阶(占峰值比):图例 ramp 与格子共用这一组 class。 */
-const HEAT_STEPS = ["bg-blue/15", "bg-blue/30", "bg-blue/45", "bg-blue/60", "bg-blue/80", "bg-blue"];
+const HEAT_STEPS = [
+  "bg-viz-sequential-1",
+  "bg-viz-sequential-2",
+  "bg-viz-sequential-3",
+  "bg-viz-sequential-4",
+  "bg-viz-sequential-5",
+];
 
 export function UsageHeatmapGrid({
   heatmap,
@@ -491,14 +511,13 @@ export function UsageHeatmapGrid({
   const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
   const shortNames = zh ? WEEKDAY_SHORT_ZH : WEEKDAY_SHORT_EN;
   const stepClass = (value: number): string => {
-    if (value <= 0 || max <= 0) return "bg-paper/[0.05]";
+    if (value <= 0 || max <= 0) return "bg-viz-grid";
     const ratio = value / max;
-    if (ratio <= 0.16) return HEAT_STEPS[0];
-    if (ratio <= 0.32) return HEAT_STEPS[1];
-    if (ratio <= 0.48) return HEAT_STEPS[2];
-    if (ratio <= 0.64) return HEAT_STEPS[3];
-    if (ratio <= 0.82) return HEAT_STEPS[4];
-    return HEAT_STEPS[5];
+    if (ratio <= 0.2) return HEAT_STEPS[0];
+    if (ratio <= 0.4) return HEAT_STEPS[1];
+    if (ratio <= 0.6) return HEAT_STEPS[2];
+    if (ratio <= 0.8) return HEAT_STEPS[3];
+    return HEAT_STEPS[4];
   };
   const cell = hovered
     ? {
@@ -521,7 +540,7 @@ export function UsageHeatmapGrid({
             aria-pressed={mobileHourStart === start}
             onClick={() => setMobileHourStart(start)}
             className={`min-h-9 rounded-md font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-              mobileHourStart === start ? "bg-blue text-bg" : "text-grey"
+              mobileHourStart === start ? "bg-viz-blue-primary text-viz-neutral-strong" : "text-grey"
             }`}
           >
             {String(start).padStart(2, "0")}–{String(start + 11).padStart(2, "0")}
@@ -564,7 +583,7 @@ export function UsageHeatmapGrid({
                         } ${stepClass(value)}`}
                         style={
                           isPeak
-                            ? { boxShadow: "0 0 0 1.5px #fff, 0 0 16px rgb(59 130 246 / 0.55)" }
+                            ? { boxShadow: "0 0 0 1.5px var(--color-paper), 0 0 16px color-mix(in srgb, var(--color-viz-blue-electric) 45%, transparent)" }
                             : undefined
                         }
                         onMouseEnter={() => setHovered({ weekday, hour })}
@@ -600,7 +619,7 @@ export function UsageHeatmapGrid({
            任何格子都不会被自己的数据卡挡住 */
         <div
           role="tooltip"
-          className={`pointer-events-none absolute top-5 z-20 w-[252px] rounded-lg border border-line bg-moon p-3 shadow-2xl ${
+          className={`pointer-events-none absolute top-5 z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl ${
             hovered.hour >= 12 ? "left-1" : "right-1"
           }`}
         >

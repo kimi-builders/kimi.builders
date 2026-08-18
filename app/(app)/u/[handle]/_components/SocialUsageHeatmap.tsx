@@ -50,14 +50,13 @@ export default function SocialUsageHeatmap({
   const weekdayLabelWidth = zh ? "w-8" : "w-14";
   /* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值 */
   const stepClass = (value: number): string => {
-    if (value <= 0 || max <= 0) return "bg-paper/[0.05]";
+    if (value <= 0 || max <= 0) return "bg-viz-grid";
     const ratio = value / max;
-    if (ratio <= 0.16) return "bg-blue/15";
-    if (ratio <= 0.32) return "bg-blue/30";
-    if (ratio <= 0.48) return "bg-blue/45";
-    if (ratio <= 0.64) return "bg-blue/60";
-    if (ratio <= 0.82) return "bg-blue/80";
-    return "bg-blue";
+    if (ratio <= 0.2) return "bg-viz-sequential-1";
+    if (ratio <= 0.4) return "bg-viz-sequential-2";
+    if (ratio <= 0.6) return "bg-viz-sequential-3";
+    if (ratio <= 0.8) return "bg-viz-sequential-4";
+    return "bg-viz-sequential-5";
   };
   const top = grid
     .flatMap((row, weekday) => row.map((value, hour) => ({ weekday, hour, value })))
@@ -77,7 +76,7 @@ export default function SocialUsageHeatmap({
                 aria-pressed={mobileHourStart === start}
                 onClick={() => setMobileHourStart(start)}
                 className={`min-h-9 rounded-md font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  mobileHourStart === start ? "bg-blue text-bg" : "text-grey"
+                  mobileHourStart === start ? "bg-viz-blue-primary text-viz-neutral-strong" : "text-grey"
                 }`}
               >
                 {String(start).padStart(2, "0")}–{String(start + 11).padStart(2, "0")}
@@ -137,7 +136,7 @@ export default function SocialUsageHeatmap({
           {hovered && (
             <div
               role="tooltip"
-              className="pointer-events-none absolute right-1 top-5 z-20 rounded-lg border border-line bg-moon p-3 shadow-2xl"
+              className="pointer-events-none absolute right-1 top-5 z-20 rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
             >
               <div className="font-mono text-[11px] font-semibold text-paper">
                 {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
@@ -186,6 +185,12 @@ export default function SocialUsageHeatmap({
                     </span>
                     <span className="mt-0.5 block font-mono text-[10.5px] text-grey/65">
                       tokens · {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
+                    </span>
+                    <span className="mt-1.5 block h-1 bg-viz-grid">
+                      <span
+                        className={`block h-full ${index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"}`}
+                        style={{ width: `${Math.max((item.value / Math.max(1, top[0]?.value ?? 1)) * 100, 2)}%` }}
+                      />
                     </span>
                   </span>
                 </li>

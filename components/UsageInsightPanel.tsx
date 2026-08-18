@@ -3,9 +3,9 @@ import { DataMeta } from "@/components/data-display";
 import type { UsageInsight } from "@/src/lib/usage/insights";
 
 const TONE_CLASS: Record<UsageInsight["tone"], string> = {
-  focus: "border-blue/35 bg-blue/[0.07]",
+  focus: "border-viz-blue-primary/35 bg-viz-blue-primary/[0.07]",
   neutral: "border-line bg-paper/[0.025]",
-  attention: "border-amber-400/35 bg-amber-400/[0.06]",
+  attention: "border-viz-yellow-soft/40 bg-viz-yellow-soft/[0.06]",
 };
 
 export default function UsageInsightPanel({
@@ -24,7 +24,7 @@ export default function UsageInsightPanel({
       className={`rounded-2xl border border-line bg-card p-4 sm:p-5 ${className}`}
     >
       <div className="flex items-start gap-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-blue/25 bg-blue/10 text-blue">
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-viz-blue-primary/30 bg-viz-blue-primary/10 text-viz-blue-soft">
           <Lightbulb size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
