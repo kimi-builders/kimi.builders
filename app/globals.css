@@ -122,6 +122,12 @@
   --color-card: rgb(0 0 0 / 0.018);
 }
 
+/* 始终为纵向滚动条预留槽位。内容长短切换时三栏画布宽度不再变化，
+   社区 / 关于 / 作品 / Awesome 等菜单页保持同一主列边界。 */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-paper);
