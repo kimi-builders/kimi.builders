@@ -7,7 +7,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { GalleryVerticalEnd, SquarePen } from "lucide-react";
+import { GalleryVerticalEnd } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import WorkKindIcon from "@/components/WorkKindIcon";
@@ -78,28 +78,19 @@ export default async function WorksPage({
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-[0.2px] text-paper">
             <GalleryVerticalEnd size={20} aria-hidden="true" />
             {t(locale, "works.wallTitle")}
           </h1>
-          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
+          <p className="mt-2 max-w-2xl text-[15px] leading-6 text-grey">
             {t(locale, "works.wallIntro")}
           </p>
         </div>
-        {user && (
-          <Link
-            href="/works/new"
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-          >
-            <SquarePen size={13} aria-hidden="true" />
-            {t(locale, "works.submit")}
-          </Link>
-        )}
       </div>
 
       {/* items-start(20260815 三次打磨):排序 seg 与筛选下拉常驻行顶部对齐,
           筛选结果分组行在 WorksFilterBar 内部向下生长,工具位恒不动 */}
-      <div className="mt-5 flex flex-wrap items-start gap-2.5">
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {(
             [

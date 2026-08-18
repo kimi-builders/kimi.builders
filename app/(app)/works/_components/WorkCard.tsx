@@ -24,7 +24,7 @@ import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkCardFooter from "./WorkCardFooter";
 import WorkScreenshot from "./WorkScreenshot";
 
-const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-[11px] font-medium";
+const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-xs font-medium";
 
 /* 状态标签:meta 行纯文本 token(不再是 pill 芯片);两种卡片共用。 */
 export function statusLabelOf(status: string, locale: Locale): string | null {
@@ -111,14 +111,16 @@ export default function WorkCard({
     /* 行式卡:移动端图在上,sm+ 图在左固定列;标题独占一行截断,
        类型/Agent/声明/精选收成一条 mono meta 行,底行 hairline 分隔。
        group:封面轻放大 + 标题变蓝的 hover 载体。 */
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30 sm:flex-row">
+    <article className={`kb-work-card group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30 sm:flex-row ${
+      w.source === "awesome" ? "kb-awesome-card" : "kb-member-card"
+    }`}>
       {/* 整卡链详情页(P1-2,absolute 覆盖链接);下方交互元素抬 z-10 保持独立跳转 */}
       <Link
         href={`/works/${w.id}`}
         aria-label={w.name}
         className="absolute inset-0 z-0 rounded-2xl"
       />
-      <div className="shrink-0 border-b border-line sm:w-[248px] sm:self-stretch sm:border-b-0 sm:border-r">
+      <div className="kb-work-card-cover shrink-0 border-b border-line sm:w-[232px] sm:self-stretch sm:border-b-0 sm:border-r">
         {/* 封面 = 独立上传封面(cover_key,20260916 起不再取配图第一张);
             无封面回落旧 screenshot_url 外链,再空则 WorkScreenshot 兜底色卡名称砖
             (作品=用户选定色/theme,Awesome=类型族或选定色) */}
@@ -135,33 +137,36 @@ export default function WorkCard({
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col p-5">
-        <h2 className="truncate text-[15px] font-semibold leading-snug text-paper transition-colors group-hover:text-blue">
+        <h2 className="truncate text-lg font-semibold leading-snug text-paper transition-colors group-hover:text-blue">
           {w.name}
         </h2>
         {w.tagline && (
-          <p className="mt-1 truncate text-[13px] leading-relaxed text-grey">
+          <p className="mt-1 line-clamp-2 text-[15px] leading-6 text-grey">
             {w.tagline}
           </p>
         )}
         {/* meta 区:分类 / Agent / 收录口径分三行,每行带 mute 小标签
             (类型/参与构建/收录——一眼可读,2026-08-14);蓝只给声明投入与精选 */}
-        <div className="mb-4 mt-2.5 flex min-w-0 flex-col gap-1 font-mono text-[11px] text-grey">
+        <div className="mb-4 mt-3 flex min-w-0 flex-col gap-1.5 font-mono text-xs leading-5 text-grey">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-grey/55">{t(locale, "works.metaKind")}</span>
             <WorkMetaChips w={w} locale={locale} statusLabel={statusLabel} kindLabel={kindLabel} />
             {w.tags.length > 0 && (
-              <span className="truncate">· {w.tags.slice(0, 3).join(", ")}</span>
+              <span className="truncate">· {w.tags.slice(0, 2).join(", ")}</span>
             )}
           </span>
           {w.agents.length > 0 && (
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span className="shrink-0 text-grey/55">{t(locale, "works.metaAgents")}</span>
-              {w.agents.map((a) => (
+              {w.agents.slice(0, 2).map((a) => (
                 <span key={a} className="inline-flex shrink-0 items-center gap-1">
                   <AgentIcon id={a} size={11} />
                   {agentName(a)}
                 </span>
               ))}
+              {w.agents.length > 2 && (
+                <span className="text-grey/70">+{w.agents.length - 2}</span>
+              )}
             </span>
           )}
           {(w.source === "awesome" && w.scope) || (claimBadge !== null && claimBadge > 0) || w.featuredAt ? (
@@ -195,7 +200,7 @@ export default function WorkCard({
         <WorkCardFooter work={w} locale={locale} meId={meId} />
         {/* 声明超额提示(声明制):仅作者本人可见,引导去编辑页重新分配 */}
         {claimPaused && meId !== null && w.userId === meId && (
-          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[11px] leading-relaxed text-grey">
+          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-xs leading-relaxed text-grey">
             {t(locale, "works.claimPaused")}
           </p>
         )}

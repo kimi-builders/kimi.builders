@@ -177,11 +177,11 @@ export default function MarkdownEditor({
   };
 
   const btnCls =
-    "rounded-md p-1.5 text-grey transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40";
+    "flex size-9 items-center justify-center rounded-lg text-grey transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40";
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center gap-0.5" role="toolbar" aria-label="Markdown">
+      <div className="mb-2 flex flex-wrap items-center gap-1" role="toolbar" aria-label="Markdown">
         {SYNTAX_ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
@@ -193,7 +193,7 @@ export default function MarkdownEditor({
               className={btnCls}
               onClick={() => apply(action)}
             >
-              <Icon size={13} aria-hidden="true" />
+              <Icon size={15} aria-hidden="true" />
             </button>
           );
         })}
@@ -207,9 +207,9 @@ export default function MarkdownEditor({
           onClick={() => fileRef.current?.click()}
         >
           {uploading ? (
-            <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
+            <LoaderCircle size={15} className="animate-spin" aria-hidden="true" />
           ) : (
-            <ImagePlus size={13} aria-hidden="true" />
+            <ImagePlus size={15} aria-hidden="true" />
           )}
         </button>
         <input

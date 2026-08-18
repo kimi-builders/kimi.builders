@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, GalleryVerticalEnd, MessagesSquare, SquarePen, User } from "lucide-react";
-import { t, type Locale } from "@/src/lib/i18n";
+import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 
 export default function MobileTabBar({
   locale,
@@ -23,6 +23,12 @@ export default function MobileTabBar({
   /* 未登录时受限入口的目标(登录弹窗带回跳) */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
+  const contextualCreate: { href: string; key: I18nKey } =
+    pathname.startsWith("/awesome")
+      ? { href: "/works/new", key: "awesome.recommend" }
+      : pathname.startsWith("/works")
+        ? { href: "/works/new", key: "works.submit" }
+        : { href: "/community/new", key: "nav.post" };
   const tabs = [
     {
       href: "/community",
@@ -38,13 +44,15 @@ export default function MobileTabBar({
       href: "/works",
       icon: GalleryVerticalEnd,
       key: "nav.works" as const,
-      active: pathname.startsWith("/works"),
+      active: pathname.startsWith("/works") && !pathname.startsWith("/works/new"),
     },
     {
-      href: gate("/community/new"),
+      href: gate(contextualCreate.href),
       icon: SquarePen,
-      key: "nav.post" as const,
-      active: pathname.startsWith("/community/new"),
+      key: contextualCreate.key,
+      active:
+        pathname.startsWith("/community/new") ||
+        pathname.startsWith("/works/new"),
       primary: true,
     },
     {
@@ -72,7 +80,7 @@ export default function MobileTabBar({
               aria-current={tab.active ? "page" : undefined}
               /* 标签字体走系统 sans(20260815 评审):JetBrains Mono 无中文字形,
                  中文标签 fallback 混排基线不齐;tab 文案中英皆有,sans 两端都稳 */
-              className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[11px] transition-colors ${
+              className={`flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 px-1 text-xs transition-colors ${
                 tab.primary
                   ? "text-blue"
                   : tab.active
@@ -80,8 +88,8 @@ export default function MobileTabBar({
                     : "text-grey hover:text-paper"
               }`}
             >
-              <span className={`flex items-center justify-center ${tab.primary ? "size-8 rounded-lg bg-blue text-white shadow-lg shadow-blue/25" : "size-6"}`}>
-                <Icon size={tab.primary ? 17 : 18} />
+              <span className={`flex items-center justify-center ${tab.primary ? "size-10 rounded-lg bg-blue text-white shadow-lg shadow-blue/25" : "size-7"}`}>
+                <Icon size={tab.primary ? 18 : 19} />
               </span>
               {t(locale, tab.key)}
             </Link>

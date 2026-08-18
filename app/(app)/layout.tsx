@@ -53,7 +53,7 @@ export default async function AppLayout({
       <TopBar locale={locale} unread={unread} loggedIn={!!user} />
       {/* 三栏统一收进 1320 居中容器:栏间距固定,宽屏只剩两侧等宽留白,
           左栏不再贴视口缘;主列 ≥lg 带竖向 hairline 缝合版面 */}
-      <div className="mx-auto flex w-full max-w-[1320px] items-start gap-6 lg:pt-14">
+      <div className="mx-auto flex w-full max-w-[1440px] items-start gap-4 px-[5vw] lg:pt-14">
         {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
         <Suspense fallback={null}>
           <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} loggedIn={!!user} worksSrc={worksSrc} />
@@ -65,7 +65,7 @@ export default async function AppLayout({
             wide 路由无右栏,不参与 */}
         <main
           className={`maincol w-full min-w-0 flex-1 px-4 py-6 pb-24 lg:border-x lg:border-line lg:px-6 lg:py-8 ${
-            rail.wide ? "lg:max-w-[1000px]" : "maincol-rail lg:max-w-[720px]"
+            rail.wide ? "lg:max-w-[1040px]" : "maincol-rail lg:max-w-[800px]"
           }`}
         >
           {children}

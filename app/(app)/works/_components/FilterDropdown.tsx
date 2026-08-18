@@ -97,7 +97,7 @@ export default function FilterDropdown({
         }}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9 sm:w-auto"
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 text-grey">{label}</span>

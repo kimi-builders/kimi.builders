@@ -34,8 +34,8 @@ import { NavToggle, SidebarToggle } from "./pref-controls";
 /* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
-  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog, hidden: false },
-  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn, hidden: false },
+  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog, hidden: UPCOMING.blog },
+  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn, hidden: UPCOMING.learn },
   { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
@@ -82,6 +82,11 @@ export default function LeftNav({
   /* 未登录时受限入口的目标(登录弹窗带回跳);工具入口(关于/GitHub)不受限 */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
+  const createAction = pathname.startsWith("/awesome")
+    ? { href: "/works/new", label: t(locale, "awesome.recommend") }
+    : pathname.startsWith("/works")
+      ? { href: "/works/new", label: t(locale, "works.submit") }
+      : { href: "/community/new", label: t(locale, "nav.post") };
 
   /* 激活态:详情页 /works/[id] 按来源列表判定归属(见上方 fromAwesome),
      其余路由按前缀;Awesome 在来自 Awesome 的作品详情里同样激活 */
@@ -94,7 +99,7 @@ export default function LeftNav({
   /* rail-tip:菜单项的 data-tip 提示仅收起态(图标轨)右弹;展开态有文案不弹
      (globals.css 的 .rail-tip 规则) */
   const itemCls = (active: boolean) =>
-    `nav-item rail-tip flex items-center gap-3 border-l-2 px-3 py-2 font-mono text-xs transition-colors ${
+    `nav-item rail-tip flex min-h-11 items-center gap-3 border-l-2 px-3 py-2.5 text-sm transition-colors ${
       active
         ? "border-blue text-paper"
         : "border-transparent text-grey hover:text-paper"
@@ -102,18 +107,18 @@ export default function LeftNav({
 
   /* 「界面」双键共用的紧凑盒样式;form 等宽由 globals.css 的 .panel-pair 规则给。 */
   const pairBtnCls =
-    "flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-1.5 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-blue";
+    "flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue";
 
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
       <Link prefetch={false}
-        href={gate("/community/new")}
-        data-tip={t(locale, "nav.post")}
+        href={gate(createAction.href)}
+        data-tip={createAction.label}
         data-tip-side="right"
-        className="nav-item rail-tip flex items-center justify-center gap-2 rounded-lg bg-blue py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="nav-item rail-tip flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
-        <SquarePen size={14} className="shrink-0" />
-        <span className="nav-label">{t(locale, "nav.post")}</span>
+        <SquarePen size={16} className="shrink-0" />
+        <span className="nav-label">{createAction.label}</span>
       </Link>
 
       <nav className="mt-6 space-y-1">

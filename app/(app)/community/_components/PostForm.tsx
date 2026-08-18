@@ -32,8 +32,8 @@ const TYPES = [
 ] as const;
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-[11.5px] text-grey";
+  "min-h-11 w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[15px] leading-6 text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
+const labelCls = "mb-1.5 block text-[13px] leading-5 text-grey";
 
 /* 自绘复选框:sr-only input + 兄弟节点方盒(peer-checked 驱动),与用量页 switch 同族。 */
 function CheckBox({
@@ -313,7 +313,7 @@ export default function PostForm({
           placeholder={t(locale, type === "text" ? "form.bodyText" : "form.bodyOpt")}
           inputCls={inputCls}
         />
-        <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
+        <div className="mt-2 flex items-center justify-between font-mono text-xs text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>
           <span>{t(locale, "form.mdSupport")}</span>
         </div>
@@ -338,13 +338,13 @@ export default function PostForm({
       )}
 
       <div className="flex items-center gap-3 border-t border-line pt-4">
-        <span className="text-[11px] text-grey/80">
+        <span className="text-[13px] leading-5 text-grey/80">
           {draftSaved ? t(locale, "form.draftSaved") : t(locale, "form.footerHint")}
         </span>
         <button
           type="submit"
           disabled={pending}
-          className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+          className="ml-auto inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
         >
           {pending ? t(locale, "form.posting") : t(locale, "form.submit")}
         </button>

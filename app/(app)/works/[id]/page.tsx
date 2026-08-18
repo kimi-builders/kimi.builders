@@ -135,7 +135,7 @@ export default async function WorkPage({
       )}
       {/* 面包屑:来源列表记忆优先(成员作品也会出现在 /awesome,按 work.source
           猜会把从 Awesome 来的用户送回作品墙),无记忆回落 work.source */}
-      <div className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
+      <div className="flex items-center gap-2 font-mono text-[13px] tracking-wider text-grey">
         <Link
           href={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
@@ -156,14 +156,14 @@ export default async function WorkPage({
             className="mt-0.5 size-11 shrink-0 rounded-lg border border-line object-cover"
           />
         )}
-        <h1 className="text-2xl font-semibold leading-snug">
+        <h1 className="text-3xl font-semibold leading-tight">
           {work.name}
         </h1>
       </div>
       {/* meta 拆两层(20260815 打磨):身份行 = 作者/原作者+推荐人 · 时间
           (信息同族才同行);属性 chips = 类型/口径/状态/声明(蓝)/★精选(蓝)
           ——徽章化后移动端换行自然对齐,不再 · 分隔挤成参差多行 */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[11px] text-grey">
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[13px] leading-5 text-grey">
         {work.source === "awesome" && work.authorLabel ? (
           <>
             {/* 原作者可点跳 GitHub 主页(句柄形状校验,非句柄降级纯文本);
@@ -208,13 +208,13 @@ export default async function WorkPage({
         )}
         <span>· {relTime(work.createdAt, locale)}</span>
         {work.visibility === "private" && (
-          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-[11px] font-medium text-grey">
+          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-[13px] font-medium text-grey">
             {t(locale, "works.private")}
           </span>
         )}
         {work.hiddenAt && (
           <span
-            className="inline-block rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[11px] font-medium text-red-400"
+            className="inline-block rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[13px] font-medium text-red-400"
             title={work.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}
@@ -222,12 +222,12 @@ export default async function WorkPage({
         )}
       </div>
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
+        <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 font-mono text-[13px] text-grey">
           <WorkKindIcon id={work.kind} size={11} />
           {workKindLabel(work.kind, locale === "zh")}
         </span>
         {work.scope && (
-          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
+          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-[13px] text-grey">
             {t(
               locale,
               work.scope === "eco"
@@ -239,7 +239,7 @@ export default async function WorkPage({
           </span>
         )}
         {work.status !== "released" && (
-          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-[11px] text-grey">
+          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-[13px] text-grey">
             {t(
               locale,
               work.status === "planning"
@@ -252,7 +252,7 @@ export default async function WorkPage({
         )}
         {claimBadge !== null && (
           <span
-            className="inline-flex items-center rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-[11px] text-blue"
+            className="inline-flex items-center rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-[13px] text-blue"
             title={t(locale, "works.badgeTitle")}
           >
             {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -260,7 +260,7 @@ export default async function WorkPage({
         )}
         {work.featuredAt && (
           <span
-            className="inline-flex items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-[11px] text-blue"
+            className="inline-flex items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-[13px] text-blue"
             title={`${work.featuredReason ?? ""}${
               work.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
@@ -280,7 +280,7 @@ export default async function WorkPage({
             href={work.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue max-sm:w-full max-sm:justify-center"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue max-sm:w-full max-sm:justify-center"
           >
             <ExternalLink size={13} />
             {t(locale, "works.tryIt")}
@@ -295,7 +295,7 @@ export default async function WorkPage({
           />
         ) : (
           <span
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-mono text-xs text-grey"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-4 text-sm text-grey"
             title={t(locale, "works.loginToSupport")}
           >
             <Heart size={13} />
@@ -304,7 +304,7 @@ export default async function WorkPage({
         )}
         <span className="ml-auto flex items-center gap-3">
           {user && work.userId === user.id && (
-            <span className="flex items-center gap-3 font-mono text-[11px] text-grey">
+            <span className="flex items-center gap-3 font-mono text-[13px] text-grey">
               <WorkOwnerActions
                 workId={work.id}
                 locale={locale}
@@ -373,7 +373,7 @@ export default async function WorkPage({
 
         {/* 内联信息栏(<xl):与右栏同款 label/value hairline 行,sm 起两列 */}
         <aside className="border-t border-line pt-5 xl:hidden">
-          <dl className="grid gap-x-8 font-mono text-[11px] sm:grid-cols-2">
+          <dl className="grid gap-x-8 font-mono text-[13px] sm:grid-cols-2">
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
               <dt className="text-grey">
                 {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
@@ -481,7 +481,7 @@ export default async function WorkPage({
       {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删,
               AI 评论(召唤)另放行治理) */}
       <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
-        <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
+        <h2 id="comments" className="text-xl font-semibold text-paper">
           {t(locale, "works.discuss")} ·{" "}
           {t(locale, "post.comments", { n: comments.total })}
         </h2>

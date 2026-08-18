@@ -9,10 +9,9 @@ import { LayoutGrid, List } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { WORKS_VIEW_COOKIE, type WorksView } from "@/src/lib/works-view";
 
-/* 高度统一(20260815):36/28 + 容器 8 = 外高 44/36,与排序 seg、筛选下拉
-   同规格(见 seg-classes.ts 注释) */
+/* 36px 按钮 + 8px 容器边框/内边距 = 44px,与排序和筛选同高。 */
 const BTN =
-  "inline-flex size-9 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:size-7";
+  "inline-flex size-9 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
 
 /* cookie 写在组件外:组件作用域内直接给 document.cookie 赋值会触发
    react-hooks/immutability(组件被假定可并发渲染,不许有可见副作用)。
@@ -42,7 +41,7 @@ export default function WorksViewToggle({
     <div
       role="group"
       aria-label={t(locale, "works.viewToggle")}
-      className="ml-auto inline-flex items-center gap-0.5 self-start rounded-lg border border-line bg-card p-[3px]"
+      className="ml-auto inline-flex h-11 items-center gap-0.5 self-center rounded-lg border border-line bg-card p-[3px]"
     >
       {items.map(({ key, label, Icon }) => (
         <button

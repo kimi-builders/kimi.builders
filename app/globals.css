@@ -354,7 +354,21 @@ html:not([data-sidebar="0"]) .only-sidebar-hidden {
 }
 /* 左栏「界面」双键:两个 form 等宽;左栏收起时纵排成图标键 */
 .panel-pair > form {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.panel-pair {
+  min-width: 0;
+}
+.panel-pair > form > button {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.5rem;
+}
+.panel-pair .nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 html[data-nav="1"] .panel-pair {
   flex-direction: column;
@@ -635,4 +649,134 @@ html[data-vibe="soft"] .vibe-card-soft {
   color: var(--color-blue);
   background: rgb(59 130 246 / 0.08);
   font-weight: 500;
+}
+/* Kimi typography + layout remediation (2026-08-18).
+   Sans carries reading and task UI; mono is reserved for technical evidence. */
+@font-face {
+  font-family: "KB Geist Sans";
+  src: url("/fonts/kb-geist-sans.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: "KB Geist Mono";
+  src: url("/fonts/kb-geist-mono.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
+:root {
+  --font-ui: "Inter", "KB Geist Sans", -apple-system, BlinkMacSystemFont,
+    "PingFang SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei",
+    sans-serif;
+  --font-technical: "KB Geist Mono", "JetBrains Mono", ui-monospace,
+    "SFMono-Regular", Consolas, monospace;
+  --font-human: "Iowan Old Style", "Songti SC", "Noto Serif SC", serif;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+.font-mono {
+  font-family: var(--font-technical);
+}
+
+main h1 {
+  font-size: clamp(1.625rem, 1.25rem + 1vw, 1.875rem);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+main article p {
+  line-height: 1.65;
+}
+
+main nav a {
+  min-height: 2.5rem;
+  font-size: 0.8125rem;
+}
+
+/* 工具栏分段控件自行管理 44px 外高,不继承通用导航链接最小高度。 */
+main nav.kb-control-group > a,
+main nav.kb-control-group > button {
+  min-height: 0;
+}
+
+.leftnav {
+  box-sizing: border-box;
+  width: 14rem;
+  padding-inline: 0.75rem;
+  overflow-x: hidden;
+}
+
+.leftnav .nav-item {
+  min-height: 2.75rem;
+}
+
+.rightsidebar {
+  font-size: 0.8125rem;
+}
+
+.kb-work-card {
+  isolation: isolate;
+}
+
+.kb-awesome-card {
+  background-image: linear-gradient(110deg, rgb(26 136 255 / 0.06), transparent 35%);
+}
+
+.kb-awesome-card::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  background: rgb(26 136 255 / 0.8);
+  content: "";
+}
+
+form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+form select,
+form textarea {
+  min-height: 2.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+}
+
+body > main h1 {
+  font-family: var(--font-technical);
+}
+
+body > main p {
+  font-family: var(--font-ui);
+}
+
+@media (max-width: 639px) {
+  main h1 {
+    font-size: 1.625rem;
+    line-height: 1.3;
+  }
+
+  main article p {
+    font-size: 0.9375rem;
+  }
+
+  .kb-work-card-cover {
+    height: 11rem;
+    overflow: hidden;
+  }
+
+  .kb-work-card-cover > * {
+    height: 100%;
+  }
+
+  main nav a {
+    min-height: 2.75rem;
+  }
 }

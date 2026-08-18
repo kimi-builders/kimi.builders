@@ -1,7 +1,6 @@
 /* /awesome 右栏:收录统计 + 收录口径(带计数,点行即筛选)+ Agent 分布
    + 推荐规则(必须填原作者/不进作品墙/无徽章)+ 推荐入口。 */
 import Link from "next/link";
-import { SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
@@ -22,6 +21,7 @@ export default async function AwesomeRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
+  void loggedIn;
   const { stats, scopeStats, agents } = await getPublicAwesomeRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
@@ -39,7 +39,7 @@ export default async function AwesomeRail({
           ].map((s) => (
             <div key={s.l}>
               <div className="font-mono text-lg font-semibold text-paper">{s.n}</div>
-              <div className="mt-0.5 font-mono text-[11px] text-grey">{s.l}</div>
+              <div className="mt-0.5 font-mono text-xs text-grey">{s.l}</div>
             </div>
           ))}
         </div>
@@ -61,11 +61,11 @@ export default async function AwesomeRail({
                   <span className="block text-xs text-paper transition-colors group-hover:text-blue">
                     {t(locale, s.labelKey)}
                   </span>
-                  <span className="mt-0.5 block text-[11px] text-grey/80">
+                  <span className="mt-0.5 block text-xs text-grey/80">
                     {t(locale, s.hintKey)}
                   </span>
                 </span>
-                <span className="shrink-0 font-mono text-[11px] font-semibold text-grey">
+                <span className="shrink-0 font-mono text-xs font-semibold text-grey">
                   {scopeStats[s.id]}
                 </span>
               </Link>
@@ -82,7 +82,7 @@ export default async function AwesomeRail({
           <ul className="space-y-2.5">
             {agents.map((a) => (
               <li key={a.agent} className="flex items-center gap-2.5">
-                <span className="flex w-28 shrink-0 items-center gap-1.5 text-[11px] text-grey">
+                <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-grey">
                   <AgentIcon id={a.agent} size={13} />
                   <span className="truncate">{agentName(a.agent)}</span>
                 </span>
@@ -92,7 +92,7 @@ export default async function AwesomeRail({
                     style={{ width: `${Math.max((a.count / agentMax) * 100, 4)}%` }}
                   />
                 </span>
-                <span className="shrink-0 font-mono text-[11px] text-grey">{a.count}</span>
+                <span className="shrink-0 font-mono text-xs text-grey">{a.count}</span>
               </li>
             ))}
           </ul>
@@ -103,15 +103,6 @@ export default async function AwesomeRail({
         <p className="text-xs leading-relaxed text-grey">
           {t(locale, "awesome.rulesBody")}
         </p>
-        {loggedIn && (
-          <Link
-            href="/works/new"
-            className="mt-3 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-          >
-            <SquarePen size={13} aria-hidden="true" />
-            {t(locale, "awesome.recommend")}
-          </Link>
-        )}
       </Widget>
     </>
   );

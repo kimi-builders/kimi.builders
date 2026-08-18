@@ -20,6 +20,7 @@ export default function ModToolbar({
   targetId,
   hidden,
   isAdmin,
+  showSoftDelete = true,
   locale,
   redirectAfter,
 }: {
@@ -27,6 +28,8 @@ export default function ModToolbar({
   targetId: number;
   hidden: boolean;
   isAdmin: boolean;
+  /* 详情页作者本人已有自助软删,治理条隐藏同义入口以避免重复。 */
+  showSoftDelete?: boolean;
   locale: Locale;
   /* 硬删成功后的跳转(详情页传入;列表缺省原地刷新) */
   redirectAfter?: string;
@@ -105,7 +108,7 @@ export default function ModToolbar({
         </button>
       )}
       {/* 软删:仅帖子/评论(作品无软删态,处置 = 屏蔽或硬删) */}
-      {targetType !== "work" && (
+      {showSoftDelete && targetType !== "work" && (
         <button
           type="button"
           onClick={softDelete}

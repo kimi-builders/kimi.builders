@@ -21,7 +21,6 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { loadMorePostsAction } from "./actions";
 import { loadFeedCards } from "./_components/feed-page";
-import { CATEGORY_DOT } from "./_components/PostCard";
 
 export default async function CommunityPage({
   searchParams,
@@ -90,7 +89,7 @@ export default async function CommunityPage({
         </Link>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {sortItems.map((item) => (
             <Link
@@ -104,19 +103,18 @@ export default async function CommunityPage({
             </Link>
           ))}
         </nav>
-        {/* 话题 tabs:无框纯文本(安静化,20260813)。移动端与作品/Awesome 的
-            筛选行同处理(20260815):整行换行展示、左对齐,不再横向滚动
-            (滚动行在窄屏挤成一团、与排序行相互侵入);桌面维持单行横滑 */}
+        {/* 话题 tabs:六等分网格。分类是同一层级的互斥选择,不再用散点分隔；
+            窄屏 3×2、桌面 6×1,始终保持整齐的点击区域。 */}
         <nav
           aria-label={t(locale, "feed.topicsAll")}
-          className="scrollbar-none order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[11.5px] sm:order-none sm:min-w-0 sm:flex-1 sm:flex-nowrap sm:overflow-x-auto"
+          className="order-last grid min-w-0 grid-cols-3 gap-px border border-line bg-line md:order-none md:grid-cols-6"
         >
           <Link
             href={feedHref({ cat: null })}
             scroll={false}
             aria-current={!cat ? "page" : undefined}
-            className={`shrink-0 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-              !cat ? "font-semibold text-paper" : "text-grey hover:text-paper"
+            className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 font-mono text-[11.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+              !cat ? "bg-paper font-semibold text-bg" : "text-grey hover:bg-card hover:text-paper"
             }`}
           >
             {t(locale, "feed.topicsAll")}
@@ -129,11 +127,10 @@ export default async function CommunityPage({
                 href={feedHref({ cat: c.id })}
                 scroll={false}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex shrink-0 items-center gap-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  active ? "font-semibold text-paper" : "text-grey hover:text-paper"
+                className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 font-mono text-[11.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  active ? "bg-paper font-semibold text-bg" : "text-grey hover:bg-card hover:text-paper"
                 }`}
               >
-                <i className={`size-[5px] rounded-full ${active ? (CATEGORY_DOT[c.id] ?? CATEGORY_DOT.chat) : "bg-grey/60"}`} />
                 {categoryLabel(locale, c.id)}
               </Link>
             );
@@ -146,7 +143,7 @@ export default async function CommunityPage({
           href={feedHref({ solved: solvedOnly ? null : "1" })}
           scroll={false}
           aria-current={solvedOnly ? "page" : undefined}
-          className={`ml-auto inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 ${
+          className={`inline-flex h-11 min-h-0 shrink-0 items-center gap-1 justify-self-start rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue md:justify-self-end ${
             solvedOnly
               ? "border-blue/60 bg-blue/10 font-semibold text-blue"
               : "border-line text-grey hover:border-blue/50 hover:text-blue"

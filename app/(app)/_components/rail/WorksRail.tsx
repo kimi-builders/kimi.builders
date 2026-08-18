@@ -1,7 +1,7 @@
 /* /works 列表右栏:作品统计(上架/作者/声明投入/本周新)+ 活跃 Agent 分布
    + 本周最受欢迎 + 声明口径说明(Awesome 引流)。 */
 import Link from "next/link";
-import { ArrowBigUp, SquarePen } from "lucide-react";
+import { ArrowBigUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
@@ -18,12 +18,13 @@ export default async function WorksRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
+  void loggedIn;
   const { stats, agents, kinds, top } = await getPublicWorksRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
     <>
       {/* 引句:一次好的构建,既是终点也是指路牌 */}
-      <p className="border-l-2 border-blue pl-3 font-mono text-[11px] leading-relaxed text-grey">
+      <p className="border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-grey">
         {t(locale, "about.quote")}
       </p>
 
@@ -43,19 +44,10 @@ export default async function WorksRail({
           ].map((s) => (
             <div key={s.l}>
               <div className="font-mono text-lg font-semibold text-paper">{s.n}</div>
-              <div className="mt-0.5 font-mono text-[11px] text-grey">{s.l}</div>
+              <div className="mt-0.5 font-mono text-xs text-grey">{s.l}</div>
             </div>
           ))}
         </div>
-        {loggedIn && (
-          <Link
-            href="/works/new"
-            className="mt-4 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-          >
-            <SquarePen size={13} aria-hidden="true" />
-            {t(locale, "rail.worksSubmit")}
-          </Link>
-        )}
       </Widget>
 
       {kinds.length > 0 && (
@@ -73,7 +65,7 @@ export default async function WorksRail({
                     <span className="min-w-0 flex-1 truncate text-xs text-paper transition-colors group-hover:text-blue">
                       {workKindLabel(k.kind, locale === "zh")}
                     </span>
-                    <span className="shrink-0 font-mono text-[11px] font-semibold text-grey">
+                    <span className="shrink-0 font-mono text-xs font-semibold text-grey">
                       {k.count}
                     </span>
                   </Link>
@@ -92,7 +84,7 @@ export default async function WorksRail({
           <ul className="space-y-2.5">
             {agents.map((a) => (
               <li key={a.agent} className="flex items-center gap-2.5">
-                <span className="flex w-28 shrink-0 items-center gap-1.5 text-[11px] text-grey">
+                <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-grey">
                   <AgentIcon id={a.agent} size={13} />
                   <span className="truncate">{agentName(a.agent)}</span>
                 </span>
@@ -102,7 +94,7 @@ export default async function WorksRail({
                     style={{ width: `${Math.max((a.count / agentMax) * 100, 4)}%` }}
                   />
                 </span>
-                <span className="shrink-0 font-mono text-[11px] text-grey">{a.count}</span>
+                <span className="shrink-0 font-mono text-xs text-grey">{a.count}</span>
               </li>
             ))}
           </ul>
@@ -116,7 +108,7 @@ export default async function WorksRail({
           <ul className="space-y-2.5">
             {top.map((w, i) => (
               <li key={w.id} className="flex items-baseline gap-2 text-xs">
-                <span className="shrink-0 font-mono text-[11px] text-grey">
+                <span className="shrink-0 font-mono text-xs text-grey">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <Link
@@ -125,7 +117,7 @@ export default async function WorksRail({
                 >
                   {w.name}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-grey">
                   <ArrowBigUp size={11} />
                   {w.voteCount}
                 </span>
@@ -133,7 +125,7 @@ export default async function WorksRail({
             ))}
           </ul>
         )}
-        <p className="mt-3 border-t border-line pt-3 text-[11px] leading-relaxed text-grey/80">
+        <p className="mt-3 border-t border-line pt-3 text-xs leading-relaxed text-grey/80">
           {t(locale, "works.claimNote")}{" "}
           <Link
             href="/awesome"

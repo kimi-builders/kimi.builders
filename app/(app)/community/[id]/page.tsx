@@ -81,6 +81,7 @@ export default async function PostPage({
   const downVoted = postReactions.down.has(postId);
   /* 精选操作入口:admin/mod 可见(与是否作者无关),action 层再校验一次 */
   const canFeature = !!user && canModerate(user.role);
+  const isOwner = !!user && post.userId === user.id;
 
   return (
     <div>
@@ -251,7 +252,7 @@ export default async function PostPage({
             locale={locale}
           />
         )}
-        {user && post.userId === user.id && (
+        {isOwner && (
           <PostOwnerActions
             postId={post.id}
             visibility={post.visibility}
@@ -273,6 +274,7 @@ export default async function PostPage({
             targetId={post.id}
             hidden={!!post.hiddenAt}
             isAdmin={user?.role === "admin"}
+            showSoftDelete={!isOwner}
             locale={locale}
             redirectAfter="/community"
           />

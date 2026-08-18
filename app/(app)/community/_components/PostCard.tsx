@@ -48,7 +48,7 @@ export default function PostCard({
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <Link
             href={`/u/${p.handle}`}
-            className="flex items-center gap-1 text-[13px] font-semibold text-paper transition-colors hover:text-blue"
+            className="flex items-center gap-1 text-[15px] font-semibold text-paper transition-colors hover:text-blue"
           >
             @{p.handle}
             {official && (
@@ -60,18 +60,18 @@ export default function PostCard({
               />
             )}
           </Link>
-          <span className="text-[11.5px] text-grey/80">· {relTime(p.createdAt, locale)}</span>
+          <span className="text-[13px] text-grey/80">· {relTime(p.createdAt, locale)}</span>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2 font-mono text-[11px]">
+        <div className="ml-auto flex shrink-0 items-center gap-2 font-mono text-xs">
           {p.visibility === "private" && (
-            <span className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper">
+            <span className="rounded-md border border-line px-1.5 py-px text-xs text-paper">
               {t(locale, "post.private")}
             </span>
           )}
           {/* 被屏蔽标:feed 只向作者本人放行被屏蔽帖,徽章天然只有作者可见 */}
           {p.hiddenAt && (
             <span
-              className="rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[11px] text-red-400"
+              className="rounded-md border border-red-400/60 px-1.5 py-px font-mono text-xs text-red-400"
               title={p.hiddenReason ?? undefined}
             >
               {t(locale, "mod.hiddenBadge")}
@@ -95,7 +95,7 @@ export default function PostCard({
         >
           {p.title}
           {p.type !== "text" && (
-            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[11px] font-normal text-grey">
+            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-xs font-normal text-grey">
               {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
             </span>
           )}
@@ -110,7 +110,7 @@ export default function PostCard({
           {(truncated || !p.title) && (
             <Link
               href={`/community/${p.id}`}
-              className="mt-1 inline-block font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mt-1 inline-block font-mono text-xs text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "feed.readMore")}
             </Link>
@@ -131,7 +131,7 @@ export default function PostCard({
           />
         ) : (
           <span
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-grey"
+            className="inline-flex items-center gap-1.5 min-h-9 rounded-lg px-2.5 py-2 font-mono text-xs text-grey"
             title={t(locale, "post.loginToUpvote")}
           >
             <ArrowBigUp size={14} />
@@ -141,7 +141,7 @@ export default function PostCard({
         <Link
           href={`/community/${p.id}#comments`}
           title={t(locale, "post.comments", { n: p.commentCount })}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-grey transition-colors hover:bg-paper/[0.05] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="inline-flex items-center gap-1.5 min-h-9 rounded-lg px-2.5 py-2 font-mono text-xs text-grey transition-colors hover:bg-paper/[0.05] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           <MessageCircle size={13} />
           {p.commentCount}
@@ -152,7 +152,7 @@ export default function PostCard({
           copiedLabel={t(locale, "post.copied")}
         />
         {p.aiReply && (
-          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] text-blue">
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-xs text-blue">
             <Bot size={12} aria-hidden="true" />
             {t(locale, "post.aiJoin")}
           </span>

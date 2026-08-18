@@ -22,11 +22,11 @@ export default function TopBar({
   loggedIn: boolean;
 }) {
   const iconBtn =
-    "flex h-9 w-9 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+    "flex h-10 w-10 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <header className="fixed inset-x-0 top-0 z-20 hidden h-14 border-b border-line bg-bg/95 backdrop-blur lg:block">
       {/* 内容与下方三栏共用 1320 居中容器:品牌与左栏左边线、登录态与右栏右边线对齐 */}
-      <div className="mx-auto flex h-full w-full max-w-[1320px] items-center px-4">
+      <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-[5vw]">
       <Link
         href="/"
         title="kimi.builders"
@@ -40,7 +40,7 @@ export default function TopBar({
         </span>
       </Link>
 
-      <div className="ml-auto flex items-center gap-1.5 font-mono text-xs">
+      <div className="ml-auto flex items-center gap-1.5 text-xs">
         <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
         {loggedIn && (
           <Link

@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SquarePen, Trash2 } from "lucide-react";
+import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { deleteWorkAction } from "../actions";
@@ -49,14 +49,25 @@ export default function WorkOwnerActions({
   };
 
   return (
-    <>
+    <details
+      data-compact={compact ? "true" : "false"}
+      className="group/owner relative"
+    >
+      <summary
+        aria-label={locale === "zh" ? "更多操作" : "More actions"}
+        className="flex size-9 cursor-pointer list-none items-center justify-center rounded-lg text-grey transition-colors hover:bg-moon hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden"
+      >
+        <MoreHorizontal size={16} aria-hidden="true" />
+      </summary>
+      <div className="absolute right-0 top-10 z-30 w-36 rounded-xl border border-line bg-card p-1.5 shadow-xl">
       <Link
         href={`/works/${workId}/edit`}
         title={t(locale, "post.edit")}
         aria-label={t(locale, "post.edit")}
-        className="inline-flex items-center transition-colors hover:text-blue"
+        className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-moon hover:text-blue"
       >
-        {compact ? <SquarePen size={12} aria-hidden="true" /> : t(locale, "post.edit")}
+        <SquarePen size={14} aria-hidden="true" />
+        <span>{t(locale, "post.edit")}</span>
       </Link>
       <button
         type="button"
@@ -64,10 +75,12 @@ export default function WorkOwnerActions({
         disabled={busy}
         title={t(locale, "post.delete")}
         aria-label={t(locale, "post.delete")}
-        className="inline-flex items-center transition-colors hover:text-blue disabled:opacity-40"
+        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-moon hover:text-red-400 disabled:opacity-40"
       >
-        {compact ? <Trash2 size={12} aria-hidden="true" /> : t(locale, "post.delete")}
+        <Trash2 size={14} aria-hidden="true" />
+        <span>{t(locale, "post.delete")}</span>
       </button>
-    </>
+      </div>
+    </details>
   );
 }
