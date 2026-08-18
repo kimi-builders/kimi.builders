@@ -43,7 +43,9 @@ export default function SocialUsageHeatmap({
   zh: boolean;
 }) {
   const [hovered, setHovered] = useState<{ weekday: number; hour: number } | null>(null);
+  const [mobileHourStart, setMobileHourStart] = useState<0 | 12>(0);
   const max = Math.max(0, ...grid.flat());
+  const total = grid.flat().reduce((sum, value) => sum + value, 0);
   const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
   const weekdayLabelWidth = zh ? "w-8" : "w-14";
   /* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值 */
@@ -67,14 +69,34 @@ export default function SocialUsageHeatmap({
     <div className="relative" onMouseLeave={() => setHovered(null)}>
       <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,620px)_minmax(220px,1fr)]">
         <div className="relative min-w-0">
-          {/* 完整星期文案需要比单字标签更宽;窄屏允许横向滚动,保持 24 小时格子可读。 */}
-          <div className="scrollbar-none overflow-x-auto pb-1">
-            <div className="min-w-[580px] max-w-[620px]">
+          <div className="mb-3 grid grid-cols-2 rounded-lg border border-line p-0.5 sm:hidden">
+            {([0, 12] as const).map((start) => (
+              <button
+                key={start}
+                type="button"
+                aria-pressed={mobileHourStart === start}
+                onClick={() => setMobileHourStart(start)}
+                className={`min-h-9 rounded-md font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  mobileHourStart === start ? "bg-blue text-bg" : "text-grey"
+                }`}
+              >
+                {String(start).padStart(2, "0")}–{String(start + 11).padStart(2, "0")}
+              </button>
+            ))}
+          </div>
+          {/* 移动端分为两个 12 小时时段，桌面端保持完整 24 小时矩阵。 */}
+          <div className="pb-1">
+            <div className="min-w-0 max-w-[620px] sm:min-w-[580px]">
               <div className="flex items-center gap-1.5">
                 <span className={`${weekdayLabelWidth} shrink-0`} />
-                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
+                <div className="grid flex-1 grid-cols-[repeat(12,minmax(0,1fr))] gap-[3px] sm:grid-cols-[repeat(24,minmax(0,1fr))]">
                   {Array.from({ length: 24 }, (_, hour) => (
-                    <span key={hour} className="text-center font-mono text-[10.5px] text-grey">
+                    <span
+                      key={hour}
+                      className={`text-center font-mono text-[10.5px] text-grey ${
+                        hour >= mobileHourStart && hour < mobileHourStart + 12 ? "" : "hidden sm:block"
+                      }`}
+                    >
                       {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
                     </span>
                   ))}
@@ -88,18 +110,23 @@ export default function SocialUsageHeatmap({
                     >
                       {longNames[weekday]}
                     </span>
-                    <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
-                      {row.map((value, hour) => (
-                        <button
+                    <div className="grid flex-1 grid-cols-[repeat(12,minmax(0,1fr))] gap-[3px] sm:grid-cols-[repeat(24,minmax(0,1fr))]">
+                      {row.map((value, hour) => {
+                        const mobileVisible = hour >= mobileHourStart && hour < mobileHourStart + 12;
+                        return (
+                          <button
                           key={hour}
                           type="button"
                           aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${compact(value, zh)} tokens`}
-                          className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
+                          className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${
+                            mobileVisible ? "" : "hidden sm:block"
+                          } ${stepClass(value)}`}
                           onMouseEnter={() => setHovered({ weekday, hour })}
                           onFocus={() => setHovered({ weekday, hour })}
                           onBlur={() => setHovered(null)}
-                        />
-                      ))}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -130,7 +157,7 @@ export default function SocialUsageHeatmap({
 
         <aside
           aria-label={zh ? "最活跃时段" : "Busiest slots"}
-          className="rounded-xl border border-line bg-paper/[0.025] p-4"
+          className="order-first rounded-xl border border-line bg-paper/[0.025] p-4 lg:order-none"
         >
           <p className="font-mono text-[11px] font-semibold text-paper">
             {zh ? "最活跃时段" : "Busiest slots"}
@@ -157,7 +184,9 @@ export default function SocialUsageHeatmap({
                       </span>
                       <span className="shrink-0 text-grey">{compact(item.value, zh)}</span>
                     </span>
-                    <span className="mt-0.5 block font-mono text-[10.5px] text-grey/65">tokens</span>
+                    <span className="mt-0.5 block font-mono text-[10.5px] text-grey/65">
+                      tokens · {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
+                    </span>
                   </span>
                 </li>
               ))}

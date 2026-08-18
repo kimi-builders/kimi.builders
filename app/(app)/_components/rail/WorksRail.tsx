@@ -37,7 +37,12 @@ export default async function WorksRail({
             { n: stats.works, l: t(locale, "works.statWorks") },
             { n: stats.authors, l: t(locale, "works.statAuthors") },
             {
-              n: compactNumber(stats.claimedSum, locale),
+              n:
+                stats.claimedSum > 0
+                  ? compactNumber(stats.claimedSum, locale)
+                  : locale === "zh"
+                    ? "未申报"
+                    : "Not reported",
               l: t(locale, "works.statClaimed"),
             },
             { n: stats.weeklyNew, l: t(locale, "works.statWeeklyNew") },
@@ -82,7 +87,7 @@ export default async function WorksRail({
           note={t(locale, "works.activeAgentsNote")}
         >
           <ul className="space-y-2.5">
-            {agents.map((a) => (
+            {agents.map((a, index) => (
               <li key={a.agent} className="flex items-center gap-2.5">
                 <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-grey">
                   <AgentIcon id={a.agent} size={13} />
@@ -90,7 +95,7 @@ export default async function WorksRail({
                 </span>
                 <span className="h-1.5 min-w-0 flex-1 rounded-full bg-paper/[0.06]">
                   <span
-                    className="block h-full rounded-full bg-blue/70"
+                    className={`block h-full rounded-full ${index === 0 ? "bg-blue" : "bg-paper/25"}`}
                     style={{ width: `${Math.max((a.count / agentMax) * 100, 4)}%` }}
                   />
                 </span>

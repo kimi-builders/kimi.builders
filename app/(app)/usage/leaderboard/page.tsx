@@ -52,10 +52,13 @@ function compact(value: number): string {
   return value.toLocaleString("en-US");
 }
 
-/* 估费固定以 USD 展示(榜单无币种切换):>= $0.01 两位小数,否则四位。 */
+/* 榜单估费来自自报聚合，默认使用约数，避免用小数位制造不必要的确定感。 */
 function fmtCost(micros: number): string {
   const value = micros / 1e6;
-  return `$${value >= 0.01 ? value.toFixed(2) : value.toFixed(4)}`;
+  if (value >= 1000) return `≈$${(value / 1000).toFixed(value >= 10000 ? 0 : 2)}k`;
+  if (value >= 100) return `≈$${Math.round(value)}`;
+  if (value >= 10) return `≈$${value.toFixed(1)}`;
+  return `≈$${value >= 0.01 ? value.toFixed(2) : value.toFixed(4)}`;
 }
 
 type BoardEntry = UsageLeaderboardEntry & { costMicros?: number };
@@ -92,7 +95,7 @@ function LeaderboardRow({
 }) {
   const first = entry.rank === 1;
   return (
-    <tr className={`border-b border-line last:border-b-0 ${first ? "bg-blue/[0.06]" : ""}`}>
+    <tr className="border-b border-line last:border-b-0">
       <td className="w-12 px-3 py-3 text-center sm:w-14 sm:px-4 sm:py-3.5">
         <span
           className={`font-mono text-xs tabular-nums ${
@@ -128,8 +131,8 @@ function LeaderboardRow({
         </div>
       </td>
       <td
-        className={`w-24 px-3 py-3 text-right font-mono text-paper sm:w-28 sm:px-4 sm:py-3.5 ${
-          first ? "text-base font-semibold" : "text-sm"
+        className={`w-24 px-3 py-3 text-right font-mono sm:w-28 sm:px-4 sm:py-3.5 ${
+          first ? "text-base font-semibold text-blue" : "text-sm text-paper"
         }`}
         title={entry.totalTokens.toLocaleString("en-US")}
       >
@@ -523,8 +526,8 @@ export default async function UsageLeaderboardPage({
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-semibold text-paper">{boardHeading}</h2>
-                <p className="mt-1 font-mono text-[11px] tracking-[0.12em] text-grey">
-                  {periodLabel}
+                <p className="mt-1 font-mono text-[11px] tracking-[0.08em] text-grey">
+                  {periodLabel} · {locale === "zh" ? `${activeEntries.length} 份公开样本` : `${activeEntries.length} public samples`}
                 </p>
               </div>
               <ShareButton

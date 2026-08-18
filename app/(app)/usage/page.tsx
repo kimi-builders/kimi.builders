@@ -21,7 +21,6 @@ import {
 import {
   heatMetricText,
   heatTopSlots,
-  USAGE_TREND_LEGEND,
   USAGE_WEEKDAYS_EN,
   USAGE_WEEKDAYS_ZH,
   type UsageHeatMetric,
@@ -286,9 +285,6 @@ function SegLinks({
     </nav>
   );
 }
-
-/* 趋势卡头图例:USAGE_TREND_LEGEND 已收进 src/lib/usage/heatmap.ts(两页共用),
-   与 UsageVisualizations 的 FILL_* 柱子填充一一对应(改色两边同步)。 */
 
 function HeroCard({
   label,
@@ -961,7 +957,6 @@ export default async function UsagePage({
         <HeroCard
           label={zh ? "缓存命中率" : "Cache hit rate"}
           value={fmtHitRate(hitRate)}
-          valueClass={hitRate !== null && hitRate >= 0.85 ? "text-emerald-400" : undefined}
           pill={hitRate !== null ? <HitRatePill rate={hitRate} zh={zh} /> : undefined}
           caption={
             zh
@@ -1019,12 +1014,10 @@ export default async function UsagePage({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {filters.metric === "tokens" && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                {USAGE_TREND_LEGEND.map((item) => (
-                  <span key={item.key} className="flex items-center gap-1.5 text-[11px] text-grey">
-                    <i className={`h-2 w-2 rounded-[2px] ${item.chip}`} />
-                    {zh ? item.zh : item.en}
-                  </span>
-                ))}
+                <span className="flex items-center gap-1.5 text-[11px] text-grey">
+                  <i className="h-2 w-2 rounded-[2px] bg-blue" />
+                  {zh ? "总 Token" : "Total tokens"}
+                </span>
               </div>
             )}
             <span className="flex items-center gap-1.5 text-[11px] text-grey">

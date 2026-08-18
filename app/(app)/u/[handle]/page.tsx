@@ -27,7 +27,7 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
 import { getProfileByHandle, getProfileStats, profileDisplay } from "@/src/lib/users";
 import { userWorksCountQuery } from "@/src/lib/share-posters";
-import { USAGE_TREND_LEGEND, USAGE_WEEKDAYS_EN, USAGE_WEEKDAYS_ZH } from "@/src/lib/usage/heatmap";
+import { USAGE_WEEKDAYS_EN, USAGE_WEEKDAYS_ZH } from "@/src/lib/usage/heatmap";
 import { USAGE_DISPLAY_CURRENCIES } from "@/src/lib/usage/pricing";
 import type { UsageTrendDay } from "@/src/lib/usage/query";
 import { getUsageSettings } from "@/src/lib/usage/settings";
@@ -364,7 +364,7 @@ export default async function ProfilePage({
                 </div>
                 <div className="mt-1 font-mono text-[10.5px] text-grey/70">
                   {t(locale, "prof.statTotalSub", {
-                    v: `$${(snapshotAll.costMicros / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    v: `≈$${Math.round(snapshotAll.costMicros / 1e6).toLocaleString("en-US")}`,
                   })}
                 </div>
               </div>
@@ -396,7 +396,7 @@ export default async function ProfilePage({
                 <div className="text-[11px] tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statHitRate")}
                 </div>
-                <div className="mt-1.5 font-mono text-lg font-semibold text-emerald-400">
+                <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
                   {snapshotAll.cacheHitRate === null
                     ? "—"
                     : `${(snapshotAll.cacheHitRate * 100).toFixed(1)}%`}
@@ -650,7 +650,7 @@ export default async function ProfilePage({
                       </div>
                       <div className="rounded-xl border border-line bg-bg p-3.5">
                         <div className="text-[11px] text-grey/80">{t(locale, "prof.usageHit")}</div>
-                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-emerald-400">
+                        <div className="mt-1.5 font-mono text-[17px] font-semibold text-paper">
                           {snapshot30.cacheHitRate === null
                             ? "—"
                             : `${(snapshot30.cacheHitRate * 100).toFixed(1)}%`}
@@ -663,22 +663,21 @@ export default async function ProfilePage({
                         </div>
                       </div>
                     </div>
-                    {/* 近 30 天每日趋势:直接复用用量中心的 SVG 堆叠柱图(同一渲染器) */}
+                    {/* 近 30 天每日趋势:默认比较总量，构成信息在 Tooltip 中按需查看。 */}
                     <div className="mt-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <h4 className="text-[13px] font-semibold text-paper">
-                          {t(locale, "prof.dailyTrend")}
+                          {zh ? "近 30 天 Token 趋势" : "30-day token trend"}
                         </h4>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                          {USAGE_TREND_LEGEND.map((item) => (
-                            <span
-                              key={item.key}
-                              className="flex items-center gap-1.5 text-[11px] text-grey"
-                            >
-                              <i className={`h-2 w-2 rounded-[2px] ${item.chip}`} />
-                              {zh ? item.zh : item.en}
-                            </span>
-                          ))}
+                          <span className="flex items-center gap-1.5 text-[11px] text-grey">
+                            <i className="h-2 w-2 rounded-[2px] bg-blue" />
+                            {zh ? "总 Token" : "Total tokens"}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[11px] text-grey">
+                            <i className="h-0 w-3.5 border-t-2 border-dashed border-grey/70" />
+                            {zh ? "7 日均值" : "7-day average"}
+                          </span>
                         </div>
                       </div>
                       <div className="mt-2">

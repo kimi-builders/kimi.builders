@@ -228,14 +228,22 @@ export default async function Home({
       {stats && (
         <section className="border-y border-line">
           <div className="mx-auto grid max-w-4xl grid-cols-2 gap-y-8 px-6 py-12 sm:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.l} className="text-center">
-                <div className="font-mono text-3xl font-semibold tracking-wide">
+            {stats.map((s, index) => (
+              <div
+                key={s.l}
+                className={`text-center ${index === 3 ? "border-t border-line pt-8 sm:border-l sm:border-t-0 sm:pt-0" : ""}`}
+              >
+                <div className={`font-mono text-3xl font-semibold tracking-wide ${index === 3 ? "text-blue" : ""}`}>
                   <CountUpStat value={s.n} locale={locale} />
                 </div>
                 <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-grey">
                   {s.l}
                 </div>
+                {index === 3 && (
+                  <div className="mt-2 text-[10.5px] text-grey/70">
+                    {locale === "zh" ? "公开成员累计" : "Public member total"}
+                  </div>
+                )}
               </div>
             ))}
           </div>

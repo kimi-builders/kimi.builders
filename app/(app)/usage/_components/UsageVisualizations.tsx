@@ -17,12 +17,8 @@ const WEEKDAY_LONG_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAY_SHORT_ZH = ["一", "二", "三", "四", "五", "六", "日"];
 const WEEKDAY_SHORT_EN = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-/* 堆叠序列的配色单一事实源:SVG 柱子用下面的 FILL_*(inline style,Tailwind 不管 SVG 填充),
-   page.tsx 的卡头图例用 USAGE_TREND_LEGEND 的 bg-* class。两套值必须同 hue,改色两边同步。 */
-const FILL_INPUT = "var(--color-blue)";
-const FILL_CACHE = "rgb(52 211 153 / 0.8)"; // emerald-400/80
-const FILL_OUTPUT = "color-mix(in srgb, var(--color-paper) 75%, transparent)";
-const FILL_REASONING = "#fbbf24"; // amber-400
+/* 趋势图默认只强调总量。输入、缓存、输出与推理构成保留在 Tooltip，
+   避免高缓存占比长期用绿色淹没真正需要比较的 Token 总量。 */
 const FILL_COST = "var(--color-blue)";
 const FILL_DURATION = "color-mix(in srgb, var(--color-blue) 70%, transparent)";
 
@@ -149,7 +145,7 @@ function tooltipPos(
   };
 }
 
-/* 趋势图核心:SVG 堆叠柱(+可选均线)+ Y 网格线 + HTML 透明热区(保键盘可达)。
+/* 趋势图核心:SVG 总量柱(+可选均线)+ Y 网格线 + HTML 透明热区(保键盘可达)。
    视觉层全 SVG,交互层叠绝对定位的 button 行,两者用同一组 slot 几何对齐。 */
 function TrendCore({
   trend,
@@ -265,35 +261,18 @@ function TrendCore({
               {trend.map((item, index) => {
                 const x = padL + index * slot + (slot - barW) / 2;
                 if (metric === "tokens") {
-                  const segments = [
-                    { value: item.inputTokens + item.cacheWriteInputTokens, fill: FILL_INPUT },
-                    { value: item.cacheReadInputTokens, fill: FILL_CACHE },
-                    { value: item.outputTokens, fill: FILL_OUTPUT },
-                    { value: item.reasoningOutputTokens, fill: FILL_REASONING },
-                  ];
-                  let cursor = y(0);
+                  const value = item.totalTokens;
+                  const h = value <= 0 ? 1 : Math.max(2, (value / max) * plotHeight);
                   return (
-                    <g key={item.day}>
-                      {item.totalTokens <= 0 && (
-                        <rect x={x} y={cursor - 1} width={barW} height={1} style={{ fill: "var(--color-card)" }} />
-                      )}
-                      {segments.map((segment) => {
-                        if (segment.value <= 0) return null;
-                        const h = (segment.value / max) * plotHeight;
-                        cursor -= h;
-                        return (
-                          <rect
-                            key={segment.fill}
-                            x={x}
-                            y={cursor}
-                            width={barW}
-                            height={Math.max(h, 1.5)}
-                            rx={1}
-                            style={{ fill: segment.fill }}
-                          />
-                        );
-                      })}
-                    </g>
+                    <rect
+                      key={item.day}
+                      x={x}
+                      y={y(0) - h}
+                      width={barW}
+                      height={h}
+                      rx={1}
+                      style={{ fill: value <= 0 ? "var(--color-card)" : "var(--color-blue)" }}
+                    />
                   );
                 }
                 const value = metricValue(item, metric);
@@ -505,6 +484,7 @@ export function UsageHeatmapGrid({
   currency: UsageCurrencySpec;
 }) {
   const [hovered, setHovered] = useState<{ weekday: number; hour: number } | null>(null);
+  const [mobileHourStart, setMobileHourStart] = useState<0 | 12>(0);
   const grid = heatGridFor(heatmap, metric);
   const max = Math.max(0, ...grid.flat());
   const peak = heatPeakSlot(heatmap, metric);
@@ -533,24 +513,42 @@ export function UsageHeatmapGrid({
 
   return (
     <div className="relative" onMouseLeave={() => setHovered(null)}>
+      <div className="mb-3 grid grid-cols-2 rounded-lg border border-line p-0.5 sm:hidden">
+        {([0, 12] as const).map((start) => (
+          <button
+            key={start}
+            type="button"
+            aria-pressed={mobileHourStart === start}
+            onClick={() => setMobileHourStart(start)}
+            className={`min-h-9 rounded-md font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+              mobileHourStart === start ? "bg-blue text-bg" : "text-grey"
+            }`}
+          >
+            {String(start).padStart(2, "0")}–{String(start + 11).padStart(2, "0")}
+          </button>
+        ))}
+      </div>
       {/* 格子随列宽自适应,但设最大宽度:超宽容器里格子不被拉大,视觉密度恒定。 */}
       <div className="pb-1">
-        <div className="max-w-[620px]">
+        <div className="min-w-0 max-w-[620px] sm:min-w-[560px]">
           <div className="space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
                 <span className="w-5 shrink-0 text-center font-mono text-[11px] text-grey">
                   {shortNames[weekday]}
                 </span>
-                <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
+                <div className="grid flex-1 grid-cols-[repeat(12,minmax(0,1fr))] gap-[3px] sm:grid-cols-[repeat(24,minmax(0,1fr))]">
                   {row.map((value, hour) => {
+                    const mobileVisible = hour >= mobileHourStart && hour < mobileHourStart + 12;
                     if (!heatmap.hasData[weekday][hour]) {
                       /* 采集缺口:虚线描边格,不可交互。 */
                       return (
                         <span
                           key={hour}
                           aria-hidden="true"
-                          className="aspect-square rounded-[3px] border border-dashed border-paper/20"
+                          className={`aspect-square rounded-[3px] border border-dashed border-paper/20 ${
+                            mobileVisible ? "" : "hidden sm:block"
+                          }`}
                         />
                       );
                     }
@@ -561,7 +559,9 @@ export function UsageHeatmapGrid({
                         key={hour}
                         type="button"
                         aria-label={`${longNames[weekday]} ${String(hour).padStart(2, "0")}:00 · ${heatMetricText(metric, value, zh, currency)}`}
-                        className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${stepClass(value)}`}
+                        className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${
+                          mobileVisible ? "" : "hidden sm:block"
+                        } ${stepClass(value)}`}
                         style={
                           isPeak
                             ? { boxShadow: "0 0 0 1.5px #fff, 0 0 16px rgb(59 130 246 / 0.55)" }
@@ -579,9 +579,14 @@ export function UsageHeatmapGrid({
           </div>
           <div className="mt-[3px] flex items-center gap-1.5">
             <span className="w-5 shrink-0" />
-            <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-[3px]">
+            <div className="grid flex-1 grid-cols-[repeat(12,minmax(0,1fr))] gap-[3px] sm:grid-cols-[repeat(24,minmax(0,1fr))]">
               {Array.from({ length: 24 }, (_, hour) => (
-                <span key={hour} className="text-center font-mono text-[10.5px] text-grey">
+                <span
+                  key={hour}
+                  className={`text-center font-mono text-[10.5px] text-grey ${
+                    hour >= mobileHourStart && hour < mobileHourStart + 12 ? "" : "hidden sm:block"
+                  }`}
+                >
                   {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
                 </span>
               ))}
