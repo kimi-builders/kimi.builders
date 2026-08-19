@@ -8,7 +8,9 @@
    20260921 评审修订:计数与渲染同口径——统计只数可见资源(external +
    ref 解析成功),整层无可见内容(资源全隐藏且无支线)则整层不渲染,
    层号按可见层重排;MockRibbon 改分区措辞(策展预览,讨论/毕业作品为真实记录)。
-   板块开关未就绪时整页换「正在路上」。 */
+   板块开关未就绪时整页换「正在路上」。
+   20260819 版式对齐:H1 纳入 .kb-h1、层标题 .kb-h2、条目 .kb-h3、eyebrow 统一
+   .kb-eyebrow;金句引语走 font-human(手册:人文字体给引语);section 节奏 py-12。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -208,7 +210,7 @@ function Spine({
         aria-hidden="true"
         className="absolute bottom-5 left-[18px] top-2 w-px bg-line"
       />
-      <div className="space-y-5">
+      <div className="space-y-6">
         {level.resources.map((r, j) => (
           <SpineNode
             key={j}
@@ -227,7 +229,7 @@ function Branches({ level, zh }: { level: PathLevel; zh: boolean }) {
   if (!level.branches.length) return null;
   return (
     <div className="ml-[18px] mt-6 border-l border-dashed border-line pl-6">
-      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+      <p className="kb-eyebrow">
         {zh ? "支线 · OPTIONAL BRANCHES" : "OPTIONAL BRANCHES"}
       </p>
       <ul className="mt-2.5 space-y-2.5">
@@ -262,8 +264,8 @@ function Branches({ level, zh }: { level: PathLevel; zh: boolean }) {
 function VerifyLog({ path, zh }: { path: LearnPath; zh: boolean }) {
   const stale = isPathStale(path);
   return (
-    <section className="border-b border-line py-9">
-      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+    <section className="border-b border-line py-12">
+      <p className="kb-eyebrow">
         {zh ? "验证记录 · VERIFY LOG" : "VERIFY LOG"}
       </p>
       <ol className="mt-4 space-y-2.5">
@@ -316,8 +318,8 @@ function DiscussionBlock({
   zh: boolean;
 }) {
   return (
-    <section className="border-b border-line py-9">
-      <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+    <section className="border-b border-line py-12">
+      <p className="flex items-center gap-2 kb-eyebrow">
         <MessagesSquare size={13} aria-hidden="true" />
         {zh ? "讨论 · DISCUSSION" : "DISCUSSION"}
       </p>
@@ -376,7 +378,7 @@ function GraduatesBlock({
 }) {
   return (
     <div className="mt-6">
-      <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+      <p className="flex items-center gap-2 kb-eyebrow">
         <GraduationCap size={13} aria-hidden="true" />
         {zh ? "毕业作品 · GRADUATES" : "GRADUATES"}
       </p>
@@ -454,22 +456,22 @@ function JourneyLayout({
     <article>
       {/* hero:eyebrow + 大标题 + 金句 + 摘要 + facts + CTA(统计只报可见) */}
       <header className="border-b border-line pb-8">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <p className="kb-eyebrow">
           — {path.code} ·{" "}
           {path.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"} ·{" "}
           {levels.length} {zh ? "层" : "levels"} · {totalVisible}{" "}
           {zh ? "个资源" : "resources"}
         </p>
-        <h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight tracking-tight">
+        <h1 className="kb-h1 mt-3 max-w-2xl">
           {zh ? path.title.zh : path.title.en}
         </h1>
-        <p className="mt-4 max-w-xl text-lg leading-relaxed text-grey">
+        <p className="mt-4 max-w-xl font-human text-xl leading-relaxed text-grey">
           {zh ? `「${path.tagline.zh}」` : `“${path.tagline.en}”`}
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-grey">
           {zh ? path.summary.zh : path.summary.en}
         </p>
-        <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 kb-eyebrow">
           <span className="flex items-center gap-1.5">
             <Clock3 size={13} aria-hidden="true" />
             {zh ? `约 ${path.hours} 小时` : `~${path.hours}h`}
@@ -482,7 +484,7 @@ function JourneyLayout({
             </span>
           )}
         </p>
-        <div className="mt-7 flex flex-wrap items-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           <a
             href="#level-01"
  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
@@ -504,12 +506,12 @@ function JourneyLayout({
         <section
           key={v.level.name.zh}
           id={`level-${String(i + 1).padStart(2, "0")}`}
-          className="scroll-mt-20 border-b border-line py-9 last:border-b-0"
+          className="scroll-mt-20 border-b border-line py-12 last:border-b-0"
         >
           <LevelHeader index={i} total={levels.length} level={v.level} count={v.visible} zh={zh} />
-          <div className="mt-5 md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10">
+          <div className="mt-6 md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-12">
             <div className="md:sticky md:top-20 md:self-start">
-              <h2 className="text-xl font-semibold tracking-tight">
+              <h2 className="kb-h2">
                 {zh ? v.level.name.zh : v.level.name.en}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-grey">
@@ -517,7 +519,7 @@ function JourneyLayout({
               </p>
               {v.level.learn.length > 0 && (
                 <div className="mt-4">
-                  <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+                  <p className="kb-eyebrow">
                     {zh ? "你将学会 · YOU'LL LEARN" : "YOU'LL LEARN"}
                   </p>
                   <ul className="mt-2 space-y-1.5">
@@ -546,7 +548,7 @@ function JourneyLayout({
       {discussion && <DiscussionBlock discussion={discussion} zh={zh} />}
 
       {/* 成就徽章+ 真实毕业作品 */}
-      <section className="py-9">
+      <section className="py-12">
         <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
           <span
             aria-hidden="true"
@@ -558,7 +560,7 @@ function JourneyLayout({
             <p className="font-mono text-xs uppercase tracking-[0.08em] text-ui-blue">
               {zh ? "成就 · ACHIEVEMENT" : "ACHIEVEMENT"}
             </p>
-            <h2 className="mt-1.5 text-lg font-semibold tracking-tight">
+            <h2 className="kb-h3 mt-2">
               {zh ? path.achievement.title.zh : path.achievement.title.en}
             </h2>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-grey">
@@ -621,10 +623,10 @@ function EditorialRow({
   if (!card) return null;
   const inner = (
     <>
-      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
+      <p className="kb-eyebrow">
         — {meta.label} · {zh ? r.duration.zh : r.duration.en}
       </p>
-      <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
+      <h3 className="kb-h3 mt-2 transition-colors group-hover:text-ui-blue">
         {card.title}
         {card.external && (
           <ArrowUpRight size={14} className="ml-1 inline shrink-0 align-[-2px] text-grey" aria-hidden="true" />
@@ -645,7 +647,7 @@ function EditorialRow({
     </>
   );
   return (
-    <article className="border-b border-line py-5 last:border-b-0">
+    <article className="border-b border-line py-6 last:border-b-0">
       {card.external ? (
         <a href={card.href} target="_blank" rel="noopener noreferrer" className="group block">
           {inner}
@@ -692,7 +694,7 @@ function EditorialLayout({
     <article>
       {/* hero:Zhaphar session-hero 语言(eyebrow + 大标题 + lead + facts + actions) */}
       <header className="border-b border-line pb-8">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <p className="kb-eyebrow">
           — {path.code} ·{" "}
           {path.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"}
           {isPathStale(path) && (
@@ -701,16 +703,16 @@ function EditorialLayout({
             </span>
           )}
         </p>
-        <h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight tracking-tight">
+        <h1 className="kb-h1 mt-3 max-w-2xl">
           {zh ? path.title.zh : path.title.en}
         </h1>
-        <p className="mt-4 max-w-xl text-lg leading-relaxed text-grey">
+        <p className="mt-4 max-w-xl font-human text-xl leading-relaxed text-grey">
           {zh ? `「${path.tagline.zh}」` : `“${path.tagline.en}”`}
         </p>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
           {zh ? path.summary.zh : path.summary.en}
         </p>
-        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 kb-eyebrow">
           <span>{platforms.join(" · ")}</span>
           <span aria-hidden="true">·</span>
           <span className="flex items-center gap-1.5">
@@ -720,7 +722,7 @@ function EditorialLayout({
           <span aria-hidden="true">·</span>
           {verifyStamp(path, zh)}
         </p>
-        <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4">
+        <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4">
           {firstHref &&
             (first?.external ? (
               <a
@@ -753,10 +755,10 @@ function EditorialLayout({
         <section
           key={v.level.name.zh}
           id={`level-${String(i + 1).padStart(2, "0")}`}
-          className="scroll-mt-20 border-b border-line py-9 last:border-b-0"
+          className="scroll-mt-20 border-b border-line py-12 last:border-b-0"
         >
           <LevelHeader index={i} total={levels.length} level={v.level} count={v.visible} zh={zh} />
-          <h2 className="mt-3 text-xl font-semibold tracking-tight">
+          <h2 className="kb-h2 mt-3">
             {zh ? v.level.name.zh : v.level.name.en}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
@@ -781,7 +783,7 @@ function EditorialLayout({
       {discussion && <DiscussionBlock discussion={discussion} zh={zh} />}
 
       {/* 成就与毕业物(真实毕业作品见 GraduatesBlock) */}
-      <section className="py-9">
+      <section className="py-12">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-sm leading-relaxed text-grey">
             <span className="font-mono text-xs uppercase tracking-[0.08em] text-ui-blue">

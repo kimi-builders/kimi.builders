@@ -1,4 +1,6 @@
-/* 知识库 · 路径总览 v3(20260816 三轮重设计;20260921 评审修订)
+/* 知识库 · 路径总览 v3(20260816 三轮重设计;20260921 评审修订;
+   20260819 版式对齐:hero 收编进共享 PageHeader,eyebrow/标题/间距纳入
+   .kb-* 基元与 4px 序列)
    · hero 右侧 PATH STACK 卡(mac 点 + 编号行 + 档位色右边条)= /ai 的
      FIELD GUIDE STACK,一屏给出全部路径的地图;
    · 编选法四条纪律(编号条款)= RFC §2 的可视化;
@@ -11,6 +13,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -49,11 +52,11 @@ function PathStack({ zh }: { zh: boolean }) {
       aria-label={zh ? "路径目录" : "Path index"}
       className="overflow-hidden rounded-2xl border border-line bg-card xl:hidden"
     >
-      <div className="flex items-center gap-1.5 border-b border-line px-4 py-2.5">
+      <div className="flex items-center gap-1.5 border-b border-line px-4 py-3">
         <span aria-hidden="true" className="size-2 rounded-full bg-status-danger/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-warn/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-ok/70" />
-        <span className="ml-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <span className="kb-eyebrow ml-2">
           {zh ? "路径栈" : "PATH STACK"}
         </span>
       </div>
@@ -120,30 +123,34 @@ export default async function LearnPage() {
     <div>
       <MockRibbon zh={zh} />
 
-      {/* hero:eyebrow + 大标题 + 导语 + 汇总 meta + CTA;右侧 PATH STACK
-          (仅 lg–xl 区间挂出:≥xl 右栏 LearnRail 已有路径栈,不重复;<lg 叠在下方) */}
-      <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 xl:block">
-        <div>
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
-            — {zh ? "知识库" : "LEARN"} · {zh ? "策划制学习路径" : "CURATED PATHS"}
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight">
+      {/* hero(20260819 收编进共享 PageHeader):eyebrow + 大标题 + 导语 + 汇总
+          meta + CTA;右侧 PATH STACK(仅 lg–xl 区间挂出:≥xl 右栏 LearnRail
+          已有路径栈,不重复,xl:block 收回单列;<lg 叠在下方) */}
+      <PageHeader
+        className="xl:block"
+        eyebrow={`— ${zh ? "知识库" : "LEARN"} · ${zh ? "策划制学习路径" : "CURATED PATHS"}`}
+        title={
+          <>
             {zh ? "少而重,走过的路" : "Few paths, walked first"}
             <span className="text-ui-blue">.</span>
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
-            {zh
-              ? "这里不生产教程。每条路径是编辑定夺的一手资料编排——Kimi 官方、YouTube、bilibili、X 上的原始内容,加上社区同学先走一遍的学习笔记;验证戳担保它此刻仍然有效,终点收口在真实作品。"
-              : "We don't produce tutorials. Each path is an editor's arrangement of first-party material — Kimi official docs, YouTube, bilibili, X — plus notes from members who walked it first; a verification stamp warrants it still works, and every path ends at a real build."}
-          </p>
-          <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+          </>
+        }
+        lede={
+          zh
+            ? "这里不生产教程。每条路径是编辑定夺的一手资料编排——Kimi 官方、YouTube、bilibili、X 上的原始内容,加上社区同学先走一遍的学习笔记;验证戳担保它此刻仍然有效,终点收口在真实作品。"
+            : "We don't produce tutorials. Each path is an editor's arrangement of first-party material — Kimi official docs, YouTube, bilibili, X — plus notes from members who walked it first; a verification stamp warrants it still works, and every path ends at a real build."
+        }
+        meta={
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
             <span>{LEARN_PATHS.length} {zh ? "条路径" : "paths"}</span>
             <span aria-hidden="true">·</span>
             <span>{totalResources} {zh ? "个一手资源" : "first-party resources"}</span>
             <span aria-hidden="true">·</span>
             <span>{zh ? "验证戳逐条可见" : "verify stamp on every path"}</span>
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
             <a
               href="#paths"
  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
@@ -157,13 +164,13 @@ export default async function LearnPage() {
               {zh ? "编选法" : "The method"}
             </a>
           </div>
-        </div>
-        <PathStack zh={zh} />
-      </header>
+        }
+        aside={<PathStack zh={zh} />}
+      />
 
       {/* 编选法:四条纪律 */}
-      <section id="method" className="mt-10 scroll-mt-20 border-y border-line py-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+      <section id="method" className="mt-12 scroll-mt-20 border-y border-line py-6">
+        <p className="kb-eyebrow">
           {zh ? "编选法 · HOW PATHS ARE MADE" : "HOW PATHS ARE MADE"}
         </p>
         <div className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -180,11 +187,12 @@ export default async function LearnPage() {
       </section>
 
       {/* 路径条目:整行式(编号徽章 + eyebrow + 大标题 + 摘要 + 验证戳);
-          资源数只报可见(与详情页同口径) */}
+          资源数只报可见(与详情页同口径);
+          20260819 版式对齐:间距归位 4px 序列,标题纳入 .kb-h3 基元 */}
       <div id="paths" className="scroll-mt-20">
         {LEARN_PATHS.map((p) => (
           <article key={p.slug} className="border-b border-line last:border-b-0">
-            <Link href={`/learn/${p.slug}`} className="group flex gap-5 py-7">
+            <Link href={`/learn/${p.slug}`} className="group flex gap-6 py-8">
               <span
                 aria-hidden="true"
                 className={`hidden size-11 shrink-0 place-items-center rounded-xl border font-mono text-xs font-semibold sm:grid ${tierColor(p)}`}
@@ -192,7 +200,7 @@ export default async function LearnPage() {
                 {p.code.replace("PATH-", "P")}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
+                <p className="kb-eyebrow">
                   —{" "}
                   {p.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"}
                   {" · "}
@@ -202,7 +210,7 @@ export default async function LearnPage() {
                   {" · "}
                   {zh ? `约 ${p.hours} 小时` : `~${p.hours}h`}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
+                <h2 className="kb-h3 mt-2 transition-colors group-hover:text-ui-blue">
                   {zh ? p.title.zh : p.title.en}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">

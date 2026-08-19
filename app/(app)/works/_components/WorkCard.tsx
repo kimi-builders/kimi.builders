@@ -136,8 +136,8 @@ export default function WorkCard({
           variant="row"
         />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col p-5">
-        <h2 className="truncate text-lg font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
+      <div className="flex min-w-0 flex-1 flex-col p-6">
+        <h2 className="kb-h3 truncate transition-colors group-hover:text-ui-blue">
           {w.name}
         </h2>
         {w.tagline && (
@@ -147,7 +147,7 @@ export default function WorkCard({
         )}
         {/* meta 区:分类 / Agent / 收录口径分三行,每行带 mute 小标签
             (类型/参与构建/收录——一眼可读,2026-08-14);蓝只给声明投入与精选 */}
-        <div className="mb-4 mt-3 flex min-w-0 flex-col gap-1.5 text-xs leading-5 text-grey">
+        <div className="mb-4 mt-3 flex min-w-0 flex-col gap-2 text-xs leading-5 text-grey">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-grey/55">{t(locale, "works.metaKind")}</span>
             <WorkMetaChips w={w} locale={locale} statusLabel={statusLabel} kindLabel={kindLabel} />

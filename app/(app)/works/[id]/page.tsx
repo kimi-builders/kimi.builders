@@ -4,7 +4,9 @@
    见右栏注册表 work kind)+ 底部单层评论区。
    浏览无需登录;支持/评论需登录(comment/vote 配额限流)。评论里 @kimi 可召唤
    Kimi 小筑(20260816;作品 ai_reply 开关 + 召唤限流,ai_summon 配额)。
-   不存在/已删作品给友好文案,不 404 硬错。 */
+   不存在/已删作品给友好文案,不 404 硬错。
+   20260819 版式对齐:H1/评论区 H2 纳入 .kb-h1/.kb-h2 基元,属性 chips 降标签档
+   (text-xs),间距归位 4px 序列。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -61,7 +63,7 @@ export async function generateMetadata({
 /* 不存在/已撤下:友好文案 + 回来源列表(来源记忆优先,20260919)。 */
 function WorkGone({ locale, href, label }: { locale: Locale; href: string; label: string }) {
   return (
-    <div className="mt-10 rounded-2xl border border-line bg-card p-8 text-center">
+    <div className="mt-12 rounded-2xl border border-line bg-card p-8 text-center">
       <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-line bg-moon text-ui-blue">
         <GalleryVerticalEnd size={23} aria-hidden="true" />
       </span>
@@ -156,7 +158,7 @@ export default async function WorkPage({
             className="mt-0.5 size-11 shrink-0 rounded-lg border border-line object-cover"
           />
         )}
-        <h1 className="text-3xl font-semibold leading-tight">
+        <h1 className="kb-h1">
           {work.name}
         </h1>
       </div>
@@ -208,13 +210,13 @@ export default async function WorkPage({
         )}
         <span>· {relTime(work.createdAt, locale)}</span>
         {work.visibility === "private" && (
-          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-sm font-medium text-grey">
+          <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-xs font-medium text-grey">
             {t(locale, "works.private")}
           </span>
         )}
         {work.hiddenAt && (
           <span
-            className="inline-block rounded-md border border-status-danger/60 px-1.5 py-px font-mono text-sm font-medium text-status-danger-fg"
+            className="inline-block rounded-md border border-status-danger/60 px-1.5 py-px font-mono text-xs font-medium text-status-danger-fg"
             title={work.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}
@@ -222,12 +224,12 @@ export default async function WorkPage({
         )}
       </div>
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 font-mono text-sm text-grey">
+        <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 font-mono text-xs text-grey">
           <WorkKindIcon id={work.kind} size={11} />
           {workKindLabel(work.kind, locale === "zh")}
         </span>
         {work.scope && (
-          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-sm text-grey">
+          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-xs text-grey">
             {t(
               locale,
               work.scope === "eco"
@@ -239,7 +241,7 @@ export default async function WorkPage({
           </span>
         )}
         {work.status !== "released" && (
-          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-sm text-grey">
+          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-xs text-grey">
             {t(
               locale,
               work.status === "planning"
@@ -252,7 +254,7 @@ export default async function WorkPage({
         )}
         {claimBadge !== null && (
           <span
-            className="inline-flex items-center rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-sm text-blue"
+            className="inline-flex items-center rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-xs text-blue"
             title={t(locale, "works.badgeTitle")}
           >
             {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -260,7 +262,7 @@ export default async function WorkPage({
         )}
         {work.featuredAt && (
           <span
-            className="inline-flex items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-sm text-blue"
+            className="inline-flex items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-xs text-blue"
             title={`${work.featuredReason ?? ""}${
               work.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
@@ -274,7 +276,7 @@ export default async function WorkPage({
 
       {/* 操作条(媒体之上):体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除。
           移动端(20260815 打磨):CTA 全宽独占一行,操作重心突出;支持/分享次行。 */}
-      <div className="mt-5 flex flex-wrap items-center gap-2.5">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         {work.url && (
           <a
             href={work.url}
@@ -342,7 +344,7 @@ export default async function WorkPage({
           都没有就不渲染——生成的名称砖是列表封面的兜底,详情页头部已有
           logo + 名称,再放同一块砖是重复(20260908) */}
       {(work.imageKeys.length > 0 || work.screenshotUrl) && (
-        <div className="mt-5">
+        <div className="mt-6">
           {work.imageKeys.length > 0 ? (
             <WorkGallery
               keys={work.imageKeys}
@@ -363,7 +365,7 @@ export default async function WorkPage({
       {/* 正文 + 信息栏:<xl 信息栏沉底两列网格(20260815 打磨:原 220px 侧栏
           在 640–1023px 视口把正文挤到 ~360px,阅读局促;沉底后正文独占全宽,
           信息行按两列排布压缩高度);≥xl 由右栏元数据卡取代(右栏注册表 work kind) */}
-      <div className="mt-10 space-y-8">
+      <div className="mt-8 space-y-8">
         <div>
           {/* 长描述优先(20260824 新增 description_md),缺省回退 tagline */}
           {(work.descriptionMd || work.tagline) && (
@@ -372,9 +374,9 @@ export default async function WorkPage({
         </div>
 
         {/* 内联信息栏(<xl):与右栏同款 label/value hairline 行,sm 起两列 */}
-        <aside className="border-t border-line pt-5 xl:hidden">
+        <aside className="border-t border-line pt-6 xl:hidden">
           <dl className="grid gap-x-8 font-mono text-sm sm:grid-cols-2">
-            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+            <div className="flex items-center justify-between gap-3 border-b border-line py-3">
               <dt className="text-grey">
                 {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
               </dt>
@@ -395,7 +397,7 @@ export default async function WorkPage({
               </dd>
             </div>
             {claimBadge !== null && (
-              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
                 <dt className="text-grey">{t(locale, "works.declared")}</dt>
                 <dd className="text-ui-blue" title={t(locale, "works.badgeTitle")}>
                   {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -403,7 +405,7 @@ export default async function WorkPage({
               </div>
             )}
             {work.agents.length > 0 && (
-              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
                 <dt className="shrink-0 text-grey">{t(locale, "works.agents")}</dt>
                 <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
                   {work.agents.map((a) => (
@@ -415,7 +417,7 @@ export default async function WorkPage({
                 </dd>
               </div>
             )}
-            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+            <div className="flex items-center justify-between gap-3 border-b border-line py-3">
               <dt className="text-grey">{t(locale, "works.kind")}</dt>
               <dd className="inline-flex items-center gap-1 text-paper">
                 <WorkKindIcon id={work.kind} size={11} />
@@ -423,7 +425,7 @@ export default async function WorkPage({
               </dd>
             </div>
             {work.models.length > 0 && (
-              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
                 <dt className="shrink-0 text-grey">{t(locale, "works.sideModels")}</dt>
                 <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
                   {work.models.map((m) => (
@@ -436,7 +438,7 @@ export default async function WorkPage({
               </div>
             )}
             {work.tags.length > 0 && (
-              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
                 <dt className="shrink-0 text-grey">{t(locale, "works.tagsShort")}</dt>
                 <dd className="min-w-0 truncate text-right text-paper" title={work.tags.join(", ")}>
                   {work.tags.join(", ")}
@@ -444,7 +446,7 @@ export default async function WorkPage({
               </div>
             )}
             {(work.url || work.repoUrl) && (
-              <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
                 <dt className="text-grey">{t(locale, "works.sideLinks")}</dt>
                 <dd className="inline-flex items-center gap-3">
                   {work.url && (
@@ -462,11 +464,11 @@ export default async function WorkPage({
                 </dd>
               </div>
             )}
-            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
+            <div className="flex items-center justify-between gap-3 border-b border-line py-3">
               <dt className="text-grey">{t(locale, "works.published")}</dt>
               <dd className="text-paper">{relTime(work.createdAt, locale)}</dd>
             </div>
-            <div className="flex items-center justify-between gap-3 py-2.5">
+            <div className="flex items-center justify-between gap-3 py-3">
               <dt className="text-grey">{t(locale, "works.support")}</dt>
               <dd className="inline-flex items-center gap-1 text-paper">
                 <Heart size={11} />
@@ -480,8 +482,8 @@ export default async function WorkPage({
 
       {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删,
               AI 评论(召唤)另放行治理) */}
-      <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
-        <h2 id="comments" className="text-xl font-semibold text-paper">
+      <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-6">
+        <h2 id="comments" className="kb-h2">
           {t(locale, "works.discuss")} ·{" "}
           {t(locale, "post.comments", { n: comments.total })}
         </h2>

@@ -6,11 +6,14 @@
    03 编辑定夺(featured + 治理公示);层色 蓝/翡翠/琥珀 贯穿。
    页面结构:hero(右侧「每期三层」卡,行锚最新期分节)→ 最新期三层预览
    → 运作方式三条纪律 → 往期 session-row 行式档案。
+   20260819 版式对齐:hero 收编进共享 PageHeader,标题/eyebrow/间距纳入
+   .kb-* 基元与 4px 序列。
    数据为真实组装(src/lib/monthly.ts);一封未发 = 诚实的「首期筹备中」空态。
    板块开关未就绪时整页换「正在路上」(src/lib/upcoming.ts)。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
@@ -51,11 +54,11 @@ function LayerStack({ slug, zh }: { slug: string; zh: boolean }) {
       aria-label={zh ? "月刊三层结构" : "The three layers"}
       className="overflow-hidden rounded-2xl border border-line bg-card"
     >
-      <div className="flex items-center gap-1.5 border-b border-line px-4 py-2.5">
+      <div className="flex items-center gap-1.5 border-b border-line px-4 py-3">
         <span aria-hidden="true" className="size-2 rounded-full bg-status-danger/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-warn/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-ok/70" />
-        <span className="ml-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <span className="kb-eyebrow ml-2">
           {zh ? "每期三层" : "THE LAYERS"}
         </span>
       </div>
@@ -91,7 +94,7 @@ function LayerStack({ slug, zh }: { slug: string; zh: boolean }) {
 function EmptyState({ zh }: { zh: boolean }) {
   return (
     <section className="mt-10 border-y border-line py-12 text-center">
-      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+      <p className="kb-eyebrow">
         {zh ? "首期 · 筹备中" : "ISSUE 01 · IN THE WORKS"}
       </p>
       <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-grey">
@@ -122,13 +125,12 @@ export default async function BlogPage() {
 
   return (
     <div>
-      {/* hero:eyebrow + 大标题 + 导语 + facts + CTA;右侧「每期三层」卡 */}
-      <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10">
-        <div>
-          <div className="flex items-baseline gap-4">
-            <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
-              — MONTHLY · {t(locale, "nav.blog")}
-            </p>
+      {/* hero(20260819 收编进共享 PageHeader):eyebrow + 大标题 + 导语 + facts
+          + CTA;右侧「每期三层」卡;编辑入口「发刊」留在 eyebrow 行右侧 */}
+      <PageHeader
+        eyebrow={
+          <span className="flex items-baseline gap-4">
+            <span>— MONTHLY · {t(locale, "nav.blog")}</span>
             {canEdit && (
               <Link
                 href="/blog/admin/new"
@@ -137,25 +139,31 @@ export default async function BlogPage() {
                 {t(locale, "blog.new")}
               </Link>
             )}
-          </div>
-          <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight">
+          </span>
+        }
+        title={
+          <>
             {t(locale, "blog.title")}
             <span className="text-ui-blue">.</span>
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
-            {zh
-              ? "每月一份的 AI 评鉴报告:Kimi 生态与更广阔的 AI 世界里,值得读的新闻、资源、知识与作品——编辑署名选读,配可复算的事实盘点与编辑部定夺。AI 写得出的内容我们不发,我们发判断。"
-              : "A monthly review of what's worth reading in AI — Kimi ecosystem news, resources, knowledge and builds, hand-picked and signed by editors, backed by reproducible facts and decisions. We don't publish what AI could write; we publish judgment."}
-          </p>
-          <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+          </>
+        }
+        lede={
+          zh
+            ? "每月一份的 AI 评鉴报告:Kimi 生态与更广阔的 AI 世界里,值得读的新闻、资源、知识与作品——编辑署名选读,配可复算的事实盘点与编辑部定夺。AI 写得出的内容我们不发,我们发判断。"
+            : "A monthly review of what's worth reading in AI — Kimi ecosystem news, resources, knowledge and builds, hand-picked and signed by editors, backed by reproducible facts and decisions. We don't publish what AI could write; we publish judgment."
+        }
+        meta={
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
             <span>{metas.length} {zh ? "期" : "issues"}</span>
             <span aria-hidden="true">·</span>
             <span>{zh ? "组装制" : "assembled"}</span>
             <span aria-hidden="true">·</span>
             <span>{zh ? "中英双发" : "bilingual"}</span>
           </p>
-          {latest && (
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+        }
+        actions={
+          latest && (
+            <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={`/blog/${latest.slug}`}
  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
@@ -171,10 +179,10 @@ export default async function BlogPage() {
                 </a>
               )}
             </div>
-          )}
-        </div>
-        {latest && <LayerStack slug={latest.slug} zh={zh} />}
-      </header>
+          )
+        }
+        aside={latest && <LayerStack slug={latest.slug} zh={zh} />}
+      />
 
       {/* 无已发期:诚实空态;有期:最新期三层预览(meta 随行:语言回落标) */}
       {!latest ? (
@@ -184,7 +192,7 @@ export default async function BlogPage() {
       )}
 
       {/* 运作方式 */}
-      <section className="grid gap-x-8 gap-y-3 border-b border-line py-5 sm:grid-cols-3">
+      <section className="grid gap-x-8 gap-y-3 border-b border-line py-6 sm:grid-cols-3">
         {CHARTER.map((c) => (
           <div key={c.zh}>
             <p className="font-mono text-xs text-paper">{zh ? c.zh : c.en}</p>
@@ -196,12 +204,12 @@ export default async function BlogPage() {
       {/* 往期:session-row 行式档案 */}
       {archive.length > 0 && (
         <section id="archive" className="scroll-mt-20">
-          <p className="py-5 font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+          <p className="kb-eyebrow py-5">
             {zh ? "往期 · ARCHIVE" : "ARCHIVE"}
           </p>
           {archive.map((a) => (
             <article key={a.slug} className="border-b border-line last:border-b-0">
-              <Link href={`/blog/${a.slug}`} className="group flex gap-5 py-6">
+              <Link href={`/blog/${a.slug}`} className="group flex gap-6 py-6">
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
                     <span>
@@ -213,7 +221,7 @@ export default async function BlogPage() {
                       </span>
                     )}
                   </p>
-                  <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
+                  <h3 className="kb-h3 mt-2 transition-colors group-hover:text-ui-blue">
                     {a.title}
                   </h3>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
@@ -249,9 +257,9 @@ function LatestIssue({
   zh: boolean;
 }) {
   return (
-    <article className="mt-10 border-y border-line py-9">
+    <article className="mt-12 border-y border-line py-12">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <p className="kb-eyebrow">
           — {zh ? "最新一期" : "LATEST"} · ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month} ·{" "}
           {zh ? "主编" : "ed."} @{issue.editorHandle}
         </p>
@@ -262,7 +270,7 @@ function LatestIssue({
         )}
       </div>
       <Link href={`/blog/${issue.slug}`} className="group mt-3 block">
-        <h2 className="max-w-2xl text-2xl font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
+        <h2 className="kb-h2 max-w-2xl transition-colors group-hover:text-ui-blue">
           {issue.title}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-grey">
@@ -271,7 +279,7 @@ function LatestIssue({
       </Link>
 
       {/* 02 事实盘点:大号 mono 数字;缺项诚实显示「—」 */}
-      <section className="mt-7">
+      <section className="mt-8">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-status-ok-fg">
           02 · {zh ? "事实盘点" : "FACTS"}
         </p>

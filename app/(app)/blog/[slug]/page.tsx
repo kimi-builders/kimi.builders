@@ -9,7 +9,9 @@
    (官方渠道无回音,再议);评鉴层即原 bodyMd 通道。
    数据为真实组装(src/lib/monthly.ts):articles(kind=letter)承载期次,
    事实/定夺来自社区统计/usage 聚合/当月 featured + payload 编辑定夺。
-   板块开关未就绪时整页换「正在路上」。 */
+   板块开关未就绪时整页换「正在路上」。
+   20260819 版式对齐:H1 纳入 .kb-h1、导语 .kb-lede、hero eyebrow 统一
+   .kb-eyebrow;section 节奏 py-12,定夺行 py-6。 */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -112,13 +114,13 @@ function IssueDetail({
     <article>
       {/* hero:eyebrow + 大标题 + 导语 + 署名 + 层锚导航 */}
       <header className="border-b border-line pb-8">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        <p className="kb-eyebrow">
           — ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month}
         </p>
-        <h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight tracking-tight">
+        <h1 className="kb-h1 mt-3 max-w-2xl">
           {issue.title}
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
+        <p className="kb-lede mt-4 max-w-2xl">
           {issue.summary}
         </p>
         <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
@@ -152,21 +154,21 @@ function IssueDetail({
 
       {/* 01 本月评鉴:编辑手写的策展长文(可空则不渲染) */}
       {issue.bodyMd && (
-        <section id="digest" className="scroll-mt-20 border-b border-line py-9">
+        <section id="digest" className="scroll-mt-20 border-b border-line py-12">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-mono text-xs uppercase tracking-[0.08em] text-ui-blue">
               01 · {zh ? "本月评鉴" : "THE REVIEW"}
             </p>
             <SectionShare issue={issue} anchor="digest" label={zh ? "本月评鉴" : "The review"} locale={locale} poster={false} />
           </div>
-          <div className="mt-5">
+          <div className="mt-6">
             <Markdown source={issue.bodyMd} />
           </div>
         </section>
       )}
 
       {/* 02 事实盘点:可验证的原始记录 */}
-      <section id="facts" className="scroll-mt-20 border-b border-line py-9">
+      <section id="facts" className="scroll-mt-20 border-b border-line py-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-status-ok-fg">
             02 · {zh ? "事实盘点" : "FACTS"}
@@ -190,7 +192,7 @@ function IssueDetail({
       </section>
 
       {/* 03 编辑定夺:谁拍的板,为什么 */}
-      <section id="decisions" className="scroll-mt-20 py-9">
+      <section id="decisions" className="scroll-mt-20 py-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-status-warn-fg">
             03 · {zh ? "编辑定夺" : "DECISIONS"}
@@ -206,7 +208,7 @@ function IssueDetail({
         ) : (
           <div className="mt-3">
             {issue.decisions.map((d, i) => (
-              <div key={`${i}-${d.kind}-${d.title}`} className="border-b border-line py-5 last:border-b-0">
+              <div key={`${i}-${d.kind}-${d.title}`} className="border-b border-line py-6 last:border-b-0">
                 <div className="flex flex-wrap items-center gap-3">
                   {decisionChip(d.kind, zh)}
                   <span className="text-sm font-semibold text-paper">

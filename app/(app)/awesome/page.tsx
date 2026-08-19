@@ -2,6 +2,7 @@
    头部说明 + sort seg + 筛选下拉(Agent / 类型 / 收录口径);卡片与 /works 共用
    WorkCard(awesome 条目带口径 chip + 推荐人),首屏与「加载更多」共用
    ../works/_components/works-page(游标分页:new = id,hot = votes|id 复合)。
+   页头(20260819 版式对齐)接入共享 PageHeader,与 learn/blog 同一语法。
    收录口径见 awesome.intro(放宽:参与即可);推荐规则见右栏。 */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -10,6 +11,7 @@ import { Star } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
 import WorkKindIcon from "@/components/WorkKindIcon";
+import PageHeader from "@/components/PageHeader";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import {
   SEG_ITEM,
@@ -83,21 +85,15 @@ export default async function AwesomePage({
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-[0.2px] text-paper">
-            <Star size={20} aria-hidden="true" />
-            {t(locale, "nav.awesome")}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-grey">
-            {t(locale, "awesome.intro")}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={t(locale, "awesome.eyebrow")}
+        title={t(locale, "nav.awesome")}
+        lede={t(locale, "awesome.intro")}
+      />
 
       {/* items-start(20260815 三次打磨):排序 seg 与筛选下拉常驻行顶部对齐,
           筛选结果分组行在 WorksFilterBar 内部向下生长,工具位恒不动 */}
-      <div className="mt-5 flex flex-wrap items-center gap-2.5">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {(
             [
@@ -170,7 +166,7 @@ export default async function AwesomePage({
         </div>
       ) : (
         <div
-          className={`stagger-in mt-5 grid gap-4 ${
+          className={`stagger-in mt-8 grid gap-4 ${
             view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
           }`}
         >

@@ -784,6 +784,10 @@ const DICT = {
   "works.kind": { zh: "作品类型", en: "Type" },
   "works.desc": { zh: "详细说说(支持 Markdown)", en: "Tell the story (Markdown)" },
   "works.wallTitle": { zh: "作品墙", en: "Works" },
+  /* 页头 eyebrow(20260819 版式对齐):works/awesome 接入共享 PageHeader,
+     与 learn/blog 同一 eyebrow 语法(.kb-eyebrow 全大写技术标签) */
+  "works.eyebrow": { zh: "— 作品墙 · 社区构建", en: "— WORKS · MEMBER BUILDS" },
+  "awesome.eyebrow": { zh: "— AWESOME · 生态精选", en: "— AWESOME · ECOSYSTEM PICKS" },
   "works.wallIntro": {
     zh: "社区成员用 Kimi 构建的真实作品;「声明投入」徽章由作者自行申报,并按可验证用量封顶。",
     en: "Real works built by members with Kimi · the build-investment badge is a declared token figure capped by verifiable usage",

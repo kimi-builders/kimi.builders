@@ -81,9 +81,12 @@
   --color-night-moon: #1b1b25;
 
   /* 字体角色唯一来源在下方 :root(--font-ui / --font-technical / --font-human),
-     这里只做引用,保持 Tailwind 工具类与自定义类同栈。 */
+     这里只做引用,保持 Tailwind 工具类与自定义类同栈。
+     --font-human 例外(20260819):@theme 不能自引用同名变量,这里落字面栈,
+     值与 :root 保持一致——引语/宣言的人文字体质感(手册:Sentient/宋体系)。 */
   --font-mono: var(--font-technical);
   --font-sans: var(--font-ui);
+  --font-human: "Iowan Old Style", "Songti SC", "Noto Serif SC", serif;
 }
 
 /* 亮色主题:root layout 按 cookie 给 <html data-theme>,这里覆盖令牌即可,
@@ -801,6 +804,51 @@ main h1 {
   font-size: clamp(1.625rem, 1.25rem + 1vw, 1.875rem);
   line-height: 1.25;
   letter-spacing: -0.025em;
+}
+
+/* ---- 版式基元(20260819 版式对齐):Kimi 品牌手册字阶的站内落地,
+   对齐 kimi-brand tokens 第 6 节(字阶/字距/行高)。
+   手册 H1 44-52px 按 800px 主列收敛为 36-44 clamp;H2 取手册下限区 26-32;
+   H3 定 20px 是密度折衷(手册 H3 24-28 是区块级,行内条目标题保列表密度);
+   eyebrow = mono 12px 全大写 +0.08em(技术标签规范);lede = 正文级 16px 导语。
+   类选择器优先级高于上方 main h1 全局规则,迁移页面用它覆盖,未迁移页面不受影响。 ---- */
+.kb-eyebrow {
+  font-family: var(--font-technical);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-grey);
+}
+
+.kb-h1 {
+  font-size: clamp(2.25rem, 1.75rem + 1.6vw, 2.75rem);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+
+.kb-h2 {
+  font-size: clamp(1.625rem, 1.45rem + 0.7vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--color-paper);
+}
+
+.kb-h3 {
+  font-size: 1.25rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: var(--color-paper);
+}
+
+.kb-lede {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-grey);
 }
 
 main article p {

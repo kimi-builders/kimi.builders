@@ -57,7 +57,7 @@ export default function WorkGridCard({
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col p-4">
-        <h2 className="truncate text-sm font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
+        <h2 className="truncate text-base font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
           {w.name}
         </h2>
         {w.tagline && (
@@ -69,7 +69,7 @@ export default function WorkGridCard({
            分类不重复出——封面名称砖左上已有类型 eyebrow(20260918)。
            Agent 在网格下只出图标(最多 3 个 + "+N",title 悬浮全名列表)——
            卡宽有限,名字会挤爆 meta 行;全名在详情页与行式卡都可看 */}
-        <div className="mb-3 mt-2.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
+        <div className="mb-3 mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
           <WorkMetaChips
             w={w}
             locale={locale}
