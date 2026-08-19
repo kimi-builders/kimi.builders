@@ -58,9 +58,32 @@
   --color-status-danger: #ffd1d4;
   --color-status-danger-fg: #ffd1d4;
 
-  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
-    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  /* 动效令牌(20260818 P2):与 kimi-brand tokens 第 10 节对齐。时长五档
+     120/200/350/600/900ms;生长类一律 ease-grow(快入稳收);
+     transition-* 默认时长收敛到 120ms。 */
+  --transition-duration-instant: 120ms;
+  --transition-duration-fast: 200ms;
+  --transition-duration-base: 350ms;
+  --transition-duration-slow: 600ms;
+  --transition-duration-reveal: 900ms;
+  --ease-grow: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --default-transition-duration: 120ms;
+
+  /* 圆角对齐四级序列 6/10/16/24(20260818 P2):lg 8→10、xl 12→16;
+     poster 气质由下方 data-vibe 规则全部归零,不受影响。 */
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+
+  /* 深色锚点登记:ink #121212 为主锚点;夜幕系是首页海报门面的品牌氛围派生,
+     登记在此,不再散落。 */
+  --color-night: #0e0e13;
+  --color-night-moon: #1b1b25;
+
+  /* 字体角色唯一来源在下方 :root(--font-ui / --font-technical / --font-human),
+     这里只做引用,保持 Tailwind 工具类与自定义类同栈。 */
+  --font-mono: var(--font-technical);
+  --font-sans: var(--font-ui);
 }
 
 /* 亮色主题:root layout 按 cookie 给 <html data-theme>,这里覆盖令牌即可,
@@ -152,8 +175,8 @@
 [data-theme-scope="poster"] {
   /* 夜幕海报:连 UA 滚动条也按暗色渲染(亮色 UI 下进入海报不突兀) */
   color-scheme: dark;
-  --color-bg: #0e0e13;
-  --color-moon: #1b1b25;
+  --color-bg: var(--color-night);
+  --color-moon: var(--color-night-moon);
   --color-paper: #efe8dc;
   --color-blue: #007cff;
   --color-grey: #9a9aa5;
@@ -257,7 +280,7 @@ body {
 .md h3 { font-size: 1.1em; }
 .md h4 { font-size: 1em; }
 .md a {
-  color: var(--color-blue);
+  color: var(--color-ui-blue);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -281,6 +304,7 @@ body {
   border-left: 2px solid var(--color-blue);
   padding-left: 12px;
   color: var(--color-grey);
+  font-family: var(--font-human);
 }
 .md ul { list-style: disc; }
 .md ol { list-style: decimal; }
@@ -492,7 +516,7 @@ html[data-vibe="soft"] .vibe-card-soft {
   }
 }
 .kb-toast {
-  animation: kb-toast-in 0.16s ease-out;
+  animation: kb-toast-in 0.2s ease-out;
 }
 
 /* ---- 首屏列表入场(20260815 评审):前 8 项 50ms 递增上浮淡入,
@@ -508,14 +532,14 @@ html[data-vibe="soft"] .vibe-card-soft {
     transform: translateY(0);
   }
 }
-.stagger-in > *:nth-child(1) { animation: kb-rise 0.4s ease-out both; }
-.stagger-in > *:nth-child(2) { animation: kb-rise 0.4s ease-out 50ms both; }
-.stagger-in > *:nth-child(3) { animation: kb-rise 0.4s ease-out 100ms both; }
-.stagger-in > *:nth-child(4) { animation: kb-rise 0.4s ease-out 150ms both; }
-.stagger-in > *:nth-child(5) { animation: kb-rise 0.4s ease-out 200ms both; }
-.stagger-in > *:nth-child(6) { animation: kb-rise 0.4s ease-out 250ms both; }
-.stagger-in > *:nth-child(7) { animation: kb-rise 0.4s ease-out 300ms both; }
-.stagger-in > *:nth-child(8) { animation: kb-rise 0.4s ease-out 350ms both; }
+.stagger-in > *:nth-child(1) { animation: kb-rise 0.35s ease-out both; }
+.stagger-in > *:nth-child(2) { animation: kb-rise 0.35s ease-out 50ms both; }
+.stagger-in > *:nth-child(3) { animation: kb-rise 0.35s ease-out 100ms both; }
+.stagger-in > *:nth-child(4) { animation: kb-rise 0.35s ease-out 150ms both; }
+.stagger-in > *:nth-child(5) { animation: kb-rise 0.35s ease-out 200ms both; }
+.stagger-in > *:nth-child(6) { animation: kb-rise 0.35s ease-out 250ms both; }
+.stagger-in > *:nth-child(7) { animation: kb-rise 0.35s ease-out 300ms both; }
+.stagger-in > *:nth-child(8) { animation: kb-rise 0.35s ease-out 350ms both; }
 
 /* ---- 全局动效降级(20260815 评审):前庭敏感用户对所有 CSS 动效/过渡的
    统一出口,替代逐组件零散处理(此前仅 usage-pulse 一处有降级)。
@@ -574,24 +598,24 @@ html[data-vibe="soft"] .vibe-card-soft {
     transparent 70%
   );
 }
-/* 同步状态脉冲圆点(薄荷绿 = 同步链路健康,与 hero 的语义色一致)。 */
+/* 同步状态脉冲圆点(状态 mint 令牌 = 同步链路健康;连续脉冲保持匀速)。 */
 @keyframes usage-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgb(52 211 153 / 0.45);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-status-ok) 45%, transparent);
   }
   70% {
-    box-shadow: 0 0 0 7px rgb(52 211 153 / 0);
+    box-shadow: 0 0 0 7px transparent;
   }
   100% {
-    box-shadow: 0 0 0 0 rgb(52 211 153 / 0);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 .usage-pulse-dot {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: #34d399;
-  animation: usage-pulse 2.4s infinite;
+  background: var(--color-status-ok);
+  animation: usage-pulse 2.4s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .usage-pulse-dot {
@@ -758,11 +782,11 @@ html[data-vibe="soft"] .vibe-card-soft {
 }
 
 :root {
-  --font-ui: "Inter", "KB Geist Sans", -apple-system, BlinkMacSystemFont,
+  --font-ui: "KB Geist Sans", -apple-system, BlinkMacSystemFont,
     "PingFang SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei",
     sans-serif;
-  --font-technical: "KB Geist Mono", "JetBrains Mono", ui-monospace,
-    "SFMono-Regular", Consolas, monospace;
+  --font-technical: "KB Geist Mono", var(--font-jetbrains), "JetBrains Mono",
+    ui-monospace, "SFMono-Regular", Consolas, monospace;
   --font-human: "Iowan Old Style", "Songti SC", "Noto Serif SC", serif;
 }
 
@@ -771,10 +795,6 @@ body {
   font-size: 16px;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
-}
-
-.font-mono {
-  font-family: var(--font-technical);
 }
 
 main h1 {

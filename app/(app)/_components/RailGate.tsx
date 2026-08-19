@@ -23,7 +23,7 @@ export default function RailGate({
   return (
     <div
       aria-hidden={stale}
-      className={`railgate hidden shrink-0 self-stretch transition-opacity duration-150 lg:ml-2 xl:block ${
+      className={`railgate hidden shrink-0 self-stretch transition-opacity duration-instant lg:ml-2 xl:block ${
         stale ? "pointer-events-none invisible opacity-0" : ""
       }`}
     >

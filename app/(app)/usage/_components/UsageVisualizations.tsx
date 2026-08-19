@@ -194,7 +194,7 @@ function TrendCore({
 
   const ticks = [0, 1, 2, 3, 4].map((step) => (max * step) / 4);
   const labels = labelIndexes(n);
-  const monoFont = "var(--font-jetbrains), ui-monospace, monospace";
+  const monoFont = "var(--font-technical)";
 
   let maPath: string | null = null;
   if (maWindow && n > 1) {

@@ -48,7 +48,7 @@ export default function WorkScreenshot({
     variant === "row"
       ? "aspect-video sm:aspect-auto sm:h-full sm:min-h-36"
       : "aspect-video";
-  const hoverCls = "transition-transform duration-300 group-hover:scale-[1.03]";
+  const hoverCls = "transition-transform duration-base group-hover:scale-[1.03]";
   if (!url || failed) {
     /* 名称砖:固定色 = .work-tone-*(CSS 双主题,冷白/色档深字);
        theme = .work-cover-tile(深空/站点白,跟随主题) */

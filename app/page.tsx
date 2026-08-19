@@ -1,8 +1,10 @@
 /* 首页完整版(P0-1):海报(hero + 主 CTA)→ 数据条 → 本周精选(无精选回落
    7 日热门,两者皆空则不渲染)→ 入群/订阅 → 免责声明。
    海报皮肤双主题(data-theme-scope="poster"):跟随 <html data-theme> 在
-   夜幕/纸感两套暖纸令牌间切换(globals.css 的 poster 块),硬边细线、蓝强调、
-   mono 大字距;hero Logo 双版本按主题二选一(only-dark/only-light)。
+   夜幕/纸感两套暖纸令牌间切换(globals.css 的 poster 块),细线、蓝强调、
+   mono 大字距;圆角跟随气质(data-vibe)——poster 归零保持硬边,soft 出圆角
+   (20260818,此前全页无圆角类导致气质切换在首页无可见效果);
+   hero Logo 双版本按主题二选一(only-dark/only-light)。
    右上角控件与壳内 TopBar 同一控件集/顺序/形态(搜索 → 通知 → 主题 → 气质 →
    语言 → 登录态),iconBtn 两处同步。
    hero 用 SMIL 动画版 Logo(双星 8s 绕轨,<img> 内 SMIL 现代浏览器可播),
@@ -57,12 +59,12 @@ function FeaturedCard({
     </Link>
   );
   return (
-    <article className="border border-line bg-card p-5 text-left">
+    <article className="rounded-2xl border border-line bg-card p-5 text-left">
       <div className="flex items-center gap-2 font-mono text-xs">
-        <span className="border border-line px-1.5 py-px text-grey">
+        <span className="rounded-md border border-line px-1.5 py-px text-grey">
           {t(locale, f.kind === "post" ? "featured.kindPost" : "featured.kindWork")}
         </span>
-        <span className="border border-blue/60 px-1.5 py-px text-blue">
+        <span className="rounded-md border border-blue/60 px-1.5 py-px text-blue">
           {t(locale, "featured.badge")}
         </span>
       </div>
@@ -196,7 +198,7 @@ export default async function Home({
         <p className="mt-2 text-sm text-grey">{t(locale, "home.heroSub")}</p>
         <Link
           href="/community"
-          className="mt-12 inline-flex w-72 items-center justify-center bg-blue py-3.5 font-mono text-sm font-semibold tracking-widest text-bg transition-opacity hover:opacity-85"
+          className="mt-12 inline-flex w-72 items-center justify-center rounded-lg bg-blue py-3.5 font-mono text-sm font-semibold tracking-widest text-bg transition-opacity hover:opacity-85"
         >
           {t(locale, "home.cta")} →
         </Link>
@@ -214,7 +216,7 @@ export default async function Home({
             <Link
               key={href}
               href={href}
-              className="flex w-32 flex-col items-center gap-1 border border-line px-2 py-2.5 text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="flex w-32 flex-col items-center gap-1 rounded-lg border border-line px-2 py-2.5 text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <span className="tracking-wider">{t(locale, key)}</span>
               <span className="text-xs tracking-normal text-grey/70">
@@ -313,7 +315,7 @@ export default async function Home({
               href="https://github.com/kimi-builders"
               target="_blank"
               rel="noopener noreferrer"
-              className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+              className="group rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 GitHub
@@ -338,7 +340,7 @@ export default async function Home({
               href="https://github.com/kimi-builders/awesome-kimi-builders"
               target="_blank"
               rel="noopener noreferrer"
-              className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+              className="group rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 Awesome Kimi Builders
@@ -361,7 +363,7 @@ export default async function Home({
           >
             <a
               href="mailto:hi@kimi.builders"
-              className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
+              className="group rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 hi@kimi.builders

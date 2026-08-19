@@ -1,6 +1,6 @@
 "use client";
 
-/* 数据条滚动数字(20260815 评审):进入视口后 0.8s ease-out 数到终值,
+/* 数据条滚动数字(20260815 评审):进入视口后 0.9s ease-out 数到终值,
    让「社区是活的」有最低成本的动效证明。
    SSR/初始渲染直接给终值(无 JS / 首屏无布局位移,SEO 也是真数字),
    水合后按需起播;prefers-reduced-motion 直接停在终值。 */
@@ -33,7 +33,7 @@ export default function CountUpStat({
         io.disconnect();
         const t0 = performance.now();
         const step = (now: number) => {
-          const p = Math.min(1, (now - t0) / 800);
+          const p = Math.min(1, (now - t0) / 900);
           setDisplay(Math.round(value * (1 - Math.pow(1 - p, 3))));
           if (p < 1) raf = requestAnimationFrame(step);
         };
