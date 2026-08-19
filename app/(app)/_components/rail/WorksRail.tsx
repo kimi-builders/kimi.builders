@@ -1,7 +1,7 @@
 /* /works 列表右栏:作品统计(上架/作者/声明投入/本周新)+ 活跃 Agent 分布
    + 本周最受欢迎 + 声明口径说明(Awesome 引流)。 */
 import Link from "next/link";
-import { ArrowBigUp } from "lucide-react";
+import { ArrowBigUp, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
@@ -18,7 +18,6 @@ export default async function WorksRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  void loggedIn;
   const { stats, agents, kinds, top } = await getPublicWorksRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
@@ -52,6 +51,15 @@ export default async function WorksRail({
             </div>
           ))}
         </div>
+        {loggedIn && (
+          <Link
+            href="/works/new"
+            className="mt-4 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            <SquarePen size={13} aria-hidden="true" />
+            {t(locale, "rail.worksSubmit")}
+          </Link>
+        )}
       </Widget>
 
       {kinds.length > 0 && (

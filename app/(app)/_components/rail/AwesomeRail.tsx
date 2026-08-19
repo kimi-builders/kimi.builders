@@ -1,6 +1,7 @@
 /* /awesome 右栏:收录统计 + 收录口径(带计数,点行即筛选)+ Agent 分布
    + 推荐规则(必须填原作者/不进作品墙/无徽章)+ 推荐入口。 */
 import Link from "next/link";
+import { SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
@@ -21,7 +22,6 @@ export default async function AwesomeRail({
   locale: Locale;
   loggedIn: boolean;
 }) {
-  void loggedIn;
   const { stats, scopeStats, agents } = await getPublicAwesomeRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
@@ -103,6 +103,15 @@ export default async function AwesomeRail({
         <p className="text-xs leading-relaxed text-grey">
           {t(locale, "awesome.rulesBody")}
         </p>
+        {loggedIn && (
+          <Link
+            href="/works/new"
+            className="mt-3 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            <SquarePen size={13} aria-hidden="true" />
+            {t(locale, "awesome.recommend")}
+          </Link>
+        )}
       </Widget>
     </>
   );

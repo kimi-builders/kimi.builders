@@ -17,9 +17,9 @@ const leaderboard = readFileSync(
 
 test("mobile profile actions stay in one compact, horizontally safe row", () => {
   assert.match(profile, /flex-nowrap items-center.*overflow-x-auto sm:flex-wrap/);
-  /* 20260815 评审:移动端操作按钮字号 10px→11px(可读性下限),触控与截断语义不变 */
-  assert.match(profile, /min-h-8 shrink-0.*text-\[11px\].*whitespace-nowrap/);
-  assert.match(share, /min-h-8 shrink-0.*text-\[11px\].*whitespace-nowrap/);
+  /* 20260818 字号统一为 text-xs(12px),高于 11px 可读性下限;触控与截断语义不变。 */
+  assert.match(profile, /min-h-8 shrink-0.*text-xs.*whitespace-nowrap/);
+  assert.match(share, /min-h-8 shrink-0.*text-xs.*whitespace-nowrap/);
 });
 
 test("profile post empty state renders one merged line instead of duplicate copy", () => {
