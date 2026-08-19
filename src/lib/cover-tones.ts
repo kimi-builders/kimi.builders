@@ -1,19 +1,19 @@
-/* 名称砖色调注册表(20260908 引入;20260916 起为 跟随主题/绿/蓝/红/黑 纯平色卡;
-   20260918 双主题化 + 降饱和统一色温,红档同日下线——实测观感不佳,存量 red
-   由迁移 20260918 归并为黑):无上传封面作品的列表封面。
-   20260815:Awesome 的「按类型族定色」(应用绿/工具蓝,awesomeToneFor)下线——
-   theme 档与作品路径同义(跟随主题深空/站点白),两条路径一套语义,色板即所得。
+/* 名称砖色调注册表(20260908 引入;20260916 起为 跟随主题/绿/蓝/黑 纯平色卡;
+   20260918 双主题化;20260819 色值换入 Kimi 品牌体系,不再自造色相):
+   无上传封面作品的列表封面。色值全部取自品牌手册——蓝 = 官方深蓝/浅蓝对
+   (#002F5B / #A0DAF7),绿档改薄荷(官方状态绿 #B3F4A8 + ink 字,双主题同渲染),
+   黑 = 官方 CLI 纯黑 #000 / ink #121212。id 不变(theme/green/blue/black),
+   存量 works.cover_tone 零迁移,色板即所得。
    theme = 跟随主题(深空/站点白,globals.css .work-cover-tile);固定色 = 砖色
-   随主题切换——深色取降饱和深调(与站点近黑底同一色温),浅色取同色相淡染
-   (深色文字),色值都在 globals.css 的 .work-tone-* 类里(响应式跟随 data-theme,
-   JS 侧只发类名)。蓝档向站点蓝族靠拢,绿档压深,黑档贴 moon 层次。
+   随主题切换(globals.css 的 .work-tone-* 类,响应式跟随 data-theme,
+   JS 侧只发类名;本表 hex 仅为文档对照,渲染以 CSS 为准)。
    增删色档:改这里 + globals.css 对应类;表单色板与 works.cover_tone 白名单读注册表。
-   旧色档 id 由迁移 20260916 映射到绿/蓝/红/黑。 */
+   旧色档 id 由迁移 20260916 映射到绿/蓝/黑。 */
 export const COVER_TONES = [
   { id: "theme", dark: null, light: null, zh: "跟随主题", en: "Theme" },
-  { id: "green", dark: "#1E4D3A", light: "#E3EDE7", zh: "绿卡", en: "Green" },
-  { id: "blue", dark: "#153E75", light: "#E2EBF8", zh: "蓝卡", en: "Blue" },
-  { id: "black", dark: "#232329", light: "#ECECEF", zh: "黑卡", en: "Black" },
+  { id: "green", dark: "#B3F4A8", light: "#B3F4A8", zh: "薄荷卡", en: "Mint" },
+  { id: "blue", dark: "#002F5B", light: "#A0DAF7", zh: "蓝卡", en: "Blue" },
+  { id: "black", dark: "#000000", light: "#121212", zh: "黑卡", en: "Black" },
 ] as const;
 
 export type CoverToneId = (typeof COVER_TONES)[number]["id"];

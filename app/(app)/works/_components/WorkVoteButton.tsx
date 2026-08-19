@@ -50,12 +50,14 @@ export default function WorkVoteButton({
 
   const label = t(locale, state.voted ? "works.supported" : "works.support");
   return (
+    /* 20260819 修比例:与操作条主按钮同规格(44px 高、rounded-lg、text-sm);
+       此前 py-1.5/text-xs 无圆角,与 44px 主 CTA 并排时矮一截、方角突兀 */
     <button
       type="button"
       onClick={toggle}
       aria-label={label}
       title={label}
-      className={`inline-flex items-center gap-1.5 border px-4 py-1.5 font-mono text-xs transition-colors ${
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-4 font-mono text-sm transition-colors ${
         state.voted
           ? "border-blue text-blue"
           : "border-line text-grey hover:border-ui-blue hover:text-ui-blue"

@@ -297,7 +297,7 @@ export default async function WorkPage({
           />
         ) : (
           <span
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-4 text-sm text-grey"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-4 font-mono text-sm text-grey"
             title={t(locale, "works.loginToSupport")}
           >
             <Heart size={13} />

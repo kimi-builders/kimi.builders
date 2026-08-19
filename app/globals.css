@@ -188,13 +188,14 @@
   background: var(--color-bg);
   color: var(--color-paper);
 }
-/* 日间纸感海报:同一套暖纸编辑色系翻成纸面墨色;
-   画布 #F6F2EA 与 public/brand/logo-animated-light.svg 的底色一致,
-   双 Logo(only-dark/only-light 二选一)与页面无缝拼合 */
+/* 日间纸感海报:暖纸编辑色系翻成纸面墨色;
+   画布 20260819 起与站点内部亮色底一致(#FBFAF9,官方 GroundPC 观察值);
+   文字/边线保留暖纸墨色系。hero Logo 同日统一为深色标志(浅色主题裁圆形
+   夜幕徽章),原浅色专版 logo-animated-light.svg 下线。 */
 [data-theme="light"] [data-theme-scope="poster"] {
   color-scheme: light;
-  --color-bg: #f6f2ea;
-  --color-moon: #ece6d9;
+  --color-bg: #fbfaf9;
+  --color-moon: #f5f5f5;
   --color-paper: #2b2620;
   --color-blue: #007cff;
   --color-grey: #6f6a5f;
@@ -724,14 +725,26 @@ html[data-vibe="soft"] .vibe-card-soft {
 .work-tone .work-tone__logo {
   border-color: rgb(255 255 255 / 0.15);
 }
+/* 色档色值(20260819 换入 Kimi 品牌体系,不再自造色相;id 不变,存量零迁移):
+   蓝 = 官方深蓝 #002F5B(深色)/ 官方浅蓝 #A0DAF7(浅色,深蓝字);
+   绿档改薄荷 = 官方状态绿 #B3F4A8 + ink 字(官方「柔和底+深字」状态色对,
+   深浅主题同渲染;浅底不压底部黑渐变,改白色柔光);
+   黑 = 官方 CLI 纯黑 #000(深色,比页底 #121212 更黑)/ ink #121212(浅色深砖)。 */
 .work-tone-green {
-  background: #1e4d3a;
+  background: #b3f4a8;
+  color: #121212;
+}
+.work-tone-green .work-tone__logo {
+  border-color: rgb(0 0 0 / 0.18);
+}
+.work-tone-green::after {
+  background: linear-gradient(to top, rgb(255 255 255 / 0.45), transparent 36%);
 }
 .work-tone-blue {
-  background: #153e75;
+  background: #002f5b;
 }
 .work-tone-black {
-  background: #232329;
+  background: #000;
 }
 :root[data-theme="light"] .work-tone {
   color: #3a3a42;
@@ -742,16 +755,22 @@ html[data-vibe="soft"] .vibe-card-soft {
 :root[data-theme="light"] .work-tone .work-tone__logo {
   border-color: rgb(0 0 0 / 0.12);
 }
-:root[data-theme="light"] .work-tone-green {
-  background: #e3ede7;
-  color: #1e4d3a;
-}
 :root[data-theme="light"] .work-tone-blue {
-  background: #e2ebf8;
-  color: #153e75;
+  background: #a0daf7;
+  color: #002f5b;
+}
+:root[data-theme="light"] .work-tone-blue .work-tone__logo {
+  border-color: rgb(0 47 91 / 0.18);
 }
 :root[data-theme="light"] .work-tone-black {
-  background: #ececef;
+  background: #121212;
+  color: rgb(255 255 255 / 0.88);
+}
+:root[data-theme="light"] .work-tone-black .work-tone__logo {
+  border-color: rgb(255 255 255 / 0.15);
+}
+:root[data-theme="light"] .work-tone-black::after {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.28), transparent 36%);
 }
 
 /* @kimi 召唤词高亮(20260816):正文/评论里的 @kimi 包成蓝色 chip,

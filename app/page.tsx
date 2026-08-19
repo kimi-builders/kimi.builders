@@ -170,8 +170,10 @@ export default async function Home({
             {t(locale, AUTH_ERRORS[authError] ?? "home.errGeneric")}
           </p>
         )}
-        {/* 双 Logo 按 UI 主题二选一(only-dark/only-light):夜幕版/纸感版,
-            两版 SVG 画布底色与海报 bg 令牌一致(#0E0E13 / #F6F2EA),拼合无缝 */}
+        {/* Logo(20260819):深浅主题统一用深色标志(logo-animated.svg,夜幕 #0E0E13
+            画布)。深色主题下与海报底同色无缝;浅色主题下裁成圆形夜幕徽章
+            (rounded-full,轨道/月面均在圆内,不裁画面)。浅色专版
+            logo-animated-light.svg 同日下线。 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/logo-animated.svg"
@@ -180,10 +182,10 @@ export default async function Home({
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/brand/logo-animated-light.svg"
+          src="/brand/logo-animated.svg"
           alt=""
           aria-hidden="true"
-          className="only-light h-44 w-44"
+          className="only-light h-44 w-44 rounded-full"
         />
         <h1 className="mt-10 font-mono text-4xl font-semibold tracking-wide">
           kimi<span className="text-ui-blue">.</span>builders

@@ -59,12 +59,13 @@ export default function WorkOwnerActions({
       >
         <MoreHorizontal size={16} aria-hidden="true" />
       </summary>
-      <div className="absolute right-0 top-10 z-30 w-36 rounded-xl border border-line bg-card p-1.5 shadow-xl">
+      {/* 弹层底色用不透明抬升面 bg-moon(与 FilterDropdown 同源;bg-card 是
+          5% 薄涂会透出下层文字,20260819 修);菜单项 hover 反用 bg-card 浅阶 */}
+      <div className="absolute right-0 top-10 z-30 w-36 rounded-xl border border-line bg-moon p-1.5 shadow-xl">
       <Link
         href={`/works/${workId}/edit`}
-        title={t(locale, "post.edit")}
         aria-label={t(locale, "post.edit")}
-        className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-moon hover:text-ui-blue"
+        className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-card hover:text-ui-blue"
       >
         <SquarePen size={14} aria-hidden="true" />
         <span>{t(locale, "post.edit")}</span>
@@ -73,9 +74,8 @@ export default function WorkOwnerActions({
         type="button"
         onClick={remove}
         disabled={busy}
-        title={t(locale, "post.delete")}
         aria-label={t(locale, "post.delete")}
-        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-moon hover:text-status-danger-fg disabled:opacity-40"
+        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-card hover:text-status-danger-fg disabled:opacity-40"
       >
         <Trash2 size={14} aria-hidden="true" />
         <span>{t(locale, "post.delete")}</span>
