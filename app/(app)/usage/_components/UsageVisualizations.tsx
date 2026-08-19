@@ -106,7 +106,7 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
     { label: zh ? "推理" : "Reasoning", value: item.reasoningOutputTokens, color: "bg-viz-purple-soft" },
   ];
   return (
-    <dl className="mt-2 space-y-1 font-mono text-[11px]">
+    <dl className="mt-2 space-y-1 font-mono text-xs">
       {rows.map((row) => (
         <div key={row.label} className="flex items-center justify-between gap-4">
           <dt className="flex items-center gap-1.5 text-grey">
@@ -374,10 +374,10 @@ function TrendCore({
           className="kb-data-tooltip pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
           style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
-          <div className="font-mono text-[11px] font-semibold text-paper">
+          <div className="font-mono text-xs font-semibold text-paper">
             {tooltipTitle ? tooltipTitle(active) : active.day}
           </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
+          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-xs">
             <span className="text-paper">{metricText(active, metric, zh, currency)}</span>
             {metric === "tokens" && (
               <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(active)}</span>
@@ -444,7 +444,7 @@ export function UsageWeeklyTrend({
   const previous = trend.at(-2);
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] text-grey">
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-xs text-grey">
         <span>{zh ? "本周" : "This week"} <strong className="text-paper">{compact(current?.totalTokens ?? 0, zh)}</strong></span>
         <span>{zh ? "上周" : "Last week"} <strong className="text-paper">{compact(previous?.totalTokens ?? 0, zh)}</strong></span>
         <span className={(current?.totalTokens ?? 0) >= (previous?.totalTokens ?? 0) ? "text-viz-positive-text" : "text-viz-negative-text"}>
@@ -461,7 +461,7 @@ export function UsageWeeklyTrend({
         plotHeight={140}
         tooltipTitle={(item) => `${item.day} → ${weekEnd(item.day)}`}
         tooltipNote={(item, index) => (
-          <div className="mt-1 font-mono text-[11px] text-grey">
+          <div className="mt-1 font-mono text-xs text-grey">
             {zh ? "环比" : "WoW"} {percentDelta(item.totalTokens, trend[index - 1]?.totalTokens ?? 0)}
           </div>
         )}
@@ -538,7 +538,7 @@ export function UsageHeatmapGrid({
             type="button"
             aria-pressed={mobileHourStart === start}
             onClick={() => setMobileHourStart(start)}
-            className={`min-h-9 rounded-md font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+            className={`min-h-9 rounded-md font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
               mobileHourStart === start ? "bg-viz-blue-primary text-viz-neutral-strong" : "text-grey"
             }`}
           >
@@ -552,7 +552,7 @@ export function UsageHeatmapGrid({
           <div className="space-y-[3px]">
             {grid.map((row, weekday) => (
               <div key={weekday} className="flex items-center gap-1.5">
-                <span className="w-5 shrink-0 text-center font-mono text-[11px] text-grey">
+                <span className="w-5 shrink-0 text-center font-mono text-xs text-grey">
                   {shortNames[weekday]}
                 </span>
                 <div className="grid flex-1 grid-cols-[repeat(12,minmax(0,1fr))] gap-[3px] sm:grid-cols-[repeat(24,minmax(0,1fr))]">
@@ -601,7 +601,7 @@ export function UsageHeatmapGrid({
               {Array.from({ length: 24 }, (_, hour) => (
                 <span
                   key={hour}
-                  className={`text-center font-mono text-[10.5px] text-grey ${
+                  className={`text-center font-mono text-xs text-grey ${
                     hour >= mobileHourStart && hour < mobileHourStart + 12 ? "" : "hidden sm:block"
                   }`}
                 >
@@ -621,15 +621,15 @@ export function UsageHeatmapGrid({
           className="kb-data-tooltip pointer-events-none absolute z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
           style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
-          <div className="font-mono text-[11px] font-semibold text-paper">
+          <div className="font-mono text-xs font-semibold text-paper">
             {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
           </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-[11px]">
+          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-xs">
             <span className="text-paper">{compact(cell.totalTokens, zh)} tokens</span>
             <span className="text-grey">{zh ? "命中率" : "hit"} {hitRate(cell)}</span>
           </div>
           <TokenBreakdown item={cell} zh={zh} />
-          <div className="mt-2 border-t border-line pt-2 font-mono text-[11px] text-grey">
+          <div className="mt-2 border-t border-line pt-2 font-mono text-xs text-grey">
             {zh ? "估费" : "Cost"} {fmtCost(heatmap.costMicros[hovered.weekday][hovered.hour], currency)} ·{" "}
             {zh ? "活跃" : "Active"} {duration(heatmap.activeSeconds[hovered.weekday][hovered.hour], zh)} ·{" "}
             {compact(heatmap.prompts[hovered.weekday][hovered.hour], zh)}{" "}
@@ -638,7 +638,7 @@ export function UsageHeatmapGrid({
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] text-grey">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs text-grey">
         <span className="flex items-center gap-1.5">
           {zh ? "少" : "Less"}
           <span className="flex gap-[3px]">

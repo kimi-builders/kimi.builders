@@ -217,7 +217,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const title = zh ? "环比上一等长周期" : "vs the previous equal-length period";
   if (prev <= 0) {
     return (
-      <span className="font-mono text-[11px] text-grey" title={title}>
+      <span className="font-mono text-xs text-grey" title={title}>
         —
       </span>
     );
@@ -225,7 +225,7 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const pct = ((cur - prev) / prev) * 100;
   return (
     <span
-      className={`font-mono text-[11px] ${pct >= 0 ? "text-viz-positive-text" : "text-viz-negative-text"}`}
+      className={`font-mono text-xs ${pct >= 0 ? "text-viz-positive-text" : "text-viz-negative-text"}`}
       title={title}
     >
       {`${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
@@ -240,7 +240,7 @@ function DeltaPill({ cur, prev, zh }: { cur: number; prev: number; zh: boolean }
   const Icon = pct >= 0 ? TrendingUp : TrendingDown;
   return (
     <span
-      className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-paper/[0.07] px-2 py-0.5 font-mono text-[11px] font-semibold text-paper/80"
+      className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-paper/[0.07] px-2 py-0.5 font-mono text-xs font-semibold text-paper/80"
       title={zh ? "环比上一等长周期" : "vs the previous equal-length period"}
     >
       <Icon size={11} aria-hidden="true" />
@@ -258,7 +258,7 @@ function HitRatePill({ rate, zh }: { rate: number; zh: boolean }) {
         ? { text: zh ? "● 一般" : "● Fair", cls: "bg-viz-yellow-soft/10 text-paper" }
         : { text: zh ? "● 偏低" : "● Low", cls: "bg-viz-red-soft/10 text-paper" };
   return (
-    <span className={`absolute right-4 top-4 rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${tone.cls}`}>
+    <span className={`absolute right-4 top-4 rounded-full px-2 py-0.5 font-mono text-xs font-semibold ${tone.cls}`}>
       {tone.text}
     </span>
   );
@@ -311,7 +311,7 @@ function HeroCard({
       label={label}
       labelAccessory={help}
       value={value}
-      valueClassName={`!text-[28px] tracking-[-0.5px] ${valueClass ?? "text-paper"}`}
+      valueClassName={`!text-3xl tracking-[-0.5px] ${valueClass ?? "text-paper"}`}
       status={pill}
       description={caption}
     />
@@ -356,8 +356,8 @@ function DistributionCard({
   return (
     <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-[13px] font-semibold text-paper">{title}</h3>
-        <span className="font-mono text-[11px] text-grey/80">
+        <h3 className="text-sm font-semibold text-paper">{title}</h3>
+        <span className="font-mono text-xs text-grey/80">
           {byCost ? (zh ? "按估费" : "by cost") : zh ? "按 Token" : "by tokens"}
         </span>
       </div>
@@ -380,10 +380,10 @@ function DistributionCard({
                       {label}
                     </span>
                   </span>
-                  <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
+                  <span className="ml-auto shrink-0 font-mono text-xs font-semibold text-paper">
                     {compact(row.tokens, zh)} · {Math.round(pct)}%
                   </span>
-                  <span className="w-[86px] shrink-0 text-right font-mono text-[11px] text-grey">
+                  <span className="w-[86px] shrink-0 text-right font-mono text-xs text-grey">
                     {row.hasUnpriced && row.costMicros === 0 ? (
                       zh ? "未定价" : "unpriced"
                     ) : (
@@ -423,7 +423,7 @@ export default async function UsagePage({
     /* 未登录:统一登录引导卡(20260919,直开/刷新的兜底;侧栏入口已直链弹窗) */
     return (
       <div>
-        <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
           <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量" : "Usage"}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-grey">
@@ -512,7 +512,7 @@ export default async function UsagePage({
       {/* 标题行:标题左、操作按钮右;状态条不再挤在标题列里(与按钮抢宽,
           英文偏长时被逐项折成多行),而是独占下方整行,中英文都是稳定一行 */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
           <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量中心" : "Usage center"}
           {/* 隐私边界说明收进弹窗(原页头常驻副标题,太占位);摘要仍在下方状态条「默认私有」 */}
           <UsagePrivacyDialog zh={zh} />
@@ -545,14 +545,14 @@ export default async function UsagePage({
           {overview && hasUsageHistory && <UsageSyncDialog zh={zh} />}
           <Link
             href="/usage/device"
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
+ className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
           >
             <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
           </Link>
         </div>
       </div>
       {/* 各段 nowrap:段内永不折断;整段只在手机窄屏换行 */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey" role="status" aria-live="polite">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-xs text-grey" role="status" aria-live="polite">
         <span className="flex items-center gap-1.5 whitespace-nowrap">
           <ShieldCheck size={13} className="text-status-ok-fg" aria-hidden="true" />
           {zh ? "默认私有" : "Private by default"}
@@ -836,14 +836,14 @@ export default async function UsagePage({
           <p className="text-sm font-medium text-paper">
             {zh ? "这份看板可能已经过期" : "This dashboard may be out of date"}
           </p>
-          <p className="mt-1 text-[11px] leading-relaxed text-grey">
+          <p className="mt-1 text-xs leading-relaxed text-grey">
             {zh
               ? `最近一次同步已超过 ${USAGE_STALE_AFTER_HOURS} 小时；站点不会主动读取本地日志。`
               : `The last sync was over ${USAGE_STALE_AFTER_HOURS} hours ago; the site never reads local logs on its own.`}
           </p>
         </div>
       </div>
-      <code className="shrink-0 rounded-lg border border-line bg-bg px-3 py-2 font-mono text-[11px] text-paper">
+      <code className="shrink-0 rounded-lg border border-line bg-bg px-3 py-2 font-mono text-xs text-paper">
         npx @kimi.builders/usage@latest sync
       </code>
     </aside>
@@ -966,7 +966,7 @@ export default async function UsagePage({
       <section className="mt-3 grid grid-cols-2 rounded-2xl border border-line bg-card sm:grid-cols-3 lg:grid-cols-5">
         {stripCells.map((cellItem) => (
           <div key={cellItem.label} title={cellItem.title} className={STRIP_CELL}>
-            <div className="flex items-center gap-0.5 text-[11px] tracking-[0.08em] text-grey/80">
+            <div className="flex items-center gap-0.5 text-xs tracking-[0.08em] text-grey/80">
               <span className="truncate">{cellItem.label}</span>
               {cellItem.help === "duration" && (
                 <UsageMethodologyDialog kind="duration" compact {...methodologyProps} />
@@ -981,7 +981,7 @@ export default async function UsagePage({
                 deltaNote(cellItem.cur, cellItem.prev, zh)}
             </div>
             {cellItem.note && (
-              <div className="mt-0.5 truncate font-mono text-[10.5px] text-grey/70" title={cellItem.note}>
+              <div className="mt-0.5 truncate font-mono text-xs text-grey/70" title={cellItem.note}>
                 {cellItem.note}
               </div>
             )}
@@ -989,7 +989,7 @@ export default async function UsagePage({
         ))}
       </section>
       {bucketOnlyFiltersActive && (
-        <p className="mt-2 text-[11px] text-grey/80">
+        <p className="mt-2 text-xs text-grey/80">
           {zh
             ? "会话指标不按模型或推理强度拆分"
             : "Session metrics are not split by model or effort"}
@@ -1039,13 +1039,13 @@ export default async function UsagePage({
             <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
             {filters.metric === "tokens" && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="flex items-center gap-1.5 text-[11px] text-grey">
+                <span className="flex items-center gap-1.5 text-xs text-grey">
                   <i className="h-2 w-2 rounded-[2px] bg-viz-blue-primary" />
                   {zh ? "总 Token" : "Total tokens"}
                 </span>
               </div>
             )}
-            <span className="flex items-center gap-1.5 text-[11px] text-grey">
+            <span className="flex items-center gap-1.5 text-xs text-grey">
               <i className="h-0 w-3.5 border-t-2 border-dashed border-grey/70" />
               {zh ? "7 日均值" : "7-slot avg"}
             </span>
@@ -1069,10 +1069,10 @@ export default async function UsagePage({
       <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-[13px] font-semibold text-paper">
+            <h2 className="text-sm font-semibold text-paper">
               {zh ? "自然周趋势" : "Natural-week trend"}
             </h2>
-            <p className="mt-1 text-[11px] text-grey">
+            <p className="mt-1 text-xs text-grey">
               {zh
                 ? `截至所选范围末尾的 12 周 · 周一 00:00 → 下周一 00:00 · ${gmtLabel(filters.tzOffsetMinutes)}`
                 : `12 weeks ending at the selected range · Monday 00:00 → next Monday 00:00 · ${gmtLabel(filters.tzOffsetMinutes)}`}
@@ -1090,10 +1090,10 @@ export default async function UsagePage({
         <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-[13px] font-semibold text-paper">
+              <h2 className="text-sm font-semibold text-paper">
                 {zh ? "用量热力图" : "Activity heatmap"}
               </h2>
-              <p className="mt-1 text-[11px] text-grey">
+              <p className="mt-1 text-xs text-grey">
                 {activeWeek !== null
                   ? `${weekLabel(activeWeek.fromUtcMs, tz, zh)} · ${zh ? "单周实际用量" : "single-week actuals"}`
                   : zh
@@ -1107,9 +1107,9 @@ export default async function UsagePage({
             </div>
           </div>
           {activeWeek !== null ? (
-            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[11px]">
+            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-xs">
               {canPrevWeek ? (
-                <Link href={weekPagerHref(-1)} scroll={false} className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey hover:border-blue hover:text-paper">
+                <Link href={weekPagerHref(-1)} scroll={false} className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey hover:border-ui-blue hover:text-paper">
                   ← {zh ? "上一周" : "Previous week"}
                 </Link>
               ) : (
@@ -1117,14 +1117,14 @@ export default async function UsagePage({
               )}
               <span className="text-paper">{weekLabel(activeWeek.fromUtcMs, tz, zh)}</span>
               {canNextWeek ? (
-                <Link href={weekPagerHref(1)} scroll={false} className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey hover:border-blue hover:text-paper">
+                <Link href={weekPagerHref(1)} scroll={false} className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey hover:border-ui-blue hover:text-paper">
                   {zh ? "下一周" : "Next week"} →
                 </Link>
               ) : (
                 <span aria-disabled="true" className="inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 text-grey/40">{zh ? "下一周" : "Next week"} →</span>
               )}
               {activeWeek.fromUtcMs !== currentWeek.fromUtcMs ? (
-                <Link href={hrefWith(query, { heatmode: "week", heatweek: weekKeyFor(currentWeek.fromUtcMs, tz) })} scroll={false} className="inline-flex min-h-8 items-center px-1.5 text-blue hover:underline">
+                <Link href={hrefWith(query, { heatmode: "week", heatweek: weekKeyFor(currentWeek.fromUtcMs, tz) })} scroll={false} className="inline-flex min-h-8 items-center px-1.5 text-ui-blue hover:underline">
                   {zh ? "回到本周" : "This week"}
                 </Link>
               ) : null}
@@ -1141,10 +1141,10 @@ export default async function UsagePage({
           </div>
         </section>
         <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
-          <h2 className="text-[13px] font-semibold text-paper">
+          <h2 className="text-sm font-semibold text-paper">
             {zh ? "最活跃时段" : "Busiest slots"}
           </h2>
-          <p className="mt-1 text-[11px] text-grey">
+          <p className="mt-1 text-xs text-grey">
             {activeWeek !== null
               ? `TOP 5 · ${weekLabel(activeWeek.fromUtcMs, tz, zh)} · ${zh ? "随热图指标联动" : "follows heatmap metric"}`
               : zh
@@ -1160,12 +1160,12 @@ export default async function UsagePage({
               {topSlots.map((slot, index) => (
                 <li key={`${slot.weekday}-${slot.hour}`} className="border-b border-line py-2.5 last:border-b-0">
                   <div className="flex items-baseline gap-3">
-                    <span className="w-5 shrink-0 font-mono text-[11px] text-grey/70">{`0${index + 1}`}</span>
+                    <span className="w-5 shrink-0 font-mono text-xs text-grey/70">{`0${index + 1}`}</span>
                     <span className="text-xs text-paper">
                       {weekdayNames[slot.weekday]} {pad2(slot.hour)}:00
                     </span>
                     <span
-                      className={`ml-auto font-mono text-[13px] font-semibold ${index === 0 ? "text-blue" : "text-paper"}`}
+                      className={`ml-auto font-mono text-sm font-semibold ${index === 0 ? "text-blue" : "text-paper"}`}
                     >
                       {heatMetricText(heatMetric, slot.value, zh, currency)}
                     </span>
@@ -1184,7 +1184,7 @@ export default async function UsagePage({
       </div>
 
       {/* 分布 */}
-      <p className="mt-6 font-mono text-[11px] tracking-[0.14em] text-grey/70">
+      <p className="mt-6 font-mono text-xs tracking-[0.08em] text-grey/70">
         {filters.metric === "cost"
           ? zh
             ? "分布 · 按估费"
@@ -1258,11 +1258,11 @@ export default async function UsagePage({
         locale={locale}
       />
 
-      <div className="mt-5 space-y-2 text-[11px] leading-relaxed text-grey/80">
+      <div className="mt-5 space-y-2 text-xs leading-relaxed text-grey/80">
         <p>
           <Link
             href="/usage/leaderboard"
-            className="text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "lb.entry")}
           </Link>

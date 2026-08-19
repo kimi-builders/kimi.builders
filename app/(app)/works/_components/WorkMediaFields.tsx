@@ -326,7 +326,7 @@ export default function WorkMediaFields({
 
       {/* ---- Logo:方形预览 + 客户端裁剪上传 ---- */}
       <div>
-        <span className="mb-1.5 block text-[11.5px] text-grey">
+        <span className="mb-1.5 block text-xs text-grey">
           {t(locale, "works.logo")}
         </span>
         <div className="flex items-center gap-3">
@@ -346,7 +346,7 @@ export default function WorkMediaFields({
             <button
               type="button"
               onClick={() => logoInput.current?.click()}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <ImagePlus size={12} aria-hidden="true" />
               {t(locale, logo ? "works.logoChange" : "works.logoUpload")}
@@ -355,7 +355,7 @@ export default function WorkMediaFields({
               <button
                 type="button"
                 onClick={() => setLogo(null)}
-                className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
                 {t(locale, "works.logoRemove")}
               </button>
@@ -378,7 +378,7 @@ export default function WorkMediaFields({
           两种来源互斥——tab 切换代替「上传 + 条件色板」并排;色卡常驻挂载,
           已选色调在两档间切换不丢,隐藏字段始终提交(有封面时服务端以封面优先) ---- */}
       <div>
-        <span className="mb-1.5 block text-[11.5px] text-grey">
+        <span className="mb-1.5 block text-xs text-grey">
           {t(locale, "works.cover")}
         </span>
         <div
@@ -426,7 +426,7 @@ export default function WorkMediaFields({
                   type="button"
                   onClick={() => coverInput.current?.click()}
                   disabled={coverUploading}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
                 >
                   {coverUploading ? (
                     <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
@@ -445,7 +445,7 @@ export default function WorkMediaFields({
                       /* 移除封面后自然回到色卡来源 */
                       setCoverMode("tone");
                     }}
-                    className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                    className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                   >
                     {t(locale, "works.logoRemove")}
                   </button>
@@ -464,7 +464,7 @@ export default function WorkMediaFields({
             />
           )}
           {coverMode === "image" && (
-            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            <span className="mt-1 block text-xs leading-relaxed text-grey/80">
               {t(locale, "works.coverHint")}
             </span>
           )}
@@ -483,9 +483,9 @@ export default function WorkMediaFields({
 
       {/* ---- 配图:点击/拖入/粘贴添加,拖拽排序,展示在详情页图集 ---- */}
       <div>
-        <span className="mb-1.5 flex items-baseline justify-between text-[11.5px] text-grey">
+        <span className="mb-1.5 flex items-baseline justify-between text-xs text-grey">
           <span>{t(locale, "works.images")}</span>
-          <span className="font-mono text-[11px] text-grey/70">
+          <span className="font-mono text-xs text-grey/70">
             {images.length}/{WORK_IMAGE_MAX}
           </span>
         </span>
@@ -514,10 +514,10 @@ export default function WorkMediaFields({
           }`}
         >
           <ImagePlus size={18} className="text-grey" aria-hidden="true" />
-          <span className="text-[11.5px] text-grey">
+          <span className="text-xs text-grey">
             {t(locale, "works.imagesAdd")}
           </span>
-          <span className="text-[11px] leading-relaxed text-grey/70">
+          <span className="text-xs leading-relaxed text-grey/70">
             {t(locale, "works.imagesHint")}
           </span>
         </div>
@@ -586,14 +586,14 @@ export default function WorkMediaFields({
                   <X size={11} aria-hidden="true" />
                 </button>
                 {it.status === "uploading" && (
-                  <span className="absolute inset-0 flex items-center justify-center gap-1 bg-black/55 font-mono text-[11px] text-white/85">
+                  <span className="absolute inset-0 flex items-center justify-center gap-1 bg-black/55 font-mono text-xs text-white/85">
                     <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
                     {t(locale, "works.uploading")}
                   </span>
                 )}
                 {it.status === "error" && (
                   <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/65">
-                    <span className="font-mono text-[11px] text-blue">
+                    <span className="font-mono text-xs text-ui-blue">
                       {t(locale, "works.uploadFailed")}
                     </span>
                     {it.file && (
@@ -607,7 +607,7 @@ export default function WorkMediaFields({
                           );
                           void upload(it.id, it.file as File);
                         }}
-                        className="inline-flex items-center gap-1 rounded border border-line bg-bg px-1.5 py-0.5 font-mono text-[11px] text-paper hover:border-blue"
+                        className="inline-flex items-center gap-1 rounded border border-line bg-bg px-1.5 py-0.5 font-mono text-xs text-paper hover:border-ui-blue"
                       >
                         <RefreshCw size={10} aria-hidden="true" />
                         {t(locale, "works.retry")}
@@ -624,7 +624,7 @@ export default function WorkMediaFields({
       {/* ---- 封面适配(有上传封面或配图时生效):裁切填满 / 补边完整 ---- */}
       {(cover || images.length > 0) && (
         <div>
-          <span className="mb-1.5 block text-[11.5px] text-grey">
+          <span className="mb-1.5 block text-xs text-grey">
             {t(locale, "works.coverFit")}
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -647,7 +647,7 @@ export default function WorkMediaFields({
               </button>
             ))}
           </div>
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          <span className="mt-1 block text-xs leading-relaxed text-grey/80">
             {t(locale, "works.coverFitHint")}
           </span>
         </div>

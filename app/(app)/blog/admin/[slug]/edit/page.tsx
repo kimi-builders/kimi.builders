@@ -45,10 +45,10 @@ export default async function EditArticlePage({
   if (!article) notFound();
   return (
     <div className="rounded-2xl border border-line bg-card p-4 sm:p-6">
-      <h1 className="font-mono text-lg font-semibold">
+      <h1 className="text-2xl font-semibold text-paper">
         {t(locale, "artf.editTitle")}
         {!article.publishedAt && (
-          <span className="ml-3 rounded-md border border-line px-1.5 py-px align-middle font-mono text-[11px] tracking-wider text-grey">
+          <span className="ml-3 rounded-md border border-line px-1.5 py-px align-middle font-mono text-xs tracking-wider text-grey">
             {t(locale, "art.draft")}
           </span>
         )}

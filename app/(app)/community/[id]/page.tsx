@@ -92,21 +92,21 @@ export default async function PostPage({
           {post.hiddenReason ? ` — ${post.hiddenReason}` : ""}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-wider text-grey">
+      <div className="flex flex-wrap items-center gap-2 font-mono text-xs tracking-wider text-grey">
         <Link href="/community" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
           <ArrowLeft size={13} aria-hidden="true" />
           {t(locale, "nav.community")}
         </Link>
-        <span className="font-mono text-[11px] text-grey"># {categoryLabel(locale, post.category)}</span>
+        <span className="font-mono text-xs text-grey"># {categoryLabel(locale, post.category)}</span>
         {/* 已解决(20260907):安静的蓝字 token,同精选同级 */}
         {post.solvedAt && (
-          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-blue">
+          <span className="inline-flex items-center gap-1 font-mono text-xs text-ui-blue">
             ✓ {t(locale, "post.solved")}
           </span>
         )}
         {post.visibility === "private" && (
           <span
-            className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper"
+            className="rounded-md border border-line px-1.5 py-px text-xs text-paper"
             title={t(locale, "post.privateHint")}
           >
             {t(locale, "post.private")}
@@ -114,7 +114,7 @@ export default async function PostPage({
         )}
         {post.hiddenAt && (
           <span
-            className="rounded-md border border-status-danger/60 px-1.5 py-px text-[11px] text-status-danger-fg"
+            className="rounded-md border border-status-danger/60 px-1.5 py-px text-xs text-status-danger-fg"
             title={post.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}
@@ -123,7 +123,7 @@ export default async function PostPage({
         {/* 编辑精选徽章:理由 + 定夺编辑放在 title(硬边描边芯片,对齐「私密」标) */}
         {postFeatured && (
           <span
-            className="rounded-md border border-blue/60 px-1.5 py-px text-[11px] text-blue"
+            className="rounded-md border border-blue/60 px-1.5 py-px text-xs text-blue"
             title={`${postFeatured.reason}${
               postFeatured.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: postFeatured.editorHandle })}`
@@ -139,14 +139,14 @@ export default async function PostPage({
         <h1 className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">{post.title}</h1>
       )}
       <div
-        className={`flex items-center gap-3 font-mono text-[11px] text-grey ${
+        className={`flex items-center gap-3 font-mono text-xs text-grey ${
           post.title ? "mt-3" : "mt-4"
         }`}
       >
         <Avatar url={post.avatarUrl} handle={post.handle} size={20} />
         <Link
           href={`/u/${post.handle}`}
-          className="text-paper transition-colors hover:text-blue"
+          className="text-paper transition-colors hover:text-ui-blue"
         >
           @{post.handle}
         </Link>
@@ -165,7 +165,7 @@ export default async function PostPage({
           href={post.linkUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 flex items-center gap-3 rounded-xl border border-line bg-bg/40 p-4 font-mono text-xs text-blue transition-colors hover:border-blue"
+          className="mt-6 flex items-center gap-3 rounded-xl border border-line bg-bg/40 p-4 font-mono text-xs text-ui-blue transition-colors hover:border-ui-blue"
         >
           <span className="min-w-0 flex-1 truncate">{post.linkUrl}</span>
           <ExternalLink size={15} className="shrink-0" aria-hidden="true" />
@@ -188,13 +188,13 @@ export default async function PostPage({
                 return (
                   <div key={o.id}>
                     <div className="flex items-baseline gap-2 text-sm">
-                      <span className={mine ? "text-blue" : "text-paper"}>
+                      <span className={mine ? "text-ui-blue" : "text-paper"}>
                         <span className="inline-flex items-center gap-1.5">
                           {o.label}
                           {mine && <Check size={13} aria-hidden="true" />}
                         </span>
                       </span>
-                      <span className="ml-auto font-mono text-[11px] text-grey">
+                      <span className="ml-auto font-mono text-xs text-grey">
                         {o.voteCount} · {pct}%
                       </span>
                     </div>
@@ -207,7 +207,7 @@ export default async function PostPage({
                   </div>
                 );
               })}
-              <p className="font-mono text-[11px] text-grey">
+              <p className="font-mono text-xs text-grey">
                 {t(locale, "post.votesTotal", { n: poll.total })}
                 {!user && ` · ${t(locale, "post.loginToVote")}`}
               </p>
@@ -240,7 +240,7 @@ export default async function PostPage({
         <a
           href="#comments"
           title={t(locale, "post.comments", { n: commentPage.total })}
-          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-blue"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-ui-blue"
         >
           <MessageCircle size={14} />
           {commentPage.total}

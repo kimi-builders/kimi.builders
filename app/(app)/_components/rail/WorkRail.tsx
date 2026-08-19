@@ -61,7 +61,7 @@ export default async function WorkRail({
       <Widget title={t(locale, "rail.workMeta")}>
         {/* label/value hairline 行(20260813 改版):作者/声明/口径/阶段/Agent/
             类型/模型/标签/链接/发布/支持/评论 */}
-        <dl className="font-mono text-[11px]">
+        <dl className="font-mono text-xs">
           <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
             <dt className="text-grey">
               {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
@@ -72,7 +72,7 @@ export default async function WorkRail({
               ) : work.handle ? (
                 <Link
                   href={`/u/${work.handle}`}
-                  className="flex items-center gap-1.5 transition-colors hover:text-blue"
+                  className="flex items-center gap-1.5 transition-colors hover:text-ui-blue"
                 >
                   <Avatar url={work.avatarUrl} handle={work.handle} size={18} className="shrink-0" />
                   <span className="truncate">@{work.handle}</span>
@@ -85,7 +85,7 @@ export default async function WorkRail({
           {claimBadge !== null && (
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
               <dt className="text-grey">{t(locale, "works.declared")}</dt>
-              <dd className="text-blue" title={t(locale, "works.badgeTitle")}>
+              <dd className="text-ui-blue" title={t(locale, "works.badgeTitle")}>
                 {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
               </dd>
             </div>
@@ -171,7 +171,7 @@ export default async function WorkRail({
                     href={work.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue underline-offset-4 hover:underline"
+                    className="inline-flex items-center gap-1 text-ui-blue underline-offset-4 hover:underline"
                   >
                     <ExternalLink size={11} />
                     {t(locale, "works.visit")}
@@ -182,7 +182,7 @@ export default async function WorkRail({
                     href={work.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-grey transition-colors hover:text-blue"
+                    className="inline-flex items-center gap-1 text-grey transition-colors hover:text-ui-blue"
                   >
                     <ExternalLink size={11} />
                     {t(locale, "works.repo")}
@@ -222,11 +222,11 @@ export default async function WorkRail({
               <li key={r.id} className="flex items-baseline gap-2 text-xs">
                 <Link
                   href={`/works/${r.id}`}
-                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-blue"
+                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-ui-blue"
                 >
                   {r.name}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-grey">
                   <Heart size={11} />
                   {r.voteCount}
                 </span>

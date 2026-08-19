@@ -54,13 +54,13 @@ export default async function CommunityWidgets({
         <div className="mt-3 flex gap-4 text-xs">
           <a
             href="https://github.com/kimi-builders"
-            className="text-grey underline decoration-blue/50 underline-offset-4 hover:text-blue"
+            className="text-grey underline decoration-ui-blue/50 underline-offset-4 hover:text-ui-blue"
           >
             GitHub
           </a>
           <a
             href="https://github.com/kimi-builders/awesome-kimi-builders"
-            className="text-grey underline decoration-blue/50 underline-offset-4 hover:text-blue"
+            className="text-grey underline decoration-ui-blue/50 underline-offset-4 hover:text-ui-blue"
           >
             Awesome
           </a>
@@ -74,7 +74,7 @@ export default async function CommunityWidgets({
           action={
             <Link
               href="/usage/leaderboard"
-              className="text-xs text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="text-xs text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "side.lbFull")}
             </Link>
@@ -84,7 +84,7 @@ export default async function CommunityWidgets({
             {lbTop.map((e) => (
               <li key={e.userId} className="flex items-center gap-2.5 border-b border-line py-2 last:border-b-0">
                 <span
-                  className={`w-4 shrink-0 font-mono text-[11px] font-bold ${
+                  className={`w-4 shrink-0 font-mono text-xs font-bold ${
                     e.rank === 1 ? "text-blue" : "text-grey/70"
                   }`}
                 >
@@ -95,18 +95,18 @@ export default async function CommunityWidgets({
                 </Link>
                 <Link
                   href={`/u/${e.handle}`}
-                  className="min-w-0 flex-1 truncate text-xs text-paper transition-colors hover:text-blue"
+                  className="min-w-0 flex-1 truncate text-xs text-paper transition-colors hover:text-ui-blue"
                 >
                   {e.name || e.handle}
                 </Link>
-                <span className={`ml-auto shrink-0 font-mono text-[11px] font-semibold ${e.rank === 1 ? "text-blue" : "text-paper"}`}>
+                <span className={`ml-auto shrink-0 font-mono text-xs font-semibold ${e.rank === 1 ? "text-blue" : "text-paper"}`}>
                   {compact(e.totalTokens)}
                 </span>
               </li>
             ))}
             {lbMe && (
               <li className="-mx-4 flex items-center gap-2.5 border-y border-blue/25 bg-blue/[0.07] px-4 py-2">
-                <span className="w-4 shrink-0 font-mono text-[11px] font-bold text-grey">
+                <span className="w-4 shrink-0 font-mono text-xs font-bold text-grey">
                   {String(lbMe.rank).padStart(2, "0")}
                 </span>
                 <Link href={`/u/${lbMe.handle}`} className="shrink-0">
@@ -114,9 +114,9 @@ export default async function CommunityWidgets({
                 </Link>
                 <span className="min-w-0 flex-1 truncate text-xs text-paper">
                   {lbMe.name || lbMe.handle}{" "}
-                  <span className="font-mono text-[11px] text-grey">{t(locale, "side.lbYou")}</span>
+                  <span className="font-mono text-xs text-grey">{t(locale, "side.lbYou")}</span>
                 </span>
-                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
+                <span className="ml-auto shrink-0 font-mono text-xs font-semibold text-paper">
                   {compact(lbMe.totalTokens)}
                 </span>
               </li>
@@ -134,14 +134,14 @@ export default async function CommunityWidgets({
                   href={f.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block truncate text-xs text-paper transition-colors hover:text-blue"
+                  className="block truncate text-xs text-paper transition-colors hover:text-ui-blue"
                 >
                   {f.title}
                 </a>
               ) : (
                 <Link
                   href={f.href}
-                  className="block truncate text-xs text-paper transition-colors hover:text-blue"
+                  className="block truncate text-xs text-paper transition-colors hover:text-ui-blue"
                 >
                   {f.title}
                 </Link>
@@ -159,13 +159,13 @@ export default async function CommunityWidgets({
                     {title}
                   </TrackClick>
                   <p
-                    className="mt-0.5 truncate text-[11px] leading-relaxed text-grey"
+                    className="mt-0.5 truncate text-xs leading-relaxed text-grey"
                     title={f.reason}
                   >
                     {f.reason}
                   </p>
                   {f.editorHandle && (
-                    <p className="mt-0.5 font-mono text-[11px] text-grey">
+                    <p className="mt-0.5 font-mono text-xs text-grey">
                       {t(locale, "featured.by", { handle: f.editorHandle })}
                     </p>
                   )}
@@ -181,14 +181,14 @@ export default async function CommunityWidgets({
         <Widget title={t(locale, "dn.widgetTitle")}>
           <Link
             href="/demo-night"
-            className="block truncate text-xs text-paper transition-colors hover:text-blue"
+            className="block truncate text-xs text-paper transition-colors hover:text-ui-blue"
           >
             {demoNight.event.title}
           </Link>
-          <p className="mt-1 font-mono text-[11px] text-paper">
+          <p className="mt-1 font-mono text-xs text-paper">
             {formatEventTime(demoNight.event.startsAt)}
           </p>
-          <p className="mt-1.5 font-mono text-[11px] text-grey">
+          <p className="mt-1.5 font-mono text-xs text-grey">
             {t(locale, "dn.rosterCount", { n: demoNight.rsvpCount })}
             {" · "}
             {demoNight.rsvped
@@ -205,16 +205,16 @@ export default async function CommunityWidgets({
           <ul className="space-y-2.5">
             {data.hot.map((h, i) => (
               <li key={h.id} className="flex items-baseline gap-2 text-xs">
-                <span className="shrink-0 font-mono text-[11px] text-grey">
+                <span className="shrink-0 font-mono text-xs text-grey">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <Link
                   href={`/community/${h.id}`}
-                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-blue"
+                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-ui-blue"
                 >
                   {h.title}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-grey">
                   <MessageCircle size={11} />
                   {h.commentCount}
                 </span>
@@ -261,7 +261,7 @@ export default async function CommunityWidgets({
             </Link>
           ))}
         </div>
-        <p className="mt-2 font-mono text-[11px] leading-relaxed text-grey">
+        <p className="mt-2 font-mono text-xs leading-relaxed text-grey">
           {data.newMembers.map((m) => `@${m.handle}`).join(" ")}
         </p>
       </Widget>

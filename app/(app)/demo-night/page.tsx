@@ -44,7 +44,7 @@ function RosterList({
         <li key={r.handle}>
           <Link
             href={`/u/${r.handle}`}
-            className="flex items-center gap-2 font-mono text-xs text-paper transition-colors hover:text-blue"
+            className="flex items-center gap-2 font-mono text-xs text-paper transition-colors hover:text-ui-blue"
           >
             <Avatar url={r.avatarUrl} handle={r.handle} size={24} />
             @{r.handle}
@@ -74,7 +74,7 @@ export default async function DemoNightPage() {
   return (
     <div>
       <header className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <h1 className="flex items-center gap-2 font-mono text-xl font-semibold">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
           <Presentation size={18} aria-hidden="true" />
           {t(locale, "dn.title")}
         </h1>
@@ -85,7 +85,7 @@ export default async function DemoNightPage() {
 
       {/* ---- 当前场 ---- */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <h2 className="font-mono text-[11px] tracking-[0.25em] text-grey">
+        <h2 className="font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "dn.upcoming")}
         </h2>
         {summary ? (
@@ -93,7 +93,7 @@ export default async function DemoNightPage() {
             <h3 className="text-base font-semibold text-paper">
               {summary.event.title}
             </h3>
-            <p className="mt-1.5 font-mono text-xs text-blue">
+            <p className="mt-1.5 font-mono text-xs text-ui-blue">
               {formatEventTime(summary.event.startsAt)}
             </p>
             {summary.event.locationNote && (
@@ -119,25 +119,25 @@ export default async function DemoNightPage() {
                   {t(locale, "dn.loginToRsvp")}
                   <a
                     href="/api/auth/github"
-                    className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+                    className="ml-2 text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
                   >
                     GitHub
                   </a>
                   <a
                     href="/api/auth/google"
-                    className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+                    className="ml-3 text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
                   >
                     Google
                   </a>
                 </p>
               )}
-              <p className="text-[11px] text-grey/80">
+              <p className="text-xs text-grey/80">
                 {t(locale, "dn.rsvpNotice")}
               </p>
             </div>
 
             <div className="mt-5 border-t border-line pt-4">
-              <p className="font-mono text-[11px] tracking-[0.25em] text-grey">
+              <p className="font-mono text-xs tracking-[0.08em] text-grey">
                 {t(locale, "dn.roster")} ·{" "}
                 {t(locale, "dn.rosterCount", { n: summary.rsvpCount })}
               </p>
@@ -151,7 +151,7 @@ export default async function DemoNightPage() {
 
       {/* ---- 往期归档 ---- */}
       <section className="mt-8">
-        <h2 className="font-mono text-[11px] tracking-[0.25em] text-grey">
+        <h2 className="font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "dn.archive")}
         </h2>
         {archive.length === 0 ? (
@@ -166,7 +166,7 @@ export default async function DemoNightPage() {
                     <h3 className="text-sm font-semibold text-paper">
                       {ev.title}
                     </h3>
-                    <p className="font-mono text-[11px] text-grey">
+                    <p className="font-mono text-xs text-grey">
                       {formatEventDate(ev.startsAt)} ·{" "}
                       {t(locale, "dn.archiveCount", { n: ev.rsvpCount })}
                     </p>
@@ -178,7 +178,7 @@ export default async function DemoNightPage() {
                   )}
                   {evRoster.length > 0 && (
                     <details className="mt-3">
-                      <summary className="cursor-pointer font-mono text-[11px] text-grey transition-colors hover:text-blue">
+                      <summary className="cursor-pointer font-mono text-xs text-grey transition-colors hover:text-ui-blue">
                         {t(locale, "dn.rosterToggle", { n: evRoster.length })}
                       </summary>
                       <div className="mt-2.5 flex flex-wrap gap-2">
@@ -199,7 +199,7 @@ export default async function DemoNightPage() {
                       href={ev.streamUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-blue"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 font-mono text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue"
                     >
                       <MonitorPlay size={13} aria-hidden="true" />
                       {t(locale, "dn.watchReplay")}

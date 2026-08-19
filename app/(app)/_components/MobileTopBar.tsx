@@ -40,7 +40,7 @@ export default function MobileTopBar({
         {/* 小尺寸瓷砖标:双主题稳定 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/logo-tile.svg" alt="" className="h-6 w-6 rounded-md" />
-        <span className="truncate">kimi<span className="text-blue">.</span>builders</span>
+        <span className="truncate">kimi<span className="text-ui-blue">.</span>builders</span>
       </Link>
       <div className="ml-auto flex shrink-0 items-center gap-1">
         {loggedIn && (

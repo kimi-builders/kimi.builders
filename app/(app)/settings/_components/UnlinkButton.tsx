@@ -44,12 +44,12 @@ export default function UnlinkButton({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+        className="inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-ui-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
       >
         {pending ? "…" : t(locale, "set.unlink")}
       </button>
       {state?.error && (
-        <p className="mt-1 text-right font-mono text-[11px] text-blue">
+        <p className="mt-1 text-right text-xs text-status-danger-fg">
           {state.error}
         </p>
       )}

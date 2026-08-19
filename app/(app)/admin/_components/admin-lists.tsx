@@ -8,7 +8,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import type { ModContentRow, ModLogRow } from "@/src/lib/moderation";
 import ModToolbar from "./ModToolbar";
 
-const BADGE = "rounded-md px-1.5 py-px font-mono text-[11px] font-medium";
+const BADGE = "rounded-md px-1.5 py-px font-mono text-xs font-medium";
 
 export function contentHref(row: ModContentRow): string {
   if (row.type === "post") return `/community/${row.id}`;
@@ -51,11 +51,11 @@ export function renderContentRows(
       </span>
       <Link
         href={contentHref(r)}
-        className="min-w-0 flex-1 truncate text-[13px] text-paper transition-colors hover:text-blue"
+        className="min-w-0 flex-1 truncate text-sm text-paper transition-colors hover:text-ui-blue"
       >
         {r.title || "—"}
       </Link>
-      <span className="shrink-0 font-mono text-[11px] text-grey">
+      <span className="shrink-0 font-mono text-xs text-grey">
         {r.authorHandle ? `@${r.authorHandle}` : "—"}
         {" · "}
         {relTime(r.createdAt, locale)}
@@ -96,13 +96,13 @@ export function renderLogRows(rows: ModLogRow[], locale: Locale): ReactNode[] {
   return rows.map((r) => (
     <div
       key={r.id}
-      className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-line py-2.5 font-mono text-[11px] last:border-b-0"
+      className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-line py-2.5 font-mono text-xs last:border-b-0"
     >
       <span className="shrink-0 text-grey">{relTime(r.createdAt, locale)}</span>
       <span className="shrink-0 text-paper">
         {r.actorHandle ? `@${r.actorHandle}` : "—"}
       </span>
-      <span className="shrink-0 rounded-md bg-blue/10 px-1.5 py-px text-[11px] font-medium text-blue">
+      <span className="shrink-0 rounded-md bg-blue/10 px-1.5 py-px text-xs font-medium text-blue">
         {t(locale, ACTION_KEY[r.action] ?? "admin.actHide")}
       </span>
       <span className="min-w-0 truncate text-grey">

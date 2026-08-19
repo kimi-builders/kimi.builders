@@ -15,8 +15,8 @@ export default function OAuthButtons({
 }) {
   const query = next && next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
   const base = block
-    ? "flex items-center justify-center gap-2 rounded-lg border border-line bg-bg/40 px-4 py-2.5 font-mono text-xs text-paper transition-colors hover:border-blue"
-    : "inline-flex min-h-9 items-center rounded-lg border border-line px-4 font-mono text-[11px] text-paper transition-colors hover:border-blue hover:text-blue";
+    ? "flex items-center justify-center gap-2 rounded-lg border border-line bg-bg/40 px-4 py-2.5 font-mono text-xs text-paper transition-colors hover:border-ui-blue"
+    : "inline-flex min-h-9 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-ui-blue hover:text-ui-blue";
   return (
     <>
       <a href={`/api/auth/github${query}`} className={base}>

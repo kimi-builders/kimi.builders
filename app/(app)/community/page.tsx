@@ -73,7 +73,7 @@ export default async function CommunityPage({
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold text-paper">
+      <h1 className="mb-4 text-2xl font-semibold text-paper">
         {t(locale, "nav.community")}
       </h1>
       {user && (
@@ -82,10 +82,10 @@ export default async function CommunityPage({
           className="mb-4 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3.5 transition-colors hover:border-paper/25"
         >
           <Avatar url={user.avatarUrl} handle={user.handle} size={32} />
-          <span className="min-w-0 flex-1 truncate text-[13px] text-grey">
+          <span className="min-w-0 flex-1 truncate text-sm text-grey">
             {t(locale, "feed.quickPost")}
           </span>
-          <span className="flex shrink-0 items-center gap-1.5 text-[12.5px] font-semibold text-blue">
+          <span className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-ui-blue">
             <SquarePen size={14} aria-hidden="true" />
             {t(locale, "nav.post")}
           </span>
@@ -149,7 +149,7 @@ export default async function CommunityPage({
           className={`inline-flex h-11 min-h-0 shrink-0 items-center gap-1 justify-self-start rounded-lg border px-3 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue md:justify-self-end ${
             solvedOnly
               ? "border-blue/60 bg-blue/10 font-semibold text-blue"
-              : "border-line text-grey hover:border-blue/50 hover:text-blue"
+              : "border-line text-grey hover:border-ui-blue/50 hover:text-ui-blue"
           }`}
         >
           ✓ {t(locale, "feed.solvedOnly")}

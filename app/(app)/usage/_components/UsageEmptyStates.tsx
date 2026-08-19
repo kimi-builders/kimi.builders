@@ -33,9 +33,9 @@ export function UsageFirstRun({
   return (
     <section className="mt-6 rounded-2xl border border-blue/35 bg-blue/5 p-5 sm:p-6" aria-labelledby="usage-first-run-title">
       <div className="flex items-start gap-3">
-        <KeyRound size={19} className="mt-0.5 shrink-0 text-blue" aria-hidden="true" />
+        <KeyRound size={19} className="mt-0.5 shrink-0 text-ui-blue" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[11px] tracking-[0.14em] text-blue">
+          <p className="font-mono text-xs tracking-[0.08em] text-ui-blue">
             {zh ? "本地优先 · 约 2 分钟" : "LOCAL-FIRST · ABOUT 2 MINUTES"}
           </p>
           <h2 id="usage-first-run-title" className="mt-1 font-mono text-base font-semibold text-paper">
@@ -50,18 +50,18 @@ export function UsageFirstRun({
           </p>
           <div className="mt-3 flex max-w-3xl flex-wrap gap-1.5">
             {sources.map((s) => (
-              <span key={s} className="rounded-md border border-line bg-bg px-2 py-1 font-mono text-[11px] text-grey">
+              <span key={s} className="rounded-md border border-line bg-bg px-2 py-1 font-mono text-xs text-grey">
                 {s}
               </span>
             ))}
-            <span className="rounded-md border border-dashed border-line px-2 py-1 font-mono text-[11px] text-grey/80">
+            <span className="rounded-md border border-dashed border-line px-2 py-1 font-mono text-xs text-grey/80">
               {zh ? "Cursor(CSV 显式启用)" : "Cursor (explicit CSV)"}
             </span>
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <div>
-              <p className="font-mono text-[11px] tracking-[0.12em] text-grey">
+              <p className="font-mono text-xs tracking-[0.08em] text-grey">
                 {zh ? "① 本地看板(不需要账号)" : "① LOCAL DASHBOARD (NO ACCOUNT)"}
               </p>
               <div className="mt-2 flex min-w-0 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
@@ -70,14 +70,14 @@ export function UsageFirstRun({
                 </code>
                 <CopyUsageCommandButton command={USAGE_DASHBOARD_COMMAND} zh={zh} />
               </div>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-grey/80">
+              <p className="mt-1.5 text-xs leading-relaxed text-grey/80">
                 {zh
                   ? "打开即得趋势、分布与费用估算,全程不联网、不上传。"
                   : "Trends, breakdowns and cost estimates on open — fully offline, nothing uploaded."}
               </p>
             </div>
             <div>
-              <p className="font-mono text-[11px] tracking-[0.12em] text-grey">
+              <p className="font-mono text-xs tracking-[0.08em] text-grey">
                 {zh ? "② 同步到社区(跨设备 / 公开档案 / 排行榜)" : "② SYNC TO COMMUNITY (DEVICES / PROFILE / RANKS)"}
               </p>
               <div className="mt-2 flex min-w-0 items-stretch overflow-hidden rounded-lg border border-line bg-bg">
@@ -86,7 +86,7 @@ export function UsageFirstRun({
                 </code>
                 <CopyUsageCommandButton command={command} zh={zh} />
               </div>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-grey/80">
+              <p className="mt-1.5 text-xs leading-relaxed text-grey/80">
                 {hasAuthorizedDevice ? usageSyncMeaning(zh) : usageInitMeaning(zh)}
               </p>
             </div>
@@ -100,7 +100,7 @@ export function UsageFirstRun({
               loading="lazy"
               className="w-full"
             />
-            <figcaption className="border-t border-line px-4 py-2.5 font-mono text-[11px] text-grey">
+            <figcaption className="border-t border-line px-4 py-2.5 font-mono text-xs text-grey">
               {zh
                 ? "本地看板实拍——由真实本机 Agent 日志生成,不是设计稿"
                 : "The local dashboard, rendered from real local agent logs — not a mockup"}
@@ -109,15 +109,15 @@ export function UsageFirstRun({
 
           <ol className="mt-5 grid gap-3 text-sm text-grey sm:grid-cols-3">
             <li className="border-l-2 border-blue/60 pl-3">
-              <span className="block font-mono text-[11px] text-blue">01</span>
+              <span className="block font-mono text-xs text-ui-blue">01</span>
               <span className="mt-1 block">{zh ? "打开本地看板并选择 Agent 扫描范围" : "Open the local dashboard and choose agent scan scope"}</span>
             </li>
             <li className="border-l-2 border-blue/60 pl-3">
-              <span className="block font-mono text-[11px] text-blue">02</span>
+              <span className="block font-mono text-xs text-ui-blue">02</span>
               <span className="mt-1 block">{zh ? "连接并批准设备，此时仍未上传" : "Connect and approve the device; nothing is uploaded yet"}</span>
             </li>
             <li className="border-l-2 border-blue/60 pl-3">
-              <span className="block font-mono text-[11px] text-blue">03</span>
+              <span className="block font-mono text-xs text-ui-blue">03</span>
               <span className="mt-1 block">{zh ? "选择社区同步范围，再开始增量同步" : "Choose community scope, then start incremental sync"}</span>
             </li>
           </ol>
@@ -125,7 +125,7 @@ export function UsageFirstRun({
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
             <Link
               href="/usage/device"
-              className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-[11px] font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "输入设备授权码" : "Enter device code"}
             </Link>
@@ -138,8 +138,8 @@ export function UsageFirstRun({
             />
           </div>
 
-          <div className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-grey">
-            <ShieldCheck size={14} className="mt-0.5 shrink-0 text-blue" aria-hidden="true" />
+          <div className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-grey">
+            <ShieldCheck size={14} className="mt-0.5 shrink-0 text-ui-blue" aria-hidden="true" />
             <p>
               {zh
                 ? "项目名默认不上传;同步 Key 可随时撤销,远端数据也可按设备或全部删除。"
@@ -182,14 +182,14 @@ export function UsageRangeEmpty({
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
         {filtersActive && (
-          <Link href={clearHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-[11px] font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          <Link href={clearHref} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-blue px-4 font-mono text-xs font-semibold text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
             {zh ? "清除维度筛选" : "Clear dimension filters"}
           </Link>
         )}
-        <Link href={range30Href} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+        <Link href={range30Href} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-grey hover:border-ui-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           <CalendarRange size={14} aria-hidden="true" /> 30D
         </Link>
-        <Link href={range90Href} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-[11px] text-grey hover:border-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+        <Link href={range90Href} scroll={false} className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-grey hover:border-ui-blue hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           <CalendarRange size={14} aria-hidden="true" /> 90D
         </Link>
       </div>

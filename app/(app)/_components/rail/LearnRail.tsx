@@ -19,11 +19,11 @@ export default function LearnRail({ locale }: { locale: Locale }) {
             <li key={p.slug}>
               <Link
                 href={`/learn/${p.slug}`}
-                className="block truncate text-xs text-paper transition-colors hover:text-blue"
+                className="block truncate text-xs text-paper transition-colors hover:text-ui-blue"
               >
                 {zh ? p.title.zh : p.title.en}
               </Link>
-              <p className="mt-0.5 font-mono text-[11px] text-grey">
+              <p className="mt-0.5 font-mono text-xs text-grey">
                 {p.code.replace("PATH-", "P")} · {p.levels.length} {zh ? "层" : "levels"} ·{" "}
                 {zh ? `约 ${p.hours} 小时` : `~${p.hours}h`}
                 {isPathStale(p) && (zh ? " · 待重验" : " · re-verify")}

@@ -28,7 +28,7 @@ export default function UsageInsightPanel({
           <Lightbulb size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h2 id="usage-insights-title" className="text-[13px] font-semibold text-paper">
+          <h2 id="usage-insights-title" className="text-sm font-semibold text-paper">
             {zh ? "本周期洞察" : "Period insights"}
           </h2>
           <DataMeta
@@ -41,13 +41,13 @@ export default function UsageInsightPanel({
         {insights.map((insight, index) => (
           <article key={insight.id} className={`rounded-xl border p-3.5 ${TONE_CLASS[insight.tone]}`}>
             <div className="flex items-start gap-2.5">
-              <span className="shrink-0 font-mono text-[10.5px] text-blue">
+              <span className="shrink-0 font-mono text-xs text-ui-blue">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
                 <h3 className="text-xs font-semibold leading-relaxed text-paper">{insight.title}</h3>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-grey">{insight.detail}</p>
-                <p className="mt-2 border-t border-line/70 pt-2 text-[11px] leading-relaxed text-paper/85">
+                <p className="mt-1.5 text-xs leading-relaxed text-grey">{insight.detail}</p>
+                <p className="mt-2 border-t border-line/70 pt-2 text-xs leading-relaxed text-paper/85">
                   {insight.action}
                 </p>
               </div>

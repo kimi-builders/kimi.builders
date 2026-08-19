@@ -111,7 +111,7 @@ export default function ProfilePrivacyForm({
           className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
         >
           <div className="min-w-0">
-            <p className="text-[13px] font-medium text-paper">{row.title}</p>
+            <p className="text-sm font-medium text-paper">{row.title}</p>
             <p className="mt-1 max-w-md text-xs leading-relaxed text-grey">
               {row.hint}
             </p>

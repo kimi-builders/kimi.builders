@@ -47,19 +47,19 @@ export function MetricCard({
 }) {
   return (
     <article className={`relative rounded-xl border border-line bg-bg p-4 ${className}`}>
-      <div className="flex min-w-0 items-center gap-1 text-[11px] text-grey/80">
+      <div className="flex min-w-0 items-center gap-1 text-xs text-grey/80">
         <span className="truncate">{label}</span>
         {labelAccessory}
       </div>
       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <strong
-          className={`font-mono text-[17px] font-semibold leading-none ${accent ? "text-blue" : "text-paper"} ${valueClassName}`}
+          className={`font-mono text-lg font-semibold leading-none ${accent ? "text-blue" : "text-paper"} ${valueClassName}`}
         >
           {value}
         </strong>
         {comparison ? <span className="font-mono text-xs text-grey">{comparison}</span> : null}
       </div>
-      {description ? <p className="mt-2 text-[11px] leading-relaxed text-grey">{description}</p> : null}
+      {description ? <p className="mt-2 text-xs leading-relaxed text-grey">{description}</p> : null}
       <DataMeta items={meta} className="mt-1.5" />
       {status}
     </article>
@@ -85,8 +85,8 @@ export function InsightHeader({
   return (
     <div className={`flex flex-wrap items-start justify-between gap-3 ${className}`}>
       <div className="min-w-0">
-        <Heading className="text-[13px] font-semibold text-paper">{title}</Heading>
-        {description ? <p className="mt-1 text-[11px] leading-relaxed text-grey">{description}</p> : null}
+        <Heading className="text-sm font-semibold text-paper">{title}</Heading>
+        {description ? <p className="mt-1 text-xs leading-relaxed text-grey">{description}</p> : null}
         <DataMeta items={meta} className="mt-1" />
       </div>
       {actions ? <div className="w-full min-w-0 sm:w-auto sm:shrink-0">{actions}</div> : null}
@@ -133,7 +133,7 @@ export function ChartLegend({
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${className}`}>
       {items.map((item, index) => (
-        <span key={index} className="inline-flex items-center gap-1.5 text-[11px] text-grey">
+        <span key={index} className="inline-flex items-center gap-1.5 text-xs text-grey">
           {item.icon ?? (
             <Hexagon
               size={10}

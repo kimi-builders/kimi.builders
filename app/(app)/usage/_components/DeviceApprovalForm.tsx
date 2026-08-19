@@ -35,7 +35,7 @@ export default function DeviceApprovalForm({
             ? "可以返回本地看板或终端了。设备 Key 只会交付并保存一次。"
             : "Return to the local dashboard or terminal. The device key is delivered and stored only once."}
         </p>
-        <a href="/usage" className="mt-4 inline-flex min-h-11 items-center text-sm text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+        <a href="/usage" className="mt-4 inline-flex min-h-11 items-center text-sm text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
           {zh ? "返回用量看板 →" : "Back to usage →"}
         </a>
       </div>
@@ -55,7 +55,7 @@ export default function DeviceApprovalForm({
     <form action={action} className="mt-6 space-y-5">
       <input type="hidden" name="user_code" value={userCode} />
       <label className="block">
-        <span className="font-mono text-[11px] tracking-[0.18em] text-grey">
+        <span className="font-mono text-xs tracking-[0.08em] text-grey">
           {zh ? "设备别名" : "DEVICE NAME"}
         </span>
         <input
@@ -77,7 +77,7 @@ export default function DeviceApprovalForm({
           <span className="block text-sm text-paper">
             {zh ? "上传项目目录名" : "Upload project directory names"}
           </span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey">
+          <span className="mt-1 block text-xs leading-relaxed text-grey">
             {zh
               ? "默认关闭。只上传 basename，不上传完整路径；可随时在看板关闭。"
               : "Off by default. Only the basename is sent, never a full path; disable it anytime."}

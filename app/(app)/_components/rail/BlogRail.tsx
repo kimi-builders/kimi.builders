@@ -26,11 +26,11 @@ export default async function BlogRail({ locale }: { locale: Locale }) {
               <li key={i.slug}>
                 <Link
                   href={`/blog/${i.slug}`}
-                  className="block truncate text-xs text-paper transition-colors hover:text-blue"
+                  className="block truncate text-xs text-paper transition-colors hover:text-ui-blue"
                 >
                   {i.title}
                 </Link>
-                <p className="mt-0.5 font-mono text-[11px] text-grey">
+                <p className="mt-0.5 font-mono text-xs text-grey">
                   ISSUE {String(i.issue).padStart(2, "0")} · {i.month}
                 </p>
               </li>
@@ -39,7 +39,7 @@ export default async function BlogRail({ locale }: { locale: Locale }) {
               <li>
                 <Link
                   href="/blog"
-                  className="font-mono text-[11px] text-blue transition-opacity hover:opacity-80"
+                  className="font-mono text-xs text-ui-blue transition-opacity hover:opacity-80"
                 >
                   {zh ? `全部 ${metas.length} 期 →` : `All ${metas.length} issues →`}
                 </Link>
@@ -54,7 +54,7 @@ export default async function BlogRail({ locale }: { locale: Locale }) {
           {t(locale, "home.featuredSub")}
         </p>
         {editors.length > 0 && (
-          <p className="mt-2 font-mono text-[11px] leading-relaxed text-grey">
+          <p className="mt-2 font-mono text-xs leading-relaxed text-grey">
             {editors.map((h) => `@${h}`).join(" ")}
           </p>
         )}
@@ -66,7 +66,7 @@ export default async function BlogRail({ locale }: { locale: Locale }) {
         </p>
         <Link
           href="/community"
-          className="mt-3 inline-block font-mono text-[11px] text-grey underline decoration-blue/50 underline-offset-4 transition-colors hover:text-blue"
+          className="mt-3 inline-block font-mono text-xs text-grey underline decoration-ui-blue/50 underline-offset-4 transition-colors hover:text-ui-blue"
         >
           {t(locale, "nav.community")}
         </Link>

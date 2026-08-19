@@ -27,8 +27,8 @@ export default function FeedShareButton({
           /* 剪贴板被拒(权限/非安全上下文)就静默 */
         }
       }}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-        copied ? "text-blue" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
+      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+        copied ? "text-ui-blue" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
       }`}
     >
       {copied ? <Check size={13} aria-hidden="true" /> : <Share2 size={13} aria-hidden="true" />}

@@ -67,13 +67,13 @@ export default function FeaturedToggle({
   };
 
   const btn =
-    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-blue disabled:opacity-40";
+    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-ui-blue disabled:opacity-40";
 
   if (featured) {
     return (
       <span className="inline-flex min-w-0 items-center gap-3 font-mono text-xs">
         <span
-          className="max-w-56 truncate text-blue"
+          className="max-w-56 truncate text-ui-blue"
           title={featured.reason}
         >
           {t(locale, "featured.badge")} · {featured.reason}

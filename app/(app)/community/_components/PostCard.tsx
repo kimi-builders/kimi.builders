@@ -48,7 +48,7 @@ export default function PostCard({
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <Link
             href={`/u/${p.handle}`}
-            className="flex items-center gap-1 text-[15px] font-semibold text-paper transition-colors hover:text-blue"
+            className="flex items-center gap-1 text-sm font-semibold text-paper transition-colors hover:text-ui-blue"
           >
             @{p.handle}
             {official && (
@@ -60,7 +60,7 @@ export default function PostCard({
               />
             )}
           </Link>
-          <span className="text-[13px] text-grey/80">· {relTime(p.createdAt, locale)}</span>
+          <span className="text-sm text-grey/80">· {relTime(p.createdAt, locale)}</span>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-xs">
           {p.visibility === "private" && (
@@ -91,7 +91,7 @@ export default function PostCard({
       {p.title && (
         <Link
           href={`/community/${p.id}`}
-          className="mt-3 block text-[16px] font-semibold leading-snug text-paper transition-colors hover:text-blue"
+          className="mt-3 block text-base font-semibold leading-snug text-paper transition-colors hover:text-ui-blue"
         >
           {p.title}
           {p.type !== "text" && (
@@ -110,7 +110,7 @@ export default function PostCard({
           {(truncated || !p.title) && (
             <Link
               href={`/community/${p.id}`}
-              className="mt-1 inline-block text-xs text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mt-1 inline-block text-xs text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "feed.readMore")}
             </Link>

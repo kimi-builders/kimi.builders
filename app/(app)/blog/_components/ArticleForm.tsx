@@ -168,7 +168,7 @@ export default function ArticleForm({
             }
             className={`${inputCls} font-mono text-xs`}
           />
-          <p className="mt-1.5 text-[11px] leading-relaxed text-grey/80">
+          <p className="mt-1.5 text-xs leading-relaxed text-grey/80">
             {locale === "zh"
               ? '可用字段:aiDisclosure({digest,facts,decisions} AI 参与披露)、governance([{title,note,rulingUrl}] 治理公示)。'
               : 'Keys: aiDisclosure ({digest,facts,decisions} AI involvement), governance ([{title,note,rulingUrl}]).'}
@@ -199,7 +199,7 @@ export default function ArticleForm({
       </label>
 
       {state?.error && (
-        /* 对齐 WorkForm 的 alert 范式(20260921:此前用品牌蓝 text-blue,
+        /* 对齐 WorkForm 的 alert 范式(20260921:此前用品牌蓝 text-ui-blue,
            蓝色在站内是链接/主色语义,不像错误) */
         <p
           role="alert"
@@ -214,7 +214,7 @@ export default function ArticleForm({
         <button
           type="submit"
           disabled={pending || deleting}
-          className="rounded-lg bg-blue px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
+ className="rounded-lg bg-blue px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {pending ? t(locale, "post.submitting") : t(locale, "post.save")}
         </button>
@@ -223,7 +223,7 @@ export default function ArticleForm({
             type="button"
             onClick={del}
             disabled={pending || deleting}
-            className="rounded-lg border border-line px-3 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
+            className="rounded-lg border border-line px-3 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue disabled:opacity-40"
           >
             {deleting ? t(locale, "post.submitting") : t(locale, "post.delete")}
           </button>

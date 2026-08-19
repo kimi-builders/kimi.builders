@@ -53,7 +53,7 @@ function PrefRow({
   return (
     <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
       <div className="min-w-0">
-        <p className="text-[13px] font-medium text-paper">{title}</p>
+        <p className="text-sm font-medium text-paper">{title}</p>
         <p className="mt-1 max-w-md text-xs leading-relaxed text-grey">{hint}</p>
       </div>
       <Switch on={on} label={title} onFlip={onFlip} />

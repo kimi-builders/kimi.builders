@@ -75,11 +75,11 @@ export default async function AdminPage({
 
   return (
     <div>
-      <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+      <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
         <ShieldCheck size={20} aria-hidden="true" />
         {t(locale, "admin.title")}
       </h1>
-      <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-grey">
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
         {t(locale, "admin.subtitle")}
       </p>
 
@@ -166,11 +166,11 @@ export default async function AdminPage({
               defaultValue={q ?? ""}
               placeholder={t(locale, "admin.userSearchPh")}
               maxLength={60}
-              className="min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 py-2 font-mono text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
+              className="min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 py-2 font-mono text-sm text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
             />
             <button
               type="submit"
-              className="min-h-9 shrink-0 rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-9 shrink-0 rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "admin.userSearch")}
             </button>
@@ -252,16 +252,16 @@ async function AdminUserList({
           >
             <Avatar url={null} handle={u.handle} size={28} className="shrink-0" />
             <span className="min-w-0">
-              <span className="block truncate text-[13px] text-paper">
+              <span className="block truncate text-sm text-paper">
                 <Link
                   href={`/u/${u.handle}`}
-                  className="transition-colors hover:text-blue"
+                  className="transition-colors hover:text-ui-blue"
                 >
                   {u.name || u.handle}
                 </Link>
-                <span className="ml-2 font-mono text-[11px] text-grey">@{u.handle}</span>
+                <span className="ml-2 font-mono text-xs text-grey">@{u.handle}</span>
               </span>
-              <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[11px] text-grey">
+              <span className="mt-0.5 flex items-center gap-1.5 font-mono text-xs text-grey">
                 <span
                   className={`rounded-md px-1.5 py-px ${
                     u.role === "member" ? "bg-paper/[0.07]" : "bg-blue/10 text-blue"

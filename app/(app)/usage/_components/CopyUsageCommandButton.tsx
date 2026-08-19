@@ -36,7 +36,7 @@ export default function CopyUsageCommandButton({ command, zh }: { command: strin
     <button
       type="button"
       onClick={copyCommand}
-      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 border-l border-line px-3 font-mono text-[11px] text-grey hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 border-l border-line px-3 font-mono text-xs text-grey hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       aria-label={label}
     >
       {status === "copied" ? (

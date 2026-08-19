@@ -58,7 +58,7 @@ export default async function AwesomeRail({
               >
                 <WorkScopeIcon id={s.id} size={14} className="shrink-0 text-grey" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs text-paper transition-colors group-hover:text-blue">
+                  <span className="block text-xs text-paper transition-colors group-hover:text-ui-blue">
                     {t(locale, s.labelKey)}
                   </span>
                   <span className="mt-0.5 block text-xs text-grey/80">

@@ -63,7 +63,7 @@ export default function RecordsColumnsMenu({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-card px-3 font-mono text-[11px] text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9"
+        className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9"
       >
         {zh ? "列" : "Columns"}
         {enabled.length > 0 ? ` · ${enabled.length}` : ""}

@@ -122,7 +122,7 @@ function EmptyPane({
       {ctaHref && ctaLabel && (
         <Link
           href={ctaHref}
-          className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-xs text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           {ctaLabel}
         </Link>
@@ -293,26 +293,26 @@ export default async function ProfilePage({
             className="shrink-0 max-sm:!size-[72px]"
           />
           <div className="min-w-0 flex-1 pt-0.5">
-            <h1 className="flex flex-wrap items-center gap-2.5 text-[22px] font-semibold tracking-[0.1px] text-paper sm:text-[26px]">
+            <h1 className="flex flex-wrap items-center gap-2.5 text-2xl font-semibold text-paper sm:text-3xl">
               {view.displayName}
               {profile.role !== "member" && (
-                <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-[10.5px] font-bold tracking-[0.16em] text-blue">
+                <span className="rounded-md border border-blue/50 bg-blue/10 px-2 py-0.5 font-mono text-xs font-bold tracking-[0.08em] text-blue">
                   {profile.role.toUpperCase()}
                 </span>
               )}
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-grey sm:text-xs">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-grey sm:text-xs">
               <span className="font-semibold text-paper">@{profile.handle}</span>
               <span>{stats.posts} {t(locale, "prof.posts")}</span>
               <span>{stats.comments} {t(locale, "prof.comments")}</span>
               <span>{stats.likes} {t(locale, "prof.likes")}</span>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-grey sm:text-[12px]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-grey sm:text-xs">
               <span className="flex items-center gap-1.5">
                 <CalendarDays size={12} aria-hidden="true" />
                 {t(locale, "prof.joined", { d: ymd(profile.createdAt) })}
               </span>
-              <span className="font-mono text-[11px] text-blue">
+              <span className="font-mono text-xs text-ui-blue">
                 {SITE_HOST}{profilePath}
               </span>
             </div>
@@ -339,7 +339,7 @@ export default async function ProfilePage({
                   href={`${posterHref}?download=1`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 text-[11px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 text-xs whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-xs"
                 >
                   {t(locale, "prof.poster")}
                 </a>
@@ -347,7 +347,7 @@ export default async function ProfilePage({
               {self && (
                 <Link
                   href="/settings"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 text-[11px] font-semibold whitespace-nowrap text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+ className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-xs"
                 >
                   {t(locale, "prof.edit")}
                 </Link>
@@ -360,44 +360,44 @@ export default async function ProfilePage({
           {usageStatsReady ? (
             <>
               <div className={`${STRIP_CELL} lg:!pl-0`}>
-                <div className="text-[11px] tracking-[0.05em] text-grey/80">
+                <div className="text-xs tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statTotal")}
                 </div>
-                <div className="mt-1.5 font-mono text-[25px] font-semibold leading-none tracking-[-0.5px] text-blue">
+                <div className="mt-1.5 font-mono text-2xl font-semibold leading-none tracking-[-0.5px] text-ui-blue">
                   {compact(snapshotAll.lifetimeTokens)}
                 </div>
-                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
+                <div className="mt-1 font-mono text-xs text-grey/70">
                   {t(locale, "prof.statTotalSub", {
                     v: formatApproxUsdMicros(snapshotAll.costMicros),
                   })}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[11px] tracking-[0.05em] text-grey/80">
+                <div className="text-xs tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statActiveDays")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
-                  {fsum.activeDays} <span className="text-[11px] font-medium text-grey">{zh ? "天" : "days"}</span>
+                  {fsum.activeDays} <span className="text-xs font-medium text-grey">{zh ? "天" : "days"}</span>
                 </div>
-                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
+                <div className="mt-1 font-mono text-xs text-grey/70">
                   {t(locale, "prof.statActiveDaysSub")}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[11px] tracking-[0.05em] text-grey/80">
+                <div className="text-xs tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statStreak")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
-                  {fsum.streak.current} <span className="text-[11px] font-medium text-grey">{zh ? "天" : "days"}</span>
+                  {fsum.streak.current} <span className="text-xs font-medium text-grey">{zh ? "天" : "days"}</span>
                 </div>
-                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
+                <div className="mt-1 font-mono text-xs text-grey/70">
                   {t(locale, "prof.statStreakSub", {
                     n: snapshotAll.streakWeeks.current || snapshotAll.streakWeeks.longest,
                   })}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[11px] tracking-[0.05em] text-grey/80">
+                <div className="text-xs tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statHitRate")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
@@ -405,18 +405,18 @@ export default async function ProfilePage({
                     ? "—"
                     : `${(snapshotAll.cacheHitRate * 100).toFixed(1)}%`}
                 </div>
-                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
+                <div className="mt-1 font-mono text-xs text-grey/70">
                   {t(locale, "prof.statHitRateSub", { v: compact(snapshotAll.flow.cacheReadTokens) })}
                 </div>
               </div>
               <div className={STRIP_CELL}>
-                <div className="text-[11px] tracking-[0.05em] text-grey/80">
+                <div className="text-xs tracking-[0.05em] text-grey/80">
                   {t(locale, "prof.statRequests")}
                 </div>
                 <div className="mt-1.5 font-mono text-lg font-semibold text-paper">
                   {snapshotAll.requests.toLocaleString("en-US")}
                 </div>
-                <div className="mt-1 font-mono text-[10.5px] text-grey/70">
+                <div className="mt-1 font-mono text-xs text-grey/70">
                   {t(locale, "prof.statRequestsSub", { n: snapshotAll.sessions.toLocaleString("en-US") })}
                 </div>
               </div>
@@ -429,7 +429,7 @@ export default async function ProfilePage({
                 { n: stats.likes, l: t(locale, "prof.likes") },
               ].map((s) => (
                 <div key={s.l} className={STRIP_CELL}>
-                  <div className="text-[11px] tracking-[0.05em] text-grey/80">{s.l}</div>
+                  <div className="text-xs tracking-[0.05em] text-grey/80">{s.l}</div>
                   <div className="mt-1.5 font-mono text-lg font-semibold text-paper">{s.n}</div>
                 </div>
               ))}
@@ -444,10 +444,10 @@ export default async function ProfilePage({
           {footprint && fsum && (
             <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-[13px] font-semibold text-paper">
+                <h2 className="text-sm font-semibold text-paper">
                   {t(locale, "prof.footprint")}
                 </h2>
-                <span className="font-mono text-[11px] text-grey/80">
+                <span className="font-mono text-xs text-grey/80">
                   {t(locale, "prof.footprintHint")}
                 </span>
               </div>
@@ -471,7 +471,7 @@ export default async function ProfilePage({
                     href={item.href}
                     scroll={false}
                     aria-current={active ? "page" : undefined}
-                    className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1.5 text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                    className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                       active
                         ? "border-blue text-paper"
                         : "border-transparent text-grey hover:text-paper"
@@ -480,7 +480,7 @@ export default async function ProfilePage({
                     {item.label}
                     {item.count !== null && (
                       <span
-                        className={`rounded-full border px-1.5 py-0.5 font-mono text-[11px] ${
+                        className={`rounded-full border px-1.5 py-0.5 font-mono text-xs ${
                           active
                             ? "border-blue/40 bg-blue/10 text-blue"
                             : "border-line bg-paper/[0.04] text-grey"
@@ -507,17 +507,17 @@ export default async function ProfilePage({
                 <div className="px-4 sm:px-5">
                   {posts.map((p) => (
                     <article key={p.id} className="border-b border-line py-4 last:border-b-0">
-                      <div className="flex items-center gap-2 font-mono text-[11px] text-grey">
+                      <div className="flex items-center gap-2 font-mono text-xs text-grey">
                         <span>{relTime(p.createdAt, locale)}</span>
                         <span className="ml-auto flex shrink-0 items-center gap-2 tracking-wider">
                           {p.visibility === "private" && (
-                            <span className="rounded-md border border-line px-1.5 py-px text-[11px] text-paper">
+                            <span className="rounded-md border border-line px-1.5 py-px text-xs text-paper">
                               {t(locale, "post.private")}
                             </span>
                           )}
                           {p.hiddenAt && (
                             <span
-                              className="rounded-md border border-status-danger/60 px-1.5 py-px text-[11px] text-status-danger-fg"
+                              className="rounded-md border border-status-danger/60 px-1.5 py-px text-xs text-status-danger-fg"
                               title={p.hiddenReason ?? undefined}
                             >
                               {t(locale, "mod.hiddenBadge")}
@@ -530,11 +530,11 @@ export default async function ProfilePage({
                         <>
                           <Link
                             href={`/community/${p.id}`}
-                            className="mt-1 block text-[15px] font-medium leading-snug text-paper transition-colors hover:text-blue"
+                            className="mt-1 block text-sm font-medium leading-snug text-paper transition-colors hover:text-ui-blue"
                           >
                             {p.title}
                             {p.type !== "text" && (
-                              <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[11px] font-normal text-grey">
+                              <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-xs font-normal text-grey">
                                 {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
                               </span>
                             )}
@@ -548,17 +548,17 @@ export default async function ProfilePage({
                       ) : (
                         <Link
                           href={`/community/${p.id}`}
-                          className="mt-1 block text-[15px] leading-relaxed text-paper transition-colors hover:text-blue"
+                          className="mt-1 block text-sm leading-relaxed text-paper transition-colors hover:text-ui-blue"
                         >
                           <span className="line-clamp-3">{p.excerpt}</span>
                           {p.type !== "text" && (
-                            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[11px] text-grey">
+                            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-xs text-grey">
                               {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
                             </span>
                           )}
                         </Link>
                       )}
-                      <div className="mt-2.5 flex items-center gap-5 font-mono text-[11px] text-grey">
+                      <div className="mt-2.5 flex items-center gap-5 font-mono text-xs text-grey">
                         <span className="inline-flex items-center gap-1">
                           <ArrowBigUp size={14} />
                           {p.score}
@@ -566,7 +566,7 @@ export default async function ProfilePage({
                         <Link
                           href={`/community/${p.id}#comments`}
                           title={t(locale, "post.comments", { n: p.commentCount })}
-                          className="inline-flex items-center gap-1 transition-colors hover:text-blue"
+                          className="inline-flex items-center gap-1 transition-colors hover:text-ui-blue"
                         >
                           <MessageCircle size={13} />
                           {p.commentCount}
@@ -591,29 +591,29 @@ export default async function ProfilePage({
                 <div className="px-4 sm:px-5">
                   {comments.map((c) => (
                     <article key={c.id} className="border-b border-line py-4 last:border-b-0">
-                      <div className="font-mono text-[11px] text-grey">
+                      <div className="font-mono text-xs text-grey">
                         {t(locale, "prof.commentedOn")}{" "}
                         <Link
                           href={`/community/${c.postId}#comment-${c.id}`}
-                          className="text-paper transition-colors hover:text-blue"
+                          className="text-paper transition-colors hover:text-ui-blue"
                         >
                           {c.postTitle}
                         </Link>
                         <span className="mx-2">·</span>
                         {relTime(c.createdAt, locale)}
                         {c.hidden && (
-                          <span className="ml-2 rounded-md border border-status-danger/60 px-1.5 py-px text-[11px] text-status-danger-fg">
+                          <span className="ml-2 rounded-md border border-status-danger/60 px-1.5 py-px text-xs text-status-danger-fg">
                             {t(locale, "mod.hiddenBadge")}
                           </span>
                         )}
                       </div>
                       <Link
                         href={`/community/${c.postId}#comment-${c.id}`}
-                        className="mt-1.5 block text-sm leading-relaxed text-paper/90 transition-colors hover:text-blue"
+                        className="mt-1.5 block text-sm leading-relaxed text-paper/90 transition-colors hover:text-ui-blue"
                       >
                         <span className="line-clamp-2">{c.excerpt}</span>
                       </Link>
-                      <div className="mt-2 flex items-center gap-1 font-mono text-[11px] text-grey">
+                      <div className="mt-2 flex items-center gap-1 font-mono text-xs text-grey">
                         <ArrowBigUp size={13} />
                         {c.score}
                       </div>
@@ -685,11 +685,11 @@ export default async function ProfilePage({
                         meta={[zh ? "与用量中心同口径" : "Same basis as usage center"]}
                         actions={
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="flex items-center gap-1.5 text-[11px] text-grey">
+                          <span className="flex items-center gap-1.5 text-xs text-grey">
                             <i className="h-2 w-2 rounded-[2px] bg-viz-blue-primary" />
                             {zh ? "总 Token" : "Total tokens"}
                           </span>
-                          <span className="flex items-center gap-1.5 text-[11px] text-grey">
+                          <span className="flex items-center gap-1.5 text-xs text-grey">
                             <i className="h-0 w-3.5 border-t-2 border-dashed border-grey/70" />
                             {zh ? "7 日均值" : "7-day average"}
                           </span>
@@ -707,12 +707,12 @@ export default async function ProfilePage({
                         />
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-xs text-grey">
                       <span>{t(locale, "prof.usageNote")}</span>
                       {self && (
                         <Link
                           href="/usage"
-                          className="ml-auto font-semibold text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                          className="ml-auto font-semibold text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                         >
                           {t(locale, "prof.usageGo")}
                         </Link>
@@ -722,7 +722,7 @@ export default async function ProfilePage({
                 )}
                 {heatmap && (
                   <div className={snapshot30 ? "mt-5 border-t border-line pt-4" : undefined}>
-                    <p className="mb-3 font-mono text-[11px] text-grey/80">
+                    <p className="mb-3 font-mono text-xs text-grey/80">
                       {zh ? "星期 × 本地小时 · 全部时间" : "Weekday × local hour · all time"}
                     </p>
                     <SocialUsageHeatmap grid={heatmap} tzOffsetMinutes={tz} zh={zh} />
@@ -752,7 +752,7 @@ export default async function ProfilePage({
                             <AgentIcon id={tool.id} context="chart" />
                             <span className="truncate">{tool.label}</span>
                           </span>
-                          <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
+                          <span className="ml-auto shrink-0 font-mono text-xs font-semibold text-paper">
                             {compact(tool.tokens)} · {Math.round(pct)}%
                           </span>
                         </div>
@@ -776,7 +776,7 @@ export default async function ProfilePage({
                 {busiestSlot && (
                   <div className="flex items-center justify-between gap-3 py-3">
                     <dt className="text-xs text-grey">{t(locale, "prof.prefPeak")}</dt>
-                    <dd className="font-mono text-[11.5px] text-paper">
+                    <dd className="font-mono text-xs text-paper">
                       {weekdayNames[busiestSlot.weekday]} {String(busiestSlot.hour).padStart(2, "0")}:00
                     </dd>
                   </div>
@@ -784,7 +784,7 @@ export default async function ProfilePage({
                 {snapshotAll.topModel && (
                   <div className="flex items-center justify-between gap-3 py-3">
                     <dt className="text-xs text-grey">{t(locale, "prof.prefModel")}</dt>
-                    <dd className="max-w-[240px] truncate font-mono text-[11.5px] text-paper" title={snapshotAll.topModel}>
+                    <dd className="max-w-[240px] truncate font-mono text-xs text-paper" title={snapshotAll.topModel}>
                       {snapshotAll.topModel}
                     </dd>
                   </div>
@@ -792,7 +792,7 @@ export default async function ProfilePage({
                 {topDims?.topDevice && (
                   <div className="flex items-center justify-between gap-3 py-3">
                     <dt className="text-xs text-grey">{t(locale, "prof.prefDevice")}</dt>
-                    <dd className="max-w-[240px] truncate font-mono text-[11.5px] text-paper" title={topDims.topDevice}>
+                    <dd className="max-w-[240px] truncate font-mono text-xs text-paper" title={topDims.topDevice}>
                       {topDims.topDevice}
                     </dd>
                   </div>
@@ -800,7 +800,7 @@ export default async function ProfilePage({
                 {topDims?.topProject && (
                   <div className="flex items-center justify-between gap-3 py-3">
                     <dt className="text-xs text-grey">{t(locale, "prof.prefProject")}</dt>
-                    <dd className="max-w-[240px] truncate font-mono text-[11.5px] text-paper" title={topDims.topProject}>
+                    <dd className="max-w-[240px] truncate font-mono text-xs text-paper" title={topDims.topProject}>
                       {topDims.topProject}
                     </dd>
                   </div>

@@ -66,7 +66,7 @@ export default async function WorksRail({
                     className="group flex items-center gap-2.5 border-b border-line py-2 last:border-b-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                   >
                     <WorkKindIcon id={meta.id} size={14} className="shrink-0 text-grey" />
-                    <span className="min-w-0 flex-1 truncate text-xs text-paper transition-colors group-hover:text-blue">
+                    <span className="min-w-0 flex-1 truncate text-xs text-paper transition-colors group-hover:text-ui-blue">
                       {workKindLabel(k.kind, locale === "zh")}
                     </span>
                     <span className="shrink-0 font-mono text-xs font-semibold text-grey">
@@ -117,7 +117,7 @@ export default async function WorksRail({
                 </span>
                 <Link
                   href={`/works/${w.id}`}
-                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-blue"
+                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-ui-blue"
                 >
                   {w.name}
                 </Link>
@@ -133,7 +133,7 @@ export default async function WorksRail({
           {t(locale, "works.claimNote")}{" "}
           <Link
             href="/awesome"
-            className="font-mono text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="font-mono text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "works.goAwesome")}
           </Link>

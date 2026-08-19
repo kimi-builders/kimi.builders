@@ -27,7 +27,7 @@ export default async function NewArticlePage() {
   }
   return (
     <div className="rounded-2xl border border-line bg-card p-4 sm:p-6">
-      <h1 className="font-mono text-lg font-semibold">
+      <h1 className="text-2xl font-semibold text-paper">
         {t(locale, "artf.newTitle")}
       </h1>
       <ArticleForm locale={locale} />

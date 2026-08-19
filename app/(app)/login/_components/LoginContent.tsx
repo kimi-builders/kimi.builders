@@ -79,19 +79,19 @@ export default async function LoginContent({
   const inputCls =
     "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue focus:ring-4 focus:ring-blue/10";
   const submitCls =
-    "w-full rounded-lg bg-blue px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90";
+ "w-full rounded-lg bg-blue px-4 py-2.5 text-xs font-semibold text-white hover:opacity-90";
 
   return (
     <div className={`mx-auto max-w-sm ${showTitle ? "rounded-2xl border border-line bg-card p-5 sm:p-6" : ""}`}>
       {showTitle && (
-        <h1 className="font-mono text-lg font-semibold text-paper">
+        <h1 className="text-2xl font-semibold text-paper">
           {t(locale, loginTitleKey(mode))}
         </h1>
       )}
       {/* 说明文字按模式一句话(20260919):登录/注册各说各的,
           forgot/reset 的说明在各自表单里,不再全局一句长句 */}
       {!emailOnly && (
-        <p className={`text-[11px] leading-relaxed text-grey ${showTitle ? "mt-2" : ""}`}>
+        <p className={`text-xs leading-relaxed text-grey ${showTitle ? "mt-2" : ""}`}>
           {t(locale, mode === "register" ? "login.registerSubtitle" : "login.subtitle")}
         </p>
       )}
@@ -104,7 +104,7 @@ export default async function LoginContent({
       )}
 
       {!emailOnly && (
-        <div className="my-5 flex items-center gap-3 font-mono text-[11px] text-grey">
+        <div className="my-5 flex items-center gap-3 font-mono text-xs text-grey">
           <span className="h-px flex-1 bg-line" />
           {t(locale, "login.emailDivider")}
           <span className="h-px flex-1 bg-line" />
@@ -142,19 +142,19 @@ export default async function LoginContent({
            只从 query 读回跳目标 */
         <form method="POST" action={`/api/auth/email/login${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
           <div>
-            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="email">
+            <label className="mb-1 block font-mono text-xs text-grey" htmlFor="email">
               {t(locale, "auth.email")}
             </label>
             <input id="email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
             <div className="mb-1 flex items-baseline justify-between">
-              <label className="block font-mono text-[11px] text-grey" htmlFor="password">
+              <label className="block font-mono text-xs text-grey" htmlFor="password">
                 {t(locale, "login.password")}
               </label>
               <Link
                 href={`/login?mode=forgot${nextQuery}`}
-                className="font-mono text-[11px] text-grey transition-colors hover:text-paper"
+                className="font-mono text-xs text-grey transition-colors hover:text-paper"
               >
                 {t(locale, "login.forgot")}
               </Link>
@@ -170,25 +170,25 @@ export default async function LoginContent({
       {mode === "register" && (
         <form method="POST" action={`/api/auth/email/register${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
           <div>
-            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-email">
+            <label className="mb-1 block font-mono text-xs text-grey" htmlFor="reg-email">
               {t(locale, "auth.email")}
             </label>
             <input id="reg-email" name="email" type="email" required autoComplete="email" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-name">
+            <label className="mb-1 block font-mono text-xs text-grey" htmlFor="reg-name">
               {t(locale, "login.displayName")}
             </label>
             <input id="reg-name" name="name" type="text" maxLength={64} autoComplete="nickname" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-password">
+            <label className="mb-1 block font-mono text-xs text-grey" htmlFor="reg-password">
               {t(locale, "login.password8")}
             </label>
             <input id="reg-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reg-password2">
+            <label className="mb-1 block font-mono text-xs text-grey" htmlFor="reg-password2">
               {t(locale, "login.confirmPassword")}
             </label>
             <input id="reg-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
@@ -207,7 +207,7 @@ export default async function LoginContent({
             </p>
             <Link
               href={`/login?mode=forgot${nextQuery}`}
-              className="inline-block font-mono text-[11px] text-grey transition-colors hover:text-paper"
+              className="inline-block font-mono text-xs text-grey transition-colors hover:text-paper"
             >
               <span className="inline-flex items-center gap-1.5">
                 {t(locale, "login.resend")}
@@ -217,11 +217,11 @@ export default async function LoginContent({
           </div>
         ) : (
           <form method="POST" action={`/api/auth/email/forgot${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
-            <p className="text-[11px] leading-relaxed text-grey">
+            <p className="text-xs leading-relaxed text-grey">
               {t(locale, "login.forgotIntro")}
             </p>
             <div>
-              <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="forgot-email">
+              <label className="mb-1 block font-mono text-xs text-grey" htmlFor="forgot-email">
                 {t(locale, "auth.email")}
               </label>
               <input id="forgot-email" name="email" type="email" required autoComplete="email" className={inputCls} />
@@ -230,7 +230,7 @@ export default async function LoginContent({
               <Mail size={12} className="mr-1 inline" /> {t(locale, "login.sendReset")}
             </button>
             {/* 重置规则(20260919 收编于此,原先全局底栏与登录/注册无关) */}
-            <p className="font-mono text-[11px] leading-relaxed text-grey/80">
+            <p className="font-mono text-xs leading-relaxed text-grey/80">
               · {t(locale, "login.resetRule")}
               <br />· {t(locale, "login.resetContact")}
             </p>
@@ -242,13 +242,13 @@ export default async function LoginContent({
           <form method="POST" action={`/api/auth/email/reset${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
             <input type="hidden" name="token" value={token} />
             <div>
-              <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reset-password">
+              <label className="mb-1 block font-mono text-xs text-grey" htmlFor="reset-password">
                 {t(locale, "login.newPassword8")}
               </label>
               <input id="reset-password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
             </div>
             <div>
-              <label className="mb-1 block font-mono text-[11px] text-grey" htmlFor="reset-password2">
+              <label className="mb-1 block font-mono text-xs text-grey" htmlFor="reset-password2">
                 {t(locale, "login.confirmNewPassword")}
               </label>
               <input id="reset-password2" name="password2" type="password" required minLength={8} autoComplete="new-password" className={inputCls} />
@@ -264,7 +264,7 @@ export default async function LoginContent({
             </p>
             <Link
               href={`/login?mode=forgot${nextQuery}`}
-              className="inline-block font-mono text-[11px] text-grey transition-colors hover:text-paper"
+              className="inline-block font-mono text-xs text-grey transition-colors hover:text-paper"
             >
               <span className="inline-flex items-center gap-1.5">
                 {t(locale, "login.requestNew")}
@@ -275,7 +275,7 @@ export default async function LoginContent({
         ))}
 
       {(mode === "forgot" || mode === "reset") && (
-        <p className="mt-4 font-mono text-[11px]">
+        <p className="mt-4 font-mono text-xs">
           <Link href={`/login${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="inline-flex items-center gap-1.5 text-grey transition-colors hover:text-paper">
             <ArrowLeft size={12} aria-hidden="true" />
             {t(locale, "login.backSignIn")}

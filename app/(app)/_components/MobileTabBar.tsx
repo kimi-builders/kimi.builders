@@ -82,13 +82,13 @@ export default function MobileTabBar({
                  中文标签 fallback 混排基线不齐;tab 文案中英皆有,sans 两端都稳 */
               className={`flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 px-1 text-xs transition-colors ${
                 tab.primary
-                  ? "text-blue"
+                  ? "text-ui-blue"
                   : tab.active
-                    ? "text-blue"
+                    ? "text-ui-blue"
                     : "text-grey hover:text-paper"
               }`}
             >
-              <span className={`flex items-center justify-center ${tab.primary ? "size-10 rounded-lg bg-blue text-white shadow-lg shadow-blue/25" : "size-7"}`}>
+ <span className={`flex items-center justify-center ${tab.primary ? "size-10 rounded-lg bg-blue text-white" : "size-7"}`}>
                 <Icon size={tab.primary ? 18 : 19} />
               </span>
               {t(locale, tab.key)}

@@ -44,7 +44,7 @@ export async function loadWorkComments(
         : !!user && (c.userId === user.id || workAuthorId === user.id);
       return (
         <div key={c.id} id={`work-comment-${c.id}`} className="scroll-mt-24 py-4">
-          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-grey">
             {c.isAi ? (
               <>
                 <Avatar
@@ -55,7 +55,7 @@ export async function loadWorkComments(
                   className="h-5 w-5"
                 />
                 <span className="text-paper">{BOT_NAME}</span>
-                <span className="rounded-md border border-blue px-1.5 py-px text-[10.5px] tracking-wider text-blue">
+                <span className="rounded-md border border-blue px-1.5 py-px text-xs tracking-wider text-blue">
                   AI
                 </span>
               </>
@@ -64,7 +64,7 @@ export async function loadWorkComments(
                 <Avatar url={c.avatarUrl} handle={c.handle} size={20} />
                 <Link
                   href={`/u/${c.handle}`}
-                  className="text-paper transition-colors hover:text-blue"
+                  className="text-paper transition-colors hover:text-ui-blue"
                 >
                   @{c.handle}
                 </Link>
@@ -74,7 +74,7 @@ export async function loadWorkComments(
               <span className="text-paper">#{c.userId}</span>
             )}
             {isAuthor && (
-              <span className="rounded-md border border-blue/60 px-1.5 py-px text-[10.5px] tracking-wider text-blue">
+              <span className="rounded-md border border-blue/60 px-1.5 py-px text-xs tracking-wider text-blue">
                 {t(locale, "works.authorChip")}
               </span>
             )}

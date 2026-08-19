@@ -185,7 +185,7 @@ export default function UsageRecordsSection({
         <span>
           <span className="block truncate">{row.modelDisplayName}</span>
           {row.modelDisplayName !== row.model && (
-            <span className="block truncate text-[10.5px] text-grey">{row.model}</span>
+            <span className="block truncate text-xs text-grey">{row.model}</span>
           )}
         </span>
       ),
@@ -280,7 +280,7 @@ export default function UsageRecordsSection({
         const rate = usageCacheHitRate(row);
         if (rate === null) return <span className="text-grey">—</span>;
         return (
-          <span className="rounded-full bg-status-ok/10 px-1.5 py-0.5 text-[11px] text-status-ok-fg">
+          <span className="rounded-full bg-status-ok/10 px-1.5 py-0.5 text-xs text-status-ok-fg">
             {formatHitRate(rate)}
           </span>
         );
@@ -303,16 +303,16 @@ export default function UsageRecordsSection({
     <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[13px] font-semibold text-paper">
+          <h2 className="text-sm font-semibold text-paper">
             {zh ? "明细" : "Records"}
           </h2>
-          <p className="mt-1 font-mono text-[11px] text-grey">
+          <p className="mt-1 font-mono text-xs text-grey">
             {zh
               ? `按 ${grain === "bucket" ? "30分钟" : "日"}×Agent×模型×推理强度×Agent版本×项目×设备 聚合 · 共 ${records.total.toLocaleString("zh-CN")} 组`
               : `Grouped by ${grain === "bucket" ? "30-min" : "day"} × agent × model × effort × Agent version × project × device · ${records.total.toLocaleString("en-US")} groups`}
           </p>
           {grain === "bucket" && (
-            <p className="mt-1 font-mono text-[11px] text-grey/80">
+            <p className="mt-1 font-mono text-xs text-grey/80">
               {zh
                 ? "30 分钟为采集最细粒度，秒级不在日志中"
                 : "30 minutes is the finest collected granularity; seconds are not in the logs."}
@@ -343,9 +343,9 @@ export default function UsageRecordsSection({
         <>
           <div className="mt-4 hidden sm:block">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse font-mono text-[11px]">
+              <table className="w-full border-collapse font-mono text-xs">
                 <thead>
-                  <tr className="text-left font-mono text-[11px] tracking-wide text-grey">
+                  <tr className="text-left font-mono text-xs tracking-wide text-grey">
                     {columns.map((column) => (
                       <th key={column.id} className="whitespace-nowrap pb-2 pr-4 font-normal">
                         {column.header}
@@ -381,7 +381,7 @@ export default function UsageRecordsSection({
                 className="rounded-lg border border-line p-3"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="shrink-0 font-mono text-[11px] text-grey">
+                  <span className="shrink-0 font-mono text-xs text-grey">
                     {grain === "bucket" && row.time ? bucketTimeLabel(row.time) : row.day}
                   </span>
                   <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
@@ -399,15 +399,15 @@ export default function UsageRecordsSection({
                     </span>
                   </span>
                 </div>
-                <div className="mt-2 font-mono text-[11px] text-grey">
+                <div className="mt-2 font-mono text-xs text-grey">
                   {compact(row.totalTokens, zh)} tokens · {recordCost(row, zh, currency)} · {zh ? "命中率" : "hit"}{" "}
                   {formatHitRate(usageCacheHitRate(row))} · {compact(row.requests, zh)} {zh ? "次请求" : "req"}
                 </div>
                 {row.modelDisplayName !== row.model && (
-                  <div className="mt-1 truncate font-mono text-[10.5px] text-grey/70">raw model: {row.model}</div>
+                  <div className="mt-1 truncate font-mono text-xs text-grey/70">raw model: {row.model}</div>
                 )}
                 {enabled.size > 0 && (
-                  <div className="mt-1 space-y-0.5 font-mono text-[11px] text-grey">
+                  <div className="mt-1 space-y-0.5 font-mono text-xs text-grey">
                     {enabled.has("project") && <p>{zh ? "项目" : "Project"} {row.project ?? notUploadedLabel}</p>}
                     {enabled.has("device") && <p>{zh ? "设备" : "Device"} {row.deviceDetail}</p>}
                     {enabled.has("effort") && <p>{zh ? "推理强度" : "Effort"} {row.reasoningEffort || "—"}</p>}
@@ -429,7 +429,7 @@ export default function UsageRecordsSection({
             href={previousHref}
             scroll={false}
             aria-label={zh ? "上一页" : "Previous page"}
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-paper hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <ChevronLeft size={14} aria-hidden="true" />
           </Link>
@@ -441,7 +441,7 @@ export default function UsageRecordsSection({
             <ChevronLeft size={14} aria-hidden="true" />
           </span>
         )}
-        <span className="font-mono text-[11px] text-grey" aria-live="polite">
+        <span className="font-mono text-xs text-grey" aria-live="polite">
           {zh ? `第 ${records.page} / ${totalPages} 页` : `Page ${records.page} / ${totalPages}`}
         </span>
         {nextHref ? (
@@ -449,7 +449,7 @@ export default function UsageRecordsSection({
             href={nextHref}
             scroll={false}
             aria-label={zh ? "下一页" : "Next page"}
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-line text-paper hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <ChevronRight size={14} aria-hidden="true" />
           </Link>

@@ -53,12 +53,12 @@ export default async function EditWorkContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="font-mono text-lg font-semibold">
+        <h1 className="text-2xl font-semibold text-paper">
           {t(locale, "works.editTitle")}
         </h1>
       )}
       {paused && (
-        <p className="mt-4 rounded-xl border border-line bg-moon px-3 py-2 font-mono text-[11px] leading-relaxed text-grey">
+        <p className="mt-4 rounded-xl border border-line bg-moon px-3 py-2 font-mono text-xs leading-relaxed text-grey">
           {t(locale, "works.claimPaused")}
         </p>
       )}

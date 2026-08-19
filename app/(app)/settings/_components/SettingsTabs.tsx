@@ -27,7 +27,7 @@ export default function SettingsTabs({
             role="tab"
             aria-selected={active === tab.key}
             onClick={() => setActive(tab.key)}
-            className={`-mb-px border-b-2 pb-2.5 text-[13px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+            className={`-mb-px border-b-2 pb-2.5 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
               active === tab.key
                 ? "border-blue font-medium text-paper"
                 : "border-transparent text-grey hover:text-paper"

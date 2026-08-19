@@ -89,7 +89,7 @@ export default async function AwesomePage({
             <Star size={20} aria-hidden="true" />
             {t(locale, "nav.awesome")}
           </h1>
-          <p className="mt-2 max-w-2xl text-[15px] leading-6 text-grey">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-grey">
             {t(locale, "awesome.intro")}
           </p>
         </div>

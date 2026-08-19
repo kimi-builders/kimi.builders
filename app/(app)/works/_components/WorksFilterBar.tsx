@@ -98,9 +98,9 @@ export default function WorksFilterBar({
             return (
               <span
                 key={`${f.key}-group`}
-                className="flex min-h-11 max-w-full flex-wrap items-center gap-x-1 gap-y-1.5 rounded-lg border border-blue/40 bg-blue/10 pr-1 pl-3 font-mono text-[11px]"
+                className="flex min-h-11 max-w-full flex-wrap items-center gap-x-1 gap-y-1.5 rounded-lg border border-blue/40 bg-blue/10 pr-1 pl-3 font-mono text-xs"
               >
-                <span className="shrink-0 text-blue">{f.label}</span>
+                <span className="shrink-0 text-ui-blue">{f.label}</span>
                 {values.map((value) => {
                   const option = f.options.find((o) => o.value === value);
                   const label = option?.label ?? value;
@@ -135,7 +135,7 @@ export default function WorksFilterBar({
             onClick={() =>
               pushParams(Object.fromEntries(filters.map((f) => [f.key, null])))
             }
-            className="min-h-11 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="min-h-11 px-2 font-mono text-xs text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "works.clearFilters")}
           </button>

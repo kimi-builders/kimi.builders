@@ -25,14 +25,14 @@ export default function SoonPage({
           <Icon size={20} />
         </span>
         <div>
-          <h1 className="font-mono text-lg font-semibold text-paper">{name}</h1>
-          <p className="font-mono text-[11px] tracking-[0.25em] text-blue">
+          <h1 className="text-2xl font-semibold text-paper">{name}</h1>
+          <p className="font-mono text-xs tracking-[0.08em] text-ui-blue">
             {t(locale, "soon.headline")}
           </p>
         </div>
       </div>
       <p className="mt-4 text-sm leading-relaxed text-grey">{desc}</p>
-      <h2 className="mt-6 font-mono text-[11px] tracking-[0.25em] text-grey">
+      <h2 className="mt-6 font-mono text-xs tracking-[0.08em] text-grey">
         {t(locale, "soon.planned")}
       </h2>
       <ul className="mt-3 space-y-2">
@@ -41,14 +41,14 @@ export default function SoonPage({
             key={it}
             className="flex items-center gap-2 font-mono text-xs text-paper/80"
           >
-            <span className="text-blue">·</span>
+            <span className="text-ui-blue">·</span>
             {it}
           </li>
         ))}
       </ul>
       <Link
         href="/community"
-        className="mt-6 inline-block border border-blue px-5 py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+        className="mt-6 inline-block border border-ui-blue px-5 py-2 text-xs text-ui-blue transition-colors hover:bg-blue hover:text-bg"
       >
         {t(locale, "soon.cta")}
       </Link>

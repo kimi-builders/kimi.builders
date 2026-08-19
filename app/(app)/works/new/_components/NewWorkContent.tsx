@@ -42,7 +42,7 @@ export default async function NewWorkContent({
     return (
       <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
         {showTitle && (
-          <h1 className="font-mono text-lg font-semibold">
+          <h1 className="text-2xl font-semibold text-paper">
             {t(locale, "works.newTitle")}
           </h1>
         )}
@@ -69,7 +69,7 @@ export default async function NewWorkContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
           <SquarePen size={17} />
           {t(locale, "works.newTitle")}
         </h1>

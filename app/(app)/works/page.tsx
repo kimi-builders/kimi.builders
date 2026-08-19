@@ -82,7 +82,7 @@ export default async function WorksPage({
             <GalleryVerticalEnd size={20} aria-hidden="true" />
             {t(locale, "works.wallTitle")}
           </h1>
-          <p className="mt-2 max-w-2xl text-[15px] leading-6 text-grey">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-grey">
             {t(locale, "works.wallIntro")}
           </p>
         </div>
@@ -150,7 +150,7 @@ export default async function WorksPage({
           </h2>
           {allowance && allowance.total > 0 && (
             <p className="mt-2">
-              <span className="inline-flex items-center rounded-full border border-blue/30 bg-blue/10 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-blue">
+              <span className="inline-flex items-center rounded-full border border-blue/30 bg-blue/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-blue">
                 {t(locale, "works.emptyQuota", {
                   n: `${compactNumber(allowance.remaining, locale)} tokens`,
                 })}
@@ -163,7 +163,7 @@ export default async function WorksPage({
           {user ? (
             <Link
               href="/works/new"
-              className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-xs text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "works.emptyCta")}
             </Link>

@@ -230,9 +230,9 @@ export default function MarkdownEditor({
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             onClick={insertMention}
-            className="absolute -top-9 left-2 z-10 flex items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1.5 font-mono text-[11px] shadow-lg transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="absolute -top-9 left-2 z-10 flex items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1.5 font-mono text-xs shadow-lg transition-colors hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            <span className="text-blue">@kimi</span>
+            <span className="text-ui-blue">@kimi</span>
             <span className="text-grey">{t(locale, "editor.summonKimiHint")}</span>
           </button>
         )}

@@ -102,12 +102,12 @@ export default function LeftNav({
     `nav-item rail-tip flex min-h-11 items-center gap-3 border-l-2 px-3 py-2.5 text-sm transition-colors ${
       active
         ? "border-blue text-paper"
-        : "border-transparent text-grey hover:text-paper"
+        : "border-transparent text-grey hover:bg-card hover:text-paper"
     }`;
 
   /* 「界面」双键共用的紧凑盒样式;form 等宽由 globals.css 的 .panel-pair 规则给。 */
   const pairBtnCls =
-    "flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue";
+    "flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
 
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
@@ -115,7 +115,7 @@ export default function LeftNav({
         href={gate(createAction.href)}
         data-tip={createAction.label}
         data-tip-side="right"
-        className="nav-item rail-tip flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="nav-item rail-tip flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <SquarePen size={16} className="shrink-0" />
         <span className="nav-label">{createAction.label}</span>
@@ -218,7 +218,7 @@ export default function LeftNav({
         {/* 「界面」双键:左=收起导航(PanelLeft*),右=隐藏侧栏(PanelRight*);
             左栏收起时纵排成图标键(globals.css 的 .panel-pair 规则) */}
         <div className="pt-3">
-          <p className="nav-label px-3 pb-1.5 font-mono text-[10.5px] tracking-[0.16em] text-grey/60">
+          <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
             {t(locale, "side.display")}
           </p>
           <div className="panel-pair flex gap-1.5">

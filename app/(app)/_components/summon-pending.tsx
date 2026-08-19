@@ -80,11 +80,11 @@ export function SummonPendingRow({ locale }: { locale: Locale }) {
   return (
     <div
       aria-live="polite"
-      className="flex items-center gap-2 py-4 font-mono text-[11px] text-grey"
+      className="flex items-center gap-2 py-4 font-mono text-xs text-grey"
     >
       <Avatar url={BOT_AVATAR} handle={BOT_NAME} size={20} className="h-5 w-5" />
       <span className="text-paper">{BOT_NAME}</span>
-      <span className="rounded-md border border-blue px-1.5 py-px text-[10.5px] tracking-wider text-blue">
+      <span className="rounded-md border border-blue px-1.5 py-px text-xs tracking-wider text-blue">
         AI
       </span>
       <span className="animate-pulse">{t(locale, "post.aiTyping")}</span>

@@ -88,7 +88,7 @@ export default function UserModControls({
   };
 
   const btn =
-    "inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40";
+    "inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40";
 
   return (
     <span className="flex flex-wrap items-center gap-1.5">
@@ -96,7 +96,7 @@ export default function UserModControls({
         value={days}
         onChange={(e) => setDays(e.target.value)}
         aria-label={t(locale, "admin.muteDuration")}
-        className="h-8 rounded-lg border border-line bg-bg px-2 font-mono text-[11px] text-paper focus:border-blue focus:outline-none"
+        className="h-8 rounded-lg border border-line bg-bg px-2 font-mono text-xs text-paper focus:border-blue focus:outline-none"
       >
         <option value="1">{t(locale, "admin.mute1d")}</option>
         <option value="3">{t(locale, "admin.mute3d")}</option>

@@ -75,7 +75,7 @@ export default function SocialUsageHeatmap({
                 type="button"
                 aria-pressed={mobileHourStart === start}
                 onClick={() => setMobileHourStart(start)}
-                className={`min-h-9 rounded-md font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                className={`min-h-9 rounded-md font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                   mobileHourStart === start ? "bg-viz-blue-primary text-viz-neutral-strong" : "text-grey"
                 }`}
               >
@@ -92,7 +92,7 @@ export default function SocialUsageHeatmap({
                   {Array.from({ length: 24 }, (_, hour) => (
                     <span
                       key={hour}
-                      className={`text-center font-mono text-[10.5px] text-grey ${
+                      className={`text-center font-mono text-xs text-grey ${
                         hour >= mobileHourStart && hour < mobileHourStart + 12 ? "" : "hidden sm:block"
                       }`}
                     >
@@ -105,7 +105,7 @@ export default function SocialUsageHeatmap({
                 {grid.map((row, weekday) => (
                   <div key={weekday} className="flex items-center gap-1.5">
                     <span
-                      className={`${weekdayLabelWidth} shrink-0 text-left font-mono text-[11px] text-grey`}
+                      className={`${weekdayLabelWidth} shrink-0 text-left font-mono text-xs text-grey`}
                     >
                       {longNames[weekday]}
                     </span>
@@ -138,16 +138,16 @@ export default function SocialUsageHeatmap({
               role="tooltip"
               className="pointer-events-none absolute right-1 top-5 z-20 rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
             >
-              <div className="font-mono text-[11px] font-semibold text-paper">
+              <div className="font-mono text-xs font-semibold text-paper">
                 {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
               </div>
-              <div className="mt-1 font-mono text-[11px] text-paper">
+              <div className="mt-1 font-mono text-xs text-paper">
                 {compact(grid[hovered.weekday][hovered.hour], zh)} tokens
               </div>
             </div>
           )}
 
-          <p className="mt-3 font-mono text-[11px] text-grey">
+          <p className="mt-3 font-mono text-xs text-grey">
             {zh
               ? `时区:${gmtLabel(tzOffsetMinutes)}(浏览器本地)· 全部时间的 token 分布`
               : `Timezone: ${gmtLabel(tzOffsetMinutes)} (browser local) · all-time token distribution`}
@@ -158,12 +158,12 @@ export default function SocialUsageHeatmap({
           aria-label={zh ? "最活跃时段" : "Busiest slots"}
           className="order-first rounded-xl border border-line bg-paper/[0.025] p-4 lg:order-none"
         >
-          <p className="font-mono text-[11px] font-semibold text-paper">
+          <p className="font-mono text-xs font-semibold text-paper">
             {zh ? "最活跃时段" : "Busiest slots"}
           </p>
-          <p className="mt-1 font-mono text-[10.5px] tracking-[0.14em] text-grey/70">TOKEN TOP 5</p>
+          <p className="mt-1 font-mono text-xs tracking-[0.08em] text-grey/70">TOKEN TOP 5</p>
           {top.length === 0 ? (
-            <p className="mt-5 text-[11px] text-grey">
+            <p className="mt-5 text-xs text-grey">
               {zh ? "还没有用量数据" : "No usage data yet"}
             </p>
           ) : (
@@ -173,17 +173,17 @@ export default function SocialUsageHeatmap({
                   key={`${item.weekday}-${item.hour}`}
                   className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 border-b border-line/70 pb-2 last:border-b-0 last:pb-0"
                 >
-                  <span className="font-mono text-[11px] text-blue">
+                  <span className="font-mono text-xs text-ui-blue">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0">
-                    <span className="flex items-baseline justify-between gap-2 font-mono text-[11px]">
+                    <span className="flex items-baseline justify-between gap-2 font-mono text-xs">
                       <span className="truncate text-paper">
                         {longNames[item.weekday]} {String(item.hour).padStart(2, "0")}:00
                       </span>
                       <span className="shrink-0 text-grey">{compact(item.value, zh)}</span>
                     </span>
-                    <span className="mt-0.5 block font-mono text-[10.5px] text-grey/65">
+                    <span className="mt-0.5 block font-mono text-xs text-grey/65">
                       tokens · {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
                     </span>
                     <span className="mt-1.5 block h-1 bg-viz-grid">

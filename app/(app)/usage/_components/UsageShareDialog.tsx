@@ -98,7 +98,7 @@ export default function UsageShareDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-haspopup="dialog"
-        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-line px-3 font-mono text-xs text-paper hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
       >
         <Share2 size={13} aria-hidden="true" /> {zh ? "分享用量" : "Share usage"}
       </button>
@@ -149,7 +149,7 @@ export default function UsageShareDialog({
                       setError(false);
                       setLoaded(false);
                     }}
-                    className="mt-4 min-h-11 rounded-lg border border-line px-4 text-paper hover:border-blue"
+                    className="mt-4 min-h-11 rounded-lg border border-line px-4 text-paper hover:border-ui-blue"
                   >
                     {zh ? "重试" : "Retry"}
                   </button>
@@ -172,7 +172,7 @@ export default function UsageShareDialog({
           </div>
 
           <aside className="flex flex-col border-t border-line bg-bg p-4 lg:border-l lg:border-t-0 lg:p-5">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-grey">
+            <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
               {zh ? "分享范围" : "Share range"}
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2" role="radiogroup" aria-label={zh ? "分享范围" : "Share range"}>
@@ -187,10 +187,10 @@ export default function UsageShareDialog({
                     setLoaded(false);
                     setError(false);
                   }}
-                  className={`min-h-11 border px-2 font-mono text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  className={`min-h-11 border px-2 font-mono text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                     range === value
                       ? "border-blue bg-blue text-white"
-                      : "border-line text-grey hover:border-blue hover:text-paper"
+                      : "border-line text-grey hover:border-ui-blue hover:text-paper"
                   }`}
                 >
                   {zh ? labels[value].zh : labels[value].en}
@@ -198,7 +198,7 @@ export default function UsageShareDialog({
               ))}
             </div>
 
-            <div className="mt-5 border border-line bg-card p-4 text-[11px] leading-relaxed text-grey">
+            <div className="mt-5 border border-line bg-card p-4 text-xs leading-relaxed text-grey">
               <p className="flex items-start gap-2">
                 <ShieldCheck size={14} className="mt-0.5 shrink-0 text-status-ok-fg" aria-hidden="true" />
                 <span>
@@ -229,7 +229,7 @@ export default function UsageShareDialog({
                 type="button"
                 onClick={downloadPoster}
                 disabled={sharing || error}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-blue disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-ui-blue disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={15} aria-hidden="true" /> {zh ? "下载 PNG" : "Download PNG"}
               </button>

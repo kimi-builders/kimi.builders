@@ -18,7 +18,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
         aria-label={title}
         aria-haspopup="dialog"
         data-tip={title}
-        className="inline-flex size-7 shrink-0 items-center justify-center text-grey/70 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="inline-flex size-7 shrink-0 items-center justify-center text-grey/70 hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <CircleHelp size={12} />
       </button>
@@ -35,7 +35,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
             <h2 id={titleId} className="font-mono text-sm font-semibold tracking-[0.06em]">
               {title}
             </h2>
-            <p className="mt-1 text-[11px] text-grey">
+            <p className="mt-1 text-xs text-grey">
               {zh ? "默认私有 · 只上传统计字段" : "Private by default · metrics only"}
             </p>
           </div>
@@ -56,7 +56,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="border-l-2 border-status-ok pl-3">
-              <div className="flex items-center gap-1.5 font-mono text-[11px] text-paper">
+              <div className="flex items-center gap-1.5 font-mono text-xs text-paper">
                 <ShieldCheck size={12} className="text-status-ok-fg" aria-hidden="true" />
                 {zh ? "接收" : "COLLECTED"}
               </div>
@@ -67,7 +67,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
               </p>
             </div>
             <div className="border-l-2 border-status-danger pl-3">
-              <div className="font-mono text-[11px] text-paper">{zh ? "不接收" : "NEVER COLLECTED"}</div>
+              <div className="font-mono text-xs text-paper">{zh ? "不接收" : "NEVER COLLECTED"}</div>
               <p className="mt-1.5">
                 {zh
                   ? "对话内容、完整路径、供应商凭据。数据由本机 CLI 主动同步，站点不会主动读取本地日志。"
@@ -75,7 +75,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
               </p>
             </div>
           </div>
-          <p className="mt-4 text-[11px]">
+          <p className="mt-4 text-xs">
             {zh
               ? "项目名默认不上传；需要按项目拆分时可在隐私设置中开启。"
               : "Project names are not uploaded by default; enable them in privacy settings to split by project."}

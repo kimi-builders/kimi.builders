@@ -1,3 +1,4 @@
+import { POSTER_ALPHA, POSTER_HEAT_SCALE, POSTER_HEAT_STEPS, POSTER_PALETTE } from "@/src/lib/brand-palette";
 import { compactNumber } from "@/src/lib/format";
 import type { UsageShareFlow, UsageShareSnapshot } from "@/src/lib/usage/share";
 import {
@@ -11,28 +12,19 @@ import { MODEL_GLYPHS, modelGlyphId } from "./model-glyphs";
 
 export const USAGE_SHARE_POSTER_SIZE = { width: 1080, height: 1440 } as const;
 
-const palette = {
-  background: "#050607",
-  paper: "#f4f6f8",
-  muted: "#8a9099",
-  line: "#252a31",
-  grid: "#1b2027",
-  blue: "#1478ff",
-  blueBright: "#54a3ff",
-  green: "#20d39a",
-  greenInk: "#03291f",
-  amber: "#f6a609",
-};
+/* 色板唯一事实源:src/lib/brand-palette.ts(官方令牌内联值;Satori 无 CSS 变量)。 */
+const palette = POSTER_PALETTE;
 
-/* 堆叠四段配色:与 usage 页趋势图(TrendCore 的 FILL_*)同 hue,改色两边同步。 */
+/* 堆叠四段:输入=焦点蓝 / 缓存读=mint / 输出=纸白 72% / 推理=lemon
+   (pastel 状态色深底可读;与下方 TOKEN FLOW 桑基同语义)。 */
 const STACK_INPUT = palette.blue;
-const STACK_CACHE = "#34d399";
-const STACK_OUTPUT = "rgba(244,246,248,0.72)";
-const STACK_REASONING = "#fbbf24";
+const STACK_CACHE = palette.green;
+const STACK_OUTPUT = POSTER_ALPHA.paper72;
+const STACK_REASONING = palette.amber;
 
 const CONTENT_WIDTH = 972;
-/* 热图蓝阶(0=无数据 → 4=峰值),向站点热图的蓝阶观感对齐。 */
-const HEAT_COLORS = ["#10141a", "#0d2f51", "#0f5385", "#0e7cc0", palette.blue];
+/* 贡献图热格:官方顺序蓝阶,按数据强度递增(#002F5B → #00F6FF)。 */
+const HEAT_COLORS = POSTER_HEAT_SCALE;
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WEEKDAYS_EN = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
@@ -103,14 +95,14 @@ function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
       <svg width={CONTENT_WIDTH} height={height} viewBox={`0 0 ${CONTENT_WIDTH} 168`}>
         <defs>
           <pattern id="cacheDots" width="15" height="15" patternUnits="userSpaceOnUse">
-            <circle cx="4" cy="4" r="1.7" fill="rgba(3,41,31,0.4)" />
+            <circle cx="4" cy="4" r="1.7" fill={POSTER_ALPHA.ink40} />
           </pattern>
         </defs>
         <path d={green} fill={palette.green} />
         <path d={green} fill="url(#cacheDots)" />
         <path d={output} fill={palette.blue} />
         <path d={reasoning} fill={palette.amber} />
-        <rect x="0" y={inputTop} width="40" height={inputHeight} fill="#39424e" />
+        <rect x="0" y={inputTop} width="40" height={inputHeight} fill={palette.seriesNeutral} />
         <rect x="0" y={inputTop} width="40" height="4" fill={palette.blueBright} />
       </svg>
       <div style={{ display: "flex", position: "absolute", left: 0, top: 0, flexDirection: "column" }}>
@@ -270,7 +262,7 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
             );
           })}
           {maPath ? (
-            <path d={maPath} fill="none" stroke="rgba(244,246,248,0.5)" strokeWidth={1.6} strokeDasharray="7 6" />
+            <path d={maPath} fill="none" stroke={POSTER_ALPHA.paper50} strokeWidth={1.6} strokeDasharray="7 6" />
           ) : null}
         </svg>
         {/* Satori 不支持 SVG <text>:刻度一律 HTML 绝对定位叠层 */}
@@ -328,15 +320,8 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
   );
 }
 
-/* 分时/贡献图共用:站点热图同一套 6 档蓝阶阈值。 */
-const HEAT_STEPS = [
-  "rgba(20,120,255,0.15)",
-  "rgba(20,120,255,0.30)",
-  "rgba(20,120,255,0.45)",
-  "rgba(20,120,255,0.60)",
-  "rgba(20,120,255,0.80)",
-  palette.blue,
-];
+/* 分时热图 6 档:焦点蓝 alpha 渐近,末端实色(分档阈值见 heatStep)。 */
+const HEAT_STEPS = POSTER_HEAT_STEPS;
 
 function heatStep(value: number, maximum: number): string | null {
   if (value <= 0 || maximum <= 0) return null;
@@ -400,8 +385,8 @@ function WeekHeatmap({ snapshot }: { snapshot: UsageShareSnapshot }) {
                     flex: 1,
                     height: 20,
                     borderRadius: 2,
-                    background: step ?? "#10141a",
-                    border: step ? "1px solid rgba(20,120,255,0.25)" : `1px solid ${palette.grid}`,
+                    background: step ?? palette.surface,
+                    border: step ? `1px solid ${POSTER_ALPHA.focusBorder25}` : `1px solid ${palette.grid}`,
                   }}
                 />
               );
@@ -468,12 +453,12 @@ function ContribGraph({ snapshot }: { snapshot: UsageShareSnapshot }) {
                     display: "flex",
                     height: 16,
                     borderRadius: 2,
-                    background: cell.future ? "#080a0d" : HEAT_COLORS[cell.level],
+                    background: cell.future ? palette.background : HEAT_COLORS[cell.level],
                     border: cell.future
-                      ? "1px dashed #1e242c"
+                      ? `1px dashed ${palette.grid}`
                       : cell.level === 0
                         ? `1px solid ${palette.grid}`
-                        : "1px solid rgba(20,120,255,0.25)",
+                        : `1px solid ${POSTER_ALPHA.focusBorder25}`,
                   }}
                 />
               ))}
@@ -630,7 +615,7 @@ function ToolIcon({ id, label }: { id: string; label: string }) {
         width: 28,
         height: 28,
         border: `1px solid ${palette.line}`,
-        background: "#0d1013",
+        background: palette.surface,
         color: palette.muted,
         alignItems: "center",
         justifyContent: "center",
@@ -694,7 +679,7 @@ function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
                   </div>
                 </div>
               </div>
-              <div style={{ display: "flex", marginTop: 12, height: 6, borderRadius: 2, background: "#11151a" }}>
+              <div style={{ display: "flex", marginTop: 12, height: 6, borderRadius: 2, background: palette.surface }}>
                 <div
                   style={{
                     display: "flex",
@@ -781,7 +766,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         width: "100%",
         height: "100%",
         flexDirection: "column",
-        background: `radial-gradient(680px 320px at 86% 0%, rgba(20,120,255,0.10), rgba(5,6,7,0) 72%), ${palette.background}`,
+        background: `radial-gradient(680px 320px at 86% 0%, ${POSTER_ALPHA.focusGlow10}, ${POSTER_ALPHA.ink0} 72%), ${palette.background}`,
         color: palette.paper,
         padding: POSTER_PADDING,
         fontFamily: POSTER_FONT_FAMILY,

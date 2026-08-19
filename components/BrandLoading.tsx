@@ -12,8 +12,8 @@ export default function BrandLoading() {
         alt="kimi.builders"
         className="h-36 w-36 rounded-3xl border border-line"
       />
-      <p className="mt-6 font-mono text-[11px] tracking-[0.3em] text-grey">
-        LOADING<span className="text-blue">.</span>
+      <p className="mt-6 font-mono text-xs tracking-[0.08em] text-grey">
+        LOADING<span className="text-ui-blue">.</span>
       </p>
     </main>
   );

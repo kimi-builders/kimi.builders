@@ -99,14 +99,14 @@ function LevelHeader({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <span className="whitespace-nowrap rounded-md border border-blue/60 px-1.5 py-px font-mono text-[11px] text-blue">
+      <span className="whitespace-nowrap rounded-md border border-blue/60 px-1.5 py-px font-mono text-xs text-blue">
         LEVEL {String(index + 1).padStart(2, "0")}
       </span>
       <span className="font-mono text-xs text-grey/70" aria-hidden="true">
         {"●".repeat(index + 1)}
         {"○".repeat(Math.max(total - index - 1, 0))}
       </span>
-      <span className="font-mono text-[11px] text-grey">
+      <span className="font-mono text-xs text-grey">
         {count > 0 && <>{count} {zh ? "个资源" : "resources"} · </>}
         {zh ? `约 ${level.hours} 小时` : `~${level.hours}h`}
       </span>
@@ -151,27 +151,27 @@ function SpineNode({
     <>
       <span
         aria-hidden="true"
-        className={`relative z-10 grid size-9 shrink-0 place-items-center rounded-full border bg-bg font-mono text-[10px] font-semibold transition-colors group-hover:border-blue group-hover:text-blue ${meta.chip}`}
+        className={`relative z-10 grid size-9 shrink-0 place-items-center rounded-full border bg-bg font-mono text-xs font-semibold transition-colors group-hover:border-ui-blue group-hover:text-ui-blue ${meta.chip}`}
       >
         {r.code}
       </span>
       <span className="min-w-0 flex-1 pt-0.5">
-        <span className="text-sm font-semibold leading-snug text-paper transition-colors group-hover:text-blue">
+        <span className="text-sm font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
           {card.title}
           {card.external && (
             <ArrowUpRight size={13} className="ml-1 inline shrink-0 align-[-2px] text-grey" aria-hidden="true" />
           )}
         </span>
-        <span className="mt-1 block font-mono text-[11px] text-grey">
+        <span className="mt-1 block font-mono text-xs text-grey">
           {card.author} · {zh ? r.duration.zh : r.duration.en}
           {card.badge !== null && card.badge > 0 && (
-            <span className="ml-2 text-blue">
+            <span className="ml-2 text-ui-blue">
               {zh ? "声明投入" : "claimed"} {compactNumber(card.badge, zh ? "zh" : "en")}
             </span>
           )}
         </span>
         <span className="mt-1.5 block text-xs leading-relaxed text-grey">
-          <span className="font-mono text-[10px] tracking-wider text-grey/60">WHY · </span>
+          <span className="font-mono text-xs tracking-wider text-grey/60">WHY · </span>
           {zh ? r.why.zh : r.why.en}
         </span>
       </span>
@@ -227,7 +227,7 @@ function Branches({ level, zh }: { level: PathLevel; zh: boolean }) {
   if (!level.branches.length) return null;
   return (
     <div className="ml-[18px] mt-6 border-l border-dashed border-line pl-6">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-grey/70">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
         {zh ? "支线 · OPTIONAL BRANCHES" : "OPTIONAL BRANCHES"}
       </p>
       <ul className="mt-2.5 space-y-2.5">
@@ -238,16 +238,16 @@ function Branches({ level, zh }: { level: PathLevel; zh: boolean }) {
                 href={b.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-paper transition-colors hover:text-blue"
+                className="font-medium text-paper transition-colors hover:text-ui-blue"
               >
                 {zh ? b.title.zh : b.title.en}
               </a>
             ) : (
-              <Link href={b.href} className="font-medium text-paper transition-colors hover:text-blue">
+              <Link href={b.href} className="font-medium text-paper transition-colors hover:text-ui-blue">
                 {zh ? b.title.zh : b.title.en}
               </Link>
             )}
-            <span className="ml-2 font-mono text-[10.5px] text-grey">
+            <span className="ml-2 font-mono text-xs text-grey">
               — {zh ? b.meta.zh : b.meta.en}
             </span>
           </li>
@@ -263,7 +263,7 @@ function VerifyLog({ path, zh }: { path: LearnPath; zh: boolean }) {
   const stale = isPathStale(path);
   return (
     <section className="border-b border-line py-9">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-grey/70">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
         {zh ? "验证记录 · VERIFY LOG" : "VERIFY LOG"}
       </p>
       <ol className="mt-4 space-y-2.5">
@@ -274,13 +274,13 @@ function VerifyLog({ path, zh }: { path: LearnPath; zh: boolean }) {
             aria-hidden="true"
           />
           <span>
-            <span className="font-mono text-[11.5px] text-paper">
+            <span className="font-mono text-xs text-paper">
               {path.verifiedAt} · {path.verifiedModel}
             </span>
             {" — "}
             {zh ? `当前验证戳(@${path.editorHandle})` : `current stamp (@${path.editorHandle})`}
             {stale && (
-              <span className="ml-2 whitespace-nowrap rounded-md border border-status-warn/40 px-1.5 py-px font-mono text-[10.5px] text-status-warn-fg">
+              <span className="ml-2 whitespace-nowrap rounded-md border border-status-warn/40 px-1.5 py-px font-mono text-xs text-status-warn-fg">
                 {zh ? "待重验" : "re-verify pending"}
               </span>
             )}
@@ -293,7 +293,7 @@ function VerifyLog({ path, zh }: { path: LearnPath; zh: boolean }) {
           >
             <History size={13} className="mt-0.5 shrink-0 text-grey/50" aria-hidden="true" />
             <span>
-              <span className="font-mono text-[11.5px] text-paper">
+              <span className="font-mono text-xs text-paper">
                 {e.at} · {e.model}
               </span>
               {" — "}
@@ -317,24 +317,24 @@ function DiscussionBlock({
 }) {
   return (
     <section className="border-b border-line py-9">
-      <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-grey/70">
+      <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
         <MessagesSquare size={13} aria-hidden="true" />
         {zh ? "讨论 · DISCUSSION" : "DISCUSSION"}
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link
           href={`/community/${discussion.postId}`}
-          className="text-sm font-semibold text-paper transition-colors hover:text-blue"
+          className="text-sm font-semibold text-paper transition-colors hover:text-ui-blue"
         >
           {discussion.title}
         </Link>
-        <span className="font-mono text-[11px] text-grey">
+        <span className="font-mono text-xs text-grey">
           {discussion.commentCount} {zh ? "条讨论" : "comments"}
         </span>
         <Link
           href={`/community/${discussion.postId}`}
           aria-label={zh ? `去「${discussion.title}」参与讨论` : `Join the discussion on "${discussion.title}"`}
-          className="ml-auto inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="ml-auto inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           {zh ? "去讨论 →" : "Join the discussion →"}
         </Link>
@@ -343,7 +343,7 @@ function DiscussionBlock({
         <ul className="mt-4 space-y-2.5">
           {discussion.comments.map((c) => (
             <li key={c.id} className="text-xs leading-relaxed text-grey">
-              <span className="font-mono text-[11px] text-paper/80">
+              <span className="font-mono text-xs text-paper/80">
                 {c.isAi ? "Kimi AI" : `@${c.handle ?? "?"}`}
               </span>
               {" · "}
@@ -376,7 +376,7 @@ function GraduatesBlock({
 }) {
   return (
     <div className="mt-6">
-      <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-grey/70">
+      <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
         <GraduationCap size={13} aria-hidden="true" />
         {zh ? "毕业作品 · GRADUATES" : "GRADUATES"}
       </p>
@@ -390,7 +390,7 @@ function GraduatesBlock({
               >
                 {/* 作品名可截断(name ≤120 字符,窄屏不撑破行);
                     tagline 次级,<lg 让位 */}
-                <span className="min-w-0 truncate text-sm font-semibold text-paper transition-colors group-hover:text-blue">
+                <span className="min-w-0 truncate text-sm font-semibold text-paper transition-colors group-hover:text-ui-blue">
                   {work.name}
                 </span>
                 {work.tagline && (
@@ -398,10 +398,10 @@ function GraduatesBlock({
                     {work.tagline}
                   </span>
                 )}
-                <span className="ml-auto shrink-0 font-mono text-[11px] text-grey">
+                <span className="ml-auto shrink-0 font-mono text-xs text-grey">
                   {work.handle ? `@${work.handle}` : work.authorLabel}
                   {claimBadge !== null && claimBadge > 0 && (
-                    <span className="ml-2 text-blue">
+                    <span className="ml-2 text-ui-blue">
                       {zh ? "声明投入" : "claimed"}{" "}
                       {compactNumber(claimBadge, zh ? "zh" : "en")}
                     </span>
@@ -420,7 +420,7 @@ function GraduatesBlock({
       )}
       <Link
         href={`/works/new?path=${path.slug}`}
-        className="mt-3 inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="mt-3 inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {graduates.length > 0
           ? zh
@@ -454,7 +454,7 @@ function JourneyLayout({
     <article>
       {/* hero:eyebrow + 大标题 + 金句 + 摘要 + facts + CTA(统计只报可见) */}
       <header className="border-b border-line pb-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
           — {path.code} ·{" "}
           {path.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"} ·{" "}
           {levels.length} {zh ? "层" : "levels"} · {totalVisible}{" "}
@@ -469,7 +469,7 @@ function JourneyLayout({
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-grey">
           {zh ? path.summary.zh : path.summary.en}
         </p>
-        <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+        <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
           <span className="flex items-center gap-1.5">
             <Clock3 size={13} aria-hidden="true" />
             {zh ? `约 ${path.hours} 小时` : `~${path.hours}h`}
@@ -485,13 +485,13 @@ function JourneyLayout({
         <div className="mt-7 flex flex-wrap items-center gap-3">
           <a
             href="#level-01"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "开始路径 ↓" : "Begin path ↓"}
           </a>
           <Link
             href="/works"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "毕业物是什么 →" : "What's the graduation →"}
           </Link>
@@ -517,13 +517,13 @@ function JourneyLayout({
               </p>
               {v.level.learn.length > 0 && (
                 <div className="mt-4">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-grey/70">
+                  <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
                     {zh ? "你将学会 · YOU'LL LEARN" : "YOU'LL LEARN"}
                   </p>
                   <ul className="mt-2 space-y-1.5">
                     {v.level.learn.map((item) => (
                       <li key={item.zh} className="flex items-start gap-2 text-xs leading-relaxed text-paper/80">
-                        <Check size={13} className="mt-0.5 shrink-0 text-blue" aria-hidden="true" />
+                        <Check size={13} className="mt-0.5 shrink-0 text-ui-blue" aria-hidden="true" />
                         {zh ? item.zh : item.en}
                       </li>
                     ))}
@@ -550,12 +550,12 @@ function JourneyLayout({
         <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
           <span
             aria-hidden="true"
-            className="grid size-16 shrink-0 place-items-center rounded-full border-2 border-dashed border-grey/40 font-mono text-[10px] leading-tight text-grey/60"
+            className="grid size-16 shrink-0 place-items-center rounded-full border-2 border-dashed border-grey/40 font-mono text-xs leading-tight text-grey/60"
           >
             {zh ? "未解锁" : "LOCKED"}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue">
+            <p className="font-mono text-xs uppercase tracking-[0.08em] text-ui-blue">
               {zh ? "成就 · ACHIEVEMENT" : "ACHIEVEMENT"}
             </p>
             <h2 className="mt-1.5 text-lg font-semibold tracking-tight">
@@ -567,7 +567,7 @@ function JourneyLayout({
           </div>
           <Link
             href={`/works/new?path=${path.slug}`}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "去发布毕业物 →" : "Ship your graduation →"}
           </Link>
@@ -578,7 +578,7 @@ function JourneyLayout({
       <p className="pb-2">
         <Link
           href="/learn"
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors hover:text-paper"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-paper"
         >
           <ArrowLeft size={13} aria-hidden="true" />
           {t(zh ? "zh" : "en", "nav.learn")}
@@ -621,23 +621,23 @@ function EditorialRow({
   if (!card) return null;
   const inner = (
     <>
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
         — {meta.label} · {zh ? r.duration.zh : r.duration.en}
       </p>
-      <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-blue">
+      <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
         {card.title}
         {card.external && (
           <ArrowUpRight size={14} className="ml-1 inline shrink-0 align-[-2px] text-grey" aria-hidden="true" />
         )}
       </h3>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
-        <span className="font-mono text-[10px] tracking-wider text-grey/60">WHY · </span>
+        <span className="font-mono text-xs tracking-wider text-grey/60">WHY · </span>
         {zh ? r.why.zh : r.why.en}
       </p>
-      <p className="mt-2 font-mono text-[11px] text-grey">
+      <p className="mt-2 font-mono text-xs text-grey">
         {card.author}
         {card.badge !== null && card.badge > 0 && (
-          <span className="ml-2 text-blue">
+          <span className="ml-2 text-ui-blue">
             {zh ? "声明投入" : "claimed"} {compactNumber(card.badge, zh ? "zh" : "en")}
           </span>
         )}
@@ -692,7 +692,7 @@ function EditorialLayout({
     <article>
       {/* hero:Zhaphar session-hero 语言(eyebrow + 大标题 + lead + facts + actions) */}
       <header className="border-b border-line pb-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
           — {path.code} ·{" "}
           {path.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"}
           {isPathStale(path) && (
@@ -707,10 +707,10 @@ function EditorialLayout({
         <p className="mt-4 max-w-xl text-lg leading-relaxed text-grey">
           {zh ? `「${path.tagline.zh}」` : `“${path.tagline.en}”`}
         </p>
-        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-grey">
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
           {zh ? path.summary.zh : path.summary.en}
         </p>
-        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
           <span>{platforms.join(" · ")}</span>
           <span aria-hidden="true">·</span>
           <span className="flex items-center gap-1.5">
@@ -727,21 +727,21 @@ function EditorialLayout({
                 href={firstHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue transition-opacity hover:opacity-80"
+                className="inline-flex items-center gap-1.5 font-mono text-xs text-ui-blue transition-opacity hover:opacity-80"
               >
                 {zh ? "开始第一站 →" : "Start the first stop →"}
               </a>
             ) : (
               <Link
                 href={firstHref}
-                className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue transition-opacity hover:opacity-80"
+                className="inline-flex items-center gap-1.5 font-mono text-xs text-ui-blue transition-opacity hover:opacity-80"
               >
                 {zh ? "开始第一站 →" : "Start the first stop →"}
               </Link>
             ))}
           <Link
             href="/community/new"
-            className="inline-flex items-center gap-1.5 font-mono text-[11px] text-blue transition-opacity hover:opacity-80"
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-ui-blue transition-opacity hover:opacity-80"
           >
             {zh ? "提交学习笔记 →" : "Submit your notes →"}
           </Link>
@@ -784,7 +784,7 @@ function EditorialLayout({
       <section className="py-9">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-sm leading-relaxed text-grey">
-            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue">
+            <span className="font-mono text-xs uppercase tracking-[0.08em] text-ui-blue">
               {zh ? "成就 · " : "ACHIEVEMENT · "}
             </span>
             {zh ? path.achievement.title.zh : path.achievement.title.en}
@@ -793,7 +793,7 @@ function EditorialLayout({
           </p>
           <Link
             href={`/works/new?path=${path.slug}`}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "去发布毕业物 →" : "Ship your graduation →"}
           </Link>
@@ -804,7 +804,7 @@ function EditorialLayout({
       <p className="pb-2">
         <Link
           href="/learn"
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors hover:text-paper"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-paper"
         >
           <ArrowLeft size={13} aria-hidden="true" />
           {t(zh ? "zh" : "en", "nav.learn")}

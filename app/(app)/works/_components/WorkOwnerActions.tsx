@@ -55,7 +55,7 @@ export default function WorkOwnerActions({
     >
       <summary
         aria-label={locale === "zh" ? "更多操作" : "More actions"}
-        className="flex size-9 cursor-pointer list-none items-center justify-center rounded-lg text-grey transition-colors hover:bg-moon hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden"
+        className="flex size-9 cursor-pointer list-none items-center justify-center rounded-lg text-grey transition-colors hover:bg-moon hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden"
       >
         <MoreHorizontal size={16} aria-hidden="true" />
       </summary>
@@ -64,7 +64,7 @@ export default function WorkOwnerActions({
         href={`/works/${workId}/edit`}
         title={t(locale, "post.edit")}
         aria-label={t(locale, "post.edit")}
-        className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-moon hover:text-blue"
+        className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-moon hover:text-ui-blue"
       >
         <SquarePen size={14} aria-hidden="true" />
         <span>{t(locale, "post.edit")}</span>

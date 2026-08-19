@@ -29,8 +29,8 @@ export default function RouteLoading({ locale }: { locale: Locale }) {
         alt="kimi.builders"
         className="h-12 w-12 rounded-lg"
       />
-      <p className="mt-5 font-mono text-[11px] tracking-[0.3em] text-grey">
-        LOADING<span className="text-blue">.</span>
+      <p className="mt-5 font-mono text-xs tracking-[0.08em] text-grey">
+        LOADING<span className="text-ui-blue">.</span>
       </p>
       {slow && (
         <div className="mt-6 flex flex-col items-center gap-2.5">
@@ -38,7 +38,7 @@ export default function RouteLoading({ locale }: { locale: Locale }) {
           <button
             type="button"
             onClick={() => router.refresh()}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-[11px] text-paper transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-xs text-paper transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <RefreshCw size={13} aria-hidden="true" />
             {t(locale, "state.retry")}

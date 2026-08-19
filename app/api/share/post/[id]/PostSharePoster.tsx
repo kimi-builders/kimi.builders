@@ -32,7 +32,7 @@ function PollBlock({ snapshot }: { snapshot: PostShareSnapshot }) {
                 {o.votes} 票 · {pct}%
               </div>
             </div>
-            <div style={{ display: "flex", marginTop: 9, height: 8, background: "#11151a" }}>
+            <div style={{ display: "flex", marginTop: 9, height: 8, background: palette.surface }}>
               <div style={{ display: "flex", width: `${Math.max(2, (o.votes / max) * 100)}%`, background: palette.blue }} />
             </div>
           </div>
@@ -81,7 +81,7 @@ export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
 
       <main style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column", justifyContent: "center", padding: "30px 0 28px" }}>
         {sparse && (
-          <div style={{ display: "flex", fontSize: 150, fontWeight: 800, lineHeight: 0.75, color: "#10151b" }}>
+          <div style={{ display: "flex", fontSize: 150, fontWeight: 800, lineHeight: 0.75, color: palette.grid }}>
             “
           </div>
         )}

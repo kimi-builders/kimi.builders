@@ -24,7 +24,7 @@ export default function AiSummonSlot({
       <button
         type="button"
         data-post-id={postId}
-        className="mt-3 flex w-full items-center justify-center gap-2 border border-blue py-2 font-mono text-xs text-blue transition-colors hover:bg-blue hover:text-bg"
+        className="mt-3 flex w-full items-center justify-center gap-2 border border-ui-blue py-2 text-xs text-ui-blue transition-colors hover:bg-blue hover:text-bg"
       >
         <Sparkles size={13} />
         {t(locale, "rail.aiSummon")}

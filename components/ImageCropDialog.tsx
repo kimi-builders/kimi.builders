@@ -125,9 +125,9 @@ export default function ImageCropDialog({
       aria-label={title}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
     >
-      <div className="w-fit max-w-full rounded-2xl border border-line bg-bg p-5 text-paper shadow-2xl">
+ <div className="w-fit max-w-full rounded-2xl border border-line bg-bg p-5 text-paper shadow-2xl">
         <h3 className="font-mono text-sm font-semibold">{title}</h3>
-        <p className="mt-1 text-[11px] leading-relaxed text-grey">{hint}</p>
+        <p className="mt-1 text-xs leading-relaxed text-grey">{hint}</p>
         {/* 裁剪视口:指针拖动定位(touch-none 让 pointer 事件接管触屏拖动) */}
         <div
           className="relative mt-4 touch-none select-none overflow-hidden rounded-lg border border-line"
@@ -179,7 +179,7 @@ export default function ImageCropDialog({
           />
         </label>
         {failed && (
-          <p role="alert" className="mt-3 text-xs text-blue">
+          <p role="alert" className="mt-3 text-xs text-ui-blue">
             {errorLabel}
           </p>
         )}
@@ -188,7 +188,7 @@ export default function ImageCropDialog({
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
           >
             {cancelLabel}
           </button>
@@ -196,7 +196,7 @@ export default function ImageCropDialog({
             type="button"
             onClick={confirm}
             disabled={busy}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
           >
             {busy ? (
               <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />

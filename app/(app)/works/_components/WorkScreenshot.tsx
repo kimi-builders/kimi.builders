@@ -61,7 +61,7 @@ export default function WorkScreenshot({
       >
         {kindLabel && (
           <span
-            className={`absolute left-3.5 top-3 z-[1] flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-[0.16em] ${
+            className={`absolute left-3.5 top-3 z-[1] flex items-center gap-1 font-mono text-xs uppercase tracking-[0.08em] ${
               toneCls ? "work-tone__eyebrow" : "work-cover-tile__eyebrow"
             }`}
           >
@@ -81,7 +81,7 @@ export default function WorkScreenshot({
               }`}
             />
           )}
-          <span className="line-clamp-2 break-words font-mono text-[14px] font-medium leading-snug">
+          <span className="line-clamp-2 break-words font-mono text-sm font-medium leading-snug">
             {titleCase(name)}
           </span>
         </span>

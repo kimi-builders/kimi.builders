@@ -82,7 +82,7 @@ function CountTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[360px] table-fixed border-collapse">
         <caption className="sr-only">{caption}</caption>
-        <thead className="border-b border-line bg-paper/[0.02] font-mono text-[11px] tracking-[0.1em] text-grey">
+        <thead className="border-b border-line bg-paper/[0.02] font-mono text-xs tracking-[0.08em] text-grey">
           <tr>
             <th scope="col" className="px-4 py-2.5 text-left font-medium sm:px-5">
               {labelHeader}
@@ -95,7 +95,7 @@ function CountTable({
             </th>
           </tr>
         </thead>
-        <tbody className="font-mono text-[11px]">
+        <tbody className="font-mono text-xs">
           {rows.length === 0 ? (
             <tr>
               <td colSpan={3} className="px-4 py-5 text-center text-grey sm:px-5">
@@ -155,10 +155,10 @@ function CountPanel({
       className="min-w-0 overflow-hidden rounded-2xl border border-line bg-card"
     >
       <div className="border-b border-line px-4 py-3.5 sm:px-5">
-        <h2 id={id} className="text-[13px] font-semibold text-paper">
+        <h2 id={id} className="text-sm font-semibold text-paper">
           {title}
         </h2>
-        <p className="mt-1 text-[11px] leading-relaxed text-grey">{note}</p>
+        <p className="mt-1 text-xs leading-relaxed text-grey">{note}</p>
       </div>
       <CountTable
         rows={rows}
@@ -201,7 +201,7 @@ function FeaturedTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[440px] table-fixed border-collapse">
         <caption className="sr-only">{t(locale, "analytics.featuredTitle")}</caption>
-        <thead className="border-b border-line bg-paper/[0.02] font-mono text-[11px] tracking-[0.1em] text-grey">
+        <thead className="border-b border-line bg-paper/[0.02] font-mono text-xs tracking-[0.08em] text-grey">
           <tr>
             <th scope="col" className="px-4 py-2.5 text-left font-medium sm:px-5">
               {t(locale, "analytics.colTarget")}
@@ -218,7 +218,7 @@ function FeaturedTable({
           const positionRows = rows.filter((row) => row.position === position);
           const positionTotal = positionRows.reduce((sum, row) => sum + row.total, 0);
           return (
-            <tbody key={position} className="font-mono text-[11px]">
+            <tbody key={position} className="font-mono text-xs">
               <tr className="border-t border-line bg-paper/[0.015]">
                 <th
                   scope="rowgroup"
@@ -226,7 +226,7 @@ function FeaturedTable({
                   className="px-4 py-2.5 text-left font-medium text-paper sm:px-5"
                 >
                   <span>{featuredPositionLabel(position, locale)}</span>
-                  <span className="ml-2 text-[11px] font-normal text-grey">
+                  <span className="ml-2 text-xs font-normal text-grey">
                     {t(locale, "analytics.groupClicks", {
                       n: numberText(positionTotal, locale),
                     })}
@@ -298,10 +298,10 @@ export default async function AnalyticsInsights({
       <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-[13px] font-semibold text-paper">
+            <h2 className="text-sm font-semibold text-paper">
               {t(locale, "analytics.overviewTitle")}
             </h2>
-            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-grey">
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-grey">
               {t(locale, "analytics.overviewNote")}
             </p>
           </div>
@@ -322,7 +322,7 @@ export default async function AnalyticsInsights({
             ))}
           </nav>
         </div>
-        <p className="mt-3 rounded-xl border border-line bg-bg/40 p-3 text-[11px] leading-relaxed text-grey">
+        <p className="mt-3 rounded-xl border border-line bg-bg/40 p-3 text-xs leading-relaxed text-grey">
           {t(locale, "analytics.privacyNote")}
           <span className="mt-1 block text-grey/80">
             {t(locale, "analytics.visitorDaysNote")}
@@ -340,10 +340,10 @@ export default async function AnalyticsInsights({
               <p className="mt-3 font-mono text-2xl font-semibold leading-none text-paper">
                 {numberText(row.total, locale)}
               </p>
-              <p className="mt-1 font-mono text-[10.5px] tracking-[0.08em] text-grey/80">
+              <p className="mt-1 font-mono text-xs tracking-[0.08em] text-grey/80">
                 {t(locale, "analytics.eventTotal")}
               </p>
-              <p className="mt-2 font-mono text-[11px] text-grey">
+              <p className="mt-2 font-mono text-xs text-grey">
                 {t(locale, "analytics.visitorDaysValue", {
                   n: numberText(row.uniqueViewers, locale),
                 })}
@@ -361,11 +361,11 @@ export default async function AnalyticsInsights({
           <div className="border-b border-line px-4 py-3.5 sm:px-5">
             <h2
               id="analytics-featured-title"
-              className="text-[13px] font-semibold text-paper"
+              className="text-sm font-semibold text-paper"
             >
               {t(locale, "analytics.featuredTitle")}
             </h2>
-            <p className="mt-1 text-[11px] leading-relaxed text-grey">
+            <p className="mt-1 text-xs leading-relaxed text-grey">
               {t(locale, "analytics.featuredNote")}
             </p>
           </div>

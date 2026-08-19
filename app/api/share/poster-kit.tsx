@@ -1,28 +1,20 @@
 /* 四张分享海报的共享视觉件(单一事实源):色板 / 字体栈 / 外边距 / 身份带 / 页脚 /
    贡献图网格 / 指标带。全部对齐用量海报(app/api/usage/share/UsageSharePoster.tsx)
-   v3 语法:深色 #050607 底、硬边细线、mono、大数字小标签、宽 1080(高分档自适应,
+   v3 语法:深色 ink #121212 底、硬边细线、mono、大数字小标签、宽 1080(高分档自适应,
    见 poster-sizes.ts)、身份带(大写品牌 + 蓝 accent + 头像 + 小写蓝地址 + 右槽)
    + QR 页脚。
    QR 用 @rc-component/qrcode 的 qrcodegen + generatePath 内联 SVG(同用量海报)。 */
 import { Ecc, QrCode } from "@rc-component/qrcode/es/libs/qrcodegen";
 import { generatePath } from "@rc-component/qrcode/es/utils";
 import type { CSSProperties, ReactNode } from "react";
+import { POSTER_ALPHA, POSTER_HEAT_SCALE, POSTER_PALETTE } from "@/src/lib/brand-palette";
 
 /* 四张统一的外边距(用量海报 v3 值)。 */
 export const POSTER_PADDING = "44px 54px 36px";
 
-export const palette = {
-  background: "#050607",
-  paper: "#f4f6f8",
-  muted: "#8a9099",
-  line: "#252a31",
-  grid: "#1b2027",
-  blue: "#1478ff",
-  blueBright: "#54a3ff",
-  green: "#20d39a",
-  greenInk: "#03291f",
-  amber: "#f6a609",
-};
+/* 色板唯一事实源:src/lib/brand-palette.ts(官方令牌内联值;Satori 无 CSS 变量)。
+   保留原导出名 palette,用量/帖子/作品/主页/周刊海报共用同一套角色色。 */
+export const palette = POSTER_PALETTE;
 
 /* 海报正文字体栈:JetBrains Mono 运行时拉取(poster-fonts.ts);拉不到时
    落回 next/og 内嵌的 geist,CJK 由 next/og 动态 Noto Sans SC 兜底。 */
@@ -49,8 +41,8 @@ export function PosterQr({ url, size = 104 }: { url: string; size?: number }) {
   const n = modules.length + margin * 2;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${n} ${n}`} role="img" aria-label={`${url} QR code`}>
-      <path fill="#ffffff" d={`M0,0 h${n}v${n}H0z`} shapeRendering="crispEdges" />
-      <path fill="#050607" d={generatePath(modules, margin)} shapeRendering="crispEdges" />
+      <path fill={palette.paper} d={`M0,0 h${n}v${n}H0z`} shapeRendering="crispEdges" />
+      <path fill={palette.background} d={generatePath(modules, margin)} shapeRendering="crispEdges" />
     </svg>
   );
 }
@@ -210,7 +202,7 @@ export function PosterFooter({
 }) {
   return (
     <footer style={{ display: "flex", marginTop: 20, alignItems: "center" }}>
-      <div style={{ display: "flex", padding: 8, background: "#ffffff" }}>
+      <div style={{ display: "flex", padding: 8, background: palette.paper }}>
         <PosterQr url={url} />
       </div>
       <div style={{ display: "flex", marginLeft: 24, flexDirection: "column" }}>
@@ -290,8 +282,9 @@ export function MetricBand({
 }
 
 /* ---- 贡献图网格(用量海报 ContribGraph 的共享版):月份随列变标注、
-   周一锚定、圆角 2px、同一套蓝阶;个人主页 26 周活跃热图也走这里。 ---- */
-export const HEAT_COLORS = ["#10141a", "#0d2f51", "#0f5385", "#0e7cc0", palette.blue];
+   周一锚定、圆角 2px、官方顺序蓝阶(#002F5B→#00F6FF 按数据强度递增);
+   个人主页 26 周活跃热图也走这里。 ---- */
+export const HEAT_COLORS = POSTER_HEAT_SCALE;
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -386,12 +379,12 @@ export function ContribGrid({
                     display: "flex",
                     height: 16,
                     borderRadius: 2,
-                    background: cell.future ? "#080a0d" : HEAT_COLORS[cell.level],
+                    background: cell.future ? palette.background : HEAT_COLORS[cell.level],
                     border: cell.future
-                      ? "1px dashed #1e242c"
+                      ? `1px dashed ${palette.grid}`
                       : cell.level === 0
                         ? `1px solid ${palette.grid}`
-                        : "1px solid rgba(20,120,255,0.25)",
+                        : `1px solid ${POSTER_ALPHA.focusBorder25}`,
                   }}
                 />
               ))}

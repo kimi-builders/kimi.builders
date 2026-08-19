@@ -32,8 +32,8 @@ const TYPES = [
 ] as const;
 
 const inputCls =
-  "min-h-11 w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[15px] leading-6 text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-[13px] leading-5 text-grey";
+  "min-h-11 w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm leading-6 text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
+const labelCls = "mb-1.5 block text-sm leading-5 text-grey";
 
 /* 自绘复选框:sr-only input + 兄弟节点方盒(peer-checked 驱动),与用量页 switch 同族。 */
 function CheckBox({
@@ -48,11 +48,11 @@ function CheckBox({
   hint: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] text-paper">
+    <label className="flex cursor-pointer items-start gap-2.5 text-xs text-paper">
       <CheckboxControl name={name} defaultChecked={defaultChecked} className="mt-px" />
       <span>
         {label}
-        <span className="mt-0.5 block text-[11px] leading-relaxed text-grey">{hint}</span>
+        <span className="mt-0.5 block text-xs leading-relaxed text-grey">{hint}</span>
       </span>
     </label>
   );
@@ -165,7 +165,7 @@ export default function PostForm({
           <button
             type="button"
             onClick={clearDraft}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[11px] text-grey transition-colors hover:bg-card hover:text-paper"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-xs text-grey transition-colors hover:bg-card hover:text-paper"
           >
             <Trash2 size={12} aria-hidden="true" />
             {t(locale, "form.clearDraft")}
@@ -196,7 +196,7 @@ export default function PostForm({
       <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
         <div>
           <label htmlFor="post-category" className={labelCls}>
-            {t(locale, "form.topic")} <span className="text-blue">*</span>
+            {t(locale, "form.topic")} <span className="text-ui-blue">*</span>
           </label>
           {/* 原生 select 外观与站点语言不符(20260815):appearance-none + 自绘
               ChevronDown(与筛选下拉同款),箭头位置与输入框内边距对齐 */}
@@ -241,7 +241,7 @@ export default function PostForm({
       {type === "link" && (
         <div>
           <label htmlFor="post-link" className={labelCls}>
-            {t(locale, "form.link")} URL <span className="text-blue">*</span>
+            {t(locale, "form.link")} URL <span className="text-ui-blue">*</span>
           </label>
           <input
             id="post-link"
@@ -257,11 +257,11 @@ export default function PostForm({
 
       {type === "poll" && (
         <div className="rounded-2xl border border-line bg-card p-3.5">
-          <p className="font-mono text-[11px] text-grey">{t(locale, "form.pollOpts")}</p>
+          <p className="font-mono text-xs text-grey">{t(locale, "form.pollOpts")}</p>
           <div className="mt-2.5 space-y-2">
             {options.map((opt, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-4 shrink-0 text-center font-mono text-[11px] text-grey">
+                <span className="w-4 shrink-0 text-center font-mono text-xs text-grey">
                   {i + 1}
                 </span>
                 <input
@@ -290,7 +290,7 @@ export default function PostForm({
             <button
               type="button"
               onClick={() => setOptions([...options, ""])}
-              className="mt-2.5 inline-flex items-center rounded-lg px-2 py-1 font-mono text-[11px] text-blue hover:bg-blue/10"
+              className="mt-2.5 inline-flex items-center rounded-lg px-2 py-1 text-xs text-ui-blue hover:bg-ui-blue/10"
             >
               {t(locale, "form.addOpt")}
             </button>
@@ -338,13 +338,13 @@ export default function PostForm({
       )}
 
       <div className="flex items-center gap-3 border-t border-line pt-4">
-        <span className="text-[13px] leading-5 text-grey/80">
+        <span className="text-sm leading-5 text-grey/80">
           {draftSaved ? t(locale, "form.draftSaved") : t(locale, "form.footerHint")}
         </span>
         <button
           type="submit"
           disabled={pending}
-          className="ml-auto inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className="ml-auto inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
         >
           {pending ? t(locale, "form.posting") : t(locale, "form.submit")}
         </button>

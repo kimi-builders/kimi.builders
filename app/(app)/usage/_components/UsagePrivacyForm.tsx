@@ -83,7 +83,7 @@ export default function UsagePrivacyForm({
 
   const rowCls =
     "flex cursor-pointer items-start justify-between gap-4 border-b border-line py-4 first:pt-0";
-  const rowTitle = "block text-[13px] font-medium text-paper";
+  const rowTitle = "block text-sm font-medium text-paper";
   const rowHint = "mt-1 block max-w-lg text-xs leading-relaxed text-grey";
 
   return (
@@ -137,12 +137,12 @@ export default function UsagePrivacyForm({
       </label>
       {error && <p role="alert" className="mt-3 text-xs text-status-danger-fg">{error}</p>}
       <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="font-mono text-[11px] text-grey">
+        <span className="font-mono text-xs text-grey">
           {zh ? `保留 ${retentionDays} 天` : `${retentionDays}-day retention`}
         </span>
         <button
           disabled={pending}
-          className="min-h-11 rounded-lg border border-line px-4 font-mono text-[11px] text-paper hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50"
+          className="min-h-11 rounded-lg border border-line px-4 font-mono text-xs text-paper hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50"
         >
           {pending ? (zh ? "保存中…" : "Saving…") : (zh ? "保存" : "Save")}
         </button>

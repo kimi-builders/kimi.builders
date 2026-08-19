@@ -110,20 +110,20 @@ export default function RouteModal({
       </div>
       {confirming && dirtyGuard && (
         <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-5 py-3">
-          <span className="text-[12.5px] text-paper">{dirtyGuard.title}</span>
+          <span className="text-xs text-paper">{dirtyGuard.title}</span>
           <span className="ml-auto flex items-center gap-2">
             <button
               type="button"
               autoFocus
               onClick={() => setConfirming(false)}
-              className="inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-9 items-center rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {dirtyGuard.keep}
             </button>
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              className="inline-flex min-h-9 items-center rounded-lg border border-status-danger/50 px-3 font-mono text-[11px] text-status-danger-fg transition-colors hover:bg-status-danger/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-status-danger"
+              className="inline-flex min-h-9 items-center rounded-lg border border-status-danger/50 px-3 font-mono text-xs text-status-danger-fg transition-colors hover:bg-status-danger/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-status-danger"
             >
               {dirtyGuard.discard}
             </button>

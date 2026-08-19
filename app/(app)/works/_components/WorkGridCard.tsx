@@ -57,11 +57,11 @@ export default function WorkGridCard({
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col p-4">
-        <h2 className="truncate text-[15px] font-semibold leading-snug text-paper transition-colors group-hover:text-blue">
+        <h2 className="truncate text-sm font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
           {w.name}
         </h2>
         {w.tagline && (
-          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-grey">
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
             {w.tagline}
           </p>
         )}
@@ -69,7 +69,7 @@ export default function WorkGridCard({
            分类不重复出——封面名称砖左上已有类型 eyebrow(20260918)。
            Agent 在网格下只出图标(最多 3 个 + "+N",title 悬浮全名列表)——
            卡宽有限,名字会挤爆 meta 行;全名在详情页与行式卡都可看 */}
-        <div className="mb-3 mt-2.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-grey">
+        <div className="mb-3 mt-2.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
           <WorkMetaChips
             w={w}
             locale={locale}
@@ -89,19 +89,19 @@ export default function WorkGridCard({
             </span>
           )}
           {claimBadge !== null && claimBadge > 0 && (
-            <span className="shrink-0 text-blue" title={t(locale, "works.badgeTitle")}>
+            <span className="shrink-0 text-ui-blue" title={t(locale, "works.badgeTitle")}>
               {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
             </span>
           )}
           {w.featuredAt && (
-            <span className="shrink-0 text-blue" title={w.featuredReason ?? undefined}>
+            <span className="shrink-0 text-ui-blue" title={w.featuredReason ?? undefined}>
               ★
             </span>
           )}
         </div>
         <WorkCardFooter work={w} locale={locale} meId={meId} compact />
         {claimPaused && meId !== null && w.userId === meId && (
-          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-[11px] leading-relaxed text-grey">
+          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-xs leading-relaxed text-grey">
             {t(locale, "works.claimPaused")}
           </p>
         )}

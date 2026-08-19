@@ -48,7 +48,7 @@ export default function CoverToneField({
     <div className={inactive ? "hidden" : undefined}>
       {!inactive && <input type="hidden" name="coverTone" value={tone} readOnly />}
       {!hideLabel && (
-        <span className="mb-1.5 block text-[11.5px] text-grey">
+        <span className="mb-1.5 block text-xs text-grey">
           {t(locale, forAwesome ? "works.coverToneAwesome" : "works.coverTone")}
         </span>
       )}
@@ -58,7 +58,7 @@ export default function CoverToneField({
           aria-hidden="true"
           className={`flex h-24 w-40 shrink-0 items-center justify-center rounded-lg border border-line ${previewCls}`}
         >
-          <span className="font-mono text-[10.5px] tracking-wider opacity-60">
+          <span className="font-mono text-xs tracking-wider opacity-60">
             {t(locale, "works.tilePreview")}
           </span>
         </span>
@@ -70,7 +70,7 @@ export default function CoverToneField({
               aria-pressed={tone === item.id}
               onClick={() => pick(item.id)}
               title={coverToneName(item.id, locale === "zh")}
-              className={`flex h-9 items-center gap-1.5 rounded-lg border px-2 text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+              className={`flex h-9 items-center gap-1.5 rounded-lg border px-2 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                 tone === item.id
                   ? "border-blue bg-blue/10 text-blue"
                   : "border-line text-grey hover:border-paper/30 hover:text-paper"
@@ -95,7 +95,7 @@ export default function CoverToneField({
           ))}
         </div>
       </div>
-      <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+      <span className="mt-1 block text-xs leading-relaxed text-grey/80">
         {t(locale, forAwesome ? "works.coverToneAwesomeHint" : "works.coverToneHint")}
       </span>
     </div>

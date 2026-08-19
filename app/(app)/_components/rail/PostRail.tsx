@@ -34,7 +34,7 @@ export default async function PostRail({
       <Widget title={t(locale, "rail.postMeta")}>
         <Link
           href={`/u/${post.handle}`}
-          className="flex items-center gap-2.5 transition-colors hover:text-blue"
+          className="flex items-center gap-2.5 transition-colors hover:text-ui-blue"
         >
           <Avatar
             url={post.avatarUrl}
@@ -46,17 +46,17 @@ export default async function PostRail({
             <span className="block truncate text-xs text-paper">
               @{post.handle}
             </span>
-            <span className="block truncate font-mono text-[11px] text-grey">
+            <span className="block truncate font-mono text-xs text-grey">
               {relTime(post.createdAt, locale)}
             </span>
           </span>
         </Link>
-        <div className="mt-3 space-y-1.5 border-t border-line pt-3 font-mono text-[11px] text-grey">
+        <div className="mt-3 space-y-1.5 border-t border-line pt-3 font-mono text-xs text-grey">
           <div className="flex items-center justify-between gap-2">
             <span>{t(locale, "rail.board")}</span>
             <Link
               href={`/community?cat=${post.category}`}
-              className="text-paper transition-colors hover:text-blue"
+              className="text-paper transition-colors hover:text-ui-blue"
             >
               {categoryLabel(locale, post.category)}
             </Link>
@@ -85,11 +85,11 @@ export default async function PostRail({
               <li key={r.id} className="flex items-baseline gap-2 text-xs">
                 <Link
                   href={`/community/${r.id}`}
-                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-blue"
+                  className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-ui-blue"
                 >
                   {r.title}
                 </Link>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-grey">
+                <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-grey">
                   <MessageCircle size={11} />
                   {r.commentCount}
                 </span>

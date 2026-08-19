@@ -28,14 +28,14 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
         {!compact && (
           <Link
             href={`/u/${user.handle}`}
-            className="text-paper transition-colors hover:text-blue"
+            className="text-paper transition-colors hover:text-ui-blue"
           >
             @{user.handle}
           </Link>
         )}
         <a
           href="/api/auth/logout"
-          className="text-grey underline underline-offset-4 transition-colors hover:text-blue"
+          className="text-grey underline underline-offset-4 transition-colors hover:text-ui-blue"
         >
           {t(locale, "auth.logout")}
         </a>
@@ -48,7 +48,7 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
        Link 软导航 → 应用内 /login 拦截成弹窗,首页上下文同样命中。 */
     <Link
       href="/login"
-      className="text-paper underline decoration-blue/60 underline-offset-4 transition-colors hover:text-blue"
+      className="text-paper underline decoration-ui-blue/60 underline-offset-4 transition-colors hover:text-ui-blue"
     >
       {t(locale, "auth.login")}
     </Link>

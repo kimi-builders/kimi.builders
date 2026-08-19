@@ -45,7 +45,7 @@ export default function SubscribeButton({
       aria-label={t(locale, subscribed ? "post.unsubscribe" : "post.subscribe")}
       title={t(locale, subscribed ? "post.unsubscribe" : "post.subscribe")}
       className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
-        subscribed ? "text-blue" : "text-grey hover:text-blue"
+        subscribed ? "text-ui-blue" : "text-grey hover:text-ui-blue"
       }`}
     >
       <Bookmark size={14} fill={subscribed ? "currentColor" : "none"} />

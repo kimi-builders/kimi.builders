@@ -244,7 +244,7 @@ export default function CommentSection({
   };
 
   const head = (c: CommentView) => (
-    <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-grey">
+    <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-grey">
       <Avatar
         url={c.avatarUrl}
         handle={c.handle ?? c.author}
@@ -254,7 +254,7 @@ export default function CommentSection({
       {c.handle ? (
         <Link
           href={`/u/${c.handle}`}
-          className="text-paper transition-colors hover:text-blue"
+          className="text-paper transition-colors hover:text-ui-blue"
         >
           {c.author}
         </Link>
@@ -262,12 +262,12 @@ export default function CommentSection({
         <span className="text-paper">{c.author}</span>
       )}
       {c.isAi && (
-        <span className="rounded-md border border-blue px-1.5 py-px text-[10.5px] tracking-wider text-blue">
+        <span className="rounded-md border border-blue px-1.5 py-px text-xs tracking-wider text-blue">
           AI
         </span>
       )}
       {c.hidden && (
-        <span className="rounded-md border border-status-danger/60 px-1.5 py-px text-[10.5px] tracking-wider text-status-danger-fg">
+        <span className="rounded-md border border-status-danger/60 px-1.5 py-px text-xs tracking-wider text-status-danger-fg">
           {t(locale, "mod.hiddenBadge")}
         </span>
       )}
@@ -283,7 +283,7 @@ export default function CommentSection({
     const mine = meId !== null && c.authorId === meId;
     const busy = busyId === c.id;
     return (
-      <div className="mt-1.5 flex items-center gap-4 font-mono text-[11px] text-grey">
+      <div className="mt-1.5 flex items-center gap-4 font-mono text-xs text-grey">
         {loggedIn ? (
           <VoteCluster
             target="comment"
@@ -307,7 +307,7 @@ export default function CommentSection({
           <button
             type="button"
             onClick={() => startReply(c.id, c.author)}
-            className="transition-colors hover:text-blue"
+            className="transition-colors hover:text-ui-blue"
           >
             {t(locale, "post.reply")}
           </button>
@@ -318,7 +318,7 @@ export default function CommentSection({
               type="button"
               disabled={busy}
               onClick={() => setEditingId(editingId === c.id ? null : c.id)}
-              className="transition-colors hover:text-blue disabled:opacity-40"
+              className="transition-colors hover:text-ui-blue disabled:opacity-40"
             >
               {t(locale, "post.edit")}
             </button>
@@ -368,11 +368,11 @@ export default function CommentSection({
             defaultValue={c.bodyMd}
             inputCls="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm text-paper focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
           />
-          <div className="flex gap-3 font-mono text-[11px]">
+          <div className="flex gap-3 font-mono text-xs">
             <button
               type="submit"
               disabled={busyId === c.id}
-              className="rounded-lg bg-blue px-3 py-1.5 font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
+ className="rounded-lg bg-blue px-3 py-1.5 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {busyId === c.id
                 ? t(locale, "post.submitting")
@@ -415,7 +415,7 @@ export default function CommentSection({
                     return next;
                   });
                 }}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[11px] text-blue transition-colors hover:bg-blue/10"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-ui-blue transition-colors hover:bg-ui-blue/10"
               >
                 {expanded ? <ChevronUp size={13} aria-hidden="true" /> : <ChevronDown size={13} aria-hidden="true" />}
                 {expanded
@@ -445,7 +445,7 @@ export default function CommentSection({
           type="button"
           onClick={loadMore}
           disabled={loadingMore}
-          className="mt-6 rounded-lg border border-line px-4 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
+          className="mt-6 rounded-lg border border-line px-4 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue disabled:opacity-40"
         >
           {loadingMore
             ? t(locale, "post.submitting")
@@ -459,7 +459,7 @@ export default function CommentSection({
           {replyTo && (
             <>
               <input type="hidden" name="parent_id" value={replyTo.id} />
-              <p className="flex items-center gap-2 font-mono text-[11px] text-grey">
+              <p className="flex items-center gap-2 font-mono text-xs text-grey">
                 {t(locale, "post.replying", { name: replyTo.author })}
                 <button
                   type="button"
@@ -485,7 +485,7 @@ export default function CommentSection({
           <button
             type="submit"
             disabled={posting}
-            className="rounded-lg bg-blue px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
+ className="rounded-lg bg-blue px-5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {posting ? t(locale, "post.submitting") : t(locale, "post.comment")}
           </button>
@@ -495,13 +495,13 @@ export default function CommentSection({
           {t(locale, "post.loginToComment")}
           <a
             href="/api/auth/github"
-            className="ml-2 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+            className="ml-2 text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
           >
             GitHub
           </a>
           <a
             href="/api/auth/google"
-            className="ml-3 text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+            className="ml-3 text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
           >
             Google
           </a>

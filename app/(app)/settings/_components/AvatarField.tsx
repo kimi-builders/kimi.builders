@@ -86,7 +86,7 @@ export default function AvatarField({
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <ImagePlus size={12} aria-hidden="true" />
             {t(locale, "set.avatarChange")}
@@ -98,7 +98,7 @@ export default function AvatarField({
                 setClear(true);
                 setUrl("");
               }}
-              className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "set.avatarReset")}
             </button>
@@ -121,7 +121,7 @@ export default function AvatarField({
           <button
             type="button"
             onClick={() => setClear(false)}
-            className="text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "set.avatarUndo")}
           </button>

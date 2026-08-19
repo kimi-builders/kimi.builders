@@ -33,8 +33,8 @@ function Panel({
   return (
     <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
       <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-[15px] font-semibold text-paper">{title}</h2>
-        <span className="font-mono text-[11px] text-grey">{note}</span>
+        <h2 className="text-sm font-semibold text-paper">{title}</h2>
+        <span className="font-mono text-xs text-grey">{note}</span>
       </div>
       <div className="mt-4">{children}</div>
     </section>
@@ -65,7 +65,7 @@ export default async function SettingsContent({
     return (
       <div className={showTitle ? "rounded-2xl border border-line bg-card p-5 sm:p-6" : ""}>
         {showTitle && (
-          <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
             <SettingsIcon size={20} aria-hidden="true" />
             {t(locale, "set.title")}
           </h1>
@@ -102,11 +102,11 @@ export default async function SettingsContent({
     <div>
       {showTitle && (
         <>
-          <h1 className="flex items-center gap-2 text-[22px] font-semibold tracking-[0.2px] text-paper">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
             <SettingsIcon size={20} aria-hidden="true" />
             {t(locale, "set.title")}
           </h1>
-          <p className="mt-2 text-[13px] text-grey">{t(locale, "set.subtitle")}</p>
+          <p className="mt-2 text-sm text-grey">{t(locale, "set.subtitle")}</p>
         </>
       )}
 
@@ -132,18 +132,18 @@ export default async function SettingsContent({
               locale={locale}
             />
             <div className="flex items-center justify-between gap-4 border-t border-line py-4">
-              <p className="text-[13px] font-medium text-paper">{t(locale, "set.locale")}</p>
+              <p className="text-sm font-medium text-paper">{t(locale, "set.locale")}</p>
               <LocaleSeg />
             </div>
             <div className="border-t border-line pt-4">
-              <p className="text-[13px] font-medium text-paper">{t(locale, "set.theme")}</p>
+              <p className="text-sm font-medium text-paper">{t(locale, "set.theme")}</p>
               <div className="mt-3">
                 <ThemeCards locale={locale} />
               </div>
               <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.themeNote")}</p>
             </div>
             <div className="border-t border-line pt-4">
-              <p className="text-[13px] font-medium text-paper">{t(locale, "set.vibe")}</p>
+              <p className="text-sm font-medium text-paper">{t(locale, "set.vibe")}</p>
               <div className="mt-3">
                 <VibeCards locale={locale} />
               </div>
@@ -156,7 +156,7 @@ export default async function SettingsContent({
           <Panel title={t(locale, "set.privacy")} note={t(locale, "set.privacyNote")}>
             <div>
               <div className="flex items-baseline justify-between gap-4">
-                <h3 className="text-[13px] font-semibold text-paper">
+                <h3 className="text-sm font-semibold text-paper">
                   {t(locale, "set.pdTitle")}
                 </h3>
               </div>
@@ -173,7 +173,7 @@ export default async function SettingsContent({
               </div>
             </div>
             <div className="mt-6 border-t border-line pt-4">
-              <h3 className="text-[13px] font-semibold text-paper">
+              <h3 className="text-sm font-semibold text-paper">
                 {t(locale, "set.usageDataTitle")}
               </h3>
               <div className="mt-2">
@@ -213,7 +213,7 @@ export default async function SettingsContent({
                     <AtSign size={15} aria-hidden="true" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-paper">{t(locale, "set.email")}</p>
+                    <p className="text-sm font-medium text-paper">{t(locale, "set.email")}</p>
                     <p className="mt-0.5 truncate font-mono text-xs text-grey">{own.email}</p>
                   </div>
                 </div>
@@ -226,10 +226,10 @@ export default async function SettingsContent({
                       {p === "github" ? <GithubIcon size={15} /> : <GoogleColor size={15} />}
                     </span>
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-[13px] font-medium text-paper">
+                      <p className="flex items-center gap-2 text-sm font-medium text-paper">
                         {p === "github" ? "GitHub" : "Google"}
                         <span
-                          className={`rounded-full border px-2 py-0.5 font-mono text-[11px] ${
+                          className={`rounded-full border px-2 py-0.5 font-mono text-xs ${
                             linkedAccount
                               ? "border-blue/30 bg-blue/10 text-blue"
                               : "border-line text-grey"
@@ -238,7 +238,7 @@ export default async function SettingsContent({
                           {t(locale, linkedAccount ? "set.linkedBadge" : "set.notLinked")}
                         </span>
                       </p>
-                      <p className="mt-0.5 font-mono text-[11px] text-grey">
+                      <p className="mt-0.5 font-mono text-xs text-grey">
                         {linkedAccount
                           ? t(locale, "set.linkedSince", { d: ymd(linkedAccount.createdAt) })
                           : t(locale, "set.linkHint")}
@@ -247,7 +247,7 @@ export default async function SettingsContent({
                     {!linkedAccount && (
                       <a
                         href={`/api/auth/${p}?link=1`}
-                        className="ml-auto inline-flex min-h-9 shrink-0 items-center rounded-lg border border-line px-3 font-mono text-[11px] text-paper transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                        className="ml-auto inline-flex min-h-9 shrink-0 items-center rounded-lg border border-line px-3 font-mono text-xs text-paper transition-colors hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                       >
                         {t(locale, "set.link")}
                       </a>
@@ -265,7 +265,7 @@ export default async function SettingsContent({
             </div>
             {/* 密码:有密码走「当前 + 新密码」改密;无密码(OAuth 注册)直接设置 */}
             <div className="mt-2 border-t border-line pt-4">
-              <h3 className="text-[13px] font-semibold text-paper">
+              <h3 className="text-sm font-semibold text-paper">
                 {t(locale, "set.pwTitle")}
               </h3>
               <p className="mt-1 max-w-lg text-xs leading-relaxed text-grey">

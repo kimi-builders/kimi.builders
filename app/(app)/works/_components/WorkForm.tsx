@@ -52,8 +52,8 @@ import WorkMediaFields, { type MediaPreviewState, type MediaRef } from "./WorkMe
 import WorkScreenshot from "./WorkScreenshot";
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-[11.5px] text-grey";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
+const labelCls = "mb-1.5 block text-xs text-grey";
 /* Choice inputs fill their own label instead of using `sr-only`'s page-level
    absolute position. In a long route modal, focusing an uncontained sr-only
    radio can scroll the outer <dialog> itself and strand the visible form. */
@@ -94,8 +94,8 @@ function Section({
 }) {
   return (
     <section className={`space-y-4 ${first ? "" : "border-t border-line pt-5"}`}>
-      <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
-        {step != null && <span className="mr-1.5 text-blue/80">{String(step).padStart(2, "0")}</span>}
+      <h3 className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+        {step != null && <span className="mr-1.5 text-ui-blue/80">{String(step).padStart(2, "0")}</span>}
         {title}
       </h3>
       {children}
@@ -120,11 +120,11 @@ function CollapseSection({
   return (
     <details open={defaultOpen} className="group border-t border-line pt-5">
       <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">
-        <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70 transition-colors group-open:text-grey">
-          {step != null && <span className="mr-1.5 text-blue/80">{String(step).padStart(2, "0")}</span>}
+        <h3 className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70 transition-colors group-open:text-grey">
+          {step != null && <span className="mr-1.5 text-ui-blue/80">{String(step).padStart(2, "0")}</span>}
           {title}
           {optionalLabel && (
-            <span className="ml-2 rounded-[2px] border border-line px-1 py-px text-[10.5px] font-normal normal-case tracking-normal text-grey/60">
+            <span className="ml-2 rounded-[2px] border border-line px-1 py-px text-xs font-normal normal-case tracking-normal text-grey/60">
               {optionalLabel}
             </span>
           )}
@@ -181,15 +181,15 @@ function WorkFormPreview({
         variant="grid"
       />
       <div className="p-4">
-        <h2 className="truncate text-[15px] font-semibold leading-snug text-paper">
+        <h2 className="truncate text-sm font-semibold leading-snug text-paper">
           {name || <span className="text-grey/60">{placeholder}</span>}
         </h2>
-        <p className="mt-1 line-clamp-2 min-h-[2.6em] text-[13px] leading-relaxed text-grey">
+        <p className="mt-1 line-clamp-2 min-h-[2.6em] text-sm leading-relaxed text-grey">
           {tagline || (
             <span className="text-grey/50">{zh ? "一句话介绍…" : "Tagline…"}</span>
           )}
         </p>
-        <div className="mt-2.5 flex items-center gap-1 font-mono text-[11px] text-grey">
+        <div className="mt-2.5 flex items-center gap-1 font-mono text-xs text-grey">
           <WorkKindIcon id={workKind} size={11} />
           {kindLabel}
         </div>
@@ -211,11 +211,11 @@ function CheckBox({
   hint: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] text-paper">
+    <label className="flex cursor-pointer items-start gap-2.5 text-xs text-paper">
       <CheckboxControl name={name} defaultChecked={defaultChecked} className="mt-px" />
       <span>
         {label}
-        <span className="mt-0.5 block text-[11px] leading-relaxed text-grey">{hint}</span>
+        <span className="mt-0.5 block text-xs leading-relaxed text-grey">{hint}</span>
       </span>
     </label>
   );
@@ -255,11 +255,11 @@ function LabelWithCount({
     <span className="mb-1.5 flex items-baseline justify-between">
       {/* 不用共享 labelCls(自带 mb-1.5):外层 wrapper 已有下间距,叠双份会
           比别的字段多出一截 */}
-      <label htmlFor={htmlFor} className="block text-[11.5px] text-grey">
-        {label} {required && <span className="text-blue">*</span>}
+      <label htmlFor={htmlFor} className="block text-xs text-grey">
+        {label} {required && <span className="text-ui-blue">*</span>}
       </label>
       <span
-        className={`font-mono text-[11px] ${count > max * 0.9 ? "text-blue" : "text-grey/60"}`}
+        className={`font-mono text-xs ${count > max * 0.9 ? "text-ui-blue" : "text-grey/60"}`}
       >
         {count}/{max}
       </span>
@@ -467,7 +467,7 @@ export default function WorkForm({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11.5px] leading-relaxed text-grey/80">
+          <p className="mt-2 text-xs leading-relaxed text-grey/80">
             {t(locale, "works.minPath")}
           </p>
         </div>
@@ -479,7 +479,7 @@ export default function WorkForm({
       {sourcePath && kind === "site" && (
         <div>
           <input type="hidden" name="source_path" value={sourcePath.slug} />
-          <p className="rounded-xl border border-dashed border-blue/50 bg-blue/5 px-3 py-2 text-[11.5px] leading-relaxed text-paper/90">
+          <p className="rounded-xl border border-dashed border-blue/50 bg-blue/5 px-3 py-2 text-xs leading-relaxed text-paper/90">
             {sourcePath.text}
           </p>
         </div>
@@ -515,7 +515,7 @@ export default function WorkForm({
 
         <fieldset>
           <span className={labelCls}>
-            {t(locale, "works.kind")} <span className="text-blue">*</span>
+            {t(locale, "works.kind")} <span className="text-ui-blue">*</span>
           </span>
           <div className="flex flex-wrap gap-1.5">
             {WORK_KINDS.map((k) => (
@@ -571,7 +571,7 @@ export default function WorkForm({
             checkbox 仍非受控(无 JS 可提交),0 选中时提前红字提示 */}
         <fieldset>
           <span className={labelCls}>
-            {t(locale, "works.agents")} <span className="text-blue">*</span>
+            {t(locale, "works.agents")} <span className="text-ui-blue">*</span>
           </span>
           <div
             className="flex flex-wrap gap-1.5"
@@ -597,11 +597,11 @@ export default function WorkForm({
             ))}
           </div>
           {agentsCount === 0 ? (
-            <span className="mt-1 block text-[11px] leading-relaxed text-status-danger-fg">
+            <span className="mt-1 block text-xs leading-relaxed text-status-danger-fg">
               {t(locale, "err.workNoAgent")}
             </span>
           ) : (
-            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            <span className="mt-1 block text-xs leading-relaxed text-grey/80">
               {t(locale, "works.agentsHint")}
             </span>
           )}
@@ -621,7 +621,7 @@ export default function WorkForm({
             onChange={setDesc}
             inputCls={inputCls}
           />
-          <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
+          <div className="mt-1.5 flex items-center justify-between font-mono text-xs text-grey/70">
             <span>{t(locale, "form.mdHint")}</span>
             <span>{t(locale, "form.mdSupport")}</span>
           </div>
@@ -647,19 +647,19 @@ export default function WorkForm({
                 <span
                   key={`${tag}-${i}`}
                   title={tag}
-                  className="rounded-md border border-line px-1.5 py-px font-mono text-[11px] text-grey"
+                  className="rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey"
                 >
                   {tag.length > 24 ? `${tag.slice(0, 24)}…` : tag}
                 </span>
               ))}
               {rawTagCount > 5 && (
-                <span className="font-mono text-[11px] text-status-danger-fg">
+                <span className="font-mono text-xs text-status-danger-fg">
                   {t(locale, "works.tagsOver", { n: rawTagCount })}
                 </span>
               )}
             </div>
           )}
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          <span className="mt-1 block text-xs leading-relaxed text-grey/80">
             {t(locale, "works.tagsHint")}
           </span>
         </div>
@@ -701,13 +701,13 @@ export default function WorkForm({
           {/* 控件摘掉 name(无名控件不随表单提交):残留的 author_label 不会把
               「我的作品」误变成 awesome 条目(服务端按 author_label 非空分流) */}
           {kind === "awesome" && (
-            <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-[11px] leading-relaxed text-grey">
+            <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-xs leading-relaxed text-grey">
               {t(locale, "awesome.rulesBody")}
             </p>
           )}
           <div>
             <label htmlFor="work-author" className={labelCls}>
-              {t(locale, "works.authorLabel")} <span className="text-blue">*</span>
+              {t(locale, "works.authorLabel")} <span className="text-ui-blue">*</span>
             </label>
             <input
               id="work-author"
@@ -717,13 +717,13 @@ export default function WorkForm({
               placeholder={t(locale, "works.authorLabelPh")}
               className={inputCls}
             />
-            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            <span className="mt-1 block text-xs leading-relaxed text-grey/80">
               {t(locale, "works.authorLabelHint")}
             </span>
           </div>
           <fieldset>
             <span className={labelCls}>
-              {t(locale, "awesome.scope")} <span className="text-blue">*</span>
+              {t(locale, "awesome.scope")} <span className="text-ui-blue">*</span>
             </span>
             <div className="grid gap-1.5 sm:grid-cols-3">
               {SCOPES.map((s) => (
@@ -742,7 +742,7 @@ export default function WorkForm({
                     <WorkScopeIcon id={s.id} size={14} />
                     <span>{t(locale, s.key)}</span>
                   </span>
-                  <span className="mt-0.5 block text-[11px] leading-relaxed text-grey">
+                  <span className="mt-0.5 block text-xs leading-relaxed text-grey">
                     {t(locale, s.hintKey)}
                   </span>
                 </label>
@@ -797,7 +797,7 @@ export default function WorkForm({
                   type="button"
                   onClick={() => setCustomModels((current) => current.filter((x) => x !== m))}
                   aria-label={m}
-                  className="text-blue/70 hover:text-blue"
+                  className="text-ui-blue/70 hover:text-ui-blue"
                 >
                   <X size={11} aria-hidden="true" />
                 </button>
@@ -821,13 +821,13 @@ export default function WorkForm({
             <button
               type="button"
               onClick={addCustomModel}
-              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-line px-3 font-mono text-[11px] text-grey transition-colors hover:border-paper/30 hover:text-paper"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper"
             >
               <Plus size={12} aria-hidden="true" />
               {t(locale, "form.addOpt").replace(/^\+?\s*/, "")}
             </button>
           </div>
-          <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+          <span className="mt-1 block text-xs leading-relaxed text-grey/80">
             {t(locale, "works.modelsHint")}
           </span>
         </fieldset>
@@ -887,10 +887,10 @@ export default function WorkForm({
                     type="button"
                     aria-pressed={claimValue === String(v)}
                     onClick={() => setClaimValue(String(v))}
-                    className={`rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                    className={`rounded-full border px-2.5 py-1 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                       claimValue === String(v)
                         ? "border-blue bg-blue/10 text-blue"
-                        : "border-line text-grey hover:border-blue/50 hover:text-paper"
+                        : "border-line text-grey hover:border-ui-blue/50 hover:text-paper"
                     }`}
                   >
                     {compactNumber(v, locale)}
@@ -898,7 +898,7 @@ export default function WorkForm({
                 ))}
               </div>
             )}
-            <span className="mt-1 block text-[11px] leading-relaxed text-grey/80">
+            <span className="mt-1 block text-xs leading-relaxed text-grey/80">
               {claim.hasUsage ? (
                 <>
                   {t(locale, "works.claimHint")}{" "}
@@ -916,7 +916,7 @@ export default function WorkForm({
                   {t(locale, "works.claimNoUsage")}{" "}
                   <Link
                     href="/usage"
-                    className="text-paper underline decoration-blue/60 underline-offset-4 hover:text-blue"
+                    className="text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
                   >
                     {t(locale, "works.claimNoUsageCta")}
                   </Link>
@@ -950,7 +950,7 @@ export default function WorkForm({
             hint={t(locale, "works.formPrivateHint")}
           />
         </div>
-        <p className="text-[11px] leading-relaxed text-grey/80">
+        <p className="text-xs leading-relaxed text-grey/80">
           {t(locale, "works.hint")}
         </p>
       </CollapseSection>
@@ -984,14 +984,14 @@ export default function WorkForm({
           <button
             type="button"
             onClick={() => router.back()}
-            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "post.cancel")}
           </button>
         ) : (
           <Link
             href={cancelHref}
-            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "post.cancel")}
           </Link>
@@ -999,7 +999,7 @@ export default function WorkForm({
         <button
           type="submit"
           disabled={pending}
-          className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
         >
           {/* 新建 = 发布(动作语义),编辑 = 保存 */}
           {pending

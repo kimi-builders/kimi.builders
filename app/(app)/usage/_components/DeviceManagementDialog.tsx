@@ -103,7 +103,7 @@ export default function DeviceManagementDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-haspopup="dialog"
-        className="inline-flex min-h-11 items-center gap-1.5 px-2 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="inline-flex min-h-11 items-center gap-1.5 px-2 font-mono text-xs text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <Settings2 size={12} aria-hidden="true" />
         {zh ? "管理" : "Manage"}
@@ -175,14 +175,14 @@ export default function DeviceManagementDialog({
                 />
                 <span>
                   <span className="block text-xs font-medium text-paper">{choice.title}</span>
-                  <span className="mt-1 block text-[11px] leading-relaxed text-grey">{choice.description}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-grey">{choice.description}</span>
                 </span>
               </label>
             ))}
           </fieldset>
 
           {deletesData && (
-            <div className="mt-4 border border-status-warn/30 bg-status-warn/5 p-3 text-[11px] leading-relaxed text-grey">
+            <div className="mt-4 border border-status-warn/30 bg-status-warn/5 p-3 text-xs leading-relaxed text-grey">
               <p className="text-status-warn-fg">
                 {zh
                   ? "删除不能在站点内撤销，而且 Collector 的本地 checkpoint 不会自动回退。"
@@ -191,7 +191,7 @@ export default function DeviceManagementDialog({
               <p className="mt-2">
                 {zh ? "如需从本机历史恢复，删除后在该设备执行：" : "To restore locally available history later, run:"}
               </p>
-              <code className="mt-1 block whitespace-pre-wrap font-mono text-[11px] text-paper">
+              <code className="mt-1 block whitespace-pre-wrap font-mono text-xs text-paper">
                 npx @kimi.builders/usage@latest reset --local{"\n"}npx @kimi.builders/usage@latest sync
               </code>
             </div>
@@ -203,14 +203,14 @@ export default function DeviceManagementDialog({
               type="button"
               disabled={pending}
               onClick={close}
-              className="min-h-11 rounded-lg border border-line px-4 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+              className="min-h-11 rounded-lg border border-line px-4 font-mono text-xs text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
             >
               {zh ? "取消" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={pending}
-              className={`min-h-11 rounded-lg border px-4 font-mono text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50 ${
+              className={`min-h-11 rounded-lg border px-4 font-mono text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50 ${
                 deletesData
                   ? "border-status-danger/50 text-status-danger-fg hover:bg-status-danger/10"
                   : "border-status-warn/50 text-status-warn-fg hover:bg-status-warn/10"

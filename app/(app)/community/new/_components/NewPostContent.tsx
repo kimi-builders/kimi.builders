@@ -18,7 +18,7 @@ export default async function NewPostContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="font-mono text-lg font-semibold">
+        <h1 className="text-2xl font-semibold text-paper">
           {t(locale, "form.pageTitle")}
         </h1>
       )}

@@ -91,14 +91,14 @@ export default function MobileNavDrawer({
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
-        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(88vw,22rem)] max-w-none overflow-hidden border-0 border-r border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/65"
+ className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(88vw,22rem)] max-w-none overflow-hidden border-0 border-r border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/65"
       >
         <div className="flex h-full flex-col">
           <div className="flex min-h-16 items-center gap-3 border-b border-line px-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/logo-tile.svg" alt="" className="size-8 rounded-md" />
             <h2 id="mobile-nav-title" className="font-mono text-sm font-semibold tracking-wide">
-              kimi<span className="text-blue">.</span>builders
+              kimi<span className="text-ui-blue">.</span>builders
             </h2>
             <button
               type="button"
@@ -120,7 +120,7 @@ export default function MobileNavDrawer({
             <Link
               href={gate("/community/new")}
               onClick={close}
-              className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 text-sm font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <SquarePen size={16} aria-hidden="true" />
               {t(locale, "nav.post")}
@@ -165,7 +165,7 @@ export default function MobileNavDrawer({
                     >
                       <Icon size={17} className="shrink-0" aria-hidden="true" />
                       <span>{t(locale, section.key)}</span>
-                      <span className="ml-auto text-[10.5px] tracking-wider text-grey/70">
+                      <span className="ml-auto text-xs tracking-wider text-grey/70">
                         {t(locale, "nav.soon")}
                       </span>
                     </Link>
@@ -187,7 +187,7 @@ export default function MobileNavDrawer({
                   <UnreadBadge
                     initial={unread}
                     locale={locale}
-                    className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
+ className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
                   />
                 </span>
                 {t(locale, "notif.title")}

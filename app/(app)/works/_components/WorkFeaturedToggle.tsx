@@ -67,13 +67,13 @@ export default function WorkFeaturedToggle({
   };
 
   const btn =
-    "inline-flex items-center font-mono text-[11px] text-grey transition-colors hover:text-blue disabled:opacity-40";
+    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-ui-blue disabled:opacity-40";
 
   return (
-    <div className="pt-3 font-mono text-[11px]">
+    <div className="pt-3 font-mono text-xs">
       {featuredReason !== null ? (
         <span className="inline-flex min-w-0 items-center gap-3">
-          <span className="max-w-56 truncate text-blue" title={featuredReason}>
+          <span className="max-w-56 truncate text-ui-blue" title={featuredReason}>
             {t(locale, "featured.badge")} · {featuredReason}
           </span>
           <button

@@ -42,7 +42,7 @@ export default function ShareButton({
           }
         }}
         className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${
-          copied ? "text-blue" : "text-grey hover:text-blue"
+          copied ? "text-ui-blue" : "text-grey hover:text-ui-blue"
         }`}
       >
         {copied ? <Check size={14} /> : <Share2 size={14} />}
@@ -67,7 +67,7 @@ export default function ShareButton({
               "noopener,noreferrer",
             );
           }}
-          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-blue"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-ui-blue"
         >
           <ImageDown size={14} />
           <span>{t(locale, "post.poster")}</span>

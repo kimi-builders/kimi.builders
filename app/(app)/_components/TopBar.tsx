@@ -36,7 +36,7 @@ export default function TopBar({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
         <span>
-          kimi<span className="text-blue">.</span>builders
+          kimi<span className="text-ui-blue">.</span>builders
         </span>
       </Link>
 

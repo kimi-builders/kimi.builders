@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 /* kimi.builders UI tokens —— 对齐 Kimi 官方设计令牌(抓自 kimi.com theme-*.js):
-   暗色 Bg.Primary #121212 / Labels 白 84%·56% / Separators 白 12% / KMBlue #1A88FF;
-   亮色 GroundPC #FBFAF9 / Labels 黑 90%·60% / Separators 黑 13% / KMBlue #1783FF。
+   暗色 Bg.Primary #121212 / Labels 白 84%·56% / Separators 白 12%;
+   亮色 GroundPC #FBFAF9 / Labels 黑 90%·60% / Separators 黑 13%。
+   三蓝分工(20260818):blue #007CFF = 焦点(当前态、关键数据、唯一主 CTA);
+   ui-blue = 交互蓝(链接、hover、次级操作),暗色 #1A88FF / 亮色 #1783FF(官方 UI 色);
+   品牌信号蓝 #1783FF 见 icon.svg 与 poster 门面。
    moon = 抬升面(代码块/下拉/进度轨,官方 Bg.Secondary),line = 发丝分隔线
    (官方 Separators.S1),card = 面板薄涂(官方 Fills.F1)。 */
 @theme {
@@ -10,6 +13,7 @@
   --color-moon: #1f1f1f;
   --color-paper: rgb(255 255 255 / 0.84);
   --color-blue: #007cff;
+  --color-ui-blue: #1a88ff;
   --color-blue-text: #a0daf7;
   /* grey 0.56→0.62(20260815 评审):10-11px 小字在 #121212 上约 4.5:1 踩 WCAG AA 线,
      提到 0.62 ≈ 6.4:1,小字号场景留出安全余量;层级观感几乎不变。 */
@@ -73,6 +77,7 @@
   --color-moon: #f5f5f5;
   --color-paper: rgb(0 0 0 / 0.9);
   --color-blue: #007cff;
+  --color-ui-blue: #1783ff;
   --color-blue-text: #002f5b;
   --color-grey: rgb(0 0 0 / 0.62);
   --color-line: rgb(0 0 0 / 0.13);
@@ -727,11 +732,11 @@ html[data-vibe="soft"] .vibe-card-soft {
    圆角走 var(--radius-md) 跟随 vibe(poster 下归零)。 */
 .mention-kimi {
   display: inline-block;
-  border: 1px solid rgb(59 130 246 / 0.45);
+  border: 1px solid color-mix(in srgb, var(--color-ui-blue) 45%, transparent);
   border-radius: var(--radius-md);
   padding: 0 4px;
-  color: var(--color-blue);
-  background: rgb(59 130 246 / 0.08);
+  color: var(--color-ui-blue);
+  background: color-mix(in srgb, var(--color-ui-blue) 8%, transparent);
   font-weight: 500;
 }
 /* Kimi typography + layout remediation (2026-08-18).
@@ -813,7 +818,7 @@ main nav.kb-control-group > button {
 }
 
 .kb-awesome-card {
-  background-image: linear-gradient(110deg, rgb(26 136 255 / 0.06), transparent 35%);
+  background-image: linear-gradient(110deg, color-mix(in srgb, var(--color-ui-blue) 6%, transparent), transparent 35%);
 }
 
 .kb-awesome-card::before {
@@ -821,7 +826,7 @@ main nav.kb-control-group > button {
   inset-block: 0;
   inset-inline-start: 0;
   width: 2px;
-  background: rgb(26 136 255 / 0.8);
+  background: color-mix(in srgb, var(--color-ui-blue) 80%, transparent);
   content: "";
 }
 
@@ -833,9 +838,7 @@ form textarea {
   line-height: 1.5rem;
 }
 
-body > main h1 {
-  font-family: var(--font-technical);
-}
+/* h1 不再全局强制 mono(20260818 评审):标题走 sans,字标场景由页面用 font-mono 类显式声明。 */
 
 body > main p {
   font-family: var(--font-ui);

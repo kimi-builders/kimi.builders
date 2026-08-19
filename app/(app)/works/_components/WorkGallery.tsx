@@ -144,7 +144,7 @@ export default function WorkGallery({
             >
               <ChevronRight size={20} />
             </button>
-            <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 font-mono text-[11px] text-white/85">
+            <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 font-mono text-xs text-white/85">
               {active + 1} / {keys.length}
             </span>
           </>
@@ -167,7 +167,7 @@ export default function WorkGallery({
               className={`block shrink-0 cursor-pointer overflow-hidden rounded-lg border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                 i === active
                   ? "border-blue"
-                  : "border-line hover:border-blue/50"
+                  : "border-line hover:border-ui-blue/50"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

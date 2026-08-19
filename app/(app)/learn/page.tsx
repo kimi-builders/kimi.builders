@@ -53,7 +53,7 @@ function PathStack({ zh }: { zh: boolean }) {
         <span aria-hidden="true" className="size-2 rounded-full bg-status-danger/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-warn/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-ok/70" />
-        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.2em] text-grey">
+        <span className="ml-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
           {zh ? "路径栈" : "PATH STACK"}
         </span>
       </div>
@@ -64,14 +64,14 @@ function PathStack({ zh }: { zh: boolean }) {
               href={`/learn/${p.slug}`}
               className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-moon/60"
             >
-              <span className="font-mono text-[11px] text-grey/70">
+              <span className="font-mono text-xs text-grey/70">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-semibold text-paper transition-colors group-hover:text-blue">
+                <span className="block truncate text-xs font-semibold text-paper transition-colors group-hover:text-ui-blue">
                   {zh ? p.title.zh : p.title.en}
                 </span>
-                <span className="mt-0.5 block font-mono text-[10.5px] text-grey">
+                <span className="mt-0.5 block font-mono text-xs text-grey">
                   {p.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"}
                   {" · "}
                   {p.levels.length} {zh ? "层" : "levels"} · {zh ? `约 ${p.hours} 小时` : `~${p.hours}h`}
@@ -124,19 +124,19 @@ export default async function LearnPage() {
           (仅 lg–xl 区间挂出:≥xl 右栏 LearnRail 已有路径栈,不重复;<lg 叠在下方) */}
       <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 xl:block">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
             — {zh ? "知识库" : "LEARN"} · {zh ? "策划制学习路径" : "CURATED PATHS"}
           </p>
           <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight">
             {zh ? "少而重,走过的路" : "Few paths, walked first"}
-            <span className="text-blue">.</span>
+            <span className="text-ui-blue">.</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-grey">
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
             {zh
               ? "这里不生产教程。每条路径是编辑定夺的一手资料编排——Kimi 官方、YouTube、bilibili、X 上的原始内容,加上社区同学先走一遍的学习笔记;验证戳担保它此刻仍然有效,终点收口在真实作品。"
               : "We don't produce tutorials. Each path is an editor's arrangement of first-party material — Kimi official docs, YouTube, bilibili, X — plus notes from members who walked it first; a verification stamp warrants it still works, and every path ends at a real build."}
           </p>
-          <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+          <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
             <span>{LEARN_PATHS.length} {zh ? "条路径" : "paths"}</span>
             <span aria-hidden="true">·</span>
             <span>{totalResources} {zh ? "个一手资源" : "first-party resources"}</span>
@@ -146,13 +146,13 @@ export default async function LearnPage() {
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
               href="#paths"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "浏览路径 ↓" : "Browse paths ↓"}
             </a>
             <a
               href="#method"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "编选法" : "The method"}
             </a>
@@ -163,16 +163,16 @@ export default async function LearnPage() {
 
       {/* 编选法:四条纪律 */}
       <section id="method" className="mt-10 scroll-mt-20 border-y border-line py-6">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-grey/70">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
           {zh ? "编选法 · HOW PATHS ARE MADE" : "HOW PATHS ARE MADE"}
         </p>
         <div className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
           {METHOD.map((m, i) => (
             <div key={m.zh} className="flex gap-3">
-              <span className="font-mono text-[11px] text-blue">{String(i + 1).padStart(2, "0")}</span>
+              <span className="font-mono text-xs text-ui-blue">{String(i + 1).padStart(2, "0")}</span>
               <div className="min-w-0">
                 <p className="font-mono text-xs text-paper">{zh ? m.zh : m.en}</p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-grey">{zh ? m.note.zh : m.note.en}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-grey">{zh ? m.note.zh : m.note.en}</p>
               </div>
             </div>
           ))}
@@ -192,7 +192,7 @@ export default async function LearnPage() {
                 {p.code.replace("PATH-", "P")}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+                <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
                   —{" "}
                   {p.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"}
                   {" · "}
@@ -202,13 +202,13 @@ export default async function LearnPage() {
                   {" · "}
                   {zh ? `约 ${p.hours} 小时` : `~${p.hours}h`}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-blue">
+                <h2 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
                   {zh ? p.title.zh : p.title.en}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
                   {zh ? p.summary.zh : p.summary.en}
                 </p>
-                <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey">
+                <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-xs text-grey">
                   <span className="flex items-center gap-1.5">
                     <ShieldCheck
                       size={13}
@@ -227,14 +227,14 @@ export default async function LearnPage() {
               <ArrowRight
                 size={16}
                 aria-hidden="true"
-                className="mt-2 shrink-0 self-start text-grey/50 transition-colors group-hover:text-blue"
+                className="mt-2 shrink-0 self-start text-grey/50 transition-colors group-hover:text-ui-blue"
               />
             </Link>
           </article>
         ))}
       </div>
 
-      <p className="mt-6 text-[11px] leading-relaxed text-grey/80">
+      <p className="mt-6 text-xs leading-relaxed text-grey/80">
         {zh
           ? "学完一条路径?把作品发上作品墙即毕业;学习笔记发到社区,被编辑部收录就会排进路径,署名归你。"
           : "Finished a path? Post your build to graduate. Publish notes in the community — curated notes enter the path under your name."}

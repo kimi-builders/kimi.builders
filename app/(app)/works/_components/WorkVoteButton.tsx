@@ -58,7 +58,7 @@ export default function WorkVoteButton({
       className={`inline-flex items-center gap-1.5 border px-4 py-1.5 font-mono text-xs transition-colors ${
         state.voted
           ? "border-blue text-blue"
-          : "border-line text-grey hover:border-blue hover:text-blue"
+          : "border-line text-grey hover:border-ui-blue hover:text-ui-blue"
       }`}
     >
       <Heart size={13} fill={state.voted ? "currentColor" : "none"} />

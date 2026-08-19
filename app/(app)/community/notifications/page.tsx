@@ -23,7 +23,7 @@ export default async function NotificationsPage() {
     /* 未登录:统一登录引导卡(20260919) */
     return (
       <div>
-        <h1 className="font-mono text-lg font-semibold">
+        <h1 className="text-2xl font-semibold text-paper">
           {t(locale, "notif.title")}
         </h1>
         <div className="mt-8">
@@ -42,7 +42,7 @@ export default async function NotificationsPage() {
 
   return (
     <div>
-      <h1 className="flex items-center gap-2 font-mono text-lg font-semibold">
+      <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
         <Bell size={17} />
         {t(locale, "notif.title")}
       </h1>
@@ -84,11 +84,11 @@ export default async function NotificationsPage() {
                         : t(locale, n.type === "reply" ? "notif.reply" : "notif.comment")}
                     </span>
                   </p>
-                  <p className="mt-1 truncate font-mono text-[11px] text-grey">
+                  <p className="mt-1 truncate font-mono text-xs text-grey">
                     {isWork ? n.workName : n.postTitle}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-[11px] text-grey">
+                <span className="shrink-0 font-mono text-xs text-grey">
                   {relTime(n.createdAt, locale)}
                 </span>
               </Link>

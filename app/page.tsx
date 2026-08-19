@@ -46,7 +46,7 @@ function FeaturedCard({
   locale: Locale;
 }) {
   const titleCls =
-    "mt-3 block font-medium leading-snug text-paper transition-colors hover:text-blue";
+    "mt-3 block font-medium leading-snug text-paper transition-colors hover:text-ui-blue";
   const title = f.external ? (
     <a href={f.href} target="_blank" rel="noopener noreferrer" className={titleCls}>
       {f.title}
@@ -58,7 +58,7 @@ function FeaturedCard({
   );
   return (
     <article className="border border-line bg-card p-5 text-left">
-      <div className="flex items-center gap-2 font-mono text-[11px]">
+      <div className="flex items-center gap-2 font-mono text-xs">
         <span className="border border-line px-1.5 py-px text-grey">
           {t(locale, f.kind === "post" ? "featured.kindPost" : "featured.kindWork")}
         </span>
@@ -86,9 +86,9 @@ function FeaturedCard({
           {f.reason}
         </p>
       )}
-      <div className="mt-3 flex items-center justify-between gap-3 font-mono text-[11px] text-grey">
+      <div className="mt-3 flex items-center justify-between gap-3 font-mono text-xs text-grey">
         {f.authorHref ? (
-          <Link href={f.authorHref} className="truncate transition-colors hover:text-blue">
+          <Link href={f.authorHref} className="truncate transition-colors hover:text-ui-blue">
             {f.author}
           </Link>
         ) : (
@@ -164,7 +164,7 @@ export default async function Home({
           </span>
         </div>
         {typeof authError === "string" && (
-          <p className="absolute top-16 font-mono text-xs text-blue">
+          <p className="absolute top-16 font-mono text-xs text-ui-blue">
             {t(locale, AUTH_ERRORS[authError] ?? "home.errGeneric")}
           </p>
         )}
@@ -184,13 +184,13 @@ export default async function Home({
           className="only-light h-44 w-44"
         />
         <h1 className="mt-10 font-mono text-4xl font-semibold tracking-wide">
-          kimi<span className="text-blue">.</span>builders
+          kimi<span className="text-ui-blue">.</span>builders
         </h1>
-        <p className="mt-5 font-mono text-sm tracking-[0.24em] text-paper">
-          BUILD GOOD THINGS WITH KIMI<span className="text-blue">.</span>
+        <p className="mt-5 font-mono text-sm tracking-[0.08em] text-paper">
+          BUILD GOOD THINGS WITH KIMI<span className="text-ui-blue">.</span>
         </p>
         <p className="mt-3 text-lg font-medium">{t(locale, "home.tagline")}</p>
-        <p className="mt-8 font-mono text-xs tracking-[0.3em] text-grey">
+        <p className="mt-8 font-mono text-xs tracking-[0.08em] text-grey">
           EXPLORE TOGETHER. BUILD TOGETHER.
         </p>
         <p className="mt-2 text-sm text-grey">{t(locale, "home.heroSub")}</p>
@@ -202,7 +202,7 @@ export default async function Home({
         </Link>
         {/* 站点入口:主 CTA 下的边框按钮排,固定宽度(中英同宽,一眼可点);
             术语型入口(Awesome/用量榜)带副文案,给首访用户一句预期(20260815) */}
-        <nav className="mt-6 flex flex-wrap items-stretch justify-center gap-2.5 font-mono text-[11px]">
+        <nav className="mt-6 flex flex-wrap items-stretch justify-center gap-2.5 font-mono text-xs">
           {(
             [
               ["/community", "nav.community", "home.subCommunity"],
@@ -214,10 +214,10 @@ export default async function Home({
             <Link
               key={href}
               href={href}
-              className="flex w-32 flex-col items-center gap-1 border border-line px-2 py-2.5 text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="flex w-32 flex-col items-center gap-1 border border-line px-2 py-2.5 text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <span className="tracking-wider">{t(locale, key)}</span>
-              <span className="text-[10.5px] tracking-normal text-grey/70">
+              <span className="text-xs tracking-normal text-grey/70">
                 {t(locale, subKey)}
               </span>
             </Link>
@@ -234,10 +234,10 @@ export default async function Home({
                 key={s.l}
                 className={`text-center ${index === 3 ? "border-t border-line pt-8 sm:border-l sm:border-t-0 sm:pt-0" : ""}`}
               >
-                <div className={`font-mono text-3xl font-semibold tracking-wide ${index === 3 ? "text-blue" : ""}`}>
+                <div className={`font-mono text-3xl font-semibold tracking-wide ${index === 3 ? "text-ui-blue" : ""}`}>
                   <CountUpStat value={s.n} locale={locale} />
                 </div>
-                <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-grey">
+                <div className="mt-2 font-mono text-xs tracking-[0.08em] text-grey">
                   {s.l}
                 </div>
                 {index === 3 && (
@@ -255,7 +255,7 @@ export default async function Home({
       {/* ---- 本周精选:编辑署名定夺;无精选回落 7 日热门;皆空不渲染 ---- */}
       {home?.featured.length ? (
         <section className="mx-auto max-w-4xl px-6 py-16">
-          <h2 className="text-center font-mono text-xs tracking-[0.3em] text-grey">
+          <h2 className="text-center font-mono text-xs tracking-[0.08em] text-grey">
             {t(locale, "home.featured")}
           </h2>
           <p className="mt-3 text-center text-xs text-grey">
@@ -269,7 +269,7 @@ export default async function Home({
         </section>
       ) : home?.hot.length ? (
         <section className="mx-auto max-w-3xl px-6 py-16">
-          <h2 className="text-center font-mono text-xs tracking-[0.3em] text-grey">
+          <h2 className="text-center font-mono text-xs tracking-[0.08em] text-grey">
             {t(locale, "side.hot")}
           </h2>
           <ul className="mt-8 border-y border-line">
@@ -277,15 +277,15 @@ export default async function Home({
               <li key={h.id} className="border-b border-line last:border-b-0">
                 <Link
                   href={`/community/${h.id}`}
-                  className="flex items-baseline gap-4 py-3 transition-colors hover:text-blue"
+                  className="flex items-baseline gap-4 py-3 transition-colors hover:text-ui-blue"
                 >
-                  <span className="shrink-0 font-mono text-[11px] text-grey">
+                  <span className="shrink-0 font-mono text-xs text-grey">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-paper">
                     {h.title}
                   </span>
-                  <span className="shrink-0 font-mono text-[11px] text-grey">
+                  <span className="shrink-0 font-mono text-xs text-grey">
                     {t(locale, "post.comments", { n: h.commentCount })}
                   </span>
                 </Link>
@@ -297,7 +297,7 @@ export default async function Home({
 
       {/* ---- 入群 / 订阅 ---- */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <h2 className="text-center font-mono text-xs tracking-[0.3em] text-grey">
+        <h2 className="text-center font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "home.join")}
         </h2>
         <div className="mt-8 grid gap-4 text-left sm:grid-cols-3">
@@ -315,13 +315,13 @@ export default async function Home({
               rel="noopener noreferrer"
               className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
-              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
+              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 GitHub
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-grey">
                 {t(locale, "home.joinDisc")}
               </p>
-              <span className="mt-3 inline-block font-mono text-[11px] text-blue">
+              <span className="mt-3 inline-block font-mono text-xs text-ui-blue">
                 {t(locale, "home.joinDiscCta")} →
               </span>
             </a>
@@ -340,13 +340,13 @@ export default async function Home({
               rel="noopener noreferrer"
               className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
-              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
+              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 Awesome Kimi Builders
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-grey">
                 {t(locale, "home.joinAwesome")}
               </p>
-              <span className="mt-3 inline-block font-mono text-[11px] text-blue">
+              <span className="mt-3 inline-block font-mono text-xs text-ui-blue">
                 {t(locale, "home.joinAwesomeCta")} →
               </span>
             </a>
@@ -363,13 +363,13 @@ export default async function Home({
               href="mailto:hi@kimi.builders"
               className="group border border-line bg-card p-5 transition-colors hover:border-paper/20"
             >
-              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-blue">
+              <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 hi@kimi.builders
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-grey">
                 {t(locale, "home.joinMail")}
               </p>
-              <span className="mt-3 inline-block font-mono text-[11px] text-blue">
+              <span className="mt-3 inline-block font-mono text-xs text-ui-blue">
                 {t(locale, "home.joinMailCta")} →
               </span>
             </a>
@@ -383,8 +383,8 @@ export default async function Home({
           免责两行做轻层级:社区声明 text-grey,法律声明再降一档 ---- */}
       <footer className="border-t border-line">
         <div className="mx-auto max-w-4xl px-6 py-12">
-          <p className="text-center font-mono text-[11px] tracking-[0.3em] text-grey">
-            KIMI<span className="text-blue">.</span>BUILDERS
+          <p className="text-center font-mono text-xs tracking-[0.08em] text-grey">
+            KIMI<span className="text-ui-blue">.</span>BUILDERS
           </p>
           <div className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed">
             <p className="text-grey">{t(locale, "home.footerLine1")}</p>

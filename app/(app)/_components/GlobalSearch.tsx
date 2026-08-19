@@ -132,7 +132,7 @@ export default function GlobalSearch({
         className="fixed left-1/2 top-[12vh] m-0 w-[min(92vw,36rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
       >
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-          <Search size={18} className="shrink-0 text-blue" aria-hidden="true" />
+          <Search size={18} className="shrink-0 text-ui-blue" aria-hidden="true" />
           <input
             ref={inputRef}
             value={query}
@@ -151,7 +151,7 @@ export default function GlobalSearch({
           </button>
         </div>
         <div className="max-h-[min(62vh,32rem)] overflow-y-auto p-2">
-          <h2 id={`${mode}-search-title`} className="px-3 pb-2 pt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-grey">
+          <h2 id={`${mode}-search-title`} className="px-3 pb-2 pt-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
             {query ? t(locale, "search.results") : t(locale, "search.jumpTo")}
           </h2>
           {results.length > 0 ? (
@@ -167,7 +167,7 @@ export default function GlobalSearch({
                     <span className="block font-mono text-sm font-semibold text-paper">{item.label}</span>
                     <span className="mt-0.5 block truncate text-xs text-grey">{item.description}</span>
                   </span>
-                  <ArrowUpRight size={16} className="shrink-0 text-grey transition-colors group-hover:text-blue" aria-hidden="true" />
+                  <ArrowUpRight size={16} className="shrink-0 text-grey transition-colors group-hover:text-ui-blue" aria-hidden="true" />
                 </Link>
               ))}
             </div>
@@ -179,7 +179,7 @@ export default function GlobalSearch({
             </div>
           )}
         </div>
-        <p className="border-t border-line px-4 py-2 text-right font-mono text-[11px] text-grey/70">
+        <p className="border-t border-line px-4 py-2 text-right font-mono text-xs text-grey/70">
           {t(locale, "search.shortcut")}
         </p>
       </dialog>

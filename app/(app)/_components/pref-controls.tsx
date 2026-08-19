@@ -114,7 +114,7 @@ export function LocaleToggle({
         }}
         className={`${className ?? ""}${pending ? " opacity-50" : ""}`}
       >
-        <span className="w-[15px] shrink-0 text-center text-[11px]">文</span>
+        <span className="w-[15px] shrink-0 text-center text-xs">文</span>
         {withLabel && (
           <>
             <span className="nav-label only-zh">English</span>
@@ -251,7 +251,7 @@ export function VibeCards({ locale }: { locale: Locale }) {
     writeCookie("kb_vibe", next);
   };
   const card =
-    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <div className="flex flex-wrap gap-3">
       <form action={setVibeToAction} className="contents">
@@ -260,9 +260,9 @@ export function VibeCards({ locale }: { locale: Locale }) {
             <span className="size-6 rounded-[1px] border border-blue bg-blue/10" />
             <span className="size-6 rounded-[1px] border border-line bg-moon" />
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "vibe.poster")}
-            <span className="rounded-[2px] border border-line px-1 text-[10.5px] text-grey">
+            <span className="rounded-[2px] border border-line px-1 text-xs text-grey">
               {t(locale, "set.vibeDefault")}
             </span>
           </span>
@@ -272,7 +272,7 @@ export function VibeCards({ locale }: { locale: Locale }) {
             <span className="size-6 rounded-[8px] border border-blue bg-blue/10" />
             <span className="size-6 rounded-[8px] border border-line bg-moon" />
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "vibe.soft")}
           </span>
         </button>
@@ -333,26 +333,26 @@ export function ThemeCards({ locale }: { locale: Locale }) {
     writeCookie("kb_theme", next);
   };
   const card =
-    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <div className="flex flex-wrap gap-3">
       <form action={setThemeToAction} className="contents">
         <button type="submit" name="theme" value="dark" onClick={pick("dark")} className={`${card} theme-card-dark`}>
-          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-bg text-blue">
+          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-bg text-ui-blue">
             <Moon size={22} aria-hidden="true" />
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "set.themeDark")}
-            <span className="rounded border border-line px-1 text-[10.5px] text-grey">
+            <span className="rounded border border-line px-1 text-xs text-grey">
               {t(locale, "set.themeDefault")}
             </span>
           </span>
         </button>
         <button type="submit" name="theme" value="light" onClick={pick("light")} className={`${card} theme-card-light`}>
-          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-moon text-blue">
+          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-moon text-ui-blue">
             <Sun size={22} aria-hidden="true" />
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-paper">
+          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "set.themeLight")}
           </span>
         </button>

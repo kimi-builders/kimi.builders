@@ -89,14 +89,14 @@ export default function VoteCluster({
         aria-label={upLabel}
         title={upLabel}
         className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-all active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-          state.up ? "text-blue" : "text-grey hover:bg-paper/[0.05] hover:text-blue"
+          state.up ? "text-ui-blue" : "text-grey hover:bg-paper/[0.05] hover:text-ui-blue"
         }`}
       >
         <ArrowBigUp size={size} fill={state.up ? "currentColor" : "none"} />
       </button>
       <span
-        className={`min-w-4 text-center font-mono text-[11px] font-semibold ${
-          state.up ? "text-blue" : state.down ? "text-paper" : "text-grey"
+        className={`min-w-4 text-center font-mono text-xs font-semibold ${
+          state.up ? "text-ui-blue" : state.down ? "text-paper" : "text-grey"
         }`}
       >
         {state.score}

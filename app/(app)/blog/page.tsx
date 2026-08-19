@@ -55,7 +55,7 @@ function LayerStack({ slug, zh }: { slug: string; zh: boolean }) {
         <span aria-hidden="true" className="size-2 rounded-full bg-status-danger/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-warn/70" />
         <span aria-hidden="true" className="size-2 rounded-full bg-status-ok/70" />
-        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.2em] text-grey">
+        <span className="ml-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
           {zh ? "每期三层" : "THE LAYERS"}
         </span>
       </div>
@@ -66,12 +66,12 @@ function LayerStack({ slug, zh }: { slug: string; zh: boolean }) {
               href={`/blog/${slug}#${l.anchor}`}
               className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-moon/60"
             >
-              <span className="font-mono text-[11px] text-grey/70">{l.no}</span>
+              <span className="font-mono text-xs text-grey/70">{l.no}</span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-semibold text-paper transition-colors group-hover:text-blue">
+                <span className="block truncate text-xs font-semibold text-paper transition-colors group-hover:text-ui-blue">
                   {zh ? l.zh : l.en}
                 </span>
-                <span className="mt-0.5 block truncate font-mono text-[10.5px] text-grey">
+                <span className="mt-0.5 block truncate font-mono text-xs text-grey">
                   {zh ? l.note.zh : l.note.en}
                 </span>
               </span>
@@ -91,7 +91,7 @@ function LayerStack({ slug, zh }: { slug: string; zh: boolean }) {
 function EmptyState({ zh }: { zh: boolean }) {
   return (
     <section className="mt-10 border-y border-line py-12 text-center">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-grey/70">
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
         {zh ? "首期 · 筹备中" : "ISSUE 01 · IN THE WORKS"}
       </p>
       <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-grey">
@@ -99,7 +99,7 @@ function EmptyState({ zh }: { zh: boolean }) {
       </p>
       <Link
         href="/community"
-        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {zh ? "去社区看看" : "Browse the community"}
       </Link>
@@ -126,13 +126,13 @@ export default async function BlogPage() {
       <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10">
         <div>
           <div className="flex items-baseline gap-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+            <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
               — MONTHLY · {t(locale, "nav.blog")}
             </p>
             {canEdit && (
               <Link
                 href="/blog/admin/new"
-                className="ml-auto shrink-0 rounded-lg bg-blue px-3 py-1.5 font-mono text-[11px] font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90"
+ className="ml-auto shrink-0 rounded-lg bg-blue px-3 py-1.5 font-mono text-xs font-semibold text-white transition-opacity hover:opacity-90"
               >
                 {t(locale, "blog.new")}
               </Link>
@@ -140,14 +140,14 @@ export default async function BlogPage() {
           </div>
           <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight">
             {t(locale, "blog.title")}
-            <span className="text-blue">.</span>
+            <span className="text-ui-blue">.</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-grey">
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
             {zh
               ? "每月一份的 AI 评鉴报告:Kimi 生态与更广阔的 AI 世界里,值得读的新闻、资源、知识与作品——编辑署名选读,配可复算的事实盘点与编辑部定夺。AI 写得出的内容我们不发,我们发判断。"
               : "A monthly review of what's worth reading in AI — Kimi ecosystem news, resources, knowledge and builds, hand-picked and signed by editors, backed by reproducible facts and decisions. We don't publish what AI could write; we publish judgment."}
           </p>
-          <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+          <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
             <span>{metas.length} {zh ? "期" : "issues"}</span>
             <span aria-hidden="true">·</span>
             <span>{zh ? "组装制" : "assembled"}</span>
@@ -158,14 +158,14 @@ export default async function BlogPage() {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link
                 href={`/blog/${latest.slug}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+ className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
                 {zh ? "阅读最新一期" : "Read the latest issue"}
               </Link>
               {archive.length > 0 && (
                 <a
                   href="#archive"
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   {zh ? "往期档案 ↓" : "Archive ↓"}
                 </a>
@@ -188,7 +188,7 @@ export default async function BlogPage() {
         {CHARTER.map((c) => (
           <div key={c.zh}>
             <p className="font-mono text-xs text-paper">{zh ? c.zh : c.en}</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-grey">{zh ? c.note.zh : c.note.en}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-grey">{zh ? c.note.zh : c.note.en}</p>
           </div>
         ))}
       </section>
@@ -196,35 +196,35 @@ export default async function BlogPage() {
       {/* 往期:session-row 行式档案 */}
       {archive.length > 0 && (
         <section id="archive" className="scroll-mt-20">
-          <p className="py-5 font-mono text-[11px] uppercase tracking-[0.2em] text-grey/70">
+          <p className="py-5 font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
             {zh ? "往期 · ARCHIVE" : "ARCHIVE"}
           </p>
           {archive.map((a) => (
             <article key={a.slug} className="border-b border-line last:border-b-0">
               <Link href={`/blog/${a.slug}`} className="group flex gap-5 py-6">
                 <div className="min-w-0 flex-1">
-                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
                     <span>
                       — ISSUE {String(a.issue).padStart(2, "0")} · {a.month}
                     </span>
                     {a.fallback && (
-                      <span className="rounded-md border border-line px-1.5 py-px text-[11px] normal-case text-paper">
+                      <span className="rounded-md border border-line px-1.5 py-px text-xs normal-case text-paper">
                         {t(locale, a.locale === "zh" ? "art.langZh" : "art.langEn")}
                       </span>
                     )}
                   </p>
-                  <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-blue">
+                  <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
                     {a.title}
                   </h3>
                   <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">
                     {a.summary}
                   </p>
-                  <p className="mt-2 font-mono text-[11px] text-grey">— @{a.editorHandle}</p>
+                  <p className="mt-2 font-mono text-xs text-grey">— @{a.editorHandle}</p>
                 </div>
                 <ArrowRight
                   size={16}
                   aria-hidden="true"
-                  className="mt-2 shrink-0 self-start text-grey/50 transition-colors group-hover:text-blue"
+                  className="mt-2 shrink-0 self-start text-grey/50 transition-colors group-hover:text-ui-blue"
                 />
               </Link>
             </article>
@@ -251,28 +251,28 @@ function LatestIssue({
   return (
     <article className="mt-10 border-y border-line py-9">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-grey">
           — {zh ? "最新一期" : "LATEST"} · ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month} ·{" "}
           {zh ? "主编" : "ed."} @{issue.editorHandle}
         </p>
         {meta?.fallback && (
-          <span className="rounded-md border border-line px-1.5 py-px font-mono text-[11px] text-paper">
+          <span className="rounded-md border border-line px-1.5 py-px font-mono text-xs text-paper">
             {t(locale, meta.locale === "zh" ? "art.langZh" : "art.langEn")}
           </span>
         )}
       </div>
       <Link href={`/blog/${issue.slug}`} className="group mt-3 block">
-        <h2 className="max-w-2xl text-2xl font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-blue">
+        <h2 className="max-w-2xl text-2xl font-semibold leading-snug tracking-tight text-paper transition-colors group-hover:text-ui-blue">
           {issue.title}
         </h2>
-        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-grey">
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-grey">
           {issue.summary}
         </p>
       </Link>
 
       {/* 02 事实盘点:大号 mono 数字;缺项诚实显示「—」 */}
       <section className="mt-7">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-status-ok-fg">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-status-ok-fg">
           02 · {zh ? "事实盘点" : "FACTS"}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-4">
@@ -282,7 +282,7 @@ function LatestIssue({
               <p className="break-all font-mono text-2xl font-semibold leading-tight tracking-tight text-paper">
                 {f.value}
               </p>
-              <p className="mt-2 text-[11px] leading-snug text-grey">{f.label}</p>
+              <p className="mt-2 text-xs leading-snug text-grey">{f.label}</p>
             </div>
           ))}
         </div>
@@ -291,7 +291,7 @@ function LatestIssue({
       {/* 03 编辑定夺 */}
       {issue.decisions.length > 0 && (
         <section className="mt-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-status-warn-fg">
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-status-warn-fg">
             03 · {zh ? "编辑定夺" : "DECISIONS"}
           </p>
           <ul className="mt-3">
@@ -299,9 +299,9 @@ function LatestIssue({
               <li key={`${i}-${d.kind}-${d.title}`} className="border-b border-line py-4 last:border-b-0">
                 <div className="flex flex-wrap items-center gap-3">
                   {decisionChip(d.kind, zh)}
-                  <span className="text-[15px] font-semibold text-paper">{d.title}</span>
+                  <span className="text-sm font-semibold text-paper">{d.title}</span>
                   {d.authorHandle && (
-                    <span className="ml-auto font-mono text-[11px] text-grey">@{d.authorHandle}</span>
+                    <span className="ml-auto font-mono text-xs text-grey">@{d.authorHandle}</span>
                   )}
                 </div>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-grey">{d.note}</p>
@@ -313,7 +313,7 @@ function LatestIssue({
 
       <Link
         href={`/blog/${issue.slug}`}
-        className="group mt-7 inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-blue transition-opacity hover:opacity-80"
+        className="group mt-7 inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-ui-blue transition-opacity hover:opacity-80"
       >
         {zh ? "阅读整期" : "Read the full issue"}
         <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />

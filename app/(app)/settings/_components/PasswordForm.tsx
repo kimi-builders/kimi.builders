@@ -76,12 +76,12 @@ export default function PasswordForm({
         />
       </label>
       {state?.error && (
-        <p className="font-mono text-xs text-blue">{state.error}</p>
+        <p className="text-xs text-status-danger-fg">{state.error}</p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg border border-blue bg-blue px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className="rounded-lg border border-blue bg-blue px-5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
       >
         {pending
           ? t(locale, "set.saving")

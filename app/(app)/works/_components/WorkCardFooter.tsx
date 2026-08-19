@@ -35,7 +35,7 @@ export default function WorkCardFooter({
               href={`https://github.com/${w.authorLabel}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-10 inline-flex min-h-9 items-center rounded-lg px-2 transition-colors hover:bg-moon hover:text-blue"
+              className="relative z-10 inline-flex min-h-9 items-center rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
             >
               {t(locale, "awesome.by", { name: w.authorLabel })}
             </a>
@@ -46,7 +46,7 @@ export default function WorkCardFooter({
       ) : w.handle ? (
         <Link
           href={`/u/${w.handle}`}
-          className="relative z-10 flex min-h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-grey transition-colors hover:bg-moon hover:text-blue"
+          className="relative z-10 flex min-h-9 min-w-0 items-center gap-1.5 rounded-lg px-2 text-grey transition-colors hover:bg-moon hover:text-ui-blue"
         >
           <Avatar url={w.avatarUrl} handle={w.handle} size={16} />
           <span className="truncate text-paper">@{w.handle}</span>
@@ -75,7 +75,7 @@ export default function WorkCardFooter({
             target="_blank"
             rel="noopener noreferrer"
             title={t(locale, "works.visit")}
-            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-blue"
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
           >
             <ExternalLink size={12} />
             {!compact && t(locale, "works.visit")}
@@ -87,7 +87,7 @@ export default function WorkCardFooter({
             target="_blank"
             rel="noopener noreferrer"
             title={t(locale, "works.repo")}
-            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-blue"
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
           >
             {/* 网格卡紧凑态:仓库链接用 GitBranch 图标与「访问」外链区分 */}
             {compact ? <Code size={12} /> : null}

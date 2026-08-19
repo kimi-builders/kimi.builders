@@ -137,11 +137,11 @@ export default function WorkCard({
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col p-5">
-        <h2 className="truncate text-lg font-semibold leading-snug text-paper transition-colors group-hover:text-blue">
+        <h2 className="truncate text-lg font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
           {w.name}
         </h2>
         {w.tagline && (
-          <p className="mt-1 line-clamp-2 text-[15px] leading-6 text-grey">
+          <p className="mt-1 line-clamp-2 text-sm leading-6 text-grey">
             {w.tagline}
           </p>
         )}
@@ -179,7 +179,7 @@ export default function WorkCard({
               )}
               {claimBadge !== null && claimBadge > 0 && (
                 <span
-                  className="shrink-0 text-blue"
+                  className="shrink-0 text-ui-blue"
                   title={t(locale, "works.badgeTitle")}
                 >
                   {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
@@ -187,7 +187,7 @@ export default function WorkCard({
               )}
               {w.featuredAt && (
                 <span
-                  className="shrink-0 text-blue"
+                  className="shrink-0 text-ui-blue"
                   title={w.featuredReason ?? undefined}
                 >
                   ★ {t(locale, "featured.badge")}

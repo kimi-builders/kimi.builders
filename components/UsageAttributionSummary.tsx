@@ -112,7 +112,7 @@ export default function UsageAttributionSummary({
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_1.9fr]">
         <div className="min-w-0">
-          <p className="font-mono text-[10.5px] tracking-[0.12em] text-grey/70">
+          <p className="font-mono text-xs tracking-[0.08em] text-grey/70">
             {zh ? "最大贡献者 · 可归因数据内占比" : "TOP CONTRIBUTORS · SHARE OF ATTRIBUTABLE DATA"}
           </p>
           <dl className="mt-2">
@@ -121,17 +121,17 @@ export default function UsageAttributionSummary({
                 key={row.key}
                 className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-2 border-b border-line py-2.5 last:border-b-0"
               >
-                <dt className="font-mono text-[10.5px] text-grey">{row.label}</dt>
+                <dt className="font-mono text-xs text-grey">{row.label}</dt>
                 <dd className="flex min-w-0 items-center gap-2 text-xs text-paper">
                   {row.icon}
                   <span className="truncate" title={row.value}>{row.value}</span>
                 </dd>
-                <dd className="font-mono text-[11px] font-semibold text-paper">{pct(row.share)}</dd>
+                <dd className="font-mono text-xs font-semibold text-paper">{pct(row.share)}</dd>
               </div>
             ))}
           </dl>
           {(agentModel || agentProject) && (
-            <div className="mt-3 border-t border-dashed border-viz-grid pt-3 font-mono text-[10.5px] leading-relaxed text-grey">
+            <div className="mt-3 border-t border-dashed border-viz-grid pt-3 font-mono text-xs leading-relaxed text-grey">
               {agentModel && (
                 <p>
                   {zh ? "主要 Agent × 模型：" : "Top agent × model: "}

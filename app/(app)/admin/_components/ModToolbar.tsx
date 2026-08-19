@@ -95,7 +95,7 @@ export default function ModToolbar({
   };
 
   const btn =
-    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-blue disabled:opacity-40";
+    "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-ui-blue disabled:opacity-40";
   return (
     <span className="inline-flex items-center gap-4">
       {hidden ? (

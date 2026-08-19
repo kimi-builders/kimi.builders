@@ -114,14 +114,14 @@ function LeaderboardRow({
           <span className="min-w-0">
             <Link
               href={`/u/${entry.handle}`}
-              className="block truncate font-mono text-xs text-paper transition-colors hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="block truncate font-mono text-xs text-paper transition-colors hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               @{entry.handle}
             </Link>
             {entry.name ? (
-              <span className="block truncate text-[11px] text-grey">{entry.name}</span>
+              <span className="block truncate text-xs text-grey">{entry.name}</span>
             ) : null}
-            <span className="mt-0.5 block truncate font-mono text-[11px] text-grey sm:hidden">
+            <span className="mt-0.5 block truncate font-mono text-xs text-grey sm:hidden">
               {t(locale, "lb.days", { n: entry.activeDays })}
               {showCost ? ` · ${entry.costMicros ? fmtCost(entry.costMicros) : "—"}` : ""}
             </span>
@@ -136,12 +136,12 @@ function LeaderboardRow({
       >
         {compact(entry.totalTokens)}
       </td>
-      <td className="hidden w-24 px-4 py-3.5 text-right font-mono text-[11px] text-grey sm:table-cell">
+      <td className="hidden w-24 px-4 py-3.5 text-right font-mono text-xs text-grey sm:table-cell">
         {t(locale, "lb.days", { n: entry.activeDays })}
       </td>
       {showCost ? (
         <td
-          className="hidden w-24 px-4 py-3.5 text-right font-mono text-[11px] text-grey sm:table-cell"
+          className="hidden w-24 px-4 py-3.5 text-right font-mono text-xs text-grey sm:table-cell"
           title={
             entry.costMicros
               ? `$${(entry.costMicros / 1e6).toLocaleString("en-US", { maximumFractionDigits: 4 })}`
@@ -170,7 +170,7 @@ function LeaderboardTable({
   return (
     <table className="w-full table-fixed">
       <caption className="sr-only">{caption}</caption>
-      <thead className="border-b border-line bg-paper/[0.02] font-mono text-[11px] tracking-[0.12em] text-grey">
+      <thead className="border-b border-line bg-paper/[0.02] font-mono text-xs tracking-[0.08em] text-grey">
         <tr>
           <th scope="col" className="w-12 px-3 py-2.5 text-center font-medium sm:w-14 sm:px-4">
             {t(locale, "lb.colRank")}
@@ -353,7 +353,7 @@ export default async function UsageLeaderboardPage({
               aria-current={selected ? "page" : undefined}
               data-scroll-active={selected || undefined}
               title={item !== display ? item : undefined}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-10 ${
+              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-3 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-10 ${
                 selected
                   ? "border-blue/40 bg-blue/10 text-paper"
                   : "border-line text-grey hover:border-paper/25 hover:text-paper"
@@ -405,7 +405,7 @@ export default async function UsageLeaderboardPage({
             <Trophy size={20} aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-[21px] font-semibold tracking-[0.2px] text-paper">
+            <h1 className="text-2xl font-semibold text-paper">
               {t(locale, "lb.title")}
             </h1>
             <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-grey">
@@ -414,8 +414,8 @@ export default async function UsageLeaderboardPage({
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-4 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex max-w-2xl items-start gap-2 text-[11px] leading-relaxed text-grey/80">
-            <ShieldCheck size={14} className="mt-px shrink-0 text-blue" aria-hidden="true" />
+          <p className="flex max-w-2xl items-start gap-2 text-xs leading-relaxed text-grey/80">
+            <ShieldCheck size={14} className="mt-px shrink-0 text-ui-blue" aria-hidden="true" />
             <span>{t(locale, "lb.trust")}</span>
           </p>
           <nav
@@ -448,7 +448,7 @@ export default async function UsageLeaderboardPage({
           <span>{t(locale, "lb.signinHint")}</span>
           <Link
             href="/login?next=%2Fusage"
-            className="shrink-0 font-mono text-[11px] font-semibold text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="shrink-0 font-mono text-xs font-semibold text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "gate.login")} →
           </Link>
@@ -473,7 +473,7 @@ export default async function UsageLeaderboardPage({
                     { label: t(locale, "lb.mineCost"), value: mine.cost },
                   ].map((item) => (
                     <div key={item.label} className="min-w-0 px-3 py-3.5 sm:px-5">
-                      <div className="truncate font-mono text-[10.5px] tracking-[0.1em] text-grey sm:text-[11px]">
+                      <div className="truncate font-mono text-xs tracking-[0.08em] text-grey sm:text-xs">
                         {item.label}
                       </div>
                       <div className="mt-1.5 font-mono text-lg font-semibold text-paper sm:text-xl">
@@ -482,7 +482,7 @@ export default async function UsageLeaderboardPage({
                     </div>
                   ))}
                 </div>
-                <p className="border-t border-line px-4 py-3 text-[11px] leading-relaxed text-grey/80 sm:px-5">
+                <p className="border-t border-line px-4 py-3 text-xs leading-relaxed text-grey/80 sm:px-5">
                   {mine.hasData ? t(locale, "lb.mineCostNote") : t(locale, "lb.mineNoData")}
                 </p>
               </>
@@ -494,7 +494,7 @@ export default async function UsageLeaderboardPage({
               </p>
               <Link
                 href="/usage#usage-management"
-                className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-[11px] text-paper transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
                 {t(locale, "lb.mineOptinCta")}
               </Link>
@@ -510,10 +510,10 @@ export default async function UsageLeaderboardPage({
       ) : data.all.length === 0 ? (
         <section className="mt-4 rounded-2xl border border-line bg-card p-5">
           <p className="text-sm text-paper">{t(locale, "lb.empty")}</p>
-          <p className="mt-2 text-[11px] leading-relaxed text-grey">{t(locale, "lb.emptyHint")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-grey">{t(locale, "lb.emptyHint")}</p>
           <Link
             href="/usage#usage-management"
-            className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-[11px] text-paper transition-colors hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {t(locale, "lb.emptyCta")}
           </Link>
@@ -585,7 +585,7 @@ export default async function UsageLeaderboardPage({
         </section>
       )}
 
-      <div className="mt-4 rounded-xl border border-line bg-card/60 px-4 py-3 text-[11px] leading-relaxed text-grey/80">
+      <div className="mt-4 rounded-xl border border-line bg-card/60 px-4 py-3 text-xs leading-relaxed text-grey/80">
         <p>{t(locale, "lb.scope")}</p>
         {board === "overall" ? <p className="mt-1.5">{t(locale, "lb.costScope")}</p> : null}
       </div>

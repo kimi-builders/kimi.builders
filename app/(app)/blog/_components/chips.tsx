@@ -11,7 +11,7 @@ export function decisionChip(kind: IssueDecision["kind"], zh: boolean) {
   } as const;
   const m = map[kind];
   return (
-    <span className={`shrink-0 whitespace-nowrap rounded-md border px-1.5 py-px font-mono text-[11px] ${m.cls}`}>
+    <span className={`shrink-0 whitespace-nowrap rounded-md border px-1.5 py-px font-mono text-xs ${m.cls}`}>
       {zh ? m.zh : m.en}
     </span>
   );

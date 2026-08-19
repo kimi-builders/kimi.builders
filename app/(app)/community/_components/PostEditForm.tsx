@@ -13,8 +13,8 @@ import { updatePostAction, type PostFormState } from "../actions";
 import MarkdownEditor from "../../_components/MarkdownEditor";
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-[13px] text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-[11.5px] text-grey";
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
+const labelCls = "mb-1.5 block text-xs text-grey";
 
 export default function PostEditForm({
   postId,
@@ -51,7 +51,7 @@ export default function PostEditForm({
       <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
         <div>
           <label htmlFor="edit-category" className={labelCls}>
-            {t(locale, "form.topic")} <span className="text-blue">*</span>
+            {t(locale, "form.topic")} <span className="text-ui-blue">*</span>
           </label>
           {/* 同发帖表单:原生 select 换自绘箭头(与筛选下拉同款) */}
           <div className="relative">
@@ -93,7 +93,7 @@ export default function PostEditForm({
       {type === "link" && (
         <div>
           <label htmlFor="edit-link" className={labelCls}>
-            {t(locale, "form.link")} URL <span className="text-blue">*</span>
+            {t(locale, "form.link")} URL <span className="text-ui-blue">*</span>
           </label>
           <input
             id="edit-link"
@@ -119,7 +119,7 @@ export default function PostEditForm({
           placeholder={t(locale, "form.bodyText")}
           inputCls={inputCls}
         />
-        <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-grey/70">
+        <div className="mt-1.5 flex items-center justify-between font-mono text-xs text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>
           <span>{t(locale, "form.mdSupport")}</span>
         </div>
@@ -132,14 +132,14 @@ export default function PostEditForm({
       <div className="flex items-center gap-3 border-t border-line pt-4">
         <Link
           href={`/community/${postId}`}
-          className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-[11px] text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           {t(locale, "post.cancel")}
         </Link>
         <button
           type="submit"
           disabled={pending}
-          className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
         >
           {pending ? t(locale, "form.posting") : t(locale, "post.save")}
         </button>

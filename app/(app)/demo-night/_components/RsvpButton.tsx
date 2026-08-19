@@ -55,7 +55,7 @@ export default function RsvpButton({
       className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-5 font-mono text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
         rsvped
           ? "border border-blue bg-transparent text-blue hover:bg-blue/10"
-          : "bg-blue text-white shadow-lg shadow-blue/25 hover:opacity-90"
+ : "bg-blue text-white hover:opacity-90"
       }`}
     >
       <Icon size={14} aria-hidden="true" />

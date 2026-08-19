@@ -18,7 +18,7 @@ export default function SoonPanel({
 }) {
   return (
     <div className="rounded-2xl border border-line bg-card px-6 py-14 text-center sm:py-20">
-      <p className="font-mono text-[11px] tracking-[0.3em] text-blue">
+      <p className="font-mono text-xs tracking-[0.08em] text-ui-blue">
         {t(locale, "soon.kicker")}
       </p>
       <h1 className="mt-4 text-2xl font-semibold tracking-[0.2px] text-paper">
@@ -28,14 +28,14 @@ export default function SoonPanel({
         {t(locale, "soon.body")}
       </p>
       {expect && (
-        <p className="mx-auto mt-3 max-w-md border-l-2 border-blue/60 pl-3 text-left text-[13px] leading-relaxed text-paper/80">
+        <p className="mx-auto mt-3 max-w-md border-l-2 border-blue/60 pl-3 text-left text-sm leading-relaxed text-paper/80">
           {expect}
         </p>
       )}
       <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
         <Link
           href="/community"
-          className="inline-flex min-h-9 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="inline-flex min-h-9 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           {t(locale, "soon.back")}
         </Link>
@@ -43,7 +43,7 @@ export default function SoonPanel({
           href="https://github.com/kimi-builders"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-9 items-center font-mono text-xs text-blue transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="inline-flex min-h-9 items-center font-mono text-xs text-ui-blue transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         >
           {t(locale, "soon.follow")} →
         </a>

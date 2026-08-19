@@ -97,7 +97,7 @@ export default function FilterDropdown({
         }}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-[11px] text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto"
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 text-grey">{label}</span>
@@ -120,20 +120,20 @@ export default function FilterDropdown({
       {open && (
         <div className="absolute left-0 top-full z-30 mt-1 w-56 overflow-hidden rounded-lg border border-line bg-moon shadow-xl">
           <div className="flex items-center justify-between border-b border-line px-3 py-1.5">
-            <span className="font-mono text-[11px] text-grey">
+            <span className="font-mono text-xs text-grey">
               {zh ? "不勾选表示不限" : "No selection means any"}
             </span>
             <button
               type="button"
               onClick={() => setDraft([])}
-              className="min-h-8 px-2 font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-8 px-2 font-mono text-xs text-ui-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "不限" : "Any"}
             </button>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {options.length === 0 ? (
-              <p className="px-3 py-3 text-[11px] text-grey">
+              <p className="px-3 py-3 text-xs text-grey">
                 {zh ? "暂无可选项" : "No options"}
               </p>
             ) : (
@@ -158,7 +158,7 @@ export default function FilterDropdown({
             <button
               type="button"
               onClick={() => onOpenChange(null)}
-              className="min-h-8 px-3 font-mono text-[11px] text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="min-h-8 px-3 font-mono text-xs text-grey hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "取消" : "Cancel"}
             </button>
@@ -166,7 +166,7 @@ export default function FilterDropdown({
               type="button"
               disabled={!dirty || pending}
               onClick={() => apply(draft)}
-              className="min-h-8 rounded-lg border border-blue px-3 font-mono text-[11px] text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-8 rounded-lg border border-blue px-3 font-mono text-xs text-paper hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
             >
               {zh ? "应用" : "Apply"}
             </button>
