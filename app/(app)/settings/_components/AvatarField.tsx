@@ -80,7 +80,7 @@ export default function AvatarField({
   return (
     <div>
       <span className={labelCls}>{t(locale, "set.avatar")}</span>
-      <div className="mt-1.5 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         <Avatar url={preview} handle={handle} size={56} className="shrink-0" />
         <span className="flex flex-wrap items-center gap-2">
           <button

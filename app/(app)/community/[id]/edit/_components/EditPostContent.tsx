@@ -26,9 +26,13 @@ export default async function EditPostContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="text-2xl font-semibold text-paper">
-          {t(locale, "edit.pageTitle")}
-        </h1>
+        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,与分区落地页同一语法 */
+        <div>
+          <p className="kb-eyebrow">{t(locale, "edit.eyebrow")}</p>
+          <h1 className="kb-h2 mt-3">
+            {t(locale, "edit.pageTitle")}
+          </h1>
+        </div>
       )}
       <PostEditForm
         postId={post.id}

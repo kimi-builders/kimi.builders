@@ -201,6 +201,9 @@ const DICT = {
   "notif.loginRequired": { zh: "登录后查看消息:", en: "Log in to see notifications:" },
   /* ---- 发帖 ---- */
   "form.pageTitle": { zh: "发帖", en: "New post" },
+  /* 表单页 eyebrow(20260819 版式对齐):任务页页头与分区落地页同一语法 */
+  "form.eyebrow": { zh: "— 社区 · 新帖子", en: "— COMMUNITY · NEW POST" },
+  "edit.eyebrow": { zh: "— 社区 · 编辑帖子", en: "— COMMUNITY · EDIT POST" },
   "form.text": { zh: "文字", en: "Text" },
   "form.link": { zh: "链接", en: "Link" },
   "form.poll": { zh: "投票", en: "Poll" },
@@ -394,6 +397,8 @@ const DICT = {
   "prof.notFound": { zh: "没有这个用户。", en: "No such user." },
   /* ---- 设置 ---- */
   "set.title": { zh: "设置", en: "Settings" },
+  /* 20260819 版式对齐:设置页头 eyebrow */
+  "set.eyebrow": { zh: "— 设置 · 账号与偏好", en: "— SETTINGS · ACCOUNT & PREFS" },
   "set.subtitle": {
     zh: "界面偏好、数据隐私与账号管理。",
     en: "Interface preferences, data privacy, and account.",
@@ -667,6 +672,10 @@ const DICT = {
   },
   "works.newTitle": { zh: "发布作品", en: "Publish work" },
   "works.editTitle": { zh: "编辑作品", en: "Edit work" },
+  /* 表单页 eyebrow(20260819 版式对齐);新建表单内 seg 可切「推荐站外项目」,
+     eyebrow 覆盖两种意图 */
+  "works.newEyebrow": { zh: "— 作品 · 上架 / 推荐", en: "— WORKS · SUBMIT OR RECOMMEND" },
+  "works.editEyebrow": { zh: "— 作品 · 编辑", en: "— WORKS · EDIT" },
   "works.name": { zh: "作品名称", en: "Name" },
   "works.tagline": { zh: "一句话亮点", en: "One-line pitch" },
   "works.url": { zh: "体验地址", en: "Live URL" },
@@ -1103,6 +1112,8 @@ const DICT = {
   "art.langEn": { zh: "EN", en: "EN" },
   "art.draft": { zh: "草稿", en: "DRAFT" },
   "artf.newTitle": { zh: "新建文章", en: "New article" },
+  /* 20260819 版式对齐:编辑台页头 eyebrow */
+  "artf.eyebrow": { zh: "— 月刊 · 编辑台", en: "— MONTHLY · DESK" },
   "artf.editTitle": { zh: "编辑文章", en: "Edit article" },
   "artf.slug": {
     zh: "Slug(小写字母/数字/连字符)",

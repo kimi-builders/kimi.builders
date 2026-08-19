@@ -3,8 +3,8 @@
    声明制(20260822_work_claims):声明字段上下文 = 作者可验证总量 − 已声明合计;
    新作品尚无名字可匹配,建议预填值留空(编辑页按作品名匹配项目分布)。
    毕业归因(20260920):?path=<slug> 带入来源路径上下文(横幅 + 隐藏字段),
-   非法 slug 与不带来源相同;登录引导的回跳地址保留 path 参数。 */
-import { SquarePen } from "lucide-react";
+   非法 slug 与不带来源相同;登录引导的回跳地址保留 path 参数。
+   20260819 版式对齐:页头接入 eyebrow + .kb-h2,H1 里的 SquarePen 图标下线。 */
 import { getSessionUser } from "@/src/lib/auth/session";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
@@ -42,9 +42,13 @@ export default async function NewWorkContent({
     return (
       <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
         {showTitle && (
-          <h1 className="text-2xl font-semibold text-paper">
-            {t(locale, "works.newTitle")}
-          </h1>
+          /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,H1 不再带图标 */
+          <div>
+            <p className="kb-eyebrow">{t(locale, "works.newEyebrow")}</p>
+            <h1 className="kb-h2 mt-3">
+              {t(locale, "works.newTitle")}
+            </h1>
+          </div>
         )}
         {/* 未登录:统一登录引导卡(20260919) */}
         <div className={showTitle ? "mt-6" : ""}>
@@ -69,10 +73,12 @@ export default async function NewWorkContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
-          <SquarePen size={17} />
-          {t(locale, "works.newTitle")}
-        </h1>
+        <div>
+          <p className="kb-eyebrow">{t(locale, "works.newEyebrow")}</p>
+          <h1 className="kb-h2 mt-3">
+            {t(locale, "works.newTitle")}
+          </h1>
+        </div>
       )}
       <WorkForm
         action={createWorkAction}

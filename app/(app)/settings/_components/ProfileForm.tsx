@@ -5,14 +5,20 @@
    失败 → 行内错误(handle 占用/格式、长度、URL 校验都在服务端)。 */
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  FORM_BTN_PRIMARY,
+  INPUT_CLS,
+  LABEL_CLS,
+} from "@/components/form-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { updateProfileAction, type SettingsState } from "../actions";
 import AvatarField from "./AvatarField";
 
-const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
-const labelCls = "text-xs text-grey";
+/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动。
+   LABEL_CLS 自带 mb-1.5,原输入框上的 mt-1.5 相应移除(同距不叠双份)。 */
+const inputCls = INPUT_CLS;
+const labelCls = LABEL_CLS;
 
 export default function ProfileForm({
   initial,
@@ -48,12 +54,12 @@ export default function ProfileForm({
           name="name"
           defaultValue={initial.name}
           maxLength={64}
-          className={`${inputCls} mt-1.5`}
+          className={inputCls}
         />
       </label>
       <label className="block">
         <span className={labelCls}>Handle</span>
-        <span className="mt-1.5 flex items-center rounded-lg border border-line bg-bg focus-within:border-blue">
+        <span className="flex items-center rounded-lg border border-line bg-bg focus-within:border-blue">
           <span className="pl-3 font-mono text-sm text-grey">@</span>
           <input
             name="handle"
@@ -75,7 +81,7 @@ export default function ProfileForm({
           rows={3}
           defaultValue={initial.bio}
           maxLength={300}
-          className={`${inputCls} mt-1.5`}
+          className={inputCls}
         />
       </label>
       <AvatarField
@@ -92,7 +98,7 @@ export default function ProfileForm({
       <button
         type="submit"
         disabled={pending}
- className="rounded-lg border border-blue bg-blue px-5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className={FORM_BTN_PRIMARY}
       >
         {pending ? t(locale, "set.saving") : t(locale, "set.save")}
       </button>

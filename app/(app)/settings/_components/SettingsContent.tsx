@@ -1,8 +1,9 @@
 /* 设置主体:完整页(/settings)与弹窗(@modal/(.)settings)共用。
-   showTitle=false 时收起 h1 与副标题(弹窗自带标题栏)。
-   版式:页签(资料/偏好/隐私与公开/账号)+ rounded-2xl 面板卡(标题 + 右侧口径小字);
+   showTitle=false 时收起页头(弹窗自带标题栏)。
+   版式:页头 eyebrow + .kb-h2(20260819 版式对齐,H1 图标下线);页签
+   (资料/偏好/隐私与公开/账号)+ rounded-2xl 面板卡(标题 + 右侧口径小字);
    行式控件(左标题说明、右开关/分段/卡片)与用量页同一套 Kimi Design 语法。 */
-import { AtSign, Settings as SettingsIcon } from "lucide-react";
+import { AtSign } from "lucide-react";
 import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getUserPasswordHash, isOwnAvatarUrl } from "@/src/lib/auth/users";
@@ -31,7 +32,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+    <section className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       <div className="flex items-baseline justify-between gap-4">
         <h2 className="text-sm font-semibold text-paper">{title}</h2>
         <span className="font-mono text-xs text-grey">{note}</span>
@@ -63,12 +64,14 @@ export default async function SettingsContent({
 
   if (!user) {
     return (
-      <div className={showTitle ? "rounded-2xl border border-line bg-card p-5 sm:p-6" : ""}>
+      <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
         {showTitle && (
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
-            <SettingsIcon size={20} aria-hidden="true" />
-            {t(locale, "set.title")}
-          </h1>
+          <div>
+            <p className="kb-eyebrow">{t(locale, "set.eyebrow")}</p>
+            <h1 className="kb-h2 mt-3">
+              {t(locale, "set.title")}
+            </h1>
+          </div>
         )}
         {/* 未登录:统一登录引导卡(20260919) */}
         <div className={showTitle ? "mt-6" : ""}>
@@ -101,13 +104,14 @@ export default async function SettingsContent({
   return (
     <div>
       {showTitle && (
-        <>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
-            <SettingsIcon size={20} aria-hidden="true" />
+        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,H1 图标下线 */
+        <div>
+          <p className="kb-eyebrow">{t(locale, "set.eyebrow")}</p>
+          <h1 className="kb-h2 mt-3">
             {t(locale, "set.title")}
           </h1>
           <p className="mt-2 text-sm text-grey">{t(locale, "set.subtitle")}</p>
-        </>
+        </div>
       )}
 
       <div className={showTitle ? "mt-6" : ""}>
@@ -208,7 +212,7 @@ export default async function SettingsContent({
             )}
             <div className="divide-y divide-line">
               {own.email && (
-                <div className="flex items-center gap-3 py-3.5 first:pt-0">
+                <div className="flex items-center gap-3 py-4 first:pt-0">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-paper/[0.04] text-grey">
                     <AtSign size={15} aria-hidden="true" />
                   </span>
@@ -221,7 +225,7 @@ export default async function SettingsContent({
               {(["github", "google"] as const).map((p) => {
                 const linkedAccount = accounts.find((a) => a.provider === p);
                 return (
-                  <div key={p} className="flex items-center gap-3 py-3.5 last:pb-0">
+                  <div key={p} className="flex items-center gap-3 py-4 last:pb-0">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-paper/[0.04] font-mono text-xs font-semibold text-grey">
                       {p === "github" ? <GithubIcon size={15} /> : <GoogleColor size={15} />}
                     </span>

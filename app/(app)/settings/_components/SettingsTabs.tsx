@@ -19,7 +19,7 @@ export default function SettingsTabs({
   );
   return (
     <div>
-      <div className="flex gap-5 border-b border-line" role="tablist">
+      <div className="flex gap-6 border-b border-line" role="tablist">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -27,7 +27,7 @@ export default function SettingsTabs({
             role="tab"
             aria-selected={active === tab.key}
             onClick={() => setActive(tab.key)}
-            className={`-mb-px border-b-2 pb-2.5 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+            className={`-mb-px border-b-2 pb-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
               active === tab.key
                 ? "border-blue font-medium text-paper"
                 : "border-transparent text-grey hover:text-paper"
@@ -41,7 +41,7 @@ export default function SettingsTabs({
         <div
           key={tabs[index]?.key ?? index}
           hidden={tabs[index]?.key !== active}
-          className="pt-5"
+          className="pt-6"
         >
           {child}
         </div>

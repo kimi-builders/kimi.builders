@@ -27,7 +27,9 @@ export default async function NewArticlePage() {
   }
   return (
     <div className="rounded-2xl border border-line bg-card p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold text-paper">
+      {/* 20260819 版式对齐:页头接入 eyebrow + .kb-h2 */}
+      <p className="kb-eyebrow">{t(locale, "artf.eyebrow")}</p>
+      <h1 className="kb-h2 mt-3">
         {t(locale, "artf.newTitle")}
       </h1>
       <ArticleForm locale={locale} />

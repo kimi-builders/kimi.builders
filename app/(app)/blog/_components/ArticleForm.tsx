@@ -7,6 +7,10 @@
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import CheckboxControl from "@/components/CheckboxControl";
+import {
+  FORM_BTN_PRIMARY,
+  INPUT_CLS,
+} from "@/components/form-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import {
@@ -21,8 +25,8 @@ import {
   type ArticleFormState,
 } from "../actions";
 
-const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
+/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动 */
+const inputCls = INPUT_CLS;
 
 export interface ArticleFormInitial {
   id: number;
@@ -75,7 +79,7 @@ export default function ArticleForm({
   };
 
   return (
-    <form action={formAction} className="mt-6 space-y-5">
+    <form action={formAction} className="mt-6 space-y-4">
       {initial && <input type="hidden" name="id" value={initial.id} />}
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -214,7 +218,7 @@ export default function ArticleForm({
         <button
           type="submit"
           disabled={pending || deleting}
- className="rounded-lg bg-blue px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+ className={FORM_BTN_PRIMARY}
         >
           {pending ? t(locale, "post.submitting") : t(locale, "post.save")}
         </button>

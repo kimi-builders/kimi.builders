@@ -18,9 +18,13 @@ export default async function NewPostContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="text-2xl font-semibold text-paper">
-          {t(locale, "form.pageTitle")}
-        </h1>
+        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,与分区落地页同一语法 */
+        <div>
+          <p className="kb-eyebrow">{t(locale, "form.eyebrow")}</p>
+          <h1 className="kb-h2 mt-3">
+            {t(locale, "form.pageTitle")}
+          </h1>
+        </div>
       )}
       {user ? (
         <PostForm aiDefault={user.aiRepliesEnabled} locale={locale} />

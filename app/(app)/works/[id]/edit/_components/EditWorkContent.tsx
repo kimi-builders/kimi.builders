@@ -32,7 +32,7 @@ export default async function EditWorkContent({
 
   if (!user || !work || work.userId !== user.id) {
     return (
-      <p className="mt-10 rounded-2xl border border-line bg-card p-8 text-center text-sm text-grey">
+      <p className="mt-12 rounded-2xl border border-line bg-card p-8 text-center text-sm text-grey">
         {t(locale, "err.notOwnerWork")}
       </p>
     );
@@ -53,9 +53,13 @@ export default async function EditWorkContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        <h1 className="text-2xl font-semibold text-paper">
-          {t(locale, "works.editTitle")}
-        </h1>
+        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2 */
+        <div>
+          <p className="kb-eyebrow">{t(locale, "works.editEyebrow")}</p>
+          <h1 className="kb-h2 mt-3">
+            {t(locale, "works.editTitle")}
+          </h1>
+        </div>
       )}
       {paused && (
         <p className="mt-4 rounded-xl border border-line bg-moon px-3 py-2 font-mono text-xs leading-relaxed text-grey">

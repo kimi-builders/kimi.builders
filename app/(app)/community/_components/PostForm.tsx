@@ -9,6 +9,11 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2, X } from "lucide-react";
 import CheckboxControl from "@/components/CheckboxControl";
 import {
+  FORM_BTN_PRIMARY,
+  INPUT_CLS,
+  LABEL_CLS,
+} from "@/components/form-classes";
+import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
@@ -31,9 +36,10 @@ const TYPES = [
   { id: "poll", key: "form.poll" },
 ] as const;
 
-const inputCls =
-  "min-h-11 w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm leading-6 text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-sm leading-5 text-grey";
+/* 控件样式收编到共享 form-classes(20260819 版式对齐);
+   别名保留,下方调用点不动。 */
+const inputCls = INPUT_CLS;
+const labelCls = LABEL_CLS;
 
 /* 自绘复选框:sr-only input + 兄弟节点方盒(peer-checked 驱动),与用量页 switch 同族。 */
 function CheckBox({
@@ -157,7 +163,7 @@ export default function PostForm({
       onSubmitCapture={() => {
         submittingRef.current = true;
       }}
-      className="mt-5 space-y-4"
+      className="mt-6 space-y-4"
     >
       {draftRestored && (
         <div className="flex items-center gap-3 rounded-xl border border-line bg-moon px-3 py-2.5 text-xs text-grey">
@@ -256,9 +262,9 @@ export default function PostForm({
       )}
 
       {type === "poll" && (
-        <div className="rounded-2xl border border-line bg-card p-3.5">
+        <div className="rounded-2xl border border-line bg-card p-4">
           <p className="font-mono text-xs text-grey">{t(locale, "form.pollOpts")}</p>
-          <div className="mt-2.5 space-y-2">
+          <div className="mt-3 space-y-2">
             {options.map((opt, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="w-4 shrink-0 text-center font-mono text-xs text-grey">
@@ -290,7 +296,7 @@ export default function PostForm({
             <button
               type="button"
               onClick={() => setOptions([...options, ""])}
-              className="mt-2.5 inline-flex items-center rounded-lg px-2 py-1 text-xs text-ui-blue hover:bg-ui-blue/10"
+              className="mt-3 inline-flex items-center rounded-lg px-2 py-1 text-xs text-ui-blue hover:bg-ui-blue/10"
             >
               {t(locale, "form.addOpt")}
             </button>
@@ -319,7 +325,7 @@ export default function PostForm({
         </div>
       </div>
 
-      <div className="space-y-2.5 pt-1">
+      <div className="space-y-3 pt-1">
         <CheckBox
           name="ai_reply"
           defaultChecked={aiDefault}
@@ -344,7 +350,7 @@ export default function PostForm({
         <button
           type="submit"
           disabled={pending}
- className="ml-auto inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className={`ml-auto shrink-0 ${FORM_BTN_PRIMARY}`}
         >
           {pending ? t(locale, "form.posting") : t(locale, "form.submit")}
         </button>

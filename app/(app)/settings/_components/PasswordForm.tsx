@@ -6,13 +6,19 @@
    失败 → 行内错误(当前密码不对/策略/两次不一致都在服务端判定)。 */
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import {
+  FORM_BTN_PRIMARY,
+  INPUT_CLS,
+  LABEL_CLS,
+} from "@/components/form-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { changePasswordAction, type SettingsState } from "../actions";
 
-const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
-const labelCls = "text-xs text-grey";
+/* 控件样式收编到共享 form-classes(20260819 版式对齐);LABEL_CLS 自带 mb-1.5,
+   原输入框上的 mt-1.5 相应移除(同距不叠双份)。 */
+const inputCls = INPUT_CLS;
+const labelCls = LABEL_CLS;
 
 export default function PasswordForm({
   locale,
@@ -47,7 +53,7 @@ export default function PasswordForm({
             type="password"
             required
             autoComplete="current-password"
-            className={`${inputCls} mt-1.5`}
+            className={inputCls}
           />
         </label>
       )}
@@ -60,7 +66,7 @@ export default function PasswordForm({
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
-          className={`${inputCls} mt-1.5`}
+          className={inputCls}
         />
       </label>
       <label className="block">
@@ -72,7 +78,7 @@ export default function PasswordForm({
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
-          className={`${inputCls} mt-1.5`}
+          className={inputCls}
         />
       </label>
       {state?.error && (
@@ -81,7 +87,7 @@ export default function PasswordForm({
       <button
         type="submit"
         disabled={pending}
- className="rounded-lg border border-blue bg-blue px-5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className={FORM_BTN_PRIMARY}
       >
         {pending
           ? t(locale, "set.saving")

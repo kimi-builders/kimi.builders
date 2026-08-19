@@ -83,7 +83,7 @@ export default function RouteModal({
       }}
       className={`fixed inset-0 m-auto max-h-[86vh] ${widthCls} overflow-clip rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75`}
     >
-      <div className="flex items-center justify-between border-b border-line bg-card px-5 py-4">
+      <div className="flex items-center justify-between border-b border-line bg-card px-6 py-4">
         <h2 className="font-mono text-sm font-semibold tracking-[0.06em]">{title}</h2>
         <button
           type="button"
@@ -95,7 +95,7 @@ export default function RouteModal({
         </button>
       </div>
       <div
-        className="max-h-[calc(86vh-64px)] overscroll-contain overflow-y-auto px-5 py-5 [scrollbar-gutter:stable]"
+        className="max-h-[calc(86vh-64px)] overscroll-contain overflow-y-auto px-6 py-6 [scrollbar-gutter:stable]"
         onInput={() => {
           if (dirtyGuard && !dirty) setDirty(true);
         }}
@@ -109,7 +109,7 @@ export default function RouteModal({
         {children}
       </div>
       {confirming && dirtyGuard && (
-        <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-5 py-3">
+        <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-6 py-3">
           <span className="text-xs text-paper">{dirtyGuard.title}</span>
           <span className="ml-auto flex items-center gap-2">
             <button

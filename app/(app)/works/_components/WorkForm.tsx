@@ -47,13 +47,19 @@ import {
   SEG_ITEM_IDLE,
   SEG_WRAP,
 } from "@/components/seg-classes";
+import {
+  FORM_BTN_GHOST,
+  FORM_BTN_PRIMARY,
+  INPUT_CLS,
+  LABEL_CLS,
+} from "@/components/form-classes";
 import type { WorkFormState } from "../actions";
 import WorkMediaFields, { type MediaPreviewState, type MediaRef } from "./WorkMediaFields";
 import WorkScreenshot from "./WorkScreenshot";
 
-const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-xs text-grey";
+/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动 */
+const inputCls = INPUT_CLS;
+const labelCls = LABEL_CLS;
 /* Choice inputs fill their own label instead of using `sr-only`'s page-level
    absolute position. In a long route modal, focusing an uncontained sr-only
    radio can scroll the outer <dialog> itself and strand the visible form. */
@@ -93,8 +99,8 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className={`space-y-4 ${first ? "" : "border-t border-line pt-5"}`}>
-      <h3 className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70">
+    <section className={`space-y-4 ${first ? "" : "border-t border-line pt-6"}`}>
+      <h3 className="kb-eyebrow">
         {step != null && <span className="mr-1.5 text-ui-blue/80">{String(step).padStart(2, "0")}</span>}
         {title}
       </h3>
@@ -118,9 +124,9 @@ function CollapseSection({
   children: ReactNode;
 }) {
   return (
-    <details open={defaultOpen} className="group border-t border-line pt-5">
+    <details open={defaultOpen} className="group border-t border-line pt-6">
       <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">
-        <h3 className="font-mono text-xs uppercase tracking-[0.08em] text-grey/70 transition-colors group-open:text-grey">
+        <h3 className="kb-eyebrow transition-colors group-open:text-paper">
           {step != null && <span className="mr-1.5 text-ui-blue/80">{String(step).padStart(2, "0")}</span>}
           {title}
           {optionalLabel && (
@@ -421,7 +427,7 @@ export default function WorkForm({
     : [];
 
   return (
-    <form action={formAction} className="mt-5 space-y-5">
+    <form action={formAction} className="mt-6 space-y-6">
       {workId && <input type="hidden" name="work_id" value={workId} />}
       <input type="hidden" name="kind" value={kind} />
 
@@ -967,14 +973,14 @@ export default function WorkForm({
       )}
       {/* 粘性提交栏(20260815 发布体验打磨):长表单里发布按钮常驻可视区,
           不再滚丢;负边距吃掉容器的横向/纵向 padding,贴弹窗/主列边缘。
-          弹窗容器 px-5 py-5;完整页主列 px-4 py-6 lg:px-6 lg:py-8,
-          移动端抬升 bottom-20 避让底部标签栏。
+          弹窗容器 px-6 py-6(20260819 随 RouteModal 归位);完整页主列
+          px-4 py-6 lg:px-6 lg:py-8,移动端抬升 bottom-20 避让底部标签栏。
           两套负边距/padding 互斥写(20260816):同优先级冲突类靠生成顺序定胜负,
           与书写顺序无关,并排写会得到两边都不预期的值。 */}
       <div
         className={`sticky z-10 flex items-center gap-3 border-t border-line bg-bg/95 py-3 backdrop-blur ${
           modal
-            ? "bottom-0 -mx-5 mb-[-1.25rem] px-5"
+            ? "bottom-0 -mx-6 mb-[-1.5rem] px-6"
             : "bottom-20 -mx-4 mb-[-1.5rem] px-4 sm:-mx-6 sm:px-6 lg:bottom-0 lg:mb-[-2rem]"
         }`}
       >
@@ -984,14 +990,14 @@ export default function WorkForm({
           <button
             type="button"
             onClick={() => router.back()}
-            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className={FORM_BTN_GHOST}
           >
             {t(locale, "post.cancel")}
           </button>
         ) : (
           <Link
             href={cancelHref}
-            className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className={FORM_BTN_GHOST}
           >
             {t(locale, "post.cancel")}
           </Link>
@@ -999,7 +1005,7 @@ export default function WorkForm({
         <button
           type="submit"
           disabled={pending}
- className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className={`ml-auto shrink-0 ${FORM_BTN_PRIMARY}`}
         >
           {/* 新建 = 发布(动作语义),编辑 = 保存 */}
           {pending

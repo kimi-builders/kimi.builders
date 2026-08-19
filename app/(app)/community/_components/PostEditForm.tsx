@@ -8,13 +8,19 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { CATEGORIES } from "@/src/lib/categories";
+import {
+  FORM_BTN_GHOST,
+  FORM_BTN_PRIMARY,
+  INPUT_CLS,
+  LABEL_CLS,
+} from "@/components/form-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { updatePostAction, type PostFormState } from "../actions";
 import MarkdownEditor from "../../_components/MarkdownEditor";
 
-const inputCls =
-  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper transition-colors placeholder:text-grey/50 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10";
-const labelCls = "mb-1.5 block text-xs text-grey";
+/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动 */
+const inputCls = INPUT_CLS;
+const labelCls = LABEL_CLS;
 
 export default function PostEditForm({
   postId,
@@ -45,7 +51,7 @@ export default function PostEditForm({
   }, [state, router]);
 
   return (
-    <form action={formAction} className="mt-5 space-y-4">
+    <form action={formAction} className="mt-6 space-y-4">
       <input type="hidden" name="post_id" value={postId} />
 
       <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
@@ -119,7 +125,7 @@ export default function PostEditForm({
           placeholder={t(locale, "form.bodyText")}
           inputCls={inputCls}
         />
-        <div className="mt-1.5 flex items-center justify-between font-mono text-xs text-grey/70">
+        <div className="mt-2 flex items-center justify-between font-mono text-xs text-grey/70">
           <span>{t(locale, "form.mdHint")}</span>
           <span>{t(locale, "form.mdSupport")}</span>
         </div>
@@ -132,14 +138,14 @@ export default function PostEditForm({
       <div className="flex items-center gap-3 border-t border-line pt-4">
         <Link
           href={`/community/${postId}`}
-          className="inline-flex min-h-9 items-center rounded-lg px-3 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className={FORM_BTN_GHOST}
         >
           {t(locale, "post.cancel")}
         </Link>
         <button
           type="submit"
           disabled={pending}
- className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+ className={`ml-auto shrink-0 ${FORM_BTN_PRIMARY}`}
         >
           {pending ? t(locale, "form.posting") : t(locale, "post.save")}
         </button>

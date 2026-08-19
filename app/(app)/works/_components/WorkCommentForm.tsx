@@ -6,6 +6,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import MarkdownEditor from "@/app/(app)/_components/MarkdownEditor";
+import { INPUT_CLS } from "@/components/form-classes";
 import {
   SummonPendingRow,
   useSummonPending,
@@ -69,7 +70,7 @@ export default function WorkCommentForm({
         required
         mentionKimi
         placeholder={t(locale, "post.commentPh")}
-        inputCls="w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none focus:ring-4 focus:ring-blue/10"
+        inputCls={INPUT_CLS}
       />
       <button
         type="submit"
