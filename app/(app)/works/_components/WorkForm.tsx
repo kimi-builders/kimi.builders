@@ -597,7 +597,7 @@ export default function WorkForm({
             ))}
           </div>
           {agentsCount === 0 ? (
-            <span className="mt-1 block text-[11px] leading-relaxed text-red-400">
+            <span className="mt-1 block text-[11px] leading-relaxed text-status-danger-fg">
               {t(locale, "err.workNoAgent")}
             </span>
           ) : (
@@ -653,7 +653,7 @@ export default function WorkForm({
                 </span>
               ))}
               {rawTagCount > 5 && (
-                <span className="font-mono text-[11px] text-red-400">
+                <span className="font-mono text-[11px] text-status-danger-fg">
                   {t(locale, "works.tagsOver", { n: rawTagCount })}
                 </span>
               )}
@@ -999,7 +999,7 @@ export default function WorkForm({
         <button
           type="submit"
           disabled={pending}
-          className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+          className="ml-auto inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
         >
           {/* 新建 = 发布(动作语义),编辑 = 保存 */}
           {pending

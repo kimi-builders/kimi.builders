@@ -62,7 +62,7 @@ export function WorkMetaChips({
       )}
       {w.hiddenAt && (
         <span
-          className={`${CHIP} border border-red-400/60 text-red-400`}
+          className={`${CHIP} border border-status-danger/60 text-status-danger-fg`}
           title={w.hiddenReason ?? undefined}
         >
           {t(locale, "mod.hiddenBadge")}
@@ -147,7 +147,7 @@ export default function WorkCard({
         )}
         {/* meta 区:分类 / Agent / 收录口径分三行,每行带 mute 小标签
             (类型/参与构建/收录——一眼可读,2026-08-14);蓝只给声明投入与精选 */}
-        <div className="mb-4 mt-3 flex min-w-0 flex-col gap-1.5 font-mono text-xs leading-5 text-grey">
+        <div className="mb-4 mt-3 flex min-w-0 flex-col gap-1.5 text-xs leading-5 text-grey">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-grey/55">{t(locale, "works.metaKind")}</span>
             <WorkMetaChips w={w} locale={locale} statusLabel={statusLabel} kindLabel={kindLabel} />
@@ -200,7 +200,7 @@ export default function WorkCard({
         <WorkCardFooter work={w} locale={locale} meId={meId} />
         {/* 声明超额提示(声明制):仅作者本人可见,引导去编辑页重新分配 */}
         {claimPaused && meId !== null && w.userId === meId && (
-          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 font-mono text-xs leading-relaxed text-grey">
+          <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 text-xs leading-relaxed text-grey">
             {t(locale, "works.claimPaused")}
           </p>
         )}

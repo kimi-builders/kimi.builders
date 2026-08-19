@@ -270,7 +270,7 @@ async function AdminUserList({
                   {u.role}
                 </span>
                 {muted && (
-                  <span className="rounded-md border border-red-400/60 px-1.5 py-px text-red-400">
+                  <span className="rounded-md border border-status-danger/60 px-1.5 py-px text-status-danger-fg">
                     {t(locale, "admin.mutedBadge")}
                   </span>
                 )}

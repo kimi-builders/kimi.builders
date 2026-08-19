@@ -44,6 +44,16 @@
   --color-viz-sequential-4: #a0daf7;
   --color-viz-sequential-5: #00f6ff;
 
+  /* UI 状态色(20260818 收编):柔和底 + 文字/图标冗余,替代 Tailwind 字面
+     red/amber/emerald(亮色主题下对比度不达标)。-fg 后缀为文字态,随主题翻转;
+     底色用法如 bg-status-danger/10,描边如 border-status-danger/40。 */
+  --color-status-ok: #b3f4a8;
+  --color-status-ok-fg: #b3f4a8;
+  --color-status-warn: #f4f9a7;
+  --color-status-warn-fg: #f4f9a7;
+  --color-status-danger: #ffd1d4;
+  --color-status-danger-fg: #ffd1d4;
+
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
     "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
@@ -77,6 +87,10 @@
   --color-viz-sequential-3: #00a1ff;
   --color-viz-sequential-4: #007cff;
   --color-viz-sequential-5: #002f5b;
+  /* 状态文字色亮版: pastel 文字在 #fbfaf9 上不达标,换成深底字(与 viz 一致) */
+  --color-status-ok-fg: #25613b;
+  --color-status-warn-fg: #6b5d10;
+  --color-status-danger-fg: #a61b32;
 }
 
 /* ---- 视觉气质(20260815 拍板):工程棱角 poster(默认) / 圆润经典 soft ----

@@ -178,7 +178,7 @@ export default function UsageMethodologyDialog({
                   : `Every 30-minute fact bucket is matched to the versioned standard API price active at that time. Current coverage is ${pricingCoverage}; matched versions: ${pricingVersions || "—"}. This is an API-equivalent estimate, not a subscription invoice or actual charge.`}
               </p>
               {assumedTokens > 0 ? (
-                <p className="mt-2 border-l-2 border-amber-400 pl-3 text-amber-300">
+                <p className="mt-2 border-l-2 border-status-warn pl-3 text-status-warn-fg">
                   {zh
                     ? `${compactTokens(assumedTokens, locale)} Token 使用了明确标注的估算假设（例如旧数据缺少上下文档位，或缓存写入缺少 TTL）。假设不影响 Token 总量，只影响估费精度。`
                     : `${compactTokens(assumedTokens, locale)} tokens use an explicitly disclosed pricing assumption (for example, missing context tier or cache-write TTL in historical data). Assumptions do not change token totals, only estimate precision.`}
@@ -228,7 +228,7 @@ export default function UsageMethodologyDialog({
                               <span className="block truncate text-[10.5px] text-grey">{row.model}</span>
                             )}
                           </td>
-                          <td className={`max-w-[180px] truncate px-3 py-2 ${row.matchedPattern ? "text-emerald-400" : "text-grey"}`} title={row.matchedPattern ?? undefined}>
+                          <td className={`max-w-[180px] truncate px-3 py-2 ${row.matchedPattern ? "text-status-ok-fg" : "text-grey"}`} title={row.matchedPattern ?? undefined}>
                             {row.matchedPattern ?? (zh ? "未匹配" : "unmatched")}
                           </td>
                           <td className="px-3 py-2 text-grey">
@@ -256,7 +256,7 @@ export default function UsageMethodologyDialog({
                             ) : null}
                             {row.verifiedAt ? <span className="ml-1">· {row.verifiedAt}</span> : null}
                             {row.assumptions.length > 0 ? (
-                              <span className="block text-[10.5px] text-amber-300">
+                              <span className="block text-[10.5px] text-status-warn-fg">
                                 {row.assumptions.map((assumption) =>
                                   assumption === "short-context"
                                     ? (zh ? "假设短上下文" : "short-context assumed")

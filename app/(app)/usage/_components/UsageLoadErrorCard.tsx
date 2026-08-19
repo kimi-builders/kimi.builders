@@ -16,9 +16,9 @@ export default function UsageLoadErrorCard({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <div className={`${compact ? "p-4" : "p-5 sm:p-6"} border border-red-500/40 bg-card`}>
+    <div className={`${compact ? "p-4" : "p-5 sm:p-6"} border border-status-danger/40 bg-card`}>
       <div className="flex items-start gap-3">
-        <TriangleAlert size={17} className="mt-0.5 shrink-0 text-red-400" aria-hidden="true" />
+        <TriangleAlert size={17} className="mt-0.5 shrink-0 text-status-danger-fg" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="text-sm text-paper">
             {zh ? "这部分数据暂时加载失败。" : "This section could not be loaded."}

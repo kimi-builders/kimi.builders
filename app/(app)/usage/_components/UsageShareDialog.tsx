@@ -200,7 +200,7 @@ export default function UsageShareDialog({
 
             <div className="mt-5 border border-line bg-card p-4 text-[11px] leading-relaxed text-grey">
               <p className="flex items-start gap-2">
-                <ShieldCheck size={14} className="mt-0.5 shrink-0 text-emerald-400" aria-hidden="true" />
+                <ShieldCheck size={14} className="mt-0.5 shrink-0 text-status-ok-fg" aria-hidden="true" />
                 <span>
                   {zh
                     ? "海报只包含聚合后的 Token、费用估算、活跃节奏和公开账号名；不包含项目名、设备、路径或对话内容。"
@@ -210,7 +210,7 @@ export default function UsageShareDialog({
             </div>
 
             {error && (
-              <p role="alert" className="mt-4 text-xs leading-relaxed text-red-400">
+              <p role="alert" className="mt-4 text-xs leading-relaxed text-status-danger-fg">
                 {zh ? "操作失败，请检查网络后重试。" : "That did not work. Check your connection and try again."}
               </p>
             )}
@@ -220,7 +220,7 @@ export default function UsageShareDialog({
                 type="button"
                 onClick={sharePoster}
                 disabled={sharing || error}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-blue px-4 font-mono text-xs font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-blue px-4 text-xs font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sharing ? <LoaderCircle size={15} className="animate-spin" aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
                 {zh ? "系统分享" : "Share"}

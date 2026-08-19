@@ -119,7 +119,7 @@ export default async function UsageDeviceContent({
                 required
                 className="min-h-11 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 font-mono text-sm uppercase tracking-[0.14em] text-paper outline-none focus:border-blue"
               />
-              <button className="min-h-11 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+              <button className="min-h-11 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
                 {zh ? "继续" : "Continue"}
               </button>
             </div>

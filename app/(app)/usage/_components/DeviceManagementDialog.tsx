@@ -182,8 +182,8 @@ export default function DeviceManagementDialog({
           </fieldset>
 
           {deletesData && (
-            <div className="mt-4 border border-amber-400/30 bg-amber-400/5 p-3 text-[11px] leading-relaxed text-grey">
-              <p className="text-amber-300">
+            <div className="mt-4 border border-status-warn/30 bg-status-warn/5 p-3 text-[11px] leading-relaxed text-grey">
+              <p className="text-status-warn-fg">
                 {zh
                   ? "删除不能在站点内撤销，而且 Collector 的本地 checkpoint 不会自动回退。"
                   : "Deletion cannot be undone on the site, and the Collector checkpoint will not rewind automatically."}
@@ -197,7 +197,7 @@ export default function DeviceManagementDialog({
             </div>
           )}
 
-          {error && <p role="alert" className="mt-3 text-xs text-red-400">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-xs text-status-danger-fg">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <button
               type="button"
@@ -212,8 +212,8 @@ export default function DeviceManagementDialog({
               disabled={pending}
               className={`min-h-11 rounded-lg border px-4 font-mono text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-wait disabled:opacity-50 ${
                 deletesData
-                  ? "border-red-400/50 text-red-300 hover:bg-red-400/10"
-                  : "border-amber-400/50 text-amber-300 hover:bg-amber-400/10"
+                  ? "border-status-danger/50 text-status-danger-fg hover:bg-status-danger/10"
+                  : "border-status-warn/50 text-status-warn-fg hover:bg-status-warn/10"
               }`}
             >
               {pending ? (zh ? "处理中…" : "Working…") : (zh ? "确认操作" : "Confirm action")}

@@ -79,7 +79,7 @@ export default async function LoginContent({
   const inputCls =
     "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper outline-none focus:border-blue focus:ring-4 focus:ring-blue/10";
   const submitCls =
-    "w-full rounded-lg bg-blue px-4 py-2.5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90";
+    "w-full rounded-lg bg-blue px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90";
 
   return (
     <div className={`mx-auto max-w-sm ${showTitle ? "rounded-2xl border border-line bg-card p-5 sm:p-6" : ""}`}>

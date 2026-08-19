@@ -450,7 +450,7 @@ export default function UsageFilterBar({
             {zh ? "应用" : "Apply"}
           </button>
           {customError && (
-            <span className="font-mono text-[11px] text-red-400">
+            <span className="font-mono text-[11px] text-status-danger-fg">
               {zh ? "需要 开始 ≤ 结束" : "From must be on or before To"}
             </span>
           )}

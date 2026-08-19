@@ -69,7 +69,7 @@ export default function UsageExportDialog({
             onClick={() => dialogRef.current?.close()}
             className="flex min-h-20 items-start gap-3 border border-line bg-card p-4 hover:border-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            <Sheet size={19} className="mt-0.5 shrink-0 text-emerald-400" aria-hidden="true" />
+            <Sheet size={19} className="mt-0.5 shrink-0 text-status-ok-fg" aria-hidden="true" />
             <span>
               <span className="block text-sm font-medium text-paper">CSV</span>
               <span className="mt-1 block text-[11px] leading-relaxed text-grey">

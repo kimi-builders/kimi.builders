@@ -169,7 +169,7 @@ function TrendCore({
   tooltipNote?: (item: UsageTrendDay, index: number) => ReactNode;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [hovered, setHovered] = useState<{ index: number; left: number; top: number } | null>(null);
+  const [hovered, setHovered] = useState<{ index: number; left: number; top: number; arrowX: number } | null>(null);
   const max = Math.max(0, ...trend.map((item) => metricValue(item, metric)));
   if (max <= 0) {
     return (

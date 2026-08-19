@@ -34,7 +34,7 @@ export function renderContentRows(
         )}
         {r.hiddenAt && (
           <span
-            className={`${BADGE} border border-red-400/60 text-red-400`}
+            className={`${BADGE} border border-status-danger/60 text-status-danger-fg`}
             title={r.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}

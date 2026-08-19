@@ -51,7 +51,7 @@ export default async function CommunityWidgets({
         <p className="text-xs leading-relaxed text-grey">
           {t(locale, "side.aboutBody")}
         </p>
-        <div className="mt-3 flex gap-4 font-mono text-[11px]">
+        <div className="mt-3 flex gap-4 text-xs">
           <a
             href="https://github.com/kimi-builders"
             className="text-grey underline decoration-blue/50 underline-offset-4 hover:text-blue"
@@ -74,7 +74,7 @@ export default async function CommunityWidgets({
           action={
             <Link
               href="/usage/leaderboard"
-              className="font-mono text-[11px] text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="text-xs text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "side.lbFull")}
             </Link>
@@ -99,7 +99,7 @@ export default async function CommunityWidgets({
                 >
                   {e.name || e.handle}
                 </Link>
-                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-blue">
+                <span className={`ml-auto shrink-0 font-mono text-[11px] font-semibold ${e.rank === 1 ? "text-blue" : "text-paper"}`}>
                   {compact(e.totalTokens)}
                 </span>
               </li>
@@ -116,7 +116,7 @@ export default async function CommunityWidgets({
                   {lbMe.name || lbMe.handle}{" "}
                   <span className="font-mono text-[11px] text-grey">{t(locale, "side.lbYou")}</span>
                 </span>
-                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-blue">
+                <span className="ml-auto shrink-0 font-mono text-[11px] font-semibold text-paper">
                   {compact(lbMe.totalTokens)}
                 </span>
               </li>
@@ -185,7 +185,7 @@ export default async function CommunityWidgets({
           >
             {demoNight.event.title}
           </Link>
-          <p className="mt-1 font-mono text-[11px] text-blue">
+          <p className="mt-1 font-mono text-[11px] text-paper">
             {formatEventTime(demoNight.event.startsAt)}
           </p>
           <p className="mt-1.5 font-mono text-[11px] text-grey">
@@ -235,7 +235,7 @@ export default async function CommunityWidgets({
               <div className="font-mono text-lg font-semibold text-paper">
                 {s.n}
               </div>
-              <div className="mt-0.5 font-mono text-[11px] text-grey">
+              <div className="mt-0.5 text-xs text-grey">
                 {s.l}
               </div>
             </div>

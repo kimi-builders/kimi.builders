@@ -45,9 +45,9 @@ export function heatPeakSlot(heatmap: UsageHeatmap, metric: UsageHeatMetric): He
    颜色与 UsageVisualizations 的 FILL_* 填充一一对应,改色两边同步。 */
 export const USAGE_TREND_LEGEND = [
   { key: "input", zh: "输入(含缓存写)", en: "Input (incl. cache write)", chip: "bg-blue" },
-  { key: "cache", zh: "缓存读", en: "Cache read", chip: "bg-emerald-400/80" },
+  { key: "cache", zh: "缓存读", en: "Cache read", chip: "bg-status-ok/80" },
   { key: "output", zh: "输出", en: "Output", chip: "bg-paper/75" },
-  { key: "reasoning", zh: "推理", en: "Reasoning", chip: "bg-amber-400" },
+  { key: "reasoning", zh: "推理", en: "Reasoning", chip: "bg-status-warn" },
 ] as const;
 
 export interface UsageCurrencySpec {

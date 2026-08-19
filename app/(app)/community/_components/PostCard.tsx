@@ -62,7 +62,7 @@ export default function PostCard({
           </Link>
           <span className="text-[13px] text-grey/80">· {relTime(p.createdAt, locale)}</span>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2 font-mono text-xs">
+        <div className="ml-auto flex shrink-0 items-center gap-2 text-xs">
           {p.visibility === "private" && (
             <span className="rounded-md border border-line px-1.5 py-px text-xs text-paper">
               {t(locale, "post.private")}
@@ -71,7 +71,7 @@ export default function PostCard({
           {/* 被屏蔽标:feed 只向作者本人放行被屏蔽帖,徽章天然只有作者可见 */}
           {p.hiddenAt && (
             <span
-              className="rounded-md border border-red-400/60 px-1.5 py-px font-mono text-xs text-red-400"
+              className="rounded-md border border-status-danger/60 px-1.5 py-px text-xs text-status-danger-fg"
               title={p.hiddenReason ?? undefined}
             >
               {t(locale, "mod.hiddenBadge")}
@@ -95,7 +95,7 @@ export default function PostCard({
         >
           {p.title}
           {p.type !== "text" && (
-            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-xs font-normal text-grey">
+            <span className="ml-2 rounded-md border border-line px-1.5 py-0.5 align-middle text-xs font-normal text-grey">
               {t(locale, p.type === "link" ? "post.typeLink" : "post.typePoll")}
             </span>
           )}
@@ -110,7 +110,7 @@ export default function PostCard({
           {(truncated || !p.title) && (
             <Link
               href={`/community/${p.id}`}
-              className="mt-1 inline-block font-mono text-xs text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mt-1 inline-block text-xs text-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {t(locale, "feed.readMore")}
             </Link>
@@ -152,7 +152,7 @@ export default function PostCard({
           copiedLabel={t(locale, "post.copied")}
         />
         {p.aiReply && (
-          <span className="ml-auto inline-flex items-center gap-1 font-mono text-xs text-blue">
+          <span className="ml-auto inline-flex items-center gap-1 text-xs text-blue">
             <Bot size={12} aria-hidden="true" />
             {t(locale, "post.aiJoin")}
           </span>

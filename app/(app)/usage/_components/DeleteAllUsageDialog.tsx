@@ -60,7 +60,7 @@ export default function DeleteAllUsageDialog({
         type="button"
         onClick={() => dialogRef.current?.showModal()}
         aria-haspopup="dialog"
-        className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-500/35 px-3 font-mono text-[11px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-status-danger/35 px-3 font-mono text-[11px] text-status-danger-fg hover:bg-status-danger/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <Trash2 size={13} aria-hidden="true" />
         {zh ? "删除全部用量数据" : "Delete all usage data"}
@@ -101,8 +101,8 @@ export default function DeleteAllUsageDialog({
           </div>
         </div>
         <form action={submit} aria-busy={pending} className="px-5 py-4">
-          <div className="border border-amber-400/30 bg-amber-400/5 p-3 text-[11px] leading-relaxed text-grey">
-            <p className="text-amber-300">
+          <div className="border border-status-warn/30 bg-status-warn/5 p-3 text-[11px] leading-relaxed text-grey">
+            <p className="text-status-warn-fg">
               {zh
                 ? "这项操作无法在站点内撤销。所有 Collector 的本地 checkpoint 都不会自动回退。"
                 : "This cannot be undone on the site. Local checkpoints on every Collector will remain unchanged."}
@@ -128,7 +128,7 @@ export default function DeleteAllUsageDialog({
             spellCheck={false}
             className="mt-2 min-h-11 w-full border border-line bg-bg px-3 font-mono text-sm text-paper outline-none focus:border-blue"
           />
-          {error && <p role="alert" className="mt-3 text-xs text-red-400">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-xs text-status-danger-fg">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <button
               type="button"
@@ -141,7 +141,7 @@ export default function DeleteAllUsageDialog({
             <button
               type="submit"
               disabled={pending || confirmation !== "DELETE"}
-              className="min-h-11 border border-red-400/50 px-4 font-mono text-[11px] text-red-300 hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
+              className="min-h-11 border border-status-danger/50 px-4 font-mono text-[11px] text-status-danger-fg hover:bg-status-danger/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40"
             >
               {pending ? (zh ? "删除中…" : "Deleting…") : (zh ? "永久删除" : "Delete permanently")}
             </button>

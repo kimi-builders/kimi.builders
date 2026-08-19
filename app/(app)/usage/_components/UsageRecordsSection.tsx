@@ -280,7 +280,7 @@ export default function UsageRecordsSection({
         const rate = usageCacheHitRate(row);
         if (rate === null) return <span className="text-grey">—</span>;
         return (
-          <span className="rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[11px] text-emerald-400">
+          <span className="rounded-full bg-status-ok/10 px-1.5 py-0.5 text-[11px] text-status-ok-fg">
             {formatHitRate(rate)}
           </span>
         );

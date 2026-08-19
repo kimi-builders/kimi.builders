@@ -53,11 +53,11 @@ export default function Toaster() {
           type="button"
           onClick={() => setItems((cur) => cur.filter((x) => x.id !== i.id))}
           className={`kb-toast pointer-events-auto flex max-w-full items-start gap-2 border bg-bg px-4 py-2 text-left font-mono text-xs text-paper shadow-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-            i.kind === "error" ? "border-red-400/50" : "border-line"
+            i.kind === "error" ? "border-status-danger/50" : "border-line"
           }`}
         >
           {i.kind === "error" && (
-            <CircleAlert size={13} className="mt-0.5 shrink-0 text-red-400" aria-hidden="true" />
+            <CircleAlert size={13} className="mt-0.5 shrink-0 text-status-danger-fg" aria-hidden="true" />
           )}
           <span className="min-w-0 break-words">{i.message}</span>
         </button>

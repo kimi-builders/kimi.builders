@@ -11,7 +11,7 @@ export function DataMeta({
   const visible = items.filter((item): item is ReactNode => item !== null && item !== false && item !== undefined);
   if (visible.length === 0) return null;
   return (
-    <p className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono text-[10.5px] text-grey/70 ${className}`}>
+    <p className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-grey/70 ${className}`}>
       {visible.map((item, index) => (
         <span key={index} className="inline-flex items-center gap-1.5">
           {index > 0 ? <i aria-hidden="true" className="h-0.5 w-0.5 rounded-full bg-grey/50" /> : null}
@@ -57,7 +57,7 @@ export function MetricCard({
         >
           {value}
         </strong>
-        {comparison ? <span className="font-mono text-[10.5px] text-grey">{comparison}</span> : null}
+        {comparison ? <span className="font-mono text-xs text-grey">{comparison}</span> : null}
       </div>
       {description ? <p className="mt-2 text-[11px] leading-relaxed text-grey">{description}</p> : null}
       <DataMeta items={meta} className="mt-1.5" />
@@ -166,9 +166,9 @@ export function CoverageBadge({
         ? "border-viz-yellow-soft/45 bg-viz-yellow-soft/10"
         : "border-line bg-paper/[0.025]";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[10.5px] text-paper ${toneClass}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-paper ${toneClass}`}>
       <span className="text-grey">{label}</span>
-      <strong className="font-semibold">{value}</strong>
+      <strong className="font-mono font-semibold">{value}</strong>
     </span>
   );
 }

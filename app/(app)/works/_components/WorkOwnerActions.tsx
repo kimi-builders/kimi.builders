@@ -75,7 +75,7 @@ export default function WorkOwnerActions({
         disabled={busy}
         title={t(locale, "post.delete")}
         aria-label={t(locale, "post.delete")}
-        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-moon hover:text-red-400 disabled:opacity-40"
+        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-moon hover:text-status-danger-fg disabled:opacity-40"
       >
         <Trash2 size={14} aria-hidden="true" />
         <span>{t(locale, "post.delete")}</span>

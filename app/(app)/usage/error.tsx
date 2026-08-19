@@ -14,8 +14,8 @@ export default function UsageError({
     console.error("usage route boundary", error);
   }, [error]);
   return (
-    <section className="border border-red-500/40 bg-card p-6">
-      <TriangleAlert size={20} className="text-red-400" aria-hidden="true" />
+    <section className="border border-status-danger/40 bg-card p-6">
+      <TriangleAlert size={20} className="text-status-danger-fg" aria-hidden="true" />
       <h1 className="mt-4 font-mono text-base font-semibold text-paper">
         用量中心暂时无法加载 / Usage center unavailable
       </h1>

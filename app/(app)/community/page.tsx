@@ -73,6 +73,9 @@ export default async function CommunityPage({
 
   return (
     <div>
+      <h1 className="mb-4 text-lg font-semibold text-paper">
+        {t(locale, "nav.community")}
+      </h1>
       {user && (
         <Link
           href="/community/new"
@@ -113,8 +116,8 @@ export default async function CommunityPage({
             href={feedHref({ cat: null })}
             scroll={false}
             aria-current={!cat ? "page" : undefined}
-            className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 font-mono text-[11.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-              !cat ? "bg-paper font-semibold text-bg" : "text-grey hover:bg-card hover:text-paper"
+            className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+              !cat ? "bg-card font-semibold text-paper" : "text-grey hover:bg-card hover:text-paper"
             }`}
           >
             {t(locale, "feed.topicsAll")}
@@ -127,8 +130,8 @@ export default async function CommunityPage({
                 href={feedHref({ cat: c.id })}
                 scroll={false}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 font-mono text-[11.5px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  active ? "bg-paper font-semibold text-bg" : "text-grey hover:bg-card hover:text-paper"
+                className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                  active ? "bg-card font-semibold text-paper" : "text-grey hover:bg-card hover:text-paper"
                 }`}
               >
                 {categoryLabel(locale, c.id)}
@@ -143,7 +146,7 @@ export default async function CommunityPage({
           href={feedHref({ solved: solvedOnly ? null : "1" })}
           scroll={false}
           aria-current={solvedOnly ? "page" : undefined}
-          className={`inline-flex h-11 min-h-0 shrink-0 items-center gap-1 justify-self-start rounded-lg border px-3 font-mono text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue md:justify-self-end ${
+          className={`inline-flex h-11 min-h-0 shrink-0 items-center gap-1 justify-self-start rounded-lg border px-3 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue md:justify-self-end ${
             solvedOnly
               ? "border-blue/60 bg-blue/10 font-semibold text-blue"
               : "border-line text-grey hover:border-blue/50 hover:text-blue"

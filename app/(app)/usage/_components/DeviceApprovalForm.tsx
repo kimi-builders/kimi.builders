@@ -86,7 +86,7 @@ export default function DeviceApprovalForm({
       </label>
 
       {(state.error || state.status) && (
-        <p role="alert" className="border-l-2 border-red-500 pl-3 text-xs text-red-400">
+        <p role="alert" className="border-l-2 border-status-danger pl-3 text-xs text-status-danger-fg">
           {zh
             ? "验证码不可用、已过期，或登录状态已失效。请在本地看板或终端重新开始连接。"
             : "The code is unavailable or expired, or your session ended. Restart linking in the local dashboard or terminal."}
@@ -99,7 +99,7 @@ export default function DeviceApprovalForm({
           name="decision"
           value="approve"
           disabled={pending}
-          className="min-h-11 border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
+          className="min-h-11 border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50"
         >
           {pending ? (zh ? "处理中…" : "Working…") : zh ? "批准并连接" : "Approve & connect"}
         </button>

@@ -12,7 +12,7 @@ import { changePasswordAction, type SettingsState } from "../actions";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-paper placeholder:text-grey/60 focus:border-blue focus:outline-none";
-const labelCls = "font-mono text-[11px] text-grey";
+const labelCls = "text-xs text-grey";
 
 export default function PasswordForm({
   locale,
@@ -81,7 +81,7 @@ export default function PasswordForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg border border-blue bg-blue px-5 py-2 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+        className="rounded-lg border border-blue bg-blue px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
       >
         {pending
           ? t(locale, "set.saving")

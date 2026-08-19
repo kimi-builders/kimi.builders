@@ -196,7 +196,7 @@ export default function ImageCropDialog({
             type="button"
             onClick={confirm}
             disabled={busy}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
           >
             {busy ? (
               <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />

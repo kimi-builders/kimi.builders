@@ -32,14 +32,14 @@ const METHOD = [
 
 /* 档位 → 色条/徽章色(stale 一律琥珀,优先级最高;stale 由 isPathStale 计算) */
 function tierColor(p: LearnPath): string {
-  if (isPathStale(p)) return "border-amber-500/50 text-amber-400";
+  if (isPathStale(p)) return "border-status-warn/50 text-status-warn-fg";
   return p.tier === "starter"
     ? "border-blue/60 text-blue"
-    : "border-emerald-400/50 text-emerald-400";
+    : "border-status-ok/50 text-status-ok-fg";
 }
 function tierBar(p: LearnPath): string {
-  if (isPathStale(p)) return "bg-amber-400";
-  return p.tier === "starter" ? "bg-blue" : "bg-emerald-400";
+  if (isPathStale(p)) return "bg-status-warn";
+  return p.tier === "starter" ? "bg-blue" : "bg-status-ok";
 }
 
 /* PATH STACK:hero 右侧的路径地图 */
@@ -50,9 +50,9 @@ function PathStack({ zh }: { zh: boolean }) {
       className="overflow-hidden rounded-2xl border border-line bg-card xl:hidden"
     >
       <div className="flex items-center gap-1.5 border-b border-line px-4 py-2.5">
-        <span aria-hidden="true" className="size-2 rounded-full bg-red-400/70" />
-        <span aria-hidden="true" className="size-2 rounded-full bg-amber-400/70" />
-        <span aria-hidden="true" className="size-2 rounded-full bg-emerald-400/70" />
+        <span aria-hidden="true" className="size-2 rounded-full bg-status-danger/70" />
+        <span aria-hidden="true" className="size-2 rounded-full bg-status-warn/70" />
+        <span aria-hidden="true" className="size-2 rounded-full bg-status-ok/70" />
         <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.2em] text-grey">
           {zh ? "路径栈" : "PATH STACK"}
         </span>
@@ -146,13 +146,13 @@ export default async function LearnPage() {
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
               href="#paths"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "浏览路径 ↓" : "Browse paths ↓"}
             </a>
             <a
               href="#method"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               {zh ? "编选法" : "The method"}
             </a>
@@ -212,13 +212,13 @@ export default async function LearnPage() {
                   <span className="flex items-center gap-1.5">
                     <ShieldCheck
                       size={13}
-                      className={isPathStale(p) ? "text-amber-400" : "text-emerald-400"}
+                      className={isPathStale(p) ? "text-status-warn-fg" : "text-status-ok-fg"}
                       aria-hidden="true"
                     />
                     @{p.editorHandle} {zh ? "验证" : "verified"} · {p.verifiedModel} · {p.verifiedAt}
                   </span>
                   {isPathStale(p) && (
-                    <span className="whitespace-nowrap rounded-md border border-amber-500/40 px-1.5 py-px text-amber-400">
+                    <span className="whitespace-nowrap rounded-md border border-status-warn/40 px-1.5 py-px text-status-warn-fg">
                       {zh ? "待重验" : "re-verify pending"}
                     </span>
                   )}

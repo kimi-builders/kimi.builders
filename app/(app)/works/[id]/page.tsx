@@ -70,7 +70,7 @@ function WorkGone({ locale, href, label }: { locale: Locale; href: string; label
       </p>
       <Link
         href={href}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue"
       >
         <ArrowLeft size={13} aria-hidden="true" />
         {label}
@@ -128,7 +128,7 @@ export default async function WorkPage({
     <div>
       <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       {work.hiddenAt && (
-        <p className="mb-4 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-3 py-2 text-xs leading-relaxed text-red-400">
+        <p className="mb-4 rounded-xl border border-status-danger/30 bg-status-danger/[0.06] px-3 py-2 text-xs leading-relaxed text-status-danger-fg">
           {t(locale, "mod.hiddenBanner")}
           {work.hiddenReason ? ` — ${work.hiddenReason}` : ""}
         </p>
@@ -214,7 +214,7 @@ export default async function WorkPage({
         )}
         {work.hiddenAt && (
           <span
-            className="inline-block rounded-md border border-red-400/60 px-1.5 py-px font-mono text-[13px] font-medium text-red-400"
+            className="inline-block rounded-md border border-status-danger/60 px-1.5 py-px font-mono text-[13px] font-medium text-status-danger-fg"
             title={work.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}

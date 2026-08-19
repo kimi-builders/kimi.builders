@@ -39,8 +39,8 @@ const CHARTER = [
 /* 三层(20260921):层色贯穿全站月刊视觉 */
 const LAYERS = [
   { no: "01", anchor: "digest", bar: "bg-blue", zh: "本月评鉴", en: "The review", note: { zh: "编辑署名的一手选读", en: "editor-signed picks" } },
-  { no: "02", anchor: "facts", bar: "bg-emerald-400", zh: "事实盘点", en: "Facts", note: { zh: "可验证的原始记录", en: "verifiable primary records" } },
-  { no: "03", anchor: "decisions", bar: "bg-amber-400", zh: "编辑定夺", en: "Decisions", note: { zh: "谁拍的板,为什么", en: "who decided, and why" } },
+  { no: "02", anchor: "facts", bar: "bg-status-ok", zh: "事实盘点", en: "Facts", note: { zh: "可验证的原始记录", en: "verifiable primary records" } },
+  { no: "03", anchor: "decisions", bar: "bg-status-warn", zh: "编辑定夺", en: "Decisions", note: { zh: "谁拍的板,为什么", en: "who decided, and why" } },
 ] as const;
 
 /* 「每期三层」卡:hero 右侧的月刊结构地图(FIELD GUIDE STACK 站内化),
@@ -52,9 +52,9 @@ function LayerStack({ slug, zh }: { slug: string; zh: boolean }) {
       className="overflow-hidden rounded-2xl border border-line bg-card"
     >
       <div className="flex items-center gap-1.5 border-b border-line px-4 py-2.5">
-        <span aria-hidden="true" className="size-2 rounded-full bg-red-400/70" />
-        <span aria-hidden="true" className="size-2 rounded-full bg-amber-400/70" />
-        <span aria-hidden="true" className="size-2 rounded-full bg-emerald-400/70" />
+        <span aria-hidden="true" className="size-2 rounded-full bg-status-danger/70" />
+        <span aria-hidden="true" className="size-2 rounded-full bg-status-warn/70" />
+        <span aria-hidden="true" className="size-2 rounded-full bg-status-ok/70" />
         <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.2em] text-grey">
           {zh ? "每期三层" : "THE LAYERS"}
         </span>
@@ -99,7 +99,7 @@ function EmptyState({ zh }: { zh: boolean }) {
       </p>
       <Link
         href="/community"
-        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {zh ? "去社区看看" : "Browse the community"}
       </Link>
@@ -158,14 +158,14 @@ export default async function BlogPage() {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link
                 href={`/blog/${latest.slug}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
                 {zh ? "阅读最新一期" : "Read the latest issue"}
               </Link>
               {archive.length > 0 && (
                 <a
                   href="#archive"
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   {zh ? "往期档案 ↓" : "Archive ↓"}
                 </a>
@@ -272,7 +272,7 @@ function LatestIssue({
 
       {/* 02 事实盘点:大号 mono 数字;缺项诚实显示「—」 */}
       <section className="mt-7">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-400">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-status-ok-fg">
           02 · {zh ? "事实盘点" : "FACTS"}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-4">
@@ -291,7 +291,7 @@ function LatestIssue({
       {/* 03 编辑定夺 */}
       {issue.decisions.length > 0 && (
         <section className="mt-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-400">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-status-warn-fg">
             03 · {zh ? "编辑定夺" : "DECISIONS"}
           </p>
           <ul className="mt-3">

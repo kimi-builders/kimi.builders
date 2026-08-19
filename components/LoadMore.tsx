@@ -59,7 +59,7 @@ export default function LoadMore<T extends string | number>({
           type="button"
           onClick={more}
           disabled={busy}
-          className="col-span-full rounded-lg border border-line px-5 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
+          className="col-span-full rounded-lg border border-line px-5 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
         >
           {busy ? t(locale, "pager.loading") : t(locale, "pager.loadMore")}
         </button>

@@ -545,7 +545,7 @@ export default async function UsagePage({
           {overview && hasUsageHistory && <UsageSyncDialog zh={zh} />}
           <Link
             href="/usage/device"
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white shadow-lg shadow-blue/25 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto"
           >
             <Link2 size={14} aria-hidden="true" /> {zh ? "连接设备" : "Connect device"}
           </Link>
@@ -554,7 +554,7 @@ export default async function UsagePage({
       {/* 各段 nowrap:段内永不折断;整段只在手机窄屏换行 */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-grey" role="status" aria-live="polite">
         <span className="flex items-center gap-1.5 whitespace-nowrap">
-          <ShieldCheck size={13} className="text-emerald-400" aria-hidden="true" />
+          <ShieldCheck size={13} className="text-status-ok-fg" aria-hidden="true" />
           {zh ? "默认私有" : "Private by default"}
         </span>
         <span aria-hidden="true" className="whitespace-nowrap">·</span>
@@ -569,7 +569,7 @@ export default async function UsagePage({
               : "Not synced yet"}
         </span>
         {staleSync && (
-          <span className="whitespace-nowrap rounded-md border border-amber-500/40 px-1.5 py-0.5 text-amber-400">
+          <span className="whitespace-nowrap rounded-md border border-status-warn/40 px-1.5 py-0.5 text-status-warn-fg">
             {zh ? `超过 ${USAGE_STALE_AFTER_HOURS} 小时未同步` : `Not synced for ${USAGE_STALE_AFTER_HOURS}+ hours`}
           </span>
         )}
@@ -829,9 +829,9 @@ export default async function UsagePage({
     />
   );
   const staleNotice = staleSync ? (
-    <aside className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-400/35 bg-amber-400/5 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+    <aside className="mt-4 flex flex-col gap-3 rounded-xl border border-status-warn/35 bg-status-warn/5 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
       <div className="flex items-start gap-2">
-        <Clock3 size={16} className="mt-0.5 shrink-0 text-amber-300" aria-hidden="true" />
+        <Clock3 size={16} className="mt-0.5 shrink-0 text-status-warn-fg" aria-hidden="true" />
         <div>
           <p className="text-sm font-medium text-paper">
             {zh ? "这份看板可能已经过期" : "This dashboard may be out of date"}

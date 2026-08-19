@@ -11,7 +11,7 @@ export default function MockRibbon({
   return (
     <p
       role="note"
-      className="mb-6 rounded-lg border border-dashed border-amber-500/40 bg-amber-400/5 px-3 py-2 font-mono text-[11px] leading-relaxed text-amber-400"
+      className="mb-6 rounded-lg border border-dashed border-status-warn/40 bg-status-warn/5 px-3 py-2 font-mono text-[11px] leading-relaxed text-status-warn-fg"
     >
       {message ??
         (zh

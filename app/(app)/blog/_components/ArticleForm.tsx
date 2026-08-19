@@ -78,7 +78,7 @@ export default function ArticleForm({
     <form action={formAction} className="mt-6 space-y-5">
       {initial && <input type="hidden" name="id" value={initial.id} />}
 
-      <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         <div className={SEG_WRAP} role="radiogroup" aria-label={t(locale, "artf.kindLetter")}>
         {(
           [
@@ -214,7 +214,7 @@ export default function ArticleForm({
         <button
           type="submit"
           disabled={pending || deleting}
-          className="rounded-lg bg-blue px-6 py-2.5 font-mono text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="rounded-lg bg-blue px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {pending ? t(locale, "post.submitting") : t(locale, "post.save")}
         </button>
@@ -223,7 +223,7 @@ export default function ArticleForm({
             type="button"
             onClick={del}
             disabled={pending || deleting}
-            className="rounded-lg border border-line px-3 py-2 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
+            className="rounded-lg border border-line px-3 py-2 text-xs text-grey transition-colors hover:border-blue hover:text-blue disabled:opacity-40"
           >
             {deleting ? t(locale, "post.submitting") : t(locale, "post.delete")}
           </button>

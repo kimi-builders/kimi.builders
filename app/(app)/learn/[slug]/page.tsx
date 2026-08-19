@@ -74,7 +74,7 @@ function verifyStamp(path: LearnPath, zh: boolean) {
     <span className="flex items-center gap-1.5">
       <ShieldCheck
         size={13}
-        className={isPathStale(path) ? "text-amber-400" : "text-emerald-400"}
+        className={isPathStale(path) ? "text-status-warn-fg" : "text-status-ok-fg"}
         aria-hidden="true"
       />
       @{path.editorHandle} {zh ? "验证" : "verified"} · {path.verifiedModel} · {path.verifiedAt}
@@ -270,7 +270,7 @@ function VerifyLog({ path, zh }: { path: LearnPath; zh: boolean }) {
         <li className="flex items-start gap-2.5 text-xs leading-relaxed text-grey">
           <ShieldCheck
             size={13}
-            className={`mt-0.5 shrink-0 ${stale ? "text-amber-400" : "text-emerald-400"}`}
+            className={`mt-0.5 shrink-0 ${stale ? "text-status-warn-fg" : "text-status-ok-fg"}`}
             aria-hidden="true"
           />
           <span>
@@ -280,7 +280,7 @@ function VerifyLog({ path, zh }: { path: LearnPath; zh: boolean }) {
             {" — "}
             {zh ? `当前验证戳(@${path.editorHandle})` : `current stamp (@${path.editorHandle})`}
             {stale && (
-              <span className="ml-2 whitespace-nowrap rounded-md border border-amber-500/40 px-1.5 py-px font-mono text-[10.5px] text-amber-400">
+              <span className="ml-2 whitespace-nowrap rounded-md border border-status-warn/40 px-1.5 py-px font-mono text-[10.5px] text-status-warn-fg">
                 {zh ? "待重验" : "re-verify pending"}
               </span>
             )}
@@ -477,7 +477,7 @@ function JourneyLayout({
           <span aria-hidden="true">·</span>
           {verifyStamp(path, zh)}
           {isPathStale(path) && (
-            <span className="rounded-md border border-amber-500/40 px-1.5 py-px normal-case tracking-normal text-amber-400">
+            <span className="rounded-md border border-status-warn/40 px-1.5 py-px normal-case tracking-normal text-status-warn-fg">
               {zh ? "待重验:地面已动,编辑尚未重走" : "re-verify pending: ground shifted"}
             </span>
           )}
@@ -485,13 +485,13 @@ function JourneyLayout({
         <div className="mt-7 flex flex-wrap items-center gap-3">
           <a
             href="#level-01"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "开始路径 ↓" : "Begin path ↓"}
           </a>
           <Link
             href="/works"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 font-mono text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-xs text-grey transition-colors hover:border-blue hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "毕业物是什么 →" : "What's the graduation →"}
           </Link>
@@ -567,7 +567,7 @@ function JourneyLayout({
           </div>
           <Link
             href={`/works/new?path=${path.slug}`}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "去发布毕业物 →" : "Ship your graduation →"}
           </Link>
@@ -696,7 +696,7 @@ function EditorialLayout({
           — {path.code} ·{" "}
           {path.tier === "starter" ? (zh ? "入门" : "STARTER") : zh ? "进阶" : "BUILDER"}
           {isPathStale(path) && (
-            <span className="ml-2 rounded-md border border-amber-500/40 px-1.5 py-px text-amber-400">
+            <span className="ml-2 rounded-md border border-status-warn/40 px-1.5 py-px text-status-warn-fg">
               {zh ? "待重验" : "RE-VERIFY PENDING"}
             </span>
           )}
@@ -793,7 +793,7 @@ function EditorialLayout({
           </p>
           <Link
             href={`/works/new?path=${path.slug}`}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 font-mono text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             {zh ? "去发布毕业物 →" : "Ship your graduation →"}
           </Link>

@@ -168,7 +168,7 @@ function IssueDetail({
       {/* 02 事实盘点:可验证的原始记录 */}
       <section id="facts" className="scroll-mt-20 border-b border-line py-9">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-400">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-status-ok-fg">
             02 · {zh ? "事实盘点" : "FACTS"}
           </p>
           <SectionShare issue={issue} anchor="facts" label={zh ? "事实盘点" : "Facts"} locale={locale} />
@@ -192,7 +192,7 @@ function IssueDetail({
       {/* 03 编辑定夺:谁拍的板,为什么 */}
       <section id="decisions" className="scroll-mt-20 py-9">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-amber-400">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-status-warn-fg">
             03 · {zh ? "编辑定夺" : "DECISIONS"}
           </p>
           <SectionShare issue={issue} anchor="decisions" label={zh ? "编辑定夺" : "Decisions"} locale={locale} />

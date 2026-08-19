@@ -123,7 +123,7 @@ export default function ModToolbar({
           type="button"
           onClick={hardDelete}
           disabled={busy}
-          className={`${btn} text-red-400/80 hover:text-red-400`}
+          className={`${btn} text-status-danger-fg hover:text-status-danger-fg`}
         >
           {t(locale, "mod.hardDelete")}
         </button>

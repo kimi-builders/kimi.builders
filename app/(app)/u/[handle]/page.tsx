@@ -339,7 +339,7 @@ export default async function ProfilePage({
                   href={`${posterHref}?download=1`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 font-mono text-[11px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 text-[11px] whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
                 >
                   {t(locale, "prof.poster")}
                 </a>
@@ -347,7 +347,7 @@ export default async function ProfilePage({
               {self && (
                 <Link
                   href="/settings"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 font-mono text-[11px] font-semibold whitespace-nowrap text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
+                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 text-[11px] font-semibold whitespace-nowrap text-white shadow-lg shadow-blue/25 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-[11px]"
                 >
                   {t(locale, "prof.edit")}
                 </Link>
@@ -517,7 +517,7 @@ export default async function ProfilePage({
                           )}
                           {p.hiddenAt && (
                             <span
-                              className="rounded-md border border-red-400/60 px-1.5 py-px text-[11px] text-red-400"
+                              className="rounded-md border border-status-danger/60 px-1.5 py-px text-[11px] text-status-danger-fg"
                               title={p.hiddenReason ?? undefined}
                             >
                               {t(locale, "mod.hiddenBadge")}
@@ -602,7 +602,7 @@ export default async function ProfilePage({
                         <span className="mx-2">·</span>
                         {relTime(c.createdAt, locale)}
                         {c.hidden && (
-                          <span className="ml-2 rounded-md border border-red-400/60 px-1.5 py-px text-[11px] text-red-400">
+                          <span className="ml-2 rounded-md border border-status-danger/60 px-1.5 py-px text-[11px] text-status-danger-fg">
                             {t(locale, "mod.hiddenBadge")}
                           </span>
                         )}

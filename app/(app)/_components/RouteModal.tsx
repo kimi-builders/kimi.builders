@@ -123,7 +123,7 @@ export default function RouteModal({
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              className="inline-flex min-h-9 items-center rounded-lg border border-red-400/50 px-3 font-mono text-[11px] text-red-400 transition-colors hover:bg-red-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400"
+              className="inline-flex min-h-9 items-center rounded-lg border border-status-danger/50 px-3 font-mono text-[11px] text-status-danger-fg transition-colors hover:bg-status-danger/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-status-danger"
             >
               {dirtyGuard.discard}
             </button>

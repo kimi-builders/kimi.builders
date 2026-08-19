@@ -5,7 +5,7 @@ import type { IssueDecision } from "@/src/lib/monthly";
 
 export function decisionChip(kind: IssueDecision["kind"], zh: boolean) {
   const map = {
-    work: { zh: "精选构建", en: "FEATURED BUILD", cls: "border-emerald-400/40 text-emerald-400" },
+    work: { zh: "精选构建", en: "FEATURED BUILD", cls: "border-status-ok/40 text-status-ok-fg" },
     post: { zh: "精选讨论", en: "FEATURED POST", cls: "border-blue/60 text-blue" },
     governance: { zh: "治理公示", en: "GOVERNANCE", cls: "border-line text-grey" },
   } as const;

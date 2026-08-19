@@ -135,7 +135,7 @@ export default function UsagePrivacyForm({
           }}
         />
       </label>
-      {error && <p role="alert" className="mt-3 text-xs text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-xs text-status-danger-fg">{error}</p>}
       <div className="mt-4 flex items-center justify-between gap-3">
         <span className="font-mono text-[11px] text-grey">
           {zh ? `保留 ${retentionDays} 天` : `${retentionDays}-day retention`}

@@ -55,9 +55,9 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
               : "Kimi-first and multi-agent ready. Only token, timing, and count metrics are accepted—never conversations, full paths, or provider credentials."}
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="border-l-2 border-emerald-400 pl-3">
+            <div className="border-l-2 border-status-ok pl-3">
               <div className="flex items-center gap-1.5 font-mono text-[11px] text-paper">
-                <ShieldCheck size={12} className="text-emerald-400" aria-hidden="true" />
+                <ShieldCheck size={12} className="text-status-ok-fg" aria-hidden="true" />
                 {zh ? "接收" : "COLLECTED"}
               </div>
               <p className="mt-1.5">
@@ -66,7 +66,7 @@ export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
                   : "Token usage by category, timing and durations, request/session/message counts, plus agent, model, and device identifiers—all aggregate statistics."}
               </p>
             </div>
-            <div className="border-l-2 border-red-400 pl-3">
+            <div className="border-l-2 border-status-danger pl-3">
               <div className="font-mono text-[11px] text-paper">{zh ? "不接收" : "NEVER COLLECTED"}</div>
               <p className="mt-1.5">
                 {zh

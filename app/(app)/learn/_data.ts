@@ -790,7 +790,7 @@ export function resourceKindMeta(kind: ResourceKind, zh: boolean): { label: stri
     "video-bilibili": { zh: "BILIBILI", en: "BILIBILI", chip: "border-line text-grey" },
     "post-x": { zh: "X · THREAD", en: "X · THREAD", chip: "border-line text-grey" },
     note: { zh: "社区笔记", en: "COMMUNITY NOTE", chip: "border-line text-paper" },
-    evidence: { zh: "证据终点", en: "EVIDENCE", chip: "border-emerald-400/40 text-emerald-400" },
+    evidence: { zh: "证据终点", en: "EVIDENCE", chip: "border-status-ok/40 text-status-ok-fg" },
   };
   const m = map[kind];
   return { label: zh ? m.zh : m.en, chip: m.chip };

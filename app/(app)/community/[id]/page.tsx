@@ -87,7 +87,7 @@ export default async function PostPage({
     <div>
       <article className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       {post.hiddenAt && (
-        <p className="mb-4 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-3 py-2 text-xs leading-relaxed text-red-400">
+        <p className="mb-4 rounded-xl border border-status-danger/30 bg-status-danger/[0.06] px-3 py-2 text-xs leading-relaxed text-status-danger-fg">
           {t(locale, "mod.hiddenBanner")}
           {post.hiddenReason ? ` — ${post.hiddenReason}` : ""}
         </p>
@@ -114,7 +114,7 @@ export default async function PostPage({
         )}
         {post.hiddenAt && (
           <span
-            className="rounded-md border border-red-400/60 px-1.5 py-px text-[11px] text-red-400"
+            className="rounded-md border border-status-danger/60 px-1.5 py-px text-[11px] text-status-danger-fg"
             title={post.hiddenReason ?? undefined}
           >
             {t(locale, "mod.hiddenBadge")}
