@@ -124,8 +124,9 @@ const TIP_WIDTH = 244;
 const TIP_HEIGHT = 236;
 
 /* 悬浮卡定位:优先放被 hover 柱子的右侧,其次左侧;两侧都放不下(柱宽/容器窄)
-   才压到离柱子最远的角落——任何情况下都不盖住鼠标所在的数据位。 */
-function tooltipPos(
+   才压到离柱子最远的角落——任何情况下都不盖住鼠标所在的数据位。
+   20260819 起导出共享:个人主页足迹/分时热图锚定同一套定位逻辑。 */
+export function tooltipPos(
   event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>,
   viewport: HTMLDivElement | null,
   tipWidth = TIP_WIDTH,

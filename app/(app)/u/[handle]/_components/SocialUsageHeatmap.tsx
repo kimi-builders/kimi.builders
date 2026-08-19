@@ -4,9 +4,12 @@
    视觉/交互对齐用量看板的 UsageHeatmapGrid(同一套色阶、行列标签、悬停 tooltip、
    TOP5 摘要),但刻意简化:不含估费/活跃时长/消息数 —— 那些依赖看板的定价与
    会话管线,社交面只公开 token 总量这一个聚合数字。
-   可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。 */
-import { useState } from "react";
+   可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。
+   20260819:tooltip 改锚定跟随(与用量中心同一套 tooltipPos + kb-data-tooltip),
+   不再钉右上角;「最活跃时段」数据条与用量中心同一配方(轨道/圆角/焦点色)。 */
+import { useRef, useState, type CSSProperties } from "react";
 import { compactNumber } from "@/src/lib/format";
+import { tooltipPos } from "../../../usage/_components/UsageVisualizations";
 
 const WEEKDAY_LONG_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WEEKDAY_LONG_EN = [
@@ -42,8 +45,15 @@ export default function SocialUsageHeatmap({
   tzOffsetMinutes: number;
   zh: boolean;
 }) {
-  const [hovered, setHovered] = useState<{ weekday: number; hour: number } | null>(null);
+  const [hovered, setHovered] = useState<{
+    weekday: number;
+    hour: number;
+    left: number;
+    top: number;
+    arrowX: number;
+  } | null>(null);
   const [mobileHourStart, setMobileHourStart] = useState<0 | 12>(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const max = Math.max(0, ...grid.flat());
   const total = grid.flat().reduce((sum, value) => sum + value, 0);
   const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
@@ -67,7 +77,7 @@ export default function SocialUsageHeatmap({
   return (
     <div className="relative" onMouseLeave={() => setHovered(null)}>
       <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,620px)_minmax(220px,1fr)]">
-        <div className="relative min-w-0">
+        <div className="relative min-w-0" ref={viewportRef}>
           <div className="mb-3 grid grid-cols-2 rounded-lg border border-line p-0.5 sm:hidden">
             {([0, 12] as const).map((start) => (
               <button
@@ -120,8 +130,12 @@ export default function SocialUsageHeatmap({
                           className={`aspect-square rounded-[3px] transition-transform hover:z-10 hover:scale-125 focus:outline focus:outline-1 focus:outline-blue ${
                             mobileVisible ? "" : "hidden sm:block"
                           } ${stepClass(value)}`}
-                          onMouseEnter={() => setHovered({ weekday, hour })}
-                          onFocus={() => setHovered({ weekday, hour })}
+                          onMouseEnter={(event) =>
+                            setHovered({ weekday, hour, ...tooltipPos(event, viewportRef.current, 176, 64) })
+                          }
+                          onFocus={(event) =>
+                            setHovered({ weekday, hour, ...tooltipPos(event, viewportRef.current, 176, 64) })
+                          }
                           onBlur={() => setHovered(null)}
                           />
                         );
@@ -134,9 +148,11 @@ export default function SocialUsageHeatmap({
           </div>
 
           {hovered && (
+            /* 锚定数据卡(20260819):跟随被 hover 格子,与用量中心同一表面 */
             <div
               role="tooltip"
-              className="pointer-events-none absolute right-1 top-5 z-20 rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+              className="kb-data-tooltip pointer-events-none absolute z-20 w-[176px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+              style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
             >
               <div className="font-mono text-xs font-semibold text-paper">
                 {longNames[hovered.weekday]} {String(hovered.hour).padStart(2, "0")}:00
@@ -186,9 +202,12 @@ export default function SocialUsageHeatmap({
                     <span className="mt-0.5 block font-mono text-xs text-grey/65">
                       tokens · {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
                     </span>
-                    <span className="mt-1.5 block h-1 bg-viz-grid">
+                    {/* 数据条与用量中心「最活跃时段」同一配方(20260819):
+                        轨道 h-1 rounded-full bg-paper/[0.06],填充 rounded-[2px];
+                        焦点蓝只给第一名,其余中性灰(一图一焦点) */}
+                    <span className="mt-1.5 block h-1 rounded-full bg-paper/[0.06]">
                       <span
-                        className={`block h-full ${index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"}`}
+                        className={`block h-full rounded-[2px] ${index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"}`}
                         style={{ width: `${Math.max((item.value / Math.max(1, top[0]?.value ?? 1)) * 100, 2)}%` }}
                       />
                     </span>

@@ -1171,8 +1171,10 @@ export default async function UsagePage({
                     </span>
                   </div>
                   <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
+                    {/* 焦点蓝只给第一名,其余中性灰(20260819 与个人主页同配方,
+                        手册:一图一焦点;此前全蓝) */}
                     <div
-                      className="h-full rounded-[2px] bg-viz-blue-primary"
+                      className={`h-full rounded-[2px] ${index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"}`}
                       style={{ width: `${Math.max((slot.value / topSlots[0].value) * 100, 2)}%` }}
                     />
                   </div>

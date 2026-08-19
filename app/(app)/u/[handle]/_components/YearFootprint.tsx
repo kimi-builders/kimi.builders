@@ -6,10 +6,13 @@
    - 移动端(sm 以下):拆成前后两个半年页,← → 按钮或左右滑动切换,
      默认落在含当前月的后半年页(格子从 ~5px 回到 ~12px);
    6 档蓝阶与用量中心热图同阈值;悬停/聚焦出角标 tooltip(日期 + 确切 tokens)。
+   20260819:tooltip 改为跟随被 hover 格子的锚定卡(与用量中心同一套
+   tooltipPos 定位 + kb-data-tooltip 表面/箭头),不再是钉在右上角的固定卡。
    可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。 */
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { compactNumber } from "@/src/lib/format";
+import { tooltipPos } from "../../../usage/_components/UsageVisualizations";
 import type {
   FootprintCell,
   FootprintGrid,
@@ -62,7 +65,13 @@ export default function YearFootprint({
   );
   const monthText = (month: number) =>
     zh ? `${month}月` : MONTH_SHORT_EN[month - 1];
-  const [hovered, setHovered] = useState<FootprintCell | null>(null);
+  const [hovered, setHovered] = useState<{
+    cell: FootprintCell;
+    left: number;
+    top: number;
+    arrowX: number;
+  } | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   /* 移动端分页:53 周拆成 27 + 26 两页,默认后一页(含当前月/今天)。 */
   const PAGE_SPLIT = 27;
@@ -80,8 +89,12 @@ export default function YearFootprint({
           : `${cell.date} · ${zh ? "未活跃" : "inactive"}`
       }
       className={`aspect-square w-full rounded-[2.5px] transition-transform hover:z-10 hover:scale-[1.35] focus-visible:outline focus-visible:outline-1 focus-visible:outline-blue ${stepClassOf(cell, max)}`}
-      onMouseEnter={() => setHovered(cell)}
-      onFocus={() => setHovered(cell)}
+      onMouseEnter={(event) =>
+        setHovered({ cell, ...tooltipPos(event, viewportRef.current, 176, 64) })
+      }
+      onFocus={(event) =>
+        setHovered({ cell, ...tooltipPos(event, viewportRef.current, 176, 64) })
+      }
       onBlur={() => setHovered(null)}
     />
   );
@@ -133,7 +146,7 @@ export default function YearFootprint({
   };
 
   return (
-    <div className="relative" onMouseLeave={() => setHovered(null)}>
+    <div ref={viewportRef} className="relative" onMouseLeave={() => setHovered(null)}>
       {/* 桌面:通栏 53 列(限 860px,格子 ~13px,不被拉大) */}
       <div className="max-w-[860px] max-sm:hidden">{renderGrid(grid.weeks, 0)}</div>
 
@@ -182,13 +195,16 @@ export default function YearFootprint({
       </div>
 
       {hovered && (
+        /* 锚定数据卡(20260819):跟随被 hover 格子,与用量中心同一表面
+           (kb-data-tooltip + viz-surface + 箭头) */
         <div
           role="tooltip"
-          className="pointer-events-none absolute right-1 top-5 z-20 rounded-lg border border-line bg-moon p-3 shadow-2xl"
+          className="kb-data-tooltip pointer-events-none absolute z-20 w-[176px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+          style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
-          <div className="font-mono text-xs font-semibold text-paper">{hovered.date}</div>
+          <div className="font-mono text-xs font-semibold text-paper">{hovered.cell.date}</div>
           <div className="mt-1 font-mono text-xs text-paper">
-            {hovered.tokens > 0 ? `${compact(hovered.tokens, zh)} tokens` : zh ? "未活跃" : "Inactive"}
+            {hovered.cell.tokens > 0 ? `${compact(hovered.cell.tokens, zh)} tokens` : zh ? "未活跃" : "Inactive"}
           </div>
         </div>
       )}

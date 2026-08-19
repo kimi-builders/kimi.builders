@@ -171,8 +171,8 @@ export default async function Home({
           </p>
         )}
         {/* Logo(20260819):深浅主题统一用深色标志(logo-animated.svg,夜幕 #0E0E13
-            画布)。深色主题下与海报底同色无缝;浅色主题下裁成圆形夜幕徽章
-            (rounded-full,轨道/月面均在圆内,不裁画面)。浅色专版
+            画布)。深色主题下与海报底同色无缝;浅色主题下收进圆角方砖
+            (rounded-2xl 随气质:poster 硬边、soft 圆角)。浅色专版
             logo-animated-light.svg 同日下线。 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -180,12 +180,15 @@ export default async function Home({
           alt={t(locale, "home.logoAlt")}
           className="only-dark h-44 w-44"
         />
+        {/* 浅色主题:深色标志收进圆角方砖(rounded-2xl 走令牌——poster 气质
+            自动归零成硬边方砖,与全站工程棱角一致;soft 气质出 16px 卡圆角),
+            不再是与站点语言冲突的圆形徽章(20260819 三轮) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/logo-animated.svg"
           alt=""
           aria-hidden="true"
-          className="only-light h-44 w-44 rounded-full"
+          className="only-light h-44 w-44 rounded-2xl"
         />
         <h1 className="mt-10 font-mono text-4xl font-semibold tracking-wide">
           kimi<span className="text-ui-blue">.</span>builders

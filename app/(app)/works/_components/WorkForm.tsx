@@ -16,6 +16,9 @@
    (复用 WorkScreenshot,与列表同一渲染路径)。
    Agent/平台/模型家族芯片是原生 checkbox(has-checked 着色),无 JS 可提交;
    自填型号(回车添加)依赖 JS,删除键同样。
+   20260819 发布体验④:结构导览(kind seg 下 mono 锚点目录,全区块一眼可见,
+   可选项从「藏起来」变「列出来」)+ 折叠节头自解释(summaryHint 写明内容,
+   整行 hover 可点)。编辑态 defaultOpen 逻辑不变。
    保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -91,15 +94,19 @@ function Section({
   title,
   step,
   first = false,
+  id,
   children,
 }: {
   title: string;
   step?: number;
   first?: boolean;
+  /* 结构导览锚点(20260819):带 id 的节给 scroll-mt-28(112px ≈ 顶栏 56/64
+     + 吸顶导览行,锚跳后不被盖住) */
+  id?: string;
   children: ReactNode;
 }) {
   return (
-    <section className={`space-y-4 ${first ? "" : "border-t border-line pt-6"}`}>
+    <section id={id} className={`space-y-4 ${id ? "scroll-mt-28 " : ""}${first ? "" : "border-t border-line pt-6"}`}>
       <h3 className="kb-eyebrow">
         {step != null && <span className="mr-1.5 text-ui-blue/80">{String(step).padStart(2, "0")}</span>}
         {title}
@@ -113,20 +120,27 @@ function CollapseSection({
   title,
   step,
   optionalLabel,
+  summaryHint,
   defaultOpen = false,
+  id,
   children,
 }: {
   title: string;
   step?: number;
   /* 「可选」标记:调用方传本地化文案 */
   optionalLabel?: string;
+  /* 节内内容摘要(20260819 发布体验):折叠头自解释——一眼知道里面有什么,
+     可选项不再「不知道存在」。摘要行内展示,正常字重字距(eyebrow 外的说明) */
+  summaryHint?: string;
   defaultOpen?: boolean;
+  /* 结构导览锚点(同 Section) */
+  id?: string;
   children: ReactNode;
 }) {
   return (
-    <details open={defaultOpen} className="group border-t border-line pt-6">
-      <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">
-        <h3 className="kb-eyebrow transition-colors group-open:text-paper">
+    <details id={id} open={defaultOpen} className={`group border-t border-line pt-6 ${id ? "scroll-mt-28" : ""}`}>
+      <summary className="-mx-2 flex cursor-pointer select-none list-none items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-moon/60 [&::-webkit-details-marker]:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue">
+        <h3 className="kb-eyebrow shrink-0 transition-colors group-open:text-paper">
           {step != null && <span className="mr-1.5 text-ui-blue/80">{String(step).padStart(2, "0")}</span>}
           {title}
           {optionalLabel && (
@@ -135,10 +149,15 @@ function CollapseSection({
             </span>
           )}
         </h3>
+        {summaryHint && (
+          <span className="ml-auto hidden min-w-0 truncate font-sans text-xs normal-case tracking-normal text-grey/60 sm:inline">
+            {summaryHint}
+          </span>
+        )}
         <ChevronDown
           size={13}
           aria-hidden="true"
-          className="shrink-0 text-grey/60 transition-transform group-open:rotate-180"
+          className={`shrink-0 text-grey/60 transition-transform group-open:rotate-180 ${summaryHint ? "" : "ml-auto"}`}
         />
       </summary>
       <div className="mt-4 space-y-4">{children}</div>
@@ -491,8 +510,44 @@ export default function WorkForm({
         </div>
       )}
 
+      {/* 结构导览(20260819 发布体验):全区块锚点目录——有哪些可填一眼可见,
+          可选项从「藏起来」变「列出来」;awesome 意图下 03 为推荐信息(必填常开)。
+          sticky 吸顶(20260819 二轮):跳到目标节后导览仍常驻,回程不用滚回顶部;
+          移动端让位 MobileTopBar(64px),桌面让位固定顶栏(56px),弹窗内贴滚动
+          容器顶(0);负边距吃容器 padding 与粘性提交栏同款,两套互斥写。 */}
+      <nav
+        aria-label={t(locale, "works.formNav")}
+        className={`sticky z-10 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-line bg-bg/95 py-3 font-mono text-xs uppercase tracking-[0.08em] backdrop-blur ${
+          modal
+            ? "top-0 -mx-6 px-6"
+            : "top-16 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:top-14"
+        }`}
+      >
+        <a href="#wf-basic" className="text-grey transition-colors hover:text-ui-blue">
+          01 {t(locale, "works.secBasic")}
+        </a>
+        <a href="#wf-detail" className="text-grey transition-colors hover:text-ui-blue">
+          02 {t(locale, "works.secDetail")}
+        </a>
+        {kind === "awesome" ? (
+          <a href="#wf-recommend" className="text-grey transition-colors hover:text-ui-blue">
+            03 {t(locale, "works.secRecommend")}
+          </a>
+        ) : (
+          <a href="#wf-media" className="text-grey transition-colors hover:text-ui-blue">
+            03 {t(locale, "works.secMedia")} · {t(locale, "works.optional")}
+          </a>
+        )}
+        <a href="#wf-models" className="text-grey transition-colors hover:text-ui-blue">
+          04 {t(locale, "works.navModels")} · {t(locale, "works.optional")}
+        </a>
+        <a href="#wf-publish" className="text-grey transition-colors hover:text-ui-blue">
+          05 {t(locale, "works.secPublish")} · {t(locale, "works.optional")}
+        </a>
+      </nav>
+
       {/* ---- 01 基本信息:必填集中(name/type/agents)+ 链接二选一 ---- */}
-      <Section first step={1} title={t(locale, "works.secBasic")}>
+      <Section first step={1} id="wf-basic" title={t(locale, "works.secBasic")}>
         <div>
           <LabelWithCount htmlFor="work-name" label={t(locale, "works.name")} count={name.length} max={120} required />
           <input
@@ -615,7 +670,7 @@ export default function WorkForm({
       </Section>
 
       {/* ---- 02 详情介绍:desc + tags(高频填写字段,保持常开) ---- */}
-      <Section title={t(locale, "works.secDetail")} step={2}>
+      <Section title={t(locale, "works.secDetail")} step={2} id="wf-detail">
         <div>
           <LabelWithCount htmlFor="work-desc" label={t(locale, "works.desc")} count={desc.length} max={10000} />
           <MarkdownEditor
@@ -679,11 +734,12 @@ export default function WorkForm({
 
       {/* ---- 03 媒体素材(仅「我的作品」;常驻挂载,awesome 意图下整节隐藏;
               纯可选增强,默认折叠,编辑带回媒体时展开 ---- */}
-      <div className={kind === "site" ? "block" : "hidden"}>
+      <div id="wf-media" className={`scroll-mt-28 ${kind === "site" ? "block" : "hidden"}`}>
         <CollapseSection
           title={t(locale, "works.secMedia")}
           step={3}
           optionalLabel={t(locale, "works.optional")}
+          summaryHint={t(locale, "works.mediaSummary")}
           defaultOpen={Boolean(media && (media.logo || media.cover || media.images.length > 0))}
         >
           <WorkMediaFields
@@ -702,7 +758,7 @@ export default function WorkForm({
 
       {/* ---- 03 推荐信息(仅「推荐站外项目」;含必填字段,可见时常开;
               常驻挂载,site 意图下整节隐藏 ---- */}
-      <div className={kind === "awesome" ? "block" : "hidden"}>
+      <div id="wf-recommend" className={`scroll-mt-28 ${kind === "awesome" ? "block" : "hidden"}`}>
         <Section title={t(locale, "works.secRecommend")} step={3}>
           {/* 控件摘掉 name(无名控件不随表单提交):残留的 author_label 不会把
               「我的作品」误变成 awesome 条目(服务端按 author_label 非空分流) */}
@@ -773,6 +829,8 @@ export default function WorkForm({
         title={t(locale, "works.models")}
         step={4}
         optionalLabel={t(locale, "works.optional")}
+        summaryHint={t(locale, "works.modelsSummary")}
+        id="wf-models"
         defaultOpen={(initial?.models ?? []).length > 0}
       >
         <fieldset>
@@ -845,6 +903,8 @@ export default function WorkForm({
         title={t(locale, "works.secPublish")}
         step={5}
         optionalLabel={t(locale, "works.optional")}
+        summaryHint={t(locale, "works.publishSummary")}
+        id="wf-publish"
         defaultOpen={Boolean(
           workId &&
             (initial?.visibility === "private" ||

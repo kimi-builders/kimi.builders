@@ -1356,6 +1356,15 @@ const DICT = {
   "works.secRecommend": { zh: "推荐信息", en: "Recommendation" },
   "works.secDetail": { zh: "详情", en: "Details" },
   "works.secPublish": { zh: "发布选项", en: "Publishing" },
+  /* 20260819 发布体验:结构导览 + 折叠节头摘要(可选项从「藏起来」变「列出来」) */
+  "works.formNav": { zh: "表单结构", en: "Form sections" },
+  "works.navModels": { zh: "模型", en: "Models" },
+  "works.mediaSummary": { zh: "封面 / Logo / 图集 / 色档", en: "Cover / logo / gallery / tile tone" },
+  "works.modelsSummary": { zh: "用到的模型,可自填型号", en: "Models used; custom entries" },
+  "works.publishSummary": {
+    zh: "状态 / 声明投入徽章 / 私密与 AI 评论",
+    en: "Status / claimed-investment badge / privacy & AI replies",
+  },
   "works.coverCropTitle": { zh: "封面构图(16:9)", en: "Cover crop (16:9)" },
   "works.coverCropHint": {
     zh: "拖动定位、滑杆缩放;列表封面统一按 16:9 展示。",
