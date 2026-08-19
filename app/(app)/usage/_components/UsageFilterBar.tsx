@@ -107,7 +107,7 @@ function DimensionDropdown({
         }}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9 sm:w-auto sm:min-w-28"
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto sm:min-w-28"
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="shrink-0 text-grey">{dimension.label}</span>
@@ -396,7 +396,7 @@ export default function UsageFilterBar({
               disabled={pending}
               onClick={() => setMoreOpen((value) => !value)}
               aria-expanded={moreOpen}
-              className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line px-3 font-mono text-xs text-grey/80 transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:min-h-9 sm:w-auto"
+              className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line px-3 font-mono text-xs text-grey/80 transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 sm:w-auto"
             >
               {moreOpen
                 ? zh

@@ -78,6 +78,8 @@ interface RecordColumn {
   header: string;
   cell: (row: UsageRecordRow) => ReactNode;
   className?: string;
+  /* 数字列(20260819 版式对齐):表头/单元格右对齐,与品牌手册「数字列右对齐」一致 */
+  numeric?: boolean;
   titleOf?: (row: UsageRecordRow) => string | undefined;
 }
 
@@ -239,12 +241,14 @@ export default function UsageRecordsSection({
   columns.push({
     id: "input",
     header: zh ? "输入(含缓存写)" : "INPUT+CW",
+    numeric: true,
     cell: (row) => compact(row.inputTokens + row.cacheWriteInputTokens, zh),
   });
   if (enabled.has("cacheWrite")) {
     columns.push({
       id: "cacheWrite",
       header: zh ? "缓存写" : "CACHE W",
+      numeric: true,
       cell: (row) => compact(row.cacheWriteInputTokens, zh),
     });
   }
@@ -252,11 +256,13 @@ export default function UsageRecordsSection({
     {
       id: "cacheRead",
       header: zh ? "缓存读" : "CACHE R",
+      numeric: true,
       cell: (row) => compact(row.cacheReadInputTokens, zh),
     },
     {
       id: "output",
       header: zh ? "输出" : "OUTPUT",
+      numeric: true,
       cell: (row) => compact(row.outputTokens, zh),
     },
   );
@@ -264,6 +270,7 @@ export default function UsageRecordsSection({
     columns.push({
       id: "reasoning",
       header: zh ? "推理" : "REASON",
+      numeric: true,
       cell: (row) => compact(row.reasoningOutputTokens, zh),
     });
   }
@@ -271,11 +278,13 @@ export default function UsageRecordsSection({
     {
       id: "total",
       header: zh ? "总 TOKEN" : "TOTAL",
+      numeric: true,
       cell: (row) => compact(row.totalTokens, zh),
     },
     {
       id: "hitRate",
       header: zh ? "命中率" : "HIT%",
+      numeric: true,
       cell: (row) => {
         const rate = usageCacheHitRate(row);
         if (rate === null) return <span className="text-grey">—</span>;
@@ -289,12 +298,14 @@ export default function UsageRecordsSection({
     {
       id: "requests",
       header: zh ? "请求" : "REQS",
+      numeric: true,
       cell: (row) => compact(row.requests, zh),
     },
     {
       id: "cost",
       header: zh ? "估费" : "COST",
-      className: "whitespace-nowrap py-2 text-paper",
+      numeric: true,
+      className: "whitespace-nowrap py-2 text-right text-paper",
       cell: (row) => recordCost(row, zh, currency),
     },
   );
@@ -347,7 +358,10 @@ export default function UsageRecordsSection({
                 <thead>
                   <tr className="text-left font-mono text-xs tracking-wide text-grey">
                     {columns.map((column) => (
-                      <th key={column.id} className="whitespace-nowrap pb-2 pr-4 font-normal">
+                      <th
+                        key={column.id}
+                        className={`whitespace-nowrap pb-2 pr-4 font-normal ${column.numeric ? "text-right" : ""}`}
+                      >
                         {column.header}
                       </th>
                     ))}
@@ -362,7 +376,7 @@ export default function UsageRecordsSection({
                       {columns.map((column) => (
                         <td
                           key={column.id}
-                          className={column.className ?? "whitespace-nowrap py-2 pr-4 text-paper"}
+                          className={column.className ?? `whitespace-nowrap py-2 pr-4 text-paper${column.numeric ? " text-right" : ""}`}
                           title={column.titleOf?.(row)}
                         >
                           {column.cell(row)}

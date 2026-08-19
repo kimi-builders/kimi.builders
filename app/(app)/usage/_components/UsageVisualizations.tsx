@@ -236,7 +236,8 @@ function TrendCore({
                     x2={width - padR}
                     y2={y(tick)}
                     style={{ stroke: "var(--color-viz-grid)" }}
-                    strokeDasharray={tick === 0 ? undefined : "2 4"}
+                    /* 20260819:网格线按品牌工作令牌统一为实线(chart.gridlineStyle=solid),
+                       虚线只留给数据线(7 日均线),层级不再混淆 */
                     strokeWidth={tick === 0 ? 1.2 : 1}
                   />
                   <text

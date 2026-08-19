@@ -966,7 +966,7 @@ export default async function UsagePage({
       <section className="mt-3 grid grid-cols-2 rounded-2xl border border-line bg-card sm:grid-cols-3 lg:grid-cols-5">
         {stripCells.map((cellItem) => (
           <div key={cellItem.label} title={cellItem.title} className={STRIP_CELL}>
-            <div className="flex items-center gap-0.5 text-xs tracking-[0.08em] text-grey/80">
+            <div className="flex items-center gap-0.5 font-mono text-xs tracking-[0.08em] text-grey/80">
               <span className="truncate">{cellItem.label}</span>
               {cellItem.help === "duration" && (
                 <UsageMethodologyDialog kind="duration" compact {...methodologyProps} />

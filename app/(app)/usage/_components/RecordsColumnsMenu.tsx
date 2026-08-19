@@ -63,7 +63,9 @@ export default function RecordsColumnsMenu({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9"
+        /* 20260819:去掉 sm:min-h-9 桌面降档——与同排 seg 控件(h-11)统一 44px,
+           此前桌面端 36px 比 seg 矮一截(明细页头「按日/按 30 分钟 + 列」错层) */
+        className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {zh ? "列" : "Columns"}
         {enabled.length > 0 ? ` · ${enabled.length}` : ""}

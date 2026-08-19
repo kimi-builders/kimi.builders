@@ -39,7 +39,7 @@ export default function UsageInsightPanel({
       </div>
       <div className="mt-4 grid gap-2 lg:grid-cols-3">
         {insights.map((insight, index) => (
-          <article key={insight.id} className={`rounded-xl border p-3.5 ${TONE_CLASS[insight.tone]}`}>
+          <article key={insight.id} className={`rounded-xl border p-4 ${TONE_CLASS[insight.tone]}`}>
             <div className="flex items-start gap-2.5">
               <span className="shrink-0 font-mono text-xs text-ui-blue">
                 {String(index + 1).padStart(2, "0")}
