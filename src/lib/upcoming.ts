@@ -7,7 +7,7 @@ export const UPCOMING = {
      learn 20260921 重新关闸:机制(毕业归因/讨论闭环/ref 解析)已齐,但 _data.ts
      的策展内容仍是占位(假外链 + 占位 ref id=0)——开闸标准:外链逐条真实 +
      ref 配真实对象 + 计数与渲染同口径(已就绪)。 */
-  blog: true,
+  blog: false,
   learn: true,
   demoNight: true,
 } as const;
