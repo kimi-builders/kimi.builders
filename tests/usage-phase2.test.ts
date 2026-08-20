@@ -280,10 +280,13 @@ function zeroTokens() {
 test("filters: 预设/兼容 days/自定义范围/跨度上限", () => {
   const now = new Date("2026-08-08T12:00:00.000Z");
   const opts = { uploadProject: false, tzOffsetMinutes: 480, now };
-  assert.equal(parseUsageFilters({}, opts).days, 30);
+  const defaults = parseUsageFilters({}, opts);
+  assert.equal(defaults.rangeLabel, "today");
+  assert.equal(defaults.days, 1);
+  assert.equal(defaults.from.toISOString(), "2026-08-07T16:00:00.000Z");
   assert.equal(parseUsageFilters({ range: "90d" }, opts).days, 90);
   assert.equal(parseUsageFilters({ days: "7" }, opts).days, 7);
-  assert.equal(parseUsageFilters({ range: "bogus" }, opts).days, 30);
+  assert.equal(parseUsageFilters({ range: "bogus" }, opts).rangeLabel, "today");
 
   const custom = parseUsageFilters({ from: "2026-07-01", to: "2026-07-15" }, opts);
   assert.equal(custom.rangeLabel, "custom");
@@ -292,7 +295,7 @@ test("filters: 预设/兼容 days/自定义范围/跨度上限", () => {
   assert.equal(custom.from.toISOString(), "2026-06-30T16:00:00.000Z");
 
   const tooWide = parseUsageFilters({ from: "2024-01-01", to: "2026-01-01" }, opts);
-  assert.equal(tooWide.rangeLabel, "30d");
+  assert.equal(tooWide.rangeLabel, "today");
   assert.ok(USAGE_MAX_RANGE_DAYS >= 366);
 });
 

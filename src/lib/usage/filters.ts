@@ -38,6 +38,7 @@ export interface UsageFilters {
 }
 
 export const USAGE_RANGE_PRESETS = [7, 30, 90] as const;
+export const USAGE_DEFAULT_RANGE: UsageRangeLabel = "today";
 export const USAGE_MAX_RANGE_DAYS = 366;
 export const USAGE_MAX_PAGE_SIZE = 100;
 export const USAGE_DEFAULT_PAGE_SIZE = 25;
@@ -90,8 +91,8 @@ export function parseUsageFilters(
   const tzOffsetMinutes = clampTzOffset(options.tzOffsetMinutes);
 
   // 预设范围优先;兼容旧参数 days=7|30|90;from/to 为预留的自定义范围接口。
-  let days = 30;
-  let rangeLabel: UsageRangeLabel = "30d";
+  let days = 1;
+  let rangeLabel: UsageRangeLabel = USAGE_DEFAULT_RANGE;
   let from: Date;
   let to: Date = now;
   const rangeParam = first(raw.range).trim();
@@ -112,7 +113,7 @@ export function parseUsageFilters(
   }
   const customFrom = localDayStartUtc(first(raw.from).trim(), tzOffsetMinutes);
   const customTo = localDayStartUtc(first(raw.to).trim(), tzOffsetMinutes);
-  if (rangeLabel === "30d" && !rangeParam && !first(raw.days) && customFrom && customTo) {
+  if (!rangeParam && !first(raw.days) && customFrom && customTo) {
     const spanDays = Math.round((customTo.getTime() - customFrom.getTime()) / 86_400_000) + 1;
     if (spanDays >= 1 && spanDays <= USAGE_MAX_RANGE_DAYS && customFrom <= now) {
       rangeLabel = "custom";
