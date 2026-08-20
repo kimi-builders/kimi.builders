@@ -48,3 +48,23 @@ test("site pricing uses the canonical catalog and processing tier", async () => 
   );
 });
 
+test("canonical catalog keeps Codex auto-review priced after the revision boundary", async () => {
+  const prices = await loadModelPrices();
+  const at = new Date("2026-08-20T12:00:00.000Z");
+  const matched = matchModelPrice(
+    prices,
+    "codex-auto-review",
+    at,
+    "codex",
+    undefined,
+    "",
+  );
+  assert.equal(matched?.inputPerMtok, 2.5);
+  assert.equal(matched?.cacheReadPerMtok, 0.25);
+  assert.equal(matched?.outputPerMtok, 15);
+  assert.equal(matched?.effectiveTo, null);
+  assert.equal(
+    matchModelPrice(prices, "codex-auto-review", at, "claude-code"),
+    null,
+  );
+});

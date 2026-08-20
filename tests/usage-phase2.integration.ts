@@ -325,14 +325,19 @@ async function main() {
     assert.ok(overview.meta.pricingMatches.some((row) => row.model === "gpt-5-codex"));
 
     // kimi-code/k3 在摄入时被归一为 canonical kimi-k3,命中统一价格目录的前缀行
-    // (3.00/15.00/缓存读 0.30)。集成测试跟随 canonical catalog 版本,
-    // 不再把保留作迁移审计的 usage_model_prices 版本误当成运行时价格版本:
+    // (3.00/15.00/缓存读 0.30)。命中版本跟随该价格条目,不把目录发布版本
+    // 或保留作迁移审计的 usage_model_prices 版本误当成条目版本:
     // 150×3 + 20×3(写回退 input)+ 40×0.3 + 15×15 = 747 micros
     assert.ok(!overview.meta.unpricedModels.includes("kimi-code/k3"));
-    assert.ok(overview.meta.pricingVersions.includes(USAGE_PRICE_CATALOG.catalogVersion));
     const kimiMatch = overview.meta.pricingMatches.find(
       (row) => row.model === "kimi-code/k3",
     );
+    const kimiCatalogEntry = USAGE_PRICE_CATALOG.entries.find(
+      (row) => row.pattern === "kimi-k3" && row.source === null,
+    );
+    assert.ok(kimiCatalogEntry);
+    assert.ok(overview.meta.pricingVersions.includes(kimiCatalogEntry.version));
+    assert.equal(kimiMatch?.version, kimiCatalogEntry.version);
     assert.equal(kimiMatch?.modelCanonical, "kimi-k3");
     assert.equal(kimiMatch?.matchedPattern, "kimi-k3");
     // claude-opus-4: 300×5 + 105×6.25 + 50×0.5 + 30×25 = 2931.25 micros
