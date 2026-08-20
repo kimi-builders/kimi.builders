@@ -156,6 +156,31 @@ test("pricing: Codex GPT-5.6 variants beat the generic gpt-5 prefix", () => {
   assert.equal(estimate.micros, 9_199_992);
 });
 
+test("pricing: historical blank processing tier means standard API", () => {
+  const standard = price({
+    modelPattern: "kimi-k3",
+    matchKind: "exact",
+    processingTier: "standard",
+    version: "catalog-current",
+  });
+  assert.equal(
+    matchModelPrice([standard], "kimi-k3", day("2026-08-08"), "kimi-code", undefined, "")
+      ?.version,
+    "catalog-current",
+  );
+  assert.equal(
+    matchModelPrice(
+      [standard],
+      "kimi-k3",
+      day("2026-08-08"),
+      "kimi-code",
+      undefined,
+      "   ",
+    )?.version,
+    "catalog-current",
+  );
+});
+
 test("pricing: GPT-5.6 context tier selects the correct rate and discloses legacy assumptions", () => {
   const prices = [
     price({

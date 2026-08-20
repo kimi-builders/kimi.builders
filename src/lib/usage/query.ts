@@ -271,7 +271,7 @@ function mapRecordRows(
         reasoningEffort: String(row.reasoning_effort ?? ""),
         agentVersion: String(row.agent_version ?? ""),
         contextTier,
-        processingTier: String(row.processing_tier ?? ""),
+        processingTier: String(row.processing_tier ?? "").trim() || "standard",
         project: row.project_label === null ? null : String(row.project_label),
         deviceId: String(row.device_public_id),
         deviceName: usageDeviceDisplayName(device),
@@ -871,7 +871,7 @@ export async function getUsageOverview(
     const modelCanonical = canonicalModelOf(row);
     const modelProvider = String(row.model_provider ?? "");
     const contextTier = String(row.context_tier ?? "");
-    const processingTier = String(row.processing_tier ?? "standard");
+    const processingTier = String(row.processing_tier ?? "").trim() || "standard";
     const at = new Date(row.sample_at as string);
     const tokens = tokensOf(row);
     const matched = model === LEGACY_MODEL
@@ -882,7 +882,7 @@ export async function getUsageOverview(
           at,
           source,
           contextTier || undefined,
-          processingTier || "standard",
+          processingTier,
         );
     const estimate = estimateCostMicros(tokens, matched, contextTier || undefined);
     const key = `${source}\u0000${model}\u0000${modelCanonical}\u0000${modelProvider}\u0000${contextTier}\u0000${processingTier}\u0000${matched?.version ?? ""}\u0000${matched?.effectiveFrom.toISOString() ?? ""}`;

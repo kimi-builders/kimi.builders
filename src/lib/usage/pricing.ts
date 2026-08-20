@@ -101,6 +101,11 @@ export function matchModelPrice(
 ): UsageModelPrice | null {
   const name = model.trim();
   if (!name) return null;
+  // Phase 1/2 rows predate processing-tier collection and persist an empty
+  // string. Treat that historical absence as the standard API tier; otherwise
+  // switching to the canonical catalog would silently make all old rows
+  // unpriced because every catalog entry names its tier explicitly.
+  const resolvedProcessingTier = processingTier.trim() || "standard";
   const slash = name.lastIndexOf("/");
   const rawCandidates =
     slash > 0 && slash < name.length - 1 ? [name, name.slice(slash + 1)] : [name];
@@ -112,7 +117,14 @@ export function matchModelPrice(
     return [candidate, normalized, claudeAlias];
   }))];
   for (const candidate of candidates) {
-    const hit = matchExactOrPrefix(prices, candidate, at, source, contextTier, processingTier);
+    const hit = matchExactOrPrefix(
+      prices,
+      candidate,
+      at,
+      source,
+      contextTier,
+      resolvedProcessingTier,
+    );
     if (hit) return hit;
   }
   return null;

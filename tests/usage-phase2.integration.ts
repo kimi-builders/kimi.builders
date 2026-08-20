@@ -16,6 +16,7 @@ import {
 import { exportUsageData } from "../src/lib/usage/export";
 import { parseUsageFilters } from "../src/lib/usage/filters";
 import { ingestUsage } from "../src/lib/usage/ingest";
+import { USAGE_PRICE_CATALOG } from "../src/lib/usage/price-catalog";
 import { getUsageDashboard, getUsageOverview } from "../src/lib/usage/query";
 import { getUsageSettings } from "../src/lib/usage/settings";
 import { validateUsageIngest } from "../src/lib/usage/validation";
@@ -323,10 +324,12 @@ async function main() {
     );
     assert.ok(overview.meta.pricingMatches.some((row) => row.model === "gpt-5-codex"));
 
-    // kimi-code/k3 在摄入时被归一为 canonical kimi-k3,命中 v1 前缀行(3.00/15.00/缓存读 0.30):
+    // kimi-code/k3 在摄入时被归一为 canonical kimi-k3,命中统一价格目录的前缀行
+    // (3.00/15.00/缓存读 0.30)。集成测试跟随 canonical catalog 版本,
+    // 不再把保留作迁移审计的 usage_model_prices 版本误当成运行时价格版本:
     // 150×3 + 20×3(写回退 input)+ 40×0.3 + 15×15 = 747 micros
     assert.ok(!overview.meta.unpricedModels.includes("kimi-code/k3"));
-    assert.ok(overview.meta.pricingVersions.includes("2026-08-08"));
+    assert.ok(overview.meta.pricingVersions.includes(USAGE_PRICE_CATALOG.catalogVersion));
     const kimiMatch = overview.meta.pricingMatches.find(
       (row) => row.model === "kimi-code/k3",
     );
@@ -526,23 +529,23 @@ async function main() {
     assert.equal(bystander.totals.sessions, 0);
     assert.equal(bystander.records.rows.length, 0);
 
-    // —— 价格生效窗口(直插两行:8/15 体验价 $2、9/15 标准价 $3) ——
-    for (const start of ["2026-08-15 00:00:00", "2026-09-15 00:00:00"]) {
+    // —— canonical catalog 价格生效窗口:MiniMax M3 在 8/14 从 $0.60 调整为 $0.30 ——
+    for (const start of ["2026-08-11 12:00:00", "2026-08-20 12:00:00"]) {
       await pool.query(
         `INSERT INTO usage_buckets
            (user_id, device_id, source, model, project_label, project_hash, bucket_start,
             input_tokens, request_count, measurement)
-         VALUES (?, ?, 'claude-code', 'claude-sonnet-5-20260101', NULL, UNHEX(SHA2('', 256)), ?,
+         VALUES (?, ?, 'opencode', 'minimax-m3', NULL, UNHEX(SHA2('', 256)), ?,
                  1000000, 1, 'exact')`,
         [userId, deviceA.principal.deviceId, start],
       );
     }
-    for (const start of ["2026-08-31 23:30:00", "2026-09-01 00:00:00"]) {
+    for (const start of ["2026-08-13 23:30:00", "2026-08-14 00:00:00"]) {
       await pool.query(
         `INSERT INTO usage_buckets
            (user_id, device_id, source, model, project_label, project_hash, bucket_start,
             input_tokens, request_count, measurement)
-         VALUES (?, ?, 'claude-code', 'claude-sonnet-5-20260101', NULL, UNHEX(SHA2('', 256)), ?,
+         VALUES (?, ?, 'opencode', 'minimax-m3', NULL, UNHEX(SHA2('', 256)), ?,
                  1000000, 1, 'exact')`,
         [userId, deviceA.principal.deviceId, start],
       );
@@ -550,12 +553,12 @@ async function main() {
     const windowed = await getUsageOverview(
       userId,
       parseUsageFilters(
-        { from: "2026-08-10", to: "2026-10-20" },
+        { from: "2026-08-10", to: "2026-08-25", models: "minimax-m3" },
         { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-11-01T00:00:00Z") },
       ),
     );
-    // 两个体验价桶 + 两个标准价桶 = $10；每条事实独立命中价格窗口。
-    assert.ok(Math.abs(windowed.totals.costMicros - 10_000_000) < 1);
+    // 两个旧价桶($0.60) + 两个新价桶($0.30) = $1.80；每条事实独立命中价格窗口。
+    assert.ok(Math.abs(windowed.totals.costMicros - 1_800_000) < 1);
     assert.equal(windowed.totals.totalTokens, 4_000_000);
     assert.equal(windowed.meta.pricedTokens, 4_000_000);
     assert.equal(windowed.meta.unpricedTokens, 0);
@@ -568,6 +571,10 @@ async function main() {
       windowed.trend.reduce((sum, row) => sum + row.costMicros, 0),
       windowed.totals.costMicros,
     );
+    const minimaxMatches = windowed.meta.pricingMatches.filter(
+      (row) => row.modelCanonical === "minimax-m3",
+    );
+    assert.equal(new Set(minimaxMatches.map((row) => row.effectiveFrom)).size, 2);
     for (const distribution of [
       windowed.distributions.source,
       windowed.distributions.model,
@@ -586,14 +593,14 @@ async function main() {
     const sameLocalDay = await getUsageOverview(
       userId,
       parseUsageFilters(
-        { from: "2026-08-31", to: "2026-08-31", sources: "claude-code" },
+        { from: "2026-08-13", to: "2026-08-13", sources: "opencode" },
         { uploadProject: true, tzOffsetMinutes: -60, now: new Date("2026-11-01T00:00:00Z") },
       ),
     );
     assert.equal(sameLocalDay.records.rows.length, 1);
     assert.equal(sameLocalDay.records.rows[0].totalTokens, 2_000_000);
-    assert.ok(Math.abs(sameLocalDay.records.rows[0].costMicros - 5_000_000) < 1);
-    assert.ok(Math.abs(sameLocalDay.totals.costMicros - 5_000_000) < 1);
+    assert.ok(Math.abs(sameLocalDay.records.rows[0].costMicros - 900_000) < 1);
+    assert.ok(Math.abs(sameLocalDay.totals.costMicros - 900_000) < 1);
 
     // —— 分页 ——
     const page1 = await getUsageOverview(userId, filters({ ps: "2", page: "1" }));
