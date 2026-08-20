@@ -162,7 +162,7 @@ export function buildUsageLeaderboardCostQuery(
   });
   return {
     sql: `SELECT b.user_id, b.source, b.model, b.model_canonical, b.model_provider,
-                 b.context_tier, b.measurement, DATE(b.bucket_start) AS day,
+                 b.context_tier, b.processing_tier, b.measurement, DATE(b.bucket_start) AS day,
                  SUM(b.input_tokens) AS input_tokens,
                  SUM(b.cache_write_input_tokens) AS cache_write_input_tokens,
                  SUM(b.cache_write_5m_input_tokens) AS cache_write_5m_input_tokens,
@@ -177,7 +177,7 @@ export function buildUsageLeaderboardCostQuery(
           WHERE b.user_id IN (${ids.join(",")})
             AND b.bucket_start >= ?
           GROUP BY b.user_id, b.source, b.model, b.model_canonical, b.model_provider,
-                   b.context_tier, b.measurement, day`,
+                   b.context_tier, b.processing_tier, b.measurement, day`,
     params: [usageLeaderboardCutoff(period, now)],
   };
 }
@@ -189,6 +189,7 @@ export interface UsageLeaderboardCostRow {
   model_canonical: unknown;
   model_provider: unknown;
   context_tier: unknown;
+  processing_tier?: unknown;
   measurement: unknown;
   day: unknown;
   input_tokens: unknown;
@@ -241,6 +242,7 @@ export function aggregateUsageLeaderboardCosts(
             row.day instanceof Date ? row.day : new Date(String(row.day)),
             String(row.source),
             String(row.context_tier ?? "") || undefined,
+            String(row.processing_tier ?? "standard"),
           ),
           String(row.context_tier ?? "") || undefined,
         );

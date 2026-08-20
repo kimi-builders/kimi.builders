@@ -1,13 +1,12 @@
-/* 服务端版本化价格表(Phase 2)。
-   价格只存在于服务端 usage_model_prices 表;Collector 永远不内置价格。
+/* 版本化价格目录。社区公开 API 与站内估费共享同一份 canonical catalog;
+   usage_model_prices 表保留历史迁移与审计兼容,不再是运行时唯一事实源。
    匹配规则:exact 优先于 prefix;prefix 取最长命中;同长度时 source 限定行优先于通用行;
    生效窗口 [effective_from, effective_to) 按 bucket 发生时间取价,不用今日价格回算历史。
    费率回退链:cacheWrite NULL → input 价(Moonshot/OpenAI 不单收 cache 写);
    reasoning NULL → output 价(OpenAI/Moonshot 把 reasoning 计入 output 计费);
    cacheRead NULL → 该类目未定价,token 照常统计但不计入估费(模型标记 partial)。 */
-import type { RowDataPacket } from "mysql2";
 import type mysql from "mysql2/promise";
-import { getPool } from "../db";
+import { USAGE_PRICE_CATALOG } from "./price-catalog";
 
 export interface UsageModelPrice {
   modelPattern: string;
@@ -66,37 +65,26 @@ function rate(value: unknown): number | null {
 export async function loadModelPrices(
   db?: Pick<mysql.Pool, "query">,
 ): Promise<UsageModelPrice[]> {
-  const pool = db ?? getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT model_pattern, match_kind, source, context_tier, processing_tier,
-            effective_from, effective_to, input_per_mtok, cache_write_per_mtok,
-            cache_write_5m_per_mtok, cache_write_1h_per_mtok,
-            cache_read_per_mtok, output_per_mtok, reasoning_per_mtok, version,
-            pricing_source_url, verified_at, pricing_basis
-     FROM usage_model_prices`,
-  );
-  return rows.map((row) => ({
-    modelPattern: String(row.model_pattern),
-    matchKind: row.match_kind === "exact" ? "exact" : "prefix",
-    source: row.source === null ? null : String(row.source),
-    contextTier: String(row.context_tier ?? ""),
-    processingTier: String(row.processing_tier ?? "standard"),
-    effectiveFrom: new Date(row.effective_from as string),
-    effectiveTo: row.effective_to === null ? null : new Date(row.effective_to as string),
-    inputPerMtok: Number(row.input_per_mtok),
-    cacheWritePerMtok: rate(row.cache_write_per_mtok),
-    cacheWrite5mPerMtok: rate(row.cache_write_5m_per_mtok),
-    cacheWrite1hPerMtok: rate(row.cache_write_1h_per_mtok),
-    cacheReadPerMtok: rate(row.cache_read_per_mtok),
-    outputPerMtok: Number(row.output_per_mtok),
-    reasoningPerMtok: rate(row.reasoning_per_mtok),
-    version: String(row.version),
-    pricingSourceUrl: String(row.pricing_source_url ?? ""),
-    verifiedAt:
-      row.verified_at === null || row.verified_at === undefined
-        ? null
-        : new Date(row.verified_at as string).toISOString().slice(0, 10),
-    pricingBasis: String(row.pricing_basis ?? "standard-api"),
+  void db;
+  return USAGE_PRICE_CATALOG.entries.map((entry) => ({
+    modelPattern: entry.pattern,
+    matchKind: entry.match,
+    source: entry.source,
+    contextTier: entry.contextTier,
+    processingTier: entry.processingTier,
+    effectiveFrom: new Date(entry.effectiveFrom),
+    effectiveTo: entry.effectiveTo === null ? null : new Date(entry.effectiveTo),
+    inputPerMtok: Number(entry.input),
+    cacheWritePerMtok: rate(entry.cacheWrite),
+    cacheWrite5mPerMtok: rate(entry.cacheWrite5m),
+    cacheWrite1hPerMtok: rate(entry.cacheWrite1h),
+    cacheReadPerMtok: rate(entry.cacheRead),
+    outputPerMtok: Number(entry.output),
+    reasoningPerMtok: rate(entry.reasoning),
+    version: entry.version,
+    pricingSourceUrl: entry.sourceUrl,
+    verifiedAt: entry.verifiedAt || null,
+    pricingBasis: entry.basis,
   }));
 }
 
@@ -109,14 +97,22 @@ export function matchModelPrice(
   at: Date,
   source?: string,
   contextTier?: string,
+  processingTier = "standard",
 ): UsageModelPrice | null {
   const name = model.trim();
   if (!name) return null;
   const slash = name.lastIndexOf("/");
-  const candidates =
+  const rawCandidates =
     slash > 0 && slash < name.length - 1 ? [name, name.slice(slash + 1)] : [name];
+  const candidates = [...new Set(rawCandidates.flatMap((candidate) => {
+    const normalized = candidate.toLowerCase().replace(/[\s_]+/g, "-");
+    const claudeAlias = normalized.startsWith("claude-")
+      ? normalized.replace(/-(\d+)\.(\d+)(?=-|$)/g, "-$1-$2")
+      : normalized;
+    return [candidate, normalized, claudeAlias];
+  }))];
   for (const candidate of candidates) {
-    const hit = matchExactOrPrefix(prices, candidate, at, source, contextTier);
+    const hit = matchExactOrPrefix(prices, candidate, at, source, contextTier, processingTier);
     if (hit) return hit;
   }
   return null;
@@ -128,6 +124,7 @@ function matchExactOrPrefix(
   at: Date,
   source?: string,
   contextTier?: string,
+  processingTier = "standard",
 ): UsageModelPrice | null {
   const inWindow = (price: UsageModelPrice) =>
     price.effectiveFrom <= at && (price.effectiveTo === null || at < price.effectiveTo);
@@ -150,6 +147,7 @@ function matchExactOrPrefix(
         price.modelPattern === name &&
         inWindow(price) &&
         contextRank(price) >= 0 &&
+        price.processingTier === processingTier &&
         (price.source === null || price.source === source),
     )
     .sort((a, b) => contextRank(b) - contextRank(a) || sourceRank(b) - sourceRank(a));
@@ -161,6 +159,7 @@ function matchExactOrPrefix(
         name.startsWith(price.modelPattern) &&
         inWindow(price) &&
         contextRank(price) >= 0 &&
+        price.processingTier === processingTier &&
         (price.source === null || price.source === source),
     )
     .sort(
@@ -297,10 +296,11 @@ export function priceIntoLedger(
   at: Date,
   source?: string,
   contextTier?: string,
+  processingTier = "standard",
 ): UsagePriceEstimate {
   const estimate = estimateCostMicros(
     tokens,
-    matchModelPrice(prices, model, at, source, contextTier),
+    matchModelPrice(prices, model, at, source, contextTier, processingTier),
     contextTier,
   );
   ledger.micros += estimate.micros;

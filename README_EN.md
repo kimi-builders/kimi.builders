@@ -40,6 +40,16 @@ knowledge — and an AI that actually lives in the community.
 - **i18n & theming**: Chinese/English toggle; dark/light themes plus two visual vibes
   (poster / soft).
 
+## Public pricing catalog API
+
+The site and `@kimi.builders/usage` share one versioned standard-API USD pricing
+catalog at `GET /api/public/usage-pricing/v1/catalog`. It is unauthenticated and
+supports `ETag` / `If-None-Match`; it returns only model match rules, prices,
+effective windows, and provenance—never user usage. The CLI validates the schema,
+revision, and SHA-256 integrity, then falls back to its last-known-good cache or
+bundled snapshot when an update fails. Revisions are append-only: content cannot be
+silently replaced under an existing revision.
+
 ## Screenshots
 
 | Community | Works | Awesome |

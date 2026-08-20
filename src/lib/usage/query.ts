@@ -234,6 +234,7 @@ function mapRecordRows(
             new Date(row.sample_at as string),
             String(row.source),
             contextTier || undefined,
+            String(row.processing_tier ?? "standard"),
           ),
           contextTier || undefined,
         );
@@ -674,6 +675,7 @@ export async function getUsageOverview(
             new Date(row.sample_at as string),
             String(row.source),
             String(row.context_tier ?? "") || undefined,
+            String(row.processing_tier ?? "standard"),
         ),
       String(row.context_tier ?? "") || undefined,
     );
@@ -695,6 +697,7 @@ export async function getUsageOverview(
       new Date(row.sample_at as string),
       String(row.source),
       String(row.context_tier ?? "") || undefined,
+      String(row.processing_tier ?? "standard"),
     );
     estimateByRow.set(row, estimate);
     return estimate.micros;
@@ -773,6 +776,7 @@ export async function getUsageOverview(
           new Date(row.sample_at as string),
           String(row.source),
           String(row.context_tier ?? "") || undefined,
+          String(row.processing_tier ?? "standard"),
         ),
         String(row.context_tier ?? "") || undefined,
       ).micros;
@@ -872,7 +876,14 @@ export async function getUsageOverview(
     const tokens = tokensOf(row);
     const matched = model === LEGACY_MODEL
       ? null
-      : matchModelPrice(prices, modelCanonical, at, source, contextTier || undefined);
+      : matchModelPrice(
+          prices,
+          modelCanonical,
+          at,
+          source,
+          contextTier || undefined,
+          processingTier || "standard",
+        );
     const estimate = estimateCostMicros(tokens, matched, contextTier || undefined);
     const key = `${source}\u0000${model}\u0000${modelCanonical}\u0000${modelProvider}\u0000${contextTier}\u0000${processingTier}\u0000${matched?.version ?? ""}\u0000${matched?.effectiveFrom.toISOString() ?? ""}`;
     const existing = pricingMatchMap.get(key);

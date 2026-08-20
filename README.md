@@ -30,6 +30,14 @@
 - **月刊与知识库**:社区月刊(`blog`)、新手指南与教程(`learn`)、Demo Night 活动页。
 - **双语与双主题**:中文/English 一键切换;深色/浅色主题 + poster/soft 两种视觉气质。
 
+## 公开价格目录 API
+
+本站与 `@kimi.builders/usage` 共用同一份版本化标准 API 美元价格目录：
+`GET /api/public/usage-pricing/v1/catalog`。端点无需登录，支持 `ETag` / `If-None-Match`，
+只返回模型匹配规则、价格、生效窗口与来源，不接收或返回任何用户用量。CLI 会严格校验
+schema、revision 和 SHA-256 完整性；更新失败时继续使用本机 last-known-good 或随包内置快照。
+目录 revision 只增不改，同一 revision 不允许静默替换内容。
+
 ## 截图
 
 | 社区讨论 | 作品墙 | Awesome |
