@@ -24,10 +24,13 @@ import {
 } from "@/src/lib/explore";
 import { findLearnSeries } from "@/src/lib/learn-series";
 import { UPCOMING } from "@/src/lib/upcoming";
+import { getWorksView } from "@/src/lib/works-view-server";
 import PageHeader from "@/components/PageHeader";
 import SoonPanel from "../_components/SoonPanel";
 import WorksFilterBar from "../works/_components/WorksFilterBar";
+import WorksViewToggle from "../works/_components/WorksViewToggle";
 import SeriesGridCard from "./_components/SeriesGridCard";
+import SeriesRowCard from "./_components/SeriesRowCard";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -133,6 +136,8 @@ export default async function ExplorePage({
   const selYear = first(sp.year);
 
   const items = await listExploreItems(locale);
+  /* 系列视图的行式/网格:与作品墙同一 cookie 偏好(kb-works-view) */
+  const seriesView = await getWorksView();
   const kindCounts = countByKind(items);
   const seriesCounts = countSeries(items);
   const tagCounts = countTags(items);
@@ -214,26 +219,26 @@ export default async function ExplorePage({
         }
       />
 
-      {/* 维度切换(分段控件,计数随行) */}
-      <nav
-        aria-label={zh ? "浏览维度" : "Browse dimensions"}
-        className={`${SEG_WRAP} mt-8 max-sm:w-full max-sm:flex-wrap`}
-      >
-        {viewTabs.map((v) => (
-          <Link
-            key={v.view}
-            href={exploreHref(v.view)}
-            scroll={false}
-            aria-current={view === v.view ? "page" : undefined}
-            className={`${SEG_ITEM} ${view === v.view ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
-          >
-            {zh ? v.zh : v.en} <span className="opacity-60">{v.count}</span>
-          </Link>
-        ))}
-      </nav>
-
-      {/* 当前维度的筛选器(作品/Awesome 同款下拉;view 参数随行保留) */}
-      <div className="mt-4">
+      {/* 工具行(与作品/Awesome 同一结构):维度 seg + 当前维度筛选下拉同一行,
+          选中项 chip 行在下一行(WorksFilterBar 内部生长);系列视图多出
+          行式/网格切换(与作品墙同一 cookie 偏好) */}
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <nav
+          aria-label={zh ? "浏览维度" : "Browse dimensions"}
+          className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
+        >
+          {viewTabs.map((v) => (
+            <Link
+              key={v.view}
+              href={exploreHref(v.view)}
+              scroll={false}
+              aria-current={view === v.view ? "page" : undefined}
+              className={`${SEG_ITEM} ${view === v.view ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+            >
+              {zh ? v.zh : v.en} <span className="opacity-60">{v.count}</span>
+            </Link>
+          ))}
+        </nav>
         <WorksFilterBar
           basePath="/explore"
           preservedQuery={view === "categories" ? "" : `view=${view}`}
@@ -246,23 +251,36 @@ export default async function ExplorePage({
             archives: { year: selYear ? [selYear] : [] },
           }[view]}
         />
+        {view === "series" && !selSeries && (
+          <WorksViewToggle locale={locale} view={seriesView} />
+        )}
       </div>
 
       {/* 内容区 */}
       <div className="mt-6">
         {view === "series" && !selSeries ? (
-          /* 系列网格:作品卡语法(封面在上 16:9 + 内容在下) */
+          /* 系列:行式/网格随作品墙同一偏好(getWorksView cookie) */
           seriesCounts.length === 0 ? (
             <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
               {zh ? "还没有系列上架。" : "No series yet."}
             </p>
-          ) : (
+          ) : seriesView === "grid" ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {seriesCounts.map((c) => {
                 const s = findLearnSeries(c.slug)!;
                 const list = items.filter((i) => i.series === c.slug);
                 return (
                   <SeriesGridCard key={c.slug} series={s} episodes={list} zh={zh} />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {seriesCounts.map((c) => {
+                const s = findLearnSeries(c.slug)!;
+                const list = items.filter((i) => i.series === c.slug);
+                return (
+                  <SeriesRowCard key={c.slug} series={s} episodes={list} zh={zh} />
                 );
               })}
             </div>
