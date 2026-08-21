@@ -93,6 +93,15 @@ export default function PostForm({
     if (state?.ok && state.postId) router.push(`/community/${state.postId}`);
   }, [state, router]);
 
+  /* 校验失败:错误条滚进视野(对齐 WorkForm 的长表单防「看似无反应」处理,
+     20260821 评审——发布键在表单底部,错误若只出现在原位会被提交键挡住) */
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (state && !state.ok && state.error) {
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [state]);
+
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       const draft = readCommunityDraft(window.localStorage.getItem(COMMUNITY_DRAFT_KEY));
@@ -340,7 +349,14 @@ export default function PostForm({
       </div>
 
       {state?.error && (
-        <p role="alert" className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">{state.error}</p>
+        <p
+          ref={errorRef}
+          role="alert"
+          tabIndex={-1}
+          className="rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper"
+        >
+          {state.error}
+        </p>
       )}
 
       <div className="flex items-center gap-3 border-t border-line pt-4">

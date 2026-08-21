@@ -50,11 +50,14 @@
 
   /* UI 状态色(20260818 收编):柔和底 + 文字/图标冗余,替代 Tailwind 字面
      red/amber/emerald(亮色主题下对比度不达标)。-fg 后缀为文字态,随主题翻转;
-     底色用法如 bg-status-danger/10,描边如 border-status-danger/40。 */
+     底色用法如 bg-status-danger/10,描边如 border-status-danger/40。
+     warn 20260821 调离官方柠檬黄绿 #F4F9A7:与 ok #B3F4A8 明度色相双近,
+     同屏(热图 ok/warn 相邻格、stale 三元)难瞬间区分;向琥珀拉到 #F7E08E,
+     保持柔和底体质,色相与绿/粉拉开(评审建议 1)。 */
   --color-status-ok: #b3f4a8;
   --color-status-ok-fg: #b3f4a8;
-  --color-status-warn: #f4f9a7;
-  --color-status-warn-fg: #f4f9a7;
+  --color-status-warn: #f7e08e;
+  --color-status-warn-fg: #f7e08e;
   --color-status-danger: #ffd1d4;
   --color-status-danger-fg: #ffd1d4;
 
@@ -559,6 +562,18 @@ html[data-vibe="soft"] .vibe-card-soft {
   }
 }
 
+/* 手动「减少动效」(20260821 评审):设置页开关写 <html data-motion="reduce">,
+   与上方系统 prefers-reduced-motion 同一套降级——不是所有用户都知道系统级
+   设置在哪。两块规则保持同参,改一处记得同步另一处。 */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] ::before,
+html[data-motion="reduce"] ::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* Keep compact horizontal filter rows touch-scrollable without a desktop gutter. */
 .scrollbar-none {
   scrollbar-width: none;
@@ -626,6 +641,9 @@ html[data-vibe="soft"] .vibe-card-soft {
     animation: none;
   }
 }
+html[data-motion="reduce"] .usage-pulse-dot {
+  animation: none;
+}
 
 /* ---- feed 卡格式化摘要(.md 的紧凑降档位,~5 行截断 + 底部渐隐)---- */
 .md-feed .md {
@@ -684,6 +702,32 @@ html[data-vibe="soft"] .vibe-card-soft {
   );
 }
 
+/* ---- 长文阅读档(20260821 评审):月刊评鉴与教程文稿是「读文章」场景,
+   与社区帖/评论的「刷列表」拉开排版档次——CJK 字形密度高,长读 15px 偏小
+   易疲劳;16.5px/1.9 是月刊正文主档。外层挂类(Markdown 内部仍是 .md),
+   模式同 .md-feed;社区帖/评论不受影响。 ---- */
+.md-longform .md {
+  font-size: 16.5px;
+  line-height: 1.9;
+}
+.md-longform .md p,
+.md-longform .md ul,
+.md-longform .md ol,
+.md-longform .md blockquote,
+.md-longform .md pre,
+.md-longform .md table {
+  margin-bottom: 1.1em;
+}
+.md-longform .md h1,
+.md-longform .md h2,
+.md-longform .md h3,
+.md-longform .md h4 {
+  margin-top: 1.6em;
+}
+.md-longform .md blockquote {
+  font-size: 1.05em;
+}
+
 /* 名称砖 · theme 档(20260914):不用中性 moon——深色取首页门面的深空
    #0E0E13 + 品牌纸 #EFE8DC,浅色取站点背景白(令牌随主题);与品牌资产同一色系。 */
 .work-cover-tile {
@@ -724,6 +768,27 @@ html[data-vibe="soft"] .vibe-card-soft {
 }
 .work-tone .work-tone__logo {
   border-color: rgb(255 255 255 / 0.15);
+}
+/* 名称砖纹理变体(20260821 评审):细网格给纯平色档一点工程气质的节奏,
+   按砖面标识哈希取舍(cover-tones.ts 的 coverTextureClass),色档不变、
+   密度上来后同色砖不再千篇一律。纹理用 currentColor 派生——深砖(冷白
+   文字)出白线、浅砖(深字)出墨线,双主题零额外覆盖;置于文字层下。 */
+.work-tile-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, currentColor 7%, transparent) 0 1px,
+      transparent 1px 12px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, currentColor 7%, transparent) 0 1px,
+      transparent 1px 12px
+    );
 }
 /* 色档色值(20260819 换入 Kimi 品牌体系,不再自造色相;id 不变,存量零迁移):
    蓝 = 官方深蓝 #002F5B(深色)/ 官方浅蓝 #A0DAF7(浅色,深蓝字);
@@ -839,6 +904,18 @@ main h1 {
   color: var(--color-grey);
 }
 
+/* 海报→App 的品牌语汇回声(20260821 评审):首页暖纸海报的人文字体
+   (--font-human,引语/宣言)在进入 App 的第一站(社区页头)回响一次,
+   衔接海报编辑气质与 App 工程气质。规范与 .kb-eyebrow 同参(12px/+0.08em),
+   仅字族换 human serif;EN 不强制大写——serif 小字号全大写字距开会糊,
+   保持句首大写更利读。 */
+.kb-eyebrow-human {
+  font-family: var(--font-human);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-grey);
+}
+
 .kb-h1 {
   font-size: clamp(2.25rem, 1.75rem + 1.6vw, 2.75rem);
   line-height: 1.18;
@@ -870,19 +947,39 @@ main h1 {
   color: var(--color-grey);
 }
 
+/* 月刊(letter)标题/导语的人文字体档(20260821 评审):letter 与 guide 同表
+   共架,需要一眼可辨的内容形态信号——字体比角标更强。serif 与 sans 的
+   同视觉重量换算:500/-0.01em(对照 sans 档的 600/-0.02em);导语同步
+   serif + 半档字号。guide 保持 sans 工程气质,eyebrow 仍 mono
+   (技术标签规范不破)。 */
+.kb-h1-human {
+  font-family: var(--font-human);
+  font-size: clamp(2.25rem, 1.75rem + 1.6vw, 2.75rem);
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.kb-lede-human {
+  font-family: var(--font-human);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-grey);
+}
+
 main article p {
   line-height: 1.65;
 }
 
-main nav a {
+/* 真导航链接的触控命中(20260821 收敛):原 main nav a 全局规则
+   (min-height + 字号)+ kb-control-group 豁免改为专门类——全局元素
+   选择器每多一个 nav 工具栏就要打一次豁免补丁,收敛后只有真导航
+   (页签条/前后篇导航/结构导览/首页入口)挂本类;工具栏分段控件
+   (seg)自带 h-11/min-h-0 外高,不受影响。字号由各站点自己的
+   text-* 控制,不再全局强设。 */
+.kb-navlink {
   min-height: 2.5rem;
-  font-size: 0.8125rem;
-}
-
-/* 工具栏分段控件自行管理 44px 外高,不继承通用导航链接最小高度。 */
-main nav.kb-control-group > a,
-main nav.kb-control-group > button {
-  min-height: 0;
 }
 
 .leftnav {
@@ -950,7 +1047,7 @@ body > main p {
     height: 100%;
   }
 
-  main nav a {
+  .kb-navlink {
     min-height: 2.75rem;
   }
 }

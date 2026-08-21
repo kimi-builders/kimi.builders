@@ -111,7 +111,7 @@ export default function WorkCard({
     /* 行式卡:移动端图在上,sm+ 图在左固定列;标题独占一行截断,
        类型/Agent/声明/精选收成一条 mono meta 行,底行 hairline 分隔。
        group:封面轻放大 + 标题变蓝的 hover 载体。 */
-    <article className={`kb-work-card group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30 sm:flex-row ${
+    <article className={`kb-work-card group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30 sm:flex-row ${
       w.source === "awesome" ? "kb-awesome-card" : "kb-member-card"
     }`}>
       {/* 整卡链详情页(P1-2,absolute 覆盖链接);下方交互元素抬 z-10 保持独立跳转 */}

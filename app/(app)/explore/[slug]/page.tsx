@@ -96,7 +96,7 @@ function LetterDetail({
       id: "digest",
       label: zh ? "本月评鉴" : "The review",
       panel: (
-        <div className="border-b border-line py-9">
+        <div className="md-longform border-b border-line py-9">
           <Markdown source={issue.bodyMd} />
         </div>
       ),
@@ -222,8 +222,8 @@ function LetterDetail({
             </span>
           )}
         </p>
-        <h1 className="kb-h1 mt-3">{issue.title}</h1>
-        <p className="kb-lede mt-4 max-w-2xl">{issue.summary}</p>
+        <h1 className="kb-h1-human mt-3">{issue.title}</h1>
+        <p className="kb-lede-human mt-4 max-w-2xl">{issue.summary}</p>
         <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
           <span>
             {zh ? "主编" : "ed."}{" "}
@@ -279,7 +279,7 @@ function LetterDetail({
         className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"
       >
         {prev ? (
-          <Link href={`/explore/${prev.slug}`} className="group min-w-0">
+          <Link href={`/explore/${prev.slug}`} className="kb-navlink group min-w-0">
             <span className="flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
               <ArrowLeft size={13} aria-hidden="true" />
               {zh ? "上一期" : "OLDER"}
@@ -292,7 +292,7 @@ function LetterDetail({
           <span />
         )}
         {next ? (
-          <Link href={`/explore/${next.slug}`} className="group min-w-0 text-right">
+          <Link href={`/explore/${next.slug}`} className="kb-navlink group min-w-0 text-right">
             <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
               {zh ? "下一期" : "NEWER"}
               <ArrowRight size={13} aria-hidden="true" />
@@ -345,7 +345,7 @@ function GuideDetail({
       id: "read",
       label: zh ? "文稿" : "Read",
       panel: (
-        <div className="border-b border-line py-9">
+        <div className="md-longform border-b border-line py-9">
           <Markdown source={tutorial.bodyMd} />
         </div>
       ),
@@ -546,7 +546,7 @@ function GuideDetail({
           className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"
         >
           {prev ? (
-            <Link href={`/explore/${prev.slug}`} className="group min-w-0">
+            <Link href={`/explore/${prev.slug}`} className="kb-navlink group min-w-0">
               <span className="flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
                 <ArrowLeft size={13} aria-hidden="true" />
                 {zh ? "上一集" : "PREVIOUS"}
@@ -559,7 +559,7 @@ function GuideDetail({
             <span />
           )}
           {next ? (
-            <Link href={`/explore/${next.slug}`} className="group min-w-0 text-right">
+            <Link href={`/explore/${next.slug}`} className="kb-navlink group min-w-0 text-right">
               <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
                 {zh ? "下一集" : "NEXT"}
                 <ArrowRight size={13} aria-hidden="true" />

@@ -40,7 +40,7 @@ export default function PostCard({
   /* 前缀基本用满 ≈ 正文被截断;无标题帖始终给「阅读全文」主链接位 */
   const truncated = p.bodyMd.length >= 499;
   return (
-    <article className="rounded-2xl border border-line bg-card px-5 pb-4 pt-5 transition-colors hover:border-paper/20">
+    <article className="rounded-2xl border border-line bg-card px-5 pb-4 pt-5 transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/20">
       <div className="flex items-center gap-2.5">
         <Link href={`/u/${p.handle}`} className="shrink-0">
           <Avatar url={p.avatarUrl} handle={p.handle} size={34} />

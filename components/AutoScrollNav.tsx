@@ -25,7 +25,9 @@ export default function AutoScrollNav({
 
     const target = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
     const left = Math.min(nav.scrollWidth - nav.clientWidth, Math.max(0, target));
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotion =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      document.documentElement.getAttribute("data-motion") === "reduce";
 
     nav.scrollTo({
       left,

@@ -221,7 +221,7 @@ export default async function Home({
             <Link
               key={href}
               href={href}
-              className="flex w-32 flex-col items-center gap-1 rounded-lg border border-line px-2 py-2.5 text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="kb-navlink flex w-32 flex-col items-center gap-1 rounded-lg border border-line px-2 py-2.5 text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <span className="tracking-wider">{t(locale, key)}</span>
               <span className="text-xs tracking-normal text-grey/70">

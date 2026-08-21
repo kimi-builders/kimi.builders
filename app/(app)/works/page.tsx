@@ -77,6 +77,11 @@ export default async function WorksPage({
     ? await getClaimAllowance(user.id)
     : null;
 
+  /* stagger 入场只在默认视图挂载(20260821 评审):筛选/排序切换是服务端
+     重渲染,卡片 key 全换会让前 8 项重放入场动画,观感像卡顿;
+     默认视图(无任何筛选参数)才挂 stagger-in,软导航进入仍有流动感 */
+  const stagger = currentSort === "new" && activeAgents.length === 0 && activeKinds.length === 0;
+
   return (
     <div>
       <PageHeader
@@ -173,7 +178,7 @@ export default async function WorksPage({
         </div>
       ) : (
         <div
-          className={`stagger-in mt-8 grid gap-4 ${
+          className={`mt-8 grid gap-4 ${stagger ? "stagger-in " : ""}${
             view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
           }`}
         >

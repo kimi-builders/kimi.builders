@@ -3,7 +3,8 @@
 /* 数据条滚动数字(20260815 评审):进入视口后 0.9s ease-out 数到终值,
    让「社区是活的」有最低成本的动效证明。
    SSR/初始渲染直接给终值(无 JS / 首屏无布局位移,SEO 也是真数字),
-   水合后按需起播;prefers-reduced-motion 直接停在终值。 */
+   水合后按需起播;prefers-reduced-motion 或手动减动效(html data-motion,
+   20260821)直接停在终值。 */
 import { useEffect, useRef, useState } from "react";
 import { compactNumber } from "@/src/lib/format";
 import type { Locale } from "@/src/lib/i18n";
@@ -24,6 +25,7 @@ export default function CountUpStat({
     const el = ref.current;
     if (!el) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (document.documentElement.getAttribute("data-motion") === "reduce") return;
     let raf = 0;
     let started = false;
     const io = new IntersectionObserver(

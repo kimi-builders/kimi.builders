@@ -523,25 +523,25 @@ export default function WorkForm({
             : "top-16 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:top-14"
         }`}
       >
-        <a href="#wf-basic" className="text-grey transition-colors hover:text-ui-blue">
+        <a href="#wf-basic" className="kb-navlink text-grey transition-colors hover:text-ui-blue">
           01 {t(locale, "works.secBasic")}
         </a>
-        <a href="#wf-detail" className="text-grey transition-colors hover:text-ui-blue">
+        <a href="#wf-detail" className="kb-navlink text-grey transition-colors hover:text-ui-blue">
           02 {t(locale, "works.secDetail")}
         </a>
         {kind === "awesome" ? (
-          <a href="#wf-recommend" className="text-grey transition-colors hover:text-ui-blue">
+          <a href="#wf-recommend" className="kb-navlink text-grey transition-colors hover:text-ui-blue">
             03 {t(locale, "works.secRecommend")}
           </a>
         ) : (
-          <a href="#wf-media" className="text-grey transition-colors hover:text-ui-blue">
+          <a href="#wf-media" className="kb-navlink text-grey transition-colors hover:text-ui-blue">
             03 {t(locale, "works.secMedia")} · {t(locale, "works.optional")}
           </a>
         )}
-        <a href="#wf-models" className="text-grey transition-colors hover:text-ui-blue">
+        <a href="#wf-models" className="kb-navlink text-grey transition-colors hover:text-ui-blue">
           04 {t(locale, "works.navModels")} · {t(locale, "works.optional")}
         </a>
-        <a href="#wf-publish" className="text-grey transition-colors hover:text-ui-blue">
+        <a href="#wf-publish" className="kb-navlink text-grey transition-colors hover:text-ui-blue">
           05 {t(locale, "works.secPublish")} · {t(locale, "works.optional")}
         </a>
       </nav>

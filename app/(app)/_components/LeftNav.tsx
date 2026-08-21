@@ -30,8 +30,9 @@ import { WORKS_SRC_COOKIE, type WorksSource } from "@/src/lib/works-view";
 import GithubIcon from "./GithubIcon";
 import { NavToggle, SidebarToggle } from "./pref-controls";
 
-/* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
-const SECTIONS = [
+/* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染。
+   移动端抽屉(MobileNavDrawer)复用同一份注册表,两端入口永远一致。 */
+export const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
   { href: "/explore", icon: Compass, key: "nav.explore", soon: UPCOMING.explore, hidden: UPCOMING.explore },
   { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
@@ -125,12 +126,10 @@ export default function LeftNav({
             收起态(rail)下分组细线仍在,SOON 徽标保留(item 级标注)。 */}
         {SECTIONS.filter((s) => !s.hidden && !s.soon).map((s) => {
           const Icon = s.icon;
-          /* 用量需登录:未登录直链登录弹窗(其余板块公开浏览) */
-          const href = s.href === "/usage" ? gate(s.href) : s.href;
           return (
             <Link prefetch={false}
               key={s.href}
-              href={href}
+              href={s.href}
               data-tip={t(locale, s.key)}
               data-tip-side="right"
               className={itemCls(isActive(s.href))}

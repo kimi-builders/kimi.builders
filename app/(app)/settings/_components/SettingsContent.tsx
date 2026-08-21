@@ -10,10 +10,11 @@ import { getUserPasswordHash, isOwnAvatarUrl } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getLinkedAccounts, getOwnProfile } from "@/src/lib/users";
+import { getUiPrefs } from "@/src/lib/prefs";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import GithubIcon from "../../_components/GithubIcon";
 import LoginGate from "../../_components/LoginGate";
-import { LocaleSeg, ThemeCards, VibeCards } from "../../_components/pref-controls";
+import { LocaleSeg, MotionSeg, NavToggle, SidebarToggle, ThemeCards, VibeCards } from "../../_components/pref-controls";
 import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
 import PasswordForm from "./PasswordForm";
@@ -46,6 +47,11 @@ function ymd(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 }
+
+/* 「界面布局」双键的设置页样式(与左栏 DISPLAY 组同一语法;
+   form 等宽由 globals.css 的 .panel-pair 规则给) */
+const layoutPairBtnCls =
+  "flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
 
 export default async function SettingsContent({
   showTitle = true,
@@ -85,12 +91,14 @@ export default async function SettingsContent({
     );
   }
 
-  const [own, accounts, usageSettings, passwordHash] = await Promise.all([
+  const [own, accounts, usageSettings, passwordHash, prefs] = await Promise.all([
     getOwnProfile(user.id),
     getLinkedAccounts(user.id),
     getUsageSettings(user.id),
     /* 只用来推导 hasPassword 布尔;哈希本身不下发任何客户端 props */
     getUserPasswordHash(user.id),
+    /* 动效 seg 的 SSR 初值(kb_motion cookie) */
+    getUiPrefs(),
   ]);
   if (!own) return null;
 
@@ -139,6 +147,14 @@ export default async function SettingsContent({
               <p className="text-sm font-medium text-paper">{t(locale, "set.locale")}</p>
               <LocaleSeg />
             </div>
+            {/* 动效(20260821 评审):手动减动效出口,跟随系统为默认 */}
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line py-4">
+              <div>
+                <p className="text-sm font-medium text-paper">{t(locale, "set.motion")}</p>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-grey">{t(locale, "set.motionNote")}</p>
+              </div>
+              <MotionSeg locale={locale} initial={prefs.motion} />
+            </div>
             <div className="border-t border-line pt-4">
               <p className="text-sm font-medium text-paper">{t(locale, "set.theme")}</p>
               <div className="mt-3">
@@ -152,6 +168,17 @@ export default async function SettingsContent({
                 <VibeCards locale={locale} />
               </div>
               <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.vibeNote")}</p>
+            </div>
+            {/* 界面布局(20260821 评审):左栏收起/右栏隐藏的第二入口,
+                提升 DISPLAY 双键的可发现性;按钮复用 pref-controls 的
+                NavToggle/SidebarToggle(乐观 cookie 翻转,与左栏同一开关) */}
+            <div className="border-t border-line pt-4">
+              <p className="text-sm font-medium text-paper">{t(locale, "set.layout")}</p>
+              <div className="panel-pair mt-3 flex max-w-md gap-1.5">
+                <NavToggle locale={locale} className={layoutPairBtnCls} />
+                <SidebarToggle locale={locale} className={layoutPairBtnCls} />
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.layoutNote")}</p>
             </div>
           </Panel>
 

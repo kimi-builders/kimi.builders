@@ -7,8 +7,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Star } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import EmptyState from "@/components/EmptyState";
 import LoadMore from "@/components/LoadMore";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import PageHeader from "@/components/PageHeader";
@@ -71,6 +71,14 @@ export default async function AwesomePage({
   );
 
   const preservedQuery = currentSort !== "new" ? `sort=${currentSort}` : "";
+
+  /* stagger 入场只在默认视图挂载(20260821 评审,与 /works 同口径):
+     筛选/排序切换是服务端重渲染,卡片 key 全换会重放入场动画 */
+  const stagger =
+    currentSort === "new" &&
+    activeAgents.length === 0 &&
+    activeKinds.length === 0 &&
+    !activeScope;
 
   /* sort 切换保留筛选 */
   const sortHref = (nextSort: string) => {
@@ -158,15 +166,13 @@ export default async function AwesomePage({
       </div>
 
       {page.nodes.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-line bg-card p-8 text-center">
-          <Star size={22} className="mx-auto text-grey" aria-hidden="true" />
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-grey">
-            {t(locale, "awesome.empty")}
-          </p>
-        </div>
+        <EmptyState
+          className="mt-4"
+          message={t(locale, "awesome.empty")}
+        />
       ) : (
         <div
-          className={`stagger-in mt-8 grid gap-4 ${
+          className={`mt-8 grid gap-4 ${stagger ? "stagger-in " : ""}${
             view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
           }`}
         >

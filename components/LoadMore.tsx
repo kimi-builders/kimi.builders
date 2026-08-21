@@ -7,6 +7,7 @@
    追加的卡片直接落在父容器里(无包装节点):space-y / grid 布局都照常生效,
    按钮用 col-span-full 在网格里独占一行(块布局下该属性无副作用)。 */
 import { useState, type ReactNode } from "react";
+import { LoaderCircle } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 
@@ -59,8 +60,10 @@ export default function LoadMore<T extends string | number>({
           type="button"
           onClick={more}
           disabled={busy}
-          className="col-span-full rounded-lg border border-line px-5 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue disabled:opacity-40"
+          aria-busy={busy}
+          className="col-span-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-5 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue disabled:opacity-40"
         >
+          {busy && <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />}
           {busy ? t(locale, "pager.loading") : t(locale, "pager.loadMore")}
         </button>
       )}

@@ -6,7 +6,7 @@
    无 JS 时退化为 form POST(server action 翻 cookie 后整页重渲)。
    语言是唯一需要网络的:界面文案全部 SSR,客户端翻完 cookie 后
    router.refresh() 拉新文案(一次往返),并 fire-and-forget 写账号偏好。 */
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Circle,
@@ -21,6 +21,7 @@ import {
 import { t, type Locale } from "@/src/lib/i18n";
 import {
   SEG_ITEM,
+  SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
   SEG_WRAP,
 } from "@/components/seg-classes";
@@ -32,7 +33,7 @@ import {
   toggleNavAction,
   toggleSidebarAction,
 } from "../community/actions";
-import { setLocaleToAction, setThemeToAction, setVibeToAction } from "../settings/actions";
+import { setLocaleToAction, setMotionToAction, setThemeToAction, setVibeToAction } from "../settings/actions";
 
 const YEAR = 365 * 86400;
 
@@ -355,6 +356,57 @@ export function ThemeCards({ locale }: { locale: Locale }) {
           <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "set.themeLight")}
           </span>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/* 动效分段(设置页「偏好」,20260821 评审):跟随系统 / 减少动效。
+   纯客户端 cookie(kb_motion),reduce → <html data-motion="reduce">,
+   globals.css 里与系统 prefers-reduced-motion 同一套降级;
+   激活态本地态驱动(data-motion 无值时属性整个移除,不能用 CSS 态类)。 */
+export function MotionSeg({
+  locale,
+  initial,
+}: {
+  locale: Locale;
+  /* SSR 直出 cookie 初值(root layout 的 getUiPrefs) */
+  initial: "follow" | "reduce";
+}) {
+  const [value, setValue] = useState(initial);
+  const pick =
+    (next: "follow" | "reduce") =>
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      setValue(next);
+      if (next === "reduce") {
+        document.documentElement.setAttribute("data-motion", "reduce");
+      } else {
+        document.documentElement.removeAttribute("data-motion");
+      }
+      writeCookie("kb_motion", next);
+    };
+  return (
+    <div className={SEG_WRAP} role="group" aria-label={t(locale, "set.motion")}>
+      <form action={setMotionToAction} className="contents">
+        <button
+          type="submit"
+          name="motion"
+          value="follow"
+          onClick={pick("follow")}
+          className={`${SEG_ITEM} ${value === "follow" ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+        >
+          {t(locale, "set.motionFollow")}
+        </button>
+        <button
+          type="submit"
+          name="motion"
+          value="reduce"
+          onClick={pick("reduce")}
+          className={`${SEG_ITEM} ${value === "reduce" ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+        >
+          {t(locale, "set.motionReduce")}
         </button>
       </form>
     </div>

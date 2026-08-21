@@ -471,7 +471,7 @@ export default async function ProfilePage({
                     href={item.href}
                     scroll={false}
                     aria-current={active ? "page" : undefined}
-                    className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                    className={`kb-navlink -mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
                       active
                         ? "border-blue text-paper"
                         : "border-transparent text-grey hover:text-paper"

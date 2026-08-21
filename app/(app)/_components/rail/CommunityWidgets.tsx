@@ -10,6 +10,7 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { TrackClick } from "@/app/(app)/_components/track";
 import Avatar from "@/components/Avatar";
+import EmptyState from "@/components/EmptyState";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { formatEventTime, getUpcomingSummary } from "@/src/lib/demo-night";
 import {
@@ -200,7 +201,7 @@ export default async function CommunityWidgets({
 
       <Widget title={t(locale, "side.hot")}>
         {data.hot.length === 0 ? (
-          <p className="text-xs text-grey">{t(locale, "side.hotEmpty")}</p>
+          <EmptyState variant="inline" message={t(locale, "side.hotEmpty")} />
         ) : (
           <ul className="space-y-2.5">
             {data.hot.map((h, i) => (
@@ -244,6 +245,8 @@ export default async function CommunityWidgets({
       </Widget>
 
       <Widget title={t(locale, "side.newMembers")}>
+        {/* handle 不再整行复读(20260821 评审):Link title + Avatar alt
+            (无头像时首字母色块)已提供兜底,同一行 @handle 出现两遍是噪音 */}
         <div className="flex gap-2">
           {data.newMembers.map((m) => (
             <Link
@@ -261,9 +264,6 @@ export default async function CommunityWidgets({
             </Link>
           ))}
         </div>
-        <p className="mt-2 font-mono text-xs leading-relaxed text-grey">
-          {data.newMembers.map((m) => `@${m.handle}`).join(" ")}
-        </p>
       </Widget>
     </>
   );

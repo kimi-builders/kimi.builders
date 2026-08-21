@@ -7,7 +7,7 @@ import AgentIcon from "@/components/AgentIcon";
 import { ChartHeader, InsightHeader, MetricCard } from "@/components/data-display";
 import UsageInsightPanel from "@/components/UsageInsightPanel";
 import UsageAttributionSummary from "@/components/UsageAttributionSummary";
-import LoginGate from "@/app/(app)/_components/LoginGate";
+import UsagePublicView from "./_components/UsagePublicView";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { compactNumber, relTime } from "@/src/lib/format";
@@ -420,22 +420,9 @@ export default async function UsagePage({
   const zh = locale === "zh";
 
   if (!user) {
-    /* 未登录:统一登录引导卡(20260919,直开/刷新的兜底;侧栏入口已直链弹窗) */
-    return (
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
-          <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量" : "Usage"}
-        </h1>
-        <p className="mt-4 text-sm leading-relaxed text-grey">
-          {zh
-            ? "以 Kimi 为第一公民的多 Agent AI 编程用量中心。数据默认私有，只上传统计字段。"
-            : "A Kimi-first usage center for AI coding agents. Data stays private and only metrics are uploaded."}
-        </p>
-        <div className="mt-8">
-          <LoginGate locale={locale} title={t(locale, "gate.usage")} next="/usage" />
-        </div>
-      </div>
-    );
+    /* 未登录(20260821 评审):公开只读概览替代整页登录门——用量榜是本站
+       最有特色的橱窗,聚合数据本就来自 opt-in 公开缓存,个人面板仍需登录。 */
+    return <UsagePublicView locale={locale} />;
   }
 
   const deviceLoadPromise = captureUsageOperation(

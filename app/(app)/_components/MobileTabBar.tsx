@@ -1,12 +1,12 @@
 "use client";
 
-/* <lg 底部标签栏(主流 app 布局):社区 / 作品 / 发帖 / 用量 / 我的。
+/* <lg 底部标签栏(主流 app 布局):社区 / 探索 / 作品 / 发帖 / 用量 / 我的。
    完整功能、通知、设置与偏好从 MobileTopBar 的导航抽屉进入。
    桌面三栏壳(LeftNav/RightSidebar)在移动端整体让位给它。
    fixed 定位 + safe-area 内边距(iPhone home 条);主区在 (app)/layout 里补 pb-24 防遮挡。 */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, GalleryVerticalEnd, MessagesSquare, SquarePen, User } from "lucide-react";
+import { BarChart3, Compass, GalleryVerticalEnd, MessagesSquare, SquarePen, User } from "lucide-react";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 
 export default function MobileTabBar({
@@ -41,6 +41,12 @@ export default function MobileTabBar({
           !pathname.startsWith("/community/notifications")),
     },
     {
+      href: "/explore",
+      icon: Compass,
+      key: "nav.explore" as const,
+      active: pathname.startsWith("/explore"),
+    },
+    {
       href: "/works",
       icon: GalleryVerticalEnd,
       key: "nav.works" as const,
@@ -56,7 +62,7 @@ export default function MobileTabBar({
       primary: true,
     },
     {
-      href: gate("/usage"),
+      href: "/usage",
       icon: BarChart3,
       key: "nav.usage" as const,
       active: pathname.startsWith("/usage"),
@@ -70,7 +76,7 @@ export default function MobileTabBar({
   ];
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-      <div className="grid grid-cols-5">
+      <div className="grid grid-cols-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (

@@ -92,6 +92,16 @@ const DICT = {
     zh: "还没有订阅任何帖子 —— 在帖子页点「订阅」,重点讨论就会聚到这里。",
     en: "Nothing subscribed yet — hit Subscribe on a thread and it will gather here.",
   },
+  /* 空社区的行动引导(20260821 评审):一句内容指引 + 显式 CTA,
+     比只有鼓励文案更能把「第一条内容」等来 */
+  "feed.emptyHint": {
+    zh: "展示你的 build、抛出卡住的坑、或聊聊用法心得 —— 分类齐全,哪格都行。",
+    en: "Show off a build, ask about a blocker, or share how you work — every category counts.",
+  },
+  "feed.emptyCta": {
+    zh: "发布第一帖",
+    en: "Start the first thread",
+  },
   /* ---- 帖子详情 ---- */
   "post.comments": { zh: "{n} 条评论", en: "{n} comments" },
   "post.commentPh": {
@@ -491,6 +501,22 @@ const DICT = {
   },
   "vibe.poster": { zh: "工程棱角", en: "Sharp" },
   "vibe.soft": { zh: "圆润经典", en: "Classic" },
+  /* 界面布局(20260821 评审):左栏收起/右栏隐藏的设置页入口,
+     提升两个 DISPLAY 开关的可发现性 */
+  "set.layout": { zh: "界面布局", en: "Layout" },
+  "set.layoutNote": {
+    zh: "收起左栏或隐藏右栏,主列立即变宽;同一组开关也在左栏底部「界面」组。",
+    en: "Collapse the left nav or hide the right rail for a wider canvas; the same switches live at the bottom of the left nav.",
+  },
+  /* 动效偏好(20260821 评审):手动减动效出口——不是所有用户都知道
+     系统级 prefers-reduced-motion 设置在哪 */
+  "set.motion": { zh: "动效", en: "Motion" },
+  "set.motionFollow": { zh: "跟随系统", en: "Follow system" },
+  "set.motionReduce": { zh: "减少动效", en: "Reduce motion" },
+  "set.motionNote": {
+    zh: "减少动效会关闭全站的入场/悬停/脉冲动画;也可在系统辅助功能里设置。",
+    en: "Reduce motion disables entrances, hovers, and pulses site-wide; your OS accessibility setting works too.",
+  },
   "set.account": { zh: "账号", en: "Account" },
   "set.linked": { zh: "已绑定的登录方式", en: "Linked sign-in methods" },
   "set.linkedBadge": { zh: "已绑定", en: "Linked" },
@@ -633,6 +659,22 @@ const DICT = {
     zh: "登录后查看你的用量看板:",
     en: "Log in to see your usage dashboard:",
   },
+  /* 未登录公开概览(UsagePublicView):榜单橱窗 + 登录引导 */
+  "usage.publicLede": {
+    zh: "以 Kimi 为第一公民的多 Agent AI 编程用量中心。数据默认私有,只上传统计字段;榜单由成员自愿公开(opt-in)。",
+    en: "A Kimi-first usage center for multi-agent AI coding. Data stays private by default — metrics only; the leaderboard is shared by members opt-in.",
+  },
+  "usage.publicBoard": { zh: "近 30 天用量榜", en: "30-DAY LEADERBOARD" },
+  "usage.publicFull": { zh: "查看完整榜单 →", en: "Full leaderboard →" },
+  "usage.publicEmpty": {
+    zh: "还没有人公开用量数据。连接设备并选择上榜,成为第一个。",
+    en: "No one has opted in yet. Connect a device and opt in to be the first.",
+  },
+  "usage.publicGate": {
+    zh: "登录并连接设备,解锁你的个人用量面板(模型分布 / 项目归因 / 时段热图)。",
+    en: "Sign in and connect a device to unlock your personal dashboard (models / projects / heatmap).",
+  },
+  "usage.publicDays": { zh: "{n} 天活跃", en: "{n} active days" },
   "usage.last30": { zh: "最近 30 天", en: "LAST 30 DAYS" },
   "usage.tokensIn": { zh: "输入", en: "input" },
   "usage.tokensOut": { zh: "输出", en: "output" },
@@ -1380,7 +1422,9 @@ const DICT = {
   "topbar.notif": { zh: "消息通知", en: "Notifications" },
   /* 顶栏/首页右上角偏好开关的提示与无障碍名(20260816 起 t() 单语,不再双语并排) */
   "topbar.theme": { zh: "切换主题", en: "Toggle theme" },
-  "topbar.vibe": { zh: "切换视觉气质", en: "Toggle visual style" },
+  /* 气质切换 tooltip(20260821 评审):「切换视觉气质」说不出差异,
+     直接给两种气质的名字,用户未点也有预期 */
+  "topbar.vibe": { zh: "视觉气质:工程棱角 ⇄ 圆润经典", en: "Visual style: Sharp ⇄ Classic" },
   "topbar.lang": { zh: "切换语言", en: "Switch language" },
   "rail.postMeta": { zh: "帖子信息", en: "POST INFO" },
   "rail.board": { zh: "板块", en: "Board" },

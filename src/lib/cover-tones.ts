@@ -32,3 +32,15 @@ export function coverToneName(id: string, zh: boolean): string {
   const tone = COVER_TONES.find((item) => item.id === id) ?? COVER_TONES[0];
   return zh ? tone.zh : tone.en;
 }
+
+/* 名称砖纹理变体(20260821 评审):色档保持少而重(三固定色 + theme),
+   密度上来后同色砖重复率高、视觉节奏单调;按砖面标识(产品名)稳定哈希,
+   让约一半砖带细网格纹理(.work-tile-grid,色档与主题渲染都在 CSS),
+   同名砖保持同纹理(名称砖本就按名生成)。纯函数,单测直接测。 */
+export function coverTextureClass(key: string): "work-tile-grid" | null {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % 2 === 0 ? "work-tile-grid" : null;
+}

@@ -4,36 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
 import {
-  BarChart3,
   Bell,
-  Compass,
-  GalleryVerticalEnd,
   Info,
   Menu,
-  MessagesSquare,
-  Presentation,
   Settings,
   ShieldCheck,
   SquarePen,
-  Star,
   User,
   X,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
-import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 import UnreadBadge from "@/components/UnreadBadge";
 import GithubIcon from "./GithubIcon";
+import { SECTIONS } from "./LeftNav";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
-
-/* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
-const SECTIONS = [
-  { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
-  { href: "/explore", icon: Compass, key: "nav.explore", soon: UPCOMING.explore, hidden: false },
-  { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
-  { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
-  { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
-  { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false, hidden: NAV_HIDDEN.demoNight },
-] as const;
 
 export default function MobileNavDrawer({
   locale,
@@ -130,13 +114,10 @@ export default function MobileNavDrawer({
               {SECTIONS.filter((section) => !section.hidden && !section.soon).map((section) => {
                 const Icon = section.icon;
                 const active = pathname.startsWith(section.href);
-                /* 用量需登录:未登录直链登录弹窗(其余板块公开浏览) */
-                const href =
-                  section.href === "/usage" ? gate(section.href) : section.href;
                 return (
                   <Link
                     key={section.href}
-                    href={href}
+                    href={section.href}
                     onClick={close}
                     aria-current={active ? "page" : undefined}
                     className={itemClass(active)}

@@ -12,7 +12,7 @@
    无 group 祖先(详情页)不生效。 */
 import { useState } from "react";
 import WorkKindIcon from "@/components/WorkKindIcon";
-import { coverToneClass } from "@/src/lib/cover-tones";
+import { coverTextureClass, coverToneClass } from "@/src/lib/cover-tones";
 
 /* Title Case:每个拉丁词首字母大写,其余字母维持原大小写
    (保留 KimiClaw 这类既定驼峰;kimi-mcp-server → Kimi-Mcp-Server) */
@@ -51,13 +51,15 @@ export default function WorkScreenshot({
   const hoverCls = "transition-transform duration-base group-hover:scale-[1.03]";
   if (!url || failed) {
     /* 名称砖:固定色 = .work-tone-*(CSS 双主题,冷白/色档深字);
-       theme = .work-cover-tile(深空/站点白,跟随主题) */
+       theme = .work-cover-tile(深空/站点白,跟随主题);
+       纹理变体按产品名哈希(coverTextureClass),约一半砖带细网格 */
     const toneCls = coverToneClass(tone);
+    const textureCls = coverTextureClass(name);
     return (
       <div
         className={`relative flex w-full items-center justify-center ${
           toneCls ?? "work-cover-tile"
-        } ${mediaCls} ${hoverCls} ${embedded ? "" : "rounded-2xl border border-line"}`}
+        } ${textureCls ?? ""} ${mediaCls} ${hoverCls} ${embedded ? "" : "rounded-2xl border border-line"}`}
       >
         {kindLabel && (
           <span

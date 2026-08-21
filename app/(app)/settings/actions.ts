@@ -38,6 +38,18 @@ export async function setVibeToAction(formData: FormData): Promise<void> {
   store.set("kb_vibe", formData.get("vibe") === "soft" ? "soft" : "poster", PREF_COOKIE);
 }
 
+/* 动效偏好显式选择(设置页「减少动效」seg 的无 JS 兜底):
+   kb_motion=reduce → 全站动效降级(与系统 prefers-reduced-motion 同一套规则);
+   其余值(含 follow)= 跟随系统。 */
+export async function setMotionToAction(formData: FormData): Promise<void> {
+  const store = await cookies();
+  store.set(
+    "kb_motion",
+    formData.get("motion") === "reduce" ? "reduce" : "follow",
+    PREF_COOKIE,
+  );
+}
+
 export async function setLocaleToAction(formData: FormData): Promise<void> {
   const next = formData.get("locale") === "en" ? "en" : "zh";
   const store = await cookies();

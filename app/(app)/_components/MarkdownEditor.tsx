@@ -9,6 +9,7 @@
 import { useRef, useState } from "react";
 import {
   Bold,
+  CircleAlert,
   Code,
   Heading2,
   ImagePlus,
@@ -18,7 +19,6 @@ import {
 } from "lucide-react";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 import { kimiMentionAt } from "@/src/lib/mention-kimi";
-import { toast } from "@/src/lib/toast";
 import { uploadMedia } from "@/src/lib/upload";
 
 /* 纯拼接(单测直接测):在 [start,end) 两侧包 before/after;无选区时填占位词。
@@ -86,6 +86,9 @@ export default function MarkdownEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  /* 上传失败的内联持久错误(20260821 评审):toast 2.6s 即逝,用户改正
+     (换格式/重试)时上下文已丢;改挂工具栏下方,随下一次尝试清除 */
+  const [uploadError, setUploadError] = useState(false);
   /* @ 补全候选:start = 待替换的 @ 位置 */
   const [suggest, setSuggest] = useState<{ start: number } | null>(null);
   const controlled = value !== undefined;
@@ -149,6 +152,7 @@ export default function MarkdownEditor({
 
   const uploadImage = async (file: File) => {
     setUploading(true);
+    setUploadError(false);
     try {
       const media = await uploadMedia(file, "image");
       const ta = textareaRef.current;
@@ -169,7 +173,7 @@ export default function MarkdownEditor({
         ta.setSelectionRange(r.selectionEnd, r.selectionEnd);
       });
     } catch {
-      toast(t(locale, "err.uploadFailed"), "error");
+      setUploadError(true);
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -223,6 +227,15 @@ export default function MarkdownEditor({
           }}
         />
       </div>
+      {uploadError && (
+        <p
+          role="alert"
+          className="mb-2 flex items-center gap-1.5 rounded-lg border border-status-danger/40 bg-status-danger/10 px-2.5 py-1.5 text-xs text-status-danger-fg"
+        >
+          <CircleAlert size={13} className="shrink-0" aria-hidden="true" />
+          {t(locale, "err.uploadFailed")}
+        </p>
+      )}
       <div className="relative">
         {/* @kimi 召唤补全(mousedown 拦截保持焦点,点选不丢光标) */}
         {suggest !== null && (

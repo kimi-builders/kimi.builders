@@ -36,7 +36,7 @@ export default function WorkGridCard({
   const kindLabel = workKindLabel(w.kind, locale === "zh");
   const statusLabel = statusLabelOf(w.status, locale);
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30">
       {/* 整卡链详情页(P1-2);下方交互元素抬 z-10 保持独立跳转 */}
       <Link
         href={`/works/${w.id}`}

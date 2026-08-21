@@ -44,6 +44,9 @@ export default async function RootLayout({
       data-vibe={prefs.vibe}
       data-nav={prefs.navCollapsed ? "1" : "0"}
       data-sidebar={prefs.sidebarHidden ? "0" : "1"}
+      /* 手动减动效(kb_motion=reduce):跟随系统时不输出属性,
+         globals.css 的 media 查询兜底 */
+      {...(prefs.motion === "reduce" ? { "data-motion": "reduce" } : {})}
       className={jetbrains.variable}
       // 浏览器扩展会在水合前往 <html>/<body> 注入属性（如 data-redeviation-bs-uid）,属外部干扰,抑制告警
       suppressHydrationWarning

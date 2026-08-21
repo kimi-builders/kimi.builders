@@ -6,8 +6,9 @@
    分页(P1-4):游标分页 +「加载更多」追加(server action 返回渲染好的一页),
    卡片渲染抽在 _components/PostCard,首屏与追加共用 _components/feed-page。 */
 import Link from "next/link";
-import { SearchX, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import EmptyState from "@/components/EmptyState";
 import LoadMore from "@/components/LoadMore";
 import {
   SEG_ITEM,
@@ -65,6 +66,11 @@ export default async function CommunityPage({
     return qs ? `/community?${qs}` : "/community";
   };
 
+  /* stagger 入场只在默认视图挂载(20260821 评审):话题/排序切换是服务端
+     重渲染,卡片 key 全换会让前 8 项重放入场动画,观感像卡顿 */
+  const defaultFeedView =
+    currentSort === "hot" && !cat && !subOnly && !solvedOnly;
+
   const sortItems = [
     { key: "hot", label: t(locale, "feed.hot"), href: feedHref({ sort: "hot", sub: null }), active: currentSort === "hot" && !subOnly },
     { key: "new", label: t(locale, "feed.new"), href: feedHref({ sort: "new", sub: null }), active: currentSort === "new" && !subOnly },
@@ -75,6 +81,11 @@ export default async function CommunityPage({
 
   return (
     <div>
+      {/* 海报→App 的品牌语汇回声(20260821 评审):首页暖纸海报的人文字体
+          在进入 App 的第一站回响一次,衔接两种气质(kb-eyebrow-human) */}
+      <p className="kb-eyebrow-human mb-2">
+        {locale === "zh" ? "社区 — 讨论与分享" : "Community — discuss & share"}
+      </p>
       <h1 className="mb-4 text-2xl font-semibold text-paper">
         {t(locale, "nav.community")}
       </h1>
@@ -157,14 +168,30 @@ export default async function CommunityPage({
       </div>
 
       {feed.nodes.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-line bg-card p-8 text-center">
-          <SearchX size={22} className="mx-auto text-grey" aria-hidden="true" />
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-grey">
-            {subOnly ? t(locale, "feed.emptySub") : t(locale, "feed.empty")}
-          </p>
-        </div>
+        /* 空社区 = 显式 CTA 而非只有鼓励(20260821 评审);订阅空态
+           (subOnly)是筛选无结果,给内容指引但不给发帖按钮 */
+        <EmptyState
+          className="mt-4"
+          message={subOnly ? t(locale, "feed.emptySub") : t(locale, "feed.empty")}
+          hint={!subOnly ? t(locale, "feed.emptyHint") : undefined}
+          actions={
+            !subOnly ? (
+              <Link
+                href={
+                  user
+                    ? "/community/new"
+                    : `/login?next=${encodeURIComponent("/community/new")}`
+                }
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              >
+                <SquarePen size={14} aria-hidden="true" />
+                {t(locale, "feed.emptyCta")}
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
-        <div className="stagger-in mt-4 space-y-3">
+        <div className={`${defaultFeedView ? "stagger-in " : ""}mt-4 space-y-3`}>
           {feed.nodes}
           <LoadMore
             key={`${currentSort}-${cat ?? ""}-${subOnly ? "sub" : ""}-${locale}`}
