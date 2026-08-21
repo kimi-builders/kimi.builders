@@ -15,8 +15,8 @@ export default async function NewArticlePage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
   /* 板块未就绪(src/lib/upcoming.ts):编辑后台一并关闸 */
-  if (UPCOMING.blog) {
-    return <SoonPanel title={t(locale, "nav.blog")} locale={locale} />;
+  if (UPCOMING.explore) {
+    return <SoonPanel title={t(locale, "nav.explore")} locale={locale} />;
   }
   if (!user || !canModerate(user.role)) {
     return (

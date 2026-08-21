@@ -11,7 +11,7 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getWorksSource } from "@/src/lib/works-view-server";
 import { getClaimAllowance } from "@/src/lib/works";
-import { findLearnPath, normalizePathSlug } from "@/app/(app)/learn/_data";
+import { findLearnSeries, normalizePathSlug } from "@/src/lib/learn-series";
 import { createWorkAction } from "../../actions";
 import WorkForm from "../../_components/WorkForm";
 
@@ -32,7 +32,7 @@ export default async function NewWorkContent({
   const sourceSlug = normalizePathSlug(
     typeof sp.path === "string" ? sp.path : "",
   );
-  const sourcePath = sourceSlug ? findLearnPath(sourceSlug) : undefined;
+  const sourcePath = sourceSlug ? findLearnSeries(sourceSlug) : undefined;
   /* 登录后回来仍带来源上下文 */
   const newHref = sourceSlug
     ? `/works/new?path=${encodeURIComponent(sourceSlug)}`
@@ -91,8 +91,8 @@ export default async function NewWorkContent({
                 slug: sourceSlug,
                 /* 服务端本地化(避免客户端表单引用整份路径 mock 数据) */
                 text: zh
-                  ? `来自路径 ${sourcePath.code} · ${sourcePath.title.zh} — 发布后计入这条路径的毕业作品`
-                  : `From path ${sourcePath.code} · ${sourcePath.title.en} — your work will count as a graduate of this path`,
+                  ? `来自系列 ${sourcePath.code} · ${sourcePath.title.zh} — 发布后计入这个系列的毕业作品`
+                  : `From series ${sourcePath.code} · ${sourcePath.title.en} — your work will count as a graduate of this series`,
               }
             : null
         }

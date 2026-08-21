@@ -1,14 +1,12 @@
-/* 未就绪板块开关:月刊 / 知识库 / Demo Night 的内容资源还没准备好,
+/* 未就绪板块开关:Demo Night 的内容资源还没准备好,
    空白功能不上线——导航保留入口但标 SOON,页面整体换成「正在路上」
    占位(SoonPanel),右栏回落 community rail。
-   某个板块就绪后:把它改为 false,并删掉对应页面里的 UPCOMING 分支。 */
+   某个板块就绪后:把它改为 false,并删掉对应页面里的 UPCOMING 分支。
+   20260821:blog/learn 合并为 explore(月刊 × 教程同一文章架)。 */
 export const UPCOMING = {
-  /* blog 20260920 开闸:月刊已切真实组装(src/lib/monthly.ts),零期次有诚实空态。
-     learn 20260921 重新关闸:机制(毕业归因/讨论闭环/ref 解析)已齐,但 _data.ts
-     的策展内容仍是占位(假外链 + 占位 ref id=0)——开闸标准:外链逐条真实 +
-     ref 配真实对象 + 计数与渲染同口径(已就绪)。 */
-  blog: false,
-  learn: true,
+  /* explore 20260821 开闸:四维内容架(分类/系列/标签/归档),
+     空内容是诚实空态。 */
+  explore: false,
   demoNight: true,
 } as const;
 

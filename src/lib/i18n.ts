@@ -8,7 +8,7 @@ export type Locale = "zh" | "en";
 const DICT = {
   /* ---- 左栏 / 顶栏导航 ---- */
   "nav.community": { zh: "社区", en: "Community" },
-  "nav.learn": { zh: "知识库", en: "Learn" },
+  "nav.explore": { zh: "探索", en: "Explore" },
   "nav.works": { zh: "作品", en: "Works" },
   "nav.usage": { zh: "用量", en: "Usage" },
   "nav.awesome": { zh: "Awesome", en: "Awesome" },
@@ -22,7 +22,7 @@ const DICT = {
   "nav.closeMenu": { zh: "关闭功能导航", en: "Close navigation" },
   /* ---- 全局搜索 ---- */
   "search.open": { zh: "搜索站内内容", en: "Search the site" },
-  "search.placeholder": { zh: "搜索社区、作品、知识库…", en: "Search community, works, guides…" },
+  "search.placeholder": { zh: "搜索社区、作品、教程…", en: "Search community, works, tutorials…" },
   "search.jumpTo": { zh: "快速前往", en: "Jump to" },
   "search.results": { zh: "搜索结果", en: "Results" },
   "search.empty": { zh: "没有匹配的页面", en: "No matching page" },
@@ -31,8 +31,7 @@ const DICT = {
   "search.community": { zh: "讨论、投票与社区动态", en: "Discussions, polls, and community updates" },
   "search.works": { zh: "社区成员构建的真实项目", en: "Real projects built by community members" },
   "search.awesome": { zh: "站内与站外精选项目", en: "Selected member and external projects" },
-  "search.learn": { zh: "按路径阅读实用指南", en: "Practical guides in a curated path" },
-  "search.blog": { zh: "AI 月刊与编辑精选", en: "The AI monthly and editor picks" },
+  "search.explore": { zh: "月刊评鉴与教程,沿分类/系列/标签/时间浏览", en: "Monthly reviews and tutorials — browse by category, series, tag, or time" },
   "search.usage": { zh: "Token、成本与活跃度看板", en: "Token, cost, and activity dashboard" },
   "search.demoNightTitle": { zh: "Demo Night", en: "Demo Night" },
   "search.demoNight": { zh: "报名并查看社区展示活动", en: "Join and browse community showcase events" },
@@ -553,13 +552,9 @@ const DICT = {
   },
   "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
   "soon.follow": { zh: "关注 GitHub 获取上线动态", en: "Follow GitHub for launch updates" },
-  "soon.blogExpect": {
-    zh: "创刊号正在筹备:Kimi 生态与 AI 世界的每月评鉴——新闻、资源、知识与作品,编辑署名。",
-    en: "Issue #1 is in the works: a monthly review of the Kimi ecosystem and the AI world — news, resources, knowledge and builds, signed by editors.",
-  },
-  "soon.learnExpect": {
-    zh: "第一批策划制学习路径正在撰稿:从 Kimi 入门到 Agent 实战的编号指南。",
-    en: "The first curated learning paths are being written: numbered guides from Kimi basics to agent practice.",
+  "soon.exploreExpect": {
+    zh: "探索区正在筹备:月刊评鉴与教程系列,沿分类/系列/标签/时间浏览。",
+    en: "Explore is in the works — monthly reviews and tutorial series, browsable by category, series, tag, and time.",
   },
   "soon.body": {
     zh: "这个板块还在准备中,内容好了就开门。先去社区逛逛,或把你想看的题材发帖告诉我们。",
@@ -1093,21 +1088,6 @@ const DICT = {
   },
   "toast.rsvpCancelled": { zh: "已取消报名", en: "RSVP cancelled" },
   /* ---- S3-1:文章引擎(/blog 月刊 + /learn 策划路径;独立分区,降低合并冲突面) ---- */
-  "nav.blog": { zh: "月刊", en: "Monthly" },
-  "blog.title": { zh: "AI 月刊", en: "The AI Monthly" },
-  "blog.empty": {
-    zh: "创刊号筹备中 —— 编辑部正在汇总社区数据观察、用户痛点与精选作品,写好会署名发出,不拿空壳硬撑。",
-    en: "Issue one is in the works — the editors are gathering community data, user pain points and featured builds, and will sign it when it ships. No empty shell in the meantime.",
-  },
-  "blog.new": { zh: "写新一篇", en: "New entry" },
-  "learn.intro": {
-    zh: "策划制学习路径:编辑部拍板的入门长文,按编号顺序读。不做 wiki。",
-    en: "A curated learning path: long-form guides chosen by the editors, read in numbered order. Not a wiki.",
-  },
-  "learn.empty": {
-    zh: "编辑部撰稿中 —— 第一批入门长文正在写,完成后会按顺序排在这里。",
-    en: "The editors are writing — the first guides will line up here in order once ready.",
-  },
   "art.langZh": { zh: "中文", en: "中文" },
   "art.langEn": { zh: "EN", en: "EN" },
   "art.draft": { zh: "草稿", en: "DRAFT" },
@@ -1121,7 +1101,7 @@ const DICT = {
   },
   "artf.kind": { zh: "类型", en: "Kind" },
   "artf.kindLetter": { zh: "月刊(letter)", en: "Letter (monthly)" },
-  "artf.kindGuide": { zh: "学习路径(guide)", en: "Guide (learn path)" },
+  "artf.kindGuide": { zh: "教程(guide)", en: "Guide (tutorial)" },
   "artf.locale": { zh: "语言", en: "Language" },
   "artf.title": { zh: "标题(200 字以内)", en: "Title (200 chars max)" },
   "artf.summary": {
@@ -1432,18 +1412,6 @@ const DICT = {
   "rail.awesomeStats": { zh: "来源统计", en: "SOURCES" },
   "rail.sourceSite": { zh: "站内作品", en: "member works" },
   "rail.sourceAwesome": { zh: "站外收录", en: "external picks" },
-  "rail.blogArchive": { zh: "期号归档", en: "ARCHIVE" },
-  "rail.blogEditors": { zh: "编辑部", en: "EDITORS" },
-  "rail.blogSubscribe": { zh: "订阅说明", en: "FOLLOW THE LETTER" },
-  "rail.blogSubscribeBody": {
-    zh: "新期发布会在社区同步开帖,跟紧社区即可第一时间读到。",
-    en: "New issues are announced in the community — follow along there to catch each one.",
-  },
-  "rail.learnPath": { zh: "学习路径", en: "LEARNING PATH" },
-  "rail.learnBody": {
-    zh: "策划制长文路径:按编号顺序读,每篇解决一个上手阶段的问题,不追热点。",
-    en: "A curated path of long-form guides — read in numbered order; each one covers one onboarding stage. No hot takes.",
-  },
   /* ---- 管理台 / 社区治理(20260830)---- */
   "nav.admin": { zh: "管理", en: "Admin" },
   "admin.title": { zh: "管理台", en: "Moderation" },

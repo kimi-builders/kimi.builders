@@ -13,11 +13,10 @@ import { usePathname } from "next/navigation";
 import { useCallback, useSyncExternalStore } from "react";
 import {
   BarChart3,
-  BookOpen,
+  Compass,
   GalleryVerticalEnd,
   Info,
   MessagesSquare,
-  Newspaper,
   Presentation,
   Settings,
   ShieldCheck,
@@ -34,8 +33,7 @@ import { NavToggle, SidebarToggle } from "./pref-controls";
 /* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
-  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog, hidden: UPCOMING.blog },
-  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn, hidden: UPCOMING.learn },
+  { href: "/explore", icon: Compass, key: "nav.explore", soon: UPCOMING.explore, hidden: UPCOMING.explore },
   { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },

@@ -7,9 +7,8 @@
 import type { Locale } from "@/src/lib/i18n";
 import type { RailDecision } from "./right-rail";
 import AwesomeRail from "./rail/AwesomeRail";
-import BlogRail from "./rail/BlogRail";
 import CommunityWidgets from "./rail/CommunityWidgets";
-import LearnRail from "./rail/LearnRail";
+import ExploreRail from "./rail/ExploreRail";
 import PostRail from "./rail/PostRail";
 import WorkRail from "./rail/WorkRail";
 import WorksRail from "./rail/WorksRail";
@@ -34,10 +33,8 @@ export default function RightSidebar({
           <WorksRail locale={locale} loggedIn={loggedIn} />
         ) : decision.kind === "awesome" ? (
           <AwesomeRail locale={locale} loggedIn={loggedIn} />
-        ) : decision.kind === "blog" ? (
-          <BlogRail locale={locale} />
-        ) : decision.kind === "learn" ? (
-          <LearnRail locale={locale} />
+        ) : decision.kind === "explore" ? (
+          <ExploreRail locale={locale} />
         ) : (
           <CommunityWidgets locale={locale} />
         )}

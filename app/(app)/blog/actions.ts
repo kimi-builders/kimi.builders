@@ -22,6 +22,7 @@ import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { parseLetterPayload } from "@/src/lib/monthly";
+import { parseGuidePayload } from "@/src/lib/tutorials";
 
 export interface ArticleFormState {
   error?: string;
@@ -60,20 +61,30 @@ export async function saveArticleAction(
   if (summary.length > ARTICLE_SUMMARY_MAX)
     return { error: t(locale, "err.artSummaryLong") };
   const bodyMd = String(formData.get("body") || "").trim();
-  /* letter 的三层由数据组装(src/lib/monthly.ts),正文可空;guide 仍必填 */
-  if (!bodyMd && kind !== "letter") return { error: t(locale, "err.artBody") };
   const sortOrder = normalizeSortOrder(String(formData.get("sort_order") || ""));
   const publish = formData.get("publish") === "on";
 
-  /* letter 期次元数据:空 = NULL(纯自动组装);非空走严格校验,错误就地提示 */
+  /* 期次/教程元数据:空 = NULL;非空走严格校验(letter → monthly.ts,
+     guide → tutorials.ts),错误就地提示 */
   let payload: string | null = null;
+  let guideHasVideo = false;
   if (kind === "letter") {
     const parsed = parseLetterPayload(String(formData.get("payload") || ""));
     if (!parsed.ok) return { error: `payload:${parsed.error}` };
     payload = Object.keys(parsed.payload).length
       ? JSON.stringify(parsed.payload)
       : null;
+  } else if (kind === "guide") {
+    const parsed = parseGuidePayload(String(formData.get("payload") || ""));
+    if (!parsed.ok) return { error: `payload:${parsed.error}` };
+    payload = Object.keys(parsed.payload).length
+      ? JSON.stringify(parsed.payload)
+      : null;
+    guideHasVideo = !!parsed.payload.video;
   }
+  /* letter 的三层由数据组装(src/lib/monthly.ts),正文可空;guide 以视频为主时
+     文稿可空(集详情显示「本集以视频为主」),其余仍必填 */
+  if (!bodyMd && kind !== "letter" && !guideHasVideo) return { error: t(locale, "err.artBody") };
 
   const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder, payload };
   try {
@@ -88,17 +99,11 @@ export async function saveArticleAction(
     throw e;
   }
 
-  revalidatePath("/blog");
-  revalidatePath("/learn");
-  revalidatePath(`/blog/${slug}`);
-  revalidatePath(`/learn/${slug}`);
+  revalidatePath("/explore");
+  revalidatePath(`/explore/${slug}`);
   /* 发布 → 落到公开页;存草稿 → 回到编辑页(草稿前台不显示,编辑页是唯一工作位) */
   redirect(
-    publish
-      ? kind === "guide"
-        ? `/learn/${slug}`
-        : `/blog/${slug}`
-      : `/blog/admin/${slug}/edit?locale=${artLocale}`,
+    publish ? `/explore/${slug}` : `/blog/admin/${slug}/edit?locale=${artLocale}`,
   );
 }
 
@@ -113,9 +118,7 @@ export async function deleteArticleAction(
   const id = Number(formData.get("id"));
   if (!id) return { ok: false, error: t(locale, "err.generic") };
   const ok = await softDeleteArticle(id);
-  if (ok) {
-    revalidatePath("/blog");
-    revalidatePath("/learn");
-  }
+  /* 删除动作只带 id 不带 slug:详情缓存键不可得,作废旧列表即可 */
+  if (ok) revalidatePath("/explore");
   return { ok };
 }

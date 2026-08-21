@@ -15,8 +15,7 @@ export type RailKind =
   | "work"
   | "works"
   | "awesome"
-  | "blog"
-  | "learn"
+  | "explore"
   | "none";
 
 export interface RailDecision {
@@ -68,19 +67,11 @@ export function railFor(pathname: string): RailDecision {
   if (p === "/works") return decision("works");
 
   if (p === "/awesome") return decision("awesome");
-  /* 月刊区:列表与文章详情同 rail;admin 编辑页回落默认;
-     板块未就绪时(UPCOMING.blog)专属 rail 回落 community */
-  if (!UPCOMING.blog && p === "/blog") return decision("blog");
-  if (
-    !UPCOMING.blog &&
-    p.startsWith("/blog/") &&
-    !p.startsWith("/blog/admin")
-  ) {
-    return decision("blog");
-  }
-  /* 知识库:列表与文章详情同 rail;未就绪时回落 community */
-  if (!UPCOMING.learn && (p === "/learn" || p.startsWith("/learn/"))) {
-    return decision("learn");
+  /* 探索区(20260821 月刊 × 教程合并):目录/详情/系列页同 rail;
+     板块未就绪时(UPCOMING.explore)回落 community;
+     旧 /blog、/learn 路由已 301,不再出 rail 分支 */
+  if (!UPCOMING.explore && (p === "/explore" || p.startsWith("/explore/"))) {
+    return decision("explore");
   }
 
   /* 回落:社区 feed 及一切未列出路由(/community/new、/settings、/demo-night …) */

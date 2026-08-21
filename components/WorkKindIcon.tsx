@@ -12,6 +12,7 @@ import {
   Smartphone,
   Sparkles,
   Terminal,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ const ICONS: Record<string, LucideIcon> = {
   cli: Terminal,
   sdk: Package,
   bot: Bot,
+  workflow: Workflow,
   skill: Sparkles,
   prompt: MessageSquareText,
   slides: Presentation,

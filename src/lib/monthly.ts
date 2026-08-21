@@ -97,6 +97,8 @@ export interface LetterGovernanceEntry {
 export interface LetterPayload {
   aiDisclosure?: AiDisclosure;
   governance?: LetterGovernanceEntry[];
+  /* 探索四维的标签维(20260821):≤5 个,每标签 ≤24 字,去重 */
+  tags?: string[];
 }
 
 export type PayloadParseResult =
@@ -104,6 +106,24 @@ export type PayloadParseResult =
   | { ok: false; error: string };
 
 const GOVERNANCE_MAX = 20;
+const TAGS_MAX = 5;
+const TAG_MAX_LEN = 24;
+
+/* 标签校验(两种 payload 共用):≤TAGS_MAX 个、每个 1-24 字、去重 */
+export function normalizeTags(value: unknown): { ok: true; tags: string[] } | { ok: false; error: string } {
+  if (!Array.isArray(value) || value.length > TAGS_MAX) {
+    return { ok: false, error: `tags 需为数组(≤${TAGS_MAX} 个)` };
+  }
+  const tags: string[] = [];
+  for (const t of value) {
+    const s = typeof t === "string" ? t.trim() : "";
+    if (!s || s.length > TAG_MAX_LEN) {
+      return { ok: false, error: `tags 每项需为 1-${TAG_MAX_LEN} 字文本` };
+    }
+    if (!tags.includes(s)) tags.push(s);
+  }
+  return { ok: true, tags };
+}
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -133,9 +153,15 @@ function unknownKey(obj: Record<string, unknown>, known: string[]): string | nul
    渲染路径(letterPayloadFromDb)容错回落空 payload,不让一条坏 payload 打掉整页。 */
 export function validateLetterPayload(value: unknown): PayloadParseResult {
   if (!isPlainObject(value)) return { ok: false, error: "payload 必须是 JSON 对象" };
-  const stray = unknownKey(value, ["aiDisclosure", "governance"]);
+  const stray = unknownKey(value, ["aiDisclosure", "governance", "tags"]);
   if (stray) return { ok: false, error: `payload 未知字段:${stray}` };
   const payload: LetterPayload = {};
+
+  if (value.tags !== undefined) {
+    const r = normalizeTags(value.tags);
+    if (!r.ok) return r;
+    payload.tags = r.tags;
+  }
 
   if (value.aiDisclosure !== undefined) {
     if (!isPlainObject(value.aiDisclosure)) {

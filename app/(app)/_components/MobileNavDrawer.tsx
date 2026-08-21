@@ -6,12 +6,11 @@ import { useEffect, useRef, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
-  BookOpen,
+  Compass,
   GalleryVerticalEnd,
   Info,
   Menu,
   MessagesSquare,
-  Newspaper,
   Presentation,
   Settings,
   ShieldCheck,
@@ -29,8 +28,7 @@ import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
 /* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染 */
 const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
-  { href: "/blog", icon: Newspaper, key: "nav.blog", soon: UPCOMING.blog, hidden: false },
-  { href: "/learn", icon: BookOpen, key: "nav.learn", soon: UPCOMING.learn, hidden: false },
+  { href: "/explore", icon: Compass, key: "nav.explore", soon: UPCOMING.explore, hidden: false },
   { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
   { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
@@ -91,7 +89,7 @@ export default function MobileNavDrawer({
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
- className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(88vw,22rem)] max-w-none overflow-hidden border-0 border-r border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/65"
+        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(88vw,22rem)] max-w-none overflow-hidden border-0 border-r border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/65"
       >
         <div className="flex h-full flex-col">
           <div className="flex min-h-16 items-center gap-3 border-b border-line px-4">
@@ -120,7 +118,7 @@ export default function MobileNavDrawer({
             <Link
               href={gate("/community/new")}
               onClick={close}
- className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              className="mx-4 flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue px-4 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             >
               <SquarePen size={16} aria-hidden="true" />
               {t(locale, "nav.post")}
@@ -187,7 +185,7 @@ export default function MobileNavDrawer({
                   <UnreadBadge
                     initial={unread}
                     locale={locale}
- className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
+                    className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
                   />
                 </span>
                 {t(locale, "notif.title")}

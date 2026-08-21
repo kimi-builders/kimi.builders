@@ -69,7 +69,7 @@ export default function ArticleForm({
         return;
       }
       toast(t(locale, "toast.deleted"));
-      router.push(initial.kind === "guide" ? "/learn" : "/blog");
+      router.push("/explore");
       router.refresh();
     } catch {
       toast(t(locale, "toast.failed"), "error");
@@ -159,23 +159,31 @@ export default function ArticleForm({
         />
       )}
 
-      {kind === "letter" && (
+      {(kind === "letter" || kind === "guide") && (
         <div>
           <textarea
             name="payload"
             rows={6}
             defaultValue={initial?.payload}
             placeholder={
-              locale === "zh"
-                ? '期次元数据 payload(JSON,可留空 = 纯自动组装)\n例:{"governance":[{"title":"...","note":"...","rulingUrl":"/community/123"}]}'
-                : 'Issue payload (JSON; empty = fully assembled)\ne.g. {"governance":[{"title":"...","note":"...","rulingUrl":"/community/123"}]}'
+              kind === "letter"
+                ? locale === "zh"
+                  ? '期次元数据 payload(JSON,可留空 = 纯自动组装)\n例:{"governance":[{"title":"...","note":"...","rulingUrl":"/community/123"}]}'
+                  : 'Issue payload (JSON; empty = fully assembled)\ne.g. {"governance":[{"title":"...","note":"...","rulingUrl":"/community/123"}]}'
+                : locale === "zh"
+                  ? '教程元数据 payload(JSON,可留空)\n例:{"series":"kimi-code-in-action","video":{"provider":"bilibili","id":"BV…"},"durationMin":12,"scenario":"工作流自动化"}'
+                  : 'Tutorial payload (JSON; optional)\ne.g. {"series":"kimi-code-in-action","video":{"provider":"bilibili","id":"BV…"},"durationMin":12,"scenario":"workflow automation"}'
             }
             className={`${inputCls} font-mono text-xs`}
           />
           <p className="mt-1.5 text-xs leading-relaxed text-grey/80">
-            {locale === "zh"
-              ? '可用字段:aiDisclosure({digest,facts,decisions} AI 参与披露)、governance([{title,note,rulingUrl}] 治理公示)。'
-              : 'Keys: aiDisclosure ({digest,facts,decisions} AI involvement), governance ([{title,note,rulingUrl}]).'}
+            {kind === "letter"
+              ? locale === "zh"
+                ? '可用字段:aiDisclosure({digest,facts,decisions} AI 参与披露)、governance([{title,note,rulingUrl}] 治理公示)、tags(≤5 个标签)。选题公约:Kimi 生态 + 工作流/学习/思考范式 + 值得读的 AI 世界——AI 写得出的不发,我们发判断。'
+                : 'Keys: aiDisclosure ({digest,facts,decisions}), governance ([{title,note,rulingUrl}]), tags (≤5). Scope: Kimi ecosystem + workflows / learning / thinking + what’s worth reading in AI — we publish judgment, not what AI could write.'
+              : locale === "zh"
+                ? '可用字段:series(系列 slug,须在册 src/lib/learn-series.ts)、video({provider:"bilibili"/"youtube",id})、deck(演示稿链接)、durationMin(分钟)、scenario(场景标签)、tags(≤5 个)、resources([{label,url}] ≤8 条)、aiNote(AI 参与披露)。公约:文稿是 canonical,视频是主消费形态;每期必须有「跟着做完」的毕业动作。'
+                : 'Keys: series (registered in src/lib/learn-series.ts), video ({provider:"bilibili"/"youtube",id}), deck (slides link), durationMin, scenario, tags (≤5), resources ([{label,url}] ≤8), aiNote. Rule: the script is canonical, video is primary consumption; every episode must end in a followable action.'}
           </p>
         </div>
       )}

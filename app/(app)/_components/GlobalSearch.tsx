@@ -32,16 +32,10 @@ function catalog(locale: Locale): SiteSearchItem[] {
       keywords: ["awesome", "推荐", "external", "外部"],
     },
     {
-      href: "/learn",
-      label: t(locale, "nav.learn") + soon(locale, UPCOMING.learn),
-      description: t(locale, "search.learn"),
-      keywords: ["learn", "知识库", "guide", "指南"],
-    },
-    {
-      href: "/blog",
-      label: t(locale, "nav.blog") + soon(locale, UPCOMING.blog),
-      description: t(locale, "search.blog"),
-      keywords: ["blog", "月刊", "letter", "文章"],
+      href: "/explore",
+      label: t(locale, "nav.explore") + soon(locale, UPCOMING.explore),
+      description: t(locale, "search.explore"),
+      keywords: ["explore", "探索", "月刊", "教程", "letter", "guide", "articles", "文章"],
     },
     {
       href: "/usage",

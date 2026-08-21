@@ -8,6 +8,7 @@ export const WORK_KINDS = [
   { id: "cli", zh: "CLI 工具", en: "CLI", tint: "bg-paper/[0.04] text-grey" },
   { id: "sdk", zh: "SDK / 库", en: "SDK / Lib", tint: "bg-paper/[0.04] text-grey" },
   { id: "bot", zh: "机器人", en: "Bot", tint: "bg-paper/[0.04] text-grey" },
+  { id: "workflow", zh: "工作流 / 自动化", en: "Workflow", tint: "bg-paper/[0.04] text-grey" },
   { id: "skill", zh: "Agent SKILL", en: "Agent SKILL", tint: "bg-paper/[0.04] text-grey" },
   { id: "prompt", zh: "Prompt 合集", en: "Prompts", tint: "bg-paper/[0.04] text-grey" },
   { id: "slides", zh: "演示稿", en: "Slides", tint: "bg-paper/[0.04] text-grey" },

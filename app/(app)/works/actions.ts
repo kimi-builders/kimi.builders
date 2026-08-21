@@ -30,7 +30,7 @@ import { hasKimiMention } from "@/src/lib/mention-kimi";
 import { getActiveMute, muteMessage } from "@/src/lib/moderation";
 import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import { getWorksView } from "@/src/lib/works-view-server";
-import { normalizePathSlug } from "@/app/(app)/learn/_data";
+import { normalizePathSlug } from "@/src/lib/learn-series";
 import {
   areWorkImageKeys,
   canViewWork,
