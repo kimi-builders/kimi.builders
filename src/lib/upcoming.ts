@@ -6,7 +6,7 @@
 export const UPCOMING = {
   /* explore 20260821 开闸:四维内容架(分类/系列/标签/归档),
      空内容是诚实空态。 */
-  explore: false,
+  explore: true,
   demoNight: true,
 } as const;
 
