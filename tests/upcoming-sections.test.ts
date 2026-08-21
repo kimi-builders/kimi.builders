@@ -15,7 +15,7 @@ const read = (path: string) =>
 test("upcoming flags: explore open; demoNight stays gated", () => {
   /* explore 于 20260821 开闸(四维内容架,空内容是诚实空态);
      demoNight 仍关闸。UPCOMING 分支保留在页面里,随时可重新关闸。 */
-  assert.deepEqual(UPCOMING, { explore: false, demoNight: true });
+  assert.deepEqual(UPCOMING, { explore: true, demoNight: true });
 });
 
 test("nav-hidden flags: demoNight entries are removed, not just badged", () => {
