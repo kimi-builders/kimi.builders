@@ -54,7 +54,7 @@ const DICT = {
   "side.subs": { zh: "我的订阅", en: "Subscribed" },
   "side.about": { zh: "关于 KIMI.BUILDERS", en: "ABOUT KIMI.BUILDERS" },
   "side.aboutBody": {
-    zh: "Kimi 用户自建的公益 builder 社区(非官方)。并肩探索,一起构建。",
+    zh: "Kimi 用户自建的非商业 builder 社区(非官方)。并肩探索,一起构建。",
     en: "A user-built, non-commercial community of Kimi builders (unofficial). Explore together, build together.",
   },
   "side.hot": { zh: "7 日热门", en: "TRENDING (7D)" },
@@ -915,7 +915,7 @@ const DICT = {
   /* ---- 关于页(/about)---- */
   "about.title": { zh: "关于", en: "About" },
   "about.who": {
-    zh: "kimi.builders 是 Kimi 用户自建的公益 builder 社区(非官方)。这里聚着用 Kimi 构建、创造、生成实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着构建者声明的 token 投入。",
+    zh: "kimi.builders 是 Kimi 用户自建的非商业 builder 社区(非官方)。这里聚着用 Kimi 构建、创造、生成实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着构建者声明的 token 投入。",
     en: "kimi.builders is a non-commercial, user-built community of builders using Kimi (unofficial). It gathers people who build, create and generate real things with Kimi — agent writers, workflow automators, prompt crafters — and the works they ship, each carrying the builder's declared token investment.",
   },
   "about.whoMore": {

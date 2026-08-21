@@ -12,8 +12,10 @@ import LoadMore from "@/components/LoadMore";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
+  SEG_ITEM_FLOW,
   SEG_ITEM_IDLE,
   SEG_WRAP,
+  SEG_WRAP_FLOW,
 } from "@/components/seg-classes";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { CATEGORIES, categoryLabel } from "@/src/lib/categories";
@@ -106,19 +108,19 @@ export default async function CommunityPage({
             </Link>
           ))}
         </nav>
-        {/* 话题 tabs:六等分网格。分类是同一层级的互斥选择,不再用散点分隔；
-            窄屏 3×2、桌面 6×1,始终保持整齐的点击区域。 */}
+        {/* 话题 tabs:共享分段语法(20260820 并入 seg-classes,反色实块选中态);
+            可换行变体——选项多或 EN 文案长(Showcase/Feedback)时整组折行,
+            不再用六等分网格硬挤;圆角跟随 vibe 令牌(旧实现 gap-px 网格
+            两种气质都是直角)。已解决开关不动:状态维度,与话题两种心智。 */}
         <nav
           aria-label={t(locale, "feed.topicsAll")}
-          className="order-last grid min-w-0 grid-cols-3 gap-px border border-line bg-line md:order-none md:grid-cols-6"
+          className={`${SEG_WRAP_FLOW} order-last min-w-0 md:order-none md:justify-self-start`}
         >
           <Link
             href={feedHref({ cat: null })}
             scroll={false}
             aria-current={!cat ? "page" : undefined}
-            className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-              !cat ? "bg-card font-semibold text-paper" : "text-grey hover:bg-card hover:text-paper"
-            }`}
+            className={`${SEG_ITEM_FLOW} ${!cat ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
           >
             {t(locale, "feed.topicsAll")}
           </Link>
@@ -130,9 +132,7 @@ export default async function CommunityPage({
                 href={feedHref({ cat: c.id })}
                 scroll={false}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-11 min-h-0 items-center justify-center bg-bg px-2 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                  active ? "bg-card font-semibold text-paper" : "text-grey hover:bg-card hover:text-paper"
-                }`}
+                className={`${SEG_ITEM_FLOW} ${active ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
               >
                 {categoryLabel(locale, c.id)}
               </Link>

@@ -2,7 +2,7 @@
 
 [English](./README_EN.md) · 中文
 
-[kimi.builders](https://kimi.builders) —— Kimi 用户自建的公益 builder 社区(非官方)的线上阵地:
+[kimi.builders](https://kimi.builders) —— Kimi 用户自建的非商业 builder 社区(非官方)的线上阵地:
 讨论、作品、用量、知识,以及一个真正住在社区里的 AI。
 
 ![首页](docs/images/home-dark.png)

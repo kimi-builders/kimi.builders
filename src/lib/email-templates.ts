@@ -120,7 +120,7 @@ export function renderBrandEmail(input: BrandEmailInput): string {
             <td style="padding:24px 8px 0;">
               <div style="border-top:1px solid ${HAIRLINE};padding-top:20px;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">
                 ${footnoteBlock}<a href="${siteUrl}" target="_blank" style="color:${GREY};text-decoration:underline;">kimi.builders</a>
-                &nbsp;·&nbsp;Kimi 用户自建的公益 builder 社区(非官方)/ A user-built community of Kimi builders (unofficial)
+                &nbsp;·&nbsp;Kimi 用户自建的非商业 builder 社区(非官方)/ A user-built community of Kimi builders (unofficial)
               </div>
             </td>
           </tr>
