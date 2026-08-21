@@ -56,6 +56,8 @@ export interface LearnSeries {
   /* hero 金句 */
   tagline: L10n;
   summary: L10n;
+  /* 封面(可选):站内路径或 https 图片;缺省 = 自动文字封面(code + 标题) */
+  cover?: string;
   editorHandle: string;
   verifiedModel: string;
   verifiedAt: string;

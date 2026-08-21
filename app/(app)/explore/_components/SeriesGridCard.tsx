@@ -1,0 +1,71 @@
+/* 系列网格卡(20260821 探索区):作品网格卡(WorkGridCard)同一语法——
+   封面在上(恒定 16:9,可设置 series.cover 或自动文字封面)、内容在下、
+   hover 边框提亮 + 封面轻放大 + 标题变蓝;整卡覆盖链接进系列页。
+   meta 行:集数 + 总时长 + 验证戳(stale 琥珀/新鲜翡翠)。 */
+import Link from "next/link";
+import { Clock3, ShieldCheck } from "lucide-react";
+import { monthLabel } from "@/src/lib/format";
+import { isPathStale, type LearnSeries } from "@/src/lib/learn-series";
+import type { ExploreItem } from "@/src/lib/explore";
+import SeriesCover from "./SeriesCover";
+
+export default function SeriesGridCard({
+  series,
+  episodes,
+  zh,
+}: {
+  series: LearnSeries;
+  episodes: ExploreItem[];
+  zh: boolean;
+}) {
+  const stale = isPathStale(series);
+  const mins = episodes.reduce((n, e) => n + (e.durationMin ?? 0), 0);
+  const latest = episodes.reduce<ExploreItem | null>(
+    (acc, e) => (acc && acc.publishedAt > e.publishedAt ? acc : e),
+    null,
+  );
+  return (
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30">
+      {/* 整卡链系列页;hover 语言与作品卡一致 */}
+      <Link
+        href={`/explore/series/${series.slug}`}
+        aria-label={zh ? series.title.zh : series.title.en}
+        className="absolute inset-0 z-0 rounded-2xl"
+      />
+      <div className="overflow-hidden border-b border-line">
+        <div className="aspect-video transition-transform duration-300 group-hover:scale-[1.02]">
+          <SeriesCover series={series} zh={zh} className="h-full w-full" />
+        </div>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col p-4">
+        <h2 className="truncate text-base font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
+          {zh ? series.title.zh : series.title.en}
+        </h2>
+        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-grey">
+          {zh ? series.summary.zh : series.summary.en}
+        </p>
+        <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
+          <span className="shrink-0">{series.code}</span>
+          <span className="shrink-0">
+            {episodes.length} {zh ? "集" : "ep"}
+          </span>
+          {mins > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-1">
+              <Clock3 size={12} aria-hidden="true" />
+              {zh ? `约 ${mins} 分钟` : `~${mins} min`}
+            </span>
+          )}
+          {latest && <span className="shrink-0">{monthLabel(latest.publishedAt)}</span>}
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1">
+            <ShieldCheck
+              size={12}
+              className={stale ? "text-status-warn-fg" : "text-status-ok-fg"}
+              aria-hidden="true"
+            />
+            {stale ? (zh ? "待重验" : "stale") : zh ? "已验证" : "verified"}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}

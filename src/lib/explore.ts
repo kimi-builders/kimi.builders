@@ -26,6 +26,8 @@ export interface ExploreItem {
   /* 所属教程系列(letter 恒 null:月刊本身是期刊,不注册系列) */
   series: string | null;
   tags: string[];
+  /* 教程集的时长(分钟;letter 恒 undefined) */
+  durationMin?: number;
 }
 
 export interface TaxonomyCount {
@@ -148,6 +150,7 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
     editorHandle: r.author_handle ?? "",
     series: kind === "guide" ? (payload as { series?: string }).series ?? null : null,
     tags: (payload as { tags?: string[] }).tags ?? [],
+    durationMin: (payload as { durationMin?: number }).durationMin,
   };
 }
 

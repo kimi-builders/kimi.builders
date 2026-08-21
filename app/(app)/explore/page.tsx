@@ -1,8 +1,10 @@
-/* 探索(Explore)· 四维浏览器(20260821 月刊 × 教程合并)
+/* 探索(Explore)· 四维浏览器(20260821 月刊 × 教程合并;同日视图语言对齐
+   站内作品/Awesome:四维顶级 tabs(分段控件)+ 当前维度的筛选下拉
+   (WorksFilterBar 同款,URL 驱动)+ 系列封面卡(作品网格卡语法)。
    四个维度:分类(kind)/ 系列(注册表)/ 标签(payload.tags)/ 时间(归档),
-   ?view=categories|series|tags|archives 切换 + 各维选中参数(?category/?tag/?year;
-   系列选中直接进系列页 /explore/series/<slug>)。
-   数据 = articles 两 kind 合集(src/lib/explore.ts,纯函数聚合)。
+   全部由已发布内容算出(articles 两 kind 合集,src/lib/explore.ts 纯函数聚合),
+   系列标题等元信息是注册表策展,0 集系列不上架。
+   ?view=categories|series|tags|archives 切换 + 各维选中参数(?category/?series/?tag/?year)。
    板块开关未就绪时整页换「正在路上」。 */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,15 +18,16 @@ import {
   countByKind,
   countSeries,
   countTags,
-  filterExploreItems,
   groupByArchive,
   listExploreItems,
   type ExploreItem,
 } from "@/src/lib/explore";
-import { LEARN_SERIES } from "@/src/lib/learn-series";
+import { findLearnSeries } from "@/src/lib/learn-series";
 import { UPCOMING } from "@/src/lib/upcoming";
 import PageHeader from "@/components/PageHeader";
 import SoonPanel from "../_components/SoonPanel";
+import WorksFilterBar from "../works/_components/WorksFilterBar";
+import SeriesGridCard from "./_components/SeriesGridCard";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -40,19 +43,13 @@ function normalizeView(raw: string | undefined): View {
   return raw === "series" || raw === "tags" || raw === "archives" ? raw : "categories";
 }
 
-function exploreHref(view: View, extra: Record<string, string | null> = {}): string {
-  const params = new URLSearchParams();
-  if (view !== "categories") params.set("view", view);
-  for (const [k, v] of Object.entries(extra)) if (v) params.set(k, v);
-  const qs = params.toString();
-  return qs ? `/explore?${qs}` : "/explore";
+function exploreHref(view: View): string {
+  return view === "categories" ? "/explore" : `/explore?view=${view}`;
 }
 
 /* 结果列表行:eyebrow(分类 · 系列 · 日期)+ 标题 + 摘要 + 标签 */
 function ItemRow({ item, zh, locale }: { item: ExploreItem; zh: boolean; locale: Locale }) {
-  const series = item.series
-    ? LEARN_SERIES.find((s) => s.slug === item.series)
-    : undefined;
+  const series = item.series ? findLearnSeries(item.series) : undefined;
   return (
     <article className="border-b border-line last:border-b-0">
       <Link href={`/explore/${item.slug}`} className="group flex gap-4 py-5">
@@ -93,6 +90,23 @@ function ItemRow({ item, zh, locale }: { item: ExploreItem; zh: boolean; locale:
   );
 }
 
+function ItemList({ items, zh, locale }: { items: ExploreItem[]; zh: boolean; locale: Locale }) {
+  if (items.length === 0) {
+    return (
+      <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
+        {zh ? "这个维度下还没有内容。" : "Nothing under this filter yet."}
+      </p>
+    );
+  }
+  return (
+    <div>
+      {items.map((i) => (
+        <ItemRow key={i.slug} item={i} zh={zh} locale={locale} />
+      ))}
+    </div>
+  );
+}
+
 export default async function ExplorePage({
   searchParams,
 }: {
@@ -114,6 +128,7 @@ export default async function ExplorePage({
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
   const view = normalizeView(first(sp.view));
   const selCategory = first(sp.category);
+  const selSeries = first(sp.series);
   const selTag = first(sp.tag);
   const selYear = first(sp.year);
 
@@ -123,7 +138,7 @@ export default async function ExplorePage({
   const tagCounts = countTags(items);
   const archiveGroups = groupByArchive(items);
 
-  /* 四维 tab 计数 = 各维不同值的数量(website 同口径) */
+  /* 四维 tab 计数 = 各维不同值的数量 */
   const viewTabs: { view: View; zh: string; en: string; count: number }[] = [
     { view: "categories", zh: "分类", en: "Categories", count: kindCounts.length },
     { view: "series", zh: "系列", en: "Series", count: seriesCounts.length },
@@ -131,12 +146,56 @@ export default async function ExplorePage({
     { view: "archives", zh: "归档", en: "Archives", count: archiveGroups.length },
   ];
 
-  /* 选中后的结果列表(分类/标签/年) */
-  const filtered = filterExploreItems(items, {
-    category: selCategory === "letter" || selCategory === "guide" ? selCategory : undefined,
-    tag: selTag,
-    year: selYear,
+  /* 当前维度的筛选器(作品/Awesome 同款单选下拉;空集 = 参数缺席 = 不限) */
+  const filterSpecs = {
+    categories: {
+      key: "category",
+      label: zh ? "分类" : "Category",
+      options: kindCounts.map((c) => ({
+        value: c.value,
+        label: `${categoryLabelOf(c.value, zh)} (${c.count})`,
+      })),
+      single: true,
+    },
+    series: {
+      key: "series",
+      label: zh ? "系列" : "Series",
+      options: seriesCounts.map((c) => {
+        const s = findLearnSeries(c.slug);
+        return {
+          value: c.slug,
+          label: `${s ? (zh ? s.title.zh : s.title.en) : c.slug} (${c.count})`,
+        };
+      }),
+      single: true,
+    },
+    tags: {
+      key: "tag",
+      label: zh ? "标签" : "Tag",
+      options: tagCounts.map((tg) => ({ value: tg.value, label: `#${tg.value} (${tg.count})` })),
+      single: true,
+    },
+    archives: {
+      key: "year",
+      label: zh ? "归档" : "Year",
+      options: archiveGroups.map((g) => ({
+        value: g.year,
+        label: `${g.year} (${g.months.reduce((n, m) => n + m.items.length, 0)})`,
+      })),
+      single: true,
+    },
+  } as const;
+
+  const filtered = items.filter((i) => {
+    if (view === "categories" && selCategory && i.kind !== selCategory) return false;
+    if (view === "series" && selSeries && i.series !== selSeries) return false;
+    if (view === "tags" && selTag && !i.tags.includes(selTag)) return false;
+    if (view === "archives" && selYear && String(i.publishedAt.getUTCFullYear()) !== selYear) return false;
+    return true;
   });
+
+  /* 选中某系列时,该系列的集列表;否则系列视图 = 封面卡网格 */
+  const selSeriesMeta = selSeries ? findLearnSeries(selSeries) : undefined;
 
   return (
     <div>
@@ -155,7 +214,7 @@ export default async function ExplorePage({
         }
       />
 
-      {/* 维度切换(链接式 tabs,计数随行) */}
+      {/* 维度切换(分段控件,计数随行) */}
       <nav
         aria-label={zh ? "浏览维度" : "Browse dimensions"}
         className={`${SEG_WRAP} mt-8 max-sm:w-full max-sm:flex-wrap`}
@@ -173,163 +232,73 @@ export default async function ExplorePage({
         ))}
       </nav>
 
-      {/* 分类:目录行;选中 → 结果列表 */}
-      {view === "categories" && (
-        <section className="mt-8">
-          {!selCategory ? (
-            kindCounts.map((c) => {
-              const sample = filterExploreItems(items, {
-                category: c.value,
-              })[0];
-              return (
-                <Link
-                  key={c.value}
-                  href={exploreHref("categories", { category: c.value })}
-                  className="group flex items-baseline gap-4 border-b border-line py-6 last:border-b-0"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="kb-h3 transition-colors group-hover:text-ui-blue">
-                      {categoryLabelOf(c.value, zh)}
-                    </span>
-                    {sample && (
-                      <span className="mt-1 block truncate text-sm text-grey">
-                        {zh ? "最新:" : "Latest: "}
-                        {sample.title}
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 font-mono text-2xl font-semibold text-grey/60 transition-colors group-hover:text-ui-blue">
-                    {c.count}
-                  </span>
-                </Link>
-              );
-            })
-          ) : (
-            <>
-              <p className="kb-eyebrow border-b border-line pb-4">
-                {categoryLabelOf(selCategory === "letter" ? "letter" : "guide", zh)} · {filtered.length}
-              </p>
-              {filtered.map((i) => (
-                <ItemRow key={i.slug} item={i} zh={zh} locale={locale} />
-              ))}
-            </>
-          )}
-        </section>
-      )}
+      {/* 当前维度的筛选器(作品/Awesome 同款下拉;view 参数随行保留) */}
+      <div className="mt-4">
+        <WorksFilterBar
+          basePath="/explore"
+          preservedQuery={view === "categories" ? "" : `view=${view}`}
+          locale={locale}
+          filters={[filterSpecs[view]]}
+          selected={{
+            categories: { category: selCategory ? [selCategory] : [] },
+            series: { series: selSeries ? [selSeries] : [] },
+            tags: { tag: selTag ? [selTag] : [] },
+            archives: { year: selYear ? [selYear] : [] },
+          }[view]}
+        />
+      </div>
 
-      {/* 系列:注册表目录行 → 系列页 */}
-      {view === "series" && (
-        <section className="mt-8">
-          {seriesCounts.length === 0 ? (
+      {/* 内容区 */}
+      <div className="mt-6">
+        {view === "series" && !selSeries ? (
+          /* 系列网格:作品卡语法(封面在上 16:9 + 内容在下) */
+          seriesCounts.length === 0 ? (
             <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
               {zh ? "还没有系列上架。" : "No series yet."}
             </p>
           ) : (
-            seriesCounts.map((c) => {
-              const s = LEARN_SERIES.find((x) => x.slug === c.slug)!;
-              return (
-                <Link
-                  key={c.slug}
-                  href={`/explore/series/${c.slug}`}
-                  className="group flex items-baseline gap-4 border-b border-line py-6 last:border-b-0"
-                >
-                  <span className="shrink-0 font-mono text-[11px] text-ui-blue">{s.code}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="kb-h3 transition-colors group-hover:text-ui-blue">
-                      {zh ? s.title.zh : s.title.en}
-                    </span>
-                    <span className="mt-1 line-clamp-1 block text-sm text-grey">
-                      {zh ? s.summary.zh : s.summary.en}
-                    </span>
-                  </span>
-                  <span className="shrink-0 font-mono text-2xl font-semibold text-grey/60 transition-colors group-hover:text-ui-blue">
-                    {c.count}
-                  </span>
-                </Link>
-              );
-            })
-          )}
-        </section>
-      )}
-
-      {/* 标签:chips 云;选中 → 结果列表 */}
-      {view === "tags" && (
-        <section className="mt-8">
-          {tagCounts.length === 0 ? (
-            <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
-              {zh ? "还没有标签。" : "No tags yet."}
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {tagCounts.map((tg) => (
-                <Link
-                  key={tg.value}
-                  href={exploreHref("tags", { tag: tg.value === selTag ? null : tg.value })}
-                  scroll={false}
-                  aria-current={selTag === tg.value ? "page" : undefined}
-                  className={`rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-blue ${
-                    selTag === tg.value
-                      ? "border-paper bg-paper text-bg font-medium"
-                      : "border-line text-grey hover:border-ui-blue/60 hover:text-ui-blue"
-                  }`}
-                >
-                  #{tg.value} <span className="opacity-60">{tg.count}</span>
-                </Link>
-              ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {seriesCounts.map((c) => {
+                const s = findLearnSeries(c.slug)!;
+                const list = items.filter((i) => i.series === c.slug);
+                return (
+                  <SeriesGridCard key={c.slug} series={s} episodes={list} zh={zh} />
+                );
+              })}
             </div>
-          )}
-          {selTag && (
-            <div className="mt-6">
-              {filtered.map((i) => (
-                <ItemRow key={i.slug} item={i} zh={zh} locale={locale} />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* 归档:年 → 月 → 条目 */}
-      {view === "archives" && (
-        <section className="mt-8">
-          <div className="flex flex-wrap gap-2">
-            {archiveGroups.map((g) => (
+          )
+        ) : view === "series" && selSeriesMeta ? (
+          /* 选中系列:该系列的集列表 + 进系列页入口 */
+          <>
+            <p className="kb-eyebrow flex items-center justify-between border-b border-line pb-4">
+              <span>
+                {selSeriesMeta.code} · {filtered.length} {zh ? "集" : "episodes"}
+              </span>
               <Link
-                key={g.year}
-                href={exploreHref("archives", { year: g.year === selYear ? null : g.year })}
-                scroll={false}
-                aria-current={selYear === g.year ? "page" : undefined}
-                className={`rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-blue ${
-                  selYear === g.year
-                    ? "border-paper bg-paper text-bg font-medium"
-                    : "border-line text-grey hover:border-ui-blue/60 hover:text-ui-blue"
-                }`}
+                href={`/explore/series/${selSeriesMeta.slug}`}
+                className="text-ui-blue transition-opacity hover:opacity-80"
               >
-                {g.year}{" "}
-                <span className="opacity-60">
-                  {g.months.reduce((n, m) => n + m.items.length, 0)}
-                </span>
+                {zh ? "进系列页 →" : "Open series →"}
               </Link>
-            ))}
-          </div>
-          {archiveGroups
-            .filter((g) => !selYear || g.year === selYear)
-            .map((g) => (
-              <div key={g.year} className="mt-8">
-                <p className="kb-eyebrow border-b border-line pb-3">{g.year}</p>
-                {g.months.map((m) => (
-                  <div key={m.month} className="mt-4">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
-                      {m.month}
-                    </p>
-                    {m.items.map((i) => (
-                      <ItemRow key={i.slug} item={i} zh={zh} locale={locale} />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ))}
-        </section>
-      )}
+            </p>
+            <ItemList items={filtered} zh={zh} locale={locale} />
+          </>
+        ) : view === "archives" && !selYear ? (
+          /* 归档总览:年分组(年 eyebrow + 条目) */
+          archiveGroups.map((g) => (
+            <div key={g.year} className="mt-2 first:mt-0">
+              <p className="kb-eyebrow border-b border-line py-4">
+                {g.year} · {g.months.reduce((n, m) => n + m.items.length, 0)} {zh ? "篇" : "posts"}
+              </p>
+              {g.months.map((m) => (
+                <ItemList key={m.month} items={m.items} zh={zh} locale={locale} />
+              ))}
+            </div>
+          ))
+        ) : (
+          <ItemList items={filtered} zh={zh} locale={locale} />
+        )}
+      </div>
 
       {/* 纪律一行(原月刊 charter 收编) */}
       <p className="mt-12 border-t border-line pt-6 text-[11px] leading-relaxed text-grey/80">
