@@ -1,0 +1,18 @@
+{
+  "areas": {
+    "src/lib": 2142,
+    "app/(app)": 1544,
+    "app/@modal": 29,
+    "app/api": 252,
+    "app/layout.tsx": 6,
+    "app/page.tsx": 20,
+    "components": 152,
+    "tests": 728,
+    "scripts": 4,
+    "proxy.ts": 10
+  },
+  "locked": [
+    "src/lib/client-ip.ts",
+    "src/lib/cron-auth.ts"
+  ]
+}

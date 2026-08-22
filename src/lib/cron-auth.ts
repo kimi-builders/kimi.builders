@@ -1,7 +1,8 @@
-/* cron 路由鉴权(20260822 P2-4):Bearer CRON_SECRET。
-   - 恒时比较:两侧先 sha256 再 timingSafeEqual——比较时长不随凭据前缀变化,
-     也不泄露 header 长度(直接比 Buffer 会因长度不等提前返回);
-   - 密钥未配置与凭据错误统一 false/401:外部无法探测「是否配了密钥」。 */
+/* Bearer auth for cron routes. Both the presented header and the expected
+   value are hashed before timingSafeEqual, so comparison time leaks neither
+   a matching prefix nor the header length. A missing CRON_SECRET returns the
+   same false as a wrong credential — callers answer a uniform 401, and
+   outsiders cannot probe whether the key is configured. */
 import { createHash, timingSafeEqual } from "node:crypto";
 
 function digest(value: string): Buffer {
