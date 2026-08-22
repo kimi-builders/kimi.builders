@@ -321,3 +321,19 @@ export async function softDeleteArticle(id: number): Promise<boolean> {
   const [res] = await getPool().query<ResultSetHeader>(q.sql, q.args);
   return res.affectedRows > 0;
 }
+
+/* 按行 id 轻量取旧值(slug + payload.series,20260822 P2-6):编辑动作在更新前
+   调用,用于失效「旧 slug 详情页」与「新旧两个系列页」——slug 改名或换系列后,
+   旧路径的缓存不失效就会一直展示过期内容。草稿/已撤稿也要能取到(失效不分状态)。 */
+export async function getArticleSlugAndSeriesById(
+  id: number,
+): Promise<{ slug: string; series: string | null } | null> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT slug, payload->>'$.series' AS series FROM articles WHERE id = ? LIMIT 1",
+    [id],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  const series = r.series === null || r.series === undefined ? null : String(r.series);
+  return { slug: String(r.slug), series: series && series.length > 0 ? series : null };
+}

@@ -12,6 +12,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { PUBLIC_MONTHLY_STATS_CACHE_TAG } from "@/src/lib/cache-tags";
 import {
   createArticle,
+  getArticleSlugAndSeriesById,
   normalizeArticleKind,
   normalizeArticleLocale,
   normalizeArticleSlug,
@@ -77,6 +78,8 @@ export async function saveArticleAction(
      guide → tutorials.ts),错误就地提示 */
   let payload: string | null = null;
   let guideHasVideo = false;
+  /* guide 的系列 slug:系列页随写路径失效(letter 无系列) */
+  let seriesSlug: string | null = null;
   if (kind === "letter") {
     const parsed = parseLetterPayload(String(formData.get("payload") || ""));
     if (!parsed.ok) return { error: `payload:${parsed.error}` };
@@ -90,12 +93,15 @@ export async function saveArticleAction(
       ? JSON.stringify(parsed.payload)
       : null;
     guideHasVideo = !!parsed.payload.video;
+    seriesSlug = parsed.payload.series ?? null;
   }
   /* letter 的三层由数据组装(src/lib/monthly.ts),正文可空;guide 以视频为主时
      文稿可空(集详情显示「本集以视频为主」),其余仍必填 */
   if (!bodyMd && kind !== "letter" && !guideHasVideo) return { error: t(locale, "err.artBody") };
 
   const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder, payload };
+  /* 更新前取旧值(slug/系列):改 slug 或换系列后,旧路径缓存也要失效(20260822 P2-6) */
+  const prev = id ? await getArticleSlugAndSeriesById(id) : null;
   let rowId = id;
   try {
     if (id) {
@@ -111,6 +117,12 @@ export async function saveArticleAction(
 
   revalidatePath("/explore");
   revalidatePath(`/explore/${slug}`);
+  /* 旧 slug:改名的详情页缓存兜底失效 */
+  if (prev && prev.slug !== slug) revalidatePath(`/explore/${prev.slug}`);
+  /* 系列页:新旧系列都失效(换系列时旧页的集列表要摘掉本集) */
+  for (const s of new Set([prev?.series ?? null, seriesSlug])) {
+    if (s) revalidatePath(`/explore/series/${s}`);
+  }
   /* 统计快照缓存失效(20260822 P2-5):发布/撤稿都可能改变快照观感 */
   updateTag(PUBLIC_MONTHLY_STATS_CACHE_TAG);
   return { ok: true, id: rowId, slug, artLocale, published: publish };
@@ -126,9 +138,15 @@ export async function deleteArticleAction(
     return { ok: false, error: t(locale, "err.forbidden") };
   const id = Number(formData.get("id"));
   if (!id) return { ok: false, error: t(locale, "err.generic") };
+  /* 删除动作只带 id:先取 slug/系列再删,详情与系列页都可精确失效(20260822 P2-6) */
+  const prev = await getArticleSlugAndSeriesById(id);
   const ok = await softDeleteArticle(id);
   if (ok) {
     revalidatePath("/explore");
+    if (prev) {
+      revalidatePath(`/explore/${prev.slug}`);
+      if (prev.series) revalidatePath(`/explore/series/${prev.series}`);
+    }
     updateTag(PUBLIC_MONTHLY_STATS_CACHE_TAG);
   }
   return { ok };

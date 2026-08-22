@@ -31,3 +31,22 @@ test("发布/撤稿/软删都作废 monthly-stats tag", () => {
   assert.equal(actions.match(/updateTag\(PUBLIC_MONTHLY_STATS_CACHE_TAG\)/g)?.length ?? 0, 2);
 });
 
+/* ---- 20260822 P2-6/P2-8:发布失效补全 + proxy matcher ---- */
+
+test("发布/删除失效覆盖:旧 slug 详情页 + 新旧系列页", () => {
+  const save = actions.slice(actions.indexOf("export async function saveArticleAction"));
+  assert.match(actions, /getArticleSlugAndSeriesById/);
+  assert.match(save, /prev\.slug !== slug/);
+  assert.match(save, /\/explore\/series\/\$\{s\}/);
+  const del = actions.slice(actions.indexOf("export async function deleteArticleAction"));
+  assert.match(del, /\/explore\/\$\{prev\.slug\}/);
+  assert.match(del, /\/explore\/series\/\$\{prev\.series\}/);
+});
+
+test("proxy matcher 盖住 (app) 组单层页(/about、/login),右栏不再被藏", () => {
+  const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
+  const m = proxy.match(/matcher:\s*\[([\s\S]*?)\]/);
+  assert.ok(m);
+  assert.match(m[1], /"\/about\/:path\*"/);
+  assert.match(m[1], /"\/login\/:path\*"/);
+});
