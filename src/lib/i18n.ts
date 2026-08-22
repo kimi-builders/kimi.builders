@@ -30,7 +30,7 @@ const DICT = {
   "nav.closeMenu": { zh: "关闭功能导航", en: "Close navigation" },
   /* ---- 全局搜索 ---- */
   "search.open": { zh: "搜索站内内容", en: "Search the site" },
-  "search.placeholder": { zh: "搜索社区、作品、教程…", en: "Search community, works, tutorials…" },
+  "search.placeholder": { zh: "搜索社区、作品、指南…", en: "Search community, works, guides…" },
   "search.jumpTo": { zh: "快速前往", en: "Jump to" },
   "search.results": { zh: "搜索结果", en: "Results" },
   "search.empty": { zh: "没有匹配的页面", en: "No matching page" },
@@ -39,7 +39,7 @@ const DICT = {
   "search.community": { zh: "讨论、投票与社区动态", en: "Discussions, polls, and community updates" },
   "search.works": { zh: "社区成员构建的真实项目", en: "Real projects built by community members" },
   "search.awesome": { zh: "站内与站外精选项目", en: "Selected member and external projects" },
-  "search.explore": { zh: "月刊评鉴与教程,沿分类/系列/标签/时间浏览", en: "Monthly reviews and tutorials — browse by category, series, tag, or time" },
+  "search.explore": { zh: "月刊评鉴与指南,沿分类/系列/标签/时间浏览", en: "Monthly reviews and guides — browse by category, series, tag, or time" },
   "search.usage": { zh: "Token、成本与活跃度看板", en: "Token, cost, and activity dashboard" },
   "search.demoNightTitle": { zh: "Demo Night", en: "Demo Night" },
   "search.demoNight": { zh: "报名并查看社区展示活动", en: "Join and browse community showcase events" },
@@ -122,7 +122,7 @@ const DICT = {
   /* 分区页头统一语法(20260821 文案一致性评审):eyebrow = 「— 定位语」,
      不复读标题词(标题就在正下方);句式与详情页「— 月刊评鉴 · ISSUE 07」
      同源。探索标题保持短词(使命句由右栏顶部承担,页头不复述) */
-  "explore.eyebrow": { zh: "— 月刊 × 教程", en: "— Monthly × guides" },
+  "explore.eyebrow": { zh: "— 月刊 × 指南", en: "— Monthly × guides" },
   "explore.lede": {
     zh: "学,把智能变成认知;做,把认知变成东西;得,把东西变成价值;立,把价值变成位置与自我。",
     en: "Learn turns intelligence into judgment; Build turns judgment into things; Gain turns things into value; Become turns value into who you are.",
@@ -632,8 +632,8 @@ const DICT = {
   "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
   "soon.follow": { zh: "关注 GitHub 获取上线动态", en: "Follow GitHub for launch updates" },
   "soon.exploreExpect": {
-    zh: "探索区正在筹备:月刊评鉴与教程系列,沿分类/系列/标签/时间浏览。",
-    en: "Explore is in the works — monthly reviews and tutorial series, browsable by category, series, tag, and time.",
+    zh: "探索区正在筹备:月刊评鉴与指南系列,沿分类/系列/标签/时间浏览。",
+    en: "Explore is in the works — monthly reviews and guide series, browsable by category, series, tag, and time.",
   },
   "soon.body": {
     zh: "这个板块还在准备中,内容好了就开门。先去社区逛逛,或把你想看的题材发帖告诉我们。",
@@ -1006,7 +1006,7 @@ const DICT = {
   /* 首页入口按钮副文案(20260815):术语型入口给首访用户一句预期;
      用量榜入口随探索区上线让位(20260821 评审:入口卡按内容分区排列) */
   "home.subCommunity": { zh: "讨论 · 晒作品", en: "Discuss & share" },
-  "home.subExplore": { zh: "月刊 × 教程", en: "Monthly × guides" },
+  "home.subExplore": { zh: "月刊 × 指南", en: "Monthly × guides" },
   "home.subWorks": { zh: "成员作品墙", en: "Member builds" },
   "home.subAwesome": { zh: "生态项目精选", en: "Curated picks" },
   /* ---- 关于页(/about)---- */
@@ -1220,7 +1220,7 @@ const DICT = {
   },
   "artf.kind": { zh: "类型", en: "Kind" },
   "artf.kindLetter": { zh: "月刊(letter)", en: "Letter (monthly)" },
-  "artf.kindGuide": { zh: "教程(guide)", en: "Guide (tutorial)" },
+  "artf.kindGuide": { zh: "指南(guide)", en: "Guide" },
   "artf.locale": { zh: "语言", en: "Language" },
   "artf.title": { zh: "标题(200 字以内)", en: "Title (200 chars max)" },
   "artf.summary": {
