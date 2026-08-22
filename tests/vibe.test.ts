@@ -11,8 +11,11 @@ test("DEFAULT_VIBE is one of the two vibes", () => {
 test("normalizeVibe: legal values pass through, junk falls back to default", () => {
   assert.equal(normalizeVibe("poster"), "poster");
   assert.equal(normalizeVibe("soft"), "soft");
-  /* 与 DEFAULT_VIBE 不同档的合法值必须原样过(不能被默认吞掉) */
-  assert.notEqual(normalizeVibe("soft"), normalizeVibe(""));
+  /* 与 DEFAULT_VIBE 不同档的合法值必须原样过(不能被默认吞掉);
+     断言不假定默认是哪一档——默认可配置(vibe.ts),换了默认测试照成立 */
+  const other: "poster" | "soft" = DEFAULT_VIBE === "poster" ? "soft" : "poster";
+  assert.equal(normalizeVibe(other), other);
+  assert.notEqual(normalizeVibe(other), normalizeVibe(""));
   /* 脏值/缺失回落站点默认 */
   assert.equal(normalizeVibe(""), DEFAULT_VIBE);
   assert.equal(normalizeVibe(undefined), DEFAULT_VIBE);

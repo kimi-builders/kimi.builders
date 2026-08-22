@@ -2,6 +2,8 @@
    橱窗,不该整体锁在登录后。本视图只消费 opt-in 聚合缓存
    (getPublicUsageLeaderboardPreview,与右栏预览/榜单页同一数据源),
    不查任何个人数据;登录后的完整个人 dashboard 在页面下游,保持不动。
+   20260822:榜单上方加「个人面板预览」(UsagePreviewStrip)——确定性示例
+   数据渲染真实面板组件,访客登录前就能看到面板长什么样。
    榜单为空 = 诚实空态:列表区显示空态文案,登录引导卡照常渲染。 */
 import Link from "next/link";
 import { BarChart3, ShieldCheck } from "lucide-react";
@@ -9,6 +11,7 @@ import Avatar from "@/components/Avatar";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getPublicUsageLeaderboardPreview } from "@/src/lib/usage/public-leaderboard-cache";
+import UsagePreviewStrip from "./UsagePreviewStrip";
 
 /* 与用量中心/右栏预览同一套 B/M/k 紧凑格式。 */
 function compact(value: number): string {
@@ -39,6 +42,9 @@ export default async function UsagePublicView({
         <ShieldCheck size={13} className="text-status-ok-fg" aria-hidden="true" />
         {zh ? "默认私有 · 榜单 opt-in" : "Private by default · opt-in leaderboard"}
       </p>
+
+      {/* 个人面板预览(示例数据活渲染):先看到「会得到什么」,再往下看公开榜 */}
+      <UsagePreviewStrip locale={locale} />
 
       <section className="mt-8">
         <div className="flex items-baseline justify-between border-b border-line pb-2">

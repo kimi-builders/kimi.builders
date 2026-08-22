@@ -685,6 +685,13 @@ const DICT = {
     en: "A Kimi-first usage center for multi-agent AI coding. Data stays private by default — metrics only; the leaderboard is shared by members opt-in.",
   },
   "usage.publicBoard": { zh: "近 30 天用量榜", en: "30-DAY LEADERBOARD" },
+  /* 个人面板预览条(20260822,示例数据活渲染) */
+  "usage.previewTitle": { zh: "个人面板预览", en: "PERSONAL DASHBOARD PREVIEW" },
+  "usage.previewBadge": { zh: "示例数据", en: "SAMPLE DATA" },
+  "usage.previewNote": {
+    zh: "登录并连接设备后,这些图表就是你自己的真实数据——默认私有,上不上榜由你决定。",
+    en: "Sign in and connect a device, and these charts become your real data — private by default, opt-in to the leaderboard.",
+  },
   "usage.publicFull": { zh: "查看完整榜单 →", en: "Full leaderboard →" },
   "usage.publicEmpty": {
     zh: "还没有人公开用量数据。连接设备并选择上榜,成为第一个。",
