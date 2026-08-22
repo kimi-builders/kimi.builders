@@ -27,7 +27,10 @@
   本地看板无需账号、默认不联网,同步到本站用量中心是可选能力(仅脱敏聚合数据)。
 - **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** ——
   社区品牌资产包(月球 + 轨道 + 双星 Logo),已内置于 `public/brand/`。
-- **月刊与知识库**:社区月刊(`blog`)、新手指南与教程(`learn`)、Demo Night 活动页。
+- **探索区**(`/explore`):月刊与教程同一文章架,以「学 / 做 / 得 / 立」四章为主轴;
+  产品 / 职业 / 标签 / 归档是下拉透镜,有内容才出选项;教程按系列成集
+  (`/explore/series/<slug>`,策展制)。旧 `/blog`、`/learn` 地址 301 进探索区。
+  另有 Demo Night 活动页。
 - **双语与双主题**:中文/English 一键切换;深色/浅色主题 + poster/soft 两种视觉气质。
 
 ## 公开价格目录 API

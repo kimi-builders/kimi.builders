@@ -35,8 +35,11 @@ knowledge — and an AI that actually lives in the community.
 - **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** —
   the community brand asset pack (moon + orbit + twin-star logo), vendored into
   `public/brand/`.
-- **Monthly & knowledge base**: community monthly (`blog`), guides and tutorials
-  (`learn`), and Demo Night event pages.
+- **Explore** (`/explore`): monthly letters and tutorials share one article shelf,
+  organized along four chapters — learn / build / measure / establish. Products,
+  roles, tags and archive are dropdown lenses that only appear when they have
+  content; tutorials form curated series (`/explore/series/<slug>`). The old
+  `/blog` and `/learn` addresses 301 into Explore. Demo Night event pages too.
 - **i18n & theming**: Chinese/English toggle; dark/light themes plus two visual vibes
   (poster / soft).
 
