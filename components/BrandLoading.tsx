@@ -1,5 +1,6 @@
-/* 品牌加载态:首页同款双星绕月(SMIL 动画,浏览器原生播放)。
-   各 route 的 loading.tsx 统一引用,别再造骨架卡片。 */
+/* Brand loading state: the home page's twin stars orbiting the moon
+   (SMIL animation, played natively by the browser). Every route's
+   loading.tsx references this — no ad-hoc skeleton cards. */
 export default function BrandLoading() {
   return (
     <main

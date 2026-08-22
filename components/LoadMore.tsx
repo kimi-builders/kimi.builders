@@ -1,11 +1,14 @@
 "use client";
 
-/* 通用「加载更多」(feed / 作品墙 / Awesome 共用):server action 返回服务端
-   渲染好的一页(ReactNode 随 RSC 序列化),客户端直接追加;游标为 null 即到底。
-   模式同 CommentSection:调用方按首屏内容给 key,首屏换新(刷新/删改)时
-   remount,已追加的页作废,回到首屏第一页。
-   追加的卡片直接落在父容器里(无包装节点):space-y / grid 布局都照常生效,
-   按钮用 col-span-full 在网格里独占一行(块布局下该属性无副作用)。 */
+/* Shared "load more" (feed / works wall / Awesome): the server action
+   returns a server-rendered page (ReactNode serialized over RSC) the
+   client appends directly; a null cursor means the end. Same pattern
+   as CommentSection: the caller keys by the first page's content, so a
+   fresh first page (refresh/delete) remounts, dropping appended pages
+   back to page one. Appended cards drop straight into the parent
+   container (no wrapper node): space-y / grid layouts keep working,
+   and the button takes col-span-full for a full grid row (harmless in
+   block layout). */
 import { useState, type ReactNode } from "react";
 import { LoaderCircle } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -25,7 +28,8 @@ export default function LoadMore<T extends string | number>({
   load,
   locale,
 }: {
-  /* 游标类型由调用方定:feed 是字符串(热门为复合游标),作品墙是数字 id */
+  /* The cursor type is the caller's: a string for the feed (hot uses a
+     composite cursor), a numeric id for the works wall. */
   initialCursor: T | null;
   load: (cursor: T) => Promise<LoadMoreResult<T>>;
   locale: Locale;

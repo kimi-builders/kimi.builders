@@ -1,9 +1,11 @@
 "use client";
 
-/* 全局 toast 出口:监听 toast() 派发的 kb:toast 事件,底部居中堆叠。
-   挂在根布局,跨客户端导航存活;最多同时留 3 条。
-   分级(20260815 评审):error 红边 + 警示图标 + 5.2s(错误原因要读得完),
-   info 维持 2.6s;两种都可点击立即关闭。detail 兼容旧字符串负载。 */
+/* Global toast outlet: listens for the kb:toast events dispatched by
+   toast(), stacked bottom-center. Mounted in the root layout, it
+   survives client navigation; at most 3 at a time. Grading: error =
+   red border + warning icon + 5.2s (error causes must be readable);
+   info stays 2.6s; both close on click. detail tolerates the legacy
+   string payload. */
 import { useEffect, useState } from "react";
 import { CircleAlert } from "lucide-react";
 

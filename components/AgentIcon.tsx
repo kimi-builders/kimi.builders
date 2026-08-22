@@ -1,6 +1,8 @@
-/* Agent 品牌图标:窄子路径导入 @lobehub/icons(不走桶文件,防 bundle 膨胀)。
-   有 Color 用 Color;没有的用 Mono(currentColor,跟随文字色)。
-   图标本身是 "use client",这个 wrapper 保持 RSC,边界停在图标处。 */
+/* Agent brand icons: narrow subpath imports from @lobehub/icons (never
+   the barrel, against bundle bloat). Color variants where they exist;
+   otherwise Mono (currentColor, following the text color). The icons
+   themselves are "use client"; this wrapper stays RSC with the
+   boundary at the icon. */
 import KimiMono from "@lobehub/icons/es/Kimi/components/Mono";
 import MoonshotMono from "@lobehub/icons/es/Moonshot/components/Mono";
 import ClaudeCodeColor from "@lobehub/icons/es/ClaudeCode/components/Color";
@@ -21,18 +23,19 @@ import PiMono from "@lobehub/icons/es/Pi/components/Mono";
 
 const ICONS = {
   kimi: KimiMono,
-  /* Kimi 家族:Kimi Agent 用 Kimi K 标,Agent Swarm(Kimi Code 多智能体能力)
-     用 Moonshot 月标,不再用 lucide 通用占位(与品牌标同框显灰显假) */
+  /* Kimi family: Kimi Agent uses the Kimi K mark, Agent Swarm (Kimi
+     Code's multi-agent capability) uses the Moonshot moon mark — no
+     more lucide placeholders (grey and fake next to brand marks). */
   "kimi-agent": KimiMono,
   "agent-swarm": MoonshotMono,
-  // 用量来源 id(usage source id)直接映射
+  // Usage source ids map directly.
   "kimi-code": KimiMono,
   "claude-code": ClaudeCodeColor,
   codex: CodexColor,
   "gemini-cli": GeminiCliColor,
   opencode: OpenCodeMono,
   antigravity: AntigravityColor,
-  // 作品库 Agent id
+  // Works-library agent ids.
   cursor: CursorMono,
   copilot: CopilotColor,
   windsurf: WindsurfMono,
@@ -40,8 +43,9 @@ const ICONS = {
   cline: ClineMono,
   gemini: GeminiColor,
   qoder: QoderColor,
-  /* 智谱 Z.ai / 腾讯 / Pi:ZAI 与 Pi 只有 Mono(currentColor 跟随主题);
-     WorkBuddy 暂无独立标,沿用同产品 CodeBuddy 品牌标 */
+  /* Zhipu Z.ai / Tencent / Pi: ZAI and Pi are Mono-only (currentColor
+     follows the theme); WorkBuddy has no dedicated mark yet and
+     reuses the sibling CodeBuddy brand mark. */
   zcode: ZaiMono,
   workbuddy: CodeBuddyColor,
   "pi-agent": PiMono,

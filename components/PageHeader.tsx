@@ -1,10 +1,12 @@
-/* 列表页页头基元(20260819 版式对齐):works / awesome / learn / blog 四个分区
-   落地页共用同一页头语法——eyebrow(.kb-eyebrow 技术标签)+ H1(.kb-h1)+
-   导语(.kb-lede,正文级 16px)+ 汇总 meta + CTA 行,可选右侧 aside
-   (learn 的 PATH STACK / blog 的每期三层;works/awesome 无)。
-   对齐 Kimi 品牌手册:一页一个焦点、默认左对齐、间距只走 4px 序列。
-   eyebrow 用 div 容器:blog 需在同行右侧放编辑入口(传 flex 行节点),
-   其余页面直接传文本。 */
+/* List-page header primitive: the works / awesome / learn / blog
+   landing pages share one header grammar — eyebrow (.kb-eyebrow
+   technical label) + H1 (.kb-h1) + lede (.kb-lede, body-grade 16px) +
+   summary meta + CTA row, with an optional right aside (learn's PATH
+   STACK / blog's per-issue layers; works/awesome have none). Aligned
+   with the Kimi brand book: one focal point per page, left-aligned by
+   default, spacing strictly on the 4px ladder. The eyebrow is a div:
+   blog places an edit entry on the same row (passing a flex row
+   node); other pages pass plain text. */
 import type { ReactNode } from "react";
 
 export default function PageHeader({
@@ -22,7 +24,8 @@ export default function PageHeader({
   meta?: ReactNode;
   actions?: ReactNode;
   aside?: ReactNode;
-  /* learn 传 "xl:block":≥xl 右栏已有路径栈,aside 收起后 hero 回单列 */
+  /* learn passes "xl:block": from xl the rail already carries the
+     path stack, so a collapsed aside returns the hero to one column. */
   className?: string;
 }) {
   return (

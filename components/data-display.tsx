@@ -11,8 +11,10 @@ export function DataMeta({
   const visible = items.filter((item): item is ReactNode => item !== null && item !== false && item !== undefined);
   if (visible.length === 0) return null;
   return (
-    /* 20260819:来源/口径/单位属技术标注,走 Geist Mono(品牌手册:精确数值与技术
-       标注用 mono);此前是 sans,与同页其它 meta 行不一致 */
+    /* Source/scope/units are technical annotations and use Geist Mono
+       (brand book: exact values and technical annotations are mono);
+       they were sans before, inconsistent with the page's other meta
+       rows. */
     <p className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono text-xs text-grey/70 ${className}`}>
       {visible.map((item, index) => (
         <span key={index} className="inline-flex items-center gap-1.5">

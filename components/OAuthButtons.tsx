@@ -1,6 +1,7 @@
-/* OAuth 入口按钮行(20260919 从 LoginContent 抽出):登录页与各受限页的
-   登录引导卡共用——全站 OAuth 入口只有这一份事实源,样式永不漂移。
-   服务端安全(纯 <a>,无 hook);next 为回跳路径(空 = 不带参)。 */
+/* OAuth entry button row: shared by the login page and gated pages'
+   login invitation cards — the site's single source for OAuth entries,
+   so the styling never drifts. Server-safe (plain <a>, no hooks);
+   next is the redirect path (empty = no param). */
 import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import GithubIcon from "@/app/(app)/_components/GithubIcon";
 
@@ -8,9 +9,10 @@ export default function OAuthButtons({
   next,
   block = false,
 }: {
-  /* 登录成功后的回跳路径(如 /usage);空串 = 不带 next */
+  /* The post-login redirect path (e.g. /usage); empty = no next. */
   next?: string;
-  /* true = 登录页的块状纵排(默认);false = 引导卡的行内窄排 */
+  /* true = the login page's stacked block (default); false = the
+     invitation card's narrow inline row. */
   block?: boolean;
 }) {
   const query = next && next !== "/" ? `?next=${encodeURIComponent(next)}` : "";

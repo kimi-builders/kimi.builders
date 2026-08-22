@@ -1,6 +1,7 @@
-/* 拦截 /usage/device:应用内进入「连接用量设备」以弹窗呈现;直接访问/刷新(如
-   终端 init 打开的链接)仍走完整页(app/(app)/usage/device/page.tsx)。
-   内容与完整页共用 UsageDeviceContent。 */
+/* Intercepts /usage/device: in-app "connect device" renders a modal;
+   direct access/refresh (e.g. the link opened by the CLI's init) gets
+   the full page (app/(app)/usage/device/page.tsx). Both share
+   UsageDeviceContent. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";

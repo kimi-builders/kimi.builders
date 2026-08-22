@@ -1,5 +1,6 @@
-/* 头像兜底:无 avatarUrl 时渲染首字母色块,避免空 src 破图。
-   纯展示,RSC/客户端通用。 */
+/* Avatar fallback: without an avatarUrl render an initial-letter tile
+   — an empty src must not break the image. Pure display, usable from
+   RSC and client alike. */
 export default function Avatar({
   url,
   handle,
@@ -10,7 +11,8 @@ export default function Avatar({
   url: string | null | undefined;
   handle: string;
   size?: number;
-  /* 方形变体:bot/系统头像(Kimi 小筑等)用,人物头像保持圆形 */
+  /* Square variant: bot/system avatars (the bot and friends); human
+     avatars stay circular. */
   square?: boolean;
   className?: string;
 }) {

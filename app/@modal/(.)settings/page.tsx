@@ -1,5 +1,6 @@
-/* 拦截 /settings:应用内点击「设置」以弹窗呈现;直接访问/刷新仍走完整页
-   (app/(app)/settings/page.tsx)。内容与完整页共用 SettingsContent。 */
+/* Intercepts /settings: in-app "settings" clicks render a modal;
+   direct access/refresh still gets the full page
+   (app/(app)/settings/page.tsx). Both share SettingsContent. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";

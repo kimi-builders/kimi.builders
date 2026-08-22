@@ -1,9 +1,11 @@
 "use client";
 
-/* 分享按钮:复制帖子链接(带标题)到剪贴板,成功后图标变勾 2 秒。
-   必须客户端:要用 navigator.clipboard 和 window.location.origin。
-   可选 posterHref:有值时旁边多一颗「海报」小按钮,新 tab 打开海报 PNG
-   (?download=1 附件头直接下载);无值时行为完全不变。 */
+/* Share button: copies the post link (with title) to the clipboard; on
+   success the icon checks for 2 seconds. Client-only: needs
+   navigator.clipboard and window.location.origin. Optional posterHref:
+   when present adds a small "poster" button opening the poster PNG in a
+   new tab (?download=1 downloads directly via the attachment header);
+   absent, behavior is unchanged. */
 import { useState } from "react";
 import { Check, ImageDown, Share2 } from "lucide-react";
 import {
@@ -38,7 +40,8 @@ export default function ShareButton({
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           } catch {
-            /* 剪贴板被拒(权限/非安全上下文)就静默,不打扰阅读 */
+            /* A rejected clipboard (permissions/insecure context) stays
+               silent — never disturb the reading. */
           }
         }}
         className={`inline-flex items-center gap-1.5 font-mono text-xs transition-colors ${

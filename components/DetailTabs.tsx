@@ -1,14 +1,20 @@
 "use client";
 
-/* 详情页 Tabs(20260821 探索区,参考 website 的 DetailTabs 机制):
-   · 所有面板全部 SSR 渲染,非激活只加 hidden(无 JS 时全可见,优雅降级);
-   · 激活态初始值由服务端从 ?tab= 读入(initialTab,SSR 不出错配);
-   · 点击切换 + history.replaceState 同步 URL(首个 tab 删参数,URL 干净),
-     popstate 回同步;方向键/ Home/End 循环切换,focus 不跳滚动。
-   · remember(20260821 形态偏好,仅 guide 详情传 true):点击形态 tab
-     (read/video/deck)写 kb_fmt cookie——「喜欢文字的看文章,喜欢 PPT 的
-     看演示」,下次进任何一集直接落在偏好的形态;letter 的评鉴/事实/定夺
-     是内容节不是形态,不记忆。服务端侧的回落序见 explore/[slug]/page.tsx。 */
+/* Detail-page tabs:
+   - every panel renders fully SSR; inactive ones get only hidden (all
+     visible without JS — graceful degradation);
+   - the active initial value is read server-side from ?tab=
+     (initialTab — no SSR mismatch);
+   - clicks switch + history.replaceState the URL (the first tab drops
+     the param, keeping URLs clean), popstate syncs back; arrow keys /
+     Home/End cycle without scroll jumps on focus.
+   - remember (format preference, guide details pass true): clicking a
+     format tab (read/video/deck) writes the kb_fmt cookie — "text
+     people get the article, slide people get the deck" — and the next
+     episode opens straight at the preferred format; the letter's
+     review/facts/decisions are content sections, not formats, and are
+     never remembered. The server-side fallback order lives in
+     explore/[slug]/page.tsx. */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   SEG_ITEM,
@@ -25,9 +31,9 @@ export interface DetailTab {
 
 const FORMAT_TAB_IDS = new Set(["read", "video", "deck"]);
 
-/* 形态偏好落 cookie(模块级 helper:react-hooks/immutability 不允许
-   组件作用域直接赋值 document.cookie;与 pref-controls 的 writeCookie
-   同一规避)。 */
+/* Writing the format-preference cookie (a module-level helper:
+   react-hooks/immutability forbids assigning document.cookie in
+   component scope; the same dodge as pref-controls' writeCookie). */
 function rememberFormatTab(id: string) {
   document.cookie = `kb_fmt=${id}; path=/; max-age=${365 * 86400}; samesite=lax`;
 }
@@ -39,11 +45,12 @@ export default function DetailTabs({
   remember = false,
 }: {
   tabs: DetailTab[];
-  /* 服务端从 searchParams.tab 读入;非法/缺省 = 第一个 tab
-     (guide 详情另有 kb_fmt 偏好回落,在页面层拼好传入) */
+  /* Read server-side from searchParams.tab; invalid/missing = the
+     first tab (guide details have the kb_fmt preference fallback,
+     assembled at the page layer). */
   initialTab?: string;
   ariaLabel: string;
-  /* 形态偏好记忆:仅 guide 详情启用 */
+  /* Format-preference memory: guide details only. */
   remember?: boolean;
 }) {
   const first = tabs[0]?.id ?? "";
@@ -52,7 +59,7 @@ export default function DetailTabs({
   );
   const listRef = useRef<HTMLDivElement>(null);
 
-  /* 浏览器前进/后退:URL 的 ?tab= 回同步进 state */
+  /* Browser forward/back: the URL's ?tab= syncs back into state. */
   useEffect(() => {
     const onPop = () => {
       const t = new URLSearchParams(window.location.search).get("tab");

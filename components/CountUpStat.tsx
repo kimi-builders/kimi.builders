@@ -1,10 +1,12 @@
 "use client";
 
-/* 数据条滚动数字(20260815 评审):进入视口后 0.9s ease-out 数到终值,
-   让「社区是活的」有最低成本的动效证明。
-   SSR/初始渲染直接给终值(无 JS / 首屏无布局位移,SEO 也是真数字),
-   水合后按需起播;prefers-reduced-motion 或手动减动效(html data-motion,
-   20260821)直接停在终值。 */
+/* Stats-bar count-up numbers: on entering the viewport, count to the
+   final value over 0.9s ease-out — the cheapest possible proof that
+   "the community is alive". SSR/initial render shows the final value
+   directly (works without JS, no first-paint layout shift, real
+   numbers for SEO); after hydration the animation starts on demand;
+   prefers-reduced-motion or manual reduced motion (html data-motion)
+   parks at the final value. */
 import { useEffect, useRef, useState } from "react";
 import { compactNumber } from "@/src/lib/format";
 import type { Locale } from "@/src/lib/i18n";

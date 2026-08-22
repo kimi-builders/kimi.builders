@@ -1,5 +1,6 @@
-/* 拦截 /community/new:应用内点击「发帖」以弹窗呈现;直接访问/刷新仍走完整页
-   (app/(app)/community/new/page.tsx)。内容与完整页共用 NewPostContent。 */
+/* Intercepts /community/new: in-app "post" clicks render a modal;
+   direct access/refresh still gets the full page
+   (app/(app)/community/new/page.tsx). Both share NewPostContent. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";

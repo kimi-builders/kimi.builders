@@ -1,6 +1,7 @@
-/* 用户 Markdown 正文渲染。react-markdown 默认不执行原始 HTML(无 XSS 面),
-   GFM 支持表格/删除线/任务列表;样式走 globals.css 的 .md 块。
-   rehypeKimiMention(20260816):@kimi 召唤词高亮(代码块内除外)。 */
+/* User Markdown rendering. react-markdown never executes raw HTML by
+   default (no XSS surface); GFM adds tables/strikethrough/task lists;
+   styling lives in globals.css's .md blocks. rehypeKimiMention:
+   highlights @kimi summons (except inside code blocks). */
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { rehypeKimiMention } from "@/src/lib/mention-kimi";

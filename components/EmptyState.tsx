@@ -1,12 +1,16 @@
-/* 统一空态基元(20260821 评审):月牙 + 双星的品牌空态插画(icon.svg 的
-   小尺寸几何,颜色走令牌随主题),替代各页零散的 SearchX/Star 行内块。
-   variant="card" 独立卡(列表主空态,规格对齐 SoonPanel);
-   variant="inline" 无卡壳(嵌在右栏 Widget / 面板内,不套卡中卡)。
-   actions 插槽给行动引导——空社区的最优解是 CTA,不是只有一句鼓励。 */
+/* Unified empty-state primitive: the crescent + twin-star brand
+   illustration (icon.svg's geometry at small size, token colors
+   following the theme), replacing scattered SearchX/Star inline
+   blocks. variant="card" is a standalone card (a list's main empty
+   state, sized like SoonPanel); variant="inline" has no card shell
+   (nested inside a rail Widget / panel — no card-in-card). The actions
+   slot carries the call to action — an empty community's best answer
+   is a CTA, not encouragement alone. */
 import type { ReactNode } from "react";
 
-/* 月牙双星:与 app/icon.svg 同稿的几何;fill 走 CSS 令牌,双主题安全。
-   mask id 全站同值(内容恒等,同页多实例碰撞无副作用)。 */
+/* Crescent + twin stars: the same geometry as app/icon.svg; fills
+   ride CSS tokens, safe across themes. The mask id is one constant
+   site-wide (identical content — same-page collisions are harmless). */
 function CrescentMark({ className }: { className?: string }) {
   return (
     <svg
@@ -42,11 +46,11 @@ export default function EmptyState({
   variant = "card",
   className,
 }: {
-  /* 主体文案(空态说明) */
+  /* Main copy (the empty-state description). */
   message: ReactNode;
-  /* 次行指引(内容引导/操作提示) */
+  /* Secondary guidance (content direction / action hint). */
   hint?: ReactNode;
-  /* 行动引导(CTA 行,居中排布) */
+  /* Call to action (CTA row, centered). */
   actions?: ReactNode;
   variant?: "card" | "inline";
   className?: string;

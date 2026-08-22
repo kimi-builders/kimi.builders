@@ -1,6 +1,7 @@
-/* 登录态 chip:未登录给 GitHub / Google 入口,已登录显示头像 + @handle + 退出。
-   首页(右上角)和社区壳的移动端 mini 栏共用;compact = 隐去 @handle(窄屏省宽)。
-   文案跟随 UI 语言。 */
+/* Auth chip: signed out shows the GitHub / Google entries; signed in
+   shows avatar + @handle + sign out. Shared by the home page (top
+   right) and the shell's mobile mini bar; compact hides @handle (saves
+   width on narrow screens). Copy follows the UI language. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import Link from "next/link";
 import { t } from "@/src/lib/i18n";
@@ -47,9 +48,11 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
     );
   }
   return (
-    /* 单一登录入口(20260815 评审):登录方式的选择属于登录弹窗的语境,
-       浏览语境里并排 GitHub/Google/邮箱只会堆高顶栏噪音;弹窗内三式齐全。
-       Link 软导航 → 应用内 /login 拦截成弹窗,首页上下文同样命中。 */
+    /* A single login entry: choosing how to log in belongs to the
+       login modal's context — side-by-side GitHub/Google/email in the
+       browsing context only piles noise onto the top bar; all three
+       live inside the modal. Link soft-navigates -> the in-app /login
+       intercepts into a modal, home context included. */
     <Link
       href="/login"
       className="text-paper underline decoration-ui-blue/60 underline-offset-4 transition-colors hover:text-ui-blue"

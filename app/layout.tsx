@@ -7,8 +7,8 @@ import Toaster from "@/components/Toaster";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import "./globals.css";
 
-/* 本地化字体(2026-08):Google Fonts 边缘节点抖动曾咬挂 CI 构建,
-   字体文件入库后构建不再依赖外网。 */
+/* Localized fonts: Google Fonts edge flakiness once broke CI builds;
+   with the font files vendored, builds no longer need the network. */
 const jetbrains = localFont({
   src: [
     { path: "./fonts/JetBrainsMono-500-latin.woff2", weight: "500", style: "normal" },
@@ -25,7 +25,8 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://kimi.builders"),
 };
 
-/* viewport-fit=cover:让 env(safe-area-inset-*) 生效(底部标签栏给 iPhone home 条让位) */
+/* viewport-fit=cover: enables env(safe-area-inset-*), so the bottom
+   tab bar yields to the iPhone home bar. */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -45,11 +46,13 @@ export default async function RootLayout({
       data-vibe={prefs.vibe}
       data-nav={prefs.navCollapsed ? "1" : "0"}
       data-sidebar={prefs.sidebarHidden ? "0" : "1"}
-      /* 手动减动效(kb_motion=reduce):跟随系统时不输出属性,
-         globals.css 的 media 查询兜底 */
+      /* Manual reduced motion (kb_motion=reduce): following the system
+         emits no attribute; globals.css's media query backstops it. */
       {...(prefs.motion === "reduce" ? { "data-motion": "reduce" } : {})}
       className={jetbrains.variable}
-      // 浏览器扩展会在水合前往 <html>/<body> 注入属性（如 data-redeviation-bs-uid）,属外部干扰,抑制告警
+      // Browser extensions inject attributes into <html>/<body> before
+      // hydration (e.g. data-redeviation-bs-uid) — external noise;
+      // suppress the warning.
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>

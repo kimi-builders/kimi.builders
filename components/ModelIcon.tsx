@@ -1,6 +1,8 @@
-/* 模型家族厂商图标:窄子路径导入 @lobehub/icons(不走桶文件,防 bundle 膨胀)。
-   有 Color 用 Color;没有的(OpenAI/Grok)用 Mono(currentColor,跟随文字色)。
-   未收录的家族 id 返回 null(调用方落回纯文本 chip)。 */
+/* Model-family vendor icons: narrow subpath imports from
+   @lobehub/icons (never the barrel, against bundle bloat). Color
+   variants where they exist; the rest (OpenAI/Grok) use Mono
+   (currentColor, following the text color). Unregistered family ids
+   return null (callers fall back to a plain text chip). */
 import KimiMono from "@lobehub/icons/es/Kimi/components/Mono";
 import ClaudeColor from "@lobehub/icons/es/Claude/components/Color";
 import OpenAIMono from "@lobehub/icons/es/OpenAI/components/Mono";

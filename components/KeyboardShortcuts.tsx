@@ -1,15 +1,18 @@
 "use client";
 
-/* 全局键盘快捷键层(20260822 方案定稿):单一 keydown 监听 + 帮助面板。
-   键位:
-   全局 — / ·⌘K 搜索(归 GlobalSearch 自己的监听)/ ? 帮助 / Esc 关闭(原生
-   dialog)/ T 主题 / L 语言 / V 气质 / [ 收左栏 / ] 藏右栏 / F 全屏 /
-   N 发帖或推荐(按当前分区)/ H 专注模式(收左栏 + 藏右栏一键切换);
-   探索 — ←→ 章切换/上下篇(ExploreKeys,页面级挂载)。
-   守卫:src/lib/shortcut-guards(修饰键/输入态/弹窗态/IME),纯函数有单测;
-   字母键额外不吃 Shift 组合。动作走 src/lib/prefs-client,与按钮同一代码路径。
-   面板:与搜索同款原生 <dialog>(Esc 原生关闭、top-layer 焦点管理免费);
-   顶栏/首页按钮经 kb:shortcuts 事件呼出(kb:toast 同款事件总线模式)。 */
+/* Global keyboard shortcut layer: one keydown listener + a help panel.
+   Keys — global: / · Cmd+K search (GlobalSearch's own listener) / ?
+   help / Esc close (native dialog) / T theme / L language / V vibe /
+   [ collapse left rail / ] hide right rail / F fullscreen / N post or
+   recommend (per current section) / H focus mode (collapse + hide in
+   one toggle); explore: <- -> chapter cycle / prev-next (ExploreKeys,
+   mounted page-level). Guards: src/lib/shortcut-guards (modifiers /
+   input state / dialog state / IME), pure and unit-tested; letter
+   keys additionally ignore Shift combos. Actions go through
+   src/lib/prefs-client — one code path with the buttons. Panel: the
+   same native <dialog> as search (native Esc close, free top-layer
+   focus management); top-bar/home buttons open it via the
+   kb:shortcuts event (the kb:toast event-bus pattern). */
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Keyboard, X } from "lucide-react";
@@ -26,8 +29,9 @@ import {
 import { isEditableTarget, isPlainShortcutContext } from "@/src/lib/shortcut-guards";
 import { saveLocaleAction } from "@/app/(app)/community/actions";
 
-/* 键帽:mono 技术字体 + 细线 + moon 底;圆角走 --radius-* 令牌,
-   poster 气质自动归零成硬边(与全站控件同一气质跟随) */
+/* Key caps: mono technical font + hairline + moon fill; radii ride
+   the --radius-* tokens, auto-zeroed under the poster vibe (the same
+   vibe-following as site-wide controls). */
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
     <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-line bg-moon px-1.5 font-mono text-[11px] leading-none text-paper">
@@ -38,8 +42,9 @@ function Kbd({ children }: { children: React.ReactNode }) {
 
 function Row({ keys, desc }: { keys: string[]; desc: string }) {
   return (
-    /* 行几何与搜索结果行同款;键列 5.5rem 定宽对齐,描述单行截断,
-       双栏下每列行高处处一致 */
+    /* Row geometry matches the search result rows; the key column is a
+       fixed 5.5rem, descriptions truncate to one line, and both
+       columns' row heights agree everywhere. */
     <div className="flex items-center gap-3 px-3 py-2.5">
       <span className="flex w-[5.5rem] shrink-0 items-center gap-1">
         {keys.map((k) => (
@@ -51,8 +56,9 @@ function Row({ keys, desc }: { keys: string[]; desc: string }) {
   );
 }
 
-/* 分区标 = 搜索列表「快速前往」同款;无下划线,分隔靠留白。
-   外边距由调用方给(并排/堆叠两种排布的取舍不同) */
+/* Section labels match the search list's "quick nav"; no underline,
+   separation by whitespace. Margins come from the caller (stacked vs.
+   side-by-side trade-offs differ). */
 function Section({
   label,
   children,
@@ -72,7 +78,8 @@ function Section({
   );
 }
 
-/* 顶栏/首页的呼出按钮:经事件总线开面板(KeyboardShortcuts 挂根布局) */
+/* The top-bar/home trigger button: opens the panel through the event
+   bus (KeyboardShortcuts mounts in the root layout). */
 export function ShortcutsButton({
   locale,
   className,
@@ -104,10 +111,11 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as Element | null;
       const help = dialogRef.current;
-      /* ? 呼出/收起:输入态豁免;其他弹窗开着时让位(Esc 负责关它们),
-         但帮助面板自身开着时 ? 要能收起。
-         ? 的两种事件形态都认:美式键盘 key="?",多数合成事件/部分布局
-         是 key="/" + shiftKey */
+      /* ? toggles the panel: exempt in input state; yields while other
+         dialogs are open (Esc closes them) — but with the help panel
+         itself open, ? must close it. Both event shapes of ? are
+         accepted: key="?" on US layouts, key="/" + shiftKey on most
+         composed events and some layouts. */
       const isHelpKey =
         event.key === "?" || (event.key === "/" && event.shiftKey);
       if (isHelpKey && !event.metaKey && !event.ctrlKey && !event.altKey && !event.isComposing) {
@@ -166,7 +174,8 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
           return;
         case "n": {
           event.preventDefault();
-          /* 与左栏发帖按钮同一分区感知:作品/Awesome 去 /works/new,其余发帖 */
+          /* The same section awareness as the left rail's post button:
+             works/Awesome goes to /works/new, everything else posts. */
           const compose =
             pathname.startsWith("/works") || pathname.startsWith("/awesome")
               ? "/works/new"
@@ -194,7 +203,8 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
   }, [router, pathname, locale]);
 
   const l = locale;
-  /* 和弦写进单枚键帽(⌘K),并列键帽 = 备选键位(不再用「+」连接) */
+  /* Chords render inside one cap (Cmd+K); side-by-side caps mean
+     alternate keys (no more "+" joining). */
   const globalRows: Array<{ keys: string[]; key: I18nKey }> = [
     { keys: ["/", "⌘K"], key: "kbd.search" },
     { keys: ["?"], key: "kbd.help" },
@@ -216,8 +226,9 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
     { keys: ["←", "→"], key: "kbd.arrows" },
   ];
 
-  /* 外壳与 GlobalSearch 的弹窗同宽同壳同 header/footer 语法
-     (20260822 排版一致性:36rem / px-4 / 图标行 + X 关闭 / 右对齐脚注) */
+  /* The shell matches GlobalSearch's dialog in width, chrome, and
+     header/footer grammar (36rem / px-4 / icon row + X close /
+     right-aligned footnote). */
   return (
     <dialog
       ref={dialogRef}

@@ -1,4 +1,5 @@
-/* @modal 并行路由默认槽:未拦截时什么都不渲染。 */
+/* The @modal parallel-route default slot: renders nothing when no
+   route is intercepted. */
 export default function ModalDefault() {
   return null;
 }

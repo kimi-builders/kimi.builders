@@ -1,6 +1,8 @@
-/* 拦截 /community/[id]/edit:应用内点击「编辑」以弹窗呈现;直接访问/刷新仍走
-   完整页(app/(app)/community/[id]/edit/page.tsx)。内容与完整页共用
-   EditPostContent;非作者的 404 判定同样在内容组件内生效。 */
+/* Intercepts /community/[id]/edit: in-app "edit" clicks render a
+   modal; direct access/refresh still gets the full page
+   (app/(app)/community/[id]/edit/page.tsx). Both share
+   EditPostContent; the non-owner 404 also lives in the content
+   component. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";

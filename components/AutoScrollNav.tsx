@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { useLayoutEffect, useRef } from "react";
 
-/* 横向选项在 URL 状态变化后自动把当前项移到容器中部，避免选中项停在裁切边缘。 */
+/* After URL state changes, the horizontal scroller centers the active
+   item so it never sits clipped at an edge. */
 export default function AutoScrollNav({
   activeKey,
   ariaLabel,

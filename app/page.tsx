@@ -1,18 +1,23 @@
-/* 首页完整版(P0-1):海报(hero + 主 CTA)→ 数据条 → 本周精选(无精选回落
-   7 日热门,两者皆空则不渲染)→ 入群/订阅 → 免责声明。
-   海报皮肤双主题(data-theme-scope="poster"):跟随 <html data-theme> 在
-   夜幕/纸感两套暖纸令牌间切换(globals.css 的 poster 块),细线、蓝强调、
-   mono 大字距;圆角跟随气质(data-vibe)——poster 归零保持硬边,soft 出圆角
-   (20260818,此前全页无圆角类导致气质切换在首页无可见效果);
-   hero Logo 双版本按主题二选一(only-dark/only-light)。
-   右上角控件与壳内 TopBar 同一控件集/顺序/形态(搜索 → 通知 → 主题 → 气质 →
-   语言 → 登录态),iconBtn 两处同步。
-   hero 用 SMIL 动画版 Logo(双星 8s 绕轨,<img> 内 SMIL 现代浏览器可播),
-   alt 随 UI 语言本地化(P2-9);右上角登录态由 AuthChip 渲染。
-   渲染策略:AuthChip 读 cookies + searchParams,路由级 ISR 不成立,所以
-   DB 查询走数据层 ISR —— getHomeData 是 unstable_cache(revalidate 300),
-   精选/取消精选的 action 里 updateTag("home") 即时作废(见 src/lib/home.ts);
-   海报主体仍是静态标记。 */
+/* Full home page: poster (hero + primary CTA) -> stats bar -> this
+   week's featured (falling back to 7-day hot; both empty = not
+   rendered) -> join/subscribe -> disclaimer. The poster skin is
+   dual-theme (data-theme-scope="poster"): it follows <html data-theme>
+   between the night and paper token sets (globals.css's poster block),
+   with hairlines, blue accents, and wide-tracked mono; radii follow
+   the vibe (data-vibe) — poster zeroes them for hard edges, soft
+   rounds them (previously the page had no radius classes at all, so
+   vibe switching had no visible effect here); the hero logo ships in
+   both themes (only-dark/only-light). The top-right controls match
+   the shell's TopBar in set/order/form (search -> notifications ->
+   theme -> vibe -> language -> auth); keep iconBtn in sync on both
+   sides. The hero uses the SMIL-animated logo (twin stars orbiting in
+   8s; SMIL inside <img> plays in modern browsers) with localized alt;
+   the top-right auth renders via AuthChip. Rendering strategy:
+   AuthChip reads cookies + searchParams, so route-level ISR is
+   impossible — DB queries go through data-layer ISR instead:
+   getHomeData is an unstable_cache (revalidate 300) invalidated
+   immediately by the feature/unfeature actions via updateTag("home")
+   (see src/lib/home.ts); the poster body stays static markup. */
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Bell } from "lucide-react";
@@ -31,7 +36,8 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { getUnreadNotificationCount } from "@/src/lib/posts";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./(app)/_components/pref-controls";
 
-/* 右上角控件键:与 (app)/_components/TopBar 的 iconBtn 同一形态,两侧改要同步 */
+/* Top-right control keys: same shape as TopBar's iconBtn in
+   (app)/_components — changes must sync both sides. */
 const iconBtn =
   "flex h-9 w-9 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
 
@@ -40,7 +46,8 @@ const AUTH_ERRORS: Record<string, I18nKey> = {
   oauth_failed: "home.errOauth",
 };
 
-/* 精选卡片:帖子链站内详情,作品直达外链(无链接回落 /works)。 */
+/* Featured cards: posts link to the on-site detail; works link out
+   directly (no link falls back to /works). */
 function FeaturedCard({
   item: f,
   locale,
@@ -118,10 +125,12 @@ export default async function Home({
   const user = await getSessionUser();
   const [locale, home, unread] = await Promise.all([
     getLocale(user),
-    /* DB 不可用时海报照常落地:数据条/精选位整体不渲染,不拖垮首页门面 */
+    /* With the DB down the poster still lands: the stats bar/featured
+       slot simply don't render, never dragging down the facade. */
     getHomeData().catch(() => null),
-    /* 通知角标初值:与 (app)/layout 同一来源(铃铛仅登录后显示);
-       DB 抖动时降级为 0,不拖垮海报门面(同 getHomeData 的容错思路) */
+    /* Unread badge initial value: same source as (app)/layout (the
+       bell shows signed-in only); DB jitter degrades to 0, never
+       breaking the facade (getHomeData's tolerance). */
     user ? getUnreadNotificationCount(user.id).catch(() => 0) : 0,
   ]);
 

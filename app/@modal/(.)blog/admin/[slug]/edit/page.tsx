@@ -1,6 +1,9 @@
-/* 拦截 /blog/admin/[slug]/edit:详情页「编辑」就地弹窗(存草稿留在弹窗续编,
-   发布后 replace 回详情、弹窗静默关);直接访问/刷新仍走完整页
-   (app/(app)/blog/admin/[slug]/edit/page.tsx),两者共用 EditArticleContent。 */
+/* Intercepts /blog/admin/[slug]/edit: the detail page's "edit" opens
+   in place (saving a draft stays in the modal to keep writing;
+   publishing replaces back to the detail and the modal closes
+   silently); direct access/refresh still gets the full page
+   (app/(app)/blog/admin/[slug]/edit/page.tsx). Both share
+   EditArticleContent. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";

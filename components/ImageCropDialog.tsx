@@ -1,18 +1,23 @@
 "use client";
 
-/* 图片裁剪弹层(从 WorkMediaFields 的 Logo 裁剪抽出,头像/Logo 共用;
-   20260919 泛化 aspect:宽/高比,默认 1 = 正方形(头像/Logo),
-   作品封面传 16/9):拖动定位 + 滑杆缩放,canvas 导出 PNG。
-   文案全部由调用方以 props 传入(各自走自己的 i18n key),组件本身不绑字典。 */
+/* Image crop overlay (extracted from WorkMediaFields' logo crop;
+   shared by avatar/logo, generalized to an aspect width/height ratio —
+   default 1 = square (avatar/logo), covers pass 16/9): drag to
+   position + a zoom slider, canvas exports PNG. All copy arrives via
+   props from callers (each with their own i18n keys); the component
+   binds no dictionary. */
 import { useEffect, useRef, useState } from "react";
 import { Check, LoaderCircle, ZoomIn } from "lucide-react";
 
-/* 视口宽固定,高随 aspect(1 = 320²);图片 cover 适配为基准缩放(zoom=1),
-   滑杆最多再放 4 倍;变换只记 (scale, offset),导出时换算回源图裁剪矩形。 */
+/* The viewport width is fixed with height per aspect (1 = 320 squared);
+   the image's cover fit is the zoom=1 baseline, the slider adds up to
+   4x; the transform records only (scale, offset) and export maps it
+   back to the source crop rectangle. */
 const CROP_VIEW = 320;
 const ZOOM_MAX = 4;
-/* 导出长边:正方形保持历史行为 512(头像/Logo);非正方形取 1024
-   (封面 16:9 → 1024×576,列表展示足够) */
+/* Export long side: squares keep the historic 512 (avatar/logo);
+   non-squares take 1024 (a 16:9 cover -> 1024x576, plenty for list
+   display). */
 function outSize(aspect: number): { w: number; h: number } {
   const long = aspect === 1 ? 512 : 1024;
   return aspect >= 1
@@ -36,7 +41,7 @@ export default function ImageCropDialog({
 }: {
   img: HTMLImageElement;
   src: string;
-  /* 裁剪框宽/高比,默认 1(正方形);封面传 16/9 */
+  /* The crop box ratio, default 1 (square); covers pass 16/9. */
   aspect?: number;
   title: string;
   hint: string;
@@ -50,7 +55,7 @@ export default function ImageCropDialog({
 }) {
   const viewW = CROP_VIEW;
   const viewH = Math.round(CROP_VIEW / aspect);
-  /* cover 适配:短边贴满视口 */
+  /* Cover fit: the short side fills the viewport. */
   const base = Math.max(viewW / img.naturalWidth, viewH / img.naturalHeight);
   const [zoom, setZoom] = useState(1);
   const scale = base * zoom;
@@ -71,7 +76,7 @@ export default function ImageCropDialog({
   const [failed, setFailed] = useState(false);
   const drag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
 
-  /* Esc 取消(上传中忽略,避免状态撕裂) */
+  /* Esc cancels (ignored mid-upload, against torn state). */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !busy) onCancel();
@@ -80,7 +85,8 @@ export default function ImageCropDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [busy, onCancel]);
 
-  /* 缩放以视口中心为锚:中心指向的图点不动 */
+  /* Zoom anchors at the viewport center: the image point under the
+     center stays put. */
   const applyZoom = (z: number) => {
     const ns = base * z;
     const nw = img.naturalWidth * ns;
@@ -98,7 +104,7 @@ export default function ImageCropDialog({
     canvas.height = out.h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    /* 视口可见区域 → 源图裁剪矩形 */
+    /* The visible viewport region -> the source crop rectangle. */
     const sx = -offset.x / scale;
     const sy = -offset.y / scale;
     const sw = viewW / scale;

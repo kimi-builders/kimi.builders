@@ -1,6 +1,7 @@
-/* 拦截 /blog/admin/new:explore 页头「发内容」就地弹窗;直接访问/刷新仍走
-   完整页(app/(app)/blog/admin/new/page.tsx)。内容与完整页共用
-   NewArticleContent(与作品发布的拦截弹窗同一形态)。 */
+/* Intercepts /blog/admin/new: the explore header's "publish" opens in
+   place as a modal; direct access/refresh still gets the full page
+   (app/(app)/blog/admin/new/page.tsx). Both share NewArticleContent
+   (the same shape as the work-publish interception). */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
