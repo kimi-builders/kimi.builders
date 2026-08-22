@@ -1,8 +1,9 @@
 "use client";
 
-/* /admin 用户行的治理控件:禁言(1/3/7/30 天/永久,附原因 prompt)/ 解除禁言 /
-   资料重置(confirm)/ 角色变更(仅 admin,member ⇄ mod)。
-   操作链路:等待态 → toast → router.refresh()(同站点 mutation 惯例)。 */
+/* /admin user-row moderation controls: mute (1/3/7/30 days/forever,
+   with a reason prompt) / unmute / profile reset (confirm) / role
+   change (admin only, member <-> mod). Chain: pending -> toast ->
+   router.refresh() (the site's mutation convention). */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -23,9 +24,10 @@ export default function UserModControls({
 }: {
   userId: number;
   role: string;
-  /* 当前处于禁言中(服务端按 muted_until > NOW() 算出) */
+  /* Currently muted (computed server-side as muted_until > NOW()). */
   muted: boolean;
-  /* 浏览者是 admin(角色管理入口;admin 目标行整个不渲染控件) */
+  /* The viewer is an admin (role-management entry; admin target rows
+     render no controls at all). */
   isAdmin: boolean;
   locale: Locale;
 }) {

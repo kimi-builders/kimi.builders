@@ -1,9 +1,11 @@
 "use client";
 
-/* AI 回复偏好开关(设置页「偏好」页签):点按即切换 —— 乐观翻转,落库成功 toast,
-   失败回退并 toast。语义见 schema(v2 决策 3):
-   aiMine = 允许 AI 回我的帖/评论;aiShow = 浏览时显示 AI 回复。
-   行式版式与 UsagePrivacyForm 一致:左 标题+说明,右 iOS 圆角开关。 */
+/* AI reply preference switches (the settings "preferences" tab): tap
+   to toggle — optimistic flip, toast on save, rollback + toast on
+   failure. Semantics: aiMine = allow AI to reply to my posts/comments;
+   aiShow = show AI replies while browsing. Row layout matches
+   UsagePrivacyForm: title + description left, rounded iOS switch
+   right. */
 import { useState } from "react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";

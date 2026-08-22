@@ -1,5 +1,6 @@
-/* GitHub 品牌字形(Lucide 已移除品牌图标;取自 SimpleIcons,CC0)。
-   左栏与移动端抽屉共用,保证两处视觉一致。 */
+/* GitHub brand glyph (Lucide dropped brand icons; taken from
+   SimpleIcons, CC0). Shared by the left rail and the mobile drawer so
+   both look identical. */
 export default function GithubIcon({ size = 15 }: { size?: number }) {
   return (
     <svg

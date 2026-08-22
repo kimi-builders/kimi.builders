@@ -1,9 +1,11 @@
 "use client";
 
-/* 密码表单(设置页「账号」页签):已有密码需先验证当前密码;
-   OAuth 注册的无密码账号直接设置(登录会话即凭证)。
-   成功 → toast + 清表单 + router.refresh()(hasPassword 翻转、按钮文案切换);
-   失败 → 行内错误(当前密码不对/策略/两次不一致都在服务端判定)。 */
+/* Password form (the settings "account" tab): accounts with a
+   password verify the current one first; OAuth-signup accounts without
+   one set it directly (the session is the credential). Success ->
+   toast + clear the form + router.refresh() (hasPassword flips, button
+   copy switches); failure -> inline errors (wrong current password /
+   policy / mismatch — all decided server-side). */
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -15,8 +17,9 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { changePasswordAction, type SettingsState } from "../actions";
 
-/* 控件样式收编到共享 form-classes(20260819 版式对齐);LABEL_CLS 自带 mb-1.5,
-   原输入框上的 mt-1.5 相应移除(同距不叠双份)。 */
+/* Control styles consolidated into the shared form-classes; LABEL_CLS
+   carries mb-1.5, so the old mt-1.5 on inputs was removed (same gap,
+   not doubled). */
 const inputCls = INPUT_CLS;
 const labelCls = LABEL_CLS;
 
@@ -40,7 +43,7 @@ export default function PasswordForm({
       formRef.current?.reset();
       router.refresh();
     }
-    // state 每次提交都是新对象,仅在 ok 时反馈一次
+    // state is a fresh object per submit; feedback fires only on ok
   }, [state, locale, router]);
 
   return (

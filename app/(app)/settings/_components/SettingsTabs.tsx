@@ -1,7 +1,9 @@
 "use client";
 
-/* 设置页页签壳(资料/偏好/隐私与公开/账号):面板常挂载、hidden 切换,
-   未保存的表单状态不因切页签丢失;无 JS 时四面板顺序平铺(全部可读)。 */
+/* Settings tab shell (profile/preferences/privacy & publicity/
+   account): panels stay mounted and switch via hidden — unsaved form
+   state survives tab switches; without JS the four panels stack in
+   order, all readable. */
 import { useState, type ReactNode } from "react";
 
 export default function SettingsTabs({
@@ -10,7 +12,7 @@ export default function SettingsTabs({
   children,
 }: {
   tabs: { key: string; label: string }[];
-  /* 绑定回执落地时直接展开「账号」页签 */
+  /* An OAuth link receipt lands with the "account" tab expanded. */
   initialKey?: string;
   children: ReactNode[];
 }) {

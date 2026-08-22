@@ -1,9 +1,13 @@
-/* 个人面板预览条(20260822,未登录公开视图新增):用确定性示例数据渲染
-   真实的面板组件(Hero 三卡 + 趋势图 + 热力图),让访客在登录前就看到
-   「登录后我会得到什么」——替代静态截图:语言/主题/气质自动跟随,UI 迭代
-   永不腐化。数据来自 src/lib/usage/preview-mock.ts(同一访客每次同一份),
-   角上挂「示例数据」徽标注明来源,不冒充真实数据。
-   只渲染精选子集:筛选栏/明细表/管理面板对未登录访客没有销售价值。 */
+/* Personal dashboard preview strip (new in the signed-out view):
+   renders the real panel components (hero cards + trend + heatmap)
+   with deterministic sample data so visitors see "what I get after
+   login" before logging in — replacing static screenshots:
+   language/theme/vibe follow automatically and the preview never rots
+   as the UI evolves. Data comes from src/lib/usage/preview-mock.ts
+   (the same visitor always sees the same data); a corner "sample
+   data" badge marks the source, never impersonating real data. Only a
+   curated subset renders: the filter bar/records table/management
+   panels add no selling power for signed-out visitors. */
 import { cookies } from "next/headers";
 import { MetricCard } from "@/components/data-display";
 import { compactNumber } from "@/src/lib/format";
@@ -15,7 +19,8 @@ import {
 } from "@/src/lib/usage/pricing";
 import { UsageHeatmapGrid, UsageTrendChart } from "./UsageVisualizations";
 
-/* 与用量中心同源的展示口径(币种随 kb_usage_ccy cookie;美元折算两位小数) */
+/* The same display conventions as the usage center (currency follows
+   the kb_usage_ccy cookie; USD conversions at two decimals). */
 function fmtCost(micros: number, ccy: UsageDisplayCurrency): string {
   const { rate, symbol } = USAGE_DISPLAY_CURRENCIES[ccy];
   const value = (micros / 1e6) * rate;
@@ -28,7 +33,8 @@ export default async function UsagePreviewStrip({
   locale: Locale;
 }) {
   const zh = locale === "zh";
-  /* 展示币种与登录态看板同一 cookie 口径(默认 USD) */
+  /* Display currency follows the same cookie as the signed-in
+     dashboard (USD by default). */
   const store = await cookies();
   const ccy: UsageDisplayCurrency =
     store.get("kb_usage_ccy")?.value === "cny" ? "cny" : "usd";

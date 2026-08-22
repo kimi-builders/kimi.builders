@@ -1,9 +1,11 @@
-/* 桌面顶栏(≥lg,fixed):左 = 品牌块(logo-tile + mono 字标,点染蓝,链 /);
-   右 = 消息通知(铃铛 + 未读角标,登录后显示)、主题切换、语言切换、AuthChip。
-   细线底边 + bg/毛玻璃,对齐 MobileTopBar 的处理;移动端(<lg)不渲染,
-   MobileTopBar/底 tab/抽屉完全不受影响。
-   主题/语言直接复用 pref-controls 的乐观 UI 控件(icon-only 形态),
-   未读数由 (app)/layout SSR 下发(原左栏铃铛的同一来源)。 */
+/* Desktop top bar (>=lg, fixed): left = the brand block (logo-tile +
+   mono wordmark, blue on hover, links to /); right = notifications
+   (bell + unread badge, signed-in only), theme toggle, language
+   toggle, AuthChip. Hairline bottom edge + bg/blur, matching
+   MobileTopBar; not rendered below lg, where MobileTopBar/bottom
+   tabs/drawer take over untouched. Theme/language reuse
+   pref-controls' optimistic widgets (icon-only form); the unread count
+   comes SSR from (app)/layout (the same source as the old rail bell). */
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";

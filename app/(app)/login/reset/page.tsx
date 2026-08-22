@@ -1,5 +1,6 @@
-/* 邮件里的重置链接落点:/login/reset?token=… → /login?mode=reset&token=…
-   邮件 URL 保持简短稳定;所有视图都在登录页的 mode 里。 */
+/* Landing for emailed reset links: /login/reset?token=... ->
+   /login?mode=reset&token=... Email URLs stay short and stable; every
+   view lives in the login page's mode. */
 import { redirect } from "next/navigation";
 import { safeReturnTo } from "@/src/lib/auth/return-to";
 
@@ -11,7 +12,8 @@ export default async function ResetEntryPage({
   const sp = await searchParams;
   const raw = Array.isArray(sp.token) ? sp.token[0] : sp.token;
   const token = raw && /^[0-9a-f]{64}$/.test(raw) ? raw : "";
-  /* next 透传(20260816):邮件链接从忘记密码表单带来回跳目标 */
+  /* next pass-through: the emailed link carries the redirect target
+     from the forgot-password form. */
   const rawNext = Array.isArray(sp.next) ? sp.next[0] : sp.next;
   const next = safeReturnTo(rawNext);
   redirect(

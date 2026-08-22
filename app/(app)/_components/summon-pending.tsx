@@ -1,9 +1,11 @@
 "use client";
 
-/* 召唤等待反馈(20260816):召唤成功后客户端轮询 /api/ai-reply/status,
-   done → router.refresh() 一次拉出 AI 回复(免手动刷新);
-   failed/skipped/超时 → toast 收尾。轮询仅标签页可见时进行。
-   useSummonPending 管轮询,SummonPendingRow 渲染「正在输入」占位行。 */
+/* Summon wait feedback: after a successful summon the client polls
+   /api/ai-reply/status; done -> one router.refresh() pulls in the AI
+   reply (no manual refresh); failed/skipped/timeout -> a closing
+   toast. Polling runs only while the tab is visible. useSummonPending
+   owns the polling; SummonPendingRow renders the "typing" placeholder
+   row. */
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
@@ -17,7 +19,9 @@ export interface SummonTarget {
 }
 
 const POLL_MS = 4_000;
-/* 兜底时长:Kimi API 正常几秒;超长未归就收起占位,引导去通知中心 */
+/* Backstop duration: the Kimi API normally answers in seconds; past
+   this the placeholder folds and the user is pointed at the
+   notification center. */
 const TIMEOUT_MS = 150_000;
 
 export function useSummonPending({
@@ -63,7 +67,7 @@ export function useSummonPending({
           }
         }
       } catch {
-        /* 网络抖动:下一轮再说 */
+        /* Network jitter: let the next round decide. */
       }
       if (!stopped) timer = setTimeout(poll, POLL_MS);
     };
@@ -75,7 +79,8 @@ export function useSummonPending({
   }, [target, locale, onSettle, router]);
 }
 
-/* 「小筑正在输入…」占位行:与评论行同构(bot 头像 + 名字 + AI 徽章) */
+/* The "bot is typing..." placeholder row: same structure as a comment
+   row (bot avatar + name + AI badge). */
 export function SummonPendingRow({ locale }: { locale: Locale }) {
   return (
     <div

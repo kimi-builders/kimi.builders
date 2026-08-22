@@ -1,7 +1,8 @@
 "use client";
 
-/* 个人主页「分享主页」按钮:复制主页 URL 到剪贴板,成功后变勾 1.6s。
-   与 ShareButton 分开——这里要的是设计稿的 ghost 按钮形态,不带动帖子那套样式。 */
+/* The profile "share" button: copies the profile URL to the clipboard,
+   checks for 1.6s on success. Separate from ShareButton — this wants
+   the design's ghost button form, not the post-share styling. */
 import { useState } from "react";
 import { Check, Link2 } from "lucide-react";
 
@@ -24,7 +25,8 @@ export default function ProfileShareButtons({
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         } catch {
-          /* 剪贴板被拒(权限/非安全上下文)就静默 */
+          /* A rejected clipboard (permissions/insecure context) stays
+             silent. */
         }
       }}
       className={`inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 font-mono text-xs whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3 sm:text-xs ${

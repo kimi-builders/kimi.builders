@@ -1,13 +1,18 @@
 "use client";
 
-/* 全站左栏(功能菜单):发帖 CTA + 分区导航 + 底部工具(设置/GitHub/关于)
-   + 「界面」双键(收起导航 / 隐藏侧栏;右栏开关自右栏细轨迁入,与收起导航
-   左右并排:PanelLeft*=导航、PanelRight*=侧栏,图标方向即语义,不歧义)。
-   品牌块与通知/主题/语言已移出到桌面顶栏(TopBar);板块级导航在右栏「浏览社区」。
-   贴视口左缘:壳不再整体居中留白边(layout 的 flex 首列,无容器 padding)。
-   客户端组件:usePathname 做激活态(蓝边 rail)。
-   收起态纯 CSS 驱动(html[data-nav] + .nav-label,见 globals.css),
-   切换零网络;结构对两种状态常渲染。 */
+/* Site-wide left rail (the function menu): a post CTA + section
+   navigation + bottom tools (settings/GitHub/about) + the "interface"
+   pair (collapse nav / hide sidebar; the sidebar toggle moved here from
+   the rail's thin track, sitting beside the nav toggle: PanelLeft* =
+   nav, PanelRight* = sidebar — icon direction is semantics, no
+   ambiguity). The brand block and notifications/theme/language moved
+   to the desktop TopBar; section-level navigation lives in the rail's
+   "browse community". Flush to the viewport's left edge: the shell no
+   longer centers with blank margins (layout's flex first column, no
+   container padding). Client component: usePathname drives the active
+   state (blue rail). The collapsed state is pure CSS (html[data-nav] +
+   .nav-label, see globals.css) — toggling costs no network; the
+   structure renders for both states. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useSyncExternalStore } from "react";
@@ -31,8 +36,9 @@ import { WORKS_SRC_COOKIE, type WorksSource } from "@/src/lib/works-view";
 import GithubIcon from "./GithubIcon";
 import { NavToggle, SidebarToggle } from "./pref-controls";
 
-/* hidden:近期不上线的板块(NAV_HIDDEN)入口直接不渲染。
-   移动端抽屉(MobileNavDrawer)复用同一份注册表,两端入口永远一致。 */
+/* hidden: entries for sections not shipping soon (NAV_HIDDEN) never
+   render. The mobile drawer (MobileNavDrawer) reuses the same registry
+   so both surfaces always agree. */
 export const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
   { href: "/explore", icon: Compass, key: "nav.explore", soon: UPCOMING.explore, hidden: UPCOMING.explore },
@@ -51,21 +57,28 @@ export default function LeftNav({
 }: {
   locale: Locale;
   profileHref?: string;
-  /* admin/mod:底部工具组多「管理」入口(20260830 治理) */
+  /* admin/mod: the bottom tools gain an "admin" entry. */
   moderator?: boolean;
-  /* 未登录(20260919):受限项(发帖/用量/设置)直链 /login?next=…——
-     应用内点击即弹登录弹窗,登录后回跳目标页,不再先进页面看各自的登录门 */
+  /* Signed out: gated items (post/usage/settings) link straight to
+     /login?next=... — an in-app click opens the login modal and returns
+     to the target after login, instead of first landing on each page's
+     own login gate. */
   loggedIn?: boolean;
-  /* 来源列表 SSR 初值(layout 读 kb-works-src cookie):详情页 /works/[id]
-     同时服务作品/Awesome 两个列表,高亮按「用户从哪个列表进来」判定 */
+  /* Source-list SSR initial value (layout reads the kb-works-src
+     cookie): /works/[id] detail serves both the works and Awesome
+     lists, and the highlight follows the list the user came from. */
   worksSrc?: WorksSource | null;
 }) {
   const pathname = usePathname();
-  /* (app) layout 不随软导航重渲染,prop 只是首屏值;路由变化时读最新 cookie
-     (proxy 在 /works、/awesome 列表页响应里写入,到达详情页时已生效)。
-     与详情页「返回」链接(fromList)同一事实来源,两个入口永远指向同一列表。
-     cookie 没有变更事件,订阅为空操作:快照在每次渲染时重读,
-     pathname 变化(软导航)触发重渲染即取到新来源(模式同 app/error.tsx)。 */
+  /* The (app) layout doesn't re-render on soft navigation, so the prop
+     is only the first-paint value; on route changes read the latest
+     cookie (written by proxy into /works and /awesome list responses —
+     already effective by the time the detail page arrives). Same
+     source of truth as the detail page's "back" link (fromList) — the
+     two entries always point at the same list. Cookies have no change
+     events, so the subscribe is a no-op: the snapshot rereads on every
+     render, and a pathname change (soft navigation) re-renders and
+     picks up the new source (same pattern as app/error.tsx). */
   const src = useSyncExternalStore(
     useCallback(() => () => {}, []),
     () => {
@@ -76,12 +89,14 @@ export default function LeftNav({
     },
     () => worksSrc ?? "",
   );
-  /* 详情页归属:来自 Awesome 的 /works/* 高亮 Awesome,否则高亮作品 */
+  /* Detail-page ownership: /works/* arrived at from Awesome highlights
+     Awesome, otherwise works. */
   const fromAwesome = pathname.startsWith("/works") && src === "awesome";
 
-  /* 未登录时受限入口的目标(登录弹窗带回跳);工具入口(关于/GitHub)不受限。
-     受限动作的文案带登录预告(20260821 评审):点击前就知道这步是登录,
-     减少一次无效跳转 */
+  /* Targets for gated entries when signed out (the login modal carries
+     the redirect); tool entries (about/GitHub) stay ungated. Gated
+     actions carry a login preview in their copy — you know the click
+     logs in before clicking, saving one wasted jump. */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
   const gatedLabel = (label: string) =>
@@ -96,16 +111,18 @@ export default function LeftNav({
       ? { href: "/works/new", label: gatedLabel(t(locale, "works.submit")) }
       : { href: "/community/new", label: gatedLabel(t(locale, "nav.post")) };
 
-  /* 激活态:详情页 /works/[id] 按来源列表判定归属(见上方 fromAwesome),
-     其余路由按前缀;Awesome 在来自 Awesome 的作品详情里同样激活 */
+  /* Active state: /works/[id] details decide ownership by source list
+     (see fromAwesome above); other routes go by prefix; Awesome also
+     activates inside works details arrived at from Awesome. */
   const isActive = (href: string) => {
     if (href === "/works") return pathname.startsWith("/works") && !fromAwesome;
     if (href === "/awesome") return pathname.startsWith("/awesome") || fromAwesome;
     return pathname.startsWith(href);
   };
 
-  /* rail-tip:菜单项的 data-tip 提示仅收起态(图标轨)右弹;展开态有文案不弹
-     (globals.css 的 .rail-tip 规则) */
+  /* rail-tip: menu items' data-tip hints pop right only in the
+     collapsed (icon rail) state; expanded items carry labels and never
+     pop (globals.css .rail-tip rule). */
   const itemCls = (active: boolean) =>
     `nav-item rail-tip flex min-h-11 items-center gap-3 border-l-2 px-3 py-2.5 text-sm transition-colors ${
       active
@@ -113,10 +130,12 @@ export default function LeftNav({
         : "border-transparent text-grey hover:bg-card hover:text-paper"
     }`;
 
-  /* 「界面」双键共用的紧凑盒样式;form 等宽由 globals.css 的 .panel-pair 规则给。
-     纵排整行(20260822):并排半宽时 EN "Hide sidebar" 被截成 side…;
-     整行任何语言都放得下,与收起态(纵排图标键)同方向。左对齐 px-3
-     与导航项/「界面」标签的左缘对齐。 */
+  /* The compact box style shared by the "interface" pair; equal form
+     widths come from globals.css's .panel-pair rule. Stacked full rows:
+     at half width side-by-side, EN "Hide sidebar" truncates to
+     side...; a full row fits every language and matches the collapsed
+     state's stacked icon keys. Left-aligned px-3 lines up with the nav
+     items' and the "interface" label's left edge. */
   const pairBtnCls =
     "flex min-h-10 w-full items-center justify-start gap-1.5 whitespace-nowrap rounded-lg border border-line px-3 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
 

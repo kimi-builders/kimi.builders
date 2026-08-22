@@ -1,6 +1,7 @@
-/* 未开发分区的占位页(learn / works / usage / awesome 共用):
-   大图标 + 分区名 + 「这块还在建」+ 规划条目 + 回社区 CTA。
-   路由先立着,左栏/移动栏的入口不再是死链;正式开发时整页替换即可。 */
+/* Placeholder page for unbuilt sections: big icon + section name +
+   "still being built" + planned items + a back-to-community CTA. The
+   routes exist so nav entries aren't dead links; real development
+   replaces the whole page. */
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";

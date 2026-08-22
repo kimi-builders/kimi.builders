@@ -4,8 +4,9 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import CheckboxControl from "@/components/CheckboxControl";
 
-/* 明细表的可选列(默认全关)。顺序即列选择器里的展示顺序;
-   cols 参数的值从这里出,垃圾值由页面侧解析时丢弃。 */
+/* Optional columns for the records table (all off by default). Order
+   is the picker's display order; the cols param's values come from
+   here, garbage dropped at the page's parse. */
 export const OPTIONAL_RECORD_COLUMNS = [
   { id: "device", zh: "设备", en: "Device" },
   { id: "project", zh: "项目", en: "Project" },
@@ -18,8 +19,9 @@ export const OPTIONAL_RECORD_COLUMNS = [
 
 export type OptionalRecordColumn = (typeof OPTIONAL_RECORD_COLUMNS)[number]["id"];
 
-/* 明细列选择器:勾选即写 cols 参数(空集 = 参数缺席 = 默认列)。
-   不动 page(列显隐不影响分页),其余参数原样保留。 */
+/* Records column picker: checking writes the cols param (empty set =
+   param absent = default columns). page stays untouched (column
+   visibility doesn't affect paging); other params survive. */
 export default function RecordsColumnsMenu({
   enabled,
   onChange,
@@ -63,8 +65,9 @@ export default function RecordsColumnsMenu({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="true"
-        /* 20260819:去掉 sm:min-h-9 桌面降档——与同排 seg 控件(h-11)统一 44px,
-           此前桌面端 36px 比 seg 矮一截(明细页头「按日/按 30 分钟 + 列」错层) */
+        /* Dropped the sm:min-h-9 desktop downgrade — level with the
+           h-11 seg controls at 44px; the old 36px sat a notch short
+           (the records header's day/30-min + columns row misaligned). */
         className="flex min-h-11 items-center gap-1.5 rounded-lg border border-line bg-card px-3 font-mono text-xs text-paper hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         {zh ? "列" : "Columns"}

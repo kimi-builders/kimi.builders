@@ -1,12 +1,15 @@
-/* 右栏注册表(docs/shell-and-ai-native.md B 节):按路由段分发右栏上下文,
-   同时给出主内容列宽(usage 的 :has 加宽 hack 收编到这里,个人主页同样加宽)。
-   railFor 是纯函数,单测直接测(tests/right-rail.test.ts);
-   pathname 由根 proxy.ts 写进 x-kb-path 请求头,(app)/layout.tsx 在服务端树重取时读表。
-   kind=none → 不渲染右栏;wide → 主列 max-w 放宽到 1000(分析画布)。
-   未列出的路由(/settings、/demo-night、/community 子页等)回落
-   community —— 与改版前「全站同一份 widget」的行为一致。
-   未就绪板块(src/lib/upcoming.ts)的专属 rail 一并回落 community,
-   避免「正在路上」占位页旁边挂着空 rail。 */
+/* Right-rail registry: dispatches rail context by route segment and
+   also gives the main column width (the usage :has widening hack
+   collected here; the profile widens too). railFor is a pure function
+   unit-tested in tests/right-rail.test.ts; the pathname arrives via
+   the x-kb-path request header written by the root proxy.ts, and
+   (app)/layout.tsx reads the table on server-tree refetch. kind=none
+   -> no rail; wide -> the main column's max-w relaxes to 1000 (analytics
+   canvases). Unlisted routes (/settings, /demo-night, /community
+   subpages, ...) fall back to community — same behavior as the
+   pre-rework "one widget site-wide". Not-yet-ready sections' dedicated
+   rails also fall back to community, so the "on its way" placeholder
+   never sits beside an empty rail. */
 import { UPCOMING } from "@/src/lib/upcoming";
 
 export type RailKind =
@@ -21,17 +24,22 @@ export type RailKind =
 
 export interface RailDecision {
   kind: RailKind;
-  /* post/work 详情的路由 id;其余 kind 恒为 null(仅通知页用 0 哨兵,
-     同 rail 但需强制壳重估——见 railFor 内注释) */
+  /* The route id for post/work detail; always null for other kinds
+     (only the notifications page uses the 0 sentinel — same rail but
+     forcing a shell re-evaluation, see the railFor comment). */
   id: number | null;
-  /* 文章详情(/explore/<slug>)的 slug;仅 kind=article 时非空 */
+  /* The article detail's (/explore/<slug>) slug; non-empty only for
+     kind=article. */
   slug?: string | null;
-  /* 主列加宽(1000);目前仅 kind=none 的宽画布路由 */
+  /* Main column widened (1000); currently only the kind=none wide
+     canvas routes. */
   wide: boolean;
 }
 
-/* 布局需要重取的最小上下文:同一种 rail + 同一详情 id/slug + 同一列宽时,
-   pathname 改变不影响右栏或壳宽度,无需 router.refresh() 全树重取。 */
+/* The minimal context the layout needs to refetch: same rail + same
+   detail id/slug + same column width means a pathname change can't
+   affect the rail or shell width — no router.refresh() full-tree
+   refetch needed. */
 export function railDecisionKey({ kind, id, slug, wide }: RailDecision): string {
   return `${kind}:${slug ?? id ?? "-"}:${wide ? 1 : 0}`;
 }
@@ -42,45 +50,52 @@ const decision = (
 ): RailDecision => ({
   kind,
   id: opts.id ?? null,
-  /* slug 仅 article 决策携带(可选字段,缺省不出——与既有 deepEqual 测试兼容) */
+  /* The slug rides only article decisions (optional, absent by default
+     — compatible with the existing deepEqual tests). */
   ...(opts.slug !== undefined ? { slug: opts.slug } : {}),
   wide: opts.wide ?? false,
 });
 
 export function railFor(pathname: string): RailDecision {
-  /* 去尾斜杠,空串按根处理 */
+  /* Trailing slash stripped; empty treated as root. */
   const p = pathname.replace(/\/+$/, "") || "/";
 
-  /* 宽画布,无右栏:用量区(含 device/leaderboard 子页)与个人主页 */
+  /* Wide canvas, no rail: the usage area (device/leaderboard subpages
+     included) and the profile. */
   if (p === "/usage" || p.startsWith("/usage/")) {
     return decision("none", { wide: true });
   }
   if (p.startsWith("/u/")) return decision("none", { wide: true });
-  /* 管理台(20260830 治理):无右栏,宽画布 */
+  /* Admin console: no rail, wide canvas. */
   if (p === "/admin" || p.startsWith("/admin/")) {
     return decision("none", { wide: true });
   }
 
-  /* 通知页与 feed 同一份 community rail,但访问即已读(markNotificationsRead
-     在页面渲染里执行):给它独立 decision key,进出各强制一次全树重取,
-     布局里的未读角标随即清零;id=0 是哨兵,非详情路由 id */
+  /* The notifications page shares the feed's community rail, but a
+     visit marks everything read (markNotificationsRead runs during
+     page render): it gets its own decision key so entering and leaving
+     each force one full-tree refetch and the shell's unread badge
+     clears immediately; id=0 is a sentinel, not a detail id. */
   if (p === "/community/notifications") return decision("community", { id: 0 });
 
-  /* 详情页:仅精确匹配 /community/<id>、/works/<id>(/edit 等子页不算) */
+  /* Detail pages: exact matches /community/<id> and /works/<id> only
+     (subpages like /edit don't count). */
   const post = /^\/community\/(\d+)$/.exec(p);
   if (post) return decision("post", { id: Number(post[1]) });
   const work = /^\/works\/(\d+)$/.exec(p);
   if (work) return decision("work", { id: Number(work[1]) });
 
-  /* 作品列表:/works 有专属 rail(提交入口 + 热门作品 + 声明制说明) */
+  /* Works list: /works has its own rail (submit entry + hot works +
+     claim semantics explainer). */
   if (p === "/works") return decision("works");
 
   if (p === "/awesome") return decision("awesome");
-  /* 探索区(20260821 合并;20260822 详情独立 rail):
-     目录页与系列页用 explore rail;文章详情(/explore/<slug>,非 series)
-     用 article rail(元数据在右栏,slug 进 decision key 供壳重估)。
-     板块未就绪时(UPCOMING.explore)统一回落 community;
-     旧 /blog、/learn 路由已 301,不再出 rail 分支 */
+  /* Explore: the catalog and series pages use the explore rail;
+     article detail (/explore/<slug>, non-series) uses the article rail
+     (metadata in the rail, slug in the decision key for shell
+     re-evaluation). While the section isn't ready (UPCOMING.explore)
+     everything falls back to community; the legacy /blog and /learn
+     routes are 301s with no rail branches. */
   if (!UPCOMING.explore && (p === "/explore" || p.startsWith("/explore/"))) {
     if (p.startsWith("/explore/series/")) return decision("explore");
     if (p !== "/explore") {
@@ -89,6 +104,7 @@ export function railFor(pathname: string): RailDecision {
     return decision("explore");
   }
 
-  /* 回落:社区 feed 及一切未列出路由(/community/new、/settings、/demo-night …) */
+  /* Fallback: the community feed and every unlisted route
+     (/community/new, /settings, /demo-night ...). */
   return decision("community");
 }

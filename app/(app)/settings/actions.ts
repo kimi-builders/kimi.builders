@@ -1,7 +1,9 @@
 "use server";
 
-/* 设置页写操作:资料(显示名/handle/简介/头像 URL)与 AI 回复偏好。
-   全部先过 session,再做字段校验;handle 唯一性在查询层排除自己。 */
+/* Settings write operations: profile (display name/handle/bio/avatar
+   URL) and AI reply preferences. Everything passes the session first,
+   then field validation; handle uniqueness excludes self at the query
+   layer. */
 import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { isAllowedAvatarUrl } from "@/src/lib/avatar-urls";
@@ -26,23 +28,27 @@ import { updateAiPrefs, updateProfile, updateProfilePrivacy } from "@/src/lib/us
 
 const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
 
-/* 主题/语言的显式选择(设置页 seg 与主题卡的无 JS 兜底;客户端已乐观翻转,
-   这里只落 cookie;语言同步写账号偏好,与 community/actions 的翻转动作同语义)。 */
+/* Explicit theme/language selection (the no-JS backstop for the
+   settings seg and theme cards; the client already flipped optimally,
+   this only persists the cookie; language also writes the account
+   preference, same semantics as the community/actions toggles). */
 export async function setThemeToAction(formData: FormData): Promise<void> {
   const store = await cookies();
   store.set("kb_theme", formData.get("theme") === "light" ? "light" : "dark", PREF_COOKIE);
 }
 
-/* 视觉气质显式选择(设置页气质卡的无 JS 兜底;非法值/缺省回落站点默认,
-   见 src/lib/vibe.ts 的 DEFAULT_VIBE)。 */
+/* Explicit vibe selection (the vibe cards' no-JS backstop; invalid or
+   missing falls back to the site default, DEFAULT_VIBE in
+   src/lib/vibe.ts). */
 export async function setVibeToAction(formData: FormData): Promise<void> {
   const store = await cookies();
   store.set("kb_vibe", normalizeVibe(String(formData.get("vibe") ?? "")), PREF_COOKIE);
 }
 
-/* 动效偏好显式选择(设置页「减少动效」seg 的无 JS 兜底):
-   kb_motion=reduce → 全站动效降级(与系统 prefers-reduced-motion 同一套规则);
-   其余值(含 follow)= 跟随系统。 */
+/* Explicit motion preference (the reduce-motion seg's no-JS backstop):
+   kb_motion=reduce -> site-wide motion degradation (the same rules as
+   the system prefers-reduced-motion); anything else (incl. follow) =
+   follow the system. */
 export async function setMotionToAction(formData: FormData): Promise<void> {
   const store = await cookies();
   store.set(
@@ -77,7 +83,8 @@ export async function updateProfileAction(
   const name = String(formData.get("name") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const avatarUrl = String(formData.get("avatar_url") || "").trim();
-  /* 恢复默认头像:显式清空标记优先于 URL 字段(清空走 updateProfile 的 clearAvatar) */
+  /* Reset-to-default avatar: the explicit clear flag outranks the URL
+     field (clearing goes through updateProfile's clearAvatar). */
   const clearAvatar = formData.get("avatar_clear") === "1";
 
   if (name.length > 64) return { error: t(locale, "err.nameLong") };
@@ -93,7 +100,8 @@ export async function updateProfileAction(
   return { ok: true };
 }
 
-/* AI 偏好两个开关(客户端乐观切换,失败回退并 toast)。 */
+/* The two AI preference switches (optimistic client toggles; failures
+   roll back and toast). */
 export async function updateAiPrefsAction(
   formData: FormData,
 ): Promise<{ ok: boolean }> {
@@ -106,8 +114,9 @@ export async function updateAiPrefsAction(
   return { ok: true };
 }
 
-/* 资料展示隐私三个开关(头像/显示名/简介;1=公开 0=仅自己),
-   交互同 AI 偏好:客户端乐观切换,失败回退。 */
+/* The three profile-privacy switches (avatar/display name/bio; 1=
+   public 0=self only), interacting like the AI preferences: optimistic
+   client toggles, rollback on failure. */
 export async function updateProfilePrivacyAction(
   formData: FormData,
 ): Promise<{ ok: boolean }> {
@@ -121,9 +130,12 @@ export async function updateProfilePrivacyAction(
   return { ok: true };
 }
 
-/* 改密码(设置页「账号」页签):已有密码需先验证当前密码(限速同登录口径);
-   OAuth 注册的无密码账号直接设置,登录会话即凭证。会话是无状态签名 cookie,
-   改密不踢其他设备——要强制下线得先换 sessions 表(session.ts 注释)。 */
+/* Change password (the settings "account" tab): accounts with a
+   password must verify the current one first (rate-limited like
+   login); OAuth-signup accounts without one set it directly — the
+   session is the credential. Sessions are stateless signed cookies, so
+   a password change evicts no other device; forced sign-out needs a
+   sessions table first (see session.ts). */
 export async function changePasswordAction(
   _prev: SettingsState | null,
   formData: FormData,
@@ -156,8 +168,9 @@ export async function changePasswordAction(
   return { ok: true };
 }
 
-/* 解绑 OAuth(设置页「账号」页签):唯一登录方式守卫在 unlinkProviderAccount
-   事务里重查,这里的失败码只负责翻译。 */
+/* Unlink OAuth (the settings "account" tab): the last-login-method
+   guard is re-checked inside the unlinkProviderAccount transaction;
+   the failure codes here only translate. */
 export async function unlinkProviderAction(
   _prev: SettingsState | null,
   formData: FormData,

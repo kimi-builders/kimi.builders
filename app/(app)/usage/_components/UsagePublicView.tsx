@@ -1,10 +1,14 @@
-/* 未登录访客的用量公开概览(20260821 评审):用量榜是本站最有特色的公开
-   橱窗,不该整体锁在登录后。本视图只消费 opt-in 聚合缓存
-   (getPublicUsageLeaderboardPreview,与右栏预览/榜单页同一数据源),
-   不查任何个人数据;登录后的完整个人 dashboard 在页面下游,保持不动。
-   20260822:榜单上方加「个人面板预览」(UsagePreviewStrip)——确定性示例
-   数据渲染真实面板组件,访客登录前就能看到面板长什么样。
-   榜单为空 = 诚实空态:列表区显示空态文案,登录引导卡照常渲染。 */
+/* The signed-out public usage overview: the leaderboard is the site's
+   most distinctive public showcase and shouldn't sit entirely behind
+   login. This view consumes only the opt-in aggregate cache
+   (getPublicUsageLeaderboardPreview — the same source as the rail
+   preview and the board page) and queries no personal data; the full
+   signed-in personal dashboard stays downstream, untouched. Above the
+   board sits the "personal dashboard preview" (UsagePreviewStrip) —
+   deterministic sample data rendering the real panel components, so
+   visitors see what they'd get before logging in. An empty board is
+   an honest empty state: empty-copy in the list area, login card as
+   usual. */
 import Link from "next/link";
 import { BarChart3, ShieldCheck } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -13,7 +17,8 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { getPublicUsageLeaderboardPreview } from "@/src/lib/usage/public-leaderboard-cache";
 import UsagePreviewStrip from "./UsagePreviewStrip";
 
-/* 与用量中心/右栏预览同一套 B/M/k 紧凑格式。 */
+/* The same compact B/M/k format as the usage center and rail
+   preview. */
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;

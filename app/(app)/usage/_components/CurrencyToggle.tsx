@@ -9,10 +9,14 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 
-/* 展示币种切换:写 kb_usage_ccy cookie 后整页 refresh(服务端按 cookie 重渲染)。
-   已选中的币种下再点是 no-op,避免无谓的往返。 */
-/* cookie 写在组件外:组件作用域内直接给 document.cookie 赋值会触发
-   react-hooks/immutability(组件被假定可并发渲染,不许有可见副作用)。 */
+/* Display currency toggle: writes the kb_usage_ccy cookie then
+   refreshes the whole page (the server re-renders per the cookie).
+   Clicking the already-selected currency is a no-op — no wasted round
+   trip. */
+/* The cookie write lives outside the component: assigning
+   document.cookie inside the component scope trips
+   react-hooks/immutability (components are assumed concurrently
+   renderable — no visible side effects). */
 function writeCurrencyCookie(value: UsageDisplayCurrency) {
   document.cookie = `kb_usage_ccy=${value}; path=/; max-age=31536000; samesite=lax`;
 }

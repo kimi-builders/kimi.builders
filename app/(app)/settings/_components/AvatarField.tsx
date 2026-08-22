@@ -1,9 +1,12 @@
 "use client";
 
-/* 头像字段(设置页资料表单):当前头像预览 + 更换(裁剪弹层 → kind=avatar 上传)
-   + 恢复默认。上传成功把返回的 CDN URL 写进 avatar_url 字段随表单提交;
-   恢复默认置 avatar_clear=1,服务端显式清空 avatar_url(下次 OAuth 登录会
-   重新同步 provider 头像,见 src/lib/auth/users.ts 的防覆盖约定)。 */
+/* Avatar field (the settings profile form): current-avatar preview +
+   change (crop overlay -> kind=avatar upload) + reset to default. A
+   successful upload writes the returned CDN URL into avatar_url for
+   the form submit; reset sets avatar_clear=1 and the server
+   explicitly empties avatar_url (the next OAuth login re-syncs the
+   provider avatar, per the overwrite guard in
+   src/lib/auth/users.ts). */
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -21,20 +24,23 @@ export default function AvatarField({
 }: {
   locale: Locale;
   handle: string;
-  /* 当前已保存的头像 URL(可能为 "" = 无头像) */
+  /* The currently saved avatar URL (possibly "" = none). */
   currentUrl: string;
-  /* 服务端判定:当前头像是否为站内自传(决定「恢复默认」按钮是否出现) */
+  /* Server-decided: whether the current avatar was uploaded on site
+     (drives the "reset to default" button). */
   hasCustom: boolean;
   inputCls: string;
   labelCls: string;
 }) {
-  /* url:avatar_url 字段值,空 = 不修改(沿用现有表单语义);clear:显式清空标记 */
+  /* url: the avatar_url field value, empty = no change (existing form
+     semantics); clear: the explicit reset flag. */
   const [url, setUrl] = useState("");
   const [clear, setClear] = useState(false);
   const [custom, setCustom] = useState(hasCustom);
   const [crop, setCrop] = useState<{ src: string; img: HTMLImageElement } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  /* 本地 blob 预览 URL 台账,卸载时统一回收 */
+  /* Ledger of local blob preview URLs, reclaimed together on
+     unmount. */
   const blobs = useRef(new Set<string>());
   useEffect(() => {
     const set = blobs.current;

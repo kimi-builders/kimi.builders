@@ -1,5 +1,6 @@
-/* /works 列表右栏:作品统计(上架/作者/声明投入/本周新)+ 活跃 Agent 分布
-   + 本周最受欢迎 + 声明口径说明(Awesome 引流)。 */
+/* /works rail: work stats (listed/authors/declared effort/new this
+   week) + active agent distribution + most supported this week + the
+   claim-semantics explainer (funneling Awesome). */
 import Link from "next/link";
 import { ArrowBigUp, SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";

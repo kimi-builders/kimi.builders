@@ -1,9 +1,12 @@
-/* 右栏容器 + 注册表分发(仅 ≥xl):渲染哪种上下文由 railFor(pathname) 决定
-   (right-rail.ts;pathname 来自 proxy.ts 写入的 x-kb-path,layout 统一读表),
-   容器只负责 sticky 布局与 w-72 栏宽。
-   隐藏/显示纯 CSS 驱动(html[data-sidebar],见 globals.css),SSR 首屏按
-   cookie 直出同一状态;开关在左栏「界面」组(pref-controls 的 SidebarToggle),
-   隐藏后本栏整体收起,不再留细轨重开按钮。 */
+/* Right-rail container + registry dispatch (>=xl only): which context
+   renders is decided by railFor(pathname) (right-rail.ts; the pathname
+   comes from x-kb-path written by proxy.ts, read uniformly by the
+   layout); the container only owns sticky layout and the w-72 width.
+   Hide/show is pure CSS (html[data-sidebar], see globals.css) with SSR
+   first paint emitting the same state from the cookie; the toggle
+   lives in the left rail's "interface" group (pref-controls'
+   SidebarToggle) — hidden means the whole column folds away, no thin
+   track with a reopen button. */
 import type { Locale } from "@/src/lib/i18n";
 import type { RailDecision } from "./right-rail";
 import ArticleRail from "./rail/ArticleRail";

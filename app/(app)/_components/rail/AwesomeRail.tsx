@@ -1,5 +1,7 @@
-/* /awesome 右栏:收录统计 + 收录口径(带计数,点行即筛选)+ Agent 分布
-   + 推荐规则(必须填原作者/不进作品墙/无徽章)+ 推荐入口。 */
+/* /awesome rail: listing stats + scopes (with counts, click a row to
+   filter) + agent distribution + recommendation rules (original
+   author required / never on the works wall / no badge) + the
+   recommendation entry. */
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";

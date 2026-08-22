@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 export default function CopyUsageCommandButton({ command, zh }: { command: string; zh: boolean }) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
-  /* 状态 1.6s 后回落可复制(2026-08-14):「已复制」不再常驻,可再次点击 */
+  /* The state falls back to copyable after 1.6s: "copied" doesn't
+     stay — the button can be clicked again. */
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(

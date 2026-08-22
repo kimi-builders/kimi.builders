@@ -1,14 +1,19 @@
-/* 功能区分区外壳:固定顶栏(≥lg,全局:品牌/通知/主题/语言/登录态)
-   + 左栏(功能菜单)+ 内容列 + 右栏(路由上下文,注册表分发)。
-   作用于 (app) 路由组内所有分区;首页门面不在组内,保持独立暗色海报。
-   右栏上下文与主列宽度由 railFor(pathname) 决定(right-rail.ts;
-   pathname 由根 proxy.ts 写进 x-kb-path 请求头)。
-   注意:布局在软导航时不重渲染,所以 <RailRefresher/> 监听 rail decision 变化
-   调 router.refresh(),让本布局按新上下文重新求值(同 decision 导航不重取);
-   refresh 往返的那一拍里 <RailGate/> 按当前 decision 把旧右栏隐藏,
-   中列新页面与右栏旧内容不会同框出现。
-   三栏的收起/隐藏状态走 <html> data-* + CSS(root layout 直出),
-   壳组件不接收状态 prop,切换零网络。 */
+/* Section shell: a fixed top bar (>=lg, global: brand/notifications/
+   theme/language/auth) + left rail (function menu) + content column +
+   right rail (route context, registry-dispatched). Applies to every
+   section in the (app) route group; the home facade stays outside the
+   group, keeping its independent dark poster. The rail context and
+   main column width come from railFor(pathname) (right-rail.ts; the
+   pathname rides the x-kb-path request header written by the root
+   proxy.ts). Note: layouts don't re-render on soft navigation, so
+   <RailRefresher/> watches rail-decision changes and calls
+   router.refresh() to re-evaluate this layout under the new context
+   (same-decision navigations don't refetch); during the refresh round
+   trip <RailGate/> hides the stale rail per the current decision, so
+   the new main column and the old rail never share a frame. The three
+   columns' collapsed/hidden states ride <html> data-* + CSS (emitted
+   by the root layout) — shell components take no state props, and
+   toggling costs no network. */
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -35,14 +40,17 @@ export default async function AppLayout({
     getLocale(user),
     user ? getUnreadNotificationCount(user.id) : 0,
     headers(),
-    /* 左栏「作品/Awesome」高亮的来源初值:详情页按浏览来源列表激活,
-       软导航后 LeftNav 自行读最新 cookie(布局不随软导航重渲染) */
+    /* The left rail's works/Awesome highlight initial value: detail
+       pages activate by the source list; after soft navigation LeftNav
+       reads the latest cookie itself (the layout doesn't re-render). */
     getWorksSource(),
   ]);
   const profileHref = user ? `/u/${user.handle}` : undefined;
-  /* 管理台入口:仅 admin/mod(20260830);/admin 路由本身服务端再 404 兜底 */
+  /* Admin console entry: admin/mod only; the /admin route itself
+     404s server-side as the backstop. */
   const moderator = !!user && canModerate(user.role);
-  /* proxy 未覆盖的路径(头缺失)按回落处理:community rail + 正常列宽 */
+  /* Paths the proxy doesn't cover (missing header) fall back:
+     community rail + normal column width. */
   const railPath = headerStore.get("x-kb-path") ?? "/";
   const rail = railFor(railPath);
   const railKey = railDecisionKey(rail);
@@ -71,8 +79,10 @@ export default async function AppLayout({
           {children}
         </main>
         {rail.kind !== "none" && (
-          /* 跨上下文软导航的一拍里右栏还是上一页的:RailGate 按当前 decision 把它
-             藏起来,refresh 带新右栏到达后再显示(不再出现中列/右栏错位) */
+          /* For one beat of a cross-context soft navigation the rail still
+             shows the previous page: RailGate hides it per the current
+             decision until the refresh delivers the new rail (no more
+             column/rail mismatch). */
           <RailGate decisionKey={railKey}>
             <RightSidebar locale={locale} loggedIn={!!user} decision={rail} />
           </RailGate>

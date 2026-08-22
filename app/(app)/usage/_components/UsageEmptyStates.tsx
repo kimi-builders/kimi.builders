@@ -24,7 +24,8 @@ export function UsageFirstRun({
   zh: boolean;
 }) {
   const command = hasAuthorizedDevice ? USAGE_SYNC_COMMAND : USAGE_INIT_COMMAND;
-  /* 与 usage-cli README「支持的本地用量来源」一致:11 个自动扫描 + Cursor 显式启用 */
+  /* Matches the usage-cli README's "supported local sources": 11
+     auto-scanned + Cursor with explicit opt-in. */
   const sources = [
     "Kimi Code", "Claude Code", "Codex", "OpenCode", "Gemini CLI", "Antigravity",
     "Copilot CLI", "Roo Code", "Pi Agent", "ZCode", "WorkBuddy",

@@ -1,13 +1,18 @@
 "use client";
 
-/* 右栏一致性闸门:右栏由布局按 x-kb-path 分发,布局在软导航时不重渲染,
-   靠 RailRefresher 的 router.refresh() 事后纠正——那一拍里右栏仍是上一页的
-   内容。这里在客户端比对当前 decision 与本栏渲染时的 decision:不一致即隐藏
-   (visibility 保留栏位、不响应交互),纠正后的新右栏到达再显示;同一上下文
-   的 pathname 变化则保持显示。
-   消除「中列已是新页面、右栏还是旧页面」的错位窗口。
-   注意:本包裹层承担 aside 的栏位类(self-stretch 让内部 sticky 有滑动空间),
-   railgate 钩子供右栏隐藏时整列退出 flex 布局(globals.css 的 data-sidebar 块)。 */
+/* Right-rail consistency gate: the rail is dispatched by the layout
+   per x-kb-path, but layouts don't re-render on soft navigation —
+   RailRefresher's router.refresh() corrects it one beat later, and in
+   that beat the rail still shows the previous page. This compares the
+   current decision client-side against the one this rail rendered
+   under: a mismatch hides it (visibility keeps the slot, no
+   interaction) until the corrected rail arrives; pathname changes
+   within the same context keep it visible. It eliminates the "main
+   column is the new page, rail is the old one" mismatch window. Note:
+   this wrapper carries the aside's column classes (self-stretch gives
+   the inner sticky room to slide); the railgate hook lets the hidden
+   rail exit the flex layout entirely (globals.css data-sidebar
+   block). */
 import { usePathname } from "next/navigation";
 import { railDecisionKey, railFor } from "./right-rail";
 

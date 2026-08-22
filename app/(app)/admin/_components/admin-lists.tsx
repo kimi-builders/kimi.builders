@@ -1,6 +1,7 @@
-/* /admin 列表行的服务端渲染(首屏 SSR 与「加载更多」action 共用,同 works-page 模式)。
-   内容行:状态徽标(私密/已屏蔽/已删除)+ 标题/作者/时间 + ModToolbar 操作。
-   日志行:操作者/动作/对象/原因/时间。 */
+/* Server rendering of /admin list rows (first-page SSR and the "load
+   more" action share it, like works-page). Content rows: state badges
+   (private/hidden/deleted) + title/author/time + ModToolbar actions.
+   Log rows: actor/action/target/reason/time. */
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { relTime } from "@/src/lib/format";

@@ -215,9 +215,11 @@ export default function UsageMethodologyDialog({
                       <tr><td colSpan={11} className="border-t border-line px-3 py-4 text-center text-grey">{zh ? "当前范围内没有模型数据" : "No model data in this range"}</td></tr>
                     ) : (
                       pricingMatches.map((row) => (
-                        /* key 必须与查询层 pricingMatchMap 的判等字段同形:
-                           同一 (source, model) 可按 canonical/provider 拆成多行,
-                           缺了这两个字段会产生重复 key。 */
+                        /* The key must mirror the query layer's
+                           pricingMatchMap equality fields: one (source,
+                           model) can split into multiple rows by
+                           canonical/provider; missing either field
+                           duplicates keys. */
                         <tr key={`${row.source}-${row.model}-${row.modelCanonical}-${row.modelProvider}-${row.contextTier}-${row.processingTier}-${row.version}-${row.effectiveFrom}`} className="border-t border-line">
                           <td
                             className="max-w-[220px] px-3 py-2 text-paper"

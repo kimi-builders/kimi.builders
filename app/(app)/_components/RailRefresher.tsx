@@ -1,9 +1,12 @@
 "use client";
 
-/* 软导航跨右栏上下文时刷新服务端树:布局持有按 pathname 分发的右栏(railFor),
-   但 App Router 的布局在客户端导航时不重渲染(缓存组件/Activity 语义下
-   template.tsx 也无法可靠做到——已实测往返导航状态错乱)。同一 decision
-   (kind + 详情 id + wide)无需重取;decision 改变才 refresh 纠正右栏与列宽。 */
+/* Refresh the server tree on soft navigation across rail contexts: the
+   layout holds the pathname-dispatched rail (railFor), but App Router
+   layouts don't re-render on client navigation (and under cached
+   components/Activity semantics template.tsx can't reliably do it
+   either — round-trip navigation was measured to scramble state). The
+   same decision (kind + detail id + wide) needs no refetch; a changed
+   decision refreshes to correct the rail and column width. */
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { railDecisionKey, railFor } from "./right-rail";

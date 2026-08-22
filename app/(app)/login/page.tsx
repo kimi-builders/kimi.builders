@@ -1,5 +1,6 @@
-/* 登录/注册页(直接访问/刷新的完整页);应用内点击经拦截路由弹窗展示
-   (app/(app)/@modal/(.)login),两者共用 LoginContent。 */
+/* The login/signup page (the full page on direct access/refresh);
+   in-app clicks render the intercepted-route modal
+   (app/(app)/@modal/(.)login) — both share LoginContent. */
 import type { Metadata } from "next";
 import LoginContent from "./_components/LoginContent";
 

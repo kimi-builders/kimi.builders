@@ -1,7 +1,8 @@
 "use client";
 
-/* iOS 式开关(20260819 抽取):AiPrefsForm / ProfilePrivacyForm 此前各持有一份
-   逐字相同的 Switch,收编为设置页共享件。点按即存语义由调用方承载。 */
+/* iOS-style switch: AiPrefsForm / ProfilePrivacyForm previously each
+   held a verbatim copy; consolidated into one settings-shared part.
+   The tap-to-save semantics belong to the caller. */
 export default function Switch({
   on,
   label,

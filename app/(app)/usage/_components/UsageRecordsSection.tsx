@@ -78,7 +78,8 @@ interface RecordColumn {
   header: string;
   cell: (row: UsageRecordRow) => ReactNode;
   className?: string;
-  /* 数字列(20260819 版式对齐):表头/单元格右对齐,与品牌手册「数字列右对齐」一致 */
+  /* Numeric columns: header/cell right-aligned, per the brand book's
+     "numeric columns align right". */
   numeric?: boolean;
   titleOf?: (row: UsageRecordRow) => string | undefined;
 }

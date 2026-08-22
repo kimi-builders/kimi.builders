@@ -1,9 +1,13 @@
-/* 作品详情右栏(/works/[id]):作品元数据卡(作者/agents/链接/声明徽章/支持·评论数)
-   + 相关作品(同作者或同 Agent,5 条)。≥xl 取代详情页内联侧栏(页面侧 xl:hidden)。
-   作品与徽章数据复用详情页查询(getWorkDetail / getAuthorClaimContext 都走
-   React cache,同一请求去重);作品不存在时页面给友好文案,右栏整个不渲染。
-   私密作品:详情页对非作者按不存在处理,右栏同样不渲染(布局壳仍挂载,
-   不能借右栏把私密作品元数据漏给外人;同 PostRail 口径)。 */
+/* Work detail rail (/works/[id]): the work metadata card
+   (author/agents/links/claim badge/support & comment counts) + related
+   works (same author or shared agent, 5 rows). From xl it replaces
+   the detail page's inline panel (xl:hidden there). Work and badge
+   data reuse the detail queries (getWorkDetail / getAuthorClaimContext
+   both ride React cache, deduped per request); a missing work gets
+   friendly page copy and no rail. Private works: the detail page
+   treats them as missing for non-authors and the rail follows (the
+   layout shell still mounts — the rail must never leak a private
+   work's metadata; same rule as PostRail). */
 import Link from "next/link";
 import { ExternalLink, Heart, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -46,7 +50,9 @@ export default async function WorkRail({
       : Promise.resolve(null),
     getRelatedWorks(work),
   ]);
-  /* claimBadgeOf 的不变式需要 Map 形态;单作者场景现场构造(值与详情页同一次查询) */
+  /* claimBadgeOf's invariant wants a Map; the single-author case
+     builds it on the spot (values from the same query as the detail
+     page). */
   const claimBadge =
     work.userId !== null && claimCtx
       ? claimBadgeOf(

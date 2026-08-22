@@ -1,12 +1,16 @@
 "use client";
 
-/* 路由弹窗壳(拦截路由用):挂载即 showModal;关闭(X / 背板点击 / ESC)
-   统一 router.back() 回到来源页;若背景页已被 action 的 redirect 转走
-   (URL 偏离挂载点),则静默关窗不回退。外壳用 overflow-clip 明确禁止焦点滚动,
-   只有正文容器负责滚动,避免长表单的隐藏控件把整个 dialog 推出视口。
-   dirtyGuard(2026-08-14):传入即启用「已填写内容」守卫——表单有过输入后,
-   X / 背板 / ESC 不再直接关,先出底部确认条(继续填写 / 放弃并关闭);
-   提交进行时(onSubmit)不再拦截,正常跳转。 */
+/* Route modal shell (for intercepted routes): showModal on mount;
+   closing (X / backdrop / ESC) uniformly router.back()s to the source
+   page; if the background page was already redirected away by an
+   action (URL departed the mount point), close silently without going
+   back. The shell uses overflow-clip to forbid focus scrolling — only
+   the body container scrolls, so a hidden control in a long form
+   can't push the whole dialog out of the viewport. dirtyGuard: passing
+   it enables the "you have input" guard — once the form has input, X /
+   backdrop / ESC no longer close directly; a bottom confirm bar offers
+   keep editing / discard and close; a submit in flight (onSubmit) is
+   never intercepted and navigates normally. */
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X } from "lucide-react";
@@ -21,7 +25,8 @@ export default function RouteModal({
   title: string;
   closeLabel: string;
   dirtyGuard?: { title: string; keep: string; discard: string };
-  /* 弹窗宽度(20260919):默认 46rem;宽表单(作品发布/编辑)传 56rem */
+  /* Modal width: 46rem by default; wide forms (work publish/edit) pass
+     56rem. */
   widthCls?: string;
   children: React.ReactNode;
 }) {
@@ -30,8 +35,9 @@ export default function RouteModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [dirty, setDirty] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  /* 挂载时的 URL(弹窗开着 = URL 停在拦截路由上);silent 标记「程序化关闭,
-     不要再 router.back()——背景已经跳过转了」 */
+  /* The URL at mount (modal open = the URL sits on the intercepted
+     route); silent marks a programmatic close — no router.back(), the
+     background has already navigated. */
   const openedAt = useRef(pathname);
   const silent = useRef(false);
 
@@ -40,9 +46,12 @@ export default function RouteModal({
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
-  /* 兜底关窗(2026-08-14):server action 里的 redirect() 只转背景页,拦截路由的
-     @modal 插槽不会随之卸载(表单弹窗保存后仍盖在详情页上)。URL 偏离挂载点
-     即说明背景已导航,此时静默关窗——不回退,URL 已经是对的地方。 */
+  /* Close backstop: a server action's redirect() moves only the
+     background page — the intercepted @modal slot doesn't unmount with
+     it (a saved form modal still covers the detail page). The URL
+     departing the mount point means the background navigated: close
+     silently, without going back — the URL is already where it
+     belongs. */
   useEffect(() => {
     const dialog = dialogRef.current;
     if (pathname !== openedAt.current && dialog?.open) {
@@ -51,7 +60,8 @@ export default function RouteModal({
     }
   }, [pathname]);
 
-  /* 守卫开启且表单已填写:关闭动作改道确认条;确认条出现时 ESC = 继续填写 */
+  /* Guard on and form dirty: closing reroutes to the confirm bar; with
+     the bar up, ESC means keep editing. */
   const requestClose = () => {
     if (dirtyGuard && dirty && !confirming) {
       setConfirming(true);
@@ -65,7 +75,9 @@ export default function RouteModal({
       ref={dialogRef}
       aria-label={title}
       onClose={() => {
-        /* 程序化静默关闭(背景已导航)不回退;其余(X/背板/ESC)统一回来源页 */
+        /* A programmatic silent close (background navigated) never goes
+           back; everything else (X/backdrop/ESC) uniformly returns to the
+           source page. */
         if (silent.current) {
           silent.current = false;
           return;

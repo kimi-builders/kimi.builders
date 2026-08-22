@@ -1,9 +1,12 @@
 "use server";
 
-/* 治理写操作(/admin 与详情页管理工具条共用):屏蔽/解除、管理软删、硬删除、
-   禁言/解禁、资料重置、角色管理。
-   鉴权在每个 action 顶部(requireModerator / requireAdmin,不信任前端隐藏);
-   所有动作经 src/lib/moderation.ts 落库,必写 moderation_actions 审计。 */
+/* Moderation write operations (shared by /admin and the detail-page
+   toolbars): hide/unhide, management soft delete, hard delete,
+   mute/unmute, profile reset, role management. Auth sits at the top of
+   every action (requireModerator / requireAdmin — never trusting
+   frontend hidden fields); all actions write through
+   src/lib/moderation.ts and always leave a moderation_actions audit
+   row. */
 import { revalidatePath, updateTag } from "next/cache";
 import { getLocale } from "@/src/lib/i18n-server";
 import { t } from "@/src/lib/i18n";
@@ -44,7 +47,8 @@ function targetTypeOf(raw: string): ModTargetType | null {
   return raw === "post" || raw === "comment" || raw === "work" ? raw : null;
 }
 
-/* 治理动作后作废公共面缓存:列表/详情/首页精选/管理台。 */
+/* Invalidate public-surface caches after moderation actions:
+   lists/detail/home featured/admin console. */
 function revalidateAfterContent(id: number, type: ModTargetType) {
   updateTag(HOME_CACHE_TAG);
   if (type === "post" || type === "work") {
@@ -92,7 +96,8 @@ export async function unhideContentAction(formData: FormData): Promise<ModResult
   return { ok: true };
 }
 
-/* 管理软删:仅帖子/评论(works 无软删态,处置 = 屏蔽或硬删)。 */
+/* Management soft delete: posts/comments only (works have no soft
+   state — their remedies are hide or hard delete). */
 export async function adminDeleteAction(formData: FormData): Promise<ModResult> {
   const user = await requireModerator();
   const locale = await getLocale(user);
@@ -111,7 +116,8 @@ export async function adminDeleteAction(formData: FormData): Promise<ModResult> 
   return { ok: true };
 }
 
-/* 硬删除:仅 admin;物理删除(帖子的评论级联),不可恢复。 */
+/* Hard delete: admin only; physical removal (a post's comments
+   cascade), unrecoverable. */
 export async function hardDeleteAction(formData: FormData): Promise<ModResult> {
   const user = await requireAdmin();
   const locale = await getLocale(user);
@@ -132,7 +138,7 @@ export async function hardDeleteAction(formData: FormData): Promise<ModResult> {
   return { ok: true };
 }
 
-/* ---- 用户治理 ---- */
+/* ---- User moderation ---- */
 
 export async function muteUserAction(formData: FormData): Promise<ModResult> {
   const user = await requireModerator();
@@ -178,7 +184,8 @@ export async function resetProfileAction(formData: FormData): Promise<ModResult>
   return { ok: true };
 }
 
-/* 角色管理:仅 admin;member ⇄ mod;admin 不可被降(校验目标当前角色)。 */
+/* Role management: admin only; member <-> mod; admins can't be
+   demoted (the target's current role is validated). */
 export async function setRoleAction(formData: FormData): Promise<ModResult> {
   const user = await requireAdmin();
   const locale = await getLocale(user);
@@ -211,8 +218,9 @@ export async function setRoleAction(formData: FormData): Promise<ModResult> {
   return { ok: true };
 }
 
-/* ---- 列表「加载更多」(只读,不落库):返回服务端渲染好的一页行,
-   与首屏同口径(渲染函数在 admin-lists)。---- */
+/* ---- List "load more" (read-only, no writes): returns a
+   server-rendered page of rows matching the first page exactly (the
+   render functions live in admin-lists). ---- */
 
 import type { ReactNode } from "react";
 import {

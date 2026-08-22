@@ -1,11 +1,15 @@
 "use client";
 
-/* 偏好切换控件(主题/语言/左栏收起/右栏隐藏),乐观更新:
-   点击先改 <html> 属性 + 写 document.cookie,界面立即生效、不等网络;
-   SSR 首屏按 cookie 直出同一组 <html> 属性(root layout),两侧永远一致。
-   无 JS 时退化为 form POST(server action 翻 cookie 后整页重渲)。
-   语言是唯一需要网络的:界面文案全部 SSR,客户端翻完 cookie 后
-   router.refresh() 拉新文案(一次往返),并 fire-and-forget 写账号偏好。 */
+/* Preference toggles (theme/language/nav collapse/sidebar hide),
+   optimistic: a click first flips the <html> attributes + writes
+   document.cookie — the UI updates immediately, never waiting on the
+   network; SSR first paint emits the same attributes from the cookie
+   (root layout), so both sides always agree. Without JS it degrades
+   to a form POST (the server action flips the cookie and re-renders
+   the whole page). Language is the only network-dependent one: UI copy
+   is fully SSR, so after flipping the cookie the client
+   router.refresh()es for fresh copy (one round trip) and fire-and-
+   forgets the account preference. */
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -49,8 +53,9 @@ import {
   setVibeToAction,
 } from "../settings/actions";
 
-/* 主题:纯客户端翻转(cookie-only 偏好,无需任何服务器往返)。
-   动作逻辑在 src/lib/prefs-client(与快捷键层同一代码路径)。 */
+/* Theme: a pure client flip (cookie-only, no server round trip). The
+   action logic lives in src/lib/prefs-client (one code path with the
+   keyboard layer). */
 export function ThemeToggle({
   locale,
   className,
@@ -91,8 +96,10 @@ export function ThemeToggle({
   );
 }
 
-/* 语言:客户端翻 cookie + html.lang,然后 refresh 拉 SSR 新文案;
-   登录用户的账号偏好(AI 回帖语言第一优先级)后台写入,不阻塞界面。 */
+/* Language: flip the cookie + html.lang client-side, then refresh for
+   fresh SSR copy; the signed-in user's account preference (the first
+   priority for AI reply language) writes in the background, never
+   blocking the UI. */
 export function LocaleToggle({
   locale,
   className,
@@ -133,9 +140,10 @@ export function LocaleToggle({
   );
 }
 
-/* 左栏收起/展开:纯客户端(cookie-only);显隐规则在 globals.css 的
-   html[data-nav] 块,图标与文案用 only-nav-* 按态切换。
-   与右栏开关并排组成左栏底部的「界面」双键(className 由 LeftNav 传入)。 */
+/* Nav collapse/expand: pure client (cookie-only); visibility rules
+   live in globals.css's html[data-nav] block, icons and copy switch by
+   state via only-nav-*. Sits beside the sidebar toggle as the left
+   rail's "interface" pair (className passed by LeftNav). */
 export function NavToggle({
   locale,
   className,
@@ -165,9 +173,10 @@ export function NavToggle({
   );
 }
 
-/* 右栏隐藏/重开:同上(cookie-only,显隐规则在 globals.css 的
-   html[data-sidebar] 块)。开关已迁到左栏「界面」组,隐藏后不再在右侧
-   留细轨按钮;图标与文案用 only-sidebar-* 按态切换。 */
+/* Sidebar hide/reopen: same (cookie-only, rules in globals.css's
+   html[data-sidebar] block). The toggle moved to the left rail's
+   "interface" group; hidden leaves no thin-track button on the right;
+   icons and copy switch via only-sidebar-*. */
 export function SidebarToggle({
   locale,
   className,
@@ -197,10 +206,12 @@ export function SidebarToggle({
   );
 }
 
-/* 视觉气质(20260815 拍板):工程棱角 poster(默认) ⇄ 圆润经典 soft。
-   纯客户端翻转(cookie-only);形态语言全在 globals.css 的 data-vibe 块
-   (圆角归零 / 投影置空 / 涂层降档),这里只翻 <html> 属性 + 写 cookie。
-   图标与文案显示「目标态」(同 ThemeToggle:暗色下显示 Sun)。 */
+/* Visual vibe: angular poster (default) <-> rounded classic soft.
+   Pure client flip (cookie-only); the shape language lives entirely in
+   globals.css's data-vibe block (radii zeroed / shadows emptied /
+   strokes demoted) — this only flips the <html> attribute + writes the
+   cookie. Icons and copy show the target state (same as ThemeToggle:
+   dark shows Sun). */
 export function VibeToggle({
   locale,
   className,
@@ -242,10 +253,12 @@ export function VibeToggle({
   );
 }
 
-/* 气质卡片(设置页「偏好」):工程棱角/圆润经典两张卡,激活态走 globals.css
-   的 html[data-vibe] 态类;预览小块用字面量圆角(rounded-[..] 任意值不经过
-   --radius-* 变量,海报模式下不会被归零,两种气质下预览都如实)。
-   「默认」徽标跟着 DEFAULT_VIBE 走(20260822 起默认可配置,src/lib/vibe.ts)。 */
+/* Vibe cards (settings "preferences"): one angular, one classic;
+   active states ride globals.css's html[data-vibe] state classes;
+   preview chips use literal radii (rounded-[..] arbitrary values never
+   pass through --radius-* variables, so poster mode can't zero them —
+   the preview stays honest under both vibes). The "default" badge
+   follows DEFAULT_VIBE (configurable via src/lib/vibe.ts). */
 export function VibeCards({ locale }: { locale: Locale }) {
   const pick = (next: Vibe) => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -287,9 +300,10 @@ export function VibeCards({ locale }: { locale: Locale }) {
   );
 }
 
-/* 语言分段(设置页「偏好」):seg 双键显式选择,激活态走 globals.css的
-   html[lang] 态类(SSR 首屏即正确);逻辑与 LocaleToggle 同源(cookie +
-   html.lang + refresh + 账号偏好后台写入)。 */
+/* Language segmented (settings "preferences"): an explicit two-key
+   seg, active state riding globals.css's html[lang] classes (correct
+   from SSR first paint); logic shares LocaleToggle's source (cookie +
+   html.lang + refresh + background account-preference write). */
 export function LocaleSeg() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -330,8 +344,9 @@ export function LocaleSeg() {
   );
 }
 
-/* 主题卡片(设置页「偏好」):深/浅两张迷你预览卡,激活态走 globals.css 的
-   html[data-theme] 态类;逻辑同 ThemeToggle(纯客户端 cookie,无网络)。 */
+/* Theme cards (settings "preferences"): dark/light mini previews,
+   active state riding globals.css's html[data-theme] classes; logic
+   same as ThemeToggle (pure client cookie, no network). */
 export function ThemeCards({ locale }: { locale: Locale }) {
   const pick = (next: "dark" | "light") => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -367,16 +382,18 @@ export function ThemeCards({ locale }: { locale: Locale }) {
   );
 }
 
-/* 动效分段(设置页「偏好」,20260821 评审):跟随系统 / 减少动效。
-   纯客户端 cookie(kb_motion),reduce → <html data-motion="reduce">,
-   globals.css 里与系统 prefers-reduced-motion 同一套降级;
-   激活态本地态驱动(data-motion 无值时属性整个移除,不能用 CSS 态类)。 */
+/* Motion segmented (settings "preferences"): follow system / reduce.
+   Pure client cookie (kb_motion); reduce -> <html
+   data-motion="reduce">, sharing the same degradation as the system
+   prefers-reduced-motion in globals.css; the active state is driven
+   locally (with no value the attribute is removed entirely, so no CSS
+   state class). */
 export function MotionSeg({
   locale,
   initial,
 }: {
   locale: Locale;
-  /* SSR 直出 cookie 初值(root layout 的 getUiPrefs) */
+  /* SSR emits the cookie's initial value (root layout's getUiPrefs). */
   initial: "follow" | "reduce";
 }) {
   const [value, setValue] = useState(initial);

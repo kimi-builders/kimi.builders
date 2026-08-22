@@ -17,8 +17,9 @@ const WEEKDAY_LONG_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAY_SHORT_ZH = ["一", "二", "三", "四", "五", "六", "日"];
 const WEEKDAY_SHORT_EN = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-/* 趋势图默认只强调总量。输入、缓存、输出与推理构成保留在 Tooltip，
-   避免高缓存占比长期用绿色淹没真正需要比较的 Token 总量。 */
+/* The trend chart emphasizes totals by default. Input, cache, output,
+   and reasoning breakdowns stay in the tooltip — a high cache share
+   must not drown the token totals in green long-term. */
 const FILL_COST = "var(--color-viz-blue-primary)";
 const FILL_DURATION = "var(--color-viz-blue-soft)";
 
@@ -123,9 +124,11 @@ function TokenBreakdown({ item, zh }: { item: UsageTrendDay | HeatTokenCell; zh:
 const TIP_WIDTH = 244;
 const TIP_HEIGHT = 236;
 
-/* 悬浮卡定位:优先放被 hover 柱子的右侧,其次左侧;两侧都放不下(柱宽/容器窄)
-   才压到离柱子最远的角落——任何情况下都不盖住鼠标所在的数据位。
-   20260819 起导出共享:个人主页足迹/分时热图锚定同一套定位逻辑。 */
+/* Hover-card placement: right of the hovered bar first, then left;
+   only when neither fits (narrow bars/container) does it press into
+   the farthest corner — the hovered data slot is never covered. Shared
+   since 20260819: the profile footprint/hourly heatmap anchor on the
+   same placement logic. */
 export function tooltipPos(
   event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>,
   viewport: HTMLDivElement | null,
@@ -144,8 +147,10 @@ export function tooltipPos(
   return { left, top, arrowX };
 }
 
-/* 趋势图核心:SVG 总量柱(+可选均线)+ Y 网格线 + HTML 透明热区(保键盘可达)。
-   视觉层全 SVG,交互层叠绝对定位的 button 行,两者用同一组 slot 几何对齐。 */
+/* Trend core: SVG total bars (+ optional average line) + Y grid + an
+   HTML transparent hit layer (keyboard reachable). The visual layer is
+   all SVG, the interaction layer is an absolutely positioned row of
+   buttons, both aligned on one set of slot geometry. */
 function TrendCore({
   trend,
   metric,
@@ -185,7 +190,8 @@ function TrendCore({
   const padR = 18;
   const padT = 20;
   const padB = 26;
-  /* slot 宽度按目标总宽自适应:少数几根柱子(如 12 周)更粗,30 天则紧凑。 */
+  /* Slot widths adapt to the target width: a few bars (like 12 weeks)
+     run thicker, 30 days run compact. */
   const slot = Math.max(22, Math.min(64, Math.floor((980 - padL - padR) / Math.max(1, n))));
   const plotW = n * slot;
   const width = padL + plotW + padR;
@@ -236,8 +242,10 @@ function TrendCore({
                     x2={width - padR}
                     y2={y(tick)}
                     style={{ stroke: "var(--color-viz-grid)" }}
-                    /* 20260819:网格线按品牌工作令牌统一为实线(chart.gridlineStyle=solid),
-                       虚线只留给数据线(7 日均线),层级不再混淆 */
+                    /* Grid lines are solid per the brand chart token
+                       (chart.gridlineStyle=solid); dashed is reserved
+                       for data lines (the 7-day average) — no more
+                       hierarchy confusion. */
                     strokeWidth={tick === 0 ? 1.2 : 1}
                   />
                   <text
@@ -323,7 +331,8 @@ function TrendCore({
                 labels.has(index) ? (
                   <text
                     key={item.day}
-                    /* 两端标签改用 start/end 锚点内收,避免贴边被 padR/padL 裁掉 */
+                    /* End labels use start/end anchors and tuck in —
+                       edge-hugging labels were clipped by padR/padL. */
                     x={
                       index === 0
                         ? padL - 4
@@ -342,7 +351,9 @@ function TrendCore({
             </svg>
             <div
               className="absolute flex"
-              /* 与 SVG 同 viewBox 比例定位:整体缩放/拉伸时热区始终对齐柱子。 */
+              /* Positioned in the SVG's viewBox proportions: the hit
+                 layer stays aligned with the bars under any scaling or
+                 stretching. */
               style={{
                 left: `${(padL / width) * 100}%`,
                 top: `${(padT / height) * 100}%`,
@@ -481,7 +492,8 @@ interface HeatTokenCell {
   totalTokens: number;
 }
 
-/* 6 档色阶(占峰值比):图例 ramp 与格子共用这一组 class。 */
+/* The 6-step ramp (share of peak): the legend ramp and cells share
+   these classes. */
 const HEAT_STEPS = [
   "bg-viz-sequential-1",
   "bg-viz-sequential-2",
@@ -561,7 +573,8 @@ export function UsageHeatmapGrid({
                   {row.map((value, hour) => {
                     const mobileVisible = hour >= mobileHourStart && hour < mobileHourStart + 12;
                     if (!heatmap.hasData[weekday][hour]) {
-                      /* 采集缺口:虚线描边格,不可交互。 */
+                      /* Collection gap: dashed-outline cells, not
+                         interactive. */
                       return (
                         <span
                           key={hour}
@@ -616,8 +629,9 @@ export function UsageHeatmapGrid({
       </div>
 
       {hovered && cell && (
-        /* 悬浮卡放被 hover 格子的对侧半场:右半场的格子卡片去左边,反之亦然,
-           任何格子都不会被自己的数据卡挡住 */
+        /* The hover card goes to the opposite half: right-half cells
+           get a left card and vice versa — no cell is ever covered by
+           its own data card. */
         <div
           role="tooltip"
           className="kb-data-tooltip pointer-events-none absolute z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"

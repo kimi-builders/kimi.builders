@@ -1,11 +1,15 @@
 "use client";
 
-/* Markdown 编辑器:textarea + 轻量工具条(粗体/行内代码/标题/列表/链接/图片)。
-   不上编辑器库:工具条只在选区两侧包/插语法;图片走 /api/upload(与作品媒体同通道),
-   支持点击上传与直接粘贴图片。受控(value/onChange)与非受控(defaultValue + FormData)
-   两种父级都支持——写值走原生 setter + input 事件,两侧都同步。
-   mentionKimi(20260816):输入 @ 触发「@kimi 召唤」自动补全(Enter/Tab/点选插入,
-   Esc 关闭;匹配逻辑在 src/lib/mention-kimi.ts 的 kimiMentionAt,单测覆盖)。 */
+/* Markdown editor: a textarea + a light toolbar (bold/inline code/
+   headings/lists/link/image). No editor library: the toolbar only wraps
+   or inserts syntax around the selection; images go through
+   /api/upload (the same channel as work media) via click or direct
+   paste. Both controlled (value/onChange) and uncontrolled
+   (defaultValue + FormData) parents are supported — writes go through
+   the native setter + input event so both stay in sync. mentionKimi:
+   typing @ triggers the "@kimi summon" autocomplete (Enter/Tab/click to
+   insert, Esc to close; matching lives in kimiMentionAt in
+   src/lib/mention-kimi.ts, unit-tested). */
 import { useRef, useState } from "react";
 import {
   Bold,
@@ -21,8 +25,10 @@ import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 import { kimiMentionAt } from "@/src/lib/mention-kimi";
 import { uploadMedia } from "@/src/lib/upload";
 
-/* 纯拼接(单测直接测):在 [start,end) 两侧包 before/after;无选区时填占位词。
-   返回新值与选区(选中插入的内容,方便用户接着改)。 */
+/* Pure splicing (unit-tested): wrap before/after around [start,end);
+   with no selection, insert a placeholder word. Returns the new value
+   plus the selection (the inserted content, selected so the user can
+   keep editing). */
 export function spliceMarkdown(
   value: string,
   start: number,
@@ -44,7 +50,8 @@ const SYNTAX_ACTIONS: Array<{
   before: string;
   after: string;
   phKey: I18nKey;
-  /* 行首语法(标题/列表):光标不在行首时自动补换行 */
+  /* Line-start syntax (headings/lists): prepend a newline when the
+     cursor isn't at one. */
   linePrefix?: boolean;
 }> = [
   { key: "bold", icon: Bold, labelKey: "editor.bold", before: "**", after: "**", phKey: "editor.boldPh" },
@@ -76,24 +83,28 @@ export default function MarkdownEditor({
   defaultValue?: string;
   value?: string;
   onChange?: (value: string) => void;
-  /* 需要聚焦等 DOM 操作时把内部 textarea 引用交出去(如评论表单的回复聚焦) */
+  /* Hands out the internal textarea ref for DOM work like focusing on
+     reply. */
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   required?: boolean;
   inputCls: string;
-  /* @kimi 召唤自动补全(评论/正文编辑场景开启) */
+  /* @kimi summon autocomplete (on in comment/body editing). */
   mentionKimi?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  /* 上传失败的内联持久错误(20260821 评审):toast 2.6s 即逝,用户改正
-     (换格式/重试)时上下文已丢;改挂工具栏下方,随下一次尝试清除 */
+  /* Inline persistent upload error: a 2.6s toast vanishes before the
+     user can fix things (reformat/retry) — mount it under the toolbar,
+     cleared by the next attempt. */
   const [uploadError, setUploadError] = useState(false);
-  /* @ 补全候选:start = 待替换的 @ 位置 */
+  /* @ completion candidate: start = the @ position to replace. */
   const [suggest, setSuggest] = useState<{ start: number } | null>(null);
   const controlled = value !== undefined;
 
-  /* 光标/内容变化后重算补全(读 textarea 实况,受控/非受控都准) */
+  /* Recompute completion after cursor/content changes (reads the
+     textarea's live state — accurate for both controlled and
+     uncontrolled). */
   const updateSuggest = () => {
     if (!mentionKimi) return;
     const ta = textareaRef.current;
@@ -116,7 +127,8 @@ export default function MarkdownEditor({
     });
   };
 
-  /* 原生 setter + input 事件:受控父级收到 onChange,非受控父级走 FormData,都同步 */
+  /* Native setter + input event: controlled parents receive onChange,
+     uncontrolled parents read FormData — both in sync. */
   const writeValue = (next: string) => {
     const ta = textareaRef.current;
     if (!ta) return;

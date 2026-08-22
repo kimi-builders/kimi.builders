@@ -1,8 +1,11 @@
-/* 「正在路上」占位页:未就绪板块(见 src/lib/upcoming.ts)的统一空态,
-   代替空白功能上线。视觉沿用 panel 语法:mono kicker + 标题 + 说明 + 回社区链接。
-   期望管理(20260815 评审):expect 交代第一批会上什么(把「此处无内容」
-   转成「值得回来」);关注入口给一个回访钩子(GitHub Org 动态),
-   站点没有newsletter,这里是诚实等效物。 */
+/* The "on its way" placeholder: the unified empty state for
+   not-yet-ready sections (see src/lib/upcoming.ts), shipping instead of
+   blank features. Visual language follows the panel grammar: mono
+   kicker + title + copy + back-to-community link. Expectation
+   management: expect states what the first batch will bring (turning
+   "nothing here" into "worth coming back"); a follow entry gives a
+   return hook (the GitHub Org feed) — the site has no newsletter, and
+   this is the honest equivalent. */
 import Link from "next/link";
 import { t, type Locale } from "@/src/lib/i18n";
 
@@ -13,7 +16,8 @@ export default function SoonPanel({
 }: {
   title: string;
   locale: Locale;
-  /* 第一批内容方向(可选):板块页传入,管理/编辑入口不传 */
+  /* First-batch content directions (optional): passed by section
+     pages; the admin/edit entries pass none. */
   expect?: string;
 }) {
   return (

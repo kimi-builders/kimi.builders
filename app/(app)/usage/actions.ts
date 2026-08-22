@@ -34,9 +34,11 @@ export async function decideUsageDeviceAction(
 ): Promise<DeviceDecisionState> {
   const user = await getSessionUser();
   if (!user) return { error: "login_required" };
-  /* user_code 枚举限流(20260822 P1-6):8 字符码可在线枚举,批准动作会把
-     他人设备连进自己账号(用量数据流向攻击者)。按用户限速,与 JSON API
-     路由(app/api/usage/device/approve)同档 12/10min,两条路都关死 */
+  /* user_code enumeration limit: the 8-character code can be enumerated
+     online, and approving links someone else's device into your
+     account (usage data flowing to the attacker). Rate-limited per
+     user at the same 12/10min as the JSON API route
+     (app/api/usage/device/approve) — both roads closed. */
   const allowed = await consumeUsageRateLimit({
     scope: "device-code-approve",
     identity: String(user.id),
@@ -91,7 +93,8 @@ export async function updateUsageSettingsAction(
     return { ok: false, code: "failed", reference: operation.reference };
   }
   updateTag(PUBLIC_USAGE_LEADERBOARD_CACHE_TAG);
-  /* 同一 usage_settings 行,多处挂载(用量/设置/个人主页)——全部重验证 */
+  /* The same usage_settings row mounts in several places (usage /
+     settings / profile) — all revalidated. */
   revalidatePath("/usage");
   revalidatePath("/settings");
   revalidatePath(`/u/${user.handle}`);

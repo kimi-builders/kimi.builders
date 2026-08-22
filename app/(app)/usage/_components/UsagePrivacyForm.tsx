@@ -6,8 +6,9 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { updateUsageSettingsAction } from "../actions";
 
-/* iOS 风格开关:sr-only checkbox + 轨道/滑块兄弟节点(peer-checked 驱动),
-   语义仍是原生 checkbox,FormData/键盘行为不变。 */
+/* iOS-style switch: an sr-only checkbox + track/thumb siblings
+   (peer-checked driven); semantics stay a native checkbox — FormData
+   and keyboard behavior unchanged. */
 function Switch({
   name,
   checked,
@@ -90,9 +91,11 @@ export default function UsagePrivacyForm({
   const rowHint = "mt-1 block max-w-lg text-xs leading-relaxed text-grey";
 
   return (
-    /* 用 onSubmit + preventDefault 而不是 form action:React 19 的 form action
-       完成后会自动 reset 表单,把受控开关的 DOM 打回 SSR 初值(状态其实是对的,
-       但界面看起来「保存后自动关掉」)。手动提交不触发这个隐式重置。 */
+    /* onSubmit + preventDefault instead of form action: React 19 auto-
+       resets the form after a form action completes, snapping the
+       controlled switches' DOM back to the SSR initial values (state is
+       actually right, but the UI reads as "saving turned it off"). A
+       manual submit skips the implicit reset. */
     <form
       aria-busy={pending}
       onSubmit={(event) => {

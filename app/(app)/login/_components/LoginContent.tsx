@@ -1,11 +1,16 @@
-/* 登录/注册主体:完整页(/login)与弹窗(@modal/(.)login)共用。
-   showTitle=false 时收起 h1(弹窗自带标题栏,标题随模式变,见 loginModeOf)。
-   GitHub / Google / 邮箱三入口;邮箱部分是无 JS 也能用的原生表单(303 回跳
-   携带 error/next)。已登录访问直接 redirect(next)——在拦截路由里同样生效。
-   版式(20260919 重排):说明文字按模式出现——OAuth 区/分隔线/登录注册页签
-   只在 login/register 渲染(forgot/reset 是纯邮箱流,不再混入无关元素);
-   重置规则小字只出现在找回密码表单下,登录/注册底部保持干净;
-   页签用站内标准 segmented 控件(与排序/视图切换同款)。 */
+/* Login/signup body: shared by the full page (/login) and the modal
+   (@modal/(.)login). showTitle=false collapses the h1 (the modal has
+   its own title bar, retitled per mode — see loginModeOf). Three
+   entries: GitHub / Google / email; the email part is a native form
+   that works without JS (the 303 redirect carries error/next).
+   Signed-in visits redirect straight to next — effective inside
+   intercepted routes too. Layout: explanatory copy appears per mode —
+   the OAuth area/divider/login-signup tabs render only for
+   login/register (forgot/reset are pure email flows, no unrelated
+   elements); the reset-rules fine print sits only under the
+   forgot-password form, keeping login/signup bottoms clean; the tabs
+   use the site's standard segmented control (same as sort/view
+   toggles). */
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -35,13 +40,15 @@ const ERROR_KEYS: Record<string, I18nKey> = {
 
 export type LoginMode = "login" | "register" | "forgot" | "reset";
 
-/* URL 的 mode 收敛(弹窗标题与主体共用同一解析,避免两处口径漂移) */
+/* URL mode convergence (the modal title and body share one parse, so
+   the two never drift). */
 export function loginModeOf(sp: Record<string, string | string[] | undefined>): LoginMode {
   const raw = Array.isArray(sp.mode) ? sp.mode[0] : sp.mode;
   return raw === "register" || raw === "forgot" || raw === "reset" ? raw : "login";
 }
 
-/* 模式 → 标题键(弹窗标题栏 / 完整页 h1 共用) */
+/* Mode -> title key (shared by the modal title bar and the full-page
+   h1). */
 export function loginTitleKey(mode: LoginMode): I18nKey {
   return mode === "register"
     ? "login.titleRegister"
@@ -70,10 +77,12 @@ export default async function LoginContent({
   const errorKey = errorCode ? ERROR_KEYS[errorCode] : undefined;
   const token = (Array.isArray(sp.token) ? sp.token[0] : sp.token) ?? "";
   const sent = (Array.isArray(sp.sent) ? sp.sent[0] : sp.sent) === "1";
-  /* OAuth 与页签只属于登录/注册(forgot/reset 是纯邮箱流) */
+  /* OAuth and the tabs belong to login/signup only (forgot/reset are
+     pure email flows). */
   const emailOnly = mode === "forgot" || mode === "reset";
-  /* next 透传(20260816 补):忘记密码/重置/返回登录全链路携带,
-     否则从这些页面回来登录后回跳目标丢失 */
+  /* next pass-through: carried across forgot/reset/back-to-login —
+     otherwise the redirect target is lost once the user logs in from
+     those pages. */
   const nextQuery = next === "/" ? "" : `&next=${encodeURIComponent(next)}`;
 
   const inputCls =
@@ -138,8 +147,9 @@ export default async function LoginContent({
       )}
 
       {mode === "login" && (
-        /* next 走 action URL query:路由在校验/限速前不解析表单(安全顺序),
-           只从 query 读回跳目标 */
+        /* next rides the action URL query: routes validate/rate-limit
+           before parsing forms (safe ordering) and read the redirect
+           target from the query only. */
         <form method="POST" action={`/api/auth/email/login${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
           <div>
             <label className="mb-1 block font-mono text-xs text-grey" htmlFor="email">

@@ -1,5 +1,7 @@
-/* 连接用量设备主体:完整页(/usage/device)与弹窗(@modal/(.)usage/device)共用。
-   showTitle=false 时收起 h1(弹窗自带标题栏);上方的「← 用量看板」返回链接保留。 */
+/* Connect-device body: shared by the full page (/usage/device) and the
+   modal (@modal/(.)usage/device). showTitle=false collapses the h1
+   (the modal has its own title bar); the "<- usage dashboard" back
+   link above stays. */
 import { Database, MonitorCheck, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";

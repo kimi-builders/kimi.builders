@@ -1,11 +1,15 @@
-/* 社区 feed 右栏:关于 / 用量排行预览 / 编辑精选 / Demo Night / 7 日热门 /
-   社区数据 / 新成员,全部真实数据。「浏览社区」分类导航已收编进 feedbar
-   (排序 seg + 话题 pills),右栏不再重复。
-   用量排行预览:30d 总榜 TOP4 + 当前用户行(不在 TOP4 时追加,蓝 tint 高亮);
-   opt-in 门禁在榜单 SQL 里(未公开的用户天然不在结果集)。冷启动空榜整个不渲染。
-   编辑精选(每周精选 v0):冷启动没有任何精选时整个 widget 不渲染。
-   Demo Night:无 upcoming 场次时整个 widget 不渲染;报名态走 getSessionUser
-   (React cache 与布局壳去重,不多查库)。 */
+/* Community feed rail: about / usage leaderboard preview / editorial
+   featuring / Demo Night / 7-day hot / community stats / new members —
+   all real data. The "browse community" category navigation moved
+   into the feed bar (sort seg + topic pills); the rail doesn't repeat
+   it. Usage leaderboard preview: the 30d overall TOP4 + the current
+   user's row (appended when outside the TOP4, blue-tinted); the opt-in
+   gate lives in the board's SQL (private users are naturally absent
+   from the result set). A cold-start empty board never renders. With
+   zero featured items the widget never renders. Demo Night: no
+   upcoming event means no widget; the RSVP state goes through
+   getSessionUser (deduped with the shell by React cache, no extra
+   query). */
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { TrackClick } from "@/app/(app)/_components/track";
@@ -21,7 +25,7 @@ import { getPublicUsageLeaderboardPreview } from "@/src/lib/usage/public-leaderb
 import { t, type Locale } from "@/src/lib/i18n";
 import Widget from "./Widget";
 
-/* 与用量中心同一套 B/M/k 紧凑格式。 */
+/* The same compact B/M/k format as the usage center. */
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;

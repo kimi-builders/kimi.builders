@@ -1,5 +1,7 @@
-/* 关于页(/about):我们是谁 / 这里有什么(分区内链)/ 口号 / 联系与链接 / 非官方声明。
-   平铺在 (app) 壳内,回落 community 右栏;文案全走 i18n。 */
+/* About page (/about): who we are / what's here (in-site section
+   links) / slogan / contact & links / the unofficial disclaimer. Flat
+   inside the (app) shell with the community rail fallback; all copy
+   goes through i18n. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart3, GalleryVerticalEnd, MessagesSquare, Star } from "lucide-react";

@@ -90,24 +90,28 @@ function duration(seconds: number, zh: boolean): string {
   return zh ? `${minutes} 分钟` : `${minutes}m`;
 }
 
-/* 距现在的小时数;null 视为无限大(从未同步 = 过期)。
-   时钟读数收在这个非组件 helper 里:组件渲染体内直接 Date.now() 会触发
-   react-hooks/purity,而本页是动态服务端组件,每请求重渲染,读时钟是安全的。 */
+/* Hours since the instant; null counts as infinity (never synced =
+   stale). The clock read lives in this non-component helper: calling
+   Date.now() inside a component body trips react-hooks/purity, while
+   this page is a dynamic server component re-rendered per request —
+   reading the clock is safe here. */
 function hoursSince(value: Date | string | null): number {
   if (!value) return Number.POSITIVE_INFINITY;
   return (Date.now() - new Date(value).getTime()) / 3_600_000;
 }
 
-/* 展示层币种折算(静态汇率,仅影响展示):micros(美元)→ 目标币种;
-   折算值 >= 0.01 两位小数,否则四位(小数额保持可见)。
-   未定价/legacy 不走这里,保持「未定价」/「—」。 */
+/* Display-layer currency conversion (static rates, display-only):
+   micros (USD) -> the target currency; two decimals when the converted
+   value >= 0.01, else four (small amounts stay visible). Unpriced /
+   legacy rows never pass through here — they keep "unpriced" / "—". */
 function fmtCost(micros: number, ccy: UsageDisplayCurrency): string {
   const { rate, symbol } = USAGE_DISPLAY_CURRENCIES[ccy];
   const value = (micros / 1e6) * rate;
   return `${symbol}${value >= 0.01 ? value.toFixed(2) : value.toFixed(4)}`;
 }
 
-/* 缓存命中率展示:ratio 0..1 → "87.3%";null(无输入侧流量)→ —。 */
+/* Cache hit-rate display: ratio 0..1 -> "87.3%"; null (no input-side
+   traffic) -> —. */
 function fmtHitRate(rate: number | null): string {
   return rate === null ? "—" : `${(rate * 100).toFixed(1)}%`;
 }
@@ -131,11 +135,12 @@ function zeroTrendSlot(key: string): UsageTrendDay {
   };
 }
 
-/* 趋势补零:按粒度生成 [from, to) 的完整本地时间格序列。
-   纯 UTC 数学:localMs = utcMs + tzOffset,再用 getUTC* 读移位后的墙钟。
-   hour → "YYYY-MM-DD HH:00"(24h 滚动从 from 之后第一个整点开始);
-   day → "YYYY-MM-DD";week → 本地周一的 "YYYY-MM-DD"。与 query.ts 的
-   trendTimeExpr 输出一一对应。 */
+/* Trend zero-fill: generate the complete local time-slot sequence for
+   [from, to) at the grain. Pure UTC math: localMs = utcMs + tzOffset,
+   then read the shifted wall clock via getUTC*. hour -> "YYYY-MM-DD
+   HH:00" (a 24h roll starts at the first whole hour after from); day ->
+   "YYYY-MM-DD"; week -> the local Monday's "YYYY-MM-DD". Maps 1:1 onto
+   query.ts's trendTimeExpr output. */
 function fillTrend(
   data: UsageTrendDay[],
   fromIso: string,
@@ -201,7 +206,8 @@ function rawQueryString(raw: RawParams): string {
   return params.toString();
 }
 
-/* 页内导航链接:从当前 query 出发改少量 key,其余参数(metric/hm/ps/cols…)原样保留。 */
+/* In-page nav links: change a few keys off the current query; every
+   other param (metric/hm/ps/cols...) survives. */
 function hrefWith(currentQuery: string, changes: Record<string, string | null>): string {
   const params = new URLSearchParams(currentQuery);
   for (const [key, value] of Object.entries(changes)) {
@@ -212,7 +218,8 @@ function hrefWith(currentQuery: string, changes: Record<string, string | null>):
   return text ? `/usage?${text}` : "/usage";
 }
 
-/* 环比小注:正 emerald / 负 red / 上期为零 → 「—」。 */
+/* Period-over-period note: positive emerald / negative red / zero
+   previous -> "—". */
 function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   const title = zh ? "环比上一等长周期" : "vs the previous equal-length period";
   if (prev <= 0) {
@@ -233,7 +240,8 @@ function deltaNote(cur: number, prev: number, zh: boolean): ReactNode {
   );
 }
 
-/* Hero 卡右上角的环比 pill(中性色,TrendingUp/Down 表方向);上一周期为零不显示。 */
+/* The hero card's period pill (neutral colors; TrendingUp/Down for
+   direction); a zero previous period shows nothing. */
 function DeltaPill({ cur, prev, zh }: { cur: number; prev: number; zh: boolean }) {
   if (prev <= 0) return null;
   const pct = ((cur - prev) / prev) * 100;
@@ -249,7 +257,8 @@ function DeltaPill({ cur, prev, zh }: { cur: number; prev: number; zh: boolean }
   );
 }
 
-/* 命中率状态 pill:>=85% 良好(mint)/ 60–85% 一般(amber)/ <60% 偏低(red)。 */
+/* Hit-rate status pill: >=85% good (mint) / 60-85% fair (amber) /
+   <60% low (red). */
 function HitRatePill({ rate, zh }: { rate: number; zh: boolean }) {
   const tone =
     rate >= 0.85
@@ -264,8 +273,9 @@ function HitRatePill({ rate, zh }: { rate: number; zh: boolean }) {
   );
 }
 
-/* 分段切换(趋势/热图指标):样式常量在 seg-classes.ts,与筛选栏时间分段、
-   明细粒度、币种切换共用同一套容器+激活态。 */
+/* Segmented switches (trend/heatmap metric): style constants in
+   seg-classes.ts, shared with the filter bar's time seg, the record
+   grain, and the currency toggle. */
 function SegLinks({
   items,
   label,
@@ -318,7 +328,8 @@ function HeroCard({
   );
 }
 
-/* 指标带格子:2/3/5 列响应式,行间发丝线 + 桌面列间分隔线。 */
+/* Metric band cells: 2/3/5 responsive columns, hairlines between rows
+   + column separators on desktop. */
 const STRIP_CELL =
   "border-line px-4 py-3 [&:nth-child(n+3)]:border-t sm:[&:nth-child(-n+3)]:border-t-0 sm:[&:nth-child(n+4)]:border-t lg:[&:nth-child(-n+5)]:border-t-0 lg:[&:not(:nth-child(5n+1))]:border-l";
 
@@ -420,8 +431,10 @@ export default async function UsagePage({
   const zh = locale === "zh";
 
   if (!user) {
-    /* 未登录(20260821 评审):公开只读概览替代整页登录门——用量榜是本站
-       最有特色的橱窗,聚合数据本就来自 opt-in 公开缓存,个人面板仍需登录。 */
+    /* Signed out: a public read-only overview replaces the full-page
+       login gate — the leaderboard is the site's most distinctive
+       showcase and its aggregates already come from the opt-in public
+       cache; the personal dashboard still needs login. */
     return <UsagePublicView locale={locale} />;
   }
 
@@ -444,11 +457,13 @@ export default async function UsagePage({
     uploadProject: settings.uploadProject,
     tzOffsetMinutes: tz,
   });
-  /* 热图双模式:heatmode=week 时按 heatweek(用户时区的周一日期)另取单周网格,
-     页面其余区块仍跟随主范围。 */
+  /* Heatmap dual mode: with heatmode=week, a single-week grid is
+     fetched per heatweek (the Monday date in the user's timezone) while
+     the rest of the page still follows the main range. */
   const heatModeParam = Array.isArray(raw.heatmode) ? raw.heatmode[0] : raw.heatmode;
   const heatWeekParam = Array.isArray(raw.heatweek) ? raw.heatweek[0] : raw.heatweek;
-  /* 以主范围终点为「本周」锚点(预设范围≈请求时刻;历史自定义范围翻到其末尾所在周)。 */
+  /* "This week" anchors to the main range's end (preset ranges ~= now;
+     historical custom ranges page to the week containing their end). */
   const currentWeek = weekWindowFor(filters.to.getTime(), tz);
   const activeWeek = heatModeParam === "week"
     ? parseWeekKey(heatWeekParam, tz) ?? currentWeek
@@ -669,7 +684,8 @@ export default async function UsagePage({
   ).map((item) => ({
     key: item.key,
     label: item.label,
-    /* hm 缺省时回落到页面 metric;与页面 metric 相同的项直接清掉 hm。 */
+    /* hm falls back to the page metric when absent; an hm equal to the
+       page metric just clears hm. */
     href: hrefWith(query, { hm: item.key === filters.metric ? null : item.key }),
     active: heatMetric === item.key,
   }));

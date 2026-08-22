@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-/* 把浏览器本地时区写进 kb_tz cookie(分钟,UTC 以东为正,北京 +480),
-   服务端按它做本地日界/分时聚合。只在缺失或变化时写入并 refresh 一次;
-   刷新后 cookie 与新值一致,条件不再成立,保证不会循环刷新。 */
+/* Writes the browser's timezone into the kb_tz cookie (minutes, east
+   of UTC positive, Beijing +480); the server does local day boundaries
+   and hourly aggregation by it. Writes + one refresh only when missing
+   or changed; after the refresh the cookie matches and the condition
+   fails — no refresh loop. */
 export default function TzReporter() {
   const router = useRouter();
   useEffect(() => {

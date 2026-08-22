@@ -1,8 +1,11 @@
-/* 文章详情右栏(20260822 详情瘦身):hero 只留「类型 · 章 · 日期 + 标题 +
-   摘要」,元数据全部搬到这里——本文 META(类型/章/日期/作者/时长/语言)+
-   产品 + 职业 + 标签,全部可点回探索透镜。系列信息现阶段不显示。
-   数据:getArticleRailMeta(React cache 与同请求调用去重);查无 → 整栏不渲染
-   (页面层已 404,右栏不撑空壳)。 */
+/* Article detail rail (detail slimmed): the hero keeps only "kind ·
+   chapter · date + title + summary" — all metadata moved here: this
+   article's META (kind/chapter/date/author/duration/language) +
+   products + roles + tags, all clickable back into the explore
+   lenses. Series info stays unshown for now. Data:
+   getArticleRailMeta (React cache dedupes per-request calls); a miss
+   -> the whole rail never renders (the page already 404s; the rail
+   doesn't prop up an empty shell). */
 import Link from "next/link";
 import { Clock3 } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";
@@ -13,7 +16,8 @@ import { KB_ROLES } from "@/src/lib/kb-roles";
 import type { Locale } from "@/src/lib/i18n";
 import Widget from "./Widget";
 
-/* META 行:label 左 paper 右,值可为链接 */
+/* META row: label left, paper-colored value right; values may be
+   links. */
 function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <li className="flex items-baseline justify-between gap-2">

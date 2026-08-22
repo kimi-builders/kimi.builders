@@ -1,7 +1,11 @@
-/* 社区用量榜:公开页,浏览无需登录;未登录不渲染「我的排名」卡,榜单内容与登录态一致。
-   只展示主动 opt-in 成员的周期聚合(token 总量 + 活跃天数 + TOP 50 候选池内的预估费用),
-   项目名、设备、时段等明细维度不进入查询,页面上也无从渲染。
-   结构:资料页风格的概览 + 我的排名 + 可切换的总榜/Agent/模型单一主榜。 */
+/* Community usage leaderboard: a public page, browsing needs no login;
+   signed out just omits the "my rank" card — the board itself is
+   identical. Shows only opt-in members' period aggregates (token
+   totals + active days + estimated cost inside the TOP 50 candidate
+   pool); project/device/time detail dimensions never enter the query,
+   so the page has nothing to render them from. Structure: a
+   profile-style overview + my rank + one switchable main board
+   (overall/agent/model). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -39,14 +43,17 @@ import { usageSourceLabel } from "@/src/lib/usage/labels";
 import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 
-/* 榜单筛选信息密度高，选中态用品牌蓝浅底而不是 paper/bg 反色块；
-   深浅主题均由 --color-blue token 派生，EN 长标签不会形成沉重黑块。 */
+/* Board filters are information-dense: the selected state uses a light
+   brand-blue fill instead of a paper/bg inverted block; both themes
+   derive from the --color-blue token, and long EN labels never form
+   heavy black slabs. */
 const LEADERBOARD_SEG_ACTIVE =
   "bg-blue/10 text-blue ring-1 ring-inset ring-blue/20";
 
 export const metadata: Metadata = { title: "社区用量榜 — kimi.builders" };
 
-/* 与 /usage 看板同款的紧凑数字:1.2k / 3.4M / 5.6B;精确值放 title。 */
+/* Compact numbers matching the /usage dashboard: 1.2k / 3.4M / 5.6B;
+   exact values ride in the title. */
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -54,7 +61,9 @@ function compact(value: number): string {
   return value.toLocaleString("en-US");
 }
 
-/* 榜单估费来自自报聚合，默认使用约数，避免用小数位制造不必要的确定感。 */
+/* Board cost estimates come from self-reported aggregates and default
+   to approximations — decimal places must not manufacture false
+   precision. */
 function fmtCost(micros: number): string {
   return formatApproxUsdMicros(micros, { compactLarge: true });
 }
@@ -234,7 +243,8 @@ export default async function UsageLeaderboardPage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
 
-  /* 我的排名需要知道本人是否 opt-in;设置读取失败就藏掉卡片,不影响榜单。 */
+  /* My rank needs to know whether the viewer opted in; a settings read
+     failure hides the card and leaves the board untouched. */
   const settingsPromise = user
     ? getUsageSettings(user.id).catch(() => null)
     : Promise.resolve(null);
@@ -280,8 +290,10 @@ export default async function UsageLeaderboardPage({
   }
   const settings = await settingsPromise;
 
-  /* 我的排名:同分不并列(主指标 → 副指标 → handle 字典序的稳定全序);
-     token/活跃天数在全量 opt-in 上取名次,费用只在 TOP 50 候选池内取名次。 */
+  /* My rank: no shared ranks (the stable total order primary ->
+     secondary -> handle lexicographic); token/active-day ranks come
+     from the full opt-in aggregate, cost ranks only within the TOP 50
+     candidate pool. */
   let mine: { tokens: string; days: string; cost: string; hasData: boolean } | null = null;
   if (user && settings?.showOnLeaderboard && data) {
     const tokenRank = usageLeaderboardRank(data.all, user.id, "tokens");
@@ -309,7 +321,8 @@ export default async function UsageLeaderboardPage({
     locale,
     period === "24h" ? "lb.period24" : period === "7d" ? "lb.period7" : "lb.period30",
   );
-  /* 周期页签保留当前榜型与维度;榜型和维度选择都进入 URL,可刷新/分享。 */
+  /* Period tabs keep the current board type and dimension; both board
+     and dimension selections enter the URL — refreshable, shareable. */
   const hrefFor = (over: {
     period?: UsageLeaderboardPeriod;
     board?: BoardKind;

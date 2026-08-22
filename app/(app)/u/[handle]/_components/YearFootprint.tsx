@@ -1,14 +1,18 @@
 "use client";
 
-/* 个人主页年度构建足迹:GitHub 风格 53 列 × 7 行每日 token 贡献图。
-   网格/月份标签由 year-grid.ts 在服务端组好,本组件只负责渲染:
-   - 桌面:通栏 53 列(最大 860px,GitHub 密度);
-   - 移动端(sm 以下):拆成前后两个半年页,← → 按钮或左右滑动切换,
-     默认落在含当前月的后半年页(格子从 ~5px 回到 ~12px);
-   6 档蓝阶与用量中心热图同阈值;悬停/聚焦出角标 tooltip(日期 + 确切 tokens)。
-   20260819:tooltip 改为跟随被 hover 格子的锚定卡(与用量中心同一套
-   tooltipPos 定位 + kb-data-tooltip 表面/箭头),不再是钉在右上角的固定卡。
-   可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。 */
+/* Profile yearly build footprint: a GitHub-style 53x7 daily token
+   contribution graph. The grid and month labels are assembled
+   server-side by year-grid.ts; this component only renders:
+   - desktop: all 53 columns (max 860px, GitHub density);
+   - mobile (below sm): split into two half-year pages with <- ->
+     buttons or swipe, defaulting to the half containing the current
+     month (cells go from ~5px back to ~12px);
+   the 6-step blue ramp shares thresholds with the usage heatmap;
+   hover/focus shows a tooltip (date + exact tokens). The tooltip is an
+   anchored card following the hovered cell (the same tooltipPos +
+   kb-data-tooltip surface/arrow as the usage center), not a fixed
+   corner card. The visibility gate lives on the page (renders only for
+   the owner or show_on_leaderboard=1). */
 import { useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { compactNumber } from "@/src/lib/format";
@@ -24,7 +28,8 @@ const MONTH_SHORT_EN = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-/* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值。 */
+/* The same 6-step thresholds as the usage center's
+   UsageHeatmapGrid. */
 const STEPS = [
   "bg-viz-sequential-1",
   "bg-viz-sequential-2",
@@ -34,7 +39,8 @@ const STEPS = [
   "bg-viz-blue-primary",
 ];
 
-/* 与用量中心同一套紧凑格式(compactNumber:zh 万/亿,en K/M/B,两页读法一致)。 */
+/* The same compact format as the usage center (compactNumber: zh
+   units of 10k/100M, en K/M/B — both pages read identically). */
 function compact(value: number, zh: boolean): string {
   return compactNumber(value, zh ? "zh" : "en");
 }
@@ -73,7 +79,8 @@ export default function YearFootprint({
   } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  /* 移动端分页:53 周拆成 27 + 26 两页,默认后一页(含当前月/今天)。 */
+  /* Mobile paging: 53 weeks split into 27 + 26 pages, defaulting to
+     the latter (containing the current month/today). */
   const PAGE_SPLIT = 27;
   const pages = [grid.weeks.slice(0, PAGE_SPLIT), grid.weeks.slice(PAGE_SPLIT)];
   const [page, setPage] = useState(pages.length - 1);
@@ -195,8 +202,8 @@ export default function YearFootprint({
       </div>
 
       {hovered && (
-        /* 锚定数据卡(20260819):跟随被 hover 格子,与用量中心同一表面
-           (kb-data-tooltip + viz-surface + 箭头) */
+        /* Anchored data card: follows the hovered cell, the same surface
+           as the usage center (kb-data-tooltip + viz-surface + arrow). */
         <div
           role="tooltip"
           className="kb-data-tooltip pointer-events-none absolute z-20 w-[176px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"

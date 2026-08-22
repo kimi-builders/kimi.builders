@@ -1,8 +1,12 @@
-/* 个人主页 /u/[handle](Kimi Design 改造):身份 Hero(头像/统计带)+ 构建足迹
-   (通栏 53 周贡献图)+ 动态 Tab 卡(帖子/评论/作品 + 用量/Agent/偏好)。
-   本人视角多「编辑资料」入口,且能看到自己的私密帖(带标);访客只统计/展示公开内容。
-   用量相关块(统计带/足迹/用量·Agent·偏好 tab)仅本人或对方自愿公开
-   (usage_settings.show_on_leaderboard=1)时渲染,否则整块缺席(无负面标记)。 */
+/* Profile page /u/[handle]: identity hero (avatar/stats band) + the
+   build footprint (a full-width 53-week contribution graph) + dynamic
+   tab cards (posts/comments/works + usage/agent/preferences). The
+   owner's view adds an "edit profile" entry and shows their private
+   posts (labeled); visitors count and display public content only.
+   Usage blocks (stats band/footprint/usage-agent-preferences tabs)
+   render only for the owner or when the user opted in
+   (usage_settings.show_on_leaderboard=1) — otherwise the whole block
+   is absent (no negative signaling). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
@@ -67,7 +71,8 @@ function durationText(seconds: number, zh: boolean): string {
   return zh ? `${minutes} 分钟` : `${minutes}m`;
 }
 
-/* 与用量中心同一套 B/M/k 紧凑格式(同一数字两个页面读法一致)。 */
+/* The same compact B/M/k format as the usage center (one number reads
+   the same on both pages). */
 function compact(value: number): string {
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -75,7 +80,8 @@ function compact(value: number): string {
   return value.toLocaleString("en-US");
 }
 
-/* 统计带分隔线:2/3/5 列响应式,与用量中心指标带同一套 nth-child 规则。 */
+/* Stats band separators: 2/3/5 responsive columns, the same nth-child
+   rules as the usage center's metric band. */
 const STRIP_CELL =
   "border-line px-4 py-3 [&:nth-child(n+3)]:border-t sm:[&:nth-child(-n+3)]:border-t-0 sm:[&:nth-child(n+4)]:border-t lg:[&:nth-child(-n+5)]:border-t-0 lg:[&:not(:nth-child(5n+1))]:border-l";
 
@@ -89,14 +95,18 @@ export async function generateMetadata({
   const { handle } = await params;
   const p = await getProfileByHandle(handle);
   if (!p) return { title: "kimi.builders" };
-  /* 显示名对访客隐藏时,标签页标题/分享预览同样只落 @handle(本人视角不受限) */
+  /* When the display name is hidden from visitors, the tab title and
+     share previews also carry only @handle (the owner's own view is
+     unrestricted). */
   const me = await getSessionUser();
   const view = profileDisplay(p, me?.id === p.id);
   return { title: `${view.displayName} (@${p.handle}) — kimi.builders` };
 }
 
-/* Tab 空态:虚线图标 tile + 标题 + 说明 + CTA(CTA 仅本人)。
-   访客视角的说明省略(标题本身就是「还没有…」,再放一句同义文案是重复)。 */
+/* Tab empty state: a dashed icon tile + title + description + CTA (the
+   CTA is owner-only). The visitor view omits the description (the
+   title already says "nothing yet..."; a synonymous line would
+   repeat it). */
 function EmptyPane({
   icon: Icon,
   title,
@@ -154,11 +164,14 @@ export default async function ProfilePage({
   }
 
   const self = me?.id === profile.id;
-  /* 资料字段级隐私(20260829):头像/显示名/简介的访客展示口径;本人视角不受限 */
+  /* Per-field profile privacy: the visitor-facing display rules for
+     avatar/display name/bio; the owner's own view is unrestricted. */
   const view = profileDisplay(profile, self);
-  /* 用量块门禁:本人恒可见;访客仅当对方 opt-in 公开。 */
+  /* Usage-block gate: always visible to the owner; visitors only when
+     the user opted in. */
   const usageVisible = self || (await isUsagePublic(profile.id));
-  /* 用量/Agent/偏好三个 tab 同属隐私聚合,共用 usageVisible 门禁 */
+  /* The usage/agent/preferences tabs are all private aggregates and
+     share the usageVisible gate. */
   const activeTab =
     tab === "comments" || tab === "works"
       ? tab
@@ -178,7 +191,8 @@ export default async function ProfilePage({
     { tab: activeTab },
   );
   const usageQueryPlan = profileUsageQueryPlan(activeTab, usageVisible);
-  /* 分时热图/足迹的「本地」跟浏览器 kb_tz cookie(同用量看板);无 cookie 按 GMT+0 */
+  /* The heatmap/footprint's "local" follows the browser's kb_tz cookie
+     (like the usage dashboard); without it, GMT+0. */
   const store = await cookies();
   const parsedTz = Number(store.get("kb_tz")?.value);
   const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
@@ -205,13 +219,16 @@ export default async function ProfilePage({
             tzOffsetMinutes: tz,
             uploadProject: ownerSettings.uploadProject,
             retentionDays: ownerSettings.retentionDays,
-            /* 快照默认 zh(海报口径);主页按 UI 语言,否则 EN 界面会落出「未记录」 */
+            /* The snapshot defaults to zh (poster convention); the page
+               follows the UI locale — an EN interface would otherwise read
+               "not recorded". */
             zh,
           })
         : Promise.resolve(null),
       getPool().query(worksCountQ.sql, worksCountQ.args).then(([rows]) => rows),
     ]);
-  /* 用量 tab 的「近 30 天」迷你面板只在激活时取数 */
+  /* The usage tab's "last 30 days" mini panel fetches only when
+     active. */
   const snapshot30: UsageShareSnapshot | null =
     activeTab === "usage" && usageVisible && ownerSettings
       ? await getUsageShareSnapshot({
@@ -227,8 +244,9 @@ export default async function ProfilePage({
   const today = localTodayYmd(tz);
   const footprint = daily ? buildYearGrid(daily, today) : null;
   const fsum = daily ? footprintSummary(daily, today) : null;
-  /* 用量 tab 的 30 天日序列:snapshot 的 stacked cells → UsageTrendDay
-     (输入含缓存写 / 缓存读 / 输出含推理;请求/会话等维度日粒度没有,置 0)。 */
+  /* The usage tab's 30-day series: the snapshot's stacked cells ->
+     UsageTrendDay (input incl. cache write / cache read / output incl.
+     reasoning; request/session dimensions have no daily grain, zero). */
   const trend30: UsageTrendDay[] = snapshot30
     ? snapshot30.main.cells.map((c) => ({
         day: c.key,

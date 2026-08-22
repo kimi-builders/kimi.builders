@@ -1,6 +1,8 @@
-/* 管理台 /admin(20260830 社区治理):仅 admin/mod 可访问,其他人 404。
-   四个页签:内容治理(帖子/评论/作品,按状态筛选)/ 用户治理(可搜索)/
-   审计日志(倒序翻页)/ 位置洞察。所有写操作在 actions.ts 逐个鉴权并写审计。 */
+/* Admin console /admin: admin/mod only, everyone else gets 404. Four
+   tabs: content moderation (posts/comments/works, filterable by
+   state) / user moderation (searchable) / audit log (paged, newest
+   first) / position insights. Every write in actions.ts
+   authenticates individually and leaves an audit row. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -53,7 +55,8 @@ export default async function AdminPage({
   }>;
 }) {
   const user = await getSessionUser();
-  /* 非管理角色一律 404(不暴露管理台存在性) */
+  /* Non-moderator roles all get 404 (never revealing the console's
+     existence). */
   if (!user || !canModerate(user.role)) notFound();
   const locale = await getLocale(user);
   const admin = isAdmin(user.role);

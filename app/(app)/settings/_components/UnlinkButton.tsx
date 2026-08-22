@@ -1,8 +1,9 @@
 "use client";
 
-/* 解绑按钮(设置页「账号」页签,已绑定的 provider 行内):
-   提交前 confirm 兜底;守卫(唯一登录方式)在服务端事务里重查。
-   成功 → toast + router.refresh();失败 → 行内错误。 */
+/* Unlink button (the settings "account" tab, on each bound provider
+   row): a confirm before submit; the last-login-method guard is
+   re-checked in the server transaction. Success -> toast +
+   router.refresh(); failure -> inline error. */
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";

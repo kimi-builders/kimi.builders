@@ -1,12 +1,15 @@
 "use client";
 
-/* 应用内路由加载态(20260815 评审):挂在 (app) 组的 loading 边界上,
-   三栏壳(顶栏/左栏/右栏)在软导航时不换脸,只有主列进加载态——
-   取代此前根级 BrandLoading 整页置换造成的"闪一下全屏 logo"。
-   形态与 BrandLoading 同源(小号瓷砖标 + LOADING.),密度降为列内组件;
-   首次进站/直开 URL 的外层边界仍走根级 BrandLoading 海报。
-   慢加载自救:>5s 出现「重试」(router.refresh 重取本路由),
-   加载态不再是无出口的黑洞。 */
+/* In-app route loading state: mounted on the (app) group's loading
+   boundary — the three-column shell (top/left/right) keeps its face
+   during soft navigation and only the main column enters the loading
+   state, replacing the old root-level BrandLoading full-page swap that
+   flashed a fullscreen logo. Same visual family as BrandLoading (small
+   tile mark + LOADING.) at in-column component density; first visits
+   and direct URLs still hit the root-level BrandLoading poster via the
+   outer boundary. Slow-load self-help: past 5s a "retry" appears
+   (router.refresh re-fetches the route) — the loading state is never a
+   dead end. */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";

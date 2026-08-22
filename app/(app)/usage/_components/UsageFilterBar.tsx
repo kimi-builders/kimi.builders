@@ -42,15 +42,18 @@ const RANGE_CHIPS: { id: string; zh: string; en: string }[] = [
   { id: "90d", zh: "90D", en: "90D" },
 ];
 
-/* 服务端 csvList 最多保留 20 个值;选项更多时「全选」等价于不带参数(无筛选)。 */
+/* The server's csvList keeps at most 20 values; with more options,
+   "select all" equals carrying no param (unfiltered). */
 const MAX_EXPLICIT_VALUES = 20;
 
 function parseCsv(csv: string | undefined): string[] {
   return csv ? csv.split(",").filter(Boolean) : [];
 }
 
-/* 单维度多选下拉:先在本地暂存勾选,点击“应用”后只触发一次服务端导航。
-   空集 = 参数缺席 = 不限;外点/Escape 关闭且不会误提交草稿。 */
+/* One dimension's multi-select dropdown: selections stage locally and
+   "apply" triggers exactly one server navigation. An empty set = the
+   param is absent = unfiltered; outside click/Escape closes without
+   submitting drafts. */
 function DimensionDropdown({
   dimension,
   selected,
@@ -180,9 +183,12 @@ function DimensionDropdown({
   );
 }
 
-/* 筛选栏:时间分段 + 维度多选下拉(主:Agent/模型/项目;次:推理强度/Agent 版本/设备,
-   收进「更多筛选」虚线 chip)。所有状态都在 URL 上(可分享/可刷新);任何筛选变化把
-   page 重置回 1,metric/hm/ps 等原样保留。trailing 渲染在行右端(币种切换)。 */
+/* Filter bar: time seg + dimension dropdowns (primary: agent/model/
+   project; secondary: reasoning effort/agent version/device, tucked
+   behind a "more filters" dashed chip). All state lives in the URL
+   (shareable, refresh-safe); any filter change resets page to 1 while
+   metric/hm/ps survive. trailing renders at the row's right end (the
+   currency toggle). */
 export default function UsageFilterBar({
   options,
   applied,
@@ -204,7 +210,8 @@ export default function UsageFilterBar({
   const [customOpen, setCustomOpen] = useState(applied.range === "custom");
   const [customError, setCustomError] = useState(false);
   const [pending, startTransition] = useTransition();
-  /* 次级维度(推理强度/Agent 版本/设备)默认收起;已有激活选择时首渲染即展开。 */
+  /* Secondary dimensions (reasoning effort/agent version/device) start
+     collapsed; already-active selections expand on first render. */
   const [moreOpen, setMoreOpen] = useState(
     () =>
       parseCsv(applied.efforts).length +
@@ -290,7 +297,8 @@ export default function UsageFilterBar({
     .filter((item) => item.selected.length > 0);
   const activeCount = activeSelections.reduce((sum, item) => sum + item.selected.length, 0);
 
-  /* 主维度常显,次维度收进「更多筛选」虚线 chip。 */
+  /* Primary dimensions stay visible; secondary ones tuck behind the
+     "more filters" dashed chip. */
   const PRIMARY_KEYS: Dimension["key"][] = ["sources", "models", "projects"];
   const primaryDimensions = dimensions.filter((d) => PRIMARY_KEYS.includes(d.key));
   const secondaryDimensions = dimensions.filter((d) => !PRIMARY_KEYS.includes(d.key));
@@ -313,8 +321,9 @@ export default function UsageFilterBar({
     />
   );
 
-  /* 日期输入是非受控的:键入只动 DOM,提交时经 FormData 读取;
-     key 绑定已应用的 URL 值,导航后自动重挂载预填。 */
+  /* Date inputs are uncontrolled: typing only touches the DOM, read
+     via FormData on submit; the key binds the applied URL value so
+     navigation remounts them prefilled. */
   const applyCustomRange = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);

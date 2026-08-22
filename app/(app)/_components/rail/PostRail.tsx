@@ -1,8 +1,11 @@
-/* 帖子详情右栏(/community/[id]):帖子元数据卡(作者/发布时间/板块/顶·评论数)
-   + 同板块近期相关帖子 + AI 召唤预留卡位(默认不渲染,见 AiSummonSlot)。
-   帖子数据复用详情页的 getPost(React cache 按请求去重,不重查一套)。
-   私密帖:详情页对非作者 404,右栏同样不渲染(布局壳在 notFound 时仍会渲染,
-   不能借右栏把私密帖元数据漏给外人)。 */
+/* Post detail rail (/community/[id]): the post metadata card
+   (author/published time/category/ups & comments) + recent related
+   posts in the category + the reserved AI summon slot (not rendered by
+   default, see AiSummonSlot). Post data reuses the detail page's
+   getPost (deduped per request by React cache — no second query set).
+   Private posts: the detail page 404s for non-authors and the rail
+   follows (the layout shell still renders through notFound — the rail
+   must never leak a private post's metadata). */
 import Link from "next/link";
 import { ArrowBigUp, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";

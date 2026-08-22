@@ -1,8 +1,9 @@
 "use client";
 
-/* 资料表单(设置页「资料」页签):显示名 / handle / 简介 / 头像 URL。
-   保存成功 → toast + router.refresh()(顶栏头像、主页等处的资料随即更新);
-   失败 → 行内错误(handle 占用/格式、长度、URL 校验都在服务端)。 */
+/* Profile form (the settings "profile" tab): display name / handle /
+   bio / avatar URL. Success -> toast + router.refresh() (the top-bar
+   avatar and profile update at once); failure -> inline errors (handle
+   taken/format, lengths, URL validation all server-side). */
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -15,8 +16,9 @@ import { toast } from "@/src/lib/toast";
 import { updateProfileAction, type SettingsState } from "../actions";
 import AvatarField from "./AvatarField";
 
-/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动。
-   LABEL_CLS 自带 mb-1.5,原输入框上的 mt-1.5 相应移除(同距不叠双份)。 */
+/* Control styles consolidated into the shared form-classes; aliases
+   kept so call sites don't move. LABEL_CLS carries mb-1.5, so the old
+   mt-1.5 on inputs was removed (same gap, not doubled). */
 const inputCls = INPUT_CLS;
 const labelCls = LABEL_CLS;
 
@@ -27,7 +29,8 @@ export default function ProfileForm({
 }: {
   initial: { handle: string; name: string; bio: string; avatarUrl: string };
   locale: Locale;
-  /* 服务端判定:当前头像为站内自传 → 显示「恢复默认」 */
+  /* Server-decided: an on-site uploaded avatar shows "reset to
+     default". */
   hasCustomAvatar: boolean;
 }) {
   const [state, formAction, pending] = useActionState<
@@ -41,7 +44,7 @@ export default function ProfileForm({
       toast(t(locale, "set.saved"));
       router.refresh();
     }
-    // state 每次提交都是新对象,仅在 ok 时反馈一次
+    // state is a fresh object per submit; feedback fires only on ok
   }, [state, locale, router]);
 
   return (

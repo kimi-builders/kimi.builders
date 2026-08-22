@@ -1,9 +1,11 @@
 "use client";
 
-/* 治理工具条(仅 admin/mod 渲染,详情页与 /admin 列表共用):
-   屏蔽(填原因)/ 解除屏蔽;软删(仅帖子/评论);彻底删除(仅 admin,两次确认,
-   文案明示不可恢复)。操作链路:等待态 → toast 反馈 → router.refresh();
-   详情页硬删成功后跳 redirectAfter(目标已不存在)。 */
+/* Moderation toolbar (rendered for admin/mod; shared by detail pages
+   and the /admin lists): hide (with a reason) / unhide; soft delete
+   (posts/comments only); hard delete (admin only, double-confirmed,
+   copy states the irreversibility). Chain: pending -> toast ->
+   router.refresh(); a successful hard delete on a detail page jumps to
+   redirectAfter (the target no longer exists). */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -28,10 +30,12 @@ export default function ModToolbar({
   targetId: number;
   hidden: boolean;
   isAdmin: boolean;
-  /* 详情页作者本人已有自助软删,治理条隐藏同义入口以避免重复。 */
+  /* Detail pages already offer the author's own soft delete; the
+     toolbar hides the duplicate entry. */
   showSoftDelete?: boolean;
   locale: Locale;
-  /* 硬删成功后的跳转(详情页传入;列表缺省原地刷新) */
+  /* Post-hard-delete redirect (passed by detail pages; lists refresh
+     in place by default). */
   redirectAfter?: string;
 }) {
   const router = useRouter();
@@ -85,7 +89,7 @@ export default function ModToolbar({
   };
 
   const hardDelete = () => {
-    /* 二次确认,两次都明示不可恢复 */
+    /* Second confirmation; both state the irreversibility. */
     if (!window.confirm(t(locale, "mod.hardConfirm1"))) return;
     if (!window.confirm(t(locale, "mod.hardConfirm2"))) return;
     void run(hardDeleteAction, base(), t(locale, "toast.deleted"), () => {

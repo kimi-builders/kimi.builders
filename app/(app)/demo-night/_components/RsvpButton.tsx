@@ -1,7 +1,9 @@
 "use client";
 
-/* Demo Night 报名按钮:乐观翻转(文案 + 图标),成功 toast 并 router.refresh()
-   换到场名单,失败回滚。按钮旁的「报名即公开」提示由页面静态渲染。 */
+/* Demo Night RSVP button: optimistic flip (copy + icon); success
+   toasts and router.refresh()es the attendance list, failure rolls
+   back. The "RSVPing is public" hint beside it renders statically on
+   the page. */
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, CalendarPlus } from "lucide-react";

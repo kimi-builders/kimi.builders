@@ -3,9 +3,11 @@
 import { useId, useRef } from "react";
 import { CircleHelp, ShieldCheck, X } from "lucide-react";
 
-/* 页头「隐私与数据边界」说明弹窗:原页头常驻副标题(Kimi-first,只接收 token、
-   时间与计数…)收进此处,页头只留问号图标触发器;结构照 UsageMethodologyDialog
-   (原生 <dialog> + showModal,点背景关闭,Esc 走原生)。 */
+/* The header's "privacy & data boundary" dialog: the old permanent
+   subtitle (Kimi-first, only tokens, timestamps, and counts...) moved
+   in here, leaving a question-mark trigger in the header; structure
+   follows UsageMethodologyDialog (native <dialog> + showModal,
+   backdrop click closes, Esc is native). */
 export default function UsagePrivacyDialog({ zh }: { zh: boolean }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = `usage-privacy-${useId().replaceAll(":", "")}`;

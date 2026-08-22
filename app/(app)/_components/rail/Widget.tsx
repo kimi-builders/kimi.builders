@@ -1,6 +1,7 @@
-/* 右栏 widget 的统一外壳:圆角细线卡片 + mono 大字距小标签。
-   各上下文 rail(community/post/work/awesome/blog/learn)共用。
-   note = 标题旁的灰色小注;action = 右侧链接/按钮。 */
+/* The unified rail widget shell: a rounded hairline card + a small
+   mono wide-tracked label. Shared by every context rail
+   (community/post/work/awesome/blog/learn). note = the grey side note
+   beside the title; action = the right-hand link/button. */
 export default function Widget({
   title,
   note,

@@ -1,9 +1,11 @@
 "use client";
 
-/* <lg 底部标签栏(主流 app 布局):社区 / 探索 / 作品 / 发帖 / 用量 / 我的。
-   完整功能、通知、设置与偏好从 MobileTopBar 的导航抽屉进入。
-   桌面三栏壳(LeftNav/RightSidebar)在移动端整体让位给它。
-   fixed 定位 + safe-area 内边距(iPhone home 条);主区在 (app)/layout 里补 pb-24 防遮挡。 */
+/* The <lg bottom tab bar (the standard app layout): community /
+   explore / works / post / usage / me. Full features, notifications,
+   settings, and preferences live in MobileTopBar's drawer. The desktop
+   three-column shell (LeftNav/RightSidebar) yields entirely on mobile.
+   Fixed positioning + safe-area padding (the iPhone home bar); the
+   main area gets pb-24 in (app)/layout so nothing hides behind it. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Compass, GalleryVerticalEnd, MessagesSquare, SquarePen, User } from "lucide-react";
@@ -16,11 +18,13 @@ export default function MobileTabBar({
 }: {
   locale: Locale;
   profileHref?: string;
-  /* 未登录(20260919):受限项(发帖/用量/我的)直链登录弹窗,登录后回跳 */
+  /* Signed out: gated items (post/usage/me) link straight into the
+     login modal with a post-login redirect. */
   loggedIn?: boolean;
 }) {
   const pathname = usePathname();
-  /* 未登录时受限入口的目标(登录弹窗带回跳) */
+  /* Targets for gated entries when signed out (the login modal carries
+     the redirect). */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
   const contextualCreate: { href: string; key: I18nKey } =
@@ -84,8 +88,9 @@ export default function MobileTabBar({
               key={tab.href}
               href={tab.href}
               aria-current={tab.active ? "page" : undefined}
-              /* 标签字体走系统 sans(20260815 评审):JetBrains Mono 无中文字形,
-                 中文标签 fallback 混排基线不齐;tab 文案中英皆有,sans 两端都稳 */
+              /* Tab labels use the system sans: JetBrains Mono has no CJK
+                 glyphs and mixed-fallback Chinese misaligns the baseline;
+                 tab copy is bilingual, sans is stable for both. */
               className={`flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 px-1 text-xs transition-colors ${
                 tab.primary
                   ? "text-ui-blue"

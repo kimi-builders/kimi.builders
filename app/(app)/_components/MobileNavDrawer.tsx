@@ -30,16 +30,19 @@ export default function MobileNavDrawer({
   locale: Locale;
   unread?: number;
   profileHref?: string;
-  /* admin/mod:账号导航里多「管理」入口(20260830 治理) */
+  /* admin/mod: the account navigation gains an "admin" entry. */
   moderator?: boolean;
-  /* 登录态块(头像 + @handle + 退出 / 登录入口),由服务端父组件组合进来。 */
+  /* The signed-in block (avatar + @handle + sign out / login entry),
+     composed in by the server parent. */
   account?: ReactNode;
-  /* 未登录(20260919):受限项(发帖/用量/通知/设置)直链 /login?next=… */
+  /* Signed out: gated items (post/usage/notifications/settings) link
+     straight to /login?next=... */
   loggedIn?: boolean;
 }) {
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  /* 未登录时受限入口的目标(登录弹窗带回跳) */
+  /* Targets for gated entries when signed out (the login modal carries
+     the redirect). */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
 

@@ -1,9 +1,13 @@
-/* 登录引导卡(20260919):受限页面未登录时的统一门面——全站唯一的登录 UI
-   在 /login(拦截弹窗/完整页),这里只做引导:一句上下文文案 + 蓝色主按钮
-   进登录弹窗(带 next 回跳),下方 OAuth 快捷入口(与登录页同源的
-   OAuthButtons)。此前 /usage、/community/new、/works/new 等各自造登录门,
-   三种样式三种能力(发帖页甚至没有邮箱入口),统一后直开 URL 也是同一张脸。
-   侧栏入口在未登录时直链 /login(应用内即弹窗),本卡是直开/刷新的兜底。 */
+/* Login invitation card: the unified face of gated pages when signed
+   out — the site's only login UI lives at /login (intercepted
+   modal/full page); this card only guides: one line of context copy +
+   a blue primary button into the login modal (carrying next) + OAuth
+   quick entries below (the same OAuthButtons as the login page).
+   Before, /usage, /community/new, /works/new each built their own
+   login gates — three styles, three capabilities (the post page even
+   lacked email login); unified, a direct URL shows the same face.
+   Rail entries link straight to /login when signed out (in-app =
+   modal); this card backstops direct opens/refreshes. */
 import Link from "next/link";
 import { LogIn } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -15,9 +19,9 @@ export default function LoginGate({
   next,
 }: {
   locale: Locale;
-  /* 上下文文案:登录后能干什么(调用方传 t() 结果) */
+  /* Context copy: what login unlocks (callers pass t() results). */
   title: string;
-  /* 回跳路径(当前页) */
+  /* The redirect target (the current page). */
   next: string;
 }) {
   const query = `?next=${encodeURIComponent(next)}`;

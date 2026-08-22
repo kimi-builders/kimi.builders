@@ -8,7 +8,8 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { searchSiteItems, type SiteSearchItem } from "@/src/lib/site-search";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 
-/* 未就绪板块(src/lib/upcoming.ts):搜索结果里保留词条但挂 SOON 标 */
+/* Not-yet-ready sections: search results keep the entry but tag it
+   SOON. */
 const soon = (locale: Locale, gated: boolean) =>
   gated ? ` · ${t(locale, "nav.soon")}` : "";
 
@@ -44,7 +45,8 @@ function catalog(locale: Locale): SiteSearchItem[] {
       description: t(locale, "search.usage"),
       keywords: ["usage", "用量", "token", "dashboard", "analytics"],
     },
-    /* 近期不上线的板块(NAV_HIDDEN)连搜索词条一并摘掉 */
+    /* Sections not shipping soon (NAV_HIDDEN) drop out of search
+       results entirely. */
     ...(NAV_HIDDEN.demoNight
       ? []
       : [
@@ -77,8 +79,9 @@ export default function GlobalSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [query, setQuery] = useState("");
-  /* ↑↓ 键盘选择(20260822 快捷键方案):首项预选,Enter 打开所选;
-     query 变化重置;结果缩短时钳到范围内 */
+  /* Arrow-key selection: the first item preselected, Enter opens the
+     selection; resets when the query changes; clamps into range when
+     results shrink. */
   const [active, setActive] = useState(0);
   const items = useMemo(() => catalog(locale), [locale]);
   const results = useMemo(() => searchSiteItems(items, query), [items, query]);
@@ -98,7 +101,8 @@ export default function GlobalSearch({
     router.push(href);
   };
 
-  /* 输入框内的 ↑↓/↵:只在这一个输入域上监听,不影响页面级快捷键 */
+  /* Arrows/Enter inside the input: listened on this one field only,
+     never touching page-level shortcuts. */
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       if (results.length === 0) return;

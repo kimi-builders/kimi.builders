@@ -1,9 +1,11 @@
 "use client";
 
-/* 资料展示隐私开关(设置页「隐私与公开」页签):头像 / 显示名 / 简介三个独立开关,
-   点按即切换 —— 乐观翻转,落库成功 toast,失败回退并 toast(同 AiPrefsForm 模式)。
-   语义(20260829_profile_privacy):开 = 公开(默认),关 = 仅自己;仅影响个人主页
-   /u/[handle] 的展示,帖子/评论区的头像昵称是公开发言标识,不受这里控制。 */
+/* Profile-privacy switches (the settings "privacy & publicity" tab):
+   avatar / display name / bio, three independent toggles — optimistic
+   flip, toast on save, rollback + toast on failure (the AiPrefsForm
+   pattern). Semantics: on = public (default), off = self only; gates
+   the /u/[handle] display alone — avatars and names on posts/comments
+   are public speech attribution and are not controlled here. */
 import { useState } from "react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";

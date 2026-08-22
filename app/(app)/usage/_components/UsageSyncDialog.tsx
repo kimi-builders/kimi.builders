@@ -1,10 +1,12 @@
 "use client";
 
-/* 「同步数据」弹窗(2026-08-14):已同步用户的日常入口——单次同步 / 后台服务
-   四条管理命令 / 连接新设备。连接和上传是两个明确步骤。
-   分工:sync/daemon 命令由本文件的 PKG 拼接;dashboard/init 与口径文案走
-   src/lib/usage/device-onboarding.ts(单一事实源)。
-   复制按钮复用 CopyUsageCommandButton。 */
+/* The "sync data" dialog: the daily entry for synced users — one-shot
+   sync / four daemon management commands / connecting a new device;
+   connection and upload are two distinct steps. Division of labor:
+   sync/daemon commands come from this file's PKG; dashboard/init and
+   the canonical copy live in src/lib/usage/device-onboarding.ts
+   (single source of truth). Copy buttons reuse
+   CopyUsageCommandButton. */
 import { useRef } from "react";
 import { RefreshCw, X } from "lucide-react";
 import {

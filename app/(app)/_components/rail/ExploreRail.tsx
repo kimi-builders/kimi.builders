@@ -1,7 +1,8 @@
-/* /explore 右栏(20260822 对齐 WorksRail 语法):使命引句 + 章分布(条形)
-   + 启用的透镜数据(只出 explore-filters.ts 启用且有内容的维度——
-   当前:产品、标签;职业/归档翻开配置即用)+ 最新内容。
-   系列 = 内容组合,现阶段不显示。 */
+/* /explore rail: the mission quote + chapter distribution (bars) +
+   enabled lens data (only dimensions explore-filters.ts enables and
+   content fills — currently products and tags; roles/archive ready
+   via config) + latest content. Series are a grouping and stay
+   unshown for now. */
 import Link from "next/link";
 import type { Locale } from "@/src/lib/i18n";
 import {

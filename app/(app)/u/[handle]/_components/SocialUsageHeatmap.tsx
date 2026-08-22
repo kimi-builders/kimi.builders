@@ -1,12 +1,16 @@
 "use client";
 
-/* 个人主页「用量」页签的分时热图(S2-2):星期×本地小时 7×24 网格,只看 token。
-   视觉/交互对齐用量看板的 UsageHeatmapGrid(同一套色阶、行列标签、悬停 tooltip、
-   TOP5 摘要),但刻意简化:不含估费/活跃时长/消息数 —— 那些依赖看板的定价与
-   会话管线,社交面只公开 token 总量这一个聚合数字。
-   可见性门禁在页面侧(仅本人或对方 show_on_leaderboard=1 时才渲染本组件)。
-   20260819:tooltip 改锚定跟随(与用量中心同一套 tooltipPos + kb-data-tooltip),
-   不再钉右上角;「最活跃时段」数据条与用量中心同一配方(轨道/圆角/焦点色)。 */
+/* The profile "usage" tab's hourly heatmap: a weekday x local-hour
+   7x24 grid, tokens only. Visuals and interaction follow the usage
+   dashboard's UsageHeatmapGrid (same ramp, axis labels, hover tooltip,
+   TOP5 summary) but deliberately simplified: no cost/duration/message
+   counts — those depend on the dashboard's pricing and session
+   pipelines, and the social surface publishes only the one aggregate
+   token number. The visibility gate lives on the page (owner or
+   show_on_leaderboard=1 only). The tooltip is an anchored follower
+   (the same tooltipPos + kb-data-tooltip as the usage center, no
+   pinned corner card); the "most active slots" bars use the same
+   recipe (track/rounding/focus color). */
 import { useRef, useState, type CSSProperties } from "react";
 import { compactNumber } from "@/src/lib/format";
 import { tooltipPos } from "../../../usage/_components/UsageVisualizations";
@@ -26,7 +30,8 @@ function compact(value: number, zh: boolean): string {
   return compactNumber(value, zh ? "zh" : "en");
 }
 
-/* 与用量看板 page.tsx 的 gmtLabel 同款:tzOffsetMinutes = 本地 − UTC 的分钟数。 */
+/* Same as the usage dashboard's gmtLabel: tzOffsetMinutes = local -
+   UTC minutes. */
 function gmtLabel(tzOffsetMinutes: number): string {
   const sign = tzOffsetMinutes >= 0 ? "+" : "-";
   const abs = Math.abs(tzOffsetMinutes);
@@ -40,7 +45,7 @@ export default function SocialUsageHeatmap({
   tzOffsetMinutes,
   zh,
 }: {
-  /* 7(周一起)× 24(本地小时)的 token 总量 */
+  /* Token totals over 7 (Mon-first) x 24 (local hours). */
   grid: number[][];
   tzOffsetMinutes: number;
   zh: boolean;
@@ -58,7 +63,8 @@ export default function SocialUsageHeatmap({
   const total = grid.flat().reduce((sum, value) => sum + value, 0);
   const longNames = zh ? WEEKDAY_LONG_ZH : WEEKDAY_LONG_EN;
   const weekdayLabelWidth = zh ? "w-8" : "w-14";
-  /* 与用量中心 UsageHeatmapGrid 同一套 6 档阈值 */
+  /* The same 6-step thresholds as the usage center's
+     UsageHeatmapGrid. */
   const stepClass = (value: number): string => {
     if (value <= 0 || max <= 0) return "bg-viz-grid";
     const ratio = value / max;
@@ -148,7 +154,8 @@ export default function SocialUsageHeatmap({
           </div>
 
           {hovered && (
-            /* 锚定数据卡(20260819):跟随被 hover 格子,与用量中心同一表面 */
+            /* Anchored data card: follows the hovered cell, the same
+               surface as the usage center. */
             <div
               role="tooltip"
               className="kb-data-tooltip pointer-events-none absolute z-20 w-[176px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"

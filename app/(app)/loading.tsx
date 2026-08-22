@@ -1,8 +1,10 @@
-/* (app) 组级加载边界(20260815 评审):软导航换页时三栏壳保持,
-   只有主列显示列内加载态;壳层组件(顶栏/左栏/右栏)在 layout 里,
-   不随本边界重挂。
-   locale 只读 kb_locale cookie(与 getLocale 的最高优先级同源):
-   loading 边界要快,不去拉会话/Accept-Language 的完整解析。 */
+/* The (app) group loading boundary: on soft navigation the
+   three-column shell stays and only the main column shows the in-column
+   loading state; the shell components (top/left/right) live in the
+   layout and don't remount with this boundary. The locale reads only
+   the kb_locale cookie (the same top priority as getLocale): loading
+   boundaries must be fast — no session fetch, no full
+   Accept-Language parsing. */
 import { cookies } from "next/headers";
 import RouteLoading from "./_components/RouteLoading";
 import type { Locale } from "@/src/lib/i18n";

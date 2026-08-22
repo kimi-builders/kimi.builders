@@ -1,6 +1,7 @@
-/* 设置页(直接访问/刷新的完整页);应用内点击经拦截路由弹窗展示
-   (app/(app)/@modal/(.)settings),两者共用 SettingsContent。
-   透传 OAuth 绑定回执(?linked / ?link_error&p)给「账号」页签。 */
+/* The settings page (the full page on direct access/refresh); in-app
+   clicks render the intercepted-route modal (app/(app)/@modal/(.)
+   settings) — both share SettingsContent. Passes the OAuth link
+   receipt (?linked / ?link_error&p) through to the "account" tab. */
 import type { Metadata } from "next";
 import SettingsContent from "./_components/SettingsContent";
 

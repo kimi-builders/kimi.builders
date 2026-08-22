@@ -1,9 +1,12 @@
-/* Demo Night /demo-night:线上报名 + 归档页(实施计划第三步,P3 提前)。
-   浏览无需登录;报名需登录(server action 内再兜底鉴权)。
-   核心语义(战略支柱 1):到场名单公开 —— 报名即同意 handle 署进该场到场名单,
-   名单按报名时间正序(先到场先署名),到场本身就是稀缺背书,不是普通直播。
-   无 upcoming 场次时当前场区块显示「下一期筹备中」,归档照常。
-   视觉:硬边细线、mono 大字距小标签、无圆角无阴影(头像沿用全站圆形惯例)。 */
+/* Demo Night /demo-night: online RSVP + archive. Browsing needs no
+   login; RSVP does (re-authenticated inside the server action). Core
+   semantics: the attendance list is public — signing up consents to
+   your handle being credited on that event's list, ordered by signup
+   time (first to arrive, first credited); attendance itself is scarce
+   endorsement, not an ordinary stream. Without an upcoming event the
+   current-event block reads "next one in preparation" while the
+   archive stays. Visual: hard edges and hairlines, mono wide-tracked
+   labels, no radii or shadows (avatars keep the site-wide circle). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MonitorPlay, Presentation } from "lucide-react";
@@ -27,7 +30,9 @@ import RsvpButton from "./_components/RsvpButton";
 
 export const metadata: Metadata = { title: "Demo Night — kimi.builders" };
 
-/* 当前场到场名单:横排头像 + handle,先到场先署名(服务端已按报名时间排序)。 */
+/* The current event's attendance: avatars + handles in a row, first
+   to arrive first credited (already sorted by signup time
+   server-side). */
 function RosterList({
   roster,
   locale,
@@ -58,7 +63,8 @@ function RosterList({
 export default async function DemoNightPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* 板块未就绪(src/lib/upcoming.ts):整页换「正在路上」,不查库 */
+  /* Section not ready (src/lib/upcoming.ts): the whole page shows the
+     placeholder, no DB query. */
   if (UPCOMING.demoNight) {
     return <SoonPanel title={t(locale, "nav.demoNight")} locale={locale} />;
   }

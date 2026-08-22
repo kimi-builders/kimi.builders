@@ -1,7 +1,10 @@
-/* <lg 的顶部 mini 栏:全功能抽屉 + 品牌 + 通知 + 搜索。登录态(头像/退出)
-   收进抽屉顶部的账号块,顶栏保持纯净;主题、语言和次级入口同样在抽屉里。
-   通知位(20260815 评审):回访钩子不该藏进抽屉 —— 与桌面顶栏同款铃铛 +
-   未读角标,移动端一号触达;未登录不占位。 */
+/* The <lg top mini bar: the full-feature drawer + brand +
+   notifications + search. The signed-in state (avatar/sign out) tucks
+   into the drawer's account block, keeping the bar clean; theme,
+   language, and secondary entries live in the drawer too. The
+   notification slot: a return hook shouldn't hide in a drawer — the
+   same bell + unread badge as the desktop bar, one-thumb reach on
+   mobile; no slot when signed out. */
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
@@ -19,7 +22,7 @@ export default function MobileTopBar({
   locale: Locale;
   unread?: number;
   profileHref?: string;
-  /* admin/mod:抽屉里多「管理」入口(20260830 治理) */
+  /* admin/mod: the drawer gains an "admin" entry. */
   moderator?: boolean;
   loggedIn?: boolean;
 }) {

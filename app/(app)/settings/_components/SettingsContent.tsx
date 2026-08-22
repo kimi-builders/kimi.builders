@@ -1,8 +1,10 @@
-/* 设置主体:完整页(/settings)与弹窗(@modal/(.)settings)共用。
-   showTitle=false 时收起页头(弹窗自带标题栏)。
-   版式:页头 eyebrow + .kb-h2(20260819 版式对齐,H1 图标下线);页签
-   (资料/偏好/隐私与公开/账号)+ rounded-2xl 面板卡(标题 + 右侧口径小字);
-   行式控件(左标题说明、右开关/分段/卡片)与用量页同一套 Kimi Design 语法。 */
+/* Settings body: shared by the full page (/settings) and the modal
+   (@modal/(.)settings). showTitle=false collapses the header (the
+   modal has its own title bar). Layout: header eyebrow + .kb-h2; tabs
+   (profile/preferences/privacy & publicity/account) + rounded-2xl
+   panel cards (title + right-side fine print); row controls (title +
+   description left, switch/segment/cards right) share the usage
+   page's Kimi Design grammar. */
 import { AtSign } from "lucide-react";
 import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -48,8 +50,9 @@ function ymd(d: Date): string {
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 }
 
-/* 「界面布局」双键的设置页样式(与左栏 DISPLAY 组同一语法;
-   form 等宽由 globals.css 的 .panel-pair 规则给) */
+/* The settings-page styling for the "interface layout" pair (same
+   grammar as the left rail's DISPLAY group; equal form widths come
+   from globals.css's .panel-pair rule). */
 const layoutPairBtnCls =
   "flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
 
@@ -60,7 +63,8 @@ export default async function SettingsContent({
   linkProvider,
 }: {
   showTitle?: boolean;
-  /* OAuth 绑定回执:?linked=github / ?link_error=taken&p=github(落在「账号」页签) */
+  /* OAuth link receipt: ?linked=github / ?link_error=taken&p=github
+     (landing on the "account" tab). */
   linked?: string;
   linkError?: string;
   linkProvider?: string;
@@ -95,9 +99,10 @@ export default async function SettingsContent({
     getOwnProfile(user.id),
     getLinkedAccounts(user.id),
     getUsageSettings(user.id),
-    /* 只用来推导 hasPassword 布尔;哈希本身不下发任何客户端 props */
+    /* Only derives the hasPassword boolean; the hash itself never
+       reaches any client props. */
     getUserPasswordHash(user.id),
-    /* 动效 seg 的 SSR 初值(kb_motion cookie) */
+    /* The motion seg's SSR initial value (the kb_motion cookie). */
     getUiPrefs(),
   ]);
   if (!own) return null;
@@ -112,7 +117,8 @@ export default async function SettingsContent({
   return (
     <div>
       {showTitle && (
-        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,H1 图标下线 */
+        /* Layout alignment: the header takes eyebrow + .kb-h2; the h1
+           icon is retired. */
         <div>
           <p className="kb-eyebrow">{t(locale, "set.eyebrow")}</p>
           <h1 className="kb-h2 mt-3">
