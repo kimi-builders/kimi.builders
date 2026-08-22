@@ -14,7 +14,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const CJK = /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/;
+/* Han only: any real Chinese comment contains Han characters, while
+   fullwidth punctuation (e.g. the fullwidth @ in regex docs) can appear in
+   legitimate English comments. */
+const CJK = /[\u4e00-\u9fff]/;
 const BASELINE_PATH = new URL("./comment-baseline.json", import.meta.url);
 const ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 

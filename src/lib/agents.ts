@@ -1,9 +1,12 @@
-/* 参与构建的 Agent 品牌注册表 —— 纯数据,客户端/服务端共享。
-   id 落库进 works.agents(JSON 数组);图标映射在 components/AgentIcon.tsx。
-   收录口径(decision):不要求 100% 由 Kimi 构建 —— Kimi 参与了、
-   为 Kimi 生态做的应用、以 Kimi 为基座的项目都算;参与的 Agent 标出来。 */
+/* Registry of Agent brands involved in building — pure data, shared by
+   client and server. ids land in works.agents (JSON array); icon mapping
+   in components/AgentIcon.tsx. Inclusion bar (decision): not required to
+   be 100% Kimi-built — built with Kimi's participation, built for the
+   Kimi ecosystem, or based on Kimi all count; participating Agents get
+   marked. */
 export const AGENTS = [
-  /* `kimi` 已落库，保留 id 兼容既有作品；展示名跟随当前官方产品名。 */
+  /* `kimi` exists in stored data; the id stays for compatibility while
+     the display name tracks the current official product. */
   { id: "kimi", name: "Kimi Code" },
   { id: "kimi-agent", name: "Kimi Agent" },
   { id: "agent-swarm", name: "Agent Swarm" },
@@ -15,13 +18,15 @@ export const AGENTS = [
   { id: "trae", name: "Trae" },
   { id: "cline", name: "Cline" },
   { id: "gemini", name: "Gemini" },
-  /* Qoder = 阿里的 Agentic IDE(品牌标在 AgentIcon);Qwen 只是模型族,不占 Agent 位 */
+  /* Qoder = Alibaba's agentic IDE (brand in AgentIcon); Qwen is a model
+     family, not an Agent slot. */
   { id: "qoder", name: "Qoder" },
-  /* 智谱国际版(Z.ai)的编码 Agent;图标用 zai 标 */
+  /* Zhipu's international (Z.ai) coding agent; icon key "zai". */
   { id: "zcode", name: "Zcode" },
-  /* 腾讯 WorkBuddy(前 CodeBuddy 改名/主推名;collector 上报同 id) */
+  /* Tencent WorkBuddy (renamed from CodeBuddy; the collector reports the
+     same id). */
   { id: "workbuddy", name: "WorkBuddy" },
-  /* Pi Agent */
+  /* Pi Agent. */
   { id: "pi-agent", name: "Pi Agent" },
 ] as const;
 
@@ -29,7 +34,7 @@ export type AgentId = (typeof AGENTS)[number]["id"];
 
 const IDS = new Set<string>(AGENTS.map((a) => a.id));
 
-/* 只保留注册表里的 id 并去重；上限跟随作品 Agent 注册表。 */
+/* Keep only registry ids, deduped; capped by the works agent registry. */
 export function sanitizeAgentIds(raw: unknown[]): AgentId[] {
   const out: AgentId[] = [];
   for (const v of raw) {

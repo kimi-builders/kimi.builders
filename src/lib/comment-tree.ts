@@ -1,7 +1,9 @@
-/* 一页评论 → 两层楼中楼分组(纯函数,详情页与「加载更多」action 共用,测试直接覆盖)。
-   输入为一页带 rootId(SQL 已算好可见根)的行,按 (created_at, id) 升序;
-   根一定先于其回复出现,输出顶层有序、回复挂在根下,回复记直接父(replyToId)
-   供「回复 @xx」标注。 */
+/* One page of comments -> two-level threaded grouping (pure; shared by
+   the detail page and the load-more action, covered by tests). Input is a
+   page of rows carrying rootId (visible roots already computed in SQL),
+   ordered by (created_at, id) ascending; a root always precedes its
+   replies. Output: ordered top-level rows with replies attached; replies
+   record their direct parent (replyToId) for the "replying @x" label. */
 export interface CommentTreeRow {
   id: number;
   parentId: number | null;
@@ -29,7 +31,8 @@ export function flattenCommentPage<T extends CommentTreeRow>(
     if (node) {
       node.replies.push({ comment: r, replyToId: r.parentId });
     } else {
-      /* 兜底:根不在本页(理论上不会发生)时按顶层显示,不丢评论 */
+      /* Fallback: a root missing from this page (theoretically impossible)
+         renders as top-level — comments are never dropped. */
       const fallback: CommentTreeNode<T> = { comment: r, replies: [] };
       threads.push(fallback);
       byRoot.set(r.id, fallback);

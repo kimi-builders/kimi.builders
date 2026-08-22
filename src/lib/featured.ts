@@ -1,43 +1,53 @@
-/* 每周精选 v0(P1-7):编辑(admin/mod)的人为定夺 —— 一个编辑、一句话理由、
-   一个位置,署名到具体的人。精选是叠加在算法 feed 之上的位置,不替换热门。
-   posts/works 上 featured_at 非空即精选态,取消时三字段一起清空。
-   权限判断 / 理由校验 / 查询构建 / 混排合并是纯函数(单测直接测),
-   DB 读写在文件下半部分组装;查询风格对齐 ./posts、./works。 */
+/* Weekly featured v0: an editorial (admin/mod) human decision — one
+   editor, one-line reason, one slot, attributed to a person. Featuring is
+   a slot layered on top of the algorithmic feed, never a replacement for
+   hot. A non-null featured_at on posts/works means featured; clearing
+   empties all three columns together. Permission check / reason
+   validation / query building / merge are pure functions (unit-tested
+   directly); DB access is assembled in the lower half, style aligned with
+   ./posts and ./works. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 import { plainExcerpt } from "./format";
 
-/* 精选操作权限:users.role 为 admin / mod。 */
+/* Featuring permission: users.role of admin / mod. */
 export function canModerate(role: string | null | undefined): boolean {
   return role === "admin" || role === "mod";
 }
 
 export const FEATURED_REASON_MAX = 280;
 
-/* 理由必填、≤280 字;合法返回 trim 后的文本,否则 null。 */
+/* Reason required, <= 280 chars; returns the trimmed text when valid,
+   else null. */
 export function normalizeFeaturedReason(raw: string): string | null {
   const reason = raw.trim();
   if (!reason || reason.length > FEATURED_REASON_MAX) return null;
   return reason;
 }
 
-/* 精选条目(帖子/作品统一视图):右栏 widget 与首页精选位共用。 */
+/* Featured entries (posts/works in one view): shared by the rail widget
+   and the home featured slot. */
 export interface FeaturedItem {
   kind: "post" | "work";
   id: number;
-  href: string; // 帖子 → /community/<id>;作品 → 作品链接(无链接 → /works)
-  external: boolean; // href 是站外链接(作品直达,新窗口打开)
-  title: string; // 帖子标题(无标题回落正文摘要)/ 作品名
-  excerpt: string; // 帖子摘要 / 作品 tagline
-  author: string; // @handle 或 awesome 条目的外部作者名
-  authorHref: string | null; // 站内作者主页;外部作者为 null
-  reason: string; // 精选理由(编辑填写)
-  editorHandle: string; // 定夺编辑;编辑账号缺失时为空串(展示侧容错跳过)
+  href: string; // post -> /community/<id>; work -> its link (or /works
+                // when none)
+  external: boolean; // href is an external link (works with a URL open
+                      // in a new tab)
+  title: string; // post title (falls back to a body excerpt) / work name
+  excerpt: string; // post excerpt / work tagline
+  author: string; // @handle or the awesome entry's external author name
+  authorHref: string | null; // on-site profile path; null for external
+                              // authors
+  reason: string; // featuring reason (written by the editor)
+  editorHandle: string; // deciding editor; empty string when the account
+                         // is gone (display tolerates and skips)
   featuredAt: Date;
 }
 
-/* 最新精选帖子:联 users 两次 —— 作者(u)+ 定夺编辑(e)。
-   私密帖不进精选位:即便误标,列表查询也不露出。 */
+/* Latest featured posts: joins users twice — author (u) + deciding editor
+   (e). Private posts never reach the featured slot: even a mislabel
+   cannot leak, the list query filters it. */
 export function featuredPostsQuery(limit: number): {
   sql: string;
   args: number[];
@@ -56,8 +66,9 @@ export function featuredPostsQuery(limit: number): {
   };
 }
 
-/* 最新精选作品:站内作者(u 可空 = awesome 外部条目)+ 定夺编辑(e)。
-   私密作品不进精选位:即便误标,列表查询也不露出(同 featuredPostsQuery)。 */
+/* Latest featured works: on-site author (u nullable = awesome external
+   entry) + deciding editor (e). Private works never reach the slot (same
+   as featuredPostsQuery). */
 export function featuredWorksQuery(limit: number): {
   sql: string;
   args: number[];
@@ -82,7 +93,8 @@ function mapFeaturedPost(r: RowDataPacket): FeaturedItem {
     id,
     href: `/community/${id}`,
     external: false,
-    /* 标题非强制:无标题帖回退到正文摘要(同 feed) */
+    /* Titles are optional: untitled posts fall back to a body excerpt
+       (same as the feed). */
     title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
     excerpt: r.title ? plainExcerpt(r.body_excerpt ?? "", 140) : "",
     author: `@${r.author_handle}`,
@@ -111,7 +123,7 @@ function mapFeaturedWork(r: RowDataPacket): FeaturedItem {
   };
 }
 
-/* 帖子 + 作品混排:按精选时间倒序取前 limit。 */
+/* Posts + works merged: top limit by featured time, newest first. */
 export function mergeFeatured(
   posts: FeaturedItem[],
   works: FeaturedItem[],
@@ -134,7 +146,7 @@ export async function getFeaturedWorks(limit = 5): Promise<FeaturedItem[]> {
   return rows.map(mapFeaturedWork);
 }
 
-/* 混排取前 limit:两路各取 limit 再合并裁剪。 */
+/* Merged top limit: each side fetches limit, then merge and trim. */
 export async function getFeaturedFeed(limit = 6): Promise<FeaturedItem[]> {
   const [posts, works] = await Promise.all([
     getFeaturedPosts(limit),
@@ -143,9 +155,10 @@ export async function getFeaturedFeed(limit = 6): Promise<FeaturedItem[]> {
   return mergeFeatured(posts, works, limit);
 }
 
-/* 详情页徽章/操作态:当前帖的精选信息(未精选 → null)。
-   存活谓词与 featuredPostsQuery 同口径(20260822 P2-1):已删/被屏蔽/私密帖
-   即便残留 featured_at 也不出徽章——精选位只属于公共面可见的内容。 */
+/* Detail-page badge/action state: the post's featured info (null when
+   unfeatured). Liveness predicates match featuredPostsQuery: deleted/
+   hidden/private posts never show a badge even with a leftover featured_at
+   — the slot belongs to publicly visible content only. */
 export async function getPostFeatured(
   postId: number,
 ): Promise<{ reason: string; editorHandle: string | null; at: Date } | null> {
@@ -165,9 +178,11 @@ export async function getPostFeatured(
   };
 }
 
-/* ---- 写操作(权限校验在 action 层:登录 + admin/mod,理由 normalizeFeaturedReason)---- */
+/* ---- Writes (permissions in the action layer: login + admin/mod,
+   reason via normalizeFeaturedReason) ---- */
 
-/* 设精选:私密/已删/被屏蔽帖不可精选(WHERE 钉死,affectedRows=0 即失败)。 */
+/* Feature: private/deleted/hidden posts cannot be featured (pinned in
+   WHERE; affectedRows=0 = failure). */
 export async function setPostFeatured(
   editorId: number,
   postId: number,
@@ -190,7 +205,8 @@ export async function clearPostFeatured(postId: number): Promise<boolean> {
   return res.affectedRows > 0;
 }
 
-/* 设精选(作品):私密/被屏蔽作品不可精选(WHERE 钉死,affectedRows=0 即失败;同帖子口径)。 */
+/* Feature (works): private/hidden works cannot be featured (pinned in
+   WHERE; same as posts). */
 export async function setWorkFeatured(
   editorId: number,
   workId: number,

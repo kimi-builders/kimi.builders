@@ -1,4 +1,5 @@
-/* 板块定义 —— 客户端/服务端共享的纯数据,不许引任何服务端依赖。 */
+/* Category definitions — pure data shared by client and server; no
+   server-side imports. */
 import type { Locale } from "./i18n";
 
 export const CATEGORIES = [
@@ -6,10 +7,11 @@ export const CATEGORIES = [
   { id: "showcase", zh: "晒作品", en: "Showcase" },
   { id: "help", zh: "求助", en: "Help" },
   { id: "feedback", zh: "反馈", en: "Feedback" },
-  /* 公告/News 20260820 起停用:还没有公告类内容,空分类不上架。
-     恢复时取消注释即可(筛选器/发帖表单/校验全部读 CATEGORIES 自动回来);
-     存量 announcement 帖的色点(PostCard CATEGORY_DOT)与文案回落不受影响。 */
-  // { id: "announcement", zh: "公告", en: "News" },
+  /* "announcement" is retired: no announcement content exists yet and
+     empty categories don't ship. Restore by re-adding an entry here
+     (filter/post form/validation all read CATEGORIES and pick it up); the
+     zh/en copy lives in git history. Existing announcement posts keep
+     their dot (PostCard CATEGORY_DOT) and label fallbacks. */
 ] as const;
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
 

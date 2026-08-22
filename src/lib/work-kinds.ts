@@ -1,5 +1,6 @@
-/* 作品类型(单选):卡片 chip、筛选下拉、右栏分布共用。
-   类别差异由 WorkKindIcon + 文字标签表达；颜色严格走全局令牌。 */
+/* Work kinds (single choice): shared by card chips, the filter dropdown,
+   and the rail distribution. Kind differences show through WorkKindIcon
+   + text labels; colors strictly use global tokens. */
 export const WORK_KINDS = [
   { id: "app", zh: "软件应用", en: "App", tint: "bg-paper/[0.04] text-grey" },
   { id: "miniapp", zh: "小程序", en: "Mini app", tint: "bg-paper/[0.04] text-grey" },

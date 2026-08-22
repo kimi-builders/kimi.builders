@@ -1,6 +1,8 @@
-/* Bot 身份常量(20260816 抽出):客户端组件(召唤等待占位行)也要用,
-   从 ai-reply.ts 抽到无服务端依赖的中立模块,避免客户端打包 mysql 池。
-   ai-reply.ts 继续 re-export,既有引用不受影响。 */
+/* Bot identity constants: client components (the summon pending row)
+   need them too, so they moved out of ai-reply.ts into a dependency-free
+   module — importing ai-reply client-side would bundle the mysql pool.
+   ai-reply.ts re-exports; existing imports unaffected. */
 export const BOT_NAME = "Kimi 小筑";
-/* 小尺寸瓷砖标(月牙+双星放大,暗底):评论里 20px 也可辨,双主题稳定。 */
+/* Small tile mark (crescent + twin star enlarged, on dark): legible at
+   20px in comments, stable across themes. */
 export const BOT_AVATAR = "/brand/logo-tile.svg";

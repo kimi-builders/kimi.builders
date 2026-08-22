@@ -1,23 +1,28 @@
-/* 作品列表视图偏好(20260918):/works 与 /awesome 共用的 list(行式,默认)
-   / grid(封面墙)切换。存 cookie 而非 localStorage——列表是服务端渲染,
-   cookie 让服务端直接按偏好出对应卡片,无闪烁、无 hydration 跳变;
-   WorksViewToggle(client)写入后 router.refresh() 换页。
-   本文件客户端安全(仅常量):getWorksView(next/headers)在 works-view-server.ts,
-   client 组件引本文件不会把服务端 API 打进浏览器包。
-   /u/[handle] 不参与切换(固定行式)。 */
+/* Work-list view preference: the list (rows, default) / grid (cover wall)
+   toggle shared by /works and /awesome. Stored in a cookie, not
+   localStorage — the lists are server-rendered, and a cookie lets the
+   server emit the right card directly: no flicker, no hydration jump;
+   WorksViewToggle (client) writes it and router.refresh() re-renders.
+   This file is client-safe (constants only): getWorksView (next/headers)
+   lives in works-view-server.ts, so client imports of this file never
+   pull server APIs into the browser bundle. /u/[handle] does not toggle
+   (always rows). */
 export type WorksView = "list" | "grid";
 export const WORKS_VIEW_COOKIE = "kb-works-view";
 
-/* 移动端 UA 判定(20260822,纯函数单测直接测):移动端恒行式——封面墙在
-   <640px 退化为单列大卡,切换价值低;cookie 偏好对移动端不生效(防「桌面
-   选了封面墙,手机被困单列无法切回」)。iPad 不在列:iPadOS 13+ 默认请求
-   桌面版 UA,平板视域也够宽,交给桌面口径;UA 判定不完美,但 stakes 只有
-   列表形态。 */
+/* Mobile UA detection (pure, unit-tested): mobile is always rows — the
+   cover wall degrades to single-column big cards under 640px, so the
+   toggle adds nothing; the cookie preference does not apply on mobile
+   (prevents "desktop picked grid, phone trapped in one column with no way
+   back"). iPads are exempt: iPadOS 13+ requests desktop UAs and the
+   viewport is wide enough — desktop rules apply. UA detection is
+   imperfect, but the stakes are only the list shape. */
 export function isMobileUA(ua: string): boolean {
   return /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 
-/* 来源列表记忆(20260919):/works 与 /awesome 共用详情页与表单,
-   「返回」按它回正确的列表;由 proxy 在列表页写、服务端读。 */
+/* Source-list memory: /works and /awesome share detail pages and forms;
+   "back" uses this to return to the right list. Written by proxy on list
+   pages, read server-side. */
 export const WORKS_SRC_COOKIE = "kb-works-src";
 export type WorksSource = "works" | "awesome";

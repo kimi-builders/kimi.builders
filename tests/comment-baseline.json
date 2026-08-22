@@ -1,6 +1,6 @@
 {
   "areas": {
-    "src/lib": 1085,
+    "src/lib": 589,
     "app/(app)": 1345,
     "app/@modal": 29,
     "app/api": 222,
@@ -12,6 +12,8 @@
     "proxy.ts": 10
   },
   "locked": [
+    "src/lib/agents.ts",
+    "src/lib/ai-reply.ts",
     "src/lib/analytics.ts",
     "src/lib/auth/oauth.ts",
     "src/lib/auth/origin.ts",
@@ -19,10 +21,17 @@
     "src/lib/auth/password.ts",
     "src/lib/auth/session.ts",
     "src/lib/auth/users.ts",
+    "src/lib/bot-identity.ts",
+    "src/lib/categories.ts",
     "src/lib/client-ip.ts",
+    "src/lib/comment-tree.ts",
     "src/lib/cron-auth.ts",
+    "src/lib/featured.ts",
     "src/lib/mailer.ts",
     "src/lib/media.ts",
+    "src/lib/mention-kimi.ts",
+    "src/lib/moderation.ts",
+    "src/lib/posts.ts",
     "src/lib/rate-limit.ts",
     "src/lib/storage.ts",
     "src/lib/usage/community.ts",
@@ -49,6 +58,12 @@
     "src/lib/usage/validation.ts",
     "src/lib/usage/verifiable.ts",
     "src/lib/usage/week.ts",
-    "src/lib/usage/year-grid.ts"
+    "src/lib/usage/year-grid.ts",
+    "src/lib/work-kinds.ts",
+    "src/lib/work-media.ts",
+    "src/lib/work-meta.ts",
+    "src/lib/works-view-server.ts",
+    "src/lib/works-view.ts",
+    "src/lib/works.ts"
   ]
 }

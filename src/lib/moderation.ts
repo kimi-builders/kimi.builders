@@ -1,17 +1,24 @@
-/* 社区治理(20260830_moderation):权限判定、屏蔽/删除、禁言、资料重置、角色管理、
-   审计日志。查询/变更风格对齐 ./posts、./works;权限判定收编既有
-   featured.canModerate(全站唯一角色判定点,这里只做扩展,不另起一套)。
+/* Community moderation: permission checks, hide/delete, mutes, profile
+   resets, role management, and the audit log. Query/mutation style follows
+   ./posts and ./works; permission checks extend the existing
+   featured.canModerate (the site's single role-check point — no parallel
+   hierarchy here).
 
-   语义钉死:
-   - 屏蔽(hide)≠ 软删:hidden_* 是管理员对公开可见性的处置,可解除;
-     公开侧(列表/详情/搜索/右栏/海报/精选)一律不可见,作者本人可见带标注。
-     软删(deleted_at)是删除态,作者自助语义不变。两者可叠加。
-   - 硬删除:仅 admin,物理 DELETE(关联行靠既有 ON DELETE CASCADE 收敛,
-     reactions 是多态无 FK,手动清);目标必须存在且未删。
-   - 私密内容(visibility=private)管理员在 /admin 可见可处置(治理权高于可见性),
-     但任何公开面不泄露。
-   - 所有治理动作写 moderation_actions 审计;写路径权限在 action 层
-     (requireModerator/requireAdmin),这里不再重复判角色。 */
+   Fixed semantics:
+   - hide != soft delete: hidden_* is a moderator's ruling on public
+     visibility, reversible; every public surface (lists/detail/search/
+     rail/posters/featured) hides it, the author sees it labeled. Soft
+     delete (deleted_at) is removal with unchanged author semantics. The
+     two can stack.
+   - Hard delete: admin only, physical DELETE (dependent rows converge via
+     existing ON DELETE CASCADE; reactions are polymorphic with no FK and
+     are cleaned by hand); the target must exist and not be deleted.
+   - Private content (visibility=private) is visible and actionable for
+     admins in /admin (moderation outranks visibility) but never leaks to
+     any public surface.
+   - Every moderation action writes a moderation_actions audit row; write
+     permissions live in the action layer (requireModerator/
+     requireAdmin) — roles are not re-checked here. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
 import { getSessionUser, type SessionUser } from "./auth/session";
@@ -21,12 +28,14 @@ import { t } from "./i18n";
 
 export { canModerate } from "./featured";
 
-/* admin 判定:角色管理的唯一晋级/降级通道仅 admin;其余治理动作 admin/mod 皆可。 */
+/* Admin check: role management's only promote/demote channel is
+   admin-only; every other moderation action allows admin/mod. */
 export function isAdmin(role: string | null | undefined): boolean {
   return role === "admin";
 }
 
-/* server action 入口鉴权:未登录/非管理角色 → null(调用方按 forbidden 处理)。 */
+/* Server-action entry auth: not logged in / not a moderator -> null
+   (callers treat as forbidden). */
 export async function requireModerator(): Promise<SessionUser | null> {
   const user = await getSessionUser();
   return user && canModerate(user.role) ? user : null;
@@ -47,7 +56,8 @@ const TABLE: Record<ModTargetType, string> = {
 
 type Queryable = Pool | PoolConnection;
 
-/* 治理不变量:目标锁定、业务变更、级联计数与审计必须同生共死。 */
+/* Moderation invariant: target lock, business change, cascade counters,
+   and audit row must live or die together. */
 async function withModerationTransaction<T>(
   work: (conn: PoolConnection) => Promise<T>,
 ): Promise<T> {
@@ -65,7 +75,7 @@ async function withModerationTransaction<T>(
   }
 }
 
-/* ---- 审计 ---- */
+/* ---- Audit ---- */
 
 export type ModAction =
   | "hide"
@@ -104,7 +114,8 @@ export interface ModLogRow {
 
 export const MOD_LOG_PAGE_SIZE = 50;
 
-/* 审计日志倒序翻页:id 游标(同评论/作品分页口径),多取一条判断下一页。 */
+/* Audit log paging, newest first: id cursor (same as comment/work
+   paging), one extra row to detect the next page. */
 export async function getModerationLog(
   after = 0,
 ): Promise<{ rows: ModLogRow[]; nextCursor: number | null }> {
@@ -134,7 +145,7 @@ export async function getModerationLog(
   };
 }
 
-/* ---- 屏蔽 / 解除(可逆;仅未删目标)---- */
+/* ---- Hide / unhide (reversible; undeleted targets only) ---- */
 
 export async function hideContent(
   actorId: number,
@@ -156,8 +167,10 @@ export async function hideContent(
       `UPDATE ${TABLE[type]} SET hidden_at = NOW(), hidden_by = ?, hidden_reason = ? WHERE id = ?`,
       [actorId, reason.slice(0, 280), id],
     );
-    /* 同事务清精选三列(20260822 P2-1):被屏蔽内容不再携带精选态,
-       公共面与徽章取数即便漏过滤也不露出;解除屏蔽不自动恢复,需重新定夺 */
+    /* Clear the three featured columns in the same transaction: hidden
+       content carries no featured state, so even a missed filter on the
+       public side or badges cannot surface it; unhiding does not restore —
+       re-feature deliberately. */
     if (type === "post" || type === "work") {
       await conn.query(
         `UPDATE ${TABLE[type]} SET featured_at = NULL, featured_by = NULL, featured_reason = NULL
@@ -207,7 +220,8 @@ export async function unhideContent(
   });
 }
 
-/* ---- 管理软删(posts/comments;works 无软删,硬删见下)---- */
+/* ---- Management soft delete (posts/comments; works have none — hard
+   delete below) ---- */
 
 export async function adminDeletePost(
   actorId: number,
@@ -226,7 +240,8 @@ export async function adminDeletePost(
   });
 }
 
-/* 评论软删:删行 + 帖冗余计数 -1(同 deleteComment 的两条语句取舍)。 */
+/* Comment soft delete: delete the row and decrement the post's redundant
+   counter (same two-statement trade-off as deleteComment). */
 export async function adminDeleteComment(
   actorId: number,
   commentId: number,
@@ -241,7 +256,8 @@ export async function adminDeleteComment(
     const target = rows[0];
     if (!target) return false;
     await conn.query("UPDATE comments SET deleted_at = NOW() WHERE id = ?", [commentId]);
-    /* 已屏蔽评论在 hide 时已经从公开计数移除，软删不能再次减。 */
+    /* A hidden comment was already removed from the public counter at
+       hide time; the soft delete must not subtract again. */
     if (!target.hidden_at) {
       await conn.query(
         `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - 1)
@@ -254,7 +270,8 @@ export async function adminDeleteComment(
   });
 }
 
-/* ---- 硬删除(仅 admin;目标必须存在且未删)---- */
+/* ---- Hard delete (admin only; target must exist and be undeleted)
+   ---- */
 
 async function deleteReactions(
   targetType: "post" | "comment",
@@ -268,8 +285,9 @@ async function deleteReactions(
   );
 }
 
-/* 帖子硬删:comments/poll/subscriptions/ai_jobs/notifications 走 ON DELETE CASCADE;
-   reactions 多态无 FK,连帖带评论手动清。 */
+/* Post hard delete: comments/poll/subscriptions/ai_jobs/notifications go
+   via ON DELETE CASCADE; reactions are polymorphic with no FK and are
+   cleaned for the post and its comments by hand. */
 export async function hardDeletePost(
   actorId: number,
   postId: number,
@@ -293,8 +311,9 @@ export async function hardDeletePost(
   });
 }
 
-/* 评论硬删:整棵子树一起删(parent_id 无 FK,递归收集);帖冗余计数按其中
-   未软删的条数减。 */
+/* Comment hard delete: removes the whole subtree (parent_id has no FK —
+   collected recursively); the post's redundant counter drops by the
+   still-live count among them. */
 export async function hardDeleteComment(
   actorId: number,
   commentId: number,
@@ -307,7 +326,8 @@ export async function hardDeleteComment(
     );
     const root = rootRows[0];
     if (!root || root.deleted_at !== null) return false;
-    /* 锁父帖，让所有治理计数变更和新的受守卫评论写入按帖串行。 */
+    /* Lock the parent post so all moderation counter changes and new
+       guarded comment writes serialize per post. */
     await conn.query("SELECT id FROM posts WHERE id = ? LIMIT 1 FOR UPDATE", [root.post_id]);
     const [tree] = await conn.query<RowDataPacket[]>(
       `WITH RECURSIVE ids AS (
@@ -340,7 +360,7 @@ export async function hardDeleteComment(
   });
 }
 
-/* 作品硬删:work_votes/work_comments 走 ON DELETE CASCADE。 */
+/* Work hard delete: work_votes/work_comments go via ON DELETE CASCADE. */
 export async function hardDeleteWork(
   actorId: number,
   workId: number,
@@ -358,13 +378,15 @@ export async function hardDeleteWork(
   });
 }
 
-/* ---- 禁言 ---- */
+/* ---- Mutes ---- */
 
 export const MUTE_DAYS = [1, 3, 7, 30] as const;
-/* 永久禁言哨兵:DATETIME 不存「无限」,用最大可行日期近似(同 MUTED 判定只看 > NOW()) */
+/* Permanent-mute sentinel: DATETIME has no "infinity"; the max feasible
+   date approximates it (the mute check only tests > NOW()). */
 export const MUTE_FOREVER = "9999-12-31 23:59:59";
 
-/* 禁言时长计算(纯函数):天数 → Date;forever → 哨兵串。非法输入 → null(调用方拒)。 */
+/* Mute duration math (pure): days -> Date; forever -> sentinel string.
+   Invalid input -> null (callers reject). */
 export function muteUntilFor(
   duration: number | "forever",
   now = new Date(),
@@ -374,14 +396,16 @@ export function muteUntilFor(
   return new Date(now.getTime() + duration * 86_400_000);
 }
 
-/* 禁言判定(纯函数):NULL/过去 = 未禁言;未来时间 = 禁言中(返回截止时间)。 */
+/* Mute check (pure): NULL/past = not muted; a future instant = muted
+   (returns the expiry). */
 export function activeMute(mutedUntil: Date | string | null): Date | null {
   if (!mutedUntil) return null;
   const t = typeof mutedUntil === "string" ? new Date(mutedUntil) : mutedUntil;
   return t.getTime() > Date.now() ? t : null;
 }
 
-/* 写路径前置校验(发帖/评论/发作品/作品评论共用):禁言中 → 截止时间;否则 null。 */
+/* Write-path pre-check (shared by post/comment/work/work-comment writes):
+   muted -> expiry; otherwise null. */
 export async function getActiveMute(userId: number): Promise<Date | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT muted_until FROM users WHERE id = ? LIMIT 1",
@@ -390,7 +414,8 @@ export async function getActiveMute(userId: number): Promise<Date | null> {
   return activeMute(rows[0]?.muted_until ?? null);
 }
 
-/* 禁言提示文案(action 层共用):永久(9999 哨兵)与定期分开。 */
+/* Mute message copy (shared by the action layer): permanent (9999
+   sentinel) and dated separately. */
 export function muteMessage(locale: "zh" | "en", until: Date): string {
   if (until.getUTCFullYear() >= 9999) return t(locale, "err.mutedForever");
   return t(locale, "err.muted", { d: until.toISOString().slice(0, 10) });
@@ -402,7 +427,8 @@ interface GovernableUser {
   mutedUntil: Date | null;
 }
 
-/* 所有用户治理动作共用同一服务端防线：admin 目标恒不可改。 */
+/* One shared server-side guard for all user-moderation actions: an admin
+   target is never mutable. */
 async function lockGovernableUser(
   conn: PoolConnection,
   userId: number,
@@ -441,7 +467,8 @@ export async function unmuteUser(
   return withModerationTransaction(async (conn) => {
     const target = await lockGovernableUser(conn, userId);
     if (!target || !target.mutedUntil) return false;
-    /* WHERE 保留 role 防御，避免未来改动绕过共享锁定守卫。 */
+    /* Keep role in the WHERE defensively so future changes can't bypass
+       the shared lock guard. */
     const [res] = await conn.query<ResultSetHeader>(
       "UPDATE users SET muted_until = NULL WHERE id = ? AND role <> 'admin' AND muted_until IS NOT NULL",
       [userId],
@@ -452,7 +479,8 @@ export async function unmuteUser(
   });
 }
 
-/* ---- 资料重置(违规内容处置:清空自定义头像/显示名/简介,回到默认态)---- */
+/* ---- Profile reset (handling offending content: clear custom
+   avatar/display name/bio back to defaults) ---- */
 
 export async function resetUserProfile(
   actorId: number,
@@ -467,10 +495,12 @@ export async function resetUserProfile(
   });
 }
 
-/* ---- 角色管理(仅 admin;member ⇄ mod;admin 不可被降)---- */
+/* ---- Role management (admin only; member <-> mod; admins cannot be
+   demoted) ---- */
 
-/* 纯函数:角色变更合法性。actor 必须 admin;目标当前不能是 admin(不可降/不可改);
-   目标新角色只能是 member/mod;自己改自己无意义,拒。 */
+/* Pure: role-change validity. The actor must be admin; the target must
+   not currently be admin (no demotion/change); the new role can only be
+   member/mod; self-changes are pointless and rejected. */
 export function canChangeRole(input: {
   actorRole: string;
   actorId: number;
@@ -509,7 +539,7 @@ export async function setUserRole(
   });
 }
 
-/* ---- /admin 用户列表(可搜索)---- */
+/* ---- /admin user list (searchable) ---- */
 
 export interface AdminUserRow {
   id: number;
@@ -570,14 +600,15 @@ export async function getAdminUsers(opts: {
   };
 }
 
-/* ---- /admin 内容列表(最近帖子/评论/作品,按状态筛选)---- */
+/* ---- /admin content list (recent posts/comments/works, filterable by
+   state) ---- */
 
 export type ModContentState = "all" | "hidden" | "deleted";
 
 export interface ModContentRow {
   id: number;
   type: ModTargetType;
-  /* 标题(帖/作品)或正文摘要(评论) */
+  /* Title (posts/works) or body excerpt (comments). */
   title: string;
   authorHandle: string | null;
   createdAt: Date;
@@ -585,17 +616,19 @@ export interface ModContentRow {
   hiddenAt: Date | null;
   hiddenReason: string | null;
   visibility: string | null;
-  /* 评论专属:所在帖 id + 标题(跳转定位用) */
+  /* Comments only: containing post id + title (for jump/linking). */
   postId?: number;
   postTitle?: string;
-  /* 作品专属:来源(site/awesome) */
+  /* Works only: source (site/awesome). */
   source?: string;
 }
 
 export const MOD_CONTENT_PAGE_SIZE = 50;
 
-/* state:all=全部(含私密,治理权高于可见性)/hidden=已屏蔽/deleted=已软删
-   (works 无软删,deleted 档恒空)。列表是管理面,不过滤可见性。 */
+/* state: all = everything incl. private (moderation outranks
+   visibility) / hidden / soft-deleted (works have no soft delete — always
+   empty there). The list is an admin surface; visibility is not
+   filtered. */
 export function moderationContentQuery(opts: {
   type: ModTargetType;
   state: ModContentState;

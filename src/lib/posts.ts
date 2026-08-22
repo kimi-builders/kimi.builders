@@ -1,7 +1,8 @@
-/* 社区帖子的查询与变更。所有时间落库即 UTC(见 db.ts)。
-   列表只取展示字段;正文只在详情页取。
-   getPost 走 React cache:详情页与右栏元数据卡同一请求共享一次查询
-   (无 dispatcher 的环境 —— 单测/server action —— 自动退化为普通调用)。 */
+/* Community posts: queries and mutations. All timestamps land as UTC (see
+   db.ts). Lists select display fields only; the body is fetched on the
+   detail page alone. getPost goes through React cache so the detail page
+   and the rail metadata card share one query per request (degrades to a
+   plain call without a dispatcher — unit tests / server actions). */
 import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
@@ -19,22 +20,25 @@ export interface FeedPost {
   category: string;
   title: string;
   excerpt: string;
-  /* 原始 markdown 前缀(LEFT(body_md,500) 截到完整行):feed 卡格式化摘要专用。 */
+  /* Raw markdown prefix (LEFT(body_md,500) cut to the last full line);
+     feed-card summaries only. */
   bodyMd: string;
   visibility: string;
-  /* 治理屏蔽(20260830):非空 = 已被管理员屏蔽;公开侧已被查询滤掉,
-     只有作者本人视角会拿到非空值(卡片/详情带「已被管理员屏蔽」标注) */
+  /* Moderation hiding: non-null = hidden by a moderator; filtered on
+     public queries — only the author's own view receives the value
+     (card/detail labeled "hidden by moderators"). */
   hiddenAt: Date | null;
   hiddenReason: string | null;
   score: number;
   commentCount: number;
   createdAt: Date;
-  /* 已解决(20260907):非空 = 已解决;feed 可只看已解决 */
+  /* Solved: non-null = solved; the feed can filter to solved only. */
   solvedAt: Date | null;
   handle: string;
   name: string;
   avatarUrl: string;
-  /* 作者角色(官方标记用);feed 卡不做权限判断,仅展示。 */
+  /* Author role (for official badges); the feed card only displays it, no
+     permission logic. */
   role: string;
   aiReply: boolean;
 }
@@ -52,8 +56,9 @@ export interface PostDetail extends FeedPost {
 type Queryable = Pool | PoolConnection;
 export type PostViewer = { id: number; role: string } | null;
 
-/* 帖子详情、metadata 与互动入口共用同一可见性口径:
-   私密帖只对作者开放;治理屏蔽帖对作者和 admin/mod 开放。 */
+/* Post detail, metadata, and interaction entry points share one visibility
+   rule: private posts are author-only; moderation-hidden posts are visible
+   to the author and admin/mod. */
 export function canViewPost(
   post: Pick<PostDetail, "visibility" | "userId" | "hiddenAt">,
   viewer: PostViewer,
@@ -65,7 +70,8 @@ export function canViewPost(
   return true;
 }
 
-/* 不可见帖子只能返回站点通用标题，避免浏览器标签、分享预览泄露正文或标题。 */
+/* A post the viewer cannot see yields only the generic site title —
+   browser tabs and share previews must never leak its title or body. */
 export function postMetadataTitle(
   post: Pick<PostDetail, "visibility" | "userId" | "hiddenAt" | "title" | "bodyMd">,
   viewer: PostViewer,
@@ -82,8 +88,10 @@ export interface VisiblePostAccess {
   hiddenAt: Date | null;
 }
 
-/* Server Action 的轻量门禁查询。写路径传事务连接并 FOR UPDATE，确保从判定
-   到 INSERT/UPDATE 之间帖子不能被并发转私密、屏蔽或软删。 */
+/* Lightweight gate query for Server Actions. Write paths pass a
+   transaction connection with FOR UPDATE so the post cannot be made
+   private, hidden, or soft-deleted between the check and the
+   INSERT/UPDATE. */
 export async function getVisiblePostAccess(
   postId: number,
   viewer: PostViewer,
@@ -113,8 +121,10 @@ export interface VisibleCommentAccess {
   isAi: boolean;
 }
 
-/* 评论反应/回复同时校验评论本身和父帖。被屏蔽评论只放行评论作者与管理角色；
-   JOIN + FOR UPDATE 在写事务里一起锁住评论和帖子。 */
+/* Comment reactions/replies validate both the comment and its parent
+   post. Hidden comments pass only for the comment author and moderator
+   roles; the JOIN + FOR UPDATE locks comment and post together inside the
+   write transaction. */
 export async function getVisibleCommentAccess(
   commentId: number,
   viewer: PostViewer,
@@ -213,14 +223,16 @@ export interface CommentRow {
   score: number;
   createdAt: Date;
   editedAt: Date | null;
-  /* 治理屏蔽(20260830):非空 = 已被屏蔽;公开侧已滤,仅评论作者本人视角拿到非空 */
+  /* Moderation hiding: non-null = hidden; filtered on the public side,
+     only the comment author's own view receives the value. */
   hiddenAt: Date | null;
   handle: string | null;
   name: string | null;
   avatarUrl: string | null;
 }
 
-/* 500 字符前缀截到最后一个完整行,避免半截 markdown 语法;单行长帖原样保留。 */
+/* Cut the 500-char prefix to the last complete line (no half markdown
+   syntax); single-line long posts pass through unchanged. */
 function mdPrefix(raw: unknown): string {
   const text = typeof raw === "string" ? raw : "";
   if (text.length < 500) return text;
@@ -251,17 +263,21 @@ function mapFeed(r: RowDataPacket): FeedPost {
   };
 }
 
-/* feed 游标分页(P1-4),每页 FEED_PAGE_SIZE 条,多取 1 条判断下一页。
-   三个页签排序键不同,游标各自覆盖:
-   - 热门 = (赞 + 评论×2) / (小时+2)^1.5:排序键是随 NOW() 漂移的计算分,翻页时
-     用页 1 钉住的基准时刻 asOf(FROM_UNIXTIME)重算,同一翻页会话内分值确定;
-     键 = (hot DESC, id DESC),复合游标 "asOf|hot|id"。
-   - 最新/订阅按时间:id 自增随 created_at 单调(同评论分页),游标就是帖子 id。
-   subscriberId 给「订阅」页签用:只看自己订阅过的帖子,按时间倒序。
-   viewerId(登录浏览者):私密帖仅作者本人可见;被 viewer 点踩的帖从其 feed 消失。 */
-/* 帖子正文上限(20260822 P1-4):action 层校验给用户报错;这里的 slice 只是
-   写库兜底(编辑后台/内部调用绕过 action 时也不落超长正文,避免 LONGTEXT
-   无界)。10 万字符 ≈ Markdown 长文的合理天花板,远大于真实使用。 */
+/* Feed cursor pagination: FEED_PAGE_SIZE rows per page plus one extra to
+   detect the next. Three tabs, three cursor schemes:
+   - hot = (ups + comments*2) / (hours+2)^1.5: the score drifts with NOW(),
+     so paging recomputes against the asOf baseline pinned on page 1
+     (FROM_UNIXTIME) — scores stay fixed within one paging session; key =
+     (hot DESC, id DESC), composite cursor "asOf|hot|id".
+   - new/subscribed paginate by time: auto-increment id tracks created_at
+     monotonically (as with comments), so the cursor is just the post id.
+   subscriberId serves the "subscribed" tab: only posts the viewer
+   subscribed to, newest first. viewerId (logged in): private posts are
+   author-only; posts the viewer down-voted disappear from their feed. */
+/* Post body cap: the action layer reports a friendly error; this slice is
+   the write-side backstop (edit consoles / internal calls bypassing the
+   action still cannot land unbounded LONGTEXT). 100k characters is a sane
+   ceiling for long-form markdown, far above real usage. */
 export const POST_BODY_MAX = 100_000;
 
 export const FEED_PAGE_SIZE = 50;
@@ -278,7 +294,8 @@ export function encodeFeedCursor(c: FeedCursor): string {
     : String(c.id);
 }
 
-/* 严格解析;非法游标返回 null(调用方按「没有下一页」处理,不静默回退到首页)。 */
+/* Strict parse; an invalid cursor returns null (callers treat as "no next
+   page" — never a silent fallback to page one). */
 export function decodeFeedCursor(raw: string, hot: boolean): FeedCursor | null {
   if (hot) {
     const m = /^(\d{1,12})\|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\|(\d{1,20})$/.exec(raw);
@@ -296,8 +313,9 @@ export function decodeFeedCursor(raw: string, hot: boolean): FeedCursor | null {
   return Number.isSafeInteger(id) && id > 0 ? { id } : null;
 }
 
-/* comment_count 是 UNSIGNED、score 是有符号:混合运算会被 MySQL 整体提升成
-   UNSIGNED,负分帖直接 ER_DATA_OUT_OF_RANGE(整站 500)—— CAST 成 SIGNED 再算。 */
+/* comment_count is UNSIGNED and score is signed: mixed arithmetic gets
+   promoted to UNSIGNED by MySQL and a negative score ER_DATA_OUT_OF_RANGEs
+   (a site-wide 500) — CAST to SIGNED before computing. */
 function hotExpr(asOf: number): string {
   return `(p.score + CAST(p.comment_count AS SIGNED) * 2) / POW(TIMESTAMPDIFF(HOUR, p.created_at, FROM_UNIXTIME(${asOf})) + 2, 1.5)`;
 }
@@ -305,12 +323,13 @@ function hotExpr(asOf: number): string {
 export function feedPageQuery(opts: {
   sort: "hot" | "new";
   category?: string;
-  /* 只看已解决(20260907):solved_at 非空的帖子 */
+  /* Solved only: posts with non-null solved_at. */
   solved?: boolean;
   subscriberId?: number;
   viewerId?: number;
   cursor?: FeedCursor | null;
-  /* 热门页 1 的基准时刻(unix 秒);翻页页以游标里的 asOf 为准 */
+  /* Hot page 1's baseline instant (unix seconds); later pages use the asOf
+     from the cursor. */
   asOf?: number;
 }): { sql: string; args: (string | number)[] } {
   const where = ["p.deleted_at IS NULL"];
@@ -319,7 +338,8 @@ export function feedPageQuery(opts: {
   if (opts.viewerId) {
     where.push("(p.visibility = 'public' OR p.user_id = ?)");
     args.push(opts.viewerId);
-    /* 治理屏蔽:公开侧滤掉;作者本人仍可见(卡片带「已被管理员屏蔽」标注) */
+    /* Moderation-hidden: filtered publicly; the author still sees their own
+       card (labeled "hidden by moderators"). */
     where.push("(p.hidden_at IS NULL OR p.user_id = ?)");
     args.push(opts.viewerId);
     where.push(
@@ -398,7 +418,8 @@ export async function getFeedPage(opts: {
     nextCursor = hot
       ? encodeFeedCursor({
           asOf,
-          /* hot 为 NULL 只可能是 created_at 远超基准时刻(时钟漂移),按 0 处理 */
+          /* A NULL hot can only mean created_at is far ahead of the baseline
+             (clock drift); treat as 0. */
           hot: last.hot === null ? 0 : Number(last.hot),
           id: Number(last.id),
         })
@@ -431,8 +452,9 @@ export const getPost = cache(async (id: number): Promise<PostDetail | null> => {
   };
 });
 
-/* 帖子详情右栏「相关帖子」:同板块近期公开帖(排除本帖)。
-   右栏是公共上下文,只取 public 且未屏蔽 —— 别人的私密/被屏蔽帖不能借右栏漏出。 */
+/* Rail "related posts": recent public posts in the same category
+   (excluding this one). The rail is a public context, public and unhidden
+   only — others' private/hidden posts never leak through the rail. */
 export interface RelatedPost {
   id: number;
   title: string;
@@ -467,7 +489,7 @@ export async function getRelatedPosts(
   const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
   return rows.map((r) => ({
     id: Number(r.id),
-    /* 无标题帖回退到正文摘要(同 getHotPosts) */
+    /* Untitled posts fall back to a body excerpt (same as getHotPosts). */
     title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
     commentCount: Number(r.comment_count),
     score: Number(r.score),
@@ -475,12 +497,15 @@ export async function getRelatedPosts(
   }));
 }
 
-/* 评论分页:按顶层评论翻页(每页 COMMENT_PAGE_SIZE 条),该页顶层楼下的全部可见
-   回复随根一起带出。游标 = 上一页最后一个顶层评论的 id(id 随 created_at 单调,
-   等价时间游标且键唯一,翻页期间新增评论只追加在末尾,不会顶乱已翻过的页)。
-   「可见根」在 SQL 里算(WITH RECURSIVE 沿 parent 链向上):父被软删或被 AI 过滤
-   (showAi=false,v2 决策 3 的浏览侧开关)时,回复自身升级为顶层 —— 与旧全量拍平
-   的兜底行为一致。子查询多取一个根判断是否还有下一页。 */
+/* Comment paging: pages of top-level comments (COMMENT_PAGE_SIZE each) with
+   every visible reply under that page's roots. The cursor is the last
+   top-level comment's id (ids track created_at monotonically — equivalent
+   to a time cursor with a unique key; comments added while paging only
+   append and never reshuffle pages seen). Visible roots are computed in
+   SQL (WITH RECURSIVE walks the parent chain): when a parent is
+   soft-deleted or AI-filtered (showAi=false, the v2 view-side switch), the
+   reply is promoted to top level — same fallback as the old flatten-all
+   behavior. The subquery fetches one extra root to detect the next page. */
 export const COMMENT_PAGE_SIZE = 50;
 
 export interface CommentPageRow extends CommentRow {
@@ -489,7 +514,8 @@ export interface CommentPageRow extends CommentRow {
 
 export interface CommentPage {
   comments: CommentPageRow[];
-  /* 可见评论总数:与列表同口径(滤软删;showAi=false 不计 AI),页面计数直接用它 */
+  /* Visible comment total: same rules as the list (soft-delete filtered;
+     showAi=false excludes AI) — the page counter uses this directly. */
   total: number;
   nextCursor: number | null;
 }
@@ -500,8 +526,10 @@ export function commentPageQuery(
 ): { sql: string; args: number[] } {
   const aiC = opts.showAi ? "" : "AND c.is_ai = 0";
   const aiP = opts.showAi ? "" : "AND p.is_ai = 0";
-  /* 治理屏蔽(20260830):被屏蔽评论公开侧不可见;评论作者本人仍可见(带标注)。
-     父评论对 viewer 不可见时(软删/AI 过滤/被屏蔽),回复升级为顶层 —— 与软删同语义。 */
+  /* Moderation-hidden comments are invisible publicly; the comment author
+     still sees them (labeled). When the parent is invisible to the viewer
+     (soft-deleted/AI-filtered/hidden), the reply is promoted to top level —
+     same semantics as soft delete. */
   const hidC = opts.viewerId
     ? "AND (c.hidden_at IS NULL OR c.user_id = ?)"
     : "AND c.hidden_at IS NULL";
@@ -527,8 +555,9 @@ export function commentPageQuery(
      JOIN comments c ON c.id = t.id
      LEFT JOIN users u ON u.id = c.user_id
      WHERE t.root_id IN (
-       /* 派生表包裹:MySQL 不允许 IN/ALL/ANY 子查询里直接带 LIMIT(ER_NOT_SUPPORTED_YET),
-          先物化出本页根再 IN */
+       /* Wrapped in a derived table: MySQL forbids LIMIT directly inside
+          IN/ALL/ANY subqueries (ER_NOT_SUPPORTED_YET) — materialize this
+          page's roots first, then IN. */
        SELECT id FROM (
          SELECT id FROM tree WHERE id = root_id AND id > ?
          ORDER BY id ASC LIMIT ${COMMENT_PAGE_SIZE + 1}
@@ -543,7 +572,8 @@ export function commentPageQuery(
   return { sql, args };
 }
 
-/* 可见评论总数:与 commentPageQuery 同口径,两者必须一起改。 */
+/* Visible comment total: same rules as commentPageQuery — the two must
+   change together. */
 export function commentCountQuery(
   postId: number,
   opts: { showAi: boolean; viewerId?: number },
@@ -573,7 +603,9 @@ export async function getCommentsPage(
     pool.query<RowDataPacket[]>(count.sql, count.args).then(([r]) => r),
     pool.query<RowDataPacket[]>(page.sql, page.args).then(([r]) => r),
   ]);
-  /* 根按首次出现排序(行已按时间升序,根先于其回复出现);多取的那根连同其回复裁掉 */
+  /* Roots in first-appearance order (rows are time-ascending, a root
+     precedes its replies); the extra root is dropped along with its
+     replies. */
   const rootOrder: number[] = [];
   for (const r of rows) {
     const rootId = Number(r.root_id);
@@ -605,10 +637,11 @@ export async function getCommentsPage(
   };
 }
 
-/* 最新 N 条可见评论(知识库路径讨论闭环,20260920):软删/治理屏蔽滤掉,
-   AI 评论与详情页默认口径一致一并返回(is_ai 标记随行);
-   帖子本身的可见性由调用方先行校验(这里不再重复门禁)。
-   按 id 倒序取 N 条 = 最新优先(评论 id 随 created_at 单调)。 */
+/* Latest N visible comments (series discussion loop): soft-deleted and
+   moderation-hidden filtered; AI comments return like the detail page's
+   default (is_ai flag carried on the row); the post's own visibility is
+   the caller's gate (not re-checked here). id DESC = newest first
+   (comment ids track created_at). */
 export function latestCommentsQuery(
   postId: number,
   limit = 3,
@@ -684,7 +717,7 @@ export async function createPost(input: {
         [id, input.options[i].slice(0, 200), i],
       );
     }
-    /* 作者自动订阅自己的帖子:有评论时收通知 */
+    /* Authors auto-subscribe to their own posts: notified on any comment. */
     await conn.query(
       "INSERT IGNORE INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
       [input.userId, id],
@@ -699,8 +732,9 @@ export async function createPost(input: {
   }
 }
 
-/* 新评论后的通知:关注的帖子有新评论(type=comment,发给除直接 parent 作者外的订阅者)、
-   我的评论被回复(type=reply,发给 parent 作者)。actor NULL = AI。 */
+/* Notifications after a new comment: subscribers of the post get
+   type=comment (everyone except the direct parent's author), the parent's
+   author gets type=reply. actor NULL = AI. */
 export async function notifyOnComment(input: {
   postId: number;
   commentId: number;
@@ -730,7 +764,7 @@ export async function notifyOnComment(input: {
   }
   for (const s of subs) {
     const uid = Number(s.user_id);
-    if (uid === replyToUserId) continue; // reply 优先,不重复发 comment
+    if (uid === replyToUserId) continue; // reply wins; don't double-send
     rows.push([uid, input.actorId, "comment", input.postId, input.commentId]);
   }
   if (rows.length === 0) return;
@@ -743,12 +777,15 @@ export async function notifyOnComment(input: {
 export interface VisibleCommentCreated {
   id: number;
   parent: VisibleCommentAccess | null;
-  /* 60 秒内同人同帖同文的重复提交命中已有评论时置位(幂等成功,不产生新行) */
+  /* Set when a same-user same-post same-text resubmission within 60
+     seconds hits an existing comment (idempotent success, no new row). */
   duplicate?: boolean;
 }
 
-/* 登录成员写评论的安全入口:事务内锁父帖并重做可见性判定，回复目标也必须
-   仍属于同帖且可见。评论、冗余计数和自动订阅同事务提交。 */
+/* Safe comment entry for signed-in members: locks the parent post inside
+   a transaction and re-runs the visibility check; the reply target must
+   still belong to the same post and be visible. Comment, redundant
+   counters, and auto-subscribe commit together. */
 export async function createCommentForVisiblePost(
   viewer: Exclude<PostViewer, null>,
   postId: number,
@@ -762,8 +799,10 @@ export async function createCommentForVisiblePost(
       if (!parent || parent.postId !== postId) return null;
     }
     const body = bodyMd.slice(0, 10000);
-    /* 服务端幂等:同人同帖同文 60 秒内的重复提交视为已提交。
-       客户端有 posting 防抖,但网络重试/刷新重提会绕过它——双击不出重楼。 */
+    /* Server-side idempotency: the same user resubmitting the same text on
+       the same post within 60 seconds counts as submitted. The client
+       debounces posting, but network retries and refresh re-submits bypass
+       it — no duplicate floor on a double click. */
     const [dup] = await conn.query<RowDataPacket[]>(
       `SELECT id FROM comments
         WHERE post_id = ? AND user_id = ? AND body_md = ? AND deleted_at IS NULL
@@ -797,7 +836,8 @@ export async function createCommentForVisiblePost(
   return created;
 }
 
-/* 回复前校验 + AI 触发判断:返回目标评论概况;不存在/跨帖/已删除 → null。 */
+/* Pre-reply validation + AI trigger check: returns the target comment's
+   essentials; missing/cross-post/deleted -> null. */
 export async function getCommentForReply(
   commentId: number,
   postId: number,
@@ -815,8 +855,9 @@ export async function getCommentForReply(
   };
 }
 
-/* 顶/踩(posts.score / comments.score = 顶-踩 净分,每次重算保一致)。
-   切换语义:点同向 = 取消;点反向 = 换边(删旧存新)。 */
+/* Up/down votes (posts.score / comments.score = net ups; recomputed each
+   time for consistency). Toggle semantics: same direction again = cancel;
+   opposite = switch (delete old, insert new). */
 async function setReaction(
   userId: number,
   targetType: "post" | "comment",
@@ -840,7 +881,7 @@ async function setReaction(
         [userId, targetType, targetId, kind],
       );
     } catch {
-      /* 并发重复 → 唯一键挡住,忽略 */
+      /* Concurrent duplicate — absorbed by the unique key, ignore. */
     }
   }
   const table = targetType === "post" ? "posts" : "comments";
@@ -888,7 +929,8 @@ export interface ReactionState {
   down: Set<number>;
 }
 
-/* 批量取 reaction 态(feed 行 / 评论列表用,一条 IN 查询避免 N+1)。 */
+/* Batch reaction state (feed rows / comment lists; one IN query avoids
+   N+1). */
 async function getReactedIds(
   userId: number,
   targetType: "post" | "comment",
@@ -994,7 +1036,8 @@ export async function getPoll(
   };
 }
 
-/* 右栏 widget 数据:7 日热门 / 社区数据 / 新成员,三条小查询。 */
+/* Rail widget data: 7-day hot / community stats / new members — three
+   small queries. */
 export interface HotPost {
   id: number;
   title: string;
@@ -1002,8 +1045,9 @@ export interface HotPost {
   score: number;
 }
 
-/* 7 日热门(评论×2 + 净分):右栏 widget 与首页精选位的空态回落共用。
-   公共上下文:仅公开且未被屏蔽。 */
+/* 7-day hot (comments*2 + net score): shared by the rail widget and the
+   home featured slot's empty fallback. Public context: public and
+   unhidden only. */
 export async function getHotPosts(limit = 5): Promise<HotPost[]> {
   const n = Math.max(1, Math.min(20, Math.floor(limit)));
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -1013,7 +1057,7 @@ export async function getHotPosts(limit = 5): Promise<HotPost[]> {
   );
   return rows.map((r) => ({
     id: Number(r.id),
-    /* 无标题帖回退到正文摘要(标题非强制) */
+    /* Untitled posts fall back to a body excerpt (titles are optional). */
     title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
     commentCount: Number(r.comment_count),
     score: Number(r.score),
@@ -1026,8 +1070,9 @@ export interface CommunityStats {
   comments: number;
 }
 
-/* 社区总量(成员 / 公开帖 / 评论):右栏「社区数据」与首页数据条共用。
-   公共口径:公开、未软删且未被屏蔽。 */
+/* Community totals (members / public posts / comments): shared by the
+   rail "community stats" and the home stats bar. Public definition:
+   public, not soft-deleted, not hidden. */
 export async function getCommunityStats(): Promise<CommunityStats> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT
@@ -1107,8 +1152,9 @@ export async function votePollForViewer(
   return result ?? "not_visible";
 }
 
-/* ---- 作者自助:编辑 / 删除 / 可见性 ----
-   全部在 WHERE 里钉死作者归属(rowCount=0 即越权或已删,调用方按失败处理)。 */
+/* ---- Author self-service: edit / delete / visibility ---- Ownership is
+   pinned in WHERE (rowCount=0 means unauthorized or gone; callers treat as
+   failure). */
 
 export async function updatePost(
   userId: number,
@@ -1150,7 +1196,8 @@ export async function setPostVisibility(
   return res.affectedRows > 0;
 }
 
-/* 已解决开关(20260907):作者本人或治理(admin/mod);affectedRows=0 即越权/已删。 */
+/* Solved toggle: the author or moderation (admin/mod); affectedRows=0 =
+   unauthorized/deleted. */
 export async function setPostSolved(
   actor: { id: number; role: string },
   postId: number,
@@ -1196,7 +1243,8 @@ export async function deleteComment(
       return false;
     }
     await conn.query("UPDATE comments SET deleted_at = NOW() WHERE id = ?", [commentId]);
-    /* 屏蔽时已从公开冗余计数移除，作者再删除不能二次扣减。 */
+    /* Already removed from the public counter when hidden; the author
+       deleting afterwards must not subtract twice. */
     if (!target.hidden_at) {
       await conn.query(
         `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - 1)
@@ -1214,7 +1262,8 @@ export async function deleteComment(
   }
 }
 
-/* 浏览量:只记录,不展示(详情页渲染后经 after() 写入)。 */
+/* View counts: recorded, never displayed (written via after() after the
+   detail page renders). */
 export async function incrementViewCount(postId: number): Promise<void> {
   await getPool().query(
     "UPDATE posts SET view_count = view_count + 1 WHERE id = ?",
@@ -1222,7 +1271,7 @@ export async function incrementViewCount(postId: number): Promise<void> {
   );
 }
 
-/* ---- 消息通知 ---- */
+/* ---- Notifications ---- */
 
 export async function getUnreadNotificationCount(userId: number): Promise<number> {
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -1235,11 +1284,13 @@ export async function getUnreadNotificationCount(userId: number): Promise<number
 export interface NotificationRow {
   id: number;
   type: string;
-  /* post 通知目标;work 通知(20260816 作品召唤)为 null */
+  /* Post notification target; work notifications (work summons) are
+     null. */
   postId: number | null;
   postTitle: string;
   commentId: number | null;
-  /* work 通知目标(作品召唤回复);post 通知为 null */
+  /* Work notification target (work summon reply); post notifications are
+     null. */
   workId: number | null;
   workCommentId: number | null;
   workName: string | null;
@@ -1281,7 +1332,7 @@ export async function getNotifications(
   }));
 }
 
-/* 打开消息页即全部已读。 */
+/* Opening the notifications page marks everything read. */
 export async function markNotificationsRead(userId: number): Promise<void> {
   await getPool().query(
     "UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL",
@@ -1289,10 +1340,10 @@ export async function markNotificationsRead(userId: number): Promise<void> {
   );
 }
 
-/* ---- 个人主页 ---- */
+/* ---- Profile ---- */
 
-/* 某用户的帖子(主页「帖子」页签):self=true 含私密帖与被屏蔽帖(带标注),
-   访客只见公开且未被屏蔽的。 */
+/* A user's posts (profile "posts" tab): self=true includes private and
+   hidden (labeled); visitors see public and unhidden only. */
 export async function getUserPosts(
   userId: number,
   self: boolean,
@@ -1316,12 +1367,15 @@ export interface UserCommentRow {
   excerpt: string;
   score: number;
   createdAt: Date;
-  /* 治理屏蔽(20260830):评论被屏蔽或所在帖被屏蔽;仅本人视角含这类行(带标注) */
+  /* Moderation-hidden: the comment or its post is hidden; only the
+     owner's view includes such rows (labeled). */
   hidden: boolean;
 }
 
-/* 某用户的评论(主页「评论」页签):带上所在帖标题;访客视角不含私密帖下的评论,
-   也不含被屏蔽的评论/被屏蔽帖下的评论;本人视角含(带「已被管理员屏蔽」标注)。 */
+/* A user's comments (profile "comments" tab) with the containing post's
+   title; the visitor view excludes comments under private posts, hidden
+   comments, and comments under hidden posts; the owner's view includes
+   them (labeled "hidden by moderators"). */
 export async function getUserComments(
   userId: number,
   self: boolean,

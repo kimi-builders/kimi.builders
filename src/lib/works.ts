@@ -1,10 +1,12 @@
-/* 作品库:社区成员用 Kimi 构建的真实作品(works 表)。
-   source=site → 成员作品,上 /works 墙;source=awesome → 推荐的站外项目
-   (author_label 是外部作者名),只上 /awesome。/awesome 展示全部来源。
-   agents = 参与构建的 Agent 品牌键(注册表 src/lib/agents.ts)。
-   作者自助增改删,归属校验钉在 SQL WHERE 里(同帖子)。
-   getWorkDetail / getAuthorClaimContext 走 React cache:详情页与右栏元数据卡
-   同一请求共享查询(无 dispatcher 的环境自动退化为普通调用)。 */
+/* Works: real projects members built with Kimi (the works table).
+   source=site -> member works on the /works wall; source=awesome ->
+   recommended external projects (author_label is the external author),
+   listed on /awesome only. /awesome shows both sources. agents holds the
+   Agent brand keys involved in building (registry in src/lib/agents.ts).
+   Author self-service create/edit/delete; ownership is pinned in SQL
+   WHERE clauses (same as posts). getWorkDetail / getAuthorClaimContext go
+   through React cache so the detail page and the rail metadata card share
+   one query per request (degrades to a plain call without a dispatcher). */
 import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
@@ -22,56 +24,70 @@ export interface WorkRow {
   tagline: string;
   url: string;
   repoUrl: string;
-  /* 已知取舍:screenshot_url 保持允许任意 http(s) 外链，方便展示托管在作者站点的截图；
-     接受访客跟踪像素风险，后续如需收紧应引入受限图片代理。 */
+  /* Known trade-off: screenshot_url allows arbitrary http(s) external links
+     so authors can host their own screenshots; this accepts tracking-pixel
+     risk — tighten with a restricted image proxy if ever needed. */
   screenshotUrl: string;
   tags: string[];
   agents: string[];
   source: string;
-  /* public/private(20260828_work_visibility,语义同 posts.visibility:私密=仅作者可见) */
+  /* public/private; private means author-only (same semantics as
+     posts.visibility). */
   visibility: string;
-  /* 治理屏蔽(20260830):非空 = 已被管理员屏蔽;公开侧已滤,仅作者/管理员视角拿到 */
+  /* Moderation hiding: non-null = hidden by a moderator; filtered on
+     public surfaces, only the author/admin view receives it. */
   hiddenAt: Date | null;
   hiddenReason: string | null;
   createdAt: Date;
-  /* 站内作者(user_id 空 = awesome 外部条目,用 authorLabel) */
+  /* On-site author (user_id null = awesome external entry, use
+     authorLabel). */
   userId: number | null;
   handle: string | null;
   avatarUrl: string | null;
   authorLabel: string;
-  /* 每周精选 v0:featured_at 非空 = 精选态(理由/定夺编辑在 featured.ts 查询) */
+  /* Weekly featured v0: non-null featured_at = featured (reason/editor
+     resolved in featured.ts). */
   featuredAt: Date | null;
   featuredReason: string | null;
-  /* 冗余计数(P1-2,随 work_votes / work_comments 写路径维护) */
+  /* Redundant counters, maintained by the work_votes / work_comments
+     write paths. */
   voteCount: number;
   commentCount: number;
-  /* 用量声明制:作者声明的该作品构建投入 tokens;null = 未声明(无徽章) */
+  /* Claimed build effort in tokens, declared by the author; null = no
+     claim (no badge). */
   claimedTokens: number | null;
-  /* 20260824_work_meta:作品元数据(状态/模型/平台/长描述/awesome 收录口径) */
+  /* Work metadata: status/models/platform/long description/awesome
+     scope. */
   status: string;
   models: string[];
-  /* 作品类型(app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other) */
+  /* Work kind
+     (app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other). */
   kind: string;
   descriptionMd: string;
-  /* Awesome 收录口径:base/eco/part;仅 awesome 条目,作品墙恒 "" */
+  /* Awesome scope: base/eco/part; awesome entries only, wall entries are
+     always "". */
   scope: string;
-  /* 20260906:成员作品勾选「同时收录到 Awesome」;awesome 条目恒在清单内,此列无意义 */
+  /* Member works checked "also list on Awesome"; always-on for awesome
+     entries, meaningless there. */
   alsoAwesome: boolean;
-  /* 20260826_work_media:Logo 存储 key(空 = 无)+ 配图 key 数组(≤9,第一张 = 封面)。
-     DB 只存 key,公开 URL 渲染时由 storage.ts mediaUrl 拼接 */
+  /* Logo storage key (empty = none) + image key array (<=9, first =
+     cover). DB stores keys only; public URLs are assembled by storage.ts
+     mediaUrl at render time. */
   logoKey: string;
   imageKeys: string[];
-  /* 20260916:独立列表封面(image/ 前缀 key,空=走色卡名称砖);
-     不再取配图第一张当封面 */
+  /* Standalone list cover (image/ prefixed key; empty = name brick on a
+     color card); the first gallery image is no longer reused as the
+     cover. */
   coverKey: string;
-  /* 20260908:名称砖色调(theme=跟随主题,其余为 cover-tones 注册表固定色)+
-     封面适配(cover=裁切填满 / contain=补边完整) */
+  /* Name-brick tone (theme = follow the theme; others are fixed colors
+     from the cover-tones registry) + cover fit (cover = crop-fill /
+     contain = pad-to-fit). */
   coverTone: string;
   coverFit: string;
-  /* 20260816_work_ai_summon:允许 AI 参与本作品评论区(@kimi 召唤;默认开) */
+  /* Allow AI in this work's comments (@kimi summons; default on). */
   aiReply: boolean;
-  /* 20260921_works_source_path:毕业归因——来源学习路径 slug(发布时写入,
-     编辑不再改);null = 非路径来源(知识库机械结构 plan §二.5) */
+  /* Graduation attribution: the learn-series slug this work came from
+     (written at publish, never edited); null = not path-sourced. */
   sourcePath: string | null;
 }
 
@@ -135,19 +151,24 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys,
        w.cover_key, w.cover_tone, w.cover_fit, w.ai_reply, w.source_path`;
 
-/* 可见性谓词(20260828):私密=仅作者(推荐人)本人可见。
-   公共上下文(右栏/精选/海报/统计)恒用 PUBLIC_ONLY;列表/详情带 viewerId 放行作者本人。
-   user_id 为 NULL 的编辑收录条目恒 public(不经表单,列默认即 public)。 */
+/* Visibility predicates: private = visible to the author only. Public
+   contexts (rail/featured/posters/stats) always use PUBLIC_ONLY; lists and
+   detail views pass viewerId to admit the author. Editor-curated entries
+   with NULL user_id are always public (they bypass the form; the column
+   default is public). */
 const VISIBILITY_PUBLIC = "w.visibility = 'public'";
-/* 治理屏蔽谓词(20260830):公共上下文恒过滤;作者本人视角另行放行。 */
+/* Moderation-hidden predicate: always filtered in public contexts; the
+   author's own view admits it separately. */
 const HIDDEN_PUBLIC = "w.hidden_at IS NULL";
 
-/* Awesome 清单谓词(20260906):推荐条目(source=awesome)+ 作者勾选「同时收录」的
-   成员作品(also_awesome=1)。列表查询与右栏统计共用,保证两边数字一致。 */
+/* Awesome listing predicate: recommended entries (source=awesome) plus
+   member works whose author checked "also list" (also_awesome=1). Shared
+   by list queries and rail stats so both counts agree. */
 const AWESOME_LISTED = "(w.source = 'awesome' OR w.also_awesome = 1)";
 
-/* 单条目的可见性判定(详情页/海报/互动 action 共用):
-   被屏蔽 → 仅作者或 admin/mod(治理评审需要);否则公开或本人。 */
+/* Per-item visibility (shared by detail page/poster/interaction actions):
+   hidden -> author or admin/mod only (moderation review needs it);
+   otherwise public or owner. */
 export function canViewWork(
   work: { visibility: string; userId: number | null; hiddenAt: Date | null },
   viewer: { id: number; role: string } | null,
@@ -162,15 +183,18 @@ const SELECT_WORKS = `SELECT ${WORK_COLUMNS},
        u.handle, u.avatar_url
      FROM works w LEFT JOIN users u ON u.id = w.user_id`;
 
-/* 详情页(P1-2):多联一次定夺编辑(featured_by → handle,精选徽章 tooltip 署名)。 */
+/* Detail page: one extra join for the featuring editor (featured_by ->
+   handle, badge tooltip attribution). */
 const SELECT_WORK_DETAIL = `SELECT ${WORK_COLUMNS},
        u.handle, u.avatar_url, e.handle AS editor_handle
      FROM works w LEFT JOIN users u ON u.id = w.user_id
      LEFT JOIN users e ON e.id = w.featured_by`;
 
-/* 作品列表分页:游标 keyset —— new = 裸 id(id 自增随 created_at 单调);
-   hot = "votes|id" 复合(vote_count 降序 + id 降序键集,UNSIGNED 列无负值坑)。
-   每页多取 1 条判断是否还有下一页。非法游标按首页处理(不静默 500)。 */
+/* List pagination: keyset cursors — new = bare id (auto-increment tracks
+   created_at monotonically); hot = "votes|id" composite (vote_count DESC
+   + id DESC keyset; UNSIGNED columns have no negative trap). Each page
+   fetches one extra row to detect the next page. Invalid cursors fall
+   back to page one (never a silent 500). */
 export const WORKS_PAGE_SIZE = 100;
 export const AWESOME_PAGE_SIZE = 200;
 export type WorksSort = "hot" | "new";
@@ -210,7 +234,8 @@ export function worksPageQuery(opts: {
   kinds?: string[];
   scope?: string;
   after?: string;
-  /* 登录浏览者:私密条目仅作者本人可见(同 posts feed 口径);缺省 = 匿名,仅公开 */
+  /* Logged-in viewer: private entries are author-only (same as the posts
+     feed); absent = anonymous, public only. */
   viewerId?: number;
 }): { sql: string; args: (string | number)[] } {
   const where: string[] = [];
@@ -218,7 +243,8 @@ export function worksPageQuery(opts: {
   if (opts.viewerId) {
     where.push(`(${VISIBILITY_PUBLIC} OR w.user_id = ?)`);
     args.push(opts.viewerId);
-    /* 治理屏蔽:公开侧滤掉;作者本人仍可见(卡片带「已被管理员屏蔽」标注) */
+    /* Moderation-hidden: filtered on the public side; the author still
+       sees their own card (labeled "hidden by moderators"). */
     where.push(`(${HIDDEN_PUBLIC} OR w.user_id = ?)`);
     args.push(opts.viewerId);
   } else {
@@ -226,24 +252,27 @@ export function worksPageQuery(opts: {
     where.push(HIDDEN_PUBLIC);
   }
   if (opts.source === "site") where.push("w.source = 'site'");
-  /* Awesome 清单(20260906):见 AWESOME_LISTED——普通作品不再自动出现在 Awesome */
+  /* Awesome listing: see AWESOME_LISTED — ordinary works no longer
+     appear on /awesome automatically. */
   if (opts.source === "awesome") where.push(AWESOME_LISTED);
-  /* 参与 Agent 多选:任一命中即可(JSON 数组成员,OR 链)。
-     多选上限 = 注册表大小(20260822 P0-1 修复):占位符与绑定参数必须同源同长——
-     曾按全量生成占位符、按截断常量(10)绑定参数,URL 带重复/超限 id 即整页 500;
-     取注册表大小让「全选」不被静默截断,也随注册表增长自维护 */
+  /* Agent multi-select: any hit matches (JSON array members, OR chain).
+     The cap equals the registry size: placeholders and bound args must be
+     built from the same array — generating them from different lengths
+     once 500'd whole pages on crafted URLs, and the registry-size cap
+     keeps "select all" unclipped and self-maintaining as the registry
+     grows. */
   if (opts.agents && opts.agents.length > 0) {
     const agents = [...new Set(opts.agents)].slice(0, AGENTS.length);
     where.push(`(${agents.map(() => "JSON_CONTAINS(w.agents, JSON_QUOTE(?))").join(" OR ")})`);
     args.push(...agents);
   }
-  /* 作品类型多选:IN 列表(同源收敛,理由同上) */
+  /* Kind multi-select: IN list (same-source convergence, same reason). */
   if (opts.kinds && opts.kinds.length > 0) {
     const kinds = [...new Set(opts.kinds)].slice(0, WORK_KINDS.length);
     where.push(`w.kind IN (${kinds.map(() => "?").join(",")})`);
     args.push(...kinds);
   }
-  /* awesome 收录口径过滤(base/eco/part) */
+  /* Awesome scope filter (base/eco/part). */
   if (opts.scope) {
     where.push("w.scope = ?");
     args.push(opts.scope);
@@ -286,8 +315,9 @@ async function runWorksPage(
   return { works: kept.map(mapWork), nextCursor };
 }
 
-/* /works 墙:只看成员自己的作品;Agent/类型多选过滤 + 排序。
-   viewerId = 登录浏览者:自己的私密作品可见(卡片带「私密」标),他人私密不出现。 */
+/* /works wall: member works only; agent/kind multi-select filters +
+   sort. viewerId = logged-in viewer: their private works appear (labeled
+   "private"); others' private works never do. */
 export async function getWorksPage(
   opts: { sort?: WorksSort; agents?: string[]; kinds?: string[]; after?: string; viewerId?: number } = {},
 ): Promise<WorksPage> {
@@ -306,8 +336,8 @@ export async function getWorksPage(
   );
 }
 
-/* /awesome:推荐条目 + 勾选「同时收录」的成员作品(20260906 起不再全量混入);
-   Agent/类型/收录口径过滤 + 排序。可见性口径同上。 */
+/* /awesome: recommended entries + opted-in member works (no longer a
+   full mix); agent/kind/scope filters + sort. Same visibility rules. */
 export async function getAwesomeWorksPage(
   opts: {
     sort?: WorksSort;
@@ -334,8 +364,9 @@ export async function getAwesomeWorksPage(
   );
 }
 
-/* 个人主页「作品」页签:成员自有作品(source=site)。
-   self=true(本人)含私密与被屏蔽条目(带标注);访客只见公开且未屏蔽(同 getUserPosts)。 */
+/* Profile "works" tab: a member's own works (source=site). self=true
+   includes private and hidden entries (labeled); visitors see public and
+   unhidden only (same as getUserPosts). */
 export async function getUserWorks(
   userId: number,
   self = false,
@@ -347,12 +378,14 @@ export async function getUserWorks(
   return rows.map(mapWork);
 }
 
-/* ---- 毕业归因(20260920_works_source_path,知识库机械结构 plan §二.5)----
-   作品发布时可带来源路径 slug(/works/new?path=slug);路径详情页成就区显示
-   真实毕业作品,北极星 #5「路径毕业作品数」由此统计。 */
+/* ---- Graduation attribution ---- A work can carry its source
+   learn-series slug at publish time (/works/new?path=slug); the series
+   page's achievement area shows real graduated works, powering north-star
+   #5 "works graduated per series". */
 
-/* 路径详情页成就区:该路径的公开毕业作品(公共上下文,仅公开未屏蔽的
-   site 条目——私密/被屏蔽作品不借路径页漏出,同右栏口径),新到旧。 */
+/* Series achievement area: public graduated works for a series (public
+   context: public, unhidden, site entries only — private/hidden works
+   never leak through the series page, same as the rail), newest first. */
 export function pathGraduatesQuery(
   slug: string,
   limit = 6,
@@ -373,7 +406,8 @@ export async function getPathGraduates(
   return rows.map(mapWork);
 }
 
-/* 北极星 #5:各路径毕业作品数(公共上下文,同上口径;供月刊/分析用)。 */
+/* North-star #5: graduated-work counts per series (public context, same
+   rules; feeds the monthly letter and analytics). */
 export function pathGraduationCountsQuery(): { sql: string; args: string[] } {
   return {
     sql: `SELECT w.source_path, COUNT(*) AS n FROM works w
@@ -393,18 +427,22 @@ export async function pathGraduationCounts(
   return map;
 }
 
-/* ---- 作品用量声明制(20260822_work_claims)----
-   徽章语义(替换旧的「作者总量」徽章,原 badgeTokensOf 已移除):
-   作者为自己的每个作品声明一个构建投入 token 数(claimed_tokens),
-   同一作者全部未删作品 Σ声明 ≤ 该作者可验证总量(usage/social 同口径的
-   usage_buckets 全时间 SUM,但走 usage/verifiable.ts 的内部查询,
-   不做 show_on_leaderboard 门禁 —— 声明行为本身即公开授权,总量数字不公开展示)。
-   展示时兜底:总量缩水(删数据/retention)使 Σ声明 > 总量 → 该作者所有作品
-   徽章整体不渲染(无负面标记),作者在列表/编辑页看到重新分配提示。
-   作品物理删除,声明随删除自然释放额度。 */
+/* ---- Work usage claims ---- Badge semantics (replacing the old
+   "author total" badge): an author declares a build-effort token count
+   per work (claimed_tokens); across one author's undeleted works, the sum
+   of claims must stay within their verifiable total (an all-time SUM over
+   usage_buckets with the same definition as usage/social, but via the
+   internal query in usage/verifiable.ts without the show_on_leaderboard
+   gate — declaring is itself a public act, and the raw total is never
+   displayed). Display fallback: if the total shrinks (deletion/retention)
+   below the sum of claims, none of that author's badges render (no
+   negative signaling) and the author sees a redistribution hint in
+   lists/edit. Physically deleting a work releases its claim
+   automatically. */
 
-/* 紧凑数字解析:「612M」「1.5M」「2k」「1.2B」「10,000」→ 整 tokens。
-   空串 = 未声明(none);非空但解析不出/非正整数/超安全整数 → invalid。 */
+/* Compact-number parsing: "612M" "1.5M" "2k" "1.2B" "10,000" ->
+   integer tokens. Empty = no claim (none); non-empty but unparseable /
+   non-positive / beyond safe integers = invalid. */
 export type ClaimInputParse =
   | { kind: "none" }
   | { kind: "ok"; value: number }
@@ -422,8 +460,9 @@ export function parseClaimInput(raw: string): ClaimInputParse {
   return { kind: "ok", value };
 }
 
-/* 写时校验(纯函数):声明值 ≤ 剩余可声明额度才放行(等于剩余放行,超 1 拒绝);
-   null(撤销声明)永远放行。remaining = 可验证总量 − 其他作品已声明合计。 */
+/* Write-time validation (pure): a claim passes only if <= remaining
+   allowance (equal passes, one over rejects); null (retracting) always
+   passes. remaining = verifiable total - claims on other works. */
 export type ClaimCheck = { ok: true } | { ok: false; remaining: number };
 
 export function checkClaimAllowance(
@@ -434,9 +473,11 @@ export function checkClaimAllowance(
   return claim <= remaining ? { ok: true } : { ok: false, remaining };
 }
 
-/* 展示不变式(纯函数):本作品的徽章值;null = 不渲染(无负面标记)。
-   隐藏条件:awesome 外部条目 / 无站内作者 / 未声明 / 声明 ≤ 0 /
-   作者无可验证数据(总量 ≤ 0)/ Σ声明 > 可验证总量(总量缩水 → 全部徽章暂停)。 */
+/* Display invariant (pure): this work's badge value; null = render
+   nothing (no negative signaling). Hidden when: awesome external entry /
+   no on-site author / unclaimed / claim <= 0 / author has no verifiable
+   data (total <= 0) / sum of claims > verifiable total (a shrunk total
+   pauses all badges). */
 export function claimBadgeOf(
   w: Pick<WorkRow, "userId" | "source" | "claimedTokens">,
   totals: Map<number, number>,
@@ -452,13 +493,15 @@ export function claimBadgeOf(
   return claim;
 }
 
-/* 作者视角提示(纯函数):声明总额是否已超出可验证总量(徽章暂停,需重新分配)。 */
+/* Author-view hint (pure): whether the author's total claims exceed their
+   verifiable total (badges paused, redistribution needed). */
 export function claimsPaused(total: number, claimSum: number): boolean {
   return claimSum > 0 && claimSum > total;
 }
 
-/* 建议预填匹配(纯函数):作品名与项目 label 大小写不敏感精确匹配优先,
-   其次互为子串;都没有 → null。projects 上游已按 tokens 降序。 */
+/* Suggestion prefill matching (pure): case-insensitive exact match of
+   work name to project label first, then mutual substring; otherwise
+   null. projects arrive sorted by tokens desc upstream. */
 export function matchSuggestedClaim(
   workName: string,
   projects: ClaimProjectTotal[],
@@ -476,8 +519,9 @@ export function matchSuggestedClaim(
   );
 }
 
-/* 一批作者 → 各自全部作品(物理删除,无软删过滤)的 Σclaimed_tokens。
-   批量一条 IN 查询,与徽章总量查询配对(展示时不变式的两侧)。 */
+/* A set of authors -> the sum of claimed_tokens across their works (no
+   soft-delete filter). One batched IN query, paired with the badge-total
+   query (the two sides of the display invariant). */
 export function workClaimSumsQuery(
   userIds: (number | null)[],
 ): { sql: string; args: unknown[] } | null {
@@ -507,15 +551,18 @@ export async function getWorkClaimSums(
 }
 
 export interface ClaimAllowance {
-  /* 作者可验证总量(内部口径,不公开渲染) */
+  /* Author's verifiable total (internal definition, never rendered
+     publicly). */
   total: number;
-  /* 其他作品已声明合计(编辑时排除本作品);删除作品后自然回落 = 释放额度 */
+  /* Sum of claims on other works (excluding this one while editing);
+     deleting a work falls back naturally = releases its allowance. */
   claimed: number;
-  /* 剩余可声明额度 = max(0, total − claimed) */
+  /* Remaining claimable = max(0, total - claimed). */
   remaining: number;
 }
 
-/* 写时/表单侧的额度口径:总量(内部验证)+ 已声明合计(可排除本作品)。 */
+/* Allowance definition for writes/forms: total (internal verification) +
+   sum of claims (optionally excluding this work). */
 export async function getClaimAllowance(
   userId: number,
   excludeWorkId?: number,
@@ -554,40 +601,49 @@ export interface WorkFields {
   screenshotUrl: string;
   tags: string[];
   agents: string[];
-  authorLabel: string; // 非空 → source=awesome(推荐站外项目)
-  /* public/private;action 层已钉死枚举(非 'private' 一律 public) */
+  authorLabel: string; // non-empty -> source=awesome (recommended
+                        // external project)
+  /* public/private; the action layer pins the enum (anything but
+     'private' is public). */
   visibility: "public" | "private";
-  /* 构建投入声明(声明制);null = 未声明。额度校验在 action 层(checkClaimAllowance) */
+  /* Build-effort claim; null = unclaimed. Allowance is validated in the
+     action layer (checkClaimAllowance). */
   claimedTokens: number | null;
-  /* 20260824_work_meta;action 层已做白名单校验 */
+  /* Work metadata; allowlisted in the action layer. */
   status: string;
   models: string[];
   kind: string;
   descriptionMd: string;
-  /* awesome 收录口径(base/eco/part);作品墙条目恒 null */
+  /* Awesome scope (base/eco/part); wall entries are always null. */
   scope: string | null;
-  /* 20260906:site 作品勾选「同时收录到 Awesome」;awesome 条目恒在清单内,服务端对它们强制 0 */
+  /* "Also list on Awesome" for site works; awesome entries are always
+     listed — the server forces 0 for them. */
   alsoAwesome?: boolean;
-  /* 20260826_work_media;action 层已做形状 + 前缀校验(isWorkLogoKey/areWorkImageKeys) */
+  /* Media; shape + prefix validated in the action layer
+     (isWorkLogoKey/areWorkImageKeys). */
   logoKey: string;
   imageKeys: string[];
-  /* 20260916:独立列表封面(image/ 前缀,空=走色卡);action 层已做形状校验。
-     awesome 条目无媒体,服务端强制空 */
+  /* Standalone list cover (image/ prefixed; empty = color card).
+     Shape-validated in the action layer. Awesome entries have no media;
+     the server forces empty. */
   coverKey: string;
-  /* 20260908;action 层已做白名单校验(isCoverTone / cover|contain)。
-     awesome 条目适配无意义,服务端强制默认 */
+  /* Allowlisted in the action layer (isCoverTone / cover|contain). Fit
+     is meaningless for awesome entries; the server forces the default. */
   coverTone: string;
   coverFit: string;
-  /* 允许 AI 参与评论区(20260816 召唤):checkbox 提交 "on",缺省 = 关 */
+  /* Allow AI in comments (summon support): the checkbox submits "on",
+     absent = off. */
   aiReply: boolean;
-  /* 毕业归因来源路径 slug(20260920):action 层已按在册路径校验(normalizePathSlug,
-     非法置 null);仅 createWork 落库——归因在发布时定死,updateWork 不动它 */
+  /* Graduation source slug: validated against registered series in the
+     action layer (normalizePathSlug, invalid -> null); written by
+     createWork only — attribution is fixed at publish, updateWork never
+     touches it. */
   sourcePath: string | null;
 }
 
-/* ---- 作品媒体 key 校验(20260826_work_media)----
-   实现在 src/lib/work-media.ts(纯函数,客户端组件可引);这里 re-export
-   让 action / 测试维持从 works 导入的既有习惯。 */
+/* ---- Work media key validation ---- Implemented in
+   src/lib/work-media.ts (pure, client-importable); re-exported here so
+   actions/tests keep the existing import-from-works habit. */
 export {
   areWorkImageKeys,
   isWorkLogoKey,
@@ -597,8 +653,10 @@ export {
 } from "./work-media";
 import { WORK_IMAGE_MAX } from "./work-media";
 
-/* INSERT 查询构建(纯函数,可单测):source_path 只在创建时落库(毕业归因 20260920;
-   awesome 推荐条目无来源路径语义,强制 null)。编辑走 updateWork,不改归因。 */
+/* INSERT query building (pure, unit-testable): source_path is written at
+   creation only (graduation attribution; awesome entries have no
+   source-path semantics, forced null). Edits go through updateWork, which
+   never touches attribution. */
 export function workInsertQuery(
   userId: number,
   f: WorkFields,
@@ -619,22 +677,25 @@ export function workInsertQuery(
       source,
       f.visibility === "private" ? "private" : "public",
       f.authorLabel.slice(0, 120),
-      /* awesome 条目强制无声明(声明是作品墙的作者自报语义) */
+      /* Awesome entries are forced claimless (claims are the wall's
+         author-declared semantics). */
       source === "awesome" ? null : f.claimedTokens,
       f.status,
       JSON.stringify(f.models.slice(0, 10)),
       f.kind,
       f.descriptionMd || null,
       source === "awesome" ? f.scope : null,
-      /* 同时收录 Awesome:仅 site 作品有意义,awesome 条目恒在清单内 */
+      /* Also-on-Awesome: meaningful for site works only; awesome entries
+         are always listed. */
       source === "site" && f.alsoAwesome ? 1 : 0,
-      /* 媒体同声明:仅作品墙条目,awesome 强制为空 */
+      /* Media follows claims: wall entries only, awesome forced empty. */
       source === "awesome" ? "" : f.logoKey.slice(0, 255),
       source === "awesome" || f.imageKeys.length === 0
         ? null
         : JSON.stringify(f.imageKeys.slice(0, WORK_IMAGE_MAX)),
-      /* 独立封面同媒体:awesome 强制空;色调 20260914 起 awesome 也可选定
-         (不选则渲染侧按类型族定色);适配仅作品墙条目有意义 */
+      /* Standalone cover follows media: awesome forced empty; tone is
+         selectable for awesome too (the renderer picks by kind family
+         when unset); fit is wall-only. */
       source === "awesome" ? "" : f.coverKey.slice(0, 255),
       f.coverTone.slice(0, 16),
       source === "awesome" ? "cover" : f.coverFit === "contain" ? "contain" : "cover",
@@ -682,7 +743,8 @@ export async function updateWork(
       f.kind,
       f.descriptionMd || null,
       source === "awesome" ? f.scope : null,
-      /* 同时收录 Awesome:仅 site 作品有意义,awesome 条目恒在清单内 */
+      /* Also-on-Awesome: meaningful for site works only; awesome entries
+         are always listed. */
       source === "site" && f.alsoAwesome ? 1 : 0,
       source === "awesome" ? "" : f.logoKey.slice(0, 255),
       source === "awesome" || f.imageKeys.length === 0
@@ -711,15 +773,20 @@ export async function deleteWork(
 }
 
 
-/* ---- 作品详情 + 互动(P1-2)----
-   支持:只有「顶」没有踩,再点取消;复合主键 (work_id, user_id) 天然幂等。
-   评论:单层(无楼中楼)、软删;评论作者本人或作品作者可删,权限钉在 SQL WHERE。
-   冗余计数 vote_count / comment_count 随写路径维护,减侧 GREATEST 兜底(并发不击穿 0)。
-   AI 评论(20260816 召唤):is_ai=1 + user_id NULL,由 ai_reply_jobs 消费写入,
-   不经 createWorkComment;viewer 关掉 show_ai_replies 时查询侧滤掉。 */
+/* ---- Work detail + interactions ---- Votes: up only (no down),
+   clicking again cancels; the composite PK (work_id, user_id) is
+   naturally idempotent. Comments: single-level (no threading),
+   soft-deleted; deletable by the comment author or the work author,
+   permission pinned in SQL WHERE. Redundant vote_count / comment_count
+   follow the write paths, with GREATEST flooring on the minus side
+   (concurrency never breaks through 0). AI comments (summons): is_ai=1 +
+   user_id NULL, written by ai_reply_jobs consumers, never through
+   createWorkComment; filtered query-side when the viewer disables
+   show_ai_replies. */
 
 export interface WorkDetail extends WorkRow {
-  /* 精选定夺编辑(featured_by)的 handle;未精选/账号已注销 → null */
+  /* Featuring editor's (featured_by) handle; unfeatured or deleted
+     account -> null. */
   editorHandle: string | null;
 }
 
@@ -734,9 +801,10 @@ export const getWorkDetail = cache(
   },
 );
 
-/* 声明徽章上下文(作者可验证总量 + Σ声明):作品详情页与右栏元数据卡共用,
-   React cache 按请求去重(getVerifiableTokenTotals/getWorkClaimSums 的入参是数组,
-   直接 cache 去重不了,这里收敛成标量 userId 入口)。 */
+/* Claim-badge context (author verifiable total + sum of claims): shared
+   by the detail page and the rail metadata card; React cache dedupes per
+   request (getVerifiableTokenTotals/getWorkClaimSums take arrays and
+   can't dedupe directly, so this funnels to scalar-userId entry points). */
 export const getAuthorClaimContext = cache(
   async (userId: number): Promise<{ total: number; claimSum: number }> => {
     const [totals, sums] = await Promise.all([
@@ -750,9 +818,11 @@ export const getAuthorClaimContext = cache(
   },
 );
 
-/* 作品详情右栏「相关作品」:同作者或同 Agent(任一交集),同作者优先,其余按新到旧。
-   右栏是公共上下文,只取 public —— 别人的私密作品不能借右栏漏出(同 relatedPostsQuery)。
-   站内作者与 agents 都没有(理论上的空条目)时不构成任何条件 → null,调用方不查库。 */
+/* Rail "related works": same author or shared agent (either overlap),
+   same author first, then newest. The rail is a public context, public
+   rows only — someone else's private work must never leak through the
+   rail (same as relatedPostsQuery). With neither an on-site author nor
+   agents, no condition can form -> null and the caller skips the query. */
 export function relatedWorksQuery(
   work: { id: number; userId: number | null; agents: string[] },
   limit = 5,
@@ -771,7 +841,8 @@ export function relatedWorksQuery(
   const n = Math.max(1, Math.min(20, Math.floor(limit)));
   let order = "w.id DESC";
   if (work.userId !== null) {
-    /* 同作者的排前面;order 部分的 ? 跟在 where 之后(位置参数按序绑定) */
+    /* Same-author rows first; the ? in the ORDER BY follows the WHERE
+       (positional args bind in order). */
     order = "(w.user_id = ?) DESC, w.id DESC";
     args.push(work.userId);
   }
@@ -792,8 +863,10 @@ export async function getRelatedWorks(
   return rows.map(mapWork);
 }
 
-/* /awesome 右栏来源统计:站内成员作品 vs 站外推荐条目数(公共上下文,仅公开条目)。 */
-/* /works 列表右栏:按支持数的热门站内作品(精选与否不参与排序,徽章只是编辑意志) */
+/* /awesome rail source stats: on-site member works vs recommended
+   external entries (public context, public rows only). */
+/* /works rail: hot on-site works by supports (featuring plays no part in
+   ordering — the badge is editorial will). */
 export async function getTopWorks(limit = 5): Promise<WorkRow[]> {
   const n = Math.max(1, Math.min(20, Math.floor(limit)));
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -824,10 +897,11 @@ export async function getAwesomeSourceStats(): Promise<{
   return { site, awesome };
 }
 
-/* ---- 列表右栏统计(20260824 改造)---- */
+/* ---- List rail stats ---- */
 
-/* /works 右栏:上架作品 / 作者 / 声明投入 Σ / 本周新上架(全部 source='site';
-   公共上下文,仅公开条目——私密作品的数量也不计入,同 posts 社区统计口径)。 */
+/* /works rail: listed works / authors / declared effort sum / new this
+   week (all source='site'; public context, public rows only — private
+   works are not counted either, same as the posts community stats). */
 export async function getWorksWallStats(): Promise<{
   works: number;
   authors: number;
@@ -849,8 +923,9 @@ export async function getWorksWallStats(): Promise<{
   };
 }
 
-/* 活跃 Agent 分布(按参与作品数;JSON 成员在 JS 侧摊开,作品量小无需 JSON_TABLE)。
-   公共上下文,仅公开条目。 */
+/* Active agent distribution (by works involved; JSON members unfold in
+   JS — no JSON_TABLE needed at this scale). Public context, public rows
+   only. */
 export async function getWorksAgentStats(
   source: "site" | "awesome",
   limit = 6,
@@ -872,7 +947,8 @@ export async function getWorksAgentStats(
     .slice(0, limit);
 }
 
-/* /awesome 右栏:收录项目 / 参与 Agent / 本周新增 / 推荐成员(公共上下文,仅公开条目)。 */
+/* /awesome rail: listed projects / involved agents / new this week /
+   recommending members (public context, public rows only). */
 export async function getAwesomeStats(): Promise<{
   items: number;
   agents: number;
@@ -899,7 +975,8 @@ export async function getAwesomeStats(): Promise<{
   };
 }
 
-/* /awesome 收录口径计数(base/eco/part;公共上下文,仅公开条目)。 */
+/* /awesome scope counts (base/eco/part; public context, public rows
+   only). */
 export async function getAwesomeScopeStats(): Promise<{
   base: number;
   eco: number;
@@ -917,8 +994,9 @@ export async function getAwesomeScopeStats(): Promise<{
   return out;
 }
 
-/* 类型分布(按作品数;卡片 chip / 筛选下拉 / 右栏共用同一预设表 work-kinds.ts)。
-   公共上下文,仅公开条目。 */
+/* Kind distribution (by work count; card chips / filter dropdown / rail
+   share the preset table in work-kinds.ts). Public context, public rows
+   only. */
 export async function getWorksKindStats(
   source: "site" | "awesome",
 ): Promise<{ kind: string; count: number }[]> {
@@ -929,7 +1007,8 @@ export async function getWorksKindStats(
   return rows.map((r) => ({ kind: String(r.kind), count: Number(r.n) }));
 }
 
-/* 浏览者是否已支持(详情页支持按钮初态)。 */
+/* Whether the viewer already supports (initial state of the detail-page
+   support button). */
 export async function hasWorkVote(
   userId: number,
   workId: number,
@@ -941,7 +1020,8 @@ export async function hasWorkVote(
   return !!rows[0];
 }
 
-/* INSERT IGNORE:并发重复/双击由复合主键挡住,不报错的幂等插入。 */
+/* INSERT IGNORE: concurrent duplicates/double-clicks are absorbed by the
+   composite PK — an idempotent insert that never errors. */
 export function workVoteInsertQuery(
   workId: number,
   userId: number,
@@ -962,8 +1042,9 @@ export function workVoteDeleteQuery(
   };
 }
 
-/* 减侧先 CAST 成 SIGNED 再 GREATEST:UNSIGNED 直接 -1 会回绕成巨值
-   (同 posts.ts hotExpr 的坑),兜底在并发误删时不击穿 0。 */
+/* CAST to SIGNED before GREATEST on the minus side: subtracting 1 from
+   an UNSIGNED column wraps to a huge value (same trap as posts.ts
+   hotExpr); the floor keeps concurrency from breaking through 0. */
 export function workVoteCountQuery(
   workId: number,
   delta: 1 | -1,
@@ -977,13 +1058,15 @@ export function workVoteCountQuery(
   };
 }
 
-/* insert 的 affectedRows:1 = 这次新支持(计数 +1);0 = 已支持过(这次 = 取消)。 */
+/* insert affectedRows: 1 = new support this time (count +1); 0 = already
+   supported (this call = cancel). */
 export function workVoteBranch(insertAffectedRows: number): "support" | "cancel" {
   return insertAffectedRows > 0 ? "support" : "cancel";
 }
 
-/* 支持 toggle:插入成功即支持,已存在则删除取消;返回本次终态(客户端乐观路径
-   只关心 ok,返回值供调用方/测试对齐语义)。 */
+/* Support toggle: a successful insert is a support, an existing row is
+   deleted to cancel; returns the resulting state (optimistic clients only
+   need ok; the value aligns callers and tests). */
 export async function toggleWorkVote(
   userId: number,
   workId: number,
@@ -1006,12 +1089,12 @@ export async function toggleWorkVote(
   return branch;
 }
 
-/* ---- 评论 ---- */
+/* ---- Comments ---- */
 
 export interface WorkCommentRow {
   id: number;
   workId: number;
-  /* 评论作者;NULL = AI(20260816 召唤) */
+  /* Comment author; NULL = AI (summon). */
   userId: number | null;
   isAi: boolean;
   body: string;
@@ -1020,14 +1103,17 @@ export interface WorkCommentRow {
   avatarUrl: string | null;
 }
 
-/* 单层评论分页:id 游标,时间正序(旧的在前,对话从下往上长),每页多取 1 条
-   判断下一页;翻页期间新增评论只追加在末尾,不会顶乱已翻过的页(同社区取舍)。 */
+/* Single-level comment paging: id cursor, time ascending (oldest first,
+   threads grow bottom-up), one extra row per page to detect the next;
+   comments added while paging only append at the end and never reshuffle
+   pages already seen (same trade-off as community). */
 export const WORK_COMMENT_PAGE_SIZE = 50;
 
 export function workCommentPageQuery(
   workId: number,
   after: number,
-  /* showAi=false(viewer 关了 show_ai_replies)时滤掉 AI 评论;与 count 查询同口径 */
+  /* showAi=false (viewer disabled show_ai_replies) filters out AI
+     comments; same definition as the count query. */
   opts: { showAi?: boolean } = {},
 ): { sql: string; args: number[] } {
   const showAi = opts.showAi ?? true;
@@ -1042,7 +1128,8 @@ export function workCommentPageQuery(
   };
 }
 
-/* 可见评论总数:与 workCommentPageQuery 同口径(滤软删 + AI 过滤),两者必须一起改。 */
+/* Visible comment total: same rules as workCommentPageQuery (soft-delete
+   + AI filter) — the two must change together. */
 export function workCommentCountQuery(
   workId: number,
   opts: { showAi?: boolean } = {},
@@ -1099,9 +1186,11 @@ export async function getWorkCommentsPage(
   };
 }
 
-/* 服务端幂等(20260816,对齐社区 createCommentForVisiblePost):同人同作品同文
-   60 秒内的重复提交视为已提交——客户端 posting 防抖之外的网络重试/刷新重提
-   不出重楼,也不再触发召唤。 */
+/* Server-side idempotency (aligned with createCommentForVisiblePost): the
+   same user submitting the same comment text on the same work within 60
+   seconds counts as submitted — network retries and refresh re-submits
+   beyond the client's posting debounce produce no duplicate and trigger
+   no summon. */
 export function workCommentDuplicateQuery(
   workId: number,
   userId: number,
@@ -1116,10 +1205,12 @@ export function workCommentDuplicateQuery(
   };
 }
 
-/* 发评论:withVisibleWorkLock 事务内 60s 去重 → 插入 + 冗余计数 +1,一次
-   commit(20260822 P2-2,对齐社区 createCommentForVisiblePost);可见性判定
-   与写入同锁,消掉 action 层先查后写的 TOCTOU。不发通知(人类评论从简)。
-   AI 评论由 ai-reply.ts 直接写入(is_ai=1, user_id NULL)。 */
+/* Post comment: 60s dedup -> insert + counter +1 inside the
+   withVisibleWorkLock transaction, one commit (aligned with
+   createCommentForVisiblePost); visibility check and write share one
+   lock, removing the action layer's check-then-write TOCTOU. No
+   notifications for human comments (kept simple). AI comments are written
+   directly by ai-reply.ts (is_ai=1, user_id NULL). */
 export function workCommentInsertQuery(
   workId: number,
   userId: number,
@@ -1133,14 +1224,17 @@ export function workCommentInsertQuery(
 
 export interface WorkCommentCreated {
   id: number;
-  /* 命中 60s 去重时置位(幂等成功,不产生新行);action 层据此跳过召唤触发 */
+  /* Set when the 60s dedup hits (idempotent success, no new row); the
+     action layer skips summon triggering on it. */
   duplicate: boolean;
-  /* 目标作品的 ai_reply 开关(召唤地盘判定随锁定读数带出,替代先查后写) */
+  /* The work's ai_reply switch (summon territory check read under the
+     lock, replacing check-then-write). */
   aiReply: boolean;
 }
 
-/* 单作品可见性访问(works 侧门禁,20260822 P2-2):复用 canViewWork 口径,
-   lock=true 时 SELECT ... FOR UPDATE,给写路径的「判定 + 写入」同一把锁。 */
+/* Single-work visibility access (the works-side gate): reuses the
+   canViewWork rules; lock=true takes SELECT ... FOR UPDATE so "check +
+   write" share one lock. */
 export async function getVisibleWorkAccess(
   workId: number,
   viewer: { id: number; role: string },
@@ -1166,8 +1260,9 @@ export async function getVisibleWorkAccess(
   return { id: Number(r.id), aiReply: !!r.ai_reply };
 }
 
-/* 可见作品上的事务化写路径(对齐 posts 的 withVisiblePostLock):
-   不可见 → null(调用方按 generic 失败处理);回调内读写同事务。 */
+/* Transactional write path on a visible work (aligned with posts'
+   withVisiblePostLock): not visible -> null (caller treats as a generic
+   failure); reads and writes inside the callback share one transaction. */
 export async function withVisibleWorkLock<T>(
   workId: number,
   viewer: { id: number; role: string },
@@ -1211,15 +1306,17 @@ export async function createWorkComment(
   });
 }
 
-/* AI 回复作品评论后的通知(20260816 召唤):召唤触发者 + 作品作者
-   (触发者即作者本人时 Set 去重只发一条;awesome 站外条目无作者,只发触发者)。
-   actor NULL = AI;type='reply',work 目标列落库,渲染侧锚到
-   /works/<id>#work-comment-<cid>。 */
+/* Notification after an AI reply to a work comment: the summoning user +
+   the work author (Set-deduped when they coincide; awesome external
+   entries have no author, only the triggerer). actor NULL = AI;
+   type='reply' with work target columns; the renderer anchors to
+   /works/<id>#work-comment-<cid>. */
 export async function notifyOnWorkComment(input: {
   workId: number;
   workCommentId: number;
   actorId: number | null;
-  /* 触发召唤的那条评论;AI 回复的「父」语义挂在它上面 */
+  /* The comment that triggered the summon; the AI reply's "parent"
+     semantics hang off it. */
   triggerCommentId: number | null;
 }): Promise<void> {
   const pool = getPool();
@@ -1258,10 +1355,12 @@ export async function notifyOnWorkComment(input: {
   );
 }
 
-/* 删评论(软删):评论作者本人或作品作者可删,权限钉在 WHERE(c.user_id 或
-   w.user_id);多表 UPDATE 一条语句同时把 works.comment_count 减 1。
-   moderator=true(20260816 召唤,治理清 AI 评论)免归属校验。
-   affectedRows = 0 → 不存在/已删/越权,调用方按失败处理。 */
+/* Delete comment (soft): the comment author or the work author may
+   delete, permission pinned in WHERE (c.user_id or w.user_id); one
+   multi-table UPDATE also decrements works.comment_count.
+   moderator=true (governance cleanup of AI comments) bypasses ownership.
+   affectedRows = 0 -> missing/deleted/unauthorized; callers treat it as
+   failure. */
 export function workCommentDeleteQuery(
   commentId: number,
   userId: number,

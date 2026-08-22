@@ -1,5 +1,6 @@
-/* 作品元数据(状态/平台/收录口径)的 i18n 键映射:WorkCard / WorkRail / 详情页共用。
-   非法值落到安全默认,保证脏数据不炸渲染。 */
+/* i18n key mapping for work metadata (status/platform/scope): shared by
+   WorkCard / WorkRail / the detail page. Invalid values fall to safe
+   defaults so dirty data never breaks rendering. */
 
 export function workStatusKey(status: string) {
   switch (status) {

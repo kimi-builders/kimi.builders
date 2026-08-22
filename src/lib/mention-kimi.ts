@@ -1,14 +1,18 @@
-/* @kimi 召唤(20260816):评论/正文里显式召唤 Kimi 小筑。
-   两处用法:
-   - hasKimiMention:写操作 action 侧检测原始 md(先剥离代码块/行内代码,
-     代码示例里的 @kimi 不触发);
-   - rehypeKimiMention:Markdown 渲染插件,把正文里的 @kimi 包成
-     <span class="mention-kimi"> 高亮(code/pre 祖先内的文本跳过)。
-   词边界:前导不能是单词字符或 @(a@kimi.com 不命中),后续不能是单词字符
-   或 -(@kimiko / @kimi-builders 不命中);@ 与 kimi 之间允许空白(全角 @ 兼容)。 */
+/* @kimi summons: an explicit call to the bot in comments/post bodies. Two
+   uses:
+   - hasKimiMention: write-action detection over the raw markdown (code
+     blocks/inline code stripped first — @kimi inside a code sample never
+     triggers);
+   - rehypeKimiMention: a Markdown render plugin wrapping @kimi into
+     <span class="mention-kimi"> (text inside code/pre ancestors
+     skipped).
+   Word boundaries: no word char or @ before (a@kimi.com misses), no word
+   char or - after (@kimiko / @kimi-builders miss); whitespace between @
+   and kimi is allowed (fullwidth @ compatible). */
 
 const MENTION_RE = /(?:^|[^\w@])[@＠]\s*kimi(?![\w-])/i;
-/* 渲染用全局版:捕获 前导 + 召唤词 两段,拆分文本节点时各归各位 */
+/* Render-time global version: captures (prefix + summon) as two groups so
+   the split text nodes land in the right places. */
 const MENTION_SPLIT_RE = /(^|[^\w@])([@＠]\s*kimi(?![\w-]))/gi;
 
 export function hasKimiMention(md: string): boolean {
@@ -18,8 +22,9 @@ export function hasKimiMention(md: string): boolean {
   return MENTION_RE.test(stripped);
 }
 
-/* 自动补全(20260816):光标前紧跟 [@＠][\w-]{0,8} 且是 kimi 的前缀时,
-   返回待替换区间(start = @ 位置)与已输入 query;query="kimi" 完整输入后不再提示。 */
+/* Autocomplete: when the text right before the cursor matches
+   [@＠][\w-]{0,8} and prefixes "kimi", return the replacement range (start
+   = the @) and the typed query; a complete "kimi" stops suggesting. */
 export function kimiMentionAt(
   value: string,
   caret: number,
@@ -33,7 +38,8 @@ export function kimiMentionAt(
   return { start: caret - query.length - 1, query };
 }
 
-/* ---- rehype 插件(最小 hast 类型,不引 unist-util-visit 依赖)---- */
+/* ---- rehype plugin (minimal hast types, no unist-util-visit dependency)
+   ---- */
 
 interface HastText {
   type: "text";
