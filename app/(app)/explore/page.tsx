@@ -239,13 +239,15 @@ export default async function ExplorePage({
             aria-current={!selChapter ? "page" : undefined}
             className={`${SEG_ITEM} ${!selChapter ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
           >
-            {zh ? "全部" : "All"} <span className="opacity-60">{items.length}</span>
+            {/* 计数走 ml-1 显式间距:SEG_ITEM 是 inline-flex,元素间的
+                JSX 空格文本节点会被 flex 吞掉(字与数粘连,20260822 修复) */}
+            {zh ? "全部" : "All"} <span className="ml-1 opacity-60">{items.length}</span>
           </Link>
           {KB_CHAPTERS.map((c) => {
             const count = chapterCounts.find((x) => x.value === c.id)?.count ?? 0;
             const label = (
               <>
-                {zh ? c.zh : c.en} <span className="opacity-60">{count}</span>
+                {zh ? c.zh : c.en} <span className="ml-1 opacity-60">{count}</span>
               </>
             );
             if (count === 0) {
