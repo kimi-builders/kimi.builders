@@ -1,6 +1,7 @@
-/* GET /api/notifications/unread — 当前会话未读通知数(20260816)。
-   顶栏铃铛角标的客户端轮询源:免整页刷新知道有新回复;
-   未登录返回 401 + count 0(轮询端静默处理)。 */
+/* GET /api/notifications/unread — the session's unread count. Polled
+   by the top-bar bell badge so new replies arrive without a page
+   refresh; signed out returns 401 + count 0 (pollers handle it
+   silently). */
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { getUnreadNotificationCount } from "@/src/lib/posts";

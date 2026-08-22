@@ -1,7 +1,8 @@
-/* GET /api/ai-reply/status?commentId=<帖子评论> | workCommentId=<作品评论>
-   召唤等待反馈(20260816):客户端召唤成功后轮询此接口,拿到 done 再
-   router.refresh() 一次,免手动刷新看到 AI 回复。
-   只暴露任务状态(不泄露内容),登录即可查;无任务记 state=none。 */
+/* GET /api/ai-reply/status?commentId=<post comment> | workCommentId=<work
+   comment> — summon wait feedback: after a successful summon the client
+   polls here and router.refresh()es once on done, showing the AI reply
+   without a manual refresh. Exposes job state only (never content);
+   login required; no job means state=none. */
 import { NextRequest, NextResponse } from "next/server";
 import type { RowDataPacket } from "mysql2";
 import { getSessionUser } from "@/src/lib/auth/session";

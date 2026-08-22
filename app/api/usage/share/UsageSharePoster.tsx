@@ -12,18 +12,21 @@ import { MODEL_GLYPHS, modelGlyphId } from "./model-glyphs";
 
 export const USAGE_SHARE_POSTER_SIZE = { width: 1080, height: 1440 } as const;
 
-/* 色板唯一事实源:src/lib/brand-palette.ts(官方令牌内联值;Satori 无 CSS 变量)。 */
+/* Palette source of truth: src/lib/brand-palette.ts (inlined official
+   tokens; Satori has no CSS variables). */
 const palette = POSTER_PALETTE;
 
-/* 堆叠四段:输入=焦点蓝 / 缓存读=mint / 输出=纸白 72% / 推理=lemon
-   (pastel 状态色深底可读;与下方 TOKEN FLOW 桑基同语义)。 */
+/* Four stack segments: input = focus blue / cache read = mint / output
+   = paper 72% / reasoning = lemon (pastel status colors stay readable
+   on dark; same semantics as the TOKEN FLOW sankey below). */
 const STACK_INPUT = palette.blue;
 const STACK_CACHE = palette.green;
 const STACK_OUTPUT = POSTER_ALPHA.paper72;
 const STACK_REASONING = palette.amber;
 
 const CONTENT_WIDTH = 972;
-/* 贡献图热格:官方顺序蓝阶,按数据强度递增(#002F5B → #00F6FF)。 */
+/* Contribution heat cells: the official sequential blue ramp rising
+   with intensity (#002F5B -> #00F6FF). */
 const HEAT_COLORS = POSTER_HEAT_SCALE;
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -51,7 +54,7 @@ function safeMetric(value: string, maximum = 24): string {
 function spanText(span: { from: string; to: string }, zh: boolean): string {
   const [fromYear, fromMonth] = span.from.split("-").map(Number);
   const [toYear, toMonth] = span.to.split("-").map(Number);
-  /* zh 不用英文月名:2025.11 — 2026.08 */
+  /* zh avoids English month names: 2025.11 — 2026.08 */
   if (zh) {
     return `${fromYear}.${String(fromMonth).padStart(2, "0")} — ${toYear}.${String(toMonth).padStart(2, "0")}`;
   }
@@ -62,7 +65,8 @@ function spanText(span: { from: string; to: string }, zh: boolean): string {
     : `${fromYear} · ${from} — ${toYear} · ${to}`;
 }
 
-/* 对数带宽:以缓存读为锚,指数 4 放大差距(纯 log 下 130M 与 3.6B 几乎同宽)。 */
+/* Log bandwidth: anchored on cache read with exponent 4 — pure log
+   makes 130M and 3.6B nearly the same width. */
 function flowHeight(value: number, anchor: number, maximum: number, minimum: number): number {
   if (value <= 0 || anchor <= 0) return minimum;
   const ratio = Math.log10(1 + value) / Math.log10(1 + anchor);
@@ -141,14 +145,16 @@ function FlowSankey({ flow, zh }: { flow: UsageShareFlow; zh: boolean }) {
   );
 }
 
-/* 中段主图(hours/days/stacked):SVG 堆叠柱 + 实线网格 + mono Y 刻度,
-   语法对齐 usage 页 TrendCore;30d 堆叠加 7 日均值虚线。 */
+/* Middle chart (hours/days/stacked): SVG stacked bars + solid grid +
+   mono Y ticks, matching the usage page's TrendCore; the 30d stack adds
+   a 7-day average dashed line. */
 function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const { main } = snapshot;
   const zh = snapshot.zh;
   const cells = main.cells;
   const n = Math.max(1, cells.length);
-  /* hours(today/24H)与 30d 同为四段堆叠;7 日均值虚线只给 30d。 */
+  /* hours (today/24H) stack four segments like 30d; the 7-day average
+     dashed line is 30d-only. */
   const stacked = main.kind === "stacked" || main.kind === "hours";
   const width = CONTENT_WIDTH;
   const padL = 46;
@@ -162,7 +168,8 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const barW = Math.max(3, Math.round(slot * 0.62));
   const y = (value: number) => padT + plotH - (value / maximum) * plotH;
   const ticks = [0, 1, 2, 3, 4].map((step) => (maximum * step) / 4);
-  /* 退化数据(max≤1)下 compact 刻度会撞车(1,1,1,0,0):相邻去重,只标首个。 */
+  /* Degenerate data (max<=1) makes compact ticks collide (1,1,1,0,0):
+     dedupe neighbors, label only the first. */
   const tickLabels = ticks.map((tick, index) => {
     const text = compact(tick, zh);
     return index > 0 && text === compact(ticks[index - 1], zh) ? null : text;
@@ -187,10 +194,13 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
 
   const labelStep = Math.max(1, Math.ceil(n / 8));
   const labelOf = (cell: (typeof cells)[number], index: number): string | null => {
-    /* 末格必标;其余按 step 稀疏,且与末格至少隔一个 step(防右端两签挤一起)。 */
+    /* The last cell always gets a label; the rest sparse by step and at
+       least one step away from it (no two labels crammed at the right
+       edge). */
     if (index !== n - 1 && (index % labelStep !== 0 || n - 1 - index < labelStep)) return null;
     if (main.kind === "hours") {
-      /* mock 的日 key 不含小时位,退化为序号;today 只标小时,24H 带日期。 */
+      /* Mock day keys lack the hour part and degrade to ordinals; today
+         labels hours only, 24H carries dates. */
       if (cell.key.length <= 13) return String(index % 24).padStart(2, "0");
       return snapshot.range === "today" ? cell.key.slice(11, 13) : cell.key.slice(5);
     }
@@ -320,7 +330,8 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
   );
 }
 
-/* 分时热图 6 档:焦点蓝 alpha 渐近,末端实色(分档阈值见 heatStep)。 */
+/* Hourly heatmap 6 steps: focus-blue alpha fading to a solid end
+   (thresholds in heatStep). */
 const HEAT_STEPS = POSTER_HEAT_STEPS;
 
 function heatStep(value: number, maximum: number): string | null {
@@ -349,7 +360,8 @@ function HeatLegend({ colors }: { colors: string[] }) {
   );
 }
 
-/* 7D 主图:星期×小时活跃时段热图(同个人主页/用量看板的 6 档蓝阶)。 */
+/* 7D main chart: a weekday-x-hour activity heatmap (the same 6-step
+   blue ramp as the profile and the usage dashboard). */
 function WeekHeatmap({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const { main } = snapshot;
   const zh = snapshot.zh;
@@ -402,7 +414,8 @@ function WeekHeatmap({ snapshot }: { snapshot: UsageShareSnapshot }) {
   );
 }
 
-/* 90D/ALL 主图:构建足迹式贡献图(13/26 个自然周 × 7,月份随列变标注)。 */
+/* 90D/ALL main chart: a footprint-style contribution graph (13/26
+   natural weeks x 7, month labels changing with columns). */
 function ContribGraph({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const { main } = snapshot;
   const zh = snapshot.zh;
@@ -559,7 +572,8 @@ function MetricCell({
   );
 }
 
-/* 效率指标带:费用 / 活跃时长 / 峰值 / 缓存命中 / 会话 五格。 */
+/* Efficiency metric band: cost / active time / peak / cache hit /
+   sessions — five cells. */
 function MetricsBand({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const zh = snapshot.zh;
   const items = [
@@ -629,7 +643,8 @@ function ToolIcon({ id, label }: { id: string; label: string }) {
   );
 }
 
-/* 主力模型厂商字形:按型号名归族(model-glyphs.ts),未命中则不渲染图标。 */
+/* Top-model vendor glyph: mapped by model name (model-glyphs.ts); no
+   match means no icon. */
 function ModelGlyph({ label }: { label: string }) {
   const id = modelGlyphId(label);
   const glyph = id ? MODEL_GLYPHS[id] : undefined;
@@ -643,7 +658,8 @@ function ModelGlyph({ label }: { label: string }) {
   );
 }
 
-/* 武器库:eyebrow 行 / TOP 5 Agent 行 / 主力模型 + 推理强度 meta 行。 */
+/* Arsenal: eyebrow row / TOP 5 agent row / top model + reasoning-effort
+   meta row. */
 function ArsenalRow({ snapshot }: { snapshot: UsageShareSnapshot }) {
   const zh = snapshot.zh;
   const tools = snapshot.topTools;
@@ -757,7 +773,9 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
     : snapshot.streakWeeks.current > 0
       ? "WEEK STREAK"
       : "LONGEST STREAK";
-  /* 展示地址:去协议与 query、保持小写(与顶部大写品牌区分开);QR 仍指完整 siteUrl。 */
+  /* Display address: protocol and query stripped, lowercased (distinct
+     from the uppercase brand above); the QR still points at the full
+     siteUrl. */
   const siteUrlDisplay = snapshot.siteUrl.replace("https://", "").replace("?tab=usage", "");
   return (
     <div

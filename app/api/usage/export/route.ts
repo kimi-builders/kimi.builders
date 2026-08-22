@@ -16,11 +16,15 @@ import { captureUsageOperation } from "@/src/lib/usage/observability";
 import { listUsageRecords } from "@/src/lib/usage/query";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 
-/* GET /api/usage/export — 私人数据导出。
-   format=csv  : 当前筛选条件下的聚合明细(与看板明细同口径),封顶 2 万行。
-   format=json : 全量原始事实(buckets/sessions 各封顶 10 万行)。
-   两者都不含内部 id、session/project hash、API Key 或任何凭据。
-   鉴权:站点会话,或 Bearer kbu_ Key(read scope)。no-store。 */
+/* GET /api/usage/export — private data export.
+   format=csv  : aggregated detail under the current filters (same
+                 definition as the dashboard's records), capped at 20k
+                 rows.
+   format=json : full raw facts (buckets/sessions capped at 100k rows
+                 each).
+   Neither contains internal ids, session/project hashes, API keys, or
+   any credentials. Auth: a site session or a Bearer kbu_ key (read
+   scope). no-store. */
 export async function GET(request: Request) {
   const user = await getSessionUser();
   const principal = user ? null : await authenticateUsageRequest(request, "read");
@@ -103,7 +107,8 @@ export async function GET(request: Request) {
   });
 }
 
-/* 其他方法一律拒绝(纯导出端点,避免误用)。 */
+/* Every other method is rejected (a pure export endpoint, no
+   misuse). */
 export async function POST() {
   return noStoreJson({ ok: false, error: "method_not_allowed" }, { status: 405 });
 }

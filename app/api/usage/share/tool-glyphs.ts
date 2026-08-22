@@ -1,7 +1,10 @@
-/* AI 工具品牌字形:从 @lobehub/icons@5.15.0 的 Mono 组件提取的静态 SVG path 数据。
-   海报走 next/og(Satori)服务端渲染,lobehub 组件全是 "use client" 无法在此调用,
-   因此内联 Mono 字形(single-color currentColor 风格),以海报配色着色。
-   未收录的 source id 由 ToolIcon 退化为字母 chip。所有字形 viewBox 0 0 24 24,fillRule evenodd。 */
+/* AI tool brand glyphs: static SVG path data extracted from
+   @lobehub/icons@5.15.0's Mono components. Posters render server-side
+   via next/og (Satori), where lobehub's "use client" components can't
+   run, so the Mono glyphs are inlined (single-color currentColor style)
+   and tinted with the poster palette. Unregistered source ids degrade
+   to a letter chip via ToolIcon. All glyphs share viewBox 0 0 24 24 and
+   fillRule evenodd. */
 export const TOOL_GLYPHS: Record<string, { paths: string[] }> = {
   "kimi-code": {
     "paths": [

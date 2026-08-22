@@ -1,6 +1,7 @@
-/* 帖子分享海报 PNG:GET /api/share/post/[id]
-   dev 下 ?preview=1 用 mock 快照(不碰 DB,视觉验收用,对齐用量海报 pattern);
-   download=1 给附件头。私密/已删/不存在 → 404 不渲染。 */
+/* Post share poster PNG: GET /api/share/post/[id]. In dev, ?preview=1
+   renders a mock snapshot (no DB — visual review, same pattern as the
+   usage poster); download=1 sets the attachment header.
+   Private/deleted/missing -> 404, never rendered. */
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import {
@@ -20,7 +21,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  /* IP 限流(20260822 P1-9):渲染重,先挡量再进查询/渲染管线 */
+  /* IP rate limit: rendering is heavy — stop the volume before the
+     query/render pipeline. */
   if (await posterRateLimited(request)) {
     return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
@@ -41,10 +43,11 @@ export async function GET(
   const fonts = await getPosterFonts(postShareText(snapshot) + POSTER_STATIC_TEXT);
   return new ImageResponse(<PostSharePoster snapshot={snapshot} />, {
     ...postPosterSize(snapshot),
-    /* 空数组会被 satori 当「零字体」(全豆腐),必须回落默认字体 */
+    /* Satori treats an empty array as zero fonts (all tofu) — fall back
+       to the default fonts. */
     ...(fonts.length ? { fonts } : {}),
     headers: {
-      /* 内容会变,海报允许 5 分钟陈旧 */
+      /* Content changes; posters tolerate 5 minutes of staleness. */
       "Cache-Control": preview ? "private, no-store, max-age=0" : "public, max-age=300",
       "Content-Disposition": `${download ? "attachment" : "inline"}; filename="kimi-builders-post-${snapshot.id}.png"`,
       "X-Content-Type-Options": "nosniff",

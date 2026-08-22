@@ -9,9 +9,11 @@ import {
 
 export async function POST(request: Request) {
   try {
-    /* IP 档先行(20260822 P1-7):下方按 deviceCode 计数的限流身份来自请求体,
-       任意串即可无限插行 usage_rate_limits(无人清理);IP 档把行数按来源 IP 收敛,
-       且被拒请求不再到达 deviceCode 档(不再插行) */
+    /* The IP tier comes first: the deviceCode tier below keys on a
+       request-body string, so arbitrary strings could insert unbounded
+       usage_rate_limits rows (nothing cleaned them); the IP tier
+       converges row count per source IP, and rejected requests never
+       reach the deviceCode tier (inserting nothing). */
     const ipAllowed = await consumeUsageRateLimit({
       scope: "device-code-token-ip",
       identity: requestIdentity(request),

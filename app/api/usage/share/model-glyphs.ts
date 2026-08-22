@@ -1,9 +1,12 @@
-/* 模型厂商品牌字形:从 @lobehub/icons@5.15.0 的 Mono 组件提取的静态 SVG path 数据。
-   海报走 next/og(Satori)服务端渲染,lobehub 组件全是 "use client" 无法在此调用,
-   因此内联 Mono 字形(single-color currentColor 风格),以海报配色着色。
-   与网页端 components/ModelIcon.tsx 同族(Kimi/Claude/OpenAI/Gemini/DeepSeek/Qwen/
-   Grok/MiniMax/GLMV/Doubao/Wenxin);modelGlyphId 按型号名关键词归族,未命中返回 null
-   (调用方省略图标)。所有字形 viewBox 0 0 24 24,fillRule evenodd。 */
+/* Model-vendor brand glyphs: static SVG path data extracted from
+   @lobehub/icons@5.15.0's Mono components. Posters render server-side
+   via next/og (Satori), where lobehub's "use client" components can't
+   run, so the Mono glyphs are inlined (single-color currentColor style)
+   and tinted with the poster palette. Same families as the web-side
+   components/ModelIcon.tsx (Kimi/Claude/OpenAI/Gemini/DeepSeek/Qwen/
+   Grok/MiniMax/GLMV/Doubao/Wenxin); modelGlyphId maps a model name to a
+   family by keyword, null on no match (callers omit the icon). All
+   glyphs share viewBox 0 0 24 24 and fillRule evenodd. */
 export const MODEL_GLYPHS: Record<string, { paths: string[] }> = {
   "kimi": {
     "paths": [
@@ -69,7 +72,8 @@ export const MODEL_GLYPHS: Record<string, { paths: string[] }> = {
   }
 };
 
-/* 型号名 → 家族 id:小写关键词匹配,顺序即优先级(如 gpt 先于泛匹配)。 */
+/* Model name -> family id: lowercase keyword match, order is priority
+   (e.g. "gpt" beats the generic match). */
 export function modelGlyphId(label: string): string | null {
   const s = label.toLowerCase();
   if (/kimi|moonshot|月之暗面/.test(s)) return "kimi";

@@ -1,7 +1,10 @@
-/* 月刊分节分享海报 PNG:GET /api/share/letter/[slug]?section=facts|decisions|letter
-   section 缺省/非法 → facts(归一化在组装层,见 src/lib/share-letter.ts);
-   dev 下 ?preview=1 用 tests/fixtures/monthly-mock 第一期渲染(不碰 DB,视觉验收用,
-   对齐帖子/作品/主页海报 pattern);download=1 给附件头。无此已发布期 → 404 不渲染。 */
+/* Monthly section poster PNG: GET /api/share/letter/[slug]?section=
+   facts|decisions. A missing/invalid section falls back to facts
+   (normalized at the assembly layer, see src/lib/share-letter.ts); in
+   dev, ?preview=1 renders the first fixture from
+   tests/fixtures/monthly-mock (no DB — visual review, same pattern as
+   the other posters); download=1 sets the attachment header. No such
+   published issue -> 404, never rendered. */
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import {
@@ -23,7 +26,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  /* IP 限流(20260822 P1-9):渲染重,先挡量再进查询/渲染管线 */
+  /* IP rate limit: rendering is heavy — stop the volume before the
+     query/render pipeline. */
   if (await posterRateLimited(request)) {
     return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
@@ -31,7 +35,8 @@ export async function GET(
   const preview =
     process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("preview") === "1";
   const section = normalizeLetterSection(request.nextUrl.searchParams.get("section"));
-  /* dev 预览用 mock 夹具:动态 import,不随生产渲染路径进 bundle */
+  /* The dev preview's mock fixture imports dynamically so it never
+     enters the production render bundle. */
   const snapshot = preview
     ? letterSnapshotFromMock((await import("@/tests/fixtures/monthly-mock")).BLOG_ISSUES[0], section)
     : await getLetterShareSnapshot(slug, section);
@@ -45,10 +50,12 @@ export async function GET(
   );
   return new ImageResponse(<LetterSharePoster snapshot={snapshot} />, {
     ...LETTER_POSTER_SIZE,
-    /* 空数组会被 satori 当「零字体」(全豆腐),必须回落默认字体 */
+    /* Satori treats an empty array as zero fonts (all tofu) — fall back
+       to the default fonts. */
     ...(fonts.length ? { fonts } : {}),
     headers: {
-      /* 期内容会变(同月刊页组装制),海报允许 5 分钟陈旧 */
+      /* Issue content changes (assembled like the monthly page);
+         posters tolerate 5 minutes of staleness. */
       "Cache-Control": preview ? "private, no-store, max-age=0" : "public, max-age=300",
       "Content-Disposition": `${download ? "attachment" : "inline"}; filename="kimi-builders-letter-${snapshot.slug}-${snapshot.section}.png"`,
       "X-Content-Type-Options": "nosniff",

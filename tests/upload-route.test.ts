@@ -15,5 +15,5 @@ test("upload route consumes quota and checks Content-Length before multipart par
 });
 
 test("upload route documents the required reverse-proxy hard limit", () => {
-  assert.match(source, /Caddy\/反代.*硬上限/);
+  assert.match(source, /reverse proxy should also enforce its own hard limit/);
 });

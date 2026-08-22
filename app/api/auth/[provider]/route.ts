@@ -1,6 +1,7 @@
-/* 登录起点:GET /api/auth/github|google
-   种 state cookie(CSRF 防护,10 分钟)→ 302 到提供方授权页。
-   redirect_uri 走 canonical origin(生产在反代后,req.url 是内网地址)。 */
+/* Login start: GET /api/auth/github|google — plants the state cookie
+   (CSRF protection, 10 minutes) and 302s to the provider's authorize
+   page. redirect_uri uses the canonical origin (in production req.url
+   is an internal address behind the proxy). */
 import { NextRequest, NextResponse } from "next/server";
 import {
   authorizeUrl,
@@ -22,7 +23,8 @@ export async function GET(
     return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   }
   const origin = canonicalOrigin(req);
-  /* link=1:设置页发起的绑定流程,回调把 provider 挂到当前登录账号 */
+  /* link=1: the link flow started from settings; the callback attaches
+     the provider to the current account. */
   const linking = new URL(req.url).searchParams.get("link") === "1";
   const returnTo = linking
     ? "/settings"

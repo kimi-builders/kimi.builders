@@ -18,7 +18,9 @@ export async function DELETE(
   if (!user) return noStoreJson({ ok: false, error: "login_required" }, { status: 401 });
   const { id } = await params;
   const search = new URL(request.url).searchParams;
-  // dataOnly=1:只删除该设备的事实数据,保留授权;默认行为仍是撤销(可选连带删数据)。
+  // dataOnly=1: delete just this device's fact data, keep the
+  // authorization; the default action is still revoke (optionally with
+  // data).
   if (search.get("dataOnly") === "1") {
     const deleted = await deleteUsageForDeviceByPublicId(user.id, id);
     if (deleted !== null) {

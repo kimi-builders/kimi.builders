@@ -10,9 +10,11 @@ import { consumeCommunityRateLimit } from "@/src/lib/rate-limit";
 import { mediaKey, mediaUrl, putMedia, storageConfigured } from "@/src/lib/storage";
 import { isSameOrigin, noStoreJson } from "@/src/lib/usage/http";
 
-/* POST /api/upload — 图片上传(multipart:kind=logo|image|avatar + file)。
-   登录态 + 同源校验 + 30/小时限流;sharp 归一化为 webp 后写 R2,
-   返回内容寻址的 key 与公开 URL。存储未配置时 503(本地开发可跳过)。 */
+/* POST /api/upload — image upload (multipart: kind=logo|image|avatar +
+   file). Login + same-origin check + 30/hour rate limit; sharp
+   normalizes to webp and the result lands in R2, returning the
+   content-addressed key and public URL. 503 when storage is unconfigured
+   (local dev can skip). */
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
     return noStoreJson({ ok: false, error: "bad_origin" }, { status: 403 });
@@ -28,7 +30,8 @@ export async function POST(request: Request) {
     );
   }
 
-  /* 先扣配额再触碰请求体，超限账号不会继续制造 multipart 解析成本。 */
+  /* Consume quota before touching the body — over-limit accounts never
+     get to spend multipart parsing. */
   const rate = await consumeCommunityRateLimit(user.id, "upload");
   if (!rate.allowed) {
     return noStoreJson(
@@ -37,8 +40,10 @@ export async function POST(request: Request) {
     );
   }
 
-  /* Caddy/反代还应配置独立硬上限(由部署主人设置)。应用层在 formData() 前
-     用可信 Content-Length 快速拒绝；chunked 无长度时仍由下面的 sharp 上限兜底。 */
+  /* The reverse proxy should also enforce its own hard limit (set by
+     the deploy owner). The app layer rejects early on a trusted
+     Content-Length before formData(); chunked bodies with no length
+     still hit the sharp caps below. */
   if (isUploadContentLengthTooLarge(request.headers.get("content-length"))) {
     return noStoreJson({ ok: false, error: "too_large" }, { status: 413 });
   }

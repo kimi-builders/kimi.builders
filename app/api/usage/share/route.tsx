@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
   const range = normalizeUsageShareRange(request.nextUrl.searchParams.get("range"));
   const preview = process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("preview") === "1";
   const user = preview ? null : await getSessionUser();
-  /* 海报语言跟随导出时的界面语言(zh 可中英混搭,en 纯英文)。 */
+  /* Poster language follows the exporting UI language (zh mixes Chinese
+     and English; en is English-only). */
   const zh = (await getLocale(user)) === "zh";
   const snapshot = preview
     ? mockUsageShareSnapshot(range, zh)
@@ -50,7 +51,8 @@ export async function GET(request: NextRequest) {
   const fonts = await getPosterFonts(usageShareText(snapshot) + POSTER_STATIC_TEXT);
   return new ImageResponse(<UsageSharePoster snapshot={snapshot} />, {
     ...USAGE_SHARE_POSTER_SIZE,
-    /* 空数组会被 satori 当「零字体」(全豆腐),必须回落默认字体 */
+    /* Satori treats an empty array as zero fonts (all tofu) — fall back
+       to the default fonts. */
     ...(fonts.length ? { fonts } : {}),
     headers: {
       "Cache-Control": "private, no-store, max-age=0",

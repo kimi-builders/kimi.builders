@@ -8,12 +8,13 @@ import { isSameOrigin, noStoreJson } from "@/src/lib/usage/http";
 import { getUsageOverview } from "@/src/lib/usage/query";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 
-/* GET /api/usage — 看板聚合查询。
-   鉴权:站点会话,或 Bearer kbu_ Key(read scope)。只返回调用者本人的数据。
-   参数:range=7d|30d|90d(兼容 days=N)、from/to=YYYY-MM-DD(自定义,≤366 天)、
-   sources/models/projects/devices=逗号分隔、metric=tokens|cost|duration、
-   page/ps、tz=本地相对 UTC 的分钟偏移(默认 0)。
-   响应 no-store:私人用量不进入任何共享缓存。 */
+/* GET /api/usage — dashboard aggregate query. Auth: a site session or a
+   Bearer kbu_ key (read scope); only the caller's own data. Params:
+   range=7d|30d|90d (days=N accepted), from/to=YYYY-MM-DD (custom, <=366
+   days), sources/models/projects/devices=comma-separated,
+   metric=tokens|cost|duration, page/ps, tz=minutes offset from UTC
+   (default 0). Responses are no-store: private usage never enters a
+   shared cache. */
 export async function GET(request: Request) {
   const user = await getSessionUser();
   const principal = user ? null : await authenticateUsageRequest(request, "read");

@@ -1,6 +1,6 @@
-/* POST /api/auth/email/login — 邮箱+密码登录。
-   失败信息统一「邮箱或密码不正确」,不暴露邮箱是否注册;
-   限速:IP 10 次/10 分钟 + 单邮箱 5 次/10 分钟。 */
+/* POST /api/auth/email/login — email+password login. Failures always say
+   "incorrect email or password" — never reveal whether the email is
+   registered; rate limits: 10/10min per IP + 5/10min per email. */
 import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { normalizeEmail, verifyPassword } from "@/src/lib/auth/password";

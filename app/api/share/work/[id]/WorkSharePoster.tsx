@@ -1,8 +1,12 @@
-/* 作品分享海报:共享身份带(作者)→ 作品名 hero → tagline → agents 细线 chip
-   → (已声明且不变式满足)声明构建投入 hero → 指标带(支持/评论/发布)→ 共享 QR 页脚。
-   hero 为声明制(20260822_work_claims):数字 = 作者声明的本作品构建投入,
-   小字口径 = 作者声明、系统按可验证总量封顶;未声明/超额 = 不渲染。
-   lobehub 图标在 Satori 里不可依赖,agents 统一细线描边 mono chip(名字即可)。 */
+/* Work share poster: shared identity band (author) -> work name hero ->
+   tagline -> agent hairline chips -> (claimed and invariant holding)
+   claimed build-effort hero -> metric band (supports/comments/
+   published) -> the shared QR footer. The hero is claim-based: the
+   number is the author's declared effort for this work, the small-type
+   method line reads "declared by the author, capped by the system's
+   verifiable total"; unclaimed or over cap = never rendered. lobehub
+   icons can't be trusted under Satori, so agents are uniformly
+   hairline mono chips (names suffice). */
 import type { WorkShareSnapshot } from "@/src/lib/share-posters";
 import {
   MetricBand,
@@ -17,7 +21,8 @@ import {
 
 export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
   const s = snapshot;
-  /* 作品名是 hero:按长度降档放大(短名字给足视觉重量,对齐用量海报大数字) */
+  /* The work name is the hero: scale up by shorter length tiers (short
+     names get full visual weight, like the usage poster's big numbers). */
   const nameSize = s.name.length <= 12 ? 88 : s.name.length <= 24 ? 72 : 58;
   return (
     <div

@@ -19,8 +19,9 @@ function empty(status = 204): Response {
   });
 }
 
-/* 浏览器计数入口:只接收 taxonomy 中标记为 beacon 的三种事件。
-   IP/UA 只参与当日 HMAC 与限速,不存原文;不接收 URL、referrer、user_id 等字段。 */
+/* Browser beacon entry: accepts only the three taxonomy events marked
+   as beacons. IP/UA feed the per-day HMAC and rate limiting only — never
+   stored raw; no URL, referrer, or user_id fields are accepted. */
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return empty(403);
   if (isAnalyticsBot(request.headers.get("user-agent"))) return empty();
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
     return empty(400);
   }
 
-  /* 扣配额后再读取 body:非法小包也占额度,chunked 大包会在 2 KiB 处停止。 */
+  /* Consume quota before reading the body: invalid tiny payloads still
+     cost quota, and chunked large ones stop at 2 KiB. */
   try {
     const viewer = viewerHash(request);
     const allowed = await consumeUsageRateLimit({
@@ -60,7 +62,8 @@ export async function POST(request: Request) {
       payload.meta ?? undefined,
     );
   } catch (error) {
-    /* 分析不可影响浏览动作;失败静默返回,服务端只记通用错误。 */
+    /* Analytics must never affect browsing; failures return silently
+       with only a generic server-side error log. */
     console.error("analytics beacon processing failed", error);
   }
   return empty();

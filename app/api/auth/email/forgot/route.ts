@@ -1,7 +1,8 @@
-/* POST /api/auth/email/forgot — 忘记密码:投递重置链接邮件。
-   不泄露注册状态:无论邮箱是否注册,一律 303 回 /login?mode=forgot&sent=1;
-   发信失败只记服务端日志,对用户仍显示已发送。
-   同源校验 + IP 限速(5 次/小时,scope auth-email-forgot)。 */
+/* POST /api/auth/email/forgot — password reset email. Never leaks
+   registration state: registered or not, the answer is a 303 to
+   /login?mode=forgot&sent=1; delivery failures only hit the server log
+   while the user still sees "sent". Same-origin check + IP rate limit
+   (5/hour, scope auth-email-forgot). */
 import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { isValidEmail, normalizeEmail } from "@/src/lib/auth/password";
@@ -20,12 +21,14 @@ function back(req: NextRequest, params: Record<string, string>): NextResponse {
   return NextResponse.redirect(url, 303);
 }
 
-/* 重置链接走站点 canonical origin(src/lib/auth/origin.ts):不用裸请求 Host
-   拼邮件链接,防 Host 头注入劫持重置链接。 */
+/* Reset links use the site's canonical origin (src/lib/auth/origin.ts):
+   never build an email link from the raw request Host — that invites
+   Host-header injection hijacking the reset link. */
 
 export async function POST(req: NextRequest) {
-  /* next 透传(20260816):从 action URL query 带来(同源/限速先于表单解析,
-     不从表单体读),经校验后随回跳 URL 与邮件重置链接一起带走 */
+  /* The next param rides the action URL query (same-origin and rate
+     limiting precede form parsing — never read from the body) and, once
+     validated, follows the redirect URL and the emailed reset link. */
   const next = safeReturnTo(new URL(req.url).searchParams.get("next"));
   const extras: Record<string, string> = next === "/" ? {} : { next };
 

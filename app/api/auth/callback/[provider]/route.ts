@@ -1,9 +1,12 @@
-/* OAuth 回调:GET /api/auth/callback/github|google
-   校验 state → code 换资料 → 两条路径:
-   - 绑定模式(kb_oauth_link):把 provider 挂到当前登录账号,回 /settings?linked=…;
-     已绑给别人 / 无会话 → /settings?link_error=…
-   - 常规登录:find-or-create(已验证邮箱自动并号)→ 种会话 cookie → 回 returnTo。
-   失败统一回 /?auth_error=…(登录)或 /settings?link_error=…(绑定)。 */
+/* OAuth callback: GET /api/auth/callback/github|google — validates state,
+   exchanges the code for a profile, then one of two paths:
+   - link mode (kb_oauth_link): attach the provider to the current
+     account, return to /settings?linked=...; already bound to someone
+     else / no session -> /settings?link_error=...
+   - regular login: find-or-create (verified emails merge automatically)
+     -> plant the session cookie -> return to returnTo.
+   Failures go to /?auth_error=... (login) or /settings?link_error=...
+   (linking). */
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import {

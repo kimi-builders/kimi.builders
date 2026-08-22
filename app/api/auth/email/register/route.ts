@@ -1,6 +1,7 @@
-/* POST /api/auth/email/register — 邮箱注册。
-   表单 POST(urlencoded);同源校验 + IP 限速;成功种会话并回跳。
-   失败一律回 /login?mode=register&error=<code>,不写明文原因到日志外渠道。 */
+/* POST /api/auth/email/register — email signup. Form POST (urlencoded);
+   same-origin check + IP rate limit; success plants the session and
+   redirects back. Failures always return /login?mode=register&error=
+   <code> — plain-language reasons never leave the server log. */
 import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
 import {

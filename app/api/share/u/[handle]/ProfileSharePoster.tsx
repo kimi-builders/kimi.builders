@@ -1,7 +1,10 @@
-/* 个人主页分享海报:共享身份带(本人 + 地址 chip + 加入时间右槽)
-   → 累计 TOKENS hero(opt-in)→ 简介 → 26 周活跃贡献图(共享 ContribGrid,
-   与用量海报同一套蓝阶/周一锚定/月份标注)→ 统计带(帖子/评论/获赞/作品)
-   → 共享 QR 页脚。用量块仅当本人 opt-in 公开时渲染(快照门禁保证)。 */
+/* Profile share poster: shared identity band (the person + address chip
+   + joined-date right slot) -> lifetime TOKENS hero (opt-in) -> bio ->
+   26-week activity contribution grid (shared ContribGrid — same blue
+   ramp / Monday anchoring / month labels as the usage poster) -> stats
+   band (posts/comments/ups/works) -> the shared QR footer. The usage
+   block renders only when the owner opted in (guaranteed by the
+   snapshot gate). */
 import type { ProfileShareSnapshot } from "@/src/lib/share-posters";
 import {
   ContribGrid,

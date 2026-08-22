@@ -1,32 +1,41 @@
-/* 四张分享海报的共享视觉件(单一事实源):色板 / 字体栈 / 外边距 / 身份带 / 页脚 /
-   贡献图网格 / 指标带。全部对齐用量海报(app/api/usage/share/UsageSharePoster.tsx)
-   v3 语法:深色 ink #121212 底、硬边细线、mono、大数字小标签、宽 1080(高分档自适应,
-   见 poster-sizes.ts)、身份带(大写品牌 + 蓝 accent + 头像 + 小写蓝地址 + 右槽)
-   + QR 页脚。
-   QR 用 @rc-component/qrcode 的 qrcodegen + generatePath 内联 SVG(同用量海报)。 */
+/* Shared visual parts of the four share posters (single source):
+   palette / font stacks / margins / identity band / footer /
+   contribution grid / metric band — all matching the usage poster
+   (app/api/usage/share/UsageSharePoster.tsx) v3 language: dark ink
+   #121212 base, hard edges and hairlines, mono, big numbers with small
+   labels, 1080 wide (content-tiered height, see poster-sizes.ts),
+   identity band (uppercase brand + blue accent + avatar + lowercase blue
+   address + right slot) + QR footer. The QR uses @rc-component/qrcode's
+   qrcodegen + generatePath inlined as SVG (same as the usage poster). */
 import { Ecc, QrCode } from "@rc-component/qrcode/es/libs/qrcodegen";
 import { generatePath } from "@rc-component/qrcode/es/utils";
 import type { CSSProperties, ReactNode } from "react";
 import { POSTER_ALPHA, POSTER_HEAT_SCALE, POSTER_PALETTE } from "@/src/lib/brand-palette";
 
-/* 四张统一的外边距(用量海报 v3 值)。 */
+/* Shared margins across all four (usage poster v3 values). */
 export const POSTER_PADDING = "44px 54px 36px";
 
-/* 色板唯一事实源:src/lib/brand-palette.ts(官方令牌内联值;Satori 无 CSS 变量)。
-   保留原导出名 palette,用量/帖子/作品/主页/周刊海报共用同一套角色色。 */
+/* Palette source of truth: src/lib/brand-palette.ts (inlined official
+   tokens; Satori has no CSS variables). Keeps the original export name
+   `palette` — usage/post/work/profile posters share the same role
+   colors. */
 export const palette = POSTER_PALETTE;
 
-/* 海报正文字体栈:JetBrains Mono 运行时拉取(poster-fonts.ts);拉不到时
-   落回 next/og 内嵌的 geist,CJK 由 next/og 动态 Noto Sans SC 兜底。 */
+/* Poster body font stack: JetBrains Mono fetched at runtime
+   (poster-fonts.ts); on failure it falls back to next/og's embedded
+   Geist, with CJK covered by next/og's dynamic Noto Sans SC. */
 export const POSTER_FONT_FAMILY = "'JetBrains Mono', geist, monospace";
 
-/* 海报里全部静态中文标签,供 CJK 粗体子集抓取(漏字会回退动态 400)。
-   覆盖四张海报:用量(流向/脉冲/构成/足迹/武器库/注记)+ 帖子/作品/主页(票/声明等)。 */
+/* Every static Chinese label on the posters, for CJK bold-subset
+   fetching (a missing glyph falls back to a dynamic weight). Covers all
+   four: usage (flow/pulse/mix/footprint/arsenal/notes) + post/work/
+   profile (votes/claims etc.). */
 export const POSTER_STATIC_TEXT =
   "顶评论发布支持获赞帖子作品票共还有个选项已验证构建投入累计活跃天数加入声明者按可总量封近周" +
   "输入含缓存写输出推理读流向对数带宽上下文脉冲今日小时峰期值段命中每柱堆叠长连每格代表一单数据起止等价费用会话主力模型用量扫码看实时板标准计价估算本地私密同步不对话内容杠杆新鲜乘除未记录足迹半年九三二一四五六日构成公开快照身份阅读全文访问主页指标为渲染时数值查看";
 
-/* 大数字紧凑格式(同用量海报):K/M/B,千位以下原样。 */
+/* Compact big numbers (same as the usage poster): K/M/B; below a
+   thousand stays as-is. */
 export function compact(value: number): string {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
@@ -47,7 +56,8 @@ export function PosterQr({ url, size = 104 }: { url: string; size?: number }) {
   );
 }
 
-/* 头像字母圆(绿底深字,与用量海报身份带同款)。 */
+/* Avatar initial circle (mint fill, ink text — same as the usage
+   poster's identity band). */
 export function InitialsCircle({ initials, size = 64 }: { initials: string; size?: number }) {
   return (
     <div
@@ -69,7 +79,8 @@ export function InitialsCircle({ initials, size = 64 }: { initials: string; size
   );
 }
 
-/* 细线描边 mono chip(agents 名 / 域名等;lobehub 图标在 Satori 里不可依赖)。 */
+/* Hairline-outlined mono chips (agent names / domains; lobehub icons
+   can't be trusted under Satori). */
 export function OutlineChip({ text, color = palette.muted }: { text: string; color?: string }) {
   return (
     <div
@@ -87,7 +98,8 @@ export function OutlineChip({ text, color = palette.muted }: { text: string; col
   );
 }
 
-/* 分区 eyebrow:左大右小,全 muted(用量海报 Eyebrow 同款)。 */
+/* Section eyebrow: large left, small right, all muted (same as the
+   usage poster's Eyebrow). */
 export function Eyebrow({ left, right }: { left: string; right?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -99,8 +111,10 @@ export function Eyebrow({ left, right }: { left: string; right?: string }) {
   );
 }
 
-/* 身份带(四张海报统一头):品牌行 KIMI.BUILDERS / SECTION + 右 eyebrow + 可选 chip;
-   身份行 = 头像圆 + 名称 + @handle + 蓝色小写地址 chip + 右侧自由槽(aside)。 */
+/* Identity band (shared header of all four): brand row KIMI.BUILDERS /
+   SECTION + right eyebrow + optional chip; identity row = avatar circle
+   + name + @handle + blue lowercase address chip + a free right slot
+   (aside). */
 export function PosterHeader({
   section,
   eyebrow,
@@ -116,7 +130,8 @@ export function PosterHeader({
   chip?: string;
   initials: string;
   name: string;
-  /* 不带 @;空串 = 外部作者(不渲染 handle/地址) */
+  /* No leading @; empty = external author (no handle/address
+     rendered). */
   handle: string;
   linkLabel?: string;
   aside?: ReactNode;
@@ -187,8 +202,8 @@ export function PosterHeader({
   );
 }
 
-/* 页脚(四张统一):QR + 主行(20/700)+ 副行扫码提示(14 muted)
-   + 右侧注记(13 muted/ls1/lh1.8)。 */
+/* Footer (shared): QR + main row (20/700) + scan-hint subrow (14
+   muted) + right note (13 muted/ls1/lh1.8). */
 export function PosterFooter({
   url,
   headline,
@@ -231,7 +246,8 @@ export function PosterFooter({
   );
 }
 
-/* 指标格(用量海报 FooterMetric 同款):小标签大字距 + 大数字。 */
+/* Metric cell (same as the usage poster's FooterMetric): small
+   wide-tracked label + big number. */
 export function Metric({
   label,
   value,
@@ -260,8 +276,9 @@ export function Metric({
   );
 }
 
-/* 指标带:一行多个 Metric,中间 1px 竖分隔线(硬边细线)。
-   根节点必须自带 width:100% —— 套一层 flex 行包装会塌成内容宽度。 */
+/* Metric band: several Metrics in one row separated by 1px vertical
+   hairlines. The root must carry its own width:100% — wrapping it in a
+   flex row collapses to content width. */
 export function MetricBand({
   items,
   style,
@@ -281,9 +298,11 @@ export function MetricBand({
   );
 }
 
-/* ---- 贡献图网格(用量海报 ContribGraph 的共享版):月份随列变标注、
-   周一锚定、圆角 2px、官方顺序蓝阶(#002F5B→#00F6FF 按数据强度递增);
-   个人主页 26 周活跃热图也走这里。 ---- */
+/* ---- Contribution grid (shared version of the usage poster's
+   ContribGraph): month labels change with columns, Monday-anchored, 2px
+   rounded cells, the official sequential blue ramp (#002F5B -> #00F6FF
+   by intensity); the profile's 26-week activity map also renders here.
+   ---- */
 export const HEAT_COLORS = POSTER_HEAT_SCALE;
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -299,7 +318,8 @@ export function activityLevel(tokens: number, maximum: number): number {
   return Math.max(1, Math.min(4, Math.ceil((Math.log1p(tokens) / Math.log1p(maximum)) * 4)));
 }
 
-/* 「近 N 周活跃」Record → 贡献图列(周一锚定;未来格 future=true)。 */
+/* A "last N weeks active" record -> contribution columns
+   (Monday-anchored; future cells flagged future=true). */
 export function contribColumns(activity: Record<string, number>, weeks: number): ContribCell[][] {
   const DAY = 86_400_000;
   const now = new Date();

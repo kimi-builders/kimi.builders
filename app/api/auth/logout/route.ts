@@ -1,6 +1,9 @@
-/* 登出:POST /api/auth/logout —— 删会话 cookie 回首页(canonical origin,反代后 req.url 是内网地址)。
-   POST-only(20260822 P2-11):登出是写操作,GET 链接会被预取/爬虫/跨站 img 误触发;
-   表单提交见 AuthChip,303 回跳兼容浏览器 POST 后跟进。 */
+/* Logout: POST /api/auth/logout — clears the session cookie and returns
+   to the home page (canonical origin; behind the proxy req.url is an
+   internal address). POST-only: logout is a write — a GET link would be
+   set off by prefetchers, crawlers, or cross-site <img>; the form lives
+   in AuthChip, and the 303 redirect lets browsers follow up after the
+   POST. */
 import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { isSameOrigin } from "@/src/lib/usage/http";

@@ -1,9 +1,14 @@
-/* 帖子分享海报:共享身份带(作者 + 分类 chip + 类型徽章)→ 垂直居中的内容组
-   (大标题 → 摘要 → 链接/投票 → 指标带)→ 共享 QR 页脚。
-   版式:内容组整体垂直居中(组内固定间距),多内容(摘要/投票)自然撑满,
-   少内容(短文本帖)上下留白对称 —— 不用 space-between 摊开。
-   稀疏情形(无摘要且非投票/链接帖):标题按长度分档放大(同作品海报思路),
-   并加大号低透明引号 + 蓝方块细线两件克制装饰填视觉(硬边细线语言)。 */
+/* Post share poster: shared identity band (author + category chip + type
+   badge) -> a vertically centered content group (headline -> excerpt ->
+   link/poll -> metric band) -> the shared QR footer. Layout: the content
+   group centers vertically with fixed inner gaps — rich content
+   (excerpt/poll) fills naturally, sparse content (short text posts)
+   leaves symmetric whitespace; never stretched apart with
+   space-between. Sparse case (no excerpt, not a poll/link post): the
+   headline scales up by length tier (same idea as the work poster) plus
+   two restrained ornaments — a large low-opacity quote mark and a
+   blue-square hairline — to fill the visual field in the hard-edge
+   hairline language. */
 import type { PostShareSnapshot } from "@/src/lib/share-posters";
 import {
   MetricBand,
@@ -47,7 +52,7 @@ function PollBlock({ snapshot }: { snapshot: PostShareSnapshot }) {
 
 export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
   const s = snapshot;
-  /* 稀疏 = 只有标题的纯文本短帖 */
+  /* Sparse = a short text post with only a title. */
   const sparse = !s.excerpt && !s.poll && !s.linkDomain;
   const titleSize = !sparse
     ? 56

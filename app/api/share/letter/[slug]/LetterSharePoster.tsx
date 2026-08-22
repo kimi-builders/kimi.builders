@@ -1,10 +1,16 @@
-/* 月刊分节分享海报:两节同皮(共享身份带 + QR 页脚 + 硬边细线语言)不同骨架 ——
-   02 事实盘点 = hero 大数字 + 双列 mono 数字网格(缺项「—」不编数);
-   03 编辑定夺 = 定夺卡列表(类型 chip + 标题 + 作者 + 编辑一句话理由 + 「— @编辑 精选」)。
-   (01 本月评鉴是长文,不上海报;20260921「给官方的信」层下线,letter 节海报移除。)
-   1080×1440 固定(LETTER_POSTER_SIZE):内容上限在组装层钉死(定夺 ≤3、事实 7 项),
-   主区垂直居中,多内容自然撑满、少内容留白对称(同帖子海报思路)。
-   层色与月刊页一致:事实盘点 翡翠 / 编辑定夺 琥珀。 */
+/* Monthly section posters: two sections share one skin (identity band +
+   QR footer + hard-edge hairlines) with different skeletons —
+   02 fact sheet = hero big number + a two-column mono number grid
+   (missing values show "—", never invented);
+   03 editorial decisions = decision cards (kind chip + title + author +
+   the editor's one-line reason + "— picked by @editor").
+   (01 editorial review is long-form and never posterized; the retired
+   "letter to the official" layer took its poster with it.)
+   Fixed 1080x1440 (LETTER_POSTER_SIZE): content caps are pinned at
+   assembly (<=3 decisions, 7 facts), the main area centers vertically —
+   rich content fills, sparse content leaves symmetric whitespace (same
+   idea as the post poster). Layer colors match the monthly page: mint
+   for facts, amber for decisions. */
 import type {
   LetterSection,
   LetterShareSnapshot,
@@ -26,7 +32,8 @@ const SECTION_META: Record<
   decisions: { no: "03", zh: "编辑定夺", en: "DECISIONS", color: palette.amber, scanHint: "扫码看本期编辑定夺" },
 };
 
-/* 定夺 chip 配色与 blog 详情页 decisionChip 一致(构建 翡翠 / 讨论 蓝 / 公示 灰)。 */
+/* Decision chip colors match the blog detail page's decisionChip
+   (build mint / discussion blue / ruling grey). */
 const DECISION_CHIP_COLORS: Record<IssueDecisionKind, string> = {
   work: palette.green,
   post: palette.blue,
@@ -46,7 +53,8 @@ function SectionTitle({ meta }: { meta: (typeof SECTION_META)[LetterSection] }) 
   );
 }
 
-/* 02:首项 hero 大数字,其余双列网格;蓝左缘对齐 blog 详情页事实格。 */
+/* 02: the first fact is the hero number, the rest a two-column grid;
+   the blue left edge matches the blog detail page's fact cells. */
 function FactsBody({ facts }: { facts: IssueFact[] }) {
   const [hero, ...rest] = facts;
   const rows: IssueFact[][] = [];
@@ -93,7 +101,8 @@ function FactsBody({ facts }: { facts: IssueFact[] }) {
   );
 }
 
-/* 03:定夺卡;空栏也是记录(blog 详情页同一句话)。 */
+/* 03: decision cards; an empty field is still a record (same line as
+   the blog detail page). */
 function DecisionsBody({ snapshot }: { snapshot: LetterShareSnapshot }) {
   if (snapshot.decisions.length === 0) {
     return (
