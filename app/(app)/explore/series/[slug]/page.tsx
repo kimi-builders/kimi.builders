@@ -12,6 +12,8 @@ import { ArrowLeft, ArrowRight, Clock3, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { findKbProduct } from "@/src/lib/kb-products";
+import { findKbRole } from "@/src/lib/kb-roles";
 import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
 import { getSeriesTutorials, type Tutorial } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
@@ -110,6 +112,10 @@ export default async function ExploreSeriesPage({
   const stale = isPathStale(series);
   const mins = episodes.reduce((n, e) => n + (e.payload.durationMin ?? 0), 0);
   const first = episodes[0];
+  /* 交叉行(20260821 透镜改版):从集 payload 联合推导「覆盖产品/适合职业」,
+     可点回 /explore 透镜——脊柱与透镜互相成环 */
+  const coveredProducts = [...new Set(episodes.flatMap((e) => e.payload.products ?? []))];
+  const fitRoles = [...new Set(episodes.flatMap((e) => e.payload.roles ?? []))];
 
   return (
     <div>
@@ -166,6 +172,43 @@ export default async function ExploreSeriesPage({
       <p className="font-human mt-8 max-w-xl text-lg leading-relaxed text-grey">
         {zh ? `「${series.tagline.zh}」` : `“${series.tagline.en}”`}
       </p>
+
+      {/* 覆盖产品 / 适合职业(联合推导,可点回透镜) */}
+      {(coveredProducts.length > 0 || fitRoles.length > 0) && (
+        <div className="mt-6 flex flex-wrap items-center gap-1.5">
+          {coveredProducts.map((id) => {
+            const p = findKbProduct(id);
+            if (!p) return null;
+            const Icon = p.icon;
+            return (
+              <Link
+                key={`p-${id}`}
+                href={`/explore?product=${id}`}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 font-mono text-xs text-grey transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+              >
+                <Icon size={13} aria-hidden="true" />
+                {zh ? p.zh : p.en}
+              </Link>
+            );
+          })}
+          {coveredProducts.length > 0 && fitRoles.length > 0 && (
+            <span aria-hidden="true" className="mx-1 h-4 w-px bg-line" />
+          )}
+          {fitRoles.map((id) => {
+            const r = findKbRole(id);
+            if (!r) return null;
+            return (
+              <Link
+                key={`r-${id}`}
+                href={`/explore?role=${id}`}
+                className="inline-flex min-h-9 items-center rounded-lg border border-line px-2.5 font-mono text-xs text-grey transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+              >
+                {zh ? r.zh : r.en}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       {/* 集列表 */}
       <div className="mt-6">

@@ -6,7 +6,10 @@
    · deck        — 演示稿链接(站内路径或 https,可选);
    · durationMin — 时长(分钟,正整数,可选);
    · scenario    — 场景标签(如「工作流自动化」;≤40 字,可选);
-   · aiNote      — AI 参与披露(≤280 字,可选;渲染进详情页脚)。
+   · aiNote      — AI 参与披露(≤280 字,可选;渲染进详情页脚);
+   · products    — 产品透镜(≤3,slug 须在 kb-products.ts 在册;主产品在前);
+   · roles       — 职业透镜(≤3,slug 须在 kb-roles.ts 在册);
+   · resources   — 相关链接(≤8 条,可选 kind 分型:official/resource/prompt/skill/file)。
    校验严格(编辑后台就地报错)与渲染容错(guidePayloadFromDb 回落空)分离,
    与月刊 letter payload(src/lib/monthly.ts)同一范式。 */
 import {
@@ -15,6 +18,8 @@ import {
   type ArticleDetail,
   type ArticleListItem,
 } from "./articles";
+import { isKbProductId } from "./kb-products";
+import { isKbRoleId } from "./kb-roles";
 import { findLearnSeries } from "./learn-series";
 import { normalizeTags } from "./monthly";
 
@@ -25,9 +30,27 @@ export interface GuideVideo {
   id: string;
 }
 
+/* 资源分型(20260821 透镜改版):官方链接/推荐资源/提示词/SKILLS/源文件,
+   详情页资源 tab 按 kind 分组渲染;缺省 = 推荐资源。 */
+export type GuideResourceKind =
+  | "official"
+  | "resource"
+  | "prompt"
+  | "skill"
+  | "file";
+
+export const GUIDE_RESOURCE_KINDS: readonly GuideResourceKind[] = [
+  "official",
+  "resource",
+  "prompt",
+  "skill",
+  "file",
+] as const;
+
 export interface GuideResource {
   label: string;
   url: string;
+  kind?: GuideResourceKind;
 }
 
 export interface GuidePayload {
@@ -41,6 +64,11 @@ export interface GuidePayload {
   tags?: string[];
   /* 资源 tab:相关链接(≤8 条) */
   resources?: GuideResource[];
+  /* 产品透镜(20260821 货架+透镜):slug 须在 kb-products.ts 注册表;
+     ≤3 个,主产品在前 */
+  products?: string[];
+  /* 职业透镜:slug 须在 kb-roles.ts 注册表;≤3 个 */
+  roles?: string[];
 }
 
 export type GuidePayloadParse =
@@ -58,10 +86,52 @@ function boundedString(v: unknown, max: number): string | null {
   return s;
 }
 
+/* 透镜 slug 列表共用校验:数组 ≤max 项、逐项在册(注册表 slug 白名单)、
+   去重。编辑路径严格(不在册就地报错);渲染路径另有容错版。 */
+function normalizeLensIds(
+  value: unknown,
+  max: number,
+  isInRegistry: (id: string) => boolean,
+  label: string,
+): { ok: true; ids: string[] } | { ok: false; error: string } {
+  if (!Array.isArray(value)) return { ok: false, error: `${label} 需为数组` };
+  if (value.length === 0) return { ok: false, error: `${label} 不能为空数组(省略该字段 = 不打标)` };
+  if (value.length > max) return { ok: false, error: `${label} 最多 ${max} 项` };
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const raw of value) {
+    const id = boundedString(raw, 64);
+    if (!id) return { ok: false, error: `${label} 每项需为 ≤64 字文本` };
+    if (!isInRegistry(id)) {
+      return { ok: false, error: `${label} 不在册:${id}(词表见 src/lib/kb-products.ts / kb-roles.ts)` };
+    }
+    if (!seen.has(id)) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return { ok: true, ids };
+}
+
+/* 渲染路径的容错版:丢非法项,合法项保留(不打掉整页)。 */
+function lensIdsFromDb(
+  value: unknown,
+  max: number,
+  isInRegistry: (id: string) => boolean,
+): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  for (const raw of value.slice(0, max)) {
+    const id = boundedString(raw, 64);
+    if (id && isInRegistry(id) && !seen.has(id)) seen.add(id);
+  }
+  return [...seen];
+}
+
 export function validateGuidePayload(value: unknown): GuidePayloadParse {
   if (!isPlainObject(value)) return { ok: false, error: "payload 必须是 JSON 对象" };
   const stray = Object.keys(value).find(
-    (k) => !["series", "video", "deck", "durationMin", "scenario", "aiNote", "tags", "resources"].includes(k),
+    (k) => !["series", "video", "deck", "durationMin", "scenario", "aiNote", "tags", "resources", "products", "roles"].includes(k),
   );
   if (stray) return { ok: false, error: `payload 未知字段:${stray}` };
   const payload: GuidePayload = {};
@@ -129,9 +199,23 @@ export function validateGuidePayload(value: unknown): GuidePayloadParse {
       if (!url.startsWith("/") && !/^https?:\/\//i.test(url)) {
         return { ok: false, error: `resources[${i}] url 需为站内路径或 http(s) 链接` };
       }
-      resources.push({ label, url });
+      const kind = entry.kind;
+      if (kind !== undefined && !GUIDE_RESOURCE_KINDS.includes(kind as GuideResourceKind)) {
+        return { ok: false, error: `resources[${i}].kind 只能是 ${GUIDE_RESOURCE_KINDS.join("/")}` };
+      }
+      resources.push({ label, url, ...(kind ? { kind: kind as GuideResourceKind } : {}) });
     }
     payload.resources = resources;
+  }
+  if (value.products !== undefined) {
+    const r = normalizeLensIds(value.products, 3, isKbProductId, "products");
+    if (!r.ok) return r;
+    payload.products = r.ids;
+  }
+  if (value.roles !== undefined) {
+    const r = normalizeLensIds(value.roles, 3, isKbRoleId, "roles");
+    if (!r.ok) return r;
+    payload.roles = r.ids;
   }
 
   return { ok: true, payload };
@@ -195,11 +279,19 @@ export function guidePayloadFromDb(raw: unknown): GuidePayload {
       const label = boundedString(entry.label, 40);
       const url = boundedString(entry.url, 500);
       if (label && url && (url.startsWith("/") || /^https?:\/\//i.test(url))) {
-        resources.push({ label, url });
+        const kind = GUIDE_RESOURCE_KINDS.includes(entry.kind as GuideResourceKind)
+          ? (entry.kind as GuideResourceKind)
+          : undefined;
+        resources.push({ label, url, ...(kind ? { kind } : {}) });
       }
     }
     if (resources.length) payload.resources = resources;
   }
+  /* 透镜容错:非法 slug 只丢该项(渲染路径不做在册校验的同款口径) */
+  const products = lensIdsFromDb(value.products, 3, isKbProductId);
+  if (products.length) payload.products = products;
+  const roles = lensIdsFromDb(value.roles, 3, isKbRoleId);
+  if (roles.length) payload.roles = roles;
   return payload;
 }
 

@@ -102,9 +102,28 @@ const DICT = {
     zh: "发布第一帖",
     en: "Start the first thread",
   },
+  /* ---- 探索(货架 + 透镜,20260821) ---- */
+  "explore.lensProducts": { zh: "产品", en: "PRODUCTS" },
+  "explore.lensRoles": { zh: "职业", en: "ROLES" },
+  "explore.format": { zh: "形态", en: "FORMAT" },
+  "explore.formatAll": { zh: "全部", en: "All" },
+  "explore.formatRead": { zh: "文章", en: "Article" },
+  "explore.formatVideo": { zh: "视频", en: "Video" },
+  "explore.formatDeck": { zh: "演示稿", en: "Slides" },
+  "explore.shelfSeries": { zh: "系列", en: "SERIES" },
+  "explore.standalone": { zh: "单篇与月刊", en: "SINGLES & MONTHLY" },
+  "explore.matchInSeries": {
+    zh: "命中 {n}/{m} 集",
+    en: "{n}/{m} episodes matched",
+  },
+  "explore.emptyFilter": {
+    zh: "这个组合下还没有内容——放宽一档筛选,或从最近的内容进。",
+    en: "Nothing under this combination yet — relax a filter, or start from the latest.",
+  },
+  "explore.latest": { zh: "最近的内容", en: "LATEST" },
+  "explore.filterAria": { zh: "探索筛选", en: "Explore filters" },
   /* ---- 帖子详情 ---- */
-  "post.comments": { zh: "{n} 条评论", en: "{n} comments" },
-  "post.commentPh": {
+  "post.comments": { zh: "{n} 条评论", en: "{n} comments" },  "post.commentPh": {
     zh: "写下你的评论(支持 Markdown;@kimi 可召唤小筑回答)…",
     en: "Write a comment (Markdown; @kimi to summon the bot)…",
   },

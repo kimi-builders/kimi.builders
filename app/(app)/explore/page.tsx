@@ -1,30 +1,36 @@
-/* 探索(Explore)· 四维浏览器(20260821 月刊 × 教程合并;同日视图语言对齐
-   站内作品/Awesome:四维顶级 tabs(分段控件)+ 当前维度的筛选下拉
-   (WorksFilterBar 同款,URL 驱动)+ 系列封面卡(作品网格卡语法)。
-   四个维度:分类(kind)/ 系列(注册表)/ 标签(payload.tags)/ 时间(归档),
-   全部由已发布内容算出(articles 两 kind 合集,src/lib/explore.ts 纯函数聚合),
-   系列标题等元信息是注册表策展,0 集系列不上架。
-   ?view=categories|series|tags|archives 切换 + 各维选中参数(?category/?series/?tag/?year)。
+/* 探索(Explore)· 货架 + 透镜(20260821 透镜改版):
+   脊柱 = 系列货架(策展序列,验证戳/讨论/毕业归因挂在系列级);
+   透镜 = 产品(kb-products)/职业(kb-roles)chips + 形态(read/video/deck)
+   + 标签/年份下拉(WorksFilterBar);形态从 payload 与正文派生,不存储。
+   交互纪律(NN/g 筛选共识):chips 单选、再点取消;计数随其余筛选动态
+   更新,0 计数置灰不隐藏(上下文稳定);组合空态给「清除全部 + 最近内容」,
+   不给死胡同;筛选组合 URL noindex(防组合爬陷),默认视图可索引。
+   旧四维参数兼容:?view=/?category=/?series= 被忽略渲染默认视图,
+   ?tag=/?year= 继续生效——外链不断内容。
    板块开关未就绪时整页换「正在路上」。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileText, Play, Presentation } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { monthLabel } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
   categoryLabelOf,
-  countByKind,
   countSeries,
   countTags,
+  filterExploreItems,
   groupByArchive,
   listExploreItems,
   type ExploreItem,
+  type GuideFormat,
 } from "@/src/lib/explore";
+import { KB_PRODUCTS, findKbProduct, isKbProductId } from "@/src/lib/kb-products";
+import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
 import { findLearnSeries } from "@/src/lib/learn-series";
 import { UPCOMING } from "@/src/lib/upcoming";
 import { getWorksView } from "@/src/lib/works-view-server";
+import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import SoonPanel from "../_components/SoonPanel";
 import WorksFilterBar from "../works/_components/WorksFilterBar";
@@ -38,21 +44,45 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 
-export const metadata: Metadata = { title: "探索 — kimi.builders" };
+const FORMAT_KEYS = ["read", "video", "deck"] as const satisfies readonly GuideFormat[];
 
-type View = "categories" | "series" | "tags" | "archives";
-
-function normalizeView(raw: string | undefined): View {
-  return raw === "series" || raw === "tags" || raw === "archives" ? raw : "categories";
+function normalizeFormat(raw: string | undefined): GuideFormat | undefined {
+  return FORMAT_KEYS.find((f) => f === raw);
 }
 
-function exploreHref(view: View): string {
-  return view === "categories" ? "/explore" : `/explore?view=${view}`;
+/* 透镜/形态 chips 的单选切换(再点取消):其余参数原样保留 */
+function lensHref(
+  basePath: string,
+  current: Record<string, string | undefined>,
+  change: Record<string, string | undefined>,
+): string {
+  const merged = { ...current, ...change };
+  const params = new URLSearchParams();
+  for (const key of ["product", "role", "format", "tag", "year"]) {
+    const v = merged[key];
+    if (v) params.set(key, v);
+  }
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
 }
 
-/* 结果列表行:eyebrow(分类 · 系列 · 日期)+ 标题 + 摘要 + 标签 */
+const FORMAT_ICON = {
+  read: FileText,
+  video: Play,
+  deck: Presentation,
+} as const;
+
+const FORMAT_LABEL_KEY = {
+  read: "explore.formatRead",
+  video: "explore.formatVideo",
+  deck: "explore.formatDeck",
+} as const;
+
+/* 结果列表行:eyebrow(分类 · 系列码 · 产品 · 形态 · 日期)+ 标题 + 摘要 + 标签 */
 function ItemRow({ item, zh, locale }: { item: ExploreItem; zh: boolean; locale: Locale }) {
   const series = item.series ? findLearnSeries(item.series) : undefined;
+  const shownProducts = item.products.slice(0, 2);
+  const overflowProducts = item.products.length - shownProducts.length;
   return (
     <article className="border-b border-line last:border-b-0">
       <Link href={`/explore/${item.slug}`} className="group flex gap-4 py-5">
@@ -61,6 +91,38 @@ function ItemRow({ item, zh, locale }: { item: ExploreItem; zh: boolean; locale:
             <span>{categoryLabelOf(item.kind, zh)}</span>
             {series && <span>· {series.code}</span>}
             <span>· {monthLabel(item.publishedAt)}</span>
+            {shownProducts.length > 0 && (
+              <span className="inline-flex items-center gap-1 normal-case tracking-normal" aria-label={zh ? "产品" : "Products"}>
+                {shownProducts.map((id) => {
+                  const p = findKbProduct(id);
+                  if (!p) return null;
+                  const Icon = p.icon;
+                  return (
+                    <span key={id} title={zh ? p.zh : p.en} className="inline-flex items-center gap-0.5">
+                      <Icon size={12} aria-hidden="true" />
+                      <span className="hidden sm:inline">{zh ? p.zh : p.en}</span>
+                    </span>
+                  );
+                })}
+                {overflowProducts > 0 && <span>+{overflowProducts}</span>}
+              </span>
+            )}
+            {item.formats.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 normal-case tracking-normal" aria-label={t(locale, "explore.format")}>
+                {item.formats.map((f) => {
+                  const Icon = FORMAT_ICON[f];
+                  return (
+                    <span
+                      key={f}
+                      title={t(locale, FORMAT_LABEL_KEY[f])}
+                      className="inline-flex items-center"
+                    >
+                      <Icon size={12} aria-hidden="true" className="text-grey/70" />
+                    </span>
+                  );
+                })}
+              </span>
+            )}
             {item.fallback && (
               <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
                 {t(locale, item.locale === "zh" ? "art.langZh" : "art.langEn")}
@@ -97,7 +159,7 @@ function ItemList({ items, zh, locale }: { items: ExploreItem[]; zh: boolean; lo
   if (items.length === 0) {
     return (
       <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
-        {zh ? "这个维度下还没有内容。" : "Nothing under this filter yet."}
+        {zh ? "这里还没有内容。" : "Nothing here yet."}
       </p>
     );
   }
@@ -108,6 +170,57 @@ function ItemList({ items, zh, locale }: { items: ExploreItem[]; zh: boolean; lo
       ))}
     </div>
   );
+}
+
+/* 透镜 chip:active = 蓝实底(与 solved pill 同语法);0 计数置灰不可点 */
+function LensChip({
+  href,
+  active,
+  disabled,
+  count,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  disabled: boolean;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const cls = `inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+    active
+      ? "border-blue/60 bg-blue/10 font-semibold text-blue"
+      : disabled
+        ? "cursor-default border-line text-grey/40"
+        : "border-line text-grey hover:border-ui-blue/50 hover:text-ui-blue"
+  }`;
+  if (disabled) {
+    return (
+      <span className={cls} aria-disabled="true">
+        {children} <span className="opacity-60">{count}</span>
+      </span>
+    );
+  }
+  return (
+    <Link href={href} scroll={false} aria-pressed={active} className={cls}>
+      {children} <span className="opacity-60">{count}</span>
+    </Link>
+  );
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
+  /* 筛选组合 URL 不索引(防组合爬陷);默认视图(货架)可索引 */
+  const filtered =
+    first(sp.product) || first(sp.role) || first(sp.format) || first(sp.tag) || first(sp.year);
+  return {
+    title: "探索 — kimi.builders",
+    ...(filtered ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 export default async function ExplorePage({
@@ -129,78 +242,80 @@ export default async function ExplorePage({
   const zh = locale === "zh";
   const sp = await searchParams;
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
-  const view = normalizeView(first(sp.view));
-  const selCategory = first(sp.category);
-  const selSeries = first(sp.series);
-  const selTag = first(sp.tag);
-  const selYear = first(sp.year);
+  /* 旧四维参数(?view/?category/?series)忽略——渲染默认货架视图;
+     ?tag/?year 继续生效,透镜参数白名单校验(非法值 = 未选) */
+  const selProduct = (() => {
+    const v = first(sp.product);
+    return v && isKbProductId(v) ? v : undefined;
+  })();
+  const selRole = (() => {
+    const v = first(sp.role);
+    return v && isKbRoleId(v) ? v : undefined;
+  })();
+  const selFormat = normalizeFormat(first(sp.format));
+  const selTag = first(sp.tag) || undefined;
+  const selYear = first(sp.year) || undefined;
+  const anyFilter = !!(selProduct || selRole || selFormat || selTag || selYear);
 
   const items = await listExploreItems(locale);
-  /* 系列视图的行式/网格:与作品墙同一 cookie 偏好(kb-works-view) */
+  /* 系列货架的行式/网格:与作品墙同一 cookie 偏好(kb-works-view) */
   const seriesView = await getWorksView();
-  const kindCounts = countByKind(items);
-  const seriesCounts = countSeries(items);
+
+  const sel = {
+    product: selProduct,
+    role: selRole,
+    format: selFormat,
+    tag: selTag,
+    year: selYear,
+  };
+  const filtered = anyFilter
+    ? filterExploreItems(items, sel)
+    : items;
+
+  /* 动态计数(NN/g):每一维的计数在「其余筛选生效」的结果集上算,
+     组合下命中 0 的值置灰而非消失——上下文稳定,不玩捉迷藏 */
+  const productScope = filterExploreItems(items, { ...sel, product: undefined });
+  const productChipCount = (id: string) =>
+    productScope.filter((i) => i.products.includes(id)).length;
+  const roleScope = filterExploreItems(items, { ...sel, role: undefined });
+  const roleChipCount = (id: string) =>
+    roleScope.filter((i) => i.roles.includes(id)).length;
+  /* 职业 chips 只出「全站有内容」的职业(词表序;空词不出 = 不撑空墙) */
+  const roleIds = KB_ROLES.filter((r) => items.some((i) => i.roles.includes(r.id)));
+
   const tagCounts = countTags(items);
   const archiveGroups = groupByArchive(items);
 
-  /* 四维 tab 计数 = 各维不同值的数量 */
-  const viewTabs: { view: View; zh: string; en: string; count: number }[] = [
-    { view: "categories", zh: "分类", en: "Categories", count: kindCounts.length },
-    { view: "series", zh: "系列", en: "Series", count: seriesCounts.length },
-    { view: "tags", zh: "标签", en: "Tags", count: tagCounts.length },
-    { view: "archives", zh: "归档", en: "Archives", count: archiveGroups.length },
-  ];
+  const current: Record<string, string | undefined> = {
+    product: selProduct,
+    role: selRole,
+    format: selFormat,
+    tag: selTag,
+    year: selYear,
+  };
+  const preservedQuery = (() => {
+    const params = new URLSearchParams();
+    for (const key of ["product", "role", "format"]) {
+      if (current[key]) params.set(key, current[key]!);
+    }
+    return params.toString();
+  })();
 
-  /* 当前维度的筛选器(作品/Awesome 同款单选下拉;空集 = 参数缺席 = 不限) */
-  const filterSpecs = {
-    categories: {
-      key: "category",
-      label: zh ? "分类" : "Category",
-      options: kindCounts.map((c) => ({
-        value: c.value,
-        label: `${categoryLabelOf(c.value, zh)} (${c.count})`,
-      })),
-      single: true,
-    },
-    series: {
-      key: "series",
-      label: zh ? "系列" : "Series",
-      options: seriesCounts.map((c) => {
-        const s = findLearnSeries(c.slug);
-        return {
-          value: c.slug,
-          label: `${s ? (zh ? s.title.zh : s.title.en) : c.slug} (${c.count})`,
-        };
-      }),
-      single: true,
-    },
-    tags: {
-      key: "tag",
-      label: zh ? "标签" : "Tag",
-      options: tagCounts.map((tg) => ({ value: tg.value, label: `#${tg.value} (${tg.count})` })),
-      single: true,
-    },
-    archives: {
-      key: "year",
-      label: zh ? "归档" : "Year",
-      options: archiveGroups.map((g) => ({
-        value: g.year,
-        label: `${g.year} (${g.months.reduce((n, m) => n + m.items.length, 0)})`,
-      })),
-      single: true,
-    },
-  } as const;
-
-  const filtered = items.filter((i) => {
-    if (view === "categories" && selCategory && i.kind !== selCategory) return false;
-    if (view === "series" && selSeries && i.series !== selSeries) return false;
-    if (view === "tags" && selTag && !i.tags.includes(selTag)) return false;
-    if (view === "archives" && selYear && String(i.publishedAt.getUTCFullYear()) !== selYear) return false;
-    return true;
+  /* 系列货架:无筛选 = 全部在架系列;有筛选 = 命中系列(卡角 命中 n/N) */
+  const shelfSeries = countSeries(anyFilter ? filtered : items).map((c) => {
+    const total = items.filter((i) => i.series === c.slug).length;
+    return { slug: c.slug, hit: c.count, total, episodes: filtered.filter((i) => i.series === c.slug) };
   });
 
-  /* 选中某系列时,该系列的集列表;否则系列视图 = 封面卡网格 */
-  const selSeriesMeta = selSeries ? findLearnSeries(selSeries) : undefined;
+  /* 无筛选时的单篇流:月刊 + 不入系列的教程 */
+  const standalone = items.filter((i) => !i.series);
+
+  const formatTabs: { key: GuideFormat | undefined; label: string }[] = [
+    { key: undefined, label: t(locale, "explore.formatAll") },
+    { key: "read", label: t(locale, "explore.formatRead") },
+    { key: "video", label: t(locale, "explore.formatVideo") },
+    { key: "deck", label: t(locale, "explore.formatDeck") },
+  ];
 
   return (
     <div>
@@ -208,113 +323,198 @@ export default async function ExplorePage({
         eyebrow={`— ${zh ? "探索" : "EXPLORE"}`}
         title={
           <>
-            {zh ? "沿分类、系列、标签和时间回到内容" : "Back to content by category, series, tag, and time"}
+            {zh ? "系列是路,产品与职业是门" : "Series are the paths; products and roles are the doors"}
             <span className="text-ui-blue">.</span>
           </>
         }
         lede={
           zh
-            ? "月刊评鉴与教程是同一架上的文章——四维都是入口。"
-            : "The monthly review and the tutorials live on the same shelf — four ways in."
+            ? "月刊评鉴与教程住在同一架上——按你在用的产品、你的职业、你偏爱的形态找到入口,沿着系列走完它。"
+            : "The monthly review and the tutorials live on the same shelf — enter by the product you use, the work you do, or the format you prefer, then follow a series to the end."
         }
       />
 
-      {/* 工具行(与作品/Awesome 同一结构):维度 seg + 当前维度筛选下拉同一行,
-          选中项 chip 行在下一行(WorksFilterBar 内部生长);系列视图多出
-          行式/网格切换(与作品墙同一 cookie 偏好) */}
-      <div className="mt-8 flex flex-wrap items-center gap-3">
-        <nav
-          aria-label={zh ? "浏览维度" : "Browse dimensions"}
-          className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
-        >
-          {viewTabs.map((v) => (
-            <Link
-              key={v.view}
-              href={exploreHref(v.view)}
-              scroll={false}
-              aria-current={view === v.view ? "page" : undefined}
-              className={`${SEG_ITEM} ${view === v.view ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
-            >
-              {zh ? v.zh : v.en} <span className="opacity-60">{v.count}</span>
-            </Link>
-          ))}
-        </nav>
-        <WorksFilterBar
-          basePath="/explore"
-          preservedQuery={view === "categories" ? "" : `view=${view}`}
-          locale={locale}
-          filters={[filterSpecs[view]]}
-          selected={{
-            categories: { category: selCategory ? [selCategory] : [] },
-            series: { series: selSeries ? [selSeries] : [] },
-            tags: { tag: selTag ? [selTag] : [] },
-            archives: { year: selYear ? [selYear] : [] },
-          }[view]}
-        />
-        {view === "series" && !selSeries && (
-          <WorksViewToggle locale={locale} view={seriesView} />
+      {/* ---- 透镜区:产品 chips + 职业 chips + 形态 seg + 标签/年份下拉 ---- */}
+      <section aria-label={t(locale, "explore.filterAria")} className="mt-8 space-y-4">
+        <div>
+          <p className="kb-eyebrow mb-2">{t(locale, "explore.lensProducts")}</p>
+          <div className="flex max-w-3xl flex-wrap gap-1.5">
+            {KB_PRODUCTS.map((p) => {
+              const Icon = p.icon;
+              const count = productChipCount(p.id);
+              return (
+                <LensChip
+                  key={p.id}
+                  href={lensHref("/explore", current, {
+                    product: selProduct === p.id ? undefined : p.id,
+                  })}
+                  active={selProduct === p.id}
+                  disabled={count === 0}
+                  count={count}
+                >
+                  <Icon size={13} aria-hidden="true" />
+                  {zh ? p.zh : p.en}
+                </LensChip>
+              );
+            })}
+          </div>
+        </div>
+        {roleIds.length > 0 && (
+          <div>
+            <p className="kb-eyebrow mb-2">{t(locale, "explore.lensRoles")}</p>
+            <div className="flex max-w-3xl flex-wrap gap-1.5">
+              {roleIds.map((r) => {
+                const count = roleChipCount(r.id);
+                return (
+                  <LensChip
+                    key={r.id}
+                    href={lensHref("/explore", current, {
+                      role: selRole === r.id ? undefined : r.id,
+                    })}
+                    active={selRole === r.id}
+                    disabled={count === 0}
+                    count={count}
+                  >
+                    {zh ? r.zh : r.en}
+                  </LensChip>
+                );
+              })}
+            </div>
+          </div>
         )}
-      </div>
+        {/* 工具行:形态 seg + 标签/年份下拉(WorksFilterBar 双行结构,
+            preservedQuery 带上透镜参数,下拉切换不丢) */}
+        <div className="flex flex-wrap items-center gap-3">
+          <nav
+            aria-label={t(locale, "explore.format")}
+            className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
+          >
+            {formatTabs.map((f) => (
+              <Link
+                key={f.key ?? "all"}
+                href={lensHref("/explore", current, {
+                  format: f.key === undefined ? undefined : f.key,
+                })}
+                scroll={false}
+                aria-current={selFormat === f.key ? "page" : undefined}
+                className={`${SEG_ITEM} ${selFormat === f.key ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+              >
+                {f.label}
+              </Link>
+            ))}
+          </nav>
+          <WorksFilterBar
+            basePath="/explore"
+            preservedQuery={preservedQuery}
+            locale={locale}
+            filters={[
+              {
+                key: "tag",
+                label: zh ? "标签" : "Tag",
+                options: tagCounts.map((tg) => ({ value: tg.value, label: `#${tg.value} (${tg.count})` })),
+                single: true,
+              },
+              {
+                key: "year",
+                label: zh ? "归档" : "Year",
+                options: archiveGroups.map((g) => ({
+                  value: g.year,
+                  label: `${g.year} (${g.months.reduce((n, m) => n + m.items.length, 0)})`,
+                })),
+                single: true,
+              },
+            ]}
+            selected={{
+              tag: selTag ? [selTag] : [],
+              year: selYear ? [selYear] : [],
+            }}
+          />
+          {!anyFilter && shelfSeries.length > 0 && (
+            <WorksViewToggle locale={locale} view={seriesView} />
+          )}
+        </div>
+      </section>
 
-      {/* 内容区 */}
+      {/* ---- 内容区 ---- */}
       <div className="mt-6">
-        {view === "series" && !selSeries ? (
-          /* 系列:行式/网格随作品墙同一偏好(getWorksView cookie) */
-          seriesCounts.length === 0 ? (
-            <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
-              {zh ? "还没有系列上架。" : "No series yet."}
-            </p>
-          ) : seriesView === "grid" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {seriesCounts.map((c) => {
-                const s = findLearnSeries(c.slug)!;
-                const list = items.filter((i) => i.series === c.slug);
-                return (
-                  <SeriesGridCard key={c.slug} series={s} episodes={list} zh={zh} />
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {seriesCounts.map((c) => {
-                const s = findLearnSeries(c.slug)!;
-                const list = items.filter((i) => i.series === c.slug);
-                return (
-                  <SeriesRowCard key={c.slug} series={s} episodes={list} zh={zh} />
-                );
-              })}
-            </div>
-          )
-        ) : view === "series" && selSeriesMeta ? (
-          /* 选中系列:该系列的集列表 + 进系列页入口 */
-          <>
+        {shelfSeries.length > 0 && (
+          <section>
             <p className="kb-eyebrow flex items-center justify-between border-b border-line pb-4">
               <span>
-                {selSeriesMeta.code} · {filtered.length} {zh ? "集" : "episodes"}
+                {t(locale, "explore.shelfSeries")} · {shelfSeries.length}
               </span>
-              <Link
-                href={`/explore/series/${selSeriesMeta.slug}`}
-                className="text-ui-blue transition-opacity hover:opacity-80"
-              >
-                {zh ? "进系列页 →" : "Open series →"}
-              </Link>
             </p>
-            <ItemList items={filtered} zh={zh} locale={locale} />
-          </>
-        ) : view === "archives" && !selYear ? (
-          /* 归档总览:年分组(年 eyebrow + 条目) */
-          archiveGroups.map((g) => (
-            <div key={g.year} className="mt-2 first:mt-0">
-              <p className="kb-eyebrow border-b border-line py-4">
-                {g.year} · {g.months.reduce((n, m) => n + m.items.length, 0)} {zh ? "篇" : "posts"}
-              </p>
-              {g.months.map((m) => (
-                <ItemList key={m.month} items={m.items} zh={zh} locale={locale} />
-              ))}
+            <div className="mt-4">
+              {seriesView === "grid" ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {shelfSeries.map((s) => {
+                    const meta = findLearnSeries(s.slug)!;
+                    return (
+                      <SeriesGridCard
+                        key={s.slug}
+                        series={meta}
+                        episodes={s.episodes}
+                        zh={zh}
+                        matched={anyFilter ? { hit: s.hit, total: s.total } : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {shelfSeries.map((s) => {
+                    const meta = findLearnSeries(s.slug)!;
+                    return (
+                      <SeriesRowCard
+                        key={s.slug}
+                        series={meta}
+                        episodes={s.episodes}
+                        zh={zh}
+                        matched={anyFilter ? { hit: s.hit, total: s.total } : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          ))
+          </section>
+        )}
+
+        {/* 条目列表:无筛选 = 单篇与月刊;有筛选 = 全部命中(系列内集也单列行) */}
+        {anyFilter ? (
+          filtered.length === 0 ? (
+            /* 组合空态:清除全部 + 最近内容,不给死胡同 */
+            <>
+              <EmptyState
+                message={t(locale, "explore.emptyFilter")}
+                actions={
+                  <Link
+                    href="/explore"
+                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                  >
+                    {t(locale, "works.clearFilters")}
+                  </Link>
+                }
+              />
+              {items.length > 0 && (
+                <section className="mt-8">
+                  <p className="kb-eyebrow border-b border-line pb-4">{t(locale, "explore.latest")}</p>
+                  <ItemList items={items.slice(0, 3)} zh={zh} locale={locale} />
+                </section>
+              )}
+            </>
+          ) : (
+            <section className="mt-8">
+              <ItemList items={filtered} zh={zh} locale={locale} />
+            </section>
+          )
         ) : (
-          <ItemList items={filtered} zh={zh} locale={locale} />
+          <section className="mt-8">
+            <p className="kb-eyebrow border-b border-line pb-4">
+              {t(locale, "explore.standalone")} · {standalone.length}
+            </p>
+            <ItemList items={standalone} zh={zh} locale={locale} />
+          </section>
         )}
       </div>
 

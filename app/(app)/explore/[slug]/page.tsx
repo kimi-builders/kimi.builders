@@ -10,6 +10,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
@@ -26,6 +27,8 @@ import {
 import {
   episodeNeighbors,
   getTutorialBySlug,
+  GUIDE_RESOURCE_KINDS,
+  type GuideResourceKind,
   type Tutorial,
   type TutorialDetail,
 } from "@/src/lib/tutorials";
@@ -390,6 +393,9 @@ function GuideDetail({
             href={deck}
             target="_blank"
             rel="noopener noreferrer"
+            /* 站内演示稿是可带走的资产(HTML 导出语义);外链跨域
+               download 无效,只给内链 */
+            download={deck.startsWith("/") ? true : undefined}
             className="group flex items-center justify-between gap-4 rounded-2xl border border-line bg-card p-5 transition-colors hover:border-ui-blue/60"
           >
             <span>
@@ -406,35 +412,58 @@ function GuideDetail({
   }
   if (tutorial.payload.resources?.length) {
     const resources = tutorial.payload.resources;
+    /* 分型分组(20260821):官方/推荐/提示词/SKILLS/源文件——builder 最会收
+       的东西各归各位;无 kind 的存量 payload 全落「推荐资源」,单组时不
+       出组头(与旧渲染几乎同形,零迁移)。 */
+    const kindLabel = (k: GuideResourceKind) =>
+      ({
+        official: zh ? "官方链接" : "Official",
+        resource: zh ? "推荐资源" : "Recommended",
+        prompt: zh ? "提示词" : "Prompts",
+        skill: zh ? "SKILLS" : "Skills",
+        file: zh ? "源文件" : "Source files",
+      })[k];
+    const groups = GUIDE_RESOURCE_KINDS.map((k) => ({
+      kind: k,
+      list: resources.filter((r) => (r.kind ?? "resource") === k),
+    })).filter((g) => g.list.length > 0);
+    const legacyFlat = groups.length === 1 && groups[0].kind === "resource";
     tabs.push({
       id: "resources",
       label: zh ? "资源" : "Resources",
       panel: (
         <div className="border-b border-line py-9">
-          <ul>
-            {resources.map((r) => {
-              const external = /^https?:\/\//.test(r.url);
-              return (
-                <li key={r.url} className="border-b border-line py-3.5 last:border-b-0">
-                  {external ? (
-                    <a
-                      href={r.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group inline-flex items-center gap-1.5 text-sm font-medium text-paper transition-colors hover:text-ui-blue"
-                    >
-                      {r.label}
-                      <ArrowUpRight size={13} className="shrink-0 text-grey" aria-hidden="true" />
-                    </a>
-                  ) : (
-                    <Link href={r.url} className="text-sm font-medium text-paper transition-colors hover:text-ui-blue">
-                      {r.label}
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          {groups.map((g) => (
+            <section key={g.kind} className={legacyFlat ? "" : "mb-6 last:mb-0"}>
+              {!legacyFlat && (
+                <p className="kb-eyebrow border-b border-line pb-3">{kindLabel(g.kind)}</p>
+              )}
+              <ul>
+                {g.list.map((r) => {
+                  const external = /^https?:\/\//.test(r.url);
+                  return (
+                    <li key={r.url} className="border-b border-line py-3.5 last:border-b-0">
+                      {external ? (
+                        <a
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group inline-flex items-center gap-1.5 text-sm font-medium text-paper transition-colors hover:text-ui-blue"
+                        >
+                          {r.label}
+                          <ArrowUpRight size={13} className="shrink-0 text-grey" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <Link href={r.url} className="text-sm font-medium text-paper transition-colors hover:text-ui-blue">
+                          {r.label}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
         </div>
       ),
     });
@@ -524,7 +553,7 @@ function GuideDetail({
 
       <div className="mt-8">
         {tabs.length > 0 ? (
-          <DetailTabs tabs={tabs} initialTab={initialTab} ariaLabel={zh ? "本集内容形态" : "In this episode"} />
+          <DetailTabs tabs={tabs} initialTab={initialTab} remember ariaLabel={zh ? "本集内容形态" : "In this episode"} />
         ) : (
           <p className="border-y border-line py-9 text-sm leading-relaxed text-grey">
             {zh ? "本集还没有内容。" : "Nothing here yet."}
@@ -625,11 +654,26 @@ export default async function ExploreDetailPage({
   }
   const guide = await getTutorialBySlug(slug, locale);
   if (!guide) notFound();
+  /* 形态偏好回落序(20260821):显式 ?tab= 最优先 → kb_fmt cookie(该集
+     有此形态才生效)→ 第一个 tab;cookie 由 DetailTabs 的 remember 写入 */
+  const preferredFormat = (await cookies()).get("kb_fmt")?.value;
+  const guideTabIds = new Set<string>([
+    ...(guide.tutorial.bodyMd ? ["read"] : []),
+    ...(guide.tutorial.payload.video ? ["video"] : []),
+    ...(guide.tutorial.payload.deck ? ["deck"] : []),
+    ...(guide.tutorial.payload.resources?.length ? ["resources"] : []),
+  ]);
+  const guideTab =
+    rawTab && guideTabIds.has(rawTab)
+      ? rawTab
+      : preferredFormat && guideTabIds.has(preferredFormat)
+        ? preferredFormat
+        : undefined;
   return (
     <GuideDetail
       tutorial={guide.tutorial}
       seriesTutorials={guide.seriesTutorials}
-      initialTab={rawTab}
+      initialTab={guideTab}
       locale={locale}
       canEdit={canEdit}
     />

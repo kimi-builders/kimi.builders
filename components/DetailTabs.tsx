@@ -4,7 +4,11 @@
    · 所有面板全部 SSR 渲染,非激活只加 hidden(无 JS 时全可见,优雅降级);
    · 激活态初始值由服务端从 ?tab= 读入(initialTab,SSR 不出错配);
    · 点击切换 + history.replaceState 同步 URL(首个 tab 删参数,URL 干净),
-     popstate 回同步;方向键/ Home/End 循环切换,focus 不跳滚动。 */
+     popstate 回同步;方向键/ Home/End 循环切换,focus 不跳滚动。
+   · remember(20260821 形态偏好,仅 guide 详情传 true):点击形态 tab
+     (read/video/deck)写 kb_fmt cookie——「喜欢文字的看文章,喜欢 PPT 的
+     看演示」,下次进任何一集直接落在偏好的形态;letter 的评鉴/事实/定夺
+     是内容节不是形态,不记忆。服务端侧的回落序见 explore/[slug]/page.tsx。 */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   SEG_ITEM,
@@ -19,15 +23,28 @@ export interface DetailTab {
   panel: ReactNode;
 }
 
+const FORMAT_TAB_IDS = new Set(["read", "video", "deck"]);
+
+/* 形态偏好落 cookie(模块级 helper:react-hooks/immutability 不允许
+   组件作用域直接赋值 document.cookie;与 pref-controls 的 writeCookie
+   同一规避)。 */
+function rememberFormatTab(id: string) {
+  document.cookie = `kb_fmt=${id}; path=/; max-age=${365 * 86400}; samesite=lax`;
+}
+
 export default function DetailTabs({
   tabs,
   initialTab,
   ariaLabel,
+  remember = false,
 }: {
   tabs: DetailTab[];
-  /* 服务端从 searchParams.tab 读入;非法/缺省 = 第一个 tab */
+  /* 服务端从 searchParams.tab 读入;非法/缺省 = 第一个 tab
+     (guide 详情另有 kb_fmt 偏好回落,在页面层拼好传入) */
   initialTab?: string;
   ariaLabel: string;
+  /* 形态偏好记忆:仅 guide 详情启用 */
+  remember?: boolean;
 }) {
   const first = tabs[0]?.id ?? "";
   const [active, setActive] = useState(
@@ -51,6 +68,9 @@ export default function DetailTabs({
     if (id === first) url.searchParams.delete("tab");
     else url.searchParams.set("tab", id);
     window.history.replaceState(null, "", url);
+    if (remember && FORMAT_TAB_IDS.has(id)) {
+      rememberFormatTab(id);
+    }
     if (focus) {
       listRef.current
         ?.querySelector<HTMLButtonElement>(`[data-tab="${id}"]`)
