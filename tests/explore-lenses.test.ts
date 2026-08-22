@@ -196,22 +196,18 @@ test("guidePayloadFromDb: invalid lens items dropped, page survives", () => {
   assert.deepEqual(lenient.resources, [{ label: "x", url: "/x" }]);
 });
 
-/* ---- 形态推导(派生不说谎) ---- */
+/* ---- 形态推导(派生不说谎;20260822 P2-5:hasBody 由 SQL 布尔带出) ---- */
 
 test("deriveFormats: presence-driven, read first", () => {
-  assert.deepEqual(deriveFormats("正文", {}), ["read"]);
-  assert.deepEqual(deriveFormats("", { video: { provider: "bilibili", id: "BV1" } }), ["video"]);
-  assert.deepEqual(deriveFormats(null, { deck: "/d.html" }), ["deck"]);
-  assert.deepEqual(
-    deriveFormats("  ", { video: { id: "x" }, deck: "/d" }),
-    ["video", "deck"],
-  );
-  assert.deepEqual(deriveFormats("稿", { video: { id: "x" }, deck: "/d" }), [
+  assert.deepEqual(deriveFormats(true, {}), ["read"]);
+  assert.deepEqual(deriveFormats(false, { video: { provider: "bilibili", id: "BV1" } }), ["video"]);
+  assert.deepEqual(deriveFormats(false, { deck: "/d.html" }), ["deck"]);
+  assert.deepEqual(deriveFormats(true, { video: { id: "x" }, deck: "/d" }), [
     "read",
     "video",
     "deck",
   ]);
-  assert.deepEqual(deriveFormats(undefined, {}), []);
+  assert.deepEqual(deriveFormats(false, {}), []);
 });
 
 /* ---- 透镜计数 / 过滤 / 落地页门槛 ---- */

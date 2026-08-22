@@ -7,8 +7,9 @@
    导航交给表单层(20260822 弹窗化,与作品发布同构):action 只返回结果,
    发布 → replace 到 /explore/<slug>(弹窗静默关、落在详情);存草稿 →
    停在编辑位续编(带回首行 id,再保存走更新不重复建行)。 */
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { PUBLIC_MONTHLY_STATS_CACHE_TAG } from "@/src/lib/cache-tags";
 import {
   createArticle,
   normalizeArticleKind,
@@ -110,6 +111,8 @@ export async function saveArticleAction(
 
   revalidatePath("/explore");
   revalidatePath(`/explore/${slug}`);
+  /* 统计快照缓存失效(20260822 P2-5):发布/撤稿都可能改变快照观感 */
+  updateTag(PUBLIC_MONTHLY_STATS_CACHE_TAG);
   return { ok: true, id: rowId, slug, artLocale, published: publish };
 }
 
@@ -124,7 +127,9 @@ export async function deleteArticleAction(
   const id = Number(formData.get("id"));
   if (!id) return { ok: false, error: t(locale, "err.generic") };
   const ok = await softDeleteArticle(id);
-  /* 删除动作只带 id 不带 slug:详情缓存键不可得,作废旧列表即可 */
-  if (ok) revalidatePath("/explore");
+  if (ok) {
+    revalidatePath("/explore");
+    updateTag(PUBLIC_MONTHLY_STATS_CACHE_TAG);
+  }
   return { ok };
 }

@@ -16,6 +16,7 @@ import {
   type IssueDecisionKind,
   type IssueFact,
 } from "./monthly";
+import { getCachedMonthlyStatsSnapshot } from "./monthly-stats-cache";
 import { POSTER_SITE_ORIGIN, clip, posterInitials } from "./share-posters";
 
 /* ---- 分节参数 ---- */
@@ -124,7 +125,11 @@ export async function getLetterShareSnapshot(
 ): Promise<LetterShareSnapshot | null> {
   const s = normalizeArticleSlug(slug);
   if (!s) return null;
-  return letterSnapshotFromResult(await getAssembledIssue(s, "zh"), section);
+  /* 统计快照走缓存(20260822 P2-5):海报路由与详情页同一份快照 */
+  return letterSnapshotFromResult(
+    await getAssembledIssue(s, "zh", { stats: await getCachedMonthlyStatsSnapshot() }),
+    section,
+  );
 }
 
 /* ---- dev 预览:tests/fixtures/monthly-mock 第一期 → 同一渲染契约 ----

@@ -55,9 +55,11 @@ export interface TaxonomyCount {
 }
 
 /* 形态推导(派生不说谎):有正文才有 read,有 video 才有 video,有 deck 才有
-   deck。read 恒在数组首位(canonical 文稿优先的呈现序)。 */
+   deck。read 恒在数组首位(canonical 文稿优先的呈现序)。
+   hasBody 由 SQL 算好((body_md IS NOT NULL AND TRIM(body_md)<>'') AS has_body):
+   列表/右栏不必整取 LONGTEXT(20260822 P2-5),取数面只花一个布尔。 */
 export function deriveFormats(
-  bodyMd: string | null | undefined,
+  hasBody: boolean,
   payload: unknown,
 ): GuideFormat[] {
   const p =
@@ -65,7 +67,7 @@ export function deriveFormats(
       ? (payload as { video?: unknown; deck?: unknown })
       : {};
   const formats: GuideFormat[] = [];
-  if (bodyMd && bodyMd.trim().length > 0) formats.push("read");
+  if (hasBody) formats.push("read");
   if (p.video) formats.push("video");
   if (p.deck) formats.push("deck");
   return formats;
@@ -248,7 +250,7 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
     chapter: (payload as { chapter?: string }).chapter ?? seriesChapter ?? null,
     cover: (payload as { cover?: string }).cover ?? null,
     coverTone: (payload as { coverTone?: string }).coverTone ?? null,
-    formats: deriveFormats(r.body_md, payload),
+    formats: deriveFormats(!!r.has_body, payload),
   };
 }
 
@@ -276,7 +278,8 @@ export async function listExploreItems(
   uiLocale: ArticleLocale,
 ): Promise<ExploreItem[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT a.slug, a.kind, a.locale, a.title, a.summary, a.body_md,
+    `SELECT a.slug, a.kind, a.locale, a.title, a.summary,
+            (a.body_md IS NOT NULL AND TRIM(a.body_md) <> '') AS has_body,
             a.published_at, a.payload, u.handle AS author_handle
      FROM articles a
      JOIN users u ON u.id = a.author_id
@@ -292,7 +295,8 @@ export async function listExploreItems(
 export const getArticleRailMeta = cache(
   async (slug: string, uiLocale: ArticleLocale): Promise<ExploreItem | null> => {
     const [rows] = await getPool().query<RowDataPacket[]>(
-      `SELECT a.slug, a.kind, a.locale, a.title, a.summary, a.body_md,
+      `SELECT a.slug, a.kind, a.locale, a.title, a.summary,
+              (a.body_md IS NOT NULL AND TRIM(a.body_md) <> '') AS has_body,
               a.published_at, a.payload, u.handle AS author_handle
        FROM articles a
        JOIN users u ON u.id = a.author_id

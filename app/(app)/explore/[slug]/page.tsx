@@ -26,6 +26,7 @@ import {
   type AssembledIssue,
   type LetterIssueMeta,
 } from "@/src/lib/monthly";
+import { getCachedMonthlyStatsSnapshot } from "@/src/lib/monthly-stats-cache";
 import {
   getTutorialBySlug,
   GUIDE_RESOURCE_KINDS,
@@ -49,7 +50,7 @@ export async function generateMetadata({
   if (UPCOMING.explore) return { title: "探索 — kimi.builders" };
   const { slug } = await params;
   const locale = await getLocale(await getSessionUser());
-  const letter = await getAssembledIssue(slug, locale);
+  const letter = await getAssembledIssue(slug, locale, { stats: await getCachedMonthlyStatsSnapshot() });
   if (letter) return { title: `${letter.issue.title} — kimi.builders` };
   const guide = await getTutorialBySlug(slug, locale);
   return { title: guide ? `${guide.tutorial.title} — kimi.builders` : "kimi.builders" };
@@ -552,7 +553,7 @@ export default async function ExploreDetailPage({
   const canEdit = !!user && canModerate(user.role);
 
   /* letter 优先,guide 回落 */
-  const letter = await getAssembledIssue(slug, locale);
+  const letter = await getAssembledIssue(slug, locale, { stats: await getCachedMonthlyStatsSnapshot() });
   if (letter) {
     const metas = await listLetterIssueMetas(locale);
     return (
