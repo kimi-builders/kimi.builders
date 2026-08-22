@@ -1,8 +1,10 @@
 "use client";
 
-/* 作品的编辑精选操作(仅 admin/mod 渲染,服务端判断;action 里再兜底)。
-   挂在 WorkCard 底部:未精选 → 「设为精选」展开理由小表单;
-   已精选 → 显示当前理由 + 取消按钮。成功后 toast + router.refresh()。 */
+/* Editorial featuring controls (rendered for admin/mod only, decided
+   server-side; the action layer re-checks). Sits at the WorkCard's
+   bottom: unfeatured -> "feature" expands a small reason form;
+   featured -> shows the current reason + an unfeature button. Success
+   toasts + router.refresh()es. */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";

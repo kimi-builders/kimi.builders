@@ -1,9 +1,12 @@
-/* 编辑作品主体:完整页(/works/[id]/edit)与弹窗(@modal/(.)works/[id]/edit)
-   共用。showTitle=false 时收起 h1(弹窗自带标题栏)。
-   仅作者:加载后服务端先验归属,不是自己的直接给错误提示。
-   声明制(20260822_work_claims):声明字段上下文 = 可验证总量 − 其他作品已声明
-   (排除本作品);作者开了 upload_project 且项目 label 与作品名匹配时给建议
-   预填值(纯省事)。总量缩水使 Σ声明 > 总量时,作者在此看到重新分配提示。 */
+/* Edit-work body: shared by the full page (/works/[id]/edit) and the
+   modal (@modal/(.)works/[id]/edit). showTitle=false collapses the h1
+   (the modal has its own title bar). Author-only: the server checks
+   ownership after loading and shows an error otherwise. Claims: the
+   field context = the verifiable total - claims on other works
+   (excluding this one); a suggestion prefill appears when the author
+   enabled upload_project and a project label matches the work name
+   (pure convenience). When a shrunk total puts the sum of claims over
+   it, the author sees the redistribution hint here. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -39,12 +42,14 @@ export default async function EditWorkContent({
   }
 
   const allowance = await getClaimAllowance(user.id, work.id);
-  /* 超额提示按含本作品的完整 Σ声明 判定(allowance.claimed 已排除本作品) */
+  /* The over-cap hint judges by the full sum of claims including this
+     work (allowance.claimed already excludes it). */
   const paused = claimsPaused(
     allowance.total,
     allowance.claimed + (work.claimedTokens ?? 0),
   );
-  /* 建议预填:已有声明的作品不再给建议(声明值本身就是作者定夺) */
+  /* Suggestion prefill: works with an existing claim get no
+     suggestion (the claim itself is the author's ruling). */
   const suggested =
     work.claimedTokens === null && allowance.total > 0
       ? matchSuggestedClaim(work.name, await getSuggestedClaimProjects(user.id))
@@ -53,7 +58,7 @@ export default async function EditWorkContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2 */
+        /* Layout alignment: the header takes eyebrow + .kb-h2. */
         <div>
           <p className="kb-eyebrow">{t(locale, "works.editEyebrow")}</p>
           <h1 className="kb-h2 mt-3">
@@ -95,7 +100,8 @@ export default async function EditWorkContent({
           remaining: allowance.remaining,
           suggested,
         }}
-        /* 媒体回填(20260826_work_media):key → 公开 URL 在此(服务端)拼好 */
+        /* Media backfill: key -> public URL assembled here
+           (server-side). */
         media={{
           logo: work.logoKey ? { key: work.logoKey, url: mediaUrl(work.logoKey) } : null,
           images: work.imageKeys.map((k) => ({ key: k, url: mediaUrl(k) })),

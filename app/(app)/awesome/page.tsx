@@ -1,9 +1,12 @@
-/* Awesome Kimi:全世界用 Kimi 构建的项目(全部来源:成员作品 + 推荐的站外项目)。
-   头部说明 + sort seg + 筛选下拉(Agent / 类型 / 收录口径);卡片与 /works 共用
-   WorkCard(awesome 条目带口径 chip + 推荐人),首屏与「加载更多」共用
-   ../works/_components/works-page(游标分页:new = id,hot = votes|id 复合)。
-   页头(20260819 版式对齐)接入共享 PageHeader,与 learn/blog 同一语法。
-   收录口径见 awesome.intro(放宽:参与即可);推荐规则见右栏。 */
+/* Awesome Kimi: projects built with Kimi worldwide (both sources: member
+   works + recommended external projects). Header copy + a sort seg +
+   filter dropdowns (agent / kind / scope); cards share WorkCard with
+   /works (awesome entries carry a scope chip + recommender), and the
+   first page and "load more" share ../works/_components/works-page
+   (keyset paging: new = id, hot = the votes|id composite). The header
+   uses the shared PageHeader grammar. Scope rules live in awesome.intro
+   (relaxed: participation is enough); recommendation rules in the
+   rail. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -48,7 +51,8 @@ export default async function AwesomePage({
   const requestHeaders = await headers();
   trackEvent("awesome_view", { kind: "page", id: "awesome" }, { headers: requestHeaders });
   const currentSort = sort === "hot" ? "hot" : "new";
-  /* csv 顺手去重(P0-1):URL 是外部输入,重复 id 不收敛会放大到查询层 */
+  /* Dedupe csv values: URLs are external input — un-converged duplicate
+     ids amplify into the query layer. */
   const csv = (value?: string) => [...new Set((value ?? "").split(",").filter(Boolean))];
   const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));
   const activeKinds = csv(kind).filter(isWorkKind);
@@ -56,8 +60,9 @@ export default async function AwesomePage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const zh = locale === "zh";
-  /* 视图偏好(cookie,与 /works 共用):grid=封面墙,list=行式(默认);
-     移动端恒行式(getWorksView 内收敛),切换器也不渲染 */
+  /* View preference (cookie, shared with /works): grid = cover wall,
+     list = rows (default); mobile is always rows (converged inside
+     getWorksView) and the toggle isn't rendered. */
   const [view, mobile] = await Promise.all([getWorksView(), isMobileRequest()]);
   const page = await loadWorksCards(
     {
@@ -74,15 +79,16 @@ export default async function AwesomePage({
 
   const preservedQuery = currentSort !== "new" ? `sort=${currentSort}` : "";
 
-  /* stagger 入场只在默认视图挂载(20260821 评审,与 /works 同口径):
-     筛选/排序切换是服务端重渲染,卡片 key 全换会重放入场动画 */
+  /* Stagger entrance only on the default view: filter/sort switches are
+     server re-renders — all card keys change and the entrance animation
+     would replay. */
   const stagger =
     currentSort === "new" &&
     activeAgents.length === 0 &&
     activeKinds.length === 0 &&
     !activeScope;
 
-  /* sort 切换保留筛选 */
+  /* Sort switches keep the filters. */
   const sortHref = (nextSort: string) => {
     const params = new URLSearchParams();
     if (nextSort !== "new") params.set("sort", nextSort);

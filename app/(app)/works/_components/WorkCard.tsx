@@ -1,16 +1,22 @@
-/* 作品卡片(行式,20260813 改版;20260918 完善):/works(成员作品墙)与
-   /awesome(全来源)、/u/[handle] 作品页签共用。图在左固定列(移动端在上,
-   sm+ 248px),标题一行截断,类型/Agent/标签/声明/精选收成 mono meta 行
-   (蓝只给声明与精选),底行 hairline 分隔:作者/支持/链接/操作(共享
-   WorkCardFooter)。hover:边框提亮 + 封面轻放大 + 标题变蓝(group)。
-   私密/屏蔽保留警示 pill(仅作者可见)。
-   整卡链到详情页(P1-2,absolute 覆盖链接);作者/访问/源码/操作行抬 z-10 保持独立跳转。
-   编辑精选:featured_at 非空时 meta 行带 ★ 精选;canFeature(admin/mod)时底部多
-   一行设/撤精选操作(每周精选 v0)。
-   用量徽章(声明制,20260822_work_claims):claimBadge 非空(本作品已声明且
-   作者 Σ声明 ≤ 可验证总量,不变式由组装层 claimBadgeOf 判定)时 meta 行带
-   「声明投入」;null = 完全不渲染(未声明/超额暂停,无负面标记)。
-   claimPaused(仅作者本人为 true)时作者在自己的卡片上看到重新分配提示。 */
+/* Work card (row variant), shared by /works (member wall), /awesome
+   (all sources), and the /u/[handle] works tab. Image in a fixed left
+   column (top on mobile, 248px at sm+), one-line truncated title,
+   kind/agents/tags/claim/featured collapsed into a mono meta row (blue
+   reserved for claim and featured), and a hairline-separated bottom
+   row: author/support/links/actions (shared WorkCardFooter). Hover:
+   brighter border + slight cover zoom + blue title (group).
+   Private/hidden keep their warning pill (author-visible only).
+   The whole card links to the detail page (absolute overlay link);
+   author/visit/source/action rows raise z-10 to keep their own
+   navigation. Editorial featuring: a non-null featured_at adds a ★ to
+   the meta row; canFeature (admin/mod) adds a feature/unfeature row at
+   the bottom (weekly featured v0). Usage badge (claim-based):
+   non-null claimBadge (this work claimed and the author's sum of claims
+   <= verifiable total, decided by the assembly layer's claimBadgeOf)
+   adds "claimed effort" to the meta row; null = nothing rendered
+   (unclaimed / paused over cap — no negative signaling). claimPaused
+   (true only for the author) shows a redistribution hint on their own
+   cards. */
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
@@ -26,7 +32,8 @@ import WorkScreenshot from "./WorkScreenshot";
 
 const CHIP = "inline-flex items-center gap-1 rounded-md px-1.5 py-px text-xs font-medium";
 
-/* 状态标签:meta 行纯文本 token(不再是 pill 芯片);两种卡片共用。 */
+/* Status labels: plain-text tokens in the meta row (no longer pill
+   chips); shared by both card variants. */
 export function statusLabelOf(status: string, locale: Locale): string | null {
   if (status === "released") return null;
   return t(
@@ -50,7 +57,8 @@ export function WorkMetaChips({
   locale: Locale;
   statusLabel: string | null;
   kindLabel: string;
-  /* 网格卡=false:封面名称砖上已有类型 eyebrow,meta 行不重复出分类 */
+  /* grid=false: the cover's name brick already carries the kind
+     eyebrow, so the meta row doesn't repeat it. */
   showKind?: boolean;
 }) {
   return (
@@ -108,9 +116,11 @@ export default function WorkCard({
   const kindLabel = workKindLabel(w.kind, locale === "zh");
   const statusLabel = statusLabelOf(w.status, locale);
   return (
-    /* 行式卡:移动端图在上,sm+ 图在左固定列;标题独占一行截断,
-       类型/Agent/声明/精选收成一条 mono meta 行,底行 hairline 分隔。
-       group:封面轻放大 + 标题变蓝的 hover 载体。 */
+    /* Row card: image on top for mobile, fixed left column at sm+;
+       the title takes its own truncated line, kind/agents/claim/
+       featured collapse into one mono meta row, and a hairline
+       separates the bottom row. group: the hover vehicle for the cover
+       zoom + blue title. */
     <article className={`kb-work-card group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30 sm:flex-row ${
       w.source === "awesome" ? "kb-awesome-card" : "kb-member-card"
     }`}>

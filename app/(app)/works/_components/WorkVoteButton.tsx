@@ -1,8 +1,10 @@
 "use client";
 
-/* 作品「支持」按钮(P1-2):顶只有,再点取消。乐观更新 —— 点击立即翻转填充/计数,
-   后台落库,失败(限流/未登录等)回滚 + toast(模式同社区 VoteCluster)。
-   未登录不渲染本组件(详情页渲染只读计数)。 */
+/* The work "support" button: up-only, click again to cancel. Optimistic
+   — the click flips fill/count immediately, the write lands in the
+   background, and failures (rate limit/signed out) roll back + toast
+   (same pattern as the community VoteCluster). Not rendered when
+   signed out (the detail page shows a read-only count). */
 import { useRef, useState } from "react";
 import { Heart } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -35,7 +37,8 @@ export default function WorkVoteButton({
       const fd = new FormData();
       fd.set("work_id", String(workId));
       const res = await toggleWorkVoteAction(fd);
-      /* 服务端拒绝(限流等):回滚乐观态,限流文案带等待秒数 */
+      /* Server rejection (rate limit etc.): roll back the optimistic
+         state; the rate-limit copy carries the wait seconds. */
       if (!res.ok) {
         setState(prev);
         toast(res.error || t(locale, "toast.failed"), "error");
@@ -50,8 +53,9 @@ export default function WorkVoteButton({
 
   const label = t(locale, state.voted ? "works.supported" : "works.support");
   return (
-    /* 20260819 修比例:与操作条主按钮同规格(44px 高、rounded-lg、text-sm);
-       此前 py-1.5/text-xs 无圆角,与 44px 主 CTA 并排时矮一截、方角突兀 */
+    /* Sized to match the action bar's primary button (44px tall,
+       rounded-lg, text-sm); the old py-1.5/text-xs square button looked
+       stubby and angular next to a 44px CTA. */
     <button
       type="button"
       onClick={toggle}

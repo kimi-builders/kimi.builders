@@ -1,10 +1,12 @@
-/* 提交作品主体:完整页(/works/new)与弹窗(@modal/(.)works/new)共用。
-   showTitle=false 时收起 h1(弹窗自带标题栏)。
-   声明制(20260822_work_claims):声明字段上下文 = 作者可验证总量 − 已声明合计;
-   新作品尚无名字可匹配,建议预填值留空(编辑页按作品名匹配项目分布)。
-   毕业归因(20260920):?path=<slug> 带入来源路径上下文(横幅 + 隐藏字段),
-   非法 slug 与不带来源相同;登录引导的回跳地址保留 path 参数。
-   20260819 版式对齐:页头接入 eyebrow + .kb-h2,H1 里的 SquarePen 图标下线。 */
+/* Submit-work body: shared by the full page (/works/new) and the modal
+   (@modal/(.)works/new). showTitle=false collapses the h1 (the modal
+   has its own title bar). Claims: the field context = the author's
+   verifiable total - the sum of claims; a new work has no name to
+   match yet, so the suggestion prefill stays empty (the edit page
+   matches the project mix by work name). Graduation attribution:
+   ?path=<slug> brings the source-series context (banner + hidden
+   field); an invalid slug behaves like no source; the login
+   invitation's return URL keeps the path param. */
 import { getSessionUser } from "@/src/lib/auth/session";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
@@ -20,8 +22,8 @@ export default async function NewWorkContent({
   searchParams,
 }: {
   showTitle?: boolean;
-  /* 毕业归因(20260920,plan §二.5):?path=<slug> 带入来源路径上下文;
-     非法 slug 静默丢弃(与不带来源相同) */
+  /* Graduation attribution: ?path=<slug> brings the source-series
+     context; an invalid slug is dropped silently (same as no source). */
   searchParams?: Promise<{ path?: string | string[] }>;
 }) {
   const user = await getSessionUser();
@@ -33,7 +35,7 @@ export default async function NewWorkContent({
     typeof sp.path === "string" ? sp.path : "",
   );
   const sourcePath = sourceSlug ? findLearnSeries(sourceSlug) : undefined;
-  /* 登录后回来仍带来源上下文 */
+  /* Returning after login still carries the source context. */
   const newHref = sourceSlug
     ? `/works/new?path=${encodeURIComponent(sourceSlug)}`
     : "/works/new";
@@ -42,7 +44,8 @@ export default async function NewWorkContent({
     return (
       <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
         {showTitle && (
-          /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,H1 不再带图标 */
+          /* Layout alignment: the header takes eyebrow + .kb-h2; the h1
+             carries no icon. */
           <div>
             <p className="kb-eyebrow">{t(locale, "works.newEyebrow")}</p>
             <h1 className="kb-h2 mt-3">
@@ -64,9 +67,12 @@ export default async function NewWorkContent({
 
   const [allowance, src] = await Promise.all([
     getClaimAllowance(user.id),
-    /* 新建意图默认跟来源列表(20260815):从 Awesome 的提交入口进来,
-       表单直接落在「推荐站外项目」档——服务端读 kb-works-src(proxy 在
-       列表页写入)直出,无水合跳变;与左栏高亮/详情页「返回」同一事实源 */
+    /* Create-intent default follows the source list: entering from
+       Awesome's submit entry lands the form directly on "recommend
+       external" — the server reads kb-works-src (written by proxy on
+       list pages) and renders it directly, no hydration jump; the same
+       source of truth as the rail highlight and the detail page's
+       "back". */
     getWorksSource(),
   ]);
 
@@ -89,7 +95,8 @@ export default async function NewWorkContent({
           sourcePath && sourceSlug
             ? {
                 slug: sourceSlug,
-                /* 服务端本地化(避免客户端表单引用整份路径 mock 数据) */
+                /* Localized server-side (keeps the client form from
+                   importing the whole series mock data). */
                 text: zh
                   ? `来自系列 ${sourcePath.code} · ${sourcePath.title.zh} — 发布后计入这个系列的毕业作品`
                   : `From series ${sourcePath.code} · ${sourcePath.title.en} — your work will count as a graduate of this series`,

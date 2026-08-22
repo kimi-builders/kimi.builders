@@ -1,16 +1,21 @@
 "use client";
 
-/* 作品/Awesome 筛选条:若干多选下拉(FilterDropdown)+ 结果分组行 + 一键清除。
-   状态全在 URL(agent/kind/scope 为 csv);改动只换参数,排序/其余参数原样保留。
-   双行结构(20260815 三次打磨):
-   - 下拉行常驻,与页面排序 seg 恒同一行(页面工具行 items-start 对齐)——
-     多选再多,下拉按钮不随结果换行,工具位恒定;
-   - 结果行仅在 有选中时出现:分组之间可换行、组内值也可换行(flex-wrap),
-     维度名蓝色与值区分,清除入口随行。
-   分组呈现:维度名每组只出现一次,后接各选中值 token(可单个移除);
-   Agent 值带选项图标(icon 由 works/awesome 页面的筛选配置提供)。
-   规格统一:下拉与分组同高同弧度(min-h-11 sm:min-h-9 + rounded-lg,
-   见 seg-classes.ts 注释)。 */
+/* Works/Awesome filter bar: multi-select dropdowns (FilterDropdown) + a
+   grouped results row + clear-all. State lives entirely in the URL
+   (agent/kind/scope as csv); a change swaps only its own param — sort
+   and the rest survive. Two-row structure:
+   - the dropdown row is permanent and stays on one line with the page's
+     sort seg (the toolbar is items-start aligned) — however many
+     selections, dropdown buttons never wrap and the tool slots stay
+     fixed;
+   - the results row appears only with selections: groups wrap between,
+     values wrap within (flex-wrap), dimension names in blue to tell them
+     from values, clear-all rides along.
+   Grouped display: a dimension name appears once, followed by its value
+   tokens (individually removable); agent values carry option icons
+   (icons come from the works/awesome filter config). Sizing is unified:
+   dropdowns and groups share height and radius (min-h-11 sm:min-h-9 +
+   rounded-lg, see the seg-classes.ts comment). */
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
@@ -21,7 +26,7 @@ export interface WorksFilterSpec {
   key: string;
   label: string;
   options: FilterOption[];
-  /* 单选(收录口径):选中显示选项文案,draft 最多 1 个 */
+  /* Single-select (scope): shows the option label, at most 1 draft. */
   single?: boolean;
 }
 
@@ -61,9 +66,10 @@ export default function WorksFilterBar({
     0,
   );
 
-  /* 双行以兄弟节点参与页面的工具行 flex(20260815 四次打磨):
-     结果行 order-last + w-full = 换到工具行下一整行,左缘与排序 seg
-     (热门/最新)对齐——不再缩在下拉行内部,消除 seg 下方的空白带。 */
+  /* The two rows join the page toolbar flex as siblings: the results
+     row takes order-last + w-full — a full row under the toolbar, its
+     left edge aligned with the sort seg (hot/new) — no longer squeezed
+     inside the dropdown row, removing the blank band under the seg. */
   return (
     <>
       {/* 下拉行:移动端整条工具行里排到末尾、占满整行,下拉 w-full 逐行

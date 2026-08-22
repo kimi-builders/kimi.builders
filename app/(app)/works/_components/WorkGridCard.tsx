@@ -1,10 +1,14 @@
-/* 作品卡片(网格版,20260918):/works 与 /awesome 的「封面墙」视图——
-   封面在上(恒定 16:9),内容在下,sm 两列 / lg 三列。与行式 WorkCard 并列
-   (非变体分支):信息密度刻意更低——tagline 放宽到两行,meta 压成一行
-   (类型/状态/前两个 Agent;★精选与声明投入保留蓝色),收录口径(scope)
-   按约定省略(详情页可看),底行复用 WorkCardFooter(compact:链接只留图标)。
-   hover 语言与行式卡一致:边框提亮 + 封面轻放大 + 标题变蓝(group)。
-   整卡覆盖链接 + 交互元素 z-10 的模式与行式卡相同(P1-2)。 */
+/* Work card (grid variant): the "cover wall" view on /works and
+   /awesome — cover on top (fixed 16:9), content below, two columns at
+   sm / three at lg. A sibling of the row WorkCard (not a variant
+   branch): deliberately lower information density — tagline relaxes to
+   two lines, meta compresses to one (kind/status/first two agents; the
+   featured star and claimed effort stay blue), scope is omitted by
+   convention (the detail page shows it), and the bottom row reuses
+   WorkCardFooter (compact: links reduced to icons). Hover language
+   matches the row card: brighter border + slight cover zoom + blue
+   title (group). The card-spanning link + z-10 interactive elements
+   pattern matches the row card. */
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";

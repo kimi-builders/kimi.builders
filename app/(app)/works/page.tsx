@@ -1,11 +1,12 @@
-/* 作品库 /works:成员作品墙(Kimi Design 改造:头部说明 + sort seg + Agent chips
-   + 圆角截图卡双列网格)+ 提交入口。
-   只展示 source=site 的成员作品;推荐的站外项目在 /awesome。
-   页头(20260819 版式对齐)接入共享 PageHeader:eyebrow + kb-h1 + kb-lede,
-   与 learn/blog 同一语法;工具行/列表间距归位 4px 序列。
-   卡片渲染与 /awesome 共用 _components/WorkCard,首屏与「加载更多」共用
-   _components/works-page(游标分页:new = id,hot = votes|id 复合)。
-   作者已 opt-in 公开用量时,卡片带「已验证构建投入」徽章(见 works-page)。 */
+/* /works: the member work wall (Kimi Design rework: header copy + sort
+   seg + agent chips + a two-column grid of rounded screenshot cards) +
+   a submit entry. Shows source=site member works only; recommended
+   external projects live on /awesome. The header uses the shared
+   PageHeader (eyebrow + kb-h1 + kb-lede); cards share
+   _components/WorkCard with /awesome, and the first page and "load
+   more" share _components/works-page (keyset paging: new = id, hot =
+   the votes|id composite). When the author opted into public usage,
+   cards carry the "verified build effort" badge (see works-page). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -46,15 +47,17 @@ export default async function WorksPage({
   const requestHeaders = await headers();
   trackEvent("works_view", { kind: "page", id: "works" }, { headers: requestHeaders });
   const currentSort = sort === "hot" ? "hot" : "new";
-  /* csv 顺手去重(P0-1):URL 是外部输入,重复 id 不收敛会放大到查询层 */
+  /* Dedupe csv values: URLs are external input — un-converged duplicate
+     ids amplify into the query layer. */
   const csv = (value?: string) => [...new Set((value ?? "").split(",").filter(Boolean))];
   const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));
   const activeKinds = csv(kind).filter(isWorkKind);
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const zh = locale === "zh";
-  /* 视图偏好(cookie):grid=封面墙(两/三列),list=行式(默认);
-     移动端恒行式(getWorksView 内收敛),切换器也不渲染 */
+  /* View preference (cookie): grid = cover wall (two/three columns),
+     list = rows (default); mobile is always rows (converged inside
+     getWorksView) and the toggle isn't rendered. */
   const [view, mobile] = await Promise.all([getWorksView(), isMobileRequest()]);
   const page = await loadWorksCards(
     { awesome: false, sort: currentSort, agents: activeAgents, kinds: activeKinds, view },
@@ -64,7 +67,8 @@ export default async function WorksPage({
 
   const preservedQuery = currentSort !== "new" ? `sort=${currentSort}` : "";
 
-  /* sort 切换保留筛选(agent/kind 随链接走,与筛选条互补) */
+  /* Sort switches keep the filters (agent/kind ride the link,
+     complementing the filter bar). */
   const sortHref = (nextSort: string) => {
     const params = new URLSearchParams();
     if (nextSort !== "new") params.set("sort", nextSort);
@@ -74,14 +78,17 @@ export default async function WorksPage({
     return qs ? `/works?${qs}` : "/works";
   };
 
-  /* 空态(登录):带可声明额度 pill(有用量数据时) */
+  /* Empty state (signed in): carries a claimable-allowance pill when
+     usage data exists. */
   const allowance = user && page.nodes.length === 0
     ? await getClaimAllowance(user.id)
     : null;
 
-  /* stagger 入场只在默认视图挂载(20260821 评审):筛选/排序切换是服务端
-     重渲染,卡片 key 全换会让前 8 项重放入场动画,观感像卡顿;
-     默认视图(无任何筛选参数)才挂 stagger-in,软导航进入仍有流动感 */
+  /* Stagger entrance only on the default view: filter/sort switches are
+     server re-renders — all card keys change and the first 8 cards
+     would replay the entrance animation, reading as a stutter; only the
+     default view (no filter params) mounts stagger-in, keeping soft
+     navigation fluid. */
   const stagger = currentSort === "new" && activeAgents.length === 0 && activeKinds.length === 0;
 
   return (
@@ -172,7 +179,8 @@ export default async function WorksPage({
               {t(locale, "works.emptyCta")}
             </Link>
           ) : (
-            /* 统一登录引导卡(20260816 收编):与各受限页同源,带 next 回跳 */
+            /* The unified login-invitation card: shared with other gated
+               pages, carrying the next redirect. */
             <div className="mx-auto mt-4 max-w-sm text-left">
               <LoginGate locale={locale} title={t(locale, "gate.work")} next="/works" />
             </div>

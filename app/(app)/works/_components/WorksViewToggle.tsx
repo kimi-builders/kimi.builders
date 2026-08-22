@@ -1,21 +1,25 @@
 "use client";
 
-/* 作品列表视图切换(20260918):list(行式,默认)/ grid(封面墙)。
-   点击写 kb-works-view cookie(path=/,一年)+ router.refresh()——服务端
-   重渲染列表,无闪烁。样式沿用站内 segmented 语言(SEG_* 同款观感)。
-   /works 与 /awesome 共用;同一 cookie,两页偏好一致。 */
+/* Work list view toggle: list (rows, default) / grid (cover wall).
+   Clicking writes the kb-works-view cookie (path=/, one year) +
+   router.refresh() — the server re-renders the list with no flicker.
+   Styling follows the site's segmented language (SEG_*). Shared by
+   /works and /awesome; one cookie, one preference across both. */
 import { useRouter } from "next/navigation";
 import { LayoutGrid, List } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { WORKS_VIEW_COOKIE, type WorksView } from "@/src/lib/works-view";
 
-/* 36px 按钮 + 8px 容器边框/内边距 = 44px,与排序和筛选同高。 */
+/* 36px buttons + 8px container border/padding = 44px, level with sort
+   and filters. */
 const BTN =
   "inline-flex size-9 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
 
-/* cookie 写在组件外:组件作用域内直接给 document.cookie 赋值会触发
-   react-hooks/immutability(组件被假定可并发渲染,不许有可见副作用)。
-   模式同 CurrencyToggle。 */
+/* The cookie write lives outside the component: assigning
+   document.cookie inside the component scope trips
+   react-hooks/immutability (components are assumed concurrently
+   renderable — no visible side effects). Same pattern as
+   CurrencyToggle. */
 function writeViewCookie(value: WorksView) {
   document.cookie = `${WORKS_VIEW_COOKIE}=${value}; path=/; max-age=31536000; samesite=lax`;
 }

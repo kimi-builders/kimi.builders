@@ -1,6 +1,8 @@
-/* 提交作品页(直接访问/刷新的完整页);应用内点击经拦截路由弹窗展示
-   (app/(app)/@modal/(.)works/new),两者共用 NewWorkContent。
-   ?path=<slug> = 毕业归因来源路径(20260920,透传给 NewWorkContent)。 */
+/* The submit-work page (the full page on direct access/refresh);
+   in-app clicks render the intercepted-route modal
+   (app/(app)/@modal/(.)works/new) — both share NewWorkContent.
+   ?path=<slug> = the graduation source series (passed through to
+   NewWorkContent). */
 import type { Metadata } from "next";
 import NewWorkContent from "./_components/NewWorkContent";
 

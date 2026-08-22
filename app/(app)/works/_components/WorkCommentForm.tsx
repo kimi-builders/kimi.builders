@@ -1,8 +1,11 @@
 "use client";
 
-/* 作品评论表单(P1-2):单层评论,登录可发(action 里限流,comment 配额)。
-   成功 → toast + 清空 + router.refresh() 换新列表;失败文案由 action 带回(含限流等待秒数)。
-   @kimi 召唤(20260816):召唤成功 → 「正在输入」占位行 + 轮询,回复到达自动刷新。 */
+/* Work comment form: single-level, signed-in users only (the action
+   rate-limits via the comment quota). Success -> toast + clear +
+   router.refresh() for the fresh list; failure copy comes back from
+   the action (rate-limit wait seconds included). @kimi summon: on
+   success a "typing" placeholder row + polling auto-refreshes when the
+   reply lands. */
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import MarkdownEditor from "@/app/(app)/_components/MarkdownEditor";
@@ -42,8 +45,9 @@ export default function WorkCommentForm({
         return;
       }
       toast(t(locale, "toast.commented"));
-      /* @kimi 召唤结果(20260816 PR2,复用社区三个 key):评论照常发出,
-         召唤是否成立单独提示 */
+      /* @kimi summon outcome (reusing the community's three keys): the
+         comment publishes either way; whether the summon took is a
+         separate notice. */
       if (res.aiNote === "summoned") {
         toast(t(locale, "post.aiSummoned"));
         if (res.commentId) setSummon({ workCommentId: res.commentId });

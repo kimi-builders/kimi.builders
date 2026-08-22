@@ -1,8 +1,10 @@
 "use client";
 
-/* 作品卡片的作者动作:编辑(跳 /works/[id]/edit)+ 删除(confirm → toast → refresh)。
-   仅本人卡片渲染(服务端判断后挂载)。compact=网格卡紧凑态:只留图标
-   (title/aria-label 提示),避免与支持/访问/源码挤在一行(20260918)。 */
+/* Owner actions on work cards: edit (to /works/[id]/edit) + delete
+   (confirm -> toast -> refresh). Rendered only on the owner's cards
+   (server-decided). compact = the grid card's tight mode: icons only
+   (title/aria-label hints) so they don't crowd the support/visit/
+   source row. */
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +21,8 @@ export default function WorkOwnerActions({
 }: {
   workId: number;
   locale: Locale;
-  /* 详情页删除后要跳走(refresh 会停在「已撤下」页);卡片场景缺省 refresh */
+  /* The detail page navigates away after delete (refresh would sit on
+     the removed page); card contexts refresh by default. */
   redirectTo?: string;
   compact?: boolean;
 }) {

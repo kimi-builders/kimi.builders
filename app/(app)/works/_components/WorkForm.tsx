@@ -1,25 +1,37 @@
 "use client";
 
-/* 作品提交/编辑共用表单(Kimi Design + linux.do 参考):名称必填,链接/仓库至少其一,
-   至少标一个参与的 Agent(服务端校验)。推荐站外项目(填了原作者)= awesome 条目,
-   必须再选收录口径;作品墙条目可填构建投入声明。
-   意图(我的作品/推荐)创建时定死,编辑不再可切(静默转换是误操作,20260919);
-   媒体区与 awesome 字段常驻挂载、按意图显隐——切换不丢已填/已传内容。
-   服务端校验错误会滚动到错误条(长表单防「看似无反应」)。
-   发布体验打磨(20260815):长表单「全展开 15 段」的压迫感拆成三层——
-   ① 必填集中:agents* 上移进 01 基本信息,与名称/类型/链接同屏;
-   ② 可选收纳:媒体/模型/发布选项改原生 <details> 折叠(默认收起,编辑带回
-      数据自动展开;无 JS 仍可展开提交,收起时字段照常随表单提交);
-   ③ 动作常驻:提交栏 sticky 常驻底部,新建按钮文案「发布作品」;
-   加小节编号 01–05 与「最小路径」提示。分组/实时预览(20260919)沿用:
-   字段按 基本信息→媒体→推荐信息→详情→发布选项 分节;顶部实时渲染网格卡预览
-   (复用 WorkScreenshot,与列表同一渲染路径)。
-   Agent/平台/模型家族芯片是原生 checkbox(has-checked 着色),无 JS 可提交;
-   自填型号(回车添加)依赖 JS,删除键同样。
-   20260819 发布体验④:结构导览(kind seg 下 mono 锚点目录,全区块一眼可见,
-   可选项从「藏起来」变「列出来」)+ 折叠节头自解释(summaryHint 写明内容,
-   整行 hover 可点)。编辑态 defaultOpen 逻辑不变。
-   保存成功由 action redirect 回 /works(自己的作品)或 /awesome(推荐的站外项目)。 */
+/* Shared submit/edit form for works: name required, link/repo at least
+   one, at least one participating agent (server-validated).
+   Recommending an external project (original author filled) = an
+   awesome entry, which additionally requires a scope; wall entries may
+   declare build effort. Intent (my work / recommend) is fixed at
+   creation and unchangeable while editing (silent conversion is a
+   misclick); the media area and awesome fields stay mounted, shown or
+   hidden by intent — switching never loses filled or uploaded content.
+   Server validation errors scroll to the error row (long forms must
+   never look unresponsive). Publish-UX pass, three layers against the
+   all-expanded 15-block intimidation:
+   1. requireds concentrated: agents* moved into 01 basics, on screen
+      with name/kind/links;
+   2. optionals tucked away: media/models/publish options become native
+      <details> (collapsed by default, auto-expanded when editing brings
+      data back; expandable and submittable without JS, and collapsed
+      fields still submit);
+   3. actions ever-present: the submit bar is sticky at the bottom, the
+      create button reads "publish work";
+   plus section numbers 01-05 and a "minimal path" hint. Grouping + live
+   preview carried over: fields group as basics -> media ->
+   recommendation -> details -> publish options; the top renders a live
+   grid-card preview (reusing WorkScreenshot, the exact list render
+   path). Agent/platform/model-family chips are native checkboxes
+   (has-checked coloring), submittable without JS; free-form model
+   entry (Enter to add) needs JS, as does its delete key. Structure
+   overview (a mono anchor directory under the kind seg — every block
+   visible at a glance, optionals "listed" rather than "hidden") +
+   self-explaining collapsible headers (summaryHint states the content;
+   the whole row is hover-clickable). The edit-state defaultOpen logic
+   is unchanged. A successful save redirects to /works (own works) or
+   /awesome (recommended externals). */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -60,7 +72,8 @@ import type { WorkFormState } from "../actions";
 import WorkMediaFields, { type MediaPreviewState, type MediaRef } from "./WorkMediaFields";
 import WorkScreenshot from "./WorkScreenshot";
 
-/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动 */
+/* Control styles were consolidated into the shared form-classes;
+   aliases kept so call sites don't move. */
 const inputCls = INPUT_CLS;
 const labelCls = LABEL_CLS;
 /* Choice inputs fill their own label instead of using `sr-only`'s page-level
@@ -84,12 +97,15 @@ const SCOPES = [
   { id: "part", key: "awesome.scopePart", hintKey: "awesome.scopePartHint" },
 ] as const;
 
-/* 表单小节(20260919):轻量分组——mono 小标题 + hairline 分隔,不再是一根
-   15 段直线;first = 首节(无上分隔线)。
-   编号(20260815 发布体验打磨):01–05 mono 序号,长表单的定位感。
-   可选节折叠(CollapseSection,20260815):媒体/模型/发布选项是纯可选增强,
-   原生 <details> 收起(无 JS 也能展开与提交;收起时字段仍在 DOM、照常提交);
-   编辑带回数据时 defaultOpen 自动展开——新建走最小路径,编辑不丢任何上下文。 */
+/* Form section: light grouping — mono subtitle + hairline separator,
+   no more one unbroken 15-block line; first = the opening section (no
+   separator above). Numbering: 01-05 mono ordinals for long-form
+   orientation. Optional sections collapse (CollapseSection):
+   media/models/publish options are purely optional enhancements in
+   native <details> (expandable and submittable without JS; collapsed
+   fields stay in the DOM and submit as usual); defaultOpen expands when
+   editing brings data back — creation takes the minimal path, editing
+   loses no context. */
 function Section({
   title,
   step,
@@ -100,8 +116,9 @@ function Section({
   title: string;
   step?: number;
   first?: boolean;
-  /* 结构导览锚点(20260819):带 id 的节给 scroll-mt-28(112px ≈ 顶栏 56/64
-     + 吸顶导览行,锚跳后不被盖住) */
+  /* Structure-overview anchors: sections with ids get scroll-mt-28
+     (112px ~= top bar 56/64 + the sticky overview row, so anchor jumps
+     aren't covered). */
   id?: string;
   children: ReactNode;
 }) {
@@ -127,13 +144,15 @@ function CollapseSection({
 }: {
   title: string;
   step?: number;
-  /* 「可选」标记:调用方传本地化文案 */
+  /* The "optional" marker: callers pass localized copy. */
   optionalLabel?: string;
-  /* 节内内容摘要(20260819 发布体验):折叠头自解释——一眼知道里面有什么,
-     可选项不再「不知道存在」。摘要行内展示,正常字重字距(eyebrow 外的说明) */
+  /* Section summary: collapsible headers explain themselves — what's
+     inside at a glance, optionals are never "unknown to exist".
+     Displayed inline at normal weight/tracking (explanatory, not an
+     eyebrow). */
   summaryHint?: string;
   defaultOpen?: boolean;
-  /* 结构导览锚点(同 Section) */
+  /* Structure-overview anchor (same as Section). */
   id?: string;
   children: ReactNode;
 }) {
@@ -165,9 +184,11 @@ function CollapseSection({
   );
 }
 
-/* 实时卡片预览(20260919):网格卡同款结构——封面/名称砖 + 标题 + 一句话 + 类型行。
-   复用 WorkScreenshot(与列表完全同一渲染路径,所见即所得);cover 空 = 名称砖,
-   awesome 意图按类型族定色(与列表口径一致)。空值给占位文案,卡片不塌。 */
+/* Live card preview: the grid card's exact structure — cover/name brick
+   + title + one-liner + kind row. Reuses WorkScreenshot (the literal
+   list render path — WYSIWYG); empty cover = the name brick, awesome
+   intent colors by kind family (matching the list). Empty values get
+   placeholder copy so the card never collapses. */
 function WorkFormPreview({
   locale,
   name,
@@ -189,7 +210,8 @@ function WorkFormPreview({
 }) {
   const zh = locale === "zh";
   const kindLabel = workKindLabel(workKind, zh);
-  /* theme 档两条路径同义(20260815):跟随主题;Awesome 按类型定色已下线 */
+  /* The theme option means the same in both paths: follow the theme;
+     per-kind coloring on Awesome is retired. */
   const toneFor = tone;
   const placeholder = zh ? "作品名称" : "Work name";
   return (
@@ -223,7 +245,8 @@ function WorkFormPreview({
   );
 }
 
-/* 自绘复选框(私密开关):与发帖页同一套 CheckboxControl 样式,无 JS 可提交。 */
+/* Hand-drawn checkbox (privacy switch): the same CheckboxControl style
+   as the post form, submittable without JS. */
 function CheckBox({
   name,
   defaultChecked,
@@ -246,13 +269,15 @@ function CheckBox({
   );
 }
 
-/* 声明快捷档位(token):只展示「剩余可声明额度之内」的档(渲染前再过滤) */
+/* Claim quick tiers (tokens): only tiers within the remaining claim
+   allowance are shown (filtered again before render). */
 const CLAIM_LADDER = [
   100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 50_000_000, 100_000_000,
 ] as const;
 
-/* 与服务端 parseTagsInput 同口径(actions.ts):逗号/空格分隔,去 #,
-   ≤5 个,每个 ≤24 字——表单里 chip 预览按同一规则解析,所见即所存 */
+/* Same definition as the server's parseTagsInput (actions.ts):
+   comma/space separated, # stripped, <=5 tags, <=24 chars each — the
+   chip preview parses by the same rule, WYSIWYS. */
 function parseTagsPreview(raw: string): string[] {
   return raw
     .split(/[,,\s]+/)
@@ -262,7 +287,8 @@ function parseTagsPreview(raw: string): string[] {
     .map((s) => s.slice(0, 24));
 }
 
-/* 字数计数器(20260919):贴在标签行右端,接近上限不再「打不进字莫名其妙」 */
+/* Character counter at the tag row's right end: near the cap, a
+   silent refusal is never a mystery. */
 function LabelWithCount({
   htmlFor,
   label,
@@ -306,11 +332,14 @@ export default function WorkForm({
   action: (prev: WorkFormState | null, formData: FormData) => Promise<WorkFormState>;
   locale: Locale;
   workId?: number;
-  /* 新建意图默认(20260815):从 Awesome 入口打开时 = "awesome"(服务端读
-     kb-works-src 直出,无水合跳变);编辑不生效——意图由数据定死 */
+  /* Create-intent default: opening from Awesome starts at "awesome"
+     (the server reads kb-works-src and renders directly — no hydration
+     jump); inert while editing — intent is fixed by the data. */
   defaultKind?: "site" | "awesome";
-  /* 毕业归因上下文(20260920):从路径详情页「发布毕业物」进入(/works/new?path=slug)
-     时带上——横幅说明 + 隐藏字段随表单提交,服务端按在册路径复检(normalizePathSlug) */
+  /* Graduation attribution context: entering via a series page's
+     "publish a graduation" (/works/new?path=slug) carries it — a banner
+     explanation + a hidden field submitted with the form; the server
+     re-validates against registered series (normalizePathSlug). */
   sourcePath?: { slug: string; text: string } | null;
   initial?: {
     name: string;
@@ -327,21 +356,23 @@ export default function WorkForm({
     kind: string;
     descriptionMd: string;
     scope: string;
-    /* 同时收录 Awesome 回填(20260906) */
+    /* Also-on-Awesome backfill. */
     alsoAwesome?: boolean;
-    /* AI 参与评论区开关回填(20260816 召唤);新建默认开 */
+    /* AI-in-comments switch backfill; on by default for new works. */
     aiReply?: boolean;
   };
-  /* 声明制上下文:空 = 不渲染声明字段( awesome 推荐等同理,服务端也会强制 null) */
+  /* Claim context: empty = the claim field never renders (awesome
+     recommendations likewise — the server also forces null). */
   claim?: {
     initial: number | null;
     hasUsage: boolean;
     remaining: number;
     suggested: { label: string; tokens: number } | null;
   };
-  /* 媒体回填(20260826_work_media):编辑时由服务端 mediaUrl 拼好 URL 传入;
-     仅「我的作品」路径渲染上传区(awesome 推荐条目服务端强制置空)。
-     cover(20260916)/tone/fit(20260908):独立封面、名称砖色调与适配回填 */
+  /* Media backfill: editing passes server-assembled mediaUrl values;
+     the upload area renders only on the "my work" path (the server
+     forces awesome entries empty). cover/tone/fit: standalone cover,
+     name-brick tone, and fit backfill. */
   media?: {
     logo: MediaRef | null;
     images: MediaRef[];
@@ -349,24 +380,31 @@ export default function WorkForm({
     tone?: string;
     fit?: string;
   };
-  /* 弹窗场景(20260919):取消 = router.back() 关窗回原处,而不是跳 /works */
+  /* Modal scenario: cancel = router.back() closes the modal in place,
+     not a jump to /works. */
   modal?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<WorkFormState | null, FormData>(
     action,
     null,
   );
-  /* 保存成功:客户端导航落详情页(完整页 = 普通跳转;弹窗 = 整条路由树重解析,
-     @modal 插槽随之卸载)。action 里 redirect() 只转背景页,弹窗不会关。
-     用 replace 不用 push(20260919 验收):action 的 revalidatePath 会失效
-     客户端路由缓存,浏览器回退时拦截态弹窗恢复不出来、裸表单以整页重现——
-     而且已提交的表单本来就不该能通过回退再次进入(POST-redirect 惯例) */
+  /* Save success: client navigation lands on the detail page (a full
+     page = a normal jump; a modal = the whole route tree re-resolves
+     and the @modal slot unmounts). redirect() inside the action moves
+     only the background page — the modal never closes. replace, not
+     push: the action's revalidatePath invalidates the client router
+     cache, so browser-back would fail to restore the intercepted modal
+     and re-show the bare form as a full page — and a submitted form
+     should never be re-enterable via back anyway (POST-redirect
+     convention). */
   const router = useRouter();
   useEffect(() => {
     if (state?.ok && state.workId) router.replace(`/works/${state.workId}`);
   }, [state, router]);
-  /* 服务端校验错误(20260919):滚动到错误条——表单分组后仍很长,弹窗里错误
-     渲染在折叠线外,不滚过去用户只会看到「按钮恢复可点、毫无反应」 */
+  /* Server validation errors: scroll to the error row — the grouped
+     form is still long, and inside a modal the error renders beyond the
+     fold; without scrolling, the user sees only "the button ungrayed
+     and nothing happened". */
   const errorRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (state?.error) {
@@ -374,45 +412,54 @@ export default function WorkForm({
     }
   }, [state?.error]);
   const checkedAgents = new Set(
-    initial ? initial.agents : ["kimi"], // 新表单默认勾 Kimi
+    initial ? initial.agents : ["kimi"], // new forms check Kimi by default
   );
-  /* 我的作品 / 推荐站外项目:意图在创建时定死——编辑存量条目不再可切
-     (20260919,静默转换是误操作)。新建默认跟来源列表(20260815):
-     从 Awesome 入口进来直接落在「推荐站外项目」档 */
+  /* My work / recommend external: intent is fixed at creation — not
+     switchable while editing (silent conversion is a misclick). New
+     works default to the source list: entering from Awesome lands
+     directly on "recommend external". */
   const [kind, setKind] = useState<"site" | "awesome">(
     initial?.authorLabel ? "awesome" : defaultKind,
   );
-  /* 预览受控值(20260919):名称/一句话/类型在预览里实时出现 */
+  /* Preview-controlled values: name/one-liner/kind appear live in the
+     preview. */
   const [name, setName] = useState(initial?.name ?? "");
   const [tagline, setTagline] = useState(initial?.tagline ?? "");
   const [workKind, setWorkKind] = useState(initial?.kind ?? "app");
-  /* 详情字段受控:计数器与 tags chip 预览需要实时值 */
+  /* Detail fields controlled: the counters and tag-chip preview need
+     live values. */
   const [desc, setDesc] = useState(initial?.descriptionMd ?? "");
   const [tagsInput, setTagsInput] = useState(initial?.tags.join(", ") ?? "");
-  /* 服务端同口径解析;raw 全量计数用于超限提示 */
+  /* Parsed with the server's exact rule; the raw full count drives the
+     over-limit hint. */
   const parsedTags = parseTagsPreview(tagsInput);
   const rawTagCount = tagsInput
     .split(/[,,\s]+/)
     .map((s) => s.trim().replace(/^#/, ""))
     .filter(Boolean).length;
-  /* Agent 选中数:checkbox 仍非受控(无 JS 可提交),容器 onChange 事件委托计数 */
+  /* Agent count: the checkboxes stay uncontrolled (submittable without
+     JS); the container counts via delegated onChange. */
   const [agentsCount, setAgentsCount] = useState(checkedAgents.size);
-  /* 媒体预览快照:初始取回填,之后由 WorkMediaFields 上报 */
+  /* Media preview snapshot: initialized from the backfill, then
+     reported by WorkMediaFields. */
   const [mediaPreview, setMediaPreview] = useState<MediaPreviewState>({
     coverUrl: media?.cover?.url ?? null,
     logoUrl: media?.logo?.url ?? null,
     fit: media?.fit ?? "cover",
   });
-  /* 色调(两条 CoverToneField 都上报;内部状态各自保留,这里只喂预览) */
+  /* Tone (both CoverToneFields report; internal states stay theirs,
+     this only feeds the preview). */
   const [tone, setTone] = useState(media?.tone ?? "theme");
-  /* 自填型号(非家族预设的文本项) */
+  /* Free-form model text (entries outside the family presets). */
   const [customModels, setCustomModels] = useState<string[]>(
     (initial?.models ?? []).filter((m) => !isModelFamily(m)),
   );
   const [modelInput, setModelInput] = useState("");
-  /* 完整页「取消」的目标:来源列表记忆优先——useSyncExternalStore 客户端快照
-     读 cookie(服务端快照 null,水合后升级,不在 effect 里 setState);
-     无记忆按当前意图回落——awesome 表单不该把人送回作品墙 */
+  /* Full-page "cancel" target: the source-list memory wins —
+     useSyncExternalStore reads the cookie client-side (server snapshot
+     null, upgraded after hydration, no setState in an effect); without
+     memory, fall back by current intent — an awesome form shouldn't
+     dump anyone onto the works wall. */
   const srcHint = useSyncExternalStore(
     () => () => undefined,
     () =>
@@ -432,14 +479,17 @@ export default function WorkForm({
     );
     setModelInput("");
   };
-  /* 声明预填:已有声明回填声明值;否则有建议值时预填建议(纯省事,可改可无视) */
+  /* Claim prefill: an existing claim backfills itself; otherwise a
+     suggestion prefills when present (pure convenience — editable,
+     ignorable). */
   const claimDefault =
     claim?.initial != null
       ? String(claim.initial)
       : claim?.suggested
         ? String(claim.suggested.tokens)
         : undefined;
-  /* 受控值 + 快捷档位:档位都是「剩余可声明额度之内」的整档,一键填入,仍可手改 */
+  /* Controlled value + quick tiers: every tier sits within the
+     remaining allowance, one click fills it, still hand-editable. */
   const [claimValue, setClaimValue] = useState(claimDefault ?? "");
   const claimOptions = claim?.hasUsage
     ? CLAIM_LADDER.filter((v) => v <= claim.remaining)

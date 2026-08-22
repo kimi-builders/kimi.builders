@@ -1,10 +1,14 @@
 "use server";
 
-/* 作品库写操作:提交 / 编辑 / 删除(作者自助,归属校验在查询层 WHERE)。
-   模式同社区:useActionState 的表单返回 { error? / ok+workId }——保存成功由
-   客户端 router.push 落详情页(action 里 redirect 转不走弹窗插槽);
-   删除返回 MutationResult 由客户端 toast + 跳回列表。
-   末尾两个精选操作是编辑(admin/mod)定夺,不做归属校验(每周精选 v0)。 */
+/* Work write operations: submit / edit / delete (author self-service;
+   ownership is pinned in query-layer WHERE clauses). Same pattern as
+   community: useActionState forms return { error? / ok+workId } — a
+   successful save lands on the detail page via client router.push
+   (redirect() inside the action only moves the background page; the
+   intercepted @modal slot doesn't unmount); deletes return a
+   MutationResult for client toast + list redirect. The two featuring
+   operations at the bottom are editorial (admin/mod) rulings without
+   ownership checks (weekly featured v0). */
 import { revalidatePath, updateTag } from "next/cache";
 import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
 import { isCoverTone } from "@/src/lib/cover-tones";
@@ -59,27 +63,32 @@ import {
 
 export interface WorkFormState {
   error?: string;
-  /* 保存成功由客户端 router.push 落详情页——action 里 redirect() 只会转背景页,
-     拦截路由的 @modal 插槽不随之卸载(2026-08-14 实测) */
+  /* Success lands on the detail page via client router.push — redirect()
+     inside the action only moves the background page; the intercepted
+     @modal slot doesn't unmount (verified 2026-08-14). */
   ok?: boolean;
   workId?: number;
-  /* 作品创建限流(20260822 P1-5)超限时的等待秒数,客户端可直接展示 error 文案 */
+  /* Wait seconds when over the work-creation rate limit; clients can
+     show the error copy directly. */
   retryAfterSeconds?: number;
 }
 
 export interface MutationResult {
   ok: boolean;
   error?: string;
-  /* 限流(P1-5):超限时带上的等待秒数,客户端可直接展示 error 文案 */
+  /* Rate limit: wait seconds carried on rejection; clients can show the
+     error copy directly. */
   retryAfterSeconds?: number;
-  /* AI 召唤结果(20260816 PR2,与社区同形):评论里 @kimi 时给客户端 toast 用;
-     评论本身照常发布,该字段只说明召唤是否成立 */
+  /* AI summon outcome (same shape as community): client toast material
+     when a comment @-s kimi; the comment publishes either way and this
+     field only says whether the summon took. */
   aiNote?: "summoned" | "aiDisabled" | "rate";
-  /* 新评论 id(20260816):召唤成功后客户端按它轮询回复到达 */
+  /* New comment id: after a successful summon the client polls for the
+     reply against it. */
   commentId?: number;
 }
 
-/* 标签:逗号/空格分隔,≤5 个,每个 ≤24 字。 */
+/* Tags: comma/space separated, <=5, <=24 chars each. */
 function parseTagsInput(raw: string): string[] {
   return raw
     .split(/[,,\s]+/)
@@ -92,7 +101,8 @@ function parseTagsInput(raw: string): string[] {
 const WORK_STATUSES = ["planning", "building", "released", "archived"] as const;
 const AWESOME_SCOPES = ["base", "eco", "part"] as const;
 
-/* 模型:家族预设键或自填型号文本,≤10 个,每个 ≤40 字。 */
+/* Models: family preset keys or free-form model text, <=10, <=40 chars
+   each. */
 function sanitizeModelsInput(raw: unknown[]): string[] {
   return raw
     .map(String)
@@ -114,37 +124,47 @@ function readFields(formData: FormData) {
     tags: parseTagsInput(String(formData.get("tags") || "")),
     agents: sanitizeAgentIds(formData.getAll("agents")),
     authorLabel: String(formData.get("author_label") || "").trim(),
-    /* 私密开关:checkbox 提交 "on";非 "on" 一律 public(枚举在这里钉死) */
+    /* Privacy: the checkbox submits "on"; anything else is public (the
+       enum is pinned here). */
     visibility: (formData.get("private") === "on" ? "private" : "public") as
       | "public"
       | "private",
-    /* 同时收录 Awesome(20260906):仅「我的作品」有意;推荐条目恒在 Awesome */
+    /* Also-list-on-Awesome: meaningful for "my work" only; recommended
+       entries are always on Awesome. */
     alsoAwesome: formData.get("also_awesome") === "on",
-    /* 允许 AI 参与评论区(20260816 召唤):checkbox 提交 "on";不勾 = 关 */
+    /* Allow AI in comments (summons): the checkbox submits "on";
+       unchecked = off. */
     aiReply: formData.get("ai_reply") === "on",
-    /* 表单意图(我的作品/推荐站外项目):authorLabel 非空才是 awesome 条目,
-       intent 只用于校验提示(推荐但没填原作者 → 明确报错而不是静默当成作品) */
+    /* Form intent (my work / recommend external): authorLabel non-empty
+       marks an awesome entry; intent only drives validation hints
+       (recommending without the original author -> an explicit error,
+       never silently treated as a member work). */
     intent: String(formData.get("kind") || "site") === "awesome" ? "awesome" : "site",
     status: (WORK_STATUSES as readonly string[]).includes(status) ? status : "released",
     models: sanitizeModelsInput(formData.getAll("models")),
-    /* 作品类型(单选);表单的 kind 字段是「我的作品/推荐」意图,不冲突 */
+    /* Work kind (single choice); the form's kind field carries the
+       my-work/recommend intent — no clash. */
     kind: isWorkKind(String(formData.get("work_kind") || ""))
       ? String(formData.get("work_kind"))
       : "app",
     descriptionMd: String(formData.get("description_md") || "").trim().slice(0, 10000),
     scope: (AWESOME_SCOPES as readonly string[]).includes(scope) ? scope : null,
-    /* 媒体隐藏字段(20260826_work_media):logoKey 单 key;imageKeys 为 JSON 字符串,
-       解析失败 = null,交给 validate 报错(不静默吞掉手搓值) */
+    /* Media hidden fields: logoKey is a single key; imageKeys is a JSON
+       string — parse failure = null and validate reports it (hand-crafted
+       values are never silently swallowed). */
     logoKey: String(formData.get("logoKey") || "").trim(),
     imageKeys: parseWorkImageKeysInput(String(formData.get("imageKeys") || "")),
-    /* 独立列表封面(20260916):空=走色卡;非空必须是 image/ 前缀的合法媒体 key */
+    /* Standalone list cover: empty = color card; non-empty must be a
+       valid image/-prefixed media key. */
     coverKey: String(formData.get("coverKey") || "").trim(),
-    /* 名称砖色调 + 封面适配(20260908):白名单收敛,非法值回落默认 */
+    /* Name-brick tone + cover fit: allowlist-converged, invalid values
+       fall back to defaults. */
     coverTone: isCoverTone(String(formData.get("coverTone") || ""))
       ? String(formData.get("coverTone"))
       : "theme",
     coverFit: String(formData.get("coverFit")) === "contain" ? "contain" : "cover",
-    /* 毕业归因(20260920):隐藏字段 source_path 只信在册路径 slug,非法置 null */
+    /* Graduation attribution: the hidden source_path trusts registered
+       series slugs only; invalid becomes null. */
     sourcePath: normalizePathSlug(String(formData.get("source_path") || "")),
   };
 }
@@ -164,11 +184,14 @@ function validate(
   if (!f.url && !f.repoUrl) return t(locale, "err.workNoLink");
   if (f.authorLabel.length > 120) return t(locale, "err.workAuthorLong");
   if (f.agents.length === 0) return t(locale, "err.workNoAgent");
-  /* 表单选了「推荐站外项目」但没填原作者 → 明确报错(而不是静默当成作品墙条目) */
+  /* "Recommend external" without the original author -> an explicit
+     error (never silently treated as a wall entry). */
   if (f.intent === "awesome" && !f.authorLabel) return t(locale, "err.workAuthorRequired");
-  /* awesome 条目必须有收录口径(推荐规则:公开展示推荐人,口径必填) */
+  /* Awesome entries require a scope (recommendation rules: the
+     recommender is shown publicly, so the scope is mandatory). */
   if (f.authorLabel && !f.scope) return t(locale, "err.workNoScope");
-  /* 媒体 key:形状 + 前缀白名单(logo 仅 logo/,配图 ≤9 且仅 image/,封面同理) */
+  /* Media keys: shape + prefix allowlist (logo only logo/, images <=9
+     and only image/, cover likewise). */
   if (!isWorkLogoKey(f.logoKey)) return t(locale, "err.workLogoKey");
   if (f.imageKeys === null || !areWorkImageKeys(f.imageKeys))
     return t(locale, "err.workImageKeys");
@@ -180,9 +203,11 @@ function validate(
   return null;
 }
 
-/* 构建投入声明(声明制):解析紧凑输入 → 额度校验(Σ声明 ≤ 可验证总量,
-   编辑时 excludeWorkId 排除本作品)。awesome 推荐条目不适用声明,强制 null。
-   写时校验是 UX 兜底(并发越过校验时,展示侧不变式仍会隐藏超额徽章)。 */
+/* Build-effort claims: parse compact input -> allowance validation
+   (sum of claims <= verifiable total, excluding this work while
+   editing). Awesome entries never claim — forced null. Write-time
+   validation is a UX backstop (if concurrency slips past it, the
+   display invariant still hides over-cap badges). */
 async function resolveClaim(
   userId: number,
   locale: "zh" | "en",
@@ -211,7 +236,7 @@ export async function createWorkAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
-  /* 禁言(20260830):到期自动解除 */
+  /* Mutes lift automatically at expiry. */
   const mutedWork = await getActiveMute(user.id);
   if (mutedWork) return { error: muteMessage(locale, mutedWork) };
   const f = readFields(formData);
@@ -221,8 +246,9 @@ export async function createWorkAction(
     awesome: !!f.authorLabel,
   });
   if ("error" in claim) return { error: claim.error };
-  /* 限流(20260822 P1-5):校验与 claim 都通过后、写库前消耗——
-     与社区发帖同款 10/小时,防批量灌作品 */
+  /* Rate limit: consumed after validation and claim resolution but
+     before the write — 10/hour like community posts, against bulk work
+     spam. */
   const rate = await consumeCommunityRateLimit(user.id, "work");
   if (!rate.allowed)
     return {
@@ -237,7 +263,8 @@ export async function createWorkAction(
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
-  /* 落详情页:不在 action 里 redirect(弹窗插槽不随转);由客户端 router.push */
+  /* Land on the detail page: no redirect() in the action (the modal
+     slot doesn't follow); the client router.pushes. */
   return { ok: true, workId: newWorkId };
 }
 
@@ -248,7 +275,8 @@ export async function updateWorkAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
-  /* 禁言补检(20260822 P2-3):编辑与新建同门槛,防被禁言后借编辑绕道发声 */
+  /* Mute check on edit too — the same bar as creating, so muted users
+     can't speak via edits. */
   const mutedWork = await getActiveMute(user.id);
   if (mutedWork) return { error: muteMessage(locale, mutedWork) };
   const workId = Number(formData.get("work_id"));
@@ -271,7 +299,8 @@ export async function updateWorkAction(
   updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
-  /* 同新建:客户端 router.push 落详情页,弹窗随之关闭 */
+  /* Like create: the client router.pushes to the detail page and the
+     modal closes with it. */
   return { ok: true, workId };
 }
 
@@ -292,7 +321,8 @@ export async function deleteWorkAction(
   return { ok };
 }
 
-/* ---- 编辑精选(admin/mod 定夺,署名到编辑本人;每周精选 v0)---- */
+/* ---- Editorial featuring (admin/mod ruling, attributed to the
+   editor; weekly featured v0) ---- */
 
 export async function featureWorkAction(
   formData: FormData,
@@ -311,7 +341,8 @@ export async function featureWorkAction(
   if (!reason) return { ok: false, error: t(locale, "err.reasonRequired") };
   const ok = await setWorkFeatured(user.id, workId, reason);
   if (!ok) return { ok: false, error: t(locale, "err.generic") };
-  /* 首页数据走 tag 缓存(updateTag 即时作废),列表/首页路径缓存一并清 */
+  /* Home data goes through tag caches (updateTag invalidates now);
+     list/home path caches are cleared alongside. */
   updateTag(HOME_CACHE_TAG);
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   updateTag(PUBLIC_FEATURED_CACHE_TAG);
@@ -343,9 +374,10 @@ export async function unfeatureWorkAction(
   return { ok };
 }
 
-/* 作品列表「加载更多」(P1-4):只读,不落库不作废缓存。返回服务端渲染好的一页
-   卡片(ReactNode 随 RSC 序列化),客户端直接追加;徽章/精选行与首屏同口径
-   (都在 loadWorksCards 里)。游标 = 上一页最后一个作品的 id。 */
+/* Works "load more": read-only — no writes, no cache invalidation.
+   Returns a server-rendered page of cards (ReactNode serialized over
+   RSC) for the client to append; badges/featuring rows match the first
+   page (both live in loadWorksCards). Cursor = the last work's id. */
 export async function loadMoreWorksAction(
   scope: {
     awesome: boolean;
@@ -359,14 +391,16 @@ export async function loadMoreWorksAction(
   if (typeof after !== "string" || after.length === 0 || after.length > 40) return { ok: false };
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* 筛选收敛(P0-1 对齐):注册表成员过滤 + 去重;上限交给查询层同源收敛 */
+  /* Filter convergence: registry-member filtering + dedup; caps are the
+     query layer's same-source convergence. */
   const agents = [...new Set(scope.agents)].filter((id) => AGENTS.some((a) => a.id === id));
   const kinds = [...new Set(scope.kinds)].filter(isWorkKind);
   const scopeFilter =
     scope.scope_ && ["base", "eco", "part"].includes(scope.scope_)
       ? scope.scope_
       : undefined;
-  /* 视图随 cookie(与首屏同源):「加载更多」追加的卡片与首屏同版式 */
+  /* View follows the cookie (same source as the first page): appended
+     cards match the first page's layout. */
   const view = await getWorksView();
   const data = await loadWorksCards(
     {
@@ -385,11 +419,15 @@ export async function loadMoreWorksAction(
 }
 
 
-/* ---- 详情互动(P1-2):支持 toggle + 单层评论 ----
-   支持走纯乐观更新(只落库、不作废路径,同社区顶踩);评论 mutation 后由客户端
-   router.refresh() 换当前页数据,这里 revalidatePath 作废详情页预取缓存。
-   人类评论不发通知(从简);@kimi 召唤(20260816 PR2)排 AI 任务,
-   AI 回复落库时通知 召唤者+作品作者;删除权限(评论作者/作品作者/治理)钉在 SQL。 */
+/* ---- Detail interactions: support toggle + single-level comments
+   ---- Supports are purely optimistic (write only, no path
+   invalidation — same as community votes); after a comment mutation the
+   client router.refresh()es for fresh page data while revalidatePath
+   here drops the detail page's prefetched cache. Human comments never
+   notify (kept simple); an @kimi summon queues an AI job whose reply
+   notifies the summoner + the work author when it lands; delete
+   permissions (comment author / work author / moderation) are pinned in
+   SQL. */
 
 export async function toggleWorkVoteAction(
   formData: FormData,
@@ -398,11 +436,13 @@ export async function toggleWorkVoteAction(
   if (!user) return { ok: false };
   const workId = Number(formData.get("work_id"));
   if (!Number.isSafeInteger(workId) || workId <= 0) return { ok: false };
-  /* 作品已删/不存在 → FK 会拒,提前挡掉按失败处理(客户端回滚乐观态);
-     私密作品对非作者同样拒绝(手搓请求也不能隔空支持) */
+  /* Deleted/missing works would fail the FK anyway — reject up front so
+     the client rolls back its optimistic state; private works reject
+     non-authors too (crafted requests can't support across the void). */
   const work = await getWork(workId);
   if (!work || !canViewWork(work, user)) return { ok: false };
-  /* 限流(P1-5):投票类动作用 vote 配额;超限返回结构化错误,客户端回滚 + toast */
+  /* Rate limit: vote-class actions use the vote quota; over the limit
+     returns a structured error for client rollback + toast. */
   const rate = await consumeCommunityRateLimit(user.id, "vote");
   if (!rate.allowed) {
     const locale = await getLocale(user);
@@ -423,7 +463,7 @@ export async function createWorkCommentAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { ok: false, error: t(locale, "err.login") };
-  /* 禁言(20260830):到期自动解除 */
+  /* Mutes lift automatically at expiry. */
   const mutedNow = await getActiveMute(user.id);
   if (mutedNow) return { ok: false, error: muteMessage(locale, mutedNow) };
   const workId = Number(formData.get("work_id"));
@@ -431,7 +471,8 @@ export async function createWorkCommentAction(
   if (!Number.isSafeInteger(workId) || workId <= 0)
     return { ok: false, error: t(locale, "err.generic") };
   if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
-  /* 限流(P1-5):作品评论共用社区 comment 配额,写库前消耗额度 */
+  /* Rate limit: work comments share the community comment quota,
+     consumed before the write. */
   const rate = await consumeCommunityRateLimit(user.id, "comment");
   if (!rate.allowed)
     return {
@@ -439,15 +480,19 @@ export async function createWorkCommentAction(
       error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
       retryAfterSeconds: rate.retryAfterSeconds,
     };
-  /* 私密作品对非作者拒绝评论:可见性判定已收进 createWorkComment 的
-     withVisibleWorkLock 事务(20260822 P2-2),不再先查后写 */
+  /* Private works reject comments from non-authors: the visibility
+     check lives inside createWorkComment's withVisibleWorkLock
+     transaction — no more check-then-write. */
   const created = await createWorkComment(user, workId, body);
   if (!created) return { ok: false, error: t(locale, "err.generic") };
-  /* @kimi 召唤(20260816 PR2,语义同社区评论召唤):duplicate 不触发(网络重试
-     不刷双倍 AI 回复);地盘 = 作品 ai_reply 开关(锁定读数随返回值带出;作者
-     全局开关在执行侧复查,awesome 站外条目无作者、仅作品开关);召唤另计独立
-     限流(ai_summon 20/小时),超限不召唤但评论照常发布。enqueue 内部用
-     after(),必须在 return 之前调用。 */
+  /* @kimi summon (same semantics as community): duplicates never
+     trigger (a network retry must not double the AI replies); territory
+     = the work's ai_reply switch (read under the lock and carried back;
+     the author's global switch is re-checked at execution — awesome
+     external entries have no author, the work switch alone decides);
+     summons carry their own limit (ai_summon 20/hour) — over it, no
+     summon but the comment still publishes. enqueue uses after()
+     internally and must run before the return. */
   let aiNote: MutationResult["aiNote"];
   if (!created.duplicate && hasKimiMention(body) && user.aiRepliesEnabled) {
     if (!created.aiReply) {
@@ -475,8 +520,9 @@ export async function deleteWorkCommentAction(
   const commentId = Number(formData.get("comment_id"));
   const workId = Number(formData.get("work_id"));
   if (!Number.isSafeInteger(commentId) || commentId <= 0) return { ok: false };
-  /* 权限(评论作者本人或作品作者;治理免归属,20260816 召唤起用于清 AI 评论)
-     钉在 SQL WHERE;affectedRows=0 即越权/已删 */
+  /* Permissions (comment author or work author; moderation bypasses
+     ownership for AI-comment cleanup) are pinned in SQL WHERE;
+     affectedRows=0 = unauthorized/deleted. */
   const ok = await deleteWorkComment(user.id, commentId, {
     moderator: canModerate(user.role),
   });
@@ -488,8 +534,9 @@ export async function deleteWorkCommentAction(
   return { ok };
 }
 
-/* 评论「加载更多」:只读,不落库不作废缓存。返回服务端渲染好的一页
-   (ReactNode 随 RSC 序列化),客户端直接追加;游标 = 上一页最后一条评论 id。 */
+/* Comment "load more": read-only — no writes, no invalidation. Returns
+   a server-rendered page (ReactNode over RSC) for the client to append;
+   cursor = the last comment's id. */
 export async function loadMoreWorkCommentsAction(
   workId: number,
   after: number,
@@ -504,7 +551,8 @@ export async function loadMoreWorkCommentsAction(
   const work = await getWork(workId);
   if (!work) return { ok: false };
   const user = await getSessionUser();
-  /* 私密/被屏蔽作品的评论分页对非作者关闭(与详情页门禁同口径) */
+  /* Comment paging on private/hidden works closes to non-authors (same
+     gate as the detail page). */
   if (!canViewWork(work, user)) return { ok: false };
   const locale = await getLocale(user);
   const data = await loadWorkComments(workId, work.userId, user, locale, after);

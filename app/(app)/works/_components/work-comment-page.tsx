@@ -1,10 +1,15 @@
-/* 作品评论一页的服务端组装(P1-2):分页查询 + Markdown 渲染 + 行内删除岛。
-   详情页首屏(SSR)与「加载更多」server action 共用,保证两种入口输出一致
-   (同 works-page / comment-page 的模式)。
-   从简模型:单层(无楼中楼);作品作者的发言带「作者」芯片;删除入口(评论作者本人
-   或作品作者)在服务端算出 canDelete 才渲染,action 层再用 SQL 权限兜底一次。
-   AI 评论(20260816 召唤):BOT_NAME + 瓷砖头像 + 蓝边 AI 徽章,无主页链接;
-   删除入口仅作品作者/治理可见;viewer 关了 show_ai_replies 时查询侧整行滤掉。 */
+/* Server assembly of one page of work comments: the paged query +
+   Markdown rendering + inline delete islands. Shared by the detail
+   page's first render (SSR) and the "load more" server action so both
+   entries emit identical output (same pattern as works-page /
+   comment-page). Kept simple: single-level (no threading); the work
+   author's comments carry an "author" chip; the delete entry (comment
+   author or work author) renders only when the server computed
+   canDelete, and the action layer re-checks via SQL. AI comments
+   (summons): BOT_NAME + tile avatar + blue-edged AI badge, no profile
+   link; the delete entry is visible to the work author/moderation only;
+   a viewer who disabled show_ai_replies filters the rows out
+   query-side. */
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
@@ -38,7 +43,9 @@ export async function loadWorkComments(
     nextCursor: page.nextCursor,
     nodes: page.comments.map((c) => {
       const isAuthor = workAuthorId !== null && c.userId === workAuthorId;
-      /* AI 评论无「评论作者」可归属:删除入口只给作品作者/治理(清 AI 评论) */
+      /* AI comments have no comment author to attribute: the delete
+         entry goes to the work author/moderation only (AI-comment
+         cleanup). */
       const canDelete = c.isAi
         ? !!user && (workAuthorId === user.id || canModerate(user.role))
         : !!user && (c.userId === user.id || workAuthorId === user.id);
@@ -70,7 +77,8 @@ export async function loadWorkComments(
                 </Link>
               </>
             ) : (
-              /* 账号已注销的兜底:评论还在,名字不再可点 */
+              /* Deleted-account fallback: the comment stays, the name
+                 is no longer a link. */
               <span className="text-paper">#{c.userId}</span>
             )}
             {isAuthor && (

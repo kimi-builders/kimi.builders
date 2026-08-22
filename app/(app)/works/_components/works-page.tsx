@@ -1,11 +1,15 @@
-/* 作品列表一页的服务端组装:游标分页 + 声明徽章数据(批量两条 IN 查询,避免 N+1)
-   + 卡片渲染。/works、/awesome 首屏与「加载更多」server action 共用,
-   保证两种入口输出一致(同 comment-page.tsx 的模式)。
-   徽章(声明制,20260822_work_claims):只在 /works 成员作品墙带;/awesome 不查不带。
-   口径:本作品 claimed_tokens,且作者全部作品 Σ声明 ≤ 作者可验证总量
-   (usage/verifiable.ts 内部查询,不做 opt-in 门禁;总量数字不公开展示)。
-   不变式被破坏(总量缩水)→ 该作者所有卡片无徽章,作者本人多看到一行
-   重新分配提示(claimPaused,仅作者可见,无负面标记对外)。 */
+/* Server assembly of one page of the works list: keyset paging + claim
+   badge data (two batched IN queries, no N+1) + card rendering. Shared
+   by the /works and /awesome first pages and their "load more" server
+   actions so both entries emit identical output (same pattern as
+   comment-page.tsx). Badges (claim-based): only on the /works member
+   wall; /awesome neither queries nor carries them. Definition: this
+   work's claimed_tokens with the author's sum of claims <= their
+   verifiable total (the internal query in usage/verifiable.ts, no
+   opt-in gate; the total itself is never displayed). A broken
+   invariant (shrunk total) -> none of that author's cards carry a
+   badge, and the author alone sees a redistribution hint line
+   (claimPaused, author-visible only — no negative signaling). */
 import type { ReactNode } from "react";
 import type { SessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
@@ -66,14 +70,16 @@ export async function loadWorksCards(
         getVerifiableTokenTotals(authorIds),
         getWorkClaimSums(authorIds),
       ]);
-  /* admin/mod 在 /works 卡片上看到设/撤精选入口(每周精选 v0);/awesome 原口径不带 */
+  /* admin/mod see feature/unfeature entries on /works cards (weekly
+     featured v0); /awesome keeps its original scope without them. */
   const canFeature = !scope.awesome && !!user && canModerate(user.role);
-  /* 作者本人的声明超额态(仅作者可见的重新分配提示;徽章隐藏由 claimBadgeOf 保证) */
+  /* The author's own over-cap claim state (an author-visible
+     redistribution hint; badge hiding is claimBadgeOf's job). */
   const myPaused = user
     ? claimsPaused(totals.get(user.id) ?? 0, claimSums.get(user.id) ?? 0)
     : false;
-  /* 视图(20260918):grid=封面墙(WorkGridCard),list=行式(WorkCard,默认);
-     /u/[handle] 不传 view,恒为行式 */
+  /* View: grid = cover wall (WorkGridCard), list = rows (WorkCard,
+     default); /u/[handle] passes no view and is always rows. */
   const Card = scope.view === "grid" ? WorkGridCard : WorkCard;
   return {
     nodes: page.works.map((w) => (

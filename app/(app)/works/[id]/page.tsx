@@ -1,12 +1,15 @@
-/* 作品详情(P1-2,20260813 改版):面包屑 + 干净 H1 + meta 行(作者/时间/类型/
-   声明投入/★精选;私密/屏蔽警示 pill)+ 操作条(体验/支持/分享/作者与治理操作)
-   + 图集 + 长描述 + label/value hairline 信息栏(<xl 内联;≥xl 由右栏 Work Info 卡取代,
-   见右栏注册表 work kind)+ 底部单层评论区。
-   浏览无需登录;支持/评论需登录(comment/vote 配额限流)。评论里 @kimi 可召唤
-   Kimi 小筑(20260816;作品 ai_reply 开关 + 召唤限流,ai_summon 配额)。
-   不存在/已删作品给友好文案,不 404 硬错。
-   20260819 版式对齐:H1/评论区 H2 纳入 .kb-h1/.kb-h2 基元,属性 chips 降标签档
-   (text-xs),间距归位 4px 序列。 */
+/* Work detail: breadcrumb + clean H1 + meta row (author/time/kind/
+   claimed effort/★featured; private/hidden warning pills) + action bar
+   (try/support/share/owner & moderation actions) + gallery + long
+   description + a label/value hairline info panel (inline below xl;
+   from xl the rail's Work Info card replaces it, see the rail registry
+   work kind) + the single-level comment section at the bottom.
+   Browsing needs no login; support/comments do (comment/vote quota
+   limits). An @kimi in a comment summons the bot (the work's ai_reply
+   switch + the ai_summon quota). Missing/deleted works get friendly
+   copy, never a hard 404. Layout alignment: H1/comment H2 use the
+   .kb-h1/.kb-h2 primitives, attribute chips drop to label scale
+   (text-xs), spacing back on the 4px ladder. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -54,13 +57,16 @@ export async function generateMetadata({
   const { id } = await params;
   const work = await getWork(Number(id) || 0);
   if (!work) return { title: "kimi.builders" };
-  /* 私密作品不向非作者泄露标题;被屏蔽作品不向非作者/非管理泄露(标签页标题/分享预览都算) */
+  /* Private works never leak their title to non-authors; hidden works
+     never leak it to non-authors/non-mods (tab titles and share
+     previews count). */
   const user = await getSessionUser();
   if (!canViewWork(work, user)) return { title: "kimi.builders" };
   return { title: `${work.name} — kimi.builders` };
 }
 
-/* 不存在/已撤下:友好文案 + 回来源列表(来源记忆优先,20260919)。 */
+/* Missing/removed: friendly copy + back to the source list (the
+   source memory wins). */
 function WorkGone({ locale, href, label }: { locale: Locale; href: string; label: string }) {
   return (
     <div className="mt-12 rounded-2xl border border-line bg-card p-8 text-center">
@@ -90,8 +96,9 @@ export default async function WorkPage({
   const workId = Number(id);
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* 来源列表记忆(proxy 写的 kb-works-src):「返回」回用户来的那个列表;
-     详情页有 work 时按 work.source 回落,不存在/撤下时只能回落 /works */
+  /* Source-list memory (kb-works-src, written by proxy): "back"
+     returns to the list the user came from; with a work loaded it
+     falls back to work.source, otherwise only /works remains. */
   const fromList = await getWorksSource();
   const goneHref = fromList === "awesome" ? "/awesome" : "/works";
   const goneLabel = t(
@@ -101,8 +108,10 @@ export default async function WorkPage({
   if (!Number.isInteger(workId) || workId <= 0)
     return <WorkGone locale={locale} href={goneHref} label={goneLabel} />;
   const work = await getWorkDetail(workId);
-  /* 私密作品对他人按「不存在」处理;被屏蔽作品仅作者与 admin/mod 可开(治理评审),
-     其余按同一友好文案(与已删/不存在一致,不构成存在性 oracle)。 */
+  /* Private works read as "missing" to others; hidden works open only
+     for the author and admin/mod (moderation review) — everyone else
+     gets the same friendly copy as deleted/missing, so the page is
+     never an existence oracle. */
   if (!work || !canViewWork(work, user))
     return <WorkGone locale={locale} href={goneHref} label={goneLabel} />;
   const requestHeaders = await headers();
@@ -110,8 +119,10 @@ export default async function WorkPage({
 
   const [voted, claimCtx, comments] = await Promise.all([
     user ? hasWorkVote(user.id, workId) : false,
-    /* 声明徽章(声明制):作者可验证总量 + 其全部作品 Σ声明(内部口径,不做 opt-in 门禁);
-       与右栏元数据卡共用同一请求级缓存(getAuthorClaimContext,不多查库) */
+    /* Claim badge: the author's verifiable total + the sum of claims
+       across their works (internal definition, no opt-in gate); shares
+       the request-scoped cache with the rail metadata card
+       (getAuthorClaimContext — no extra query). */
     work.userId !== null
       ? getAuthorClaimContext(work.userId)
       : Promise.resolve(null),
@@ -329,7 +340,8 @@ export default async function WorkPage({
             path={`/works/${work.id}`}
             title={work.name}
             locale={locale}
-            /* 私密作品无海报(路由 404):按钮直接不带海报入口,同私密帖口径 */
+            /* Private works have no poster (the route 404s): the button
+               offers no poster entry, same as private posts. */
             posterHref={
               work.visibility === "public"
                 ? `/api/share/work/${work.id}`
@@ -493,7 +505,8 @@ export default async function WorkPage({
             {t(locale, "works.noComments")}
           </p>
         ) : (
-          /* LoadMore 在容器内:追加页直接落进分隔流;评论行不套圆角盒,hairline 分隔 */
+          /* LoadMore inside the container: appended pages drop into the
+             hairline-separated flow; comment rows get no rounded box. */
           <div className="mt-4 divide-y divide-line">
             {comments.nodes}
             {/* key 带首屏规模与游标:发/删评论触发 refresh 后首屏一变即 remount,
@@ -509,8 +522,8 @@ export default async function WorkPage({
         {user ? (
           <WorkCommentForm workId={workId} locale={locale} />
         ) : (
-          /* 未登录(20260815 收敛):单一登录入口(弹窗带回跳),
-             与全站登录模式一致,不再裸排 OAuth 链接 */
+          /* Signed out: the single login entry (a modal with return
+             redirect), the site-wide pattern — no bare OAuth links. */
           <p className="mt-4 border-t border-line pt-4 text-sm text-grey">
             {t(locale, "post.loginToComment")}
             <Link

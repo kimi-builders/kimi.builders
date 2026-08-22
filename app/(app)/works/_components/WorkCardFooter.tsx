@@ -1,7 +1,9 @@
-/* 作品卡片底行(行式/网格卡共用,20260918 抽取):作者(awesome 条目=GitHub
-   原作者外链,成员作品=@handle 内链)+ 支持/访问/源码 + 作者操作。
-   compact=网格卡:访问/源码只留图标(title 提示),节省纵向空间。
-   交互元素自带 relative z-10,浮在整卡覆盖链接(P1-2)之上。 */
+/* Work card bottom row (shared by row/grid cards): author (awesome
+   entries link the GitHub original author externally; member works link
+   @handle internally) + support/visit/source + owner actions.
+   compact = grid card: visit/source keep icons only (title tooltips) to
+   save vertical space. Interactive elements carry relative z-10 above
+   the card's overlay link. */
 import Link from "next/link";
 import { Code, ExternalLink, Heart } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";

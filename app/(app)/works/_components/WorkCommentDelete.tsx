@@ -1,7 +1,9 @@
 "use client";
 
-/* 作品评论行内删除(P1-2):confirm 后软删,toast 反馈 + router.refresh() 换新数据。
-   入口只渲染给评论作者本人/作品作者(服务端算 canDelete),action 层 SQL 再校验一次。 */
+/* Inline work-comment delete: confirm, soft delete, toast +
+   router.refresh() for fresh data. The entry renders only for the
+   comment author / work author (server-computed canDelete); the action
+   layer re-validates in SQL. */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";

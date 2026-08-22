@@ -1,14 +1,17 @@
 "use client";
 
-/* 名称砖色板(20260908 引入,20260914 拆分为独立字段):无上传封面时,
-   列表封面用所选色调的名称砖。自含状态与隐藏字段(coverTone),
-   WorkMediaFields(作品封面 tab)与 WorkForm(awesome 推荐信息)共用。
-   20260815:与「上传封面图」档同构——左侧同尺寸色块预览区(h-24 w-40,
-   tab 切换高度一致不跳动) + 右侧颜色按钮;theme 档两条路径同义
-   (跟随主题,按类型定色已下线)。
-   inactive(20260919):常驻挂载方案——隐藏 UI、不提交隐藏字段,但组件状态
-   (已选色调)保留,切换意图回来不用重选;两条路径同一时刻只有一条激活,
-   不会出现重复的 coverTone 提交。 */
+/* Name-brick tone palette: without an uploaded cover, the list cover is
+   the name brick in the chosen tone. Self-contained state + hidden
+   field (coverTone); shared by WorkMediaFields (the cover tab) and
+   WorkForm (awesome recommendation info). Structurally identical to
+   the "upload a cover" option — a same-size swatch preview on the left
+   (h-24 w-40, stable height across tab switches) + color buttons on
+   the right; the theme option means the same in both paths (follow the
+   theme; per-kind coloring is retired). inactive: permanently mounted —
+   UI hidden, hidden field unsubmitted, but the component state (chosen
+   tone) survives, so switching intent back needs no re-pick; only one
+   of the two paths is active at a time, so no duplicate coverTone
+   submission. */
 import { useEffect, useState } from "react";
 import { COVER_TONES, coverToneClass, coverToneName } from "@/src/lib/cover-tones";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -23,12 +26,15 @@ export default function CoverToneField({
 }: {
   locale: Locale;
   initialTone?: string;
-  /* awesome 推荐条目:字段标题用推荐语境文案(档位语义与作品路径一致) */
+  /* Awesome entries: the field title uses recommendation-context copy
+     (the option's meaning matches the works path). */
   forAwesome?: boolean;
   inactive?: boolean;
-  /* 标签由外部 tab 承担时隐藏本字段标题(预览与按钮保留) */
+  /* Hide this field's title when the outer tab provides the label
+     (preview and buttons stay). */
   hideLabel?: boolean;
-  /* 选择变化上报(20260919):表单层实时预览用;内部状态仍是唯一事实源 */
+  /* Selection changes are reported up for the form's live preview;
+     internal state remains the single source of truth. */
   onToneChange?: (tone: string) => void;
 }) {
   const [tone, setTone] = useState(initialTone);
@@ -36,13 +42,16 @@ export default function CoverToneField({
     setTone(id);
     onToneChange?.(id);
   };
-  /* 激活时重新上报(20260919 验收补):作品/awesome 两条 CoverToneField 常驻挂载、
-     各自持状态——切换意图后新激活那条要把自己的真实值同步回表单层预览,
-     否则预览停留在另一条字段上次的选择,与色板/实际提交都不一致 */
+  /* Re-report on activation: both CoverToneFields stay mounted with
+     their own states — after an intent switch, the newly active one
+     must sync its real value back to the form preview, or the preview
+     stays on the other field's last selection and disagrees with both
+     the palette and the submission. */
   useEffect(() => {
     if (!inactive) onToneChange?.(tone);
   }, [inactive, tone, onToneChange]);
-  /* 色块预览与名称砖同源:work-tone 系列与 work-cover-tile 随主题换色,所见即所得 */
+  /* The swatch preview shares the name brick's source: work-tone-* and
+     work-cover-tile shift with the theme — WYSIWYG. */
   const previewCls = coverToneClass(tone) ?? "work-cover-tile";
   return (
     <div className={inactive ? "hidden" : undefined}>

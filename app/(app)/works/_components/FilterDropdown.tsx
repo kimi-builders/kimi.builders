@@ -1,8 +1,11 @@
 "use client";
 
-/* 作品/Awesome 的多选筛选下拉(用量中心 DimensionDropdown 同款交互):
-   本地暂存勾选,点「应用」只触发一次服务端导航;空集 = 参数缺席 = 不限;
-   外点/Escape 关闭且不会误提交草稿。所有筛选状态都在 URL 上(可分享/可刷新)。 */
+/* Multi-select filter dropdown for works/awesome (same interaction as
+   the usage center's DimensionDropdown): selections stage locally and
+   "apply" triggers exactly one server navigation; an empty set = the
+   param is absent = unfiltered; outside click/Escape closes without
+   submitting drafts. All filter state lives in the URL (shareable,
+   refresh-safe). */
 import { ChevronDown, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
@@ -14,7 +17,8 @@ export interface FilterOption {
   icon?: ReactNode;
 }
 
-/* 单维度多选下拉;按钮形态与用量页 chip 一致(rounded-lg,灰标签 + 值)。 */
+/* One dimension's multi-select dropdown; the button matches the usage
+   page's chips (rounded-lg, grey label + values). */
 export default function FilterDropdown({
   paramKey,
   label,
@@ -35,8 +39,9 @@ export default function FilterDropdown({
   preservedQuery: string;
   open: boolean;
   onOpenChange: (id: string | null) => void;
-  /* 单选模式(收录口径):draft 最多 1 个,再点已选项 = 清空(不限);
-     选中时按钮显示选项文案而不是数量 */
+  /* Single-select mode (scope): at most 1 draft; clicking the selected
+     item again clears it (unfiltered); while selected the button shows
+     the option's label, not a count. */
   single?: boolean;
   zh: boolean;
 }) {

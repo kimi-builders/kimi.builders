@@ -1,13 +1,17 @@
 "use client";
 
-/* 作品媒体字段(20260826_work_media):Logo(客户端裁剪后上传)+ 配图(≤9,第一张 = 封面)。
-   仅「我的作品」路径激活(WorkForm 传 inactive 控制);awesome 推荐条目隐藏,
-   服务端也强制置空。提交走隐藏字段:logoKey 单 key,imageKeys 为 key 的 JSON 数组;
-   上传中/失败的配图不进隐藏字段(不提交半截状态)。
-   inactive(20260919):常驻挂载、CSS 隐藏——切换「我的作品/推荐站外项目」意图
-   不卸载组件,已上传的 logo/封面/配图状态不丢;隐藏字段随之不提交
-   (服务端对 awesome 条目本来就强制置空,双保险)。
-   上传统一打 POST /api/upload(kind=logo|image),裁剪/拖拽/排序全手写,无三方库。 */
+/* Work media fields: logo (client-cropped then uploaded) + gallery
+   images (<=9, first = cover). Active only on the "my work" path
+   (WorkForm passes inactive); hidden for awesome entries, which the
+   server also forces empty. Submission goes through hidden fields:
+   logoKey is a single key, imageKeys a JSON array; in-flight or failed
+   images never enter the hidden fields (no half-submitted state).
+   inactive: permanently mounted, CSS-hidden — switching my-work /
+   recommend intent never unmounts the component, so uploaded
+   logo/cover/gallery state survives; the hidden fields stop submitting
+   with it (the server forces awesome entries empty anyway — belt and
+   suspenders). Uploads all go to POST /api/upload (kind=logo|image);
+   cropping/drag-sort are hand-written, no third-party library. */
 import { useEffect, useRef, useState } from "react";
 import {
   GripVertical,
@@ -34,14 +38,16 @@ export interface MediaRef {
   url: string;
 }
 
-/* 媒体预览快照(20260919):表单层实时卡片预览所需的最小集合 */
+/* Media preview snapshot: the minimal set the form's live card preview
+   needs. */
 export interface MediaPreviewState {
   coverUrl: string | null;
   logoUrl: string | null;
   fit: string;
 }
 
-/* 配图条目:key 空 = 未上传完;file 留给失败重试。 */
+/* Gallery entry: empty key = upload unfinished; file stays for retry
+   on failure. */
 interface ImageItem {
   id: number;
   key: string;
@@ -64,37 +70,46 @@ export default function WorkMediaFields({
   locale: Locale;
   initialLogo?: MediaRef | null;
   initialImages?: MediaRef[];
-  /* 20260916:独立列表封面(image/ key;空=走色卡名称砖) */
+  /* Standalone list cover (image/ key; empty = name-brick color card). */
   initialCover?: MediaRef | null;
-  /* 20260908:名称砖色调(theme=跟随主题)+ 封面适配(cover/contain)回填 */
+  /* Name-brick tone (theme = follow the theme) + cover fit
+     (cover/contain) backfill. */
   initialTone?: string;
   initialFit?: string;
-  /* 20260919:true = 推荐站外项目意图:UI 隐藏但保持挂载(状态不丢),不提交 */
+  /* true = recommend-external intent: UI hidden but mounted (state
+     survives), nothing submitted. */
   inactive?: boolean;
-  /* 封面/logo/适配变化上报(实时预览);回调传 stable setter,不触发循环 */
+  /* Cover/logo/fit changes reported up (live preview); the callback is
+     a stable setter, no loop. */
   onPreviewChange?: (state: MediaPreviewState) => void;
-  /* 色调选择上报(透传给内部 CoverToneField) */
+  /* Tone selection reported up (passed through to the internal
+     CoverToneField). */
   onToneChange?: (tone: string) => void;
 }) {
   const [cover, setCover] = useState<MediaRef | null>(initialCover);
   const [coverUploading, setCoverUploading] = useState(false);
-  /* 封面来源二选一(20260815):上传封面图 / 封面风格(名称砖色卡)。
-     初始随回填数据(有封面=图,无封面=色卡);上传成功自动切到图,
-     移除封面自动切回色卡——两种来源互斥,不再并排堆在一起。 */
+  /* Cover source tabs: upload an image / pick a style (name-brick
+     palette). The initial tab follows the backfill (with a cover =
+     image, without = palette); a successful upload switches to image,
+     removing it switches back — the two sources are mutually exclusive,
+     never stacked side by side. */
   const [coverMode, setCoverMode] = useState<"image" | "tone">(
     initialCover ? "image" : "tone",
   );
-  /* 最近一次色调选择(20260815):image 模式下色板不挂载,隐藏字段用它带回,
-     编辑「有封面的作品」不会把已选色调重置(承接 2026-08-14 的旧语义) */
+  /* The last tone selection: in image mode the palette isn't mounted,
+     and the hidden field carries this instead — editing a covered work
+     never resets the chosen tone. */
   const [toneState, setToneState] = useState(initialTone ?? "theme");
   const handleTone = (v: string) => {
     setToneState(v);
     onToneChange?.(v);
   };
-  /* 封面 16:9 裁剪(20260919):比例不合时先进裁剪框定构图 */
+  /* Cover 16:9 cropping: off-ratio images pass through the crop box
+     first. */
   const [coverCrop, setCoverCrop] = useState<{ src: string; img: HTMLImageElement } | null>(null);
   const [fit, setFit] = useState(initialFit === "contain" ? "contain" : "cover");
-  /* 适配自动建议:第一张竖屏图上传成功时建议「补边」;用户手动选过就不再插手 */
+  /* Fit auto-suggestion: the first portrait image suggests "pad-to-fit";
+     once the user picks manually, never interfere again. */
   const fitTouched = useRef(initialFit === "contain");
   const fitSuggestedFor = useRef<string | null>(null);
   const [logo, setLogo] = useState<MediaRef | null>(initialLogo);
@@ -115,7 +130,7 @@ export default function WorkMediaFields({
   const [dropActive, setDropActive] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  /* 本地 blob 预览 URL 台账,卸载时统一回收 */
+  /* Ledger of local blob preview URLs, reclaimed together on unmount. */
   const blobs = useRef(new Set<string>());
   useEffect(() => {
     const set = blobs.current;
@@ -155,7 +170,7 @@ export default function WorkMediaFields({
     closeCrop();
   };
 
-  /* ---- 封面上传(16:9 裁剪,20260919)---- */
+  /* ---- Cover upload (16:9 crop) ---- */
   const uploadCover = async (file: File) => {
     setCoverUploading(true);
     try {
@@ -164,15 +179,17 @@ export default function WorkMediaFields({
         setCoverMode("image");
       });
     } catch {
-      /* 上传失败要出声(20260919):静默失败看起来像「传上了但没显示」 */
+      /* Upload failures must speak up: a silent one reads as "uploaded
+         but not showing". */
       toast(t(locale, "works.uploadFailed"), "error");
     } finally {
       setCoverUploading(false);
     }
   };
 
-  /* 封面选图:列表封面恒定按 16:9 展示——比例已≈16/9 直传(免打扰),
-     否则先进裁剪框定构图,免得竖图被拦腰裁 */
+  /* Cover picking: list covers always render at 16:9 — near-ratio
+     images upload directly (no nagging), others enter the crop box
+     first so portrait shots aren't cut at the waist. */
   const pickCover = (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return;
     const src = URL.createObjectURL(file);
@@ -208,7 +225,7 @@ export default function WorkMediaFields({
     closeCoverCrop();
   };
 
-  /* ---- 配图 ---- */
+  /* ---- Gallery ---- */
   const addFiles = (files: Iterable<File>) => {
     const room = WORK_IMAGE_MAX - images.length;
     if (room <= 0) return;
@@ -223,7 +240,8 @@ export default function WorkMediaFields({
     for (const item of items) void upload(item.id, item.file as File);
   };
 
-  /* 单张上传:成功换 CDN URL 并回收 blob;失败留原件可重试 */
+  /* Single upload: success swaps in the CDN URL and reclaims the blob;
+     failure keeps the file for retry. */
   const upload = async (id: number, file: File) => {
     try {
       const ref = await uploadMedia(file, "image");
@@ -257,7 +275,8 @@ export default function WorkMediaFields({
     );
   };
 
-  /* 拖拽排序(HTML5 DnD):dragIndex 源 → overIndex 目标,drop 时移动 */
+  /* Drag sorting (HTML5 DnD): dragIndex source -> overIndex target,
+     moved on drop. */
   const moveImage = (from: number, to: number) => {
     if (from === to) return;
     setImages((cur) => {
@@ -268,7 +287,8 @@ export default function WorkMediaFields({
     });
   };
 
-  /* 粘贴添加:剪贴板里有图片文件才接管(不动文本粘贴) */
+  /* Paste-to-add: take over only when the clipboard holds image files
+     (text paste untouched). */
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       const files = [...(e.clipboardData?.files ?? [])].filter((f) =>
@@ -285,8 +305,9 @@ export default function WorkMediaFields({
 
   const doneKeys = images.filter((it) => it.status === "ok" && it.key).map((it) => it.key);
 
-  /* 适配自动建议:第一张(=封面)图明显高瘦(h > w×1.15)时建议「补边完整」;
-     每张首图只建议一次,用户手动选过(fitTouched)就不再改 */
+  /* Fit auto-suggestion: when the first (= cover) image is clearly
+     tall (h > w*1.15) suggest "pad-to-fit"; once per first image, and
+     never after the user touches fit (fitTouched). */
   const firstOkUrl = images.find((it) => it.status === "ok" && it.url)?.url ?? null;
   useEffect(() => {
     if (!firstOkUrl || fitTouched.current) return;
@@ -301,8 +322,9 @@ export default function WorkMediaFields({
     img.src = firstOkUrl;
   }, [firstOkUrl]);
 
-  /* 预览上报(20260919):封面/logo/适配任一变化即同步表单层的实时预览;
-     onPreviewChange 是父层 setState(引用恒定),deps 里带上也不会循环 */
+  /* Preview reporting: any cover/logo/fit change syncs the form's live
+     preview; onPreviewChange is the parent's setState (stable
+     reference), including it in deps loops nothing. */
   useEffect(() => {
     onPreviewChange?.({
       coverUrl: cover?.url ?? null,
@@ -442,7 +464,8 @@ export default function WorkMediaFields({
                     type="button"
                     onClick={() => {
                       setCover(null);
-                      /* 移除封面后自然回到色卡来源 */
+                      /* Removing the cover naturally returns to the
+                         palette source. */
                       setCoverMode("tone");
                     }}
                     className="inline-flex min-h-9 items-center rounded-lg px-2 font-mono text-xs text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
@@ -455,8 +478,10 @@ export default function WorkMediaFields({
           ) : (
             <CoverToneField
               locale={locale}
-              /* 回填用「最近一次选择」而非原始值(20260815 修复):组件随 tab
-                 挂载/卸载,传 initialTone 会让切档回来静默丢已选色调 */
+              /* Backfill uses the "last selection" rather than the raw
+                 value: the component mounts/unmounts with the tab, and a
+                 raw initialTone would silently drop the chosen tone on
+                 tab return. */
               initialTone={toneState}
               inactive={inactive}
               hideLabel

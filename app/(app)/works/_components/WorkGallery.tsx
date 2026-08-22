@@ -1,10 +1,12 @@
 "use client";
 
-/* 详情页配图图集(P0 轮播改造 20260815):主视图即轮播——不放大就能切换:
-   左右箭头 + 计数器 + 缩略图点击切换(带激活态、自动滚入视野),
-   移动端手势横滑(阈值 40px);点大图进灯箱看细节,灯箱从当前张打开,
-   Esc/背板关闭。单图作品所有切换控件退场。
-   key → 公开 URL 由 mediaUrl 拼接(DB 只存 key,见 20260826_work_media 迁移)。 */
+/* Detail-page gallery: the main view is the carousel — switch without
+   zooming: arrows + counter + thumbnail clicks (active state,
+   auto-scroll into view), horizontal swipe on mobile (40px threshold);
+   clicking the big image opens a lightbox starting from the current
+   one, closed by Esc/backdrop. Single-image works hide every switch
+   control. key -> public URL goes through mediaUrl (the DB stores keys
+   only, see the 20260826_work_media migration). */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -19,18 +21,22 @@ export default function WorkGallery({
   keys: string[];
   name: string;
   locale: Locale;
-  /* 封面适配(20260908):cover=裁切填满(默认),contain=补边完整(竖屏图不拦腰裁) */
+  /* Cover fit: cover = crop-fill (default), contain = pad-to-fit
+     (portrait images aren't cut at the waist). */
   fit?: string;
 }) {
-  /* 主视图当前张;灯箱张(null = 关),打开时从主视图当前张起 */
+  /* The main view's current image; the lightbox image (null = closed),
+     opening from the main view's current one. */
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState<number | null>(null);
   const touchX = useRef<number | null>(null);
-  /* 横滑切图后浏览器仍会派发一次 click——标记吞掉,否则滑完即误开灯箱 */
+  /* After a swipe the browser still fires a click — swallow it via the
+     flag or the swipe would open the lightbox. */
   const swiped = useRef(false);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  /* 缩略图滚入视野只在用户切换后执行:首渲染不滚,避免带锚点/滚动恢复进入时
-     scrollIntoView 连带滚动页面祖先(20260816 修复) */
+  /* Thumbnails scroll into view only after a user switch: never on
+     first render, so anchor/scroll-restoration entries don't drag page
+     ancestors along with scrollIntoView. */
   const thumbMounted = useRef(false);
 
   const step = useCallback(
@@ -47,7 +53,8 @@ export default function WorkGallery({
   );
   const closeZoom = useCallback(() => setZoom(null), []);
 
-  /* 灯箱打开时:锁背景滚动 + 键盘左右/Esc */
+  /* While the lightbox is open: lock background scroll + arrow/Esc
+     keys. */
   useEffect(() => {
     if (zoom === null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -63,7 +70,8 @@ export default function WorkGallery({
     };
   }, [zoom, closeZoom, stepZoom]);
 
-  /* 缩略图行自动滚到当前张(仅在用户切换后;scrollbar-none 容器,只影响自身) */
+  /* The thumbnail strip auto-scrolls to the current image (user switches
+     only; scrollbar-none container, affects itself alone). */
   useEffect(() => {
     if (!thumbMounted.current) {
       thumbMounted.current = true;
@@ -79,7 +87,7 @@ export default function WorkGallery({
   if (keys.length === 0) return null;
   const multi = keys.length > 1;
 
-  /* 移动端横滑:起止 X 差超过阈值判一次切换 */
+  /* Mobile swipe: one switch when the X delta crosses the threshold. */
   const onTouchStart = (e: React.TouchEvent) => {
     swiped.current = false;
     touchX.current = e.touches[0].clientX;
@@ -93,7 +101,8 @@ export default function WorkGallery({
     }
     touchX.current = null;
   };
-  /* 横滑后的合成 click 不开灯箱(见 swiped 标记) */
+  /* The synthetic click after a swipe never opens the lightbox (see the
+     swiped flag). */
   const openZoom = () => {
     if (swiped.current) {
       swiped.current = false;
