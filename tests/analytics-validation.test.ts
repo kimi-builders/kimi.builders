@@ -151,7 +151,7 @@ test("viewer hash is stable within a UTC day, rotates across days, and hides inp
     viewerHash(
       new Request("https://different.example/", {
         headers: {
-          "x-forwarded-for": "203.0.113.42",
+          "x-forwarded-for": "203.0.113.42, 10.0.0.2",
           "user-agent": "Private Browser/9.1",
           referer: "https://another.example/",
         },
@@ -163,19 +163,46 @@ test("viewer hash is stable within a UTC day, rotates across days, and hides inp
   );
 });
 
-test("viewer hash uses the first forwarded IP and anon fallbacks", () => {
+test("viewer hash uses the trusted client IP (rightmost XFF, not the spoofable first)", () => {
   const now = new Date("2026-09-03T12:00:00.000Z");
-  const first = viewerHash(
-    new Headers({ "x-forwarded-for": "203.0.113.1, 10.0.0.1", "user-agent": "ua" }),
+  /* 伪造的前缀(客户端自带的 XFF 首段)不改变身份:右段是可信代理追加的直连地址 */
+  const spoofed = viewerHash(
+    new Headers({ "x-forwarded-for": "1.2.3.4, 203.0.113.1", "user-agent": "ua" }),
     now,
     "secret",
   );
-  const direct = viewerHash(
+  const clean = viewerHash(
     new Headers({ "x-forwarded-for": "203.0.113.1", "user-agent": "ua" }),
     now,
     "secret",
   );
-  assert.equal(first, direct);
+  assert.equal(spoofed, clean);
+  /* 右段不同 = 不同访客 */
+  const otherRightmost = viewerHash(
+    new Headers({ "x-forwarded-for": "203.0.113.1, 10.0.0.9", "user-agent": "ua" }),
+    now,
+    "secret",
+  );
+  assert.notEqual(clean, otherRightmost);
+  /* cf-connecting-ip 优先于 XFF(20260822 P1-1 可信序) */
+  const viaCf = viewerHash(
+    new Headers({
+      "cf-connecting-ip": "198.51.100.7",
+      "x-forwarded-for": "203.0.113.1",
+      "user-agent": "ua",
+    }),
+    now,
+    "secret",
+  );
+  assert.notEqual(viaCf, clean);
+  assert.equal(
+    viaCf,
+    viewerHash(
+      new Headers({ "cf-connecting-ip": "198.51.100.7", "user-agent": "ua" }),
+      now,
+      "secret",
+    ),
+  );
   assert.match(viewerHash(new Headers(), now, "secret"), /^[a-f0-9]{64}$/);
 });
 

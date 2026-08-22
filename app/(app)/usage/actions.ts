@@ -10,6 +10,7 @@ import {
   revokeUsageDevice,
 } from "@/src/lib/usage/device";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
+import { consumeUsageRateLimit } from "@/src/lib/usage/rate-limit";
 import { getUsageSettings, updateUsageSettings } from "@/src/lib/usage/settings";
 
 const USAGE_DEVICE_ID = /^udv_[A-Za-z0-9_-]{1,32}$/;
@@ -33,6 +34,16 @@ export async function decideUsageDeviceAction(
 ): Promise<DeviceDecisionState> {
   const user = await getSessionUser();
   if (!user) return { error: "login_required" };
+  /* user_code 枚举限流(20260822 P1-6):8 字符码可在线枚举,批准动作会把
+     他人设备连进自己账号(用量数据流向攻击者)。按用户限速,与 JSON API
+     路由(app/api/usage/device/approve)同档 12/10min,两条路都关死 */
+  const allowed = await consumeUsageRateLimit({
+    scope: "device-code-approve",
+    identity: String(user.id),
+    limit: 12,
+    windowSeconds: 10 * 60,
+  });
+  if (!allowed) return { error: "rate_limited" };
   const action = formData.get("decision") === "deny" ? "deny" : "approve";
   const current = await getUsageSettings(user.id);
   const status = await decideDeviceAuthorization({

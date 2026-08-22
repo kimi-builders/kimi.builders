@@ -8,6 +8,7 @@ import type {
   ResultSetHeader,
   RowDataPacket,
 } from "mysql2/promise";
+import { trustedClientIp } from "./client-ip";
 import { getPool } from "./db";
 
 type Queryable = Pool | PoolConnection;
@@ -184,7 +185,8 @@ export function viewerHash(
   secret: string = analyticsSecret(),
 ): string {
   const headers = sourceHeaders(source);
-  const ip = headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+  /* 可信 IP 序(20260822 P1-1):与限流同源,详见 client-ip.ts */
+  const ip = trustedClientIp(headers) ?? "anon";
   const ua = headers.get("user-agent")?.trim() || "anon";
   const day = now.toISOString().slice(0, 10);
   return createHmac("sha256", secret)

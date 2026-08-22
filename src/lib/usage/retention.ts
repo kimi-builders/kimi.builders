@@ -12,10 +12,22 @@ export interface UsageRetentionStats {
   users: number;
   bucketsDeleted: number;
   sessionsDeleted: number;
+  /* 全局公共表清理(20260822 P1-7),与按用户保留期无关 */
+  rateLimitsDeleted: number;
+  deviceCodesDeleted: number;
 }
 
 /* 单条 DELETE 的最大行数;删满就再来一批,避免长事务锁表 */
 const DELETE_BATCH_SIZE = 5000;
+
+/* 全局清理保留期:
+   - usage_rate_limits:窗口过期后行即失效,留 7 天仅作追溯;全 scope 一起清
+     (此前只有 analytics scope 有人清,其余无限增长)。7 天远大于最长窗口(1h),
+     不会释放仍在计数的活跃桶;
+   - usage_device_codes:终态(expired/denied/delivered)行只剩审计价值,7 天后删
+     (生命周期只有状态流转、从不 DELETE,同样无限增长)。 */
+const RATE_LIMIT_RETENTION_DAYS = 7;
+const DEVICE_CODE_RETENTION_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -48,7 +60,13 @@ export async function applyUsageRetention(
   const [rows] = await db.query<RowDataPacket[]>(
     "SELECT user_id, retention_days FROM usage_settings",
   );
-  const stats: UsageRetentionStats = { users: 0, bucketsDeleted: 0, sessionsDeleted: 0 };
+  const stats: UsageRetentionStats = {
+    users: 0,
+    bucketsDeleted: 0,
+    sessionsDeleted: 0,
+    rateLimitsDeleted: 0,
+    deviceCodesDeleted: 0,
+  };
   for (const row of rows) {
     const userId = Number(row.user_id);
     const retentionDays = Number(row.retention_days);
@@ -70,5 +88,25 @@ export async function applyUsageRetention(
     stats.bucketsDeleted += buckets;
     stats.sessionsDeleted += sessions;
   }
+  /* 全局公共表清理(P1-7):按最近命中/创建时间截断,与上面的按用户保留期无关 */
+  const rateLimitCutoff = toUtcDateTime(
+    new Date(now.getTime() - RATE_LIMIT_RETENTION_DAYS * DAY_MS),
+  );
+  stats.rateLimitsDeleted = await deleteInBatches(
+    db,
+    `DELETE FROM usage_rate_limits
+     WHERE window_start < ? LIMIT ${DELETE_BATCH_SIZE}`,
+    [rateLimitCutoff],
+  );
+  const deviceCodeCutoff = toUtcDateTime(
+    new Date(now.getTime() - DEVICE_CODE_RETENTION_DAYS * DAY_MS),
+  );
+  stats.deviceCodesDeleted = await deleteInBatches(
+    db,
+    `DELETE FROM usage_device_codes
+     WHERE status IN ('expired', 'denied', 'delivered') AND created_at < ?
+     LIMIT ${DELETE_BATCH_SIZE}`,
+    [deviceCodeCutoff],
+  );
   return stats;
 }

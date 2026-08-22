@@ -1,4 +1,5 @@
 import type { RowDataPacket } from "mysql2";
+import { trustedClientIp } from "../client-ip";
 import { getPool } from "../db";
 import { usageHmac } from "./crypto";
 
@@ -43,8 +44,9 @@ export async function consumeUsageRateLimit({
   return Number(rows[0]?.attempts ?? limit + 1) <= limit;
 }
 
+/* 限流身份(20260822 P1-1 改):可信头序见 client-ip.ts;取不到(本机直连)
+   回落 "unknown"——开发场景全体共享同一桶,可接受。 */
 export function requestIdentity(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
+  return trustedClientIp(request.headers) ?? "unknown";
 }
 
