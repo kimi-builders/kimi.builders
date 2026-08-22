@@ -736,6 +736,15 @@ const DICT = {
     zh: "登录后查看你的用量看板:",
     en: "Log in to see your usage dashboard:",
   },
+  /* 隐私开关(usage 设置 / settings 数据节共用;20260822 P1-2 补齐 UI) */
+  "usage.deviceLabel": {
+    zh: "上传设备标签",
+    en: "Upload device labels",
+  },
+  "usage.deviceLabelHint": {
+    zh: "默认关闭。关闭时服务端会丢弃 payload 里的终端与系统指纹,设备行保留旧值。",
+    en: "Off by default. When off, the server drops terminal and OS fingerprints from payloads; devices keep their existing labels.",
+  },
   /* 未登录公开概览(UsagePublicView):榜单橱窗 + 登录引导 */
   "usage.publicLede": {
     zh: "以 Kimi 为第一公民的多 Agent AI 编程用量中心。数据默认私有,只上传统计字段;榜单由成员自愿公开(opt-in)。",

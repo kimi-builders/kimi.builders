@@ -81,6 +81,7 @@ export async function updateUsageSettingsAction(
       await updateUsageSettings(user.id, {
         ...current,
         uploadProject: formData.get("upload_project") === "1",
+        uploadDeviceLabel: formData.get("upload_device_label") === "1",
         showOnLeaderboard: formData.get("show_on_leaderboard") === "1",
       });
     },

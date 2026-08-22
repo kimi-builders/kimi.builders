@@ -18,7 +18,7 @@ import { parseUsageFilters } from "../src/lib/usage/filters";
 import { ingestUsage } from "../src/lib/usage/ingest";
 import { USAGE_PRICE_CATALOG } from "../src/lib/usage/price-catalog";
 import { getUsageDashboard, getUsageOverview } from "../src/lib/usage/query";
-import { getUsageSettings } from "../src/lib/usage/settings";
+import { getUsageSettings, updateUsageSettings } from "../src/lib/usage/settings";
 import { validateUsageIngest } from "../src/lib/usage/validation";
 
 if (!process.env.DATABASE_URL?.includes("kbu-mysql")) {
@@ -223,6 +223,10 @@ async function main() {
     // —— 设备 A:摄入跨仓库一致性 fixture(两遍,验证幂等) ——
     const deviceA = await provisionDevice(userId, "integration A");
     const settings = await getUsageSettings(userId);
+    /* 设备事实合并语义只对开启设备标签上传的用户生效(20260822 P1-2:
+       默认关 + 静默剥离),本用例先开启再验证 fallback 不覆盖 detected */
+    const labelOn = { ...settings, uploadDeviceLabel: true };
+    await updateUsageSettings(userId, labelOn);
     const payload = validateUsageIngest(
       {
         protocolVersion: 2,
@@ -253,7 +257,7 @@ async function main() {
         }),
         buckets: [],
         sessions: [],
-      }, settings),
+      }, labelOn),
     );
     await ingestUsage(
       deviceA.principal,
@@ -268,7 +272,7 @@ async function main() {
         }),
         buckets: [],
         sessions: [],
-      }, settings),
+      }, labelOn),
     );
     const [deviceFacts] = await pool.query<RowDataPacket[]>(
       `SELECT terminal_name, terminal_version, terminal_confidence, agent_versions

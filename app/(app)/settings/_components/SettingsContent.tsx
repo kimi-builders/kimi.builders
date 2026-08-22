@@ -210,6 +210,7 @@ export default async function SettingsContent({
               <div className="mt-2">
                 <UsagePrivacyForm
                   uploadProject={usageSettings.uploadProject}
+                  uploadDeviceLabel={usageSettings.uploadDeviceLabel}
                   showOnLeaderboard={usageSettings.showOnLeaderboard}
                   retentionDays={usageSettings.retentionDays}
                   zh={locale === "zh"}

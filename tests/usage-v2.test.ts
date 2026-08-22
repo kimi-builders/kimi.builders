@@ -109,7 +109,9 @@ test("v2 contract preserves factual device, model, effort, and Agent version met
   });
   Object.assign(value.sessions[0], { agentVersion: "1.44.0" });
 
-  const parsed = validateUsageIngest(value, settings);
+  /* device 元数据的保留前提是用户开了 uploadDeviceLabel(P1-2 服务端强制) */
+  const labelOn = { ...settings, uploadDeviceLabel: true };
+  const parsed = validateUsageIngest(value, labelOn);
   assert.deepEqual(parsed.client.device, value.client.device);
   assert.deepEqual(parsed.client.agentVersions, value.client.agentVersions);
   assert.equal(parsed.buckets[0].model, "kimi-code/k3");
@@ -194,6 +196,27 @@ test("project fields are rejected when project upload is disabled", () => {
     () => validateUsageIngest(value, settings),
     (error) => error instanceof UsageRequestError && error.code === "project_upload_disabled",
   );
+});
+
+test("device label is silently stripped while uploadDeviceLabel is off (P1-2)", () => {
+  /* 契约承诺开关关闭时设备指纹不落库:服务端静默剥离(CLI 无感,不拒请求),
+     其余 client 字段不受影响 */
+  const value = payload() as ReturnType<typeof payload> & {
+    client: ReturnType<typeof payload>["client"] & {
+      device: {
+        terminal: { name: string };
+        os: { name: string };
+      };
+    };
+  };
+  value.client.device = {
+    terminal: { name: "Warp" },
+    os: { name: "macOS" },
+  };
+  const parsed = validateUsageIngest(value, settings);
+  assert.equal(parsed.client.device, undefined);
+  assert.equal(parsed.client.surface, "cli");
+  assert.equal(parsed.client.syncId, value.client.syncId);
 });
 
 test("usage credentials are compared as fixed-length HMAC digests", () => {

@@ -47,11 +47,13 @@ function Switch({
 
 export default function UsagePrivacyForm({
   uploadProject,
+  uploadDeviceLabel,
   showOnLeaderboard,
   retentionDays,
   zh,
 }: {
   uploadProject: boolean;
+  uploadDeviceLabel: boolean;
   showOnLeaderboard: boolean;
   retentionDays: number;
   zh: boolean;
@@ -59,6 +61,7 @@ export default function UsagePrivacyForm({
   const router = useRouter();
   const locale: Locale = zh ? "zh" : "en";
   const [enabled, setEnabled] = useState(uploadProject);
+  const [deviceLabels, setDeviceLabels] = useState(uploadDeviceLabel);
   const [listed, setListed] = useState(showOnLeaderboard);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
@@ -113,6 +116,24 @@ export default function UsagePrivacyForm({
           ariaLabel={zh ? "上传项目目录名" : "Upload project names"}
           onChange={(value) => {
             setEnabled(value);
+            setError("");
+          }}
+        />
+      </label>
+      <label className={rowCls}>
+        <span>
+          <span className={rowTitle}>{t(locale, "usage.deviceLabel")}</span>
+          <span className={rowHint}>
+            {t(locale, "usage.deviceLabelHint")}
+          </span>
+        </span>
+        <Switch
+          name="upload_device_label"
+          checked={deviceLabels}
+          disabled={pending}
+          ariaLabel={t(locale, "usage.deviceLabel")}
+          onChange={(value) => {
+            setDeviceLabels(value);
             setError("");
           }}
         />

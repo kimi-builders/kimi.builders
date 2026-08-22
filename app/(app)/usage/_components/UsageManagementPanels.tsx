@@ -117,6 +117,7 @@ export default function UsageManagementPanels({
         </h2>
         <UsagePrivacyForm
           uploadProject={settings.uploadProject}
+          uploadDeviceLabel={settings.uploadDeviceLabel}
           showOnLeaderboard={settings.showOnLeaderboard}
           retentionDays={settings.retentionDays}
           zh={zh}

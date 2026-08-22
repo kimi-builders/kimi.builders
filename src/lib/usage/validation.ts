@@ -148,7 +148,7 @@ function project(value: unknown, field: string, settings: UsageSettings): string
   return label;
 }
 
-function clientMeta(value: unknown): UsageClientMetaV2 {
+function clientMeta(value: unknown, settings: UsageSettings): UsageClientMetaV2 {
   const input = record(value, "client");
   const surfaces = new Set(["cli", "daemon", "local-dashboard", "mac-app", "windows-app"]);
   const platforms = new Set(["darwin", "linux", "win32"]);
@@ -170,7 +170,10 @@ function clientMeta(value: unknown): UsageClientMetaV2 {
     throw new UsageRequestError("invalid_payload", "client batch metadata is inconsistent.");
   }
   let device: UsageClientMetaV2["device"];
-  if (input.device !== undefined) {
+  /* 设备标签隐私开关(20260822 P1-2):契约承诺 uploadDeviceLabel=false 时
+     不落终端/OS 指纹。静默剥离而非报错——CLI 可以照常上报(它无法感知开关
+     变化),服务端丢弃字段即可;ingest 侧 COALESCE 自然保持设备行的旧值 */
+  if (input.device !== undefined && settings.uploadDeviceLabel) {
     const rawDevice = record(input.device, "client.device");
     const terminal = record(rawDevice.terminal, "client.device.terminal");
     const os = record(rawDevice.os, "client.device.os");
@@ -534,7 +537,7 @@ export function validateUsageIngest(
   }
   return {
     protocolVersion: USAGE_INGEST_PROTOCOL_VERSION,
-    client: clientMeta(input.client),
+    client: clientMeta(input.client, settings),
     buckets: input.buckets.map((item, index) => bucket(item, index, settings)),
     sessions: input.sessions.map((item, index) => session(item, index, settings)),
     ...(input.quotaSnapshots === undefined ? {} : { quotaSnapshots: [] }),
