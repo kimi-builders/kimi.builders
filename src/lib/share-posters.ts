@@ -1,16 +1,23 @@
-/* 分享海报(S5-2)的快照组装层:帖子 / 作品 / 个人主页三种 1080×1440 PNG 海报。
-   纯函数(截断 / 截取 / 门禁判断)与 DB 查询分离,路由只取快照再渲染;
-   纯函数可直接单测(见 tests/share-posters.test.ts)。
-   隐私口径:
-   - 私密帖 / 已删帖 → 快照 null,路由 404 不渲染(deleted 由 getPost 滤掉);
-   - 私密作品同理(getWork 取出后由 canViewWork 拦截,海报是匿名公共上下文);
-   - 主页统计用访客口径(getProfileStats self=false,不泄露私密量);
-   - 个人主页用量行仅作者自愿公开(usage_settings.show_on_leaderboard=1)才带数字,
-     门禁复用 usage/social.ts 的 getPublicTokenTotals(SQL JOIN 钉死),未公开 = null
-     = 海报完全不渲染该行(无负面标记原则);
-   - 作品构建投入为声明制(20260822_work_claims):数字 = 本作品 claimed_tokens,
-     作者声明即公开授权,不做 opt-in 门禁;展示不变式(作者 Σ声明 ≤ 可验证总量,
-     usage/verifiable.ts 内部口径)不满足 = null = 不渲染该 hero。 */
+/* Share-poster snapshot assembly: three 1080x1440 PNG posters (post /
+   work / profile). Pure functions (clipping / truncation / gates) are
+   separated from DB queries; routes only fetch a snapshot and render —
+   the pure functions unit-test directly (tests/share-posters.test.ts).
+   Privacy rules:
+   - private/deleted posts -> null snapshot, the route 404s (deleted is
+     filtered by getPost);
+   - private works likewise (canViewWork gates after getWork — posters
+     are an anonymous public context);
+   - profile stats use the visitor view (getProfileStats self=false;
+     private counts never leak);
+   - the profile usage row carries numbers only when the author opted in
+     (usage_settings.show_on_leaderboard=1), reusing getPublicTokenTotals
+     from usage/social.ts (the gate is pinned inside the SQL JOIN); not
+     opted in = null = the row never renders (no negative signaling);
+   - work build effort is claim-based: the number is this work's
+     claimed_tokens — declaring is itself a public act, no opt-in gate;
+     when the display invariant (per-author sum of claims <= verifiable
+     total, internal definition in usage/verifiable.ts) fails = null =
+     the hero never renders. */
 import type { RowDataPacket } from "mysql2";
 import { agentName } from "./agents";
 import { categoryLabel } from "./categories";
@@ -34,22 +41,25 @@ import {
   type WorkRow,
 } from "./works";
 
-/* 海报落点统一用主站绝对地址(QR 与页脚 URL 行共用)。 */
+/* Poster destinations always use the site's absolute origin (shared by
+   the QR and the footer URL row). */
 export const POSTER_SITE_ORIGIN = "https://kimi.builders";
 
 export const POSTER_EXCERPT_MAX = 140;
 export const POSTER_POLL_OPTIONS_MAX = 4;
 export const POSTER_AGENTS_MAX = 5;
 
-/* ---- 纯函数小件 ---- */
+/* ---- Pure helpers ---- */
 
-/* 收空白 + 截断加省略号(长度按 UTF-16 code unit,对齐 plainExcerpt 口径)。 */
+/* Trim whitespace + truncate with an ellipsis (length in UTF-16 code
+   units, aligned with plainExcerpt). */
 export function clip(text: string, max: number): string {
   const t = text.replace(/\s+/g, " ").trim();
   return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
 }
 
-/* 头像字母圆:两个单词取首字母,否则取前两个字符(同用量海报 initials 口径)。 */
+/* Avatar initial circle: two words take both initials, otherwise the
+   first two characters (same as the usage poster initials). */
 export function posterInitials(name: string, handle: string): string {
   const source = name.trim() || handle.trim() || "KB";
   const words = source.split(/\s+/).filter(Boolean);
@@ -57,7 +67,7 @@ export function posterInitials(name: string, handle: string): string {
   return [...source].slice(0, 2).join("").toUpperCase();
 }
 
-/* 链接帖的域名行:剥 www.;非法 URL 不渲染该行。 */
+/* Link-post domain row: strips www.; invalid URLs render no row. */
 export function linkDomainOf(url: string): string | null {
   try {
     const host = new URL(url).hostname;
@@ -67,14 +77,15 @@ export function linkDomainOf(url: string): string | null {
   }
 }
 
-/* 时间落库即 UTC(db.ts),海报日期行统一 YYYY-MM-DD。 */
+/* Timestamps land as UTC (db.ts); poster date rows are uniformly
+   YYYY-MM-DD. */
 export function posterYmd(d: Date | string): string {
   const t = typeof d === "string" ? new Date(d) : d;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
 
-/* ---- 帖子海报 ---- */
+/* ---- Post poster ---- */
 
 export interface PosterAuthor {
   handle: string;
@@ -85,7 +96,7 @@ export interface PosterAuthor {
 export interface PostSharePoll {
   options: { label: string; votes: number }[];
   totalVotes: number;
-  /* 超出截取上限的剩余选项数(0 = 全量显示) */
+  /* Options left beyond the cap (0 = everything shown). */
   more: number;
 }
 
@@ -105,8 +116,9 @@ export interface PostShareSnapshot {
   url: string;
 }
 
-/* 投票块截取:按 position 顺序(上游已排好)最多取 max 条,标签超长截断;
-   无选项 → null(海报按非投票帖渲染)。 */
+/* Poll clipping: at most max options in position order (sorted
+   upstream), labels truncated when long; no options -> null (rendered
+   as a non-poll post). */
 export function pollForPoster(poll: PollData | null, max = POSTER_POLL_OPTIONS_MAX): PostSharePoll | null {
   if (!poll || poll.options.length === 0) return null;
   const options = poll.options
@@ -115,8 +127,10 @@ export function pollForPoster(poll: PollData | null, max = POSTER_POLL_OPTIONS_M
   return { options, totalVotes: poll.total, more: poll.options.length - options.length };
 }
 
-/* 私密帖 / 被屏蔽帖 → null(路由 404)。标题非强制:无标题帖正文摘要坐到主标题位
-   (同详情页/feed 的回退);摘要与主标题完全雷同时(短帖)不重复展示。 */
+/* Private/hidden posts -> null (route 404s). Titles are optional: an
+   untitled post's body excerpt takes the headline slot (same fallback
+   as detail/feed); when excerpt and headline would be identical (short
+   posts) it is not repeated. */
 export function buildPostShareSnapshot(
   post: PostDetail,
   poll: PollData | null,
@@ -153,7 +167,7 @@ export async function getPostShareSnapshot(id: number): Promise<PostShareSnapsho
   return buildPostShareSnapshot(post, poll);
 }
 
-/* ---- 作品海报 ---- */
+/* ---- Work poster ---- */
 
 export interface WorkShareSnapshot {
   id: number;
@@ -161,12 +175,13 @@ export interface WorkShareSnapshot {
   tagline: string;
   author: PosterAuthor;
   agents: string[];
-  /* 超出截取上限的剩余 agent 数 */
+  /* Agents left beyond the cap. */
   agentsMore: number;
   voteCount: number;
   commentCount: number;
   publishedAt: string;
-  /* 声明构建投入(声明制:本作品 claimed_tokens,不变式满足才非空);null = 不渲染该 hero */
+  /* Claimed build effort (this work's claimed_tokens, non-empty only
+     when the invariant holds); null = the hero never renders. */
   claimedTokens: number | null;
   path: string;
   url: string;
@@ -177,7 +192,8 @@ export function buildWorkShareSnapshot(
   verifiableTotals: Map<number, number>,
   claimSums: Map<number, number>,
 ): WorkShareSnapshot {
-  /* awesome 外部条目无站内作者:作者行落 authorLabel,handle 置空 */
+  /* awesome external entries have no on-site author: the author row
+     uses authorLabel, handle stays empty. */
   const authorName = work.handle ?? work.authorLabel;
   return {
     id: work.id,
@@ -201,7 +217,8 @@ export function buildWorkShareSnapshot(
 
 export async function getWorkShareSnapshot(id: number): Promise<WorkShareSnapshot | null> {
   const work = await getWork(id);
-  /* 私密作品 → null(路由 404,同私密帖口径);海报是匿名公共上下文,viewer 恒 null */
+  /* Private works -> null (route 404s, same as private posts); posters
+     are an anonymous public context, viewer is always null. */
   if (!work || !canViewWork(work, null)) return null;
   const [totals, claimSums] = await Promise.all([
     getVerifiableTokenTotals([work.userId]),
@@ -210,30 +227,34 @@ export async function getWorkShareSnapshot(id: number): Promise<WorkShareSnapsho
   return buildWorkShareSnapshot(work, totals, claimSums);
 }
 
-/* ---- 个人主页海报 ---- */
+/* ---- Profile poster ---- */
 
 export interface ProfileShareSnapshot {
   handle: string;
   name: string;
   initials: string;
-  /* 当前海报不绘制远程头像，但快照仍只携带访客口径，避免未来模板直接泄露。 */
+  /* The current poster draws no remote avatar, but the snapshot still
+     carries the visitor view so a future template cannot leak. */
   avatarUrl: string;
   bio: string;
   joinedAt: string;
   stats: { posts: number; comments: number; likes: number; works: number };
-  /* 累计 tokens + 活跃天数 + 日粒度活动图(仅 opt-in 公开用量时非空);null = 不渲染 */
+  /* Lifetime tokens + active days + a daily activity map (non-empty
+     only when usage is opted in); null = never rendered. */
   usage: {
     totalTokens: number;
     activeDays: number;
-    /* 近 371 天 day(YYYY-MM-DD, UTC)→ tokens;无产出的日子缺席 */
+    /* Last 371 days, day (YYYY-MM-DD, UTC) -> tokens; idle days are
+       absent. */
     activity: Record<string, number>;
   } | null;
   path: string;
   url: string;
 }
 
-/* 作品数统计:成员自有作品(source='site'),与主页「作品」页签同口径。
-   self=false(访客/海报等公共上下文)只数公开作品,不泄露私密度量。 */
+/* Work counts: a member's own works (source='site'), same as the
+   profile "works" tab. self=false (visitors/posters — public contexts)
+   counts public works only; private counts never leak. */
 export function userWorksCountQuery(
   userId: number,
   self = false,
@@ -255,7 +276,8 @@ export function buildProfileShareSnapshot(input: {
   return {
     handle: profile.handle,
     name: clip(display.displayName, 28),
-    /* 隐藏显示名时从公开 handle 生成，不让姓名首字母形成旁路。 */
+    /* Generated from the public handle when the display name is hidden —
+       name initials must not form a bypass. */
     initials: posterInitials(profile.showName ? display.displayName : "", profile.handle),
     avatarUrl: display.avatarUrl,
     bio: clip(display.bio, 100),
@@ -279,8 +301,10 @@ export function buildProfileShareSnapshot(input: {
   };
 }
 
-/* 资料隐私变更必须在下一次请求立即反映；浏览器/CDN 的 5 分钟公共缓存无法被
-   Server Action 的 revalidatePath 可靠清除，因此个人海报单独选择 no-store。 */
+/* Profile-privacy changes must surface on the very next request; the
+   5-minute public browser/CDN cache cannot be reliably purged by a
+   Server Action's revalidatePath, so the profile poster opts for
+   no-store. */
 export const PROFILE_SHARE_CACHE_CONTROL = "private, no-store, max-age=0";
 
 export async function getProfileShareSnapshot(handle: string): Promise<ProfileShareSnapshot | null> {
@@ -293,9 +317,11 @@ export async function getProfileShareSnapshot(handle: string): Promise<ProfileSh
     getPublicTokenTotals([profile.id]),
   ]);
   const totalTokens = totals.get(profile.id) ?? 0;
-  /* 活跃天数:近 371 天有 token 产出的天数(getSocialDailyActivity 日粒度映射);
-     只在 opt-in 有总量时才取,未公开不做多余查询。tz 固定 0(UTC)——海报是
-     公共缓存快照,不随浏览者时区漂移。 */
+  /* Active days: days with token output in the last 371 days (the
+     getSocialDailyActivity daily map); fetched only when the opt-in
+     total exists — no extra query for private users. tz is fixed at 0
+     (UTC) — a poster is a publicly cached snapshot and must not drift
+     with the viewer's timezone. */
   const dailyActivity = totalTokens > 0 ? await getSocialDailyActivity(profile.id, 0) : {};
   const usage =
     totalTokens > 0
@@ -313,7 +339,7 @@ export async function getProfileShareSnapshot(handle: string): Promise<ProfileSh
   });
 }
 
-/* ---- dev 预览 mock(?preview=1,不碰 DB)---- */
+/* ---- Dev preview mocks (?preview=1, no DB) ---- */
 
 export function mockPostShareSnapshot(): PostShareSnapshot {
   return {
@@ -360,7 +386,8 @@ export function mockWorkShareSnapshot(): WorkShareSnapshot {
   };
 }
 
-/* mock 热力图:近 180 天的确定性伪随机活动 */
+/* Mock heatmap: deterministic pseudo-random activity for the last 180
+   days. */
 function mockActivity(): Record<string, number> {
   const activity: Record<string, number> = {};
   const today = new Date();
@@ -387,7 +414,8 @@ export function mockProfileShareSnapshot(): ProfileShareSnapshot {  return {
   };
 }
 
-/* 海报动态文本(供 CJK 粗体子集抓取;静态标签在 poster-kit 的 POSTER_STATIC_TEXT)。 */
+/* Poster dynamic text (for CJK bold-subset fetching; static labels live
+   in poster-kit's POSTER_STATIC_TEXT). */
 export function postShareText(s: PostShareSnapshot): string {
   return [
     s.title,

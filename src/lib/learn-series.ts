@@ -1,11 +1,15 @@
-/* 教程频道 · 系列注册表(20260820 知识库教程化改造,plan:文档库 → 系列课频道)
-   系列是策展对象(少而重,RFC §2),存代码不入库——署名、验证戳、重验痕迹、
-   讨论帖都在系列级;集(教程)= articles(kind='guide') + payload.series 挂载,
-   查询组装在 src/lib/tutorials.ts。
-   验证戳(RFC §2.2):editorHandle × verifiedModel × verifiedAt;
-   stale 不手填,由 isPathStale 计算(超龄或模型换代 → 待重验)——
-   验证戳必须自己不会过期说谎;reverifyLog 留每次重验的痕迹。
-   讨论闭环(RFC §2.5):discussionPostId 挂社区帖(运营发帖后回填)。 */
+/* Tutorial channel · series registry. Series are curated objects (few
+   and heavy), stored in code rather than the DB — attribution,
+   verification stamps, re-verification traces, and the discussion post
+   live at the series level; episodes (tutorials) = articles rows
+   (kind='guide') attached via payload.series, assembled in
+   src/lib/tutorials.ts. Verification stamps: editorHandle x
+   verifiedModel x verifiedAt; stale is never hand-set — isPathStale
+   computes it (over-age or a model-generation change -> due for
+   re-verification) — a stamp must never expire into a lie by itself;
+   reverifyLog keeps a trace of every re-verification. Discussion loop:
+   discussionPostId links the community post (backfilled after ops
+   creates it). */
 import type { ChapterId } from "./kb-chapters";
 
 export interface L10n {
@@ -13,18 +17,20 @@ export interface L10n {
   en: string;
 }
 
-/* 站点当前担保的模型代际(验证戳的对照基准)。
-   ⚠️ 模型换代时更新此值:更新瞬间,所有 verifiedModel ≠ 此值的系列
-   自动转「待重验」。 */
+/* The model generation the site currently vouches for (the stamp's
+   comparison baseline). When the model generation changes, update this:
+   at that instant every series whose verifiedModel differs flips to
+   "due for re-verification". */
 export const CURRENT_KIMI_MODEL = "kimi-latest";
 
-/* 验证戳保质期:verifiedAt 超过该天数未重验 → 自动「待重验」。 */
+/* Stamp shelf life: no re-verification within this many days of
+   verifiedAt -> automatically "due". */
 export const STALE_AFTER_DAYS = 45;
 
-/* 计算型 stale(纯函数):验证戳必须自己不会过期说谎。
-   · verifiedModel ≠ 当前模型代际 → 待重验;
-   · verifiedAt(YYYY-MM[-DD])距今超 STALE_AFTER_DAYS → 待重验;
-   · verifiedAt 无法解析 → 待重验(读不出的戳不担保)。 */
+/* Computed staleness (pure): a stamp must never expire into a lie by
+   itself. verifiedModel != the current generation -> due; verifiedAt
+   (YYYY-MM[-DD]) older than STALE_AFTER_DAYS -> due; unparseable
+   verifiedAt -> due (an unreadable stamp vouches for nothing). */
 export function isPathStale(
   series: { verifiedModel: string; verifiedAt: string },
   currentModel: string = CURRENT_KIMI_MODEL,
@@ -40,40 +46,47 @@ export function isPathStale(
   return now.getTime() - verified > STALE_AFTER_DAYS * 86_400_000;
 }
 
-/* 重验记录(RFC §2.2):每次重验留痕——时间 × 模型 × 编辑注记,新的在前。
-   最新一次重验同时更新 verifiedAt/verifiedModel;log 是它之前的痕迹。 */
+/* Re-verification log: a trace per re-verification — date x model x
+   editor note, newest first. The latest re-verification also updates
+   verifiedAt/verifiedModel; the log is the trail before it. */
 export interface ReverifyEntry {
   at: string;
   model: string;
   note: L10n;
 }
 
-/* 教程系列:频道的策展单元(「路径」的系列化)。 */
+/* Tutorial series: the channel's curated unit. */
 export interface LearnSeries {
   slug: string;
-  /* mono 短码(目录卡角标),如 "SER-01" */
+  /* Mono short code (catalog card corner tag), e.g. "SER-01". */
   code: string;
   title: L10n;
-  /* 所属章(kb-chapters 注册表;章是主浏览轴,每条路挂一章) */
+  /* Owning chapter (kb-chapters registry; chapters are the primary
+     browsing axis — every path hangs on one). */
   chapter?: ChapterId;
-  /* hero 金句 */
+  /* Hero quote. */
   tagline: L10n;
   summary: L10n;
-  /* 封面(可选):站内路径或 https 图片;缺省 = 自动文字封面(code + 标题) */
+  /* Cover (optional): on-site path or https image; default = the
+     automatic text cover (code + title). */
   cover?: string;
   editorHandle: string;
   verifiedModel: string;
   verifiedAt: string;
   reverifyLog: ReverifyEntry[];
-  /* 讨论闭环:挂社区帖(运营发帖后回填;缺省 = 详情页不渲染讨论区) */
+  /* Discussion loop: links a community post (backfilled after ops
+     creates it; default = the detail page renders no discussion
+     section). */
   discussionPostId?: number;
 }
 
-/* 在册系列(策展注册表,少而重;首批内容筹备中)。
-   注意:目录页只渲染「有已发布集」的系列——注册但不发集 = 不上架,不撑空壳。 */
+/* Registered series (a curated registry, few and heavy; first batch in
+   preparation). Note: the catalog renders only series with published
+   episodes — registered but empty = not shelved, no empty shells. */
 export const LEARN_SERIES: LearnSeries[] = [
-  /* —— 走查临时数据(20260821 视觉走查用,配套 kb_dev 的 lens-* 种子行;
-        看完样式即整体删除本段与对应库行) —— */
+  /* Temporary walkthrough data (for a visual pass, paired with the
+     lens-* seed rows in kb_dev; delete this block and those rows once
+     the styling is reviewed). */
   {
     slug: "kimi-best-practice",
     code: "SER-01",
@@ -118,7 +131,8 @@ export function findLearnSeries(slug: string): LearnSeries | undefined {
   return LEARN_SERIES.find((s) => s.slug === slug);
 }
 
-/* 毕业归因校验(works.source_path):只接受在册系列 slug,其余置 null。 */
+/* Graduation attribution validation (works.source_path): only
+   registered series slugs pass; everything else becomes null. */
 export function normalizePathSlug(raw: string): string | null {
   const s = raw.trim();
   if (s.length === 0 || s.length > 64) return null;

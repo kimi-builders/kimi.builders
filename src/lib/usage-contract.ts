@@ -46,10 +46,12 @@ export function isUsageSourceId(value: string): value is UsageSourceId {
   return USAGE_SOURCE_IDS.has(value);
 }
 
-/* Privacy is deny-by-default. `project` and a human-readable device label are
-   omitted from ingest payloads unless the user enables the matching setting.
-   showOnLeaderboard 是公开侧开关(P1-1):为 1 才公开周期聚合用量
-   (社区榜/热力图/作品徽章共用),且只公开聚合数字,不含任何明细维度。 */
+/* Privacy is deny-by-default. `project` and a human-readable device label
+   are omitted from ingest payloads unless the user enables the matching
+   setting. showOnLeaderboard is the public-side switch: only when set to
+   1 are periodic aggregate usages published (community leaderboard /
+   heatmap / work badges share it) — aggregate numbers only, never any
+   detail dimension. */
 export const USAGE_PRIVACY_DEFAULTS = {
   uploadProject: false,
   uploadDeviceLabel: false,
@@ -207,8 +209,9 @@ export function observedTokenTotal(tokens: UsageTokenCountsV2): number {
   );
 }
 
-/* 缓存命中率 = 缓存读 ÷ 输入侧总量(输入 + 缓存写 + 缓存读)。
-   分母为 0 时返回 null(没有输入侧流量,命中率无意义,展示为 —)。 */
+/* Cache hit rate = cache read / input-side total (input + cache write +
+   cache read). Returns null when the denominator is 0 (no input-side
+   traffic — the rate is meaningless, displayed as —). */
 export function usageCacheHitRate(
   tokens: Pick<
     UsageTokenCountsV2,

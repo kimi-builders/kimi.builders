@@ -1,6 +1,7 @@
-/* 展示格式化小工具。 */
+/* Display formatting helpers. */
 
-/* 相对时间:1 分钟内「刚刚」,然后分钟/小时/天,超过 30 天落 YYYY-MM-DD。 */
+/* Relative time: "just now" under a minute, then minutes/hours/days,
+   YYYY-MM-DD beyond 30 days. */
 export function relTime(
   d: Date | string,
   locale: "zh" | "en" = "zh",
@@ -24,7 +25,8 @@ export function relTime(
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
 
-/* Markdown → 纯文本摘要(feed 卡片用):去代码块/图片/链接语法/标记符,收空白。 */
+/* Markdown -> plain-text excerpt (feed cards): strips code blocks/
+   images/link syntax/markers, collapses whitespace. */
 export function plainExcerpt(md: string, max = 120): string {
   const text = md
     .replace(/```[\s\S]*?```/g, " ")
@@ -39,7 +41,8 @@ export function plainExcerpt(md: string, max = 120): string {
   return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }
 
-/* 大数字紧凑格式(首页数据条):zh 万/亿,en K/M/B。 */
+/* Compact large numbers (home stats bar): zh units of 10k/100M, en
+   K/M/B. */
 export function compactNumber(n: number, locale: "zh" | "en" = "zh"): string {
   return new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", {
     notation: "compact",
@@ -47,7 +50,8 @@ export function compactNumber(n: number, locale: "zh" | "en" = "zh"): string {
   }).format(n);
 }
 
-/* 期号感的月份标签(月刊列表/详情头):统一 YYYY-MM,mono 排版下两语言都读得顺。 */
+/* Issue-flavored month label (monthly list/detail headers): uniformly
+   YYYY-MM, legible in both languages under mono typesetting. */
 export function monthLabel(d: Date | string): string {
   const t = typeof d === "string" ? new Date(d) : d;
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`;

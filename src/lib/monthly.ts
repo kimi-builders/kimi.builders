@@ -1,16 +1,21 @@
-/* 月刊组装制(plan-monthly-learn-launch.md §一):/blog 期次从真实数据组装,不手写。
-   20260921 产品转向:初期月刊 = AI 月刊,
-   新三层:01 本月评鉴(articles.body_md,编辑手写的策展长文,AI 参与必披露)、
-   02 事实盘点(L1,可验证快照)、03 编辑定夺(L2,featured + 治理公示)。
-   组装口径(页脚公示,可复算):
-   · L2 facts     ← 社区总量(成员/帖子/作品/评论)+ usage 全站累计 token
-                    + 近 30 天缓存命中率与 TOP 模型(usage/community.ts 窗口聚合);
-                    缺项诚实显示 "—",不编数;
-   · L3 decisions ← 文章月份(published_at 所在月,UTC)的 featured 帖子/作品
-                    (featured_reason + 定夺编辑 handle)+ payload.governance 公示条目。
-   payload(articles.payload,JSON)只存数据给不了的编辑定夺:治理公示、
-   AI 参与披露;NULL = 纯自动组装。
-   纯函数(校验/组装/查询构建)与 DB 读写分离,写法对齐 ./articles、./featured。 */
+/* Monthly letter assembly: /blog issues assemble from real data, never
+   hand-written. The early letters are AI-assisted monthlies with three
+   layers: 01 editorial review (articles.body_md, a curator-written long
+   form; any AI participation must be disclosed), 02 fact sheet (L1,
+   verifiable snapshots), 03 editorial decisions (L2, featured + published
+   governance rulings). Assembly definitions (published in the footer,
+   recomputable):
+   - L2 facts <- community totals (members/posts/works/comments) + the
+     site-wide token total + the last-30-day cache hit rate and top model
+     (window aggregates from usage/community.ts); missing values honestly
+     show "—", never invented;
+   - L3 decisions <- the article month's (published_at, UTC) featured
+     posts/works (featured_reason + deciding editor handle) +
+     payload.governance rulings.
+   payload (articles.payload, JSON) stores only the editorial decisions
+   data cannot provide: governance rulings and AI disclosure; NULL = pure
+   automatic assembly. Pure functions (validation/assembly/query building)
+   are separated from DB access, aligned with ./articles and ./featured. */
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 import {
@@ -29,52 +34,61 @@ export const MISSING = "—";
 
 export type MonthlyLocale = "zh" | "en";
 
-/* ---- 展示层类型(渲染契约;mock 类型蓝本见 tests/fixtures/monthly-mock.ts)---- */
+/* ---- Display types (render contract; mock blueprint in
+   tests/fixtures/monthly-mock.ts) ---- */
 
-/* L2 事实盘点:一条可验证快照;value = MISSING("—")表示数据缺项。 */
+/* L2 fact sheet: one verifiable snapshot; value = MISSING ("—") marks
+   absent data. */
 export interface IssueFact {
   label: string;
   value: string;
 }
 
-/* L3 编辑定夺:featured 帖子/作品(系统带出)+ payload 治理公示。 */
+/* L3 editorial decisions: featured posts/works (system-provided) +
+   payload governance rulings. */
 export type IssueDecisionKind = "post" | "work" | "governance";
 
 export interface IssueDecision {
   kind: IssueDecisionKind;
   title: string;
-  href: string; // 帖子 → /community/<id>;作品 → 作品链接;governance → rulingUrl
-  authorHandle: string; // 站内作者 handle(不带 @);外部作品为 author_label;governance 为空串
+  href: string; // post -> /community/<id>; work -> its link; governance ->
+                 // rulingUrl
+  authorHandle: string; // on-site handle (no @); external works use
+                         // author_label; governance is empty
   authorHref: string | null;
-  note: string; // featured_reason / 公示说明
-  editorHandle: string; // 定夺编辑;缺失为空串(展示容错跳过)
-  rulingUrl: string | null; // governance:公示全文(社区帖)
+  note: string; // featured_reason / ruling note
+  editorHandle: string; // deciding editor; empty when missing (display
+                         // skips gracefully)
+  rulingUrl: string | null; // governance: full ruling (community post)
 }
 
-/* AI 参与披露:哪节有 AI 参与、参与度(RFC §1 纪律);键缺省 = 该节无 AI 参与。
-   分节键与锚一致:digest(本月评鉴)/ facts / decisions。 */
+/* AI participation disclosure: which sections had AI and how much; a
+   missing key = no AI in that section. Section keys match anchors:
+   digest (editorial) / facts / decisions. */
 export type AiDisclosure = Partial<
   Record<"digest" | "facts" | "decisions", string>
 >;
 
 export interface AssembledIssue {
   slug: string;
-  issue: number; // 期号 = 已发布 letter 按 published_at 正序的序号(1 起)
+  issue: number; // issue number = 1-based position among published letters
+                  // by published_at ascending
   month: string; // YYYY-MM(published_at,UTC)
   title: string;
   summary: string;
-  /* 本月评鉴(articles.body_md):详情页的 01 节;总览组装不取
-     (列表查询不选 body_md),恒为空串 —— 分享海报同样不消费 */
+  /* Editorial review (articles.body_md): the detail page's section 01;
+     overview assembly skips it (the list query never selects body_md),
+     always empty — share posters don't consume it either. */
   bodyMd: string;
   editorHandle: string;
   publishedAt: Date;
   facts: IssueFact[];
   decisions: IssueDecision[];
   aiDisclosure: AiDisclosure | null;
-  assembledAt: Date; // 数据截止时间(页脚公示)
+  assembledAt: Date; // data cutoff (published in the footer)
 }
 
-/* 列表/导航用轻量形态(未组装三层)。 */
+/* Lightweight shape for lists/navigation (three layers not assembled). */
 export interface LetterIssueMeta {
   slug: string;
   issue: number;
@@ -83,11 +97,12 @@ export interface LetterIssueMeta {
   summary: string;
   editorHandle: string;
   publishedAt: Date;
-  locale: MonthlyLocale; // 实际语言版本(fallback=与 UI 语言不一致)
+  locale: MonthlyLocale; // actual language version (fallback = differs
+                          // from UI locale)
   fallback: boolean;
 }
 
-/* ---- payload(articles.payload)契约与校验 ---- */
+/* ---- payload (articles.payload) contract and validation ---- */
 
 export interface LetterGovernanceEntry {
   title: string;
@@ -98,12 +113,15 @@ export interface LetterGovernanceEntry {
 export interface LetterPayload {
   aiDisclosure?: AiDisclosure;
   governance?: LetterGovernanceEntry[];
-  /* 探索四维的标签维(20260821):≤5 个,每标签 ≤24 字,去重 */
+  /* Tag dimension of the explore lenses: <=5 tags, <=24 chars each,
+     deduped. */
   tags?: string[];
-  /* 封面(20260822):站内路径或 https 图片,列表横列卡左列;缺省 = 自动章字砖(「刊」) */
+  /* Cover: on-site path or https image, on the list card's left column;
+     default = the automatic chapter brick. */
   cover?: string;
-  /* 章字砖色调(20260822,与作品名称砖同一色板):无上传封面/图挂时生效;
-     白名单见 cover-tones.ts(theme = 跟随主题,缺省) */
+  /* Chapter-brick tone (same palette as work name bricks): applies
+     without an uploaded cover/image; allowlist in cover-tones.ts (theme =
+     follow the theme, default). */
   coverTone?: string;
 }
 
@@ -115,7 +133,8 @@ const GOVERNANCE_MAX = 20;
 const TAGS_MAX = 5;
 const TAG_MAX_LEN = 24;
 
-/* 标签校验(两种 payload 共用):≤TAGS_MAX 个、每个 1-24 字、去重 */
+/* Tag validation (shared by both payloads): <=TAGS_MAX, 1-24 chars each,
+   deduped. */
 export function normalizeTags(value: unknown): { ok: true; tags: string[] } | { ok: false; error: string } {
   if (!Array.isArray(value) || value.length > TAGS_MAX) {
     return { ok: false, error: `tags 需为数组(≤${TAGS_MAX} 个)` };
@@ -142,7 +161,8 @@ function boundedString(v: unknown, max: number): string | null {
   return s;
 }
 
-/* rulingUrl:站内相对路径(/...)或 http(s) 链接,≤500 字。 */
+/* rulingUrl: on-site relative path (/...) or an http(s) link, <=500
+   chars. */
 function normalizeRulingUrl(v: unknown): string | null {
   const s = boundedString(v, 500);
   if (!s) return null;
@@ -155,8 +175,10 @@ function unknownKey(obj: Record<string, unknown>, known: string[]): string | nul
   return Object.keys(obj).find((k) => !known.includes(k)) ?? null;
 }
 
-/* 严格校验:未知字段/非法值给出具体错误(编辑后台就地提示);
-   渲染路径(letterPayloadFromDb)容错回落空 payload,不让一条坏 payload 打掉整页。 */
+/* Strict validation: unknown fields/invalid values yield specific errors
+   (inline hints in the edit console); the render path
+   (letterPayloadFromDb) tolerates and falls back to an empty payload so
+   one bad row never kills the page. */
 export function validateLetterPayload(value: unknown): PayloadParseResult {
   if (!isPlainObject(value)) return { ok: false, error: "payload 必须是 JSON 对象" };
   const stray = unknownKey(value, ["aiDisclosure", "governance", "tags", "cover", "coverTone"]);
@@ -234,7 +256,8 @@ export function validateLetterPayload(value: unknown): PayloadParseResult {
   return { ok: true, payload };
 }
 
-/* 编辑后台入口:JSON 文本 → 严格校验;空串 → ok + 空 payload(NULL 语义:纯自动组装)。 */
+/* Edit-console entry: JSON text -> strict validation; empty string -> ok
+   + empty payload (NULL semantics: pure automatic assembly). */
 export function parseLetterPayload(raw: string): PayloadParseResult {
   const text = raw.trim();
   if (!text) return { ok: true, payload: {} };
@@ -247,8 +270,9 @@ export function parseLetterPayload(raw: string): PayloadParseResult {
   return validateLetterPayload(value);
 }
 
-/* DB 读取入口(渲染路径):容错——JSON 已由驱动解析;非法内容回落空 payload,
-   期次照常自动组装,不让一条坏 payload 打掉整页。 */
+/* DB read entry (render path): tolerant — the driver already parsed the
+   JSON; invalid content falls back to an empty payload, the issue still
+   auto-assembles, one bad payload never kills the page. */
 export function letterPayloadFromDb(raw: unknown): LetterPayload {
   if (raw === null || raw === undefined || raw === "") return {};
   const value = typeof raw === "string" ? safeJson(raw) : raw;
@@ -265,13 +289,15 @@ function safeJson(text: string): unknown {
   }
 }
 
-/* ---- 月份窗口(UTC;与 published_at/created_at 的 UTC 口径一致,见 db.ts)---- */
+/* ---- Month windows (UTC; consistent with published_at/created_at, see
+   db.ts) ---- */
 
 export function monthOf(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-/* "2026-08" → ["2026-08-01 00:00:00", "2026-09-01 00:00:00")(半开区间);非法返回 null。 */
+/* "2026-08" -> ["2026-08-01 00:00:00", "2026-09-01 00:00:00") (half-open);
+   invalid -> null. */
 export function monthWindow(month: string): { start: string; end: string } | null {
   const m = /^(\d{4})-(\d{2})$/.exec(month);
   if (!m) return null;
@@ -291,9 +317,11 @@ export interface MonthlyStatsSnapshot {
   posts: number;
   works: number;
   comments: number;
-  tokensTotal: number; // 全站累计(与首页数据条同口径)
-  cacheHitRate: number | null; // 近 30 天;null=无输入侧流量
-  topModel: { name: string; share: number } | null; // 近 30 天,份额 0-1
+  tokensTotal: number; // site-wide total (same as the home stats bar)
+  cacheHitRate: number | null; // last 30 days; null = no input-side
+                                // traffic
+  topModel: { name: string; share: number } | null; // last 30 days, share
+                                                     // 0-1
 }
 
 export function buildFacts(
@@ -336,8 +364,9 @@ export function buildFacts(
   ];
 }
 
-/* 模型分布聚合(纯):按 canonical 模型合并窗口行,按 token 降序取前 limit,share=占比。
-   写法对齐 usage/query.ts 的 canonicalModelOf 口径。 */
+/* Model distribution aggregation (pure): merge window rows by canonical
+   model, top limit by tokens desc, share = fraction. Aligned with
+   canonicalModelOf in usage/query.ts. */
 export interface UsageModelTokensRow {
   source: string;
   model: string;
@@ -377,13 +406,15 @@ export function topUsageModels(
 
 /* ---- L2 decisions ---- */
 
-/* featured 帖子/作品的统一视图(月窗查询行 → 此形态,再 → IssueDecision)。 */
+/* Unified view of featured posts/works (month-window query rows -> this
+   shape -> IssueDecision). */
 export interface MonthlyFeaturedEntry {
   kind: "post" | "work";
   id: number;
   href: string;
   title: string;
-  authorHandle: string; // 站内 handle(不带 @);外部作品为 author_label
+  authorHandle: string; // on-site handle (no @); external works use
+                         // author_label
   authorHref: string | null;
   reason: string;
   editorHandle: string;
@@ -419,14 +450,15 @@ export function buildDecisions(
   return items;
 }
 
-/* ---- 期次组装(纯) ---- */
+/* ---- Issue assembly (pure) ---- */
 
 export interface AssembleIssueInput {
   article: {
     slug: string;
     title: string;
     summary: string;
-    /* 本月评鉴正文;总览(listArticles 不选 body_md)省略 → 空串 */
+    /* Editorial review body; the overview (listArticles never selects
+       body_md) omits it -> empty string. */
     bodyMd?: string;
     authorHandle: string;
     publishedAt: Date;
@@ -459,8 +491,9 @@ export function assembleIssue(input: AssembleIssueInput): AssembledIssue {
   };
 }
 
-/* 已发布 letter 列表 → 轻量期次(期号:发布时间正序 1 起)。
-   输入按展示序(新期在前,listArticles 口径),期号 = 总数 - 位次。 */
+/* Published letters -> lightweight issues (number = 1-based by publish
+   time ascending). Input is display order (newest first, listArticles
+   convention), so number = count - position. */
 export function letterIssueMetas(
   articles: Pick<
     ArticleListItem,
@@ -481,9 +514,10 @@ export function letterIssueMetas(
   }));
 }
 
-/* ---- 查询构建(纯) ---- */
+/* ---- Query building (pure) ---- */
 
-/* 作品总数(公共口径:公开且未被屏蔽;成员/帖子/评论口径见 posts.getCommunityStats)。 */
+/* Work total (public definition: public and unhidden; members/posts/
+   comments via posts.getCommunityStats). */
 export function communityWorksCountQuery(): { sql: string; args: never[] } {
   return {
     sql: `SELECT COUNT(*) AS n FROM works
@@ -492,7 +526,8 @@ export function communityWorksCountQuery(): { sql: string; args: never[] } {
   };
 }
 
-/* L2:文章月份内的精选帖子(精选时间落窗,ASC = 定夺先后)。 */
+/* L2: featured posts inside the article's month (featured time
+   in-window, ASC = decision order). */
 export function monthFeaturedPostsQuery(window: {
   start: string;
   end: string;
@@ -512,7 +547,8 @@ export function monthFeaturedPostsQuery(window: {
   };
 }
 
-/* L2:文章月份内的精选作品(同帖口径;u 可空 = awesome 外部条目)。 */
+/* L2: featured works inside the article's month (same as posts; u
+   nullable = awesome external entry). */
 export function monthFeaturedWorksQuery(window: {
   start: string;
   end: string;
@@ -531,7 +567,7 @@ export function monthFeaturedWorksQuery(window: {
   };
 }
 
-/* ---- DB 组装 ---- */
+/* ---- DB assembly ---- */
 
 function mapFeaturedPostRow(r: RowDataPacket): MonthlyFeaturedEntry {
   const id = Number(r.id);
@@ -539,7 +575,7 @@ function mapFeaturedPostRow(r: RowDataPacket): MonthlyFeaturedEntry {
     kind: "post",
     id,
     href: `/community/${id}`,
-    /* 无标题帖回退到正文摘要(同 feed 口径) */
+    /* Untitled posts fall back to a body excerpt (same as the feed). */
     title: r.title || plainExcerpt(r.body_excerpt ?? "", 60),
     authorHandle: r.author_handle ?? "",
     authorHref: r.author_handle ? `/u/${r.author_handle}` : null,
@@ -565,7 +601,8 @@ function mapFeaturedWorkRow(r: RowDataPacket): MonthlyFeaturedEntry {
   };
 }
 
-/* L1 快照:社区统计 + 作品数 + token 累计 + 近 30 天命中率/TOP 模型。 */
+/* L1 snapshot: community stats + work count + token total + last-30-day
+   hit rate/top model. */
 export async function getMonthlyStatsSnapshot(
   days = 30,
 ): Promise<MonthlyStatsSnapshot> {
@@ -596,7 +633,8 @@ export async function getMonthlyStatsSnapshot(
   };
 }
 
-/* L2 数据:文章月份内的 featured 帖子 + 作品(混排按精选时间 ASC)。 */
+/* L2 data: featured posts + works inside the article's month (merged by
+   featured time ASC). */
 export async function getMonthFeatured(month: string): Promise<MonthlyFeaturedEntry[]> {
   const window = monthWindow(month);
   if (!window) return [];
@@ -613,7 +651,8 @@ export async function getMonthFeatured(month: string): Promise<MonthlyFeaturedEn
   ].sort((a, b) => a.featuredAt.getTime() - b.featuredAt.getTime());
 }
 
-/* 列表:已发布 letter 的轻量期次(新期在前;期号已算好)。 */
+/* List: lightweight issues of published letters (newest first; numbers
+   precomputed). */
 export async function listLetterIssueMetas(
   uiLocale: MonthlyLocale,
 ): Promise<LetterIssueMeta[]> {
@@ -621,7 +660,8 @@ export async function listLetterIssueMetas(
   return letterIssueMetas(articles);
 }
 
-/* 总览页:最新一期整期组装 + 全部轻量期次;无已发布 letter → latest=null(空态)。 */
+/* Overview page: the latest issue fully assembled + all lightweight
+   issues; no published letter -> latest=null (empty state). */
 export async function getBlogOverview(
   uiLocale: MonthlyLocale,
   opts: { now?: Date } = {},
@@ -647,8 +687,10 @@ export async function getBlogOverview(
   return { latest, metas };
 }
 
-/* 详情/总览共用:按 slug 组装整期。返回 null = 无此已发布期(页面 notFound/空态)。
-   issueNumber 由调用方给(列表位次);stats 可共享传入(总览页避免重复聚合)。 */
+/* Detail/overview shared: assemble a full issue by slug. null = no such
+   published issue (page notFound/empty state). issueNumber comes from the
+   caller (list position); stats may be passed in (the overview avoids
+   double aggregation). */
 export async function getAssembledIssue(
   slug: string,
   uiLocale: MonthlyLocale,

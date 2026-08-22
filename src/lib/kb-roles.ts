@@ -1,10 +1,12 @@
-/* 职业词表注册表(20260821 探索「货架 + 透镜」改版):探索区的人群透镜。
-   职业是「我是谁,能用 Kimi 干嘛」的进入心智——与产品透镜同为筛选
-   facet,不做内容架子。词表一次全注册(16 项),渲染只出有内容的
-   (0 计数不出);职业落地页(/explore/for/<role>)另有 ≥3 单元门槛
-   (explore.ts 的 roleLandingEligible),门槛未到不建页面。 */
+/* Role vocabulary registry: the explore section's audience lens. Roles
+   match the "who am I, what can I do with Kimi" entry mindset — a filter
+   facet like the product lens, never a content shelf. The vocabulary
+   registers all 16 at once and rendering shows only roles with content
+   (zero counts never render); role landing pages (/explore/for/<role>)
+   additionally require >=3 units (roleLandingEligible in explore.ts) —
+   below the threshold, no page. */
 export interface KbRole {
-  /* payload.roles / URL ?role= 用的稳定 slug */
+  /* Stable slug for payload.roles / URL ?role=. */
   id: string;
   zh: string;
   en: string;

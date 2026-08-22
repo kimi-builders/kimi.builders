@@ -1,9 +1,13 @@
-/* 探索(Explore)聚合(20260821 月刊 × 教程合并;同日「货架 + 透镜」改版):
-   脊柱 = 系列(learn-series 注册表,策展序列);透镜 = 产品(kb-products)/
-   职业(kb-roles)结构化 facet;表现层 = 形态(read/video/deck),从 payload
-   与正文**派生**不存储(派生不说谎:有文稿才有 read);长尾 = 标签(payload.tags)
-   与时间归档。计数/过滤/归档是纯函数(单测直接测),0 计数透镜不渲染
-   (与「0 集系列不上架」同口径);DB 读写在文件底部,写法对齐 ./monthly。 */
+/* Explore aggregation (monthly letters x tutorials merged; "shelf +
+   lenses" redesign). The spine = series (the learn-series registry,
+   curated sequences); lenses = structured facets for products
+   (kb-products) and roles (kb-roles); presentation = formats
+   (read/video/deck), derived from payload and body presence rather than
+   stored (derived never lies: no body, no read); the long tail = tags
+   (payload.tags) and the time archive. Counting/filtering/archiving are
+   pure functions (unit-tested directly); lenses with 0 counts never
+   render (same rule as "empty series don't ship"); DB access sits at the
+   bottom, aligned with ./monthly. */
 import { cache } from "react";
 import type { RowDataPacket } from "mysql2";
 import type { ArticleKind, ArticleLocale } from "./articles";
@@ -15,9 +19,10 @@ import { LEARN_SERIES } from "./learn-series";
 import { letterPayloadFromDb } from "./monthly";
 import { guidePayloadFromDb } from "./tutorials";
 
-/* ---- 展示层类型 ---- */
+/* ---- Display types ---- */
 
-/* 内容单元的表现形态(同一单元可有多种):read=文章 / video=视频 / deck=演示稿 */
+/* Formats of one content unit (a unit can have several): read = article /
+   video = video / deck = slides. */
 export type GuideFormat = "read" | "video" | "deck";
 
 export interface ExploreItem {
@@ -29,23 +34,27 @@ export interface ExploreItem {
   fallback: boolean;
   publishedAt: Date;
   editorHandle: string;
-  /* 所属教程系列(letter 恒 null:月刊本身是期刊,不注册系列) */
+  /* Owning tutorial series (letters are always null: the monthly is a
+     periodical, never in a series). */
   series: string | null;
   tags: string[];
-  /* 教程集的时长(分钟;letter 恒 undefined) */
+  /* Episode duration in minutes (guides only; letters undefined). */
   durationMin?: number;
-  /* 产品/职业透镜(slug;guide 的 payload 打标,letter 契约暂不含 → 恒空) */
+  /* Product/role lenses (slugs; tagged in guide payloads, the letter
+     contract has none -> always empty). */
   products: string[];
   roles: string[];
-  /* 所属章(章主轴):继承链 payload.chapter ?? 所属系列的 series.chapter;
-     letter(月刊)不挂章 → 恒 null */
+  /* Owning chapter (the chapter axis): inheritance payload.chapter ?? the
+     series' chapter; letters never hang on a chapter -> always null. */
   chapter: string | null;
-  /* 封面(payload.cover;缺省 null → 列表卡自动章字砖) */
+  /* Cover (payload.cover; null by default -> the list card's automatic
+     chapter brick). */
   cover: string | null;
-  /* 章字砖色调(payload.coverTone,与作品名称砖同一色板;
-     null/theme = 跟随主题;封面图优先,图挂才回落色砖) */
+  /* Chapter-brick tone (payload.coverTone, same palette as work name
+     bricks); null/theme = follow the theme; a cover image wins, the tone
+     brick is the fallback. */
   coverTone: string | null;
-  /* 可得形态(派生:bodyMd/video/deck 的存在性) */
+  /* Available formats (derived from the presence of bodyMd/video/deck). */
   formats: GuideFormat[];
 }
 
@@ -54,10 +63,11 @@ export interface TaxonomyCount {
   count: number;
 }
 
-/* 形态推导(派生不说谎):有正文才有 read,有 video 才有 video,有 deck 才有
-   deck。read 恒在数组首位(canonical 文稿优先的呈现序)。
-   hasBody 由 SQL 算好((body_md IS NOT NULL AND TRIM(body_md)<>'') AS has_body):
-   列表/右栏不必整取 LONGTEXT(20260822 P2-5),取数面只花一个布尔。 */
+/* Format derivation (derived never lies): no body, no read; no video,
+   no video; no deck, no deck. read is always first (canonical text
+   first). hasBody comes precomputed from SQL ((body_md IS NOT NULL AND
+   TRIM(body_md)<>'') AS has_body) so lists and rails never fetch the
+   LONGTEXT — one boolean is all the data plane pays. */
 export function deriveFormats(
   hasBody: boolean,
   payload: unknown,
@@ -83,9 +93,9 @@ export interface ArchiveYear {
   months: ArchiveMonth[];
 }
 
-/* ---- 纯函数:计数 / 过滤 / 归档 ---- */
+/* ---- Pure functions: counts / filters / archive ---- */
 
-/* 分类(kind)计数:value 即 ArticleKind */
+/* Kind counts: value is the ArticleKind. */
 export interface KindCount {
   value: ArticleKind;
   count: number;
@@ -109,7 +119,8 @@ export function countTags(items: ExploreItem[]): TaxonomyCount[] {
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
 }
 
-/* 系列计数:只在册注册表系列,0 集的不出(与目录页「有集才上架」同口径) */
+/* Series counts: registered series only; empty ones don't appear (same
+   as the catalog's "only series with episodes ship"). */
 export function countSeries(items: ExploreItem[]): (TaxonomyCount & { slug: string })[] {
   const counts = new Map<string, number>();
   for (const i of items) {
@@ -119,7 +130,8 @@ export function countSeries(items: ExploreItem[]): (TaxonomyCount & { slug: stri
     .filter((c) => c.count > 0);
 }
 
-/* 产品透镜计数:按词表序出(主产品在前),0 计数不出 chips。 */
+/* Product lens counts: vocabulary order (primary first); 0 counts never
+   render chips. */
 export function countByProduct(items: ExploreItem[]): TaxonomyCount[] {
   const counts = new Map<string, number>();
   for (const i of items) {
@@ -130,7 +142,7 @@ export function countByProduct(items: ExploreItem[]): TaxonomyCount[] {
     .filter((c) => c.count > 0);
 }
 
-/* 职业透镜计数:同上(词表序,0 计数不出)。 */
+/* Role lens counts: same (vocabulary order, 0 counts never render). */
 export function countByRoles(items: ExploreItem[]): TaxonomyCount[] {
   const counts = new Map<string, number>();
   for (const i of items) {
@@ -141,14 +153,17 @@ export function countByRoles(items: ExploreItem[]): TaxonomyCount[] {
     .filter((c) => c.count > 0);
 }
 
-/* 职业落地页门槛(纯函数,页面缓建):该职业下已发布单元 ≥3 才允许策展
-   /explore/for/<role>(与「0 集系列不上架」同一条纪律——空分类墙不上架)。 */
+/* Role landing-page threshold (pure): a role needs >=3 published units
+   before /explore/for/<role> may be curated — same discipline as "empty
+   series don't ship": no walls of empty categories. */
 export function roleLandingEligible(items: ExploreItem[], role: string): boolean {
   return items.filter((i) => i.roles.includes(role)).length >= 3;
 }
 
-/* 章计数(章主轴):四章固定序,计数 = 该章命中的内容数(系列内集按继承链
-   解析后的 chapter);章是永久框架,页面渲染恒出四章、0 计数置灰。 */
+/* Chapter counts (the chapter axis): four chapters in fixed order; a
+   chapter's count = content resolving to it (series episodes via
+   inheritance); chapters are a permanent frame — the page always renders
+   all four, greying out zero counts. */
 export function countByChapter(items: ExploreItem[]): TaxonomyCount[] {
   return KB_CHAPTERS.map((c) => ({
     value: c.id,
@@ -156,7 +171,8 @@ export function countByChapter(items: ExploreItem[]): TaxonomyCount[] {
   }));
 }
 
-/* 归档:年倒序 → 月倒序 → 月内按发布时间倒序(UTC 口径,与 published_at 一致)。 */
+/* Archive: year desc -> month desc -> within a month by publish time desc
+   (UTC, consistent with published_at). */
 export function groupByArchive(items: ExploreItem[]): ArchiveYear[] {
   const byYear = new Map<string, Map<string, ExploreItem[]>>();
   for (const i of items) {
@@ -188,12 +204,14 @@ export interface ExploreSelection {
   series?: string;
   tag?: string;
   year?: string;
-  /* 章主轴(单选;再次点击取消 = 参数缺席) */
+  /* Chapter axis (single-select; clicking again clears = param absent). */
   chapter?: string;
-  /* 产品/职业透镜(单选;再次点击取消 = 参数缺席) */
+  /* Product/role lens (single-select; clicking again clears = param
+     absent). */
   product?: string;
   role?: string;
-  /* 形态过滤:单元「可得」该形态才命中(页面已不暴露筛选,lib 能力保留) */
+  /* Format filter: a unit matches only if the format is available (the
+     page no longer exposes the filter; the lib keeps the capability). */
   format?: GuideFormat;
 }
 
@@ -214,21 +232,23 @@ export function filterExploreItems(
   });
 }
 
-/* 分类维度的展示名(20260822:「教程」概念下线——guide 统称「文章」;
-   系列 = 内容的一种组合,现阶段不展示) */
+/* Kind display names ("tutorial" as a concept is retired — guides are
+   uniformly "articles"; series are one way to group content, not shown
+   for now). */
 export function categoryLabelOf(kind: ArticleKind, zh: boolean): string {
   if (kind === "letter") return zh ? "月刊评鉴" : "Monthly";
   return zh ? "文章" : "Article";
 }
 
-/* ---- DB:两 kind 合集 ---- */
+/* ---- DB: both kinds together ---- */
 
 function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
   const kind: ArticleKind = r.kind === "guide" ? "guide" : "letter";
   const payload =
     kind === "guide" ? guidePayloadFromDb(r.payload) : letterPayloadFromDb(r.payload);
   const seriesSlug = kind === "guide" ? (payload as { series?: string }).series ?? null : null;
-  /* 章继承链:集自带 chapter ?? 所属系列的注册表 chapter;letter 恒 null */
+  /* Chapter inheritance: an episode's own chapter ?? the series' registry
+     chapter; letters always null. */
   const seriesChapter = seriesSlug
     ? LEARN_SERIES.find((s) => s.slug === seriesSlug)?.chapter
     : undefined;
@@ -243,8 +263,9 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
     series: seriesSlug,
     tags: (payload as { tags?: string[] }).tags ?? [],
     durationMin: (payload as { durationMin?: number }).durationMin,
-    /* 透镜:payload 已在 fromDb 容错层过滤过非法 slug,这里直接取;
-       letter 的 payload 契约不含透镜字段 → 恒空数组 */
+    /* Lenses: the fromDb tolerance layer already filtered invalid slugs,
+       so take them directly; the letter payload contract has no lens
+       fields -> always empty. */
     products: (payload as { products?: string[] }).products ?? [],
     roles: (payload as { roles?: string[] }).roles ?? [],
     chapter: (payload as { chapter?: string }).chapter ?? seriesChapter ?? null,
@@ -254,8 +275,10 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
   };
 }
 
-/* 语言去重(与文章引擎 pickArticleVersions 同语义,字段不同步故本地实现):
-   同 slug 取 UI 语言版本,缺失回落另一语言并打 fallback 标。 */
+/* Language dedup (same semantics as the article engine's
+   pickArticleVersions, reimplemented locally — fields differ): per slug
+   pick the UI-locale version, falling back to the other language and
+   marking fallback. */
 function pickLocaleVersions(
   items: Omit<ExploreItem, "fallback">[],
   uiLocale: ArticleLocale,
@@ -289,9 +312,10 @@ export async function listExploreItems(
   return pickLocaleVersions(rows.map(mapExploreRow), uiLocale);
 }
 
-/* 文章详情右栏(ArticleRail)的元数据:按 slug 单查,React cache 与
-   同请求内的重复调用去重;未发布/不存在 → null(rail 不渲染)。
-   查询与 mapExploreRows 同构(章继承链/透镜/形态一次到位)。 */
+/* Article detail rail (ArticleRail) metadata: single lookup by slug,
+   React cache dedupes repeat calls within a request; unpublished/missing
+   -> null (the rail doesn't render). Same shape as mapExploreRows
+   (inheritance/lenses/formats resolved at once). */
 export const getArticleRailMeta = cache(
   async (slug: string, uiLocale: ArticleLocale): Promise<ExploreItem | null> => {
     const [rows] = await getPool().query<RowDataPacket[]>(

@@ -1,11 +1,13 @@
-/* UI 偏好(cookie 驱动,SSR 直出目标状态:无闪烁、无 JS 也能切换)。
-   kb_nav=1 → 左栏收成图标轨;kb_sidebar=0 → 右栏隐藏(左栏「界面」组重开);
-   kb_theme=light → 亮色主题(默认暗色);
-   kb_vibe=soft → 圆润经典气质(默认值可配置,见 src/lib/vibe.ts 的
-   DEFAULT_VIBE,20260822 起不再是本文件里的字面量);
-   kb_motion=reduce → 手动减动效(20260821 评审;默认不设 = 跟随系统
-   prefers-reduced-motion,切换器在设置页「偏好」)。
-   切换动作在 app/(app)/community/actions.ts 与 settings/actions.ts。 */
+/* UI preferences (cookie-driven, SSR renders the target state directly:
+   no flicker, switchable without JS). kb_nav=1 -> left rail collapses
+   to icons; kb_sidebar=0 -> right rail hidden (re-openable from the
+   left rail's "interface" group); kb_theme=light -> light theme (dark
+   by default); kb_vibe=soft -> rounded classic vibe (the default is
+   configurable via DEFAULT_VIBE in src/lib/vibe.ts, no longer a
+   literal here); kb_motion=reduce -> manually reduced motion (default
+   unset = follow prefers-reduced-motion; the toggle lives in settings
+   "preferences"). Toggle actions live in
+   app/(app)/community/actions.ts and settings/actions.ts. */
 import { cookies } from "next/headers";
 import { normalizeVibe, type Vibe } from "./vibe";
 

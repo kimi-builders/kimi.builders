@@ -1,26 +1,36 @@
-/* 品牌事务邮件骨架(深色品牌风,对齐站点 dark token —— Linear/Vercel 式事务邮件:
-   logo 头 + mono eyebrow + 大标题 + CTA 大按钮 + hairline 页脚)。
-   邮件 HTML 工程纪律:
-   - 只 table 布局 + 全内联样式;无 flex/grid/外部 CSS/类名(QQ/163/Gmail/Apple Mail)。
-   - 整封深底 #0e0e13(bgcolor 属性 + style 双写,防客户端剥离),深面板卡 + hairline。
-   - CTA 是「padding 撑开的 <a> 包在 bgcolor <td> 里」的防弹按钮,品牌蓝 #1783ff。
-   - logo 是远程 PNG,可能被默认拦截:alt 完整、正文/按钮一律真文本,无图也可读。
-   - 字体名一律单引号(双引号会截断外层双引号 style 属性;有回归测试守着)。
-   调用方只传受信内容;bodyHtml 是自家代码写的 HTML(模板不做转义),
-   title / eyebrow / cta.label / footnote 按纯文本转义。 */
+/* Brand transactional email skeleton (dark brand style matching the
+   site's dark tokens — a Linear/Vercel-style layout: logo header + mono
+   eyebrow + big title + large CTA button + hairline footer). Email HTML
+   engineering rules:
+   - Table layout + fully inline styles only; no flex/grid/external
+     CSS/class names (QQ/163/Gmail/Apple Mail compatibility).
+   - Whole message on a dark #0e0e13 base (bgcolor attribute + style
+     written twice — clients strip one), dark panel cards + hairlines.
+   - The CTA is a bulletproof button: a padding-stretched <a> inside a
+     bgcolor <td>, brand blue #1783ff.
+   - The logo is a remote PNG that clients may block by default: complete
+     alt text, body/buttons always real text — readable without images.
+   - Font names always single-quoted (double quotes would terminate the
+     outer double-quoted style attribute; a regression test guards it).
+   Callers pass trusted content only; bodyHtml is HTML written by our own
+   code (not escaped here); title / eyebrow / cta.label / footnote are
+   escaped as plain text. */
 
-/* 站点 dark 主题 token(见 app/globals.css;正文用暖白降档,避免深底上纯白刺眼) */
-const INK = "#0e0e13"; // 底色
-const PANEL = "#16161f"; // 深一层面板
-const PAPER = "#efe8dc"; // 暖白主文字
-const GREY = "#9a9aa5"; // 次要文字
-const BODY = "#c9c4ba"; // 正文
+/* Site dark theme tokens (see app/globals.css; body text uses a dimmed
+   warm white — pure white glares on dark). */
+const INK = "#0e0e13"; // base
+const PANEL = "#16161f"; // raised panel
+const PAPER = "#efe8dc"; // warm-white primary text
+const GREY = "#9a9aa5"; // secondary text
+const BODY = "#c9c4ba"; // body text
 const HAIRLINE = "rgba(255,255,255,0.12)";
 
-/* 字体名用单引号:FONT_STACK 要插进双引号的 style 属性里,双引号会提前截断属性 */
+/* Font names in single quotes: FONT_STACK is interpolated into a
+   double-quoted style attribute — double quotes would terminate it
+   early. */
 const FONT_STACK =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif";
-/* 邮件客户端不会加载网页字体,mono 用系统栈 */
+/* Email clients never load webfonts; mono uses a system stack. */
 const MONO_STACK = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
 
 export const BRAND_BLUE = "#1783ff";
@@ -36,19 +46,24 @@ export function escapeEmailHtml(value: string): string {
 }
 
 export interface BrandEmailInput {
-  /* 卡内大标题(纯文本,转义) */
+  /* Big in-card title (plain text, escaped). */
   title: string;
-  /* 卡内正文,调用方自写的可信 HTML 片段(<p> 等,样式内联) */
+  /* In-card body: a trusted HTML fragment written by the caller (<p>
+     etc., styles inlined). */
   bodyHtml: string;
-  /* 标题上方 mono 小字标签(纯文本,转义),如 KIMI.BUILDERS / SECURITY */
+  /* Small mono eyebrow above the title (plain text, escaped), e.g.
+     KIMI.BUILDERS / SECURITY. */
   eyebrow?: string;
-  /* CTA 按钮;缺省则整块不渲染(骨架可复用于无按钮的通知信) */
+  /* CTA button; absent = the whole block never renders (the skeleton
+     doubles for button-less notifications). */
   cta?: { label: string; href: string };
-  /* 页脚免责声明(纯文本,转义;\n 自动转 <br>);双语拼接由调用方完成 */
+  /* Footer note (plain text, escaped; \n becomes <br>); bilingual
+     concatenation is the caller's job. */
   footnote?: string;
-  /* 收件箱预览摘要(隐藏 preheader);缺省用 title */
+  /* Inbox preview summary (hidden preheader); defaults to the title. */
   preheader?: string;
-  /* 站点 absolute origin,拼 logo URL 与页脚链接;默认 https://kimi.builders */
+  /* Site absolute origin for the logo URL and footer links; defaults to
+     https://kimi.builders. */
   siteUrl?: string;
 }
 
@@ -132,7 +147,7 @@ export function renderBrandEmail(input: BrandEmailInput): string {
 </html>`;
 }
 
-/* ---- 具体事务邮件 ---- */
+/* ---- Concrete transactional emails ---- */
 
 export interface TransactionalMail {
   subject: string;
@@ -140,8 +155,10 @@ export interface TransactionalMail {
   html: string;
 }
 
-/* 忘记密码重置信:zh 段在前、en 段在后合一封(收件时不知道用户语言);
-   zh 用正文色、en 降次要色分出层级;text 纯文本始终同发兜底。 */
+/* Password-reset email: one message with the zh section first and the
+   en section after (the user's language is unknown at send time); zh in
+   body color, en dimmed to secondary for hierarchy; the plain-text
+   version always ships as a fallback. */
 export function renderPasswordResetMail({
   resetUrl,
   siteUrl,

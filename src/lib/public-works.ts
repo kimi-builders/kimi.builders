@@ -97,8 +97,9 @@ export interface PublicWorkDto {
   scope: string;
   logoKey: string;
   imageKeys: string[];
-  /* 20260908/20260916:色调/适配/独立封面——列表渲染要用,DTO 必须携带;
-     水合时对旧缓存负载给默认值兜底 */
+  /* Tone/fit/standalone cover fields the list rendering needs — the DTO
+     must carry them; hydration backfills defaults for older cached
+     payloads. */
   coverTone: string;
   coverFit: string;
   coverKey: string;
@@ -162,8 +163,10 @@ export function hydratePublicWorksPage(dto: PublicWorksPageDto): WorksPage {
   return {
     works: dto.works.map((work) => ({
       ...work,
-      /* 公共清单 DTO 不带收录开关/AI 开关/毕业归因来源(展示用不到),水合时补默认值;
-         20260908 前的旧缓存负载没有 cover_tone/cover_fit,同样补默认 */
+      /* The public list DTO carries no also-awesome/AI/graduation fields
+         (unused in display) — hydration backfills defaults; pre-20260908
+         cached payloads lack cover_tone/cover_fit and get the same
+         treatment. */
       alsoAwesome: false,
       aiReply: true,
       sourcePath: null,

@@ -1,11 +1,15 @@
-/* 章注册表(20260821 「章主轴」改版):探索区的主浏览轴。
-   使命句:从智能到创造力的最优转化(镜像官方 Seeking the optimal
-   conversion from energy to intelligence 的句式)。
-   四章是这条转化链上的四刀,也是用户的人生语言入口——学(信息→认知)、
-   做(认知→东西)、得(东西→价值)、立(价值→位置与自我)。
-   章存代码注册表(一年不动的永久框架,3-5 封顶),路(系列)挂章;
-   letter(月刊)不挂章——章是「路」的语言,期刊与其正交。
-   渲染按已发布内容计数,0 计数章在 seg 里置灰(恒可见)。 */
+/* Chapter registry: the explore section's primary browsing axis.
+   Mission statement: the optimal conversion from intelligence to
+   creativity (mirroring the official "Seeking the optimal conversion from
+   energy to intelligence"). The four chapters are four cuts along that
+   conversion chain and user-life entry points — learn (information ->
+   cognition), build (cognition -> artifact), measure (artifact -> value),
+   establish (value -> position and self). Chapters live in a code
+   registry (a permanent frame, capped at 3-5); series hang on chapters;
+   monthly letters never do — chapters are the language of "paths",
+   periodicals are orthogonal. Rendering counts published content;
+   zero-count chapters grey out in the segmented control (always
+   visible). */
 import type { L10n } from "./learn-series";
 
 export type ChapterId = "learn" | "build" | "gain" | "become";
@@ -14,7 +18,7 @@ export interface KbChapter {
   id: ChapterId;
   zh: string;
   en: string;
-  /* 定义句(章节头一句话) */
+  /* Defining sentence (the chapter header's one-liner). */
   tagline: L10n;
 }
 

@@ -1,11 +1,16 @@
-/* Demo Night v0(实施计划第三步,P3 提前):线上报名 + 归档页。
-   核心语义(战略支柱 1):到场名单公开 —— 报名即同意把 handle 署进该场到场名单,
-   名单按报名时间正序(先到场先署名);身体一次只能在一个地方,到场本身就是稀缺背书。
-   v0 运维方式:demo_events 的创建、改状态(upcoming → done)、回填回放链接一律
-   直接 SQL 维护,不建站内后台;文件末尾的 createDemoEvent / setDemoEventStatus /
-   setDemoEventStreamUrl 是给未来后台预留的写函数,当前只有迁移与手工 SQL 在写表。
-   starts_at 按 UTC 存储与展示(页面标注 UTC),v0 不做时区换算。
-   结构对齐 ./featured:纯查询构建在上半(单测直接测),DB 读写在下半组装。 */
+/* Demo Night v0: online RSVP + archive pages. Core semantics (strategic
+   pillar 1): the attendance list is public — signing up consents to your
+   handle being credited on that event's list, ordered by signup time
+   (first to arrive, first credited); you can only be in one place at a
+   time, so attendance is inherently scarce endorsement. v0 operations:
+   creating demo_events, changing status (upcoming -> done), and
+   backfilling stream links all happen via direct SQL — no in-site admin;
+   createDemoEvent / setDemoEventStatus / setDemoEventStreamUrl at the
+   bottom are write functions reserved for a future console; today only
+   migrations and hand-run SQL write the table. starts_at is stored and
+   shown in UTC (labeled on the page); v0 does no timezone conversion.
+   Structure aligned with ./featured: pure query builders on top
+   (unit-tested), DB assembly below. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 
@@ -15,18 +20,19 @@ export interface DemoEvent {
   id: number;
   title: string;
   startsAt: Date;
-  description: string; // Markdown 短文本
-  locationNote: string; // 如「线上 · 会议链接报名后可见」
-  streamUrl: string | null; // NULL=未公开
+  description: string; // short Markdown
+  locationNote: string; // e.g. "online · meeting link revealed after
+                         // RSVP"
+  streamUrl: string | null; // NULL = not public yet
   status: DemoEventStatus;
 }
 
-/* 归档列表条目:事件 + 到场人数。 */
+/* Archive list entry: an event + its attendance count. */
 export interface ArchivedDemoEvent extends DemoEvent {
   rsvpCount: number;
 }
 
-/* 到场名单条目:联 users 取署名所需的最小字段。 */
+/* Attendance entry: the minimal users join for credit display. */
 export interface RosterEntry {
   handle: string;
   name: string;
@@ -34,14 +40,17 @@ export interface RosterEntry {
   rsvpAt: Date;
 }
 
-/* 当前场汇总:右栏 widget 与页面头部共用。 */
+/* Current-event summary: shared by the rail widget and the page
+   header. */
 export interface UpcomingSummary {
   event: DemoEvent;
   rsvpCount: number;
-  rsvped: boolean; // 当前用户是否已报名(未登录恒 false)
+  rsvped: boolean; // whether the current user RSVPed (always false when
+                    // signed out)
 }
 
-/* 当前场:upcoming 中取开场时间最近的一场(同一时间取 id 小者,确定性)。 */
+/* Current event: the upcoming event starting soonest (lowest id on
+   ties, deterministic). */
 export function upcomingEventQuery(): { sql: string; args: number[] } {
   return {
     sql: `SELECT e.id, e.title, e.starts_at, e.description, e.location_note,
@@ -53,7 +62,8 @@ export function upcomingEventQuery(): { sql: string; args: number[] } {
   };
 }
 
-/* 归档:done 场次按开场时间倒序;到场人数随行子查询(v0 场次少,不建冗余计数列)。 */
+/* Archive: done events by start time desc; attendance count rides
+   along as a subquery (few events in v0, no redundant counter column). */
 export function archivedEventsQuery(limit: number): {
   sql: string;
   args: number[];
@@ -69,7 +79,8 @@ export function archivedEventsQuery(limit: number): {
   };
 }
 
-/* 单场到场名单:按报名时间正序 —— 先到场先署名(同秒按 user_id 定序)。 */
+/* One event's attendance: signup-time ascending — first to arrive,
+   first credited (user_id breaks same-second ties). */
 export function eventRosterQuery(eventId: number): {
   sql: string;
   args: number[];
@@ -84,7 +95,8 @@ export function eventRosterQuery(eventId: number): {
   };
 }
 
-/* 归档头像墙:一次取多场名单(避免 N+1),行序即署名序,按 event_id 分组在 JS。 */
+/* Archive avatar wall: many events' lists in one query (no N+1); row
+   order is credit order, grouped by event_id in JS. */
 export function rostersForEventsQuery(eventIds: number[]): {
   sql: string;
   args: number[];
@@ -99,9 +111,11 @@ export function rostersForEventsQuery(eventIds: number[]): {
   };
 }
 
-/* 报名:INSERT IGNORE 幂等(复合主键去重,重复报名不报错、不重复署名);
-   SELECT ... WHERE status='upcoming' 把「只能报当前场」钉死在 SQL 侧,
-   已归档场次即便被构造请求也写不进名单。affectedRows=1 才是新署名。 */
+/* RSVP: INSERT IGNORE is idempotent (composite PK dedupes; repeat
+   signups neither error nor double-credit); SELECT ... WHERE
+   status='upcoming' pins "only the current event" in SQL — archived
+   events reject even crafted requests. affectedRows=1 marks a new
+   credit. */
 export function rsvpQuery(eventId: number, userId: number): {
   sql: string;
   args: number[];
@@ -114,7 +128,8 @@ export function rsvpQuery(eventId: number, userId: number): {
   };
 }
 
-/* 取消报名:物理删除(无软删),名单只反映当前在场的人;幂等,不存在即 false。 */
+/* Cancel RSVP: physical delete (no soft delete) — the list reflects who
+   is in now; idempotent, missing rows return false. */
 export function cancelRsvpQuery(eventId: number, userId: number): {
   sql: string;
   args: number[];
@@ -125,16 +140,17 @@ export function cancelRsvpQuery(eventId: number, userId: number): {
   };
 }
 
-/* ---- 展示格式化(UTC 原样输出,确定性,单测直接测)---- */
+/* ---- Display formatting (UTC as-is, deterministic, unit-tested)
+   ---- */
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-/* 「2026-08-22 13:00 UTC」:当前场需要精确到分钟。 */
+/* "2026-08-22 13:00 UTC": the current event needs minute precision. */
 export function formatEventTime(d: Date): string {
   return `${formatEventDate(d)} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} UTC`;
 }
 
-/* 「2026-08-22」:归档列表只到日。 */
+/* "2026-08-22": the archive list stops at the day. */
 export function formatEventDate(d: Date): string {
   return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
 }
@@ -160,7 +176,8 @@ function mapRosterRow(r: RowDataPacket): RosterEntry {
   };
 }
 
-/* 多场名单行 → event_id 分组;行序(报名时间正序)在组内保持。 */
+/* Many events' rows -> grouped by event_id; row order (signup
+   ascending) is preserved within groups. */
 export function groupRosterRows(rows: RowDataPacket[]): Map<number, RosterEntry[]> {
   const map = new Map<number, RosterEntry[]>();
   for (const r of rows) {
@@ -173,7 +190,7 @@ export function groupRosterRows(rows: RowDataPacket[]): Map<number, RosterEntry[
   return map;
 }
 
-/* ---- DB 读 ---- */
+/* ---- DB reads ---- */
 
 export async function getUpcomingEvent(): Promise<DemoEvent | null> {
   const q = upcomingEventQuery();
@@ -193,7 +210,8 @@ export async function getEventRoster(eventId: number): Promise<RosterEntry[]> {
   return rows.map(mapRosterRow);
 }
 
-/* 归档头像墙批量取数;空列表短路(不拼 IN ())。 */
+/* Batch fetch for the archive avatar wall; empty lists short-circuit
+   (never build IN ()). */
 export async function getEventRosters(
   eventIds: number[],
 ): Promise<Map<number, RosterEntry[]>> {
@@ -203,7 +221,8 @@ export async function getEventRosters(
   return groupRosterRows(rows);
 }
 
-/* 当前场 + 人数 + 当前用户报名态:未登录传 null(mine 恒 0)。 */
+/* Current event + count + the current user's RSVP state: pass null
+   when signed out (mine stays 0). */
 export async function getUpcomingSummary(
   userId: number | null,
 ): Promise<UpcomingSummary | null> {
@@ -222,7 +241,8 @@ export async function getUpcomingSummary(
   };
 }
 
-/* ---- 写(RSVP 的鉴权在 action 层:必须登录;幂等性见 rsvpQuery 注释)---- */
+/* ---- Writes (RSVP auth lives in the action layer: login required;
+   idempotency per the rsvpQuery comment) ---- */
 
 export async function rsvp(eventId: number, userId: number): Promise<boolean> {
   const q = rsvpQuery(eventId, userId);
@@ -239,8 +259,9 @@ export async function cancelRsvp(
   return res.affectedRows > 0;
 }
 
-/* ---- 场次运维写函数(v0 无站内 UI:创建/改状态/回填回放直接 SQL;
-   以下留给未来的后台界面调用,当前不在任何路由里接线)---- */
+/* ---- Event ops writes (v0 has no in-site UI: create/status/stream
+   backfill via direct SQL; the following await a future console and are
+   wired to no route today) ---- */
 
 export interface DemoEventInput {
   title: string;

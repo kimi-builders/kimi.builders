@@ -1,8 +1,11 @@
-/* 首页数据组装:社区统计 + 全站 token 累计 + 本周精选(空则回落 7 日热门)。
-   数据层 ISR:首页海报带 AuthChip(cookies,按请求动态),路由级 ISR 不成立,
-   所以缓存打在查询层 —— unstable_cache(revalidate 300),全站共享一份,
-   精选/取消精选的 server action 里 updateTag(HOME_CACHE_TAG) 即时作废,
-   保证「管理员操作后首页即时可见」(1.3 验收)。海报主体仍是静态标记。 */
+/* Home page data assembly: community stats + site-wide token total + this
+   week's featured (falling back to 7-day hot when empty). Query-level
+   ISR: the home page carries AuthChip (cookies, per-request dynamic), so
+   route-level ISR is impossible — the cache sits at the query layer
+   instead (unstable_cache, revalidate 300), one shared copy site-wide;
+   the feature/unfeature server actions updateTag(HOME_CACHE_TAG) for
+   instant invalidation so admin actions show up immediately. The poster
+   body itself stays static markup. */
 import { unstable_cache } from "next/cache";
 import { getFeaturedFeed, type FeaturedItem } from "./featured";
 import {
@@ -15,13 +18,15 @@ import { getCommunityTokenTotal } from "./usage/community";
 
 export const HOME_CACHE_TAG = "home";
 
-/* featuredAt 不进首页载荷(渲染不展示,且 Date 过缓存会序列化成串,干脆不带)。 */
+/* featuredAt never enters the home payload (not rendered, and Date
+   serializes to a string through the cache — omitted on purpose). */
 export type HomeFeaturedItem = Omit<FeaturedItem, "featuredAt">;
 
 export interface HomeData {
   stats: CommunityStats & { tokens: number };
   featured: HomeFeaturedItem[];
-  /* 无任何精选时的回落:7 日热门;两者皆空 → 首页不渲染该区块(冷启动不出空壳) */
+  /* Fallback when nothing is featured: 7-day hot; both empty -> the
+     section never renders (no empty shells during cold start). */
   hot: HotPost[];
 }
 
@@ -35,7 +40,8 @@ async function loadHomeData(): Promise<HomeData> {
   return {
     stats: { ...stats, tokens },
     featured: featured.map((f) => {
-      /* featuredAt 不进首页载荷(渲染不展示;Date 过缓存会序列化成串,干脆不带) */
+      /* featuredAt never enters the home payload (not rendered; Date
+         serializes to a string through the cache — omitted on purpose). */
       const { featuredAt, ...rest } = f;
       void featuredAt;
       return rest;

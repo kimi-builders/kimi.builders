@@ -1,9 +1,12 @@
-/* 产品词表注册表(20260821 探索「货架 + 透镜」改版):探索区的领域透镜。
-   产品是「我在用 X」的查找心智——做筛选 facet 与卡片图标,不做内容架子
-   (架子只有一个:系列)。与 cover-tones / learn-series 同范式:
-   策展词表存代码不入库,slug 供 payload.products / URL / 交叉链接共用;
-   渲染按已发布内容计数,0 计数不出 chips(与「0 集系列不上架」同口径)。
-   词表变更走 PR 评审(代码评审即编辑评审),不开放自由添加。 */
+/* Product vocabulary registry: the explore section's domain lens.
+   Products match the "I'm using X" lookup mindset — filter facets and
+   card icons, never content shelves (there is exactly one shelf: the
+   series). Same pattern as cover-tones / learn-series: a curated
+   vocabulary stored in code, with slugs shared by payload.products /
+   URLs / cross-links; rendering counts published content and zero-count
+   products never render chips (same rule as empty series). Vocabulary
+   changes go through PR review (code review is editorial review) — no
+   free-form additions. */
 import {
   CalendarClock,
   FileText,
@@ -20,14 +23,15 @@ import {
 } from "lucide-react";
 
 export interface KbProduct {
-  /* payload.products / URL ?product= 用的稳定 slug */
+  /* Stable slug for payload.products / URL ?product=. */
   id: string;
   zh: string;
   en: string;
   icon: LucideIcon;
 }
 
-/* Kimi 生态在册产品(20260821 首批 11 项;主产品在前,应用能力在后)。 */
+/* Registered Kimi-ecosystem products (first batch of 11; primary
+   products first, capabilities after). */
 export const KB_PRODUCTS: KbProduct[] = [
   { id: "kimi-code", zh: "Kimi Code", en: "Kimi Code", icon: SquareCode },
   { id: "kimi-design", zh: "Kimi Design", en: "Kimi Design", icon: Palette },

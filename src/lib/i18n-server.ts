@@ -1,5 +1,6 @@
-/* 服务端专属:解析当前请求的 UI 语言(优先级见 ./i18n 文件头)。
-   拆出独立文件是因为 i18n.ts 要能被客户端组件引用,不能沾 next/headers。 */
+/* Server-only: resolves the current request's UI language (priority in
+   the ./i18n header). Split into its own file because i18n.ts must stay
+   client-importable and cannot touch next/headers. */
 import { cookies, headers } from "next/headers";
 import { getSessionUser, type SessionUser } from "./auth/session";
 import type { Locale } from "./i18n";

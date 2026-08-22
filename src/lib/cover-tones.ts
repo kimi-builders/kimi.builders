@@ -1,14 +1,19 @@
-/* 名称砖色调注册表(20260908 引入;20260916 起为 跟随主题/绿/蓝/黑 纯平色卡;
-   20260918 双主题化;20260819 色值换入 Kimi 品牌体系,不再自造色相):
-   无上传封面作品的列表封面。色值全部取自品牌手册——蓝 = 官方深蓝/浅蓝对
-   (#002F5B / #A0DAF7),绿档改薄荷(官方状态绿 #B3F4A8 + ink 字,双主题同渲染),
-   黑 = 官方 CLI 纯黑 #000 / ink #121212。id 不变(theme/green/blue/black),
-   存量 works.cover_tone 零迁移,色板即所得。
-   theme = 跟随主题(深空/站点白,globals.css .work-cover-tile);固定色 = 砖色
-   随主题切换(globals.css 的 .work-tone-* 类,响应式跟随 data-theme,
-   JS 侧只发类名;本表 hex 仅为文档对照,渲染以 CSS 为准)。
-   增删色档:改这里 + globals.css 对应类;表单色板与 works.cover_tone 白名单读注册表。
-   旧色档 id 由迁移 20260916 映射到绿/蓝/黑。 */
+/* Name-brick tone registry (flat cards: follow-theme / green / blue /
+   black; dual-theme aware; colors come from the Kimi brand system, no
+   invented hues): the list cover for works without an uploaded one.
+   Every value comes from the brand book — blue = the official deep/light
+   pair (#002F5B / #A0DAF7), green is mint (the official status green
+   #B3F4A8 + ink text, same rendering in both themes), black = the
+   official CLI pure black #000 / ink #121212. Ids never change
+   (theme/green/blue/black), so existing works.cover_tone needs zero
+   migration — the palette is what you get. theme follows the active
+   theme (globals.css .work-cover-tile); fixed tones shift with the theme
+   via the .work-tone-* classes (driven by data-theme; JS only emits the
+   class name — the hex values here are documentation, CSS is the
+   truth). Adding/removing a tone: change this file plus the matching
+   class in globals.css; the form palette and the works.cover_tone
+   allowlist read this registry. Legacy tone ids were mapped to
+   green/blue/black by a migration. */
 export const COVER_TONES = [
   { id: "theme", dark: null, light: null, zh: "跟随主题", en: "Theme" },
   { id: "green", dark: "#B3F4A8", light: "#B3F4A8", zh: "薄荷卡", en: "Mint" },
@@ -22,8 +27,9 @@ export function isCoverTone(id: string): id is CoverToneId {
   return COVER_TONES.some((tone) => tone.id === id);
 }
 
-/* theme 返回 null(走 .work-cover-tile 主题样式);固定色返回 globals.css
-   里的色调类(.work-tone 公共层 + .work-tone-{id} 色档,含浅色覆盖)。 */
+/* theme returns null (the .work-cover-tile theme style applies); fixed
+   tones return the globals.css tone class (.work-tone base +
+   .work-tone-{id}, light-theme overrides included). */
 export function coverToneClass(id: string): string | null {
   return isCoverTone(id) && id !== "theme" ? `work-tone work-tone-${id}` : null;
 }
@@ -33,10 +39,13 @@ export function coverToneName(id: string, zh: boolean): string {
   return zh ? tone.zh : tone.en;
 }
 
-/* 名称砖纹理变体(20260821 评审):色档保持少而重(三固定色 + theme),
-   密度上来后同色砖重复率高、视觉节奏单调;按砖面标识(产品名)稳定哈希,
-   让约一半砖带细网格纹理(.work-tile-grid,色档与主题渲染都在 CSS),
-   同名砖保持同纹理(名称砖本就按名生成)。纯函数,单测直接测。 */
+/* Name-brick texture variants: with few tones (three fixed + theme),
+   rising density means same-color bricks repeat and the rhythm goes
+   monotone; a stable hash over the brick's label (the product name)
+   gives roughly half the bricks a fine grid texture (.work-tile-grid —
+   tone and theming live in CSS); same-name bricks keep the same texture
+   (name bricks are generated from names anyway). Pure function,
+   unit-tested directly. */
 export function coverTextureClass(key: string): "work-tile-grid" | null {
   let hash = 0;
   for (let i = 0; i < key.length; i++) {

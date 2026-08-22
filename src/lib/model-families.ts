@@ -1,6 +1,8 @@
-/* 开发模型家族(作品库表单/详情/卡片用):家族级预设,带厂商图标(ModelIcon)。
-   家族而非具体型号:图标只到厂商级;型号月月换代,家族稳定不漂移;
-   具体型号可走自填文本(原样存储展示)。 */
+/* Development model families (work form/detail/card): family-level
+   presets with vendor icons (ModelIcon). Families, not concrete models:
+   icons only go to vendor level; models churn monthly while families
+   stay stable; a concrete model can be typed free-form (stored and
+   shown as-is). */
 export const MODEL_FAMILIES = [
   { id: "kimi", name: "Kimi" },
   { id: "claude", name: "Claude" },
@@ -21,7 +23,8 @@ export function isModelFamily(id: string): id is ModelFamilyId {
   return MODEL_FAMILIES.some((f) => f.id === id);
 }
 
-/* 家族展示名:中文家族(豆包/文心一言)在 EN 界面用英文厂商名,其余家族两种语言同形。 */
+/* Family display names: Chinese families use the English vendor name on
+   the EN interface; other families share one form across languages. */
 export function modelFamilyName(id: string, locale?: "zh" | "en"): string {
   const family = MODEL_FAMILIES.find((f) => f.id === id);
   if (!family) return id;

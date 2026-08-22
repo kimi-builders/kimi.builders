@@ -1,6 +1,9 @@
-/* 探索筛选器启用配置(20260822):哪些透镜下拉出现在 /explore 工具行与右栏。
-   按内容供给渐次开——没内容的维度先关着(职业/归档),词表与计数逻辑都在,
-   翻开即用;数组顺序 = 下拉顺序。改这里,页面与右栏(ExploreRail)同步生效。 */
+/* Explore filter enablement: which lens dropdowns appear in the
+   /explore toolbar and rail. Dimensions open gradually with content
+   supply — empty dimensions (roles/archive) stay closed, vocabulary and
+   counting logic already in place, ready to switch on; array order =
+   dropdown order. Changing this file updates the page and the rail
+   (ExploreRail) together. */
 export type ExploreFilterKey = "product" | "role" | "tag" | "year";
 
 export const ENABLED_EXPLORE_FILTERS: readonly ExploreFilterKey[] = [

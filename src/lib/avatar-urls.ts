@@ -1,5 +1,7 @@
-/* 可持久化头像 URL 白名单。头像会在社区多处由访客浏览器直接请求，因此只允许
-   自家媒体 host 或明确的 OAuth provider 图片 host，避免成员植入跟踪像素。 */
+/* Persisted avatar URL allowlist. Visitors' browsers request avatars
+   directly from many places, so only our media host or explicit OAuth
+   provider image hosts are allowed — members cannot plant tracking
+   pixels. */
 
 export const DEFAULT_AVATAR_CDN_BASE_URL = "https://cdn.kimi.builders";
 export const OAUTH_AVATAR_EXACT_HOSTS = ["avatars.githubusercontent.com"] as const;

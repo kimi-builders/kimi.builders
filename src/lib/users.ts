@@ -1,5 +1,6 @@
-/* 用户资料与账号的查询/变更(设置页、个人主页用)。
-   登录态会话查询在 ./auth/session;注册落库在 ./auth/users。 */
+/* Profile and account queries/mutations (settings page, profile page).
+   Session lookups live in ./auth/session; signup upserts in
+   ./auth/users. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { isAllowedAvatarUrl } from "./avatar-urls";
 import { getPool } from "./db";
@@ -10,8 +11,9 @@ export interface UserProfile {
   name: string;
   avatarUrl: string;
   bio: string;
-  /* 资料字段级隐私(20260829_profile_privacy):1=公开(默认),0=仅自己;
-     生效范围仅个人主页展示(见 profileDisplay),帖子/评论区发言标识不受影响 */
+  /* Per-field profile privacy: 1=public (default), 0=self only; it
+     gates the profile page display alone (see profileDisplay) — post and
+     comment attribution is unaffected. */
   showAvatar: boolean;
   showName: boolean;
   showBio: boolean;
@@ -44,9 +46,10 @@ export async function getProfileByHandle(
   };
 }
 
-/* 个人主页的展示口径(纯函数,本人视角不受限):
-   头像隐藏 → 空串(调用方回落 handle 首字符);显示名隐藏 → 只显示 @handle;
-   简介隐藏 → 空串(简介区不渲染)。 */
+/* Profile display rules (pure; the owner's own view is unrestricted):
+   hidden avatar -> empty string (callers fall back to the handle's
+   first character); hidden display name -> @handle only; hidden bio ->
+   empty string (the bio section never renders). */
 export interface ProfileDisplay {
   avatarUrl: string;
   displayName: string;
@@ -71,7 +74,8 @@ export function profileDisplay(
   };
 }
 
-/* 设置页用的完整自有资料(SessionUser 不含 bio/email)。 */
+/* Full own-profile for the settings page (SessionUser carries no
+   bio/email). */
 export interface OwnProfile extends UserProfile {
   email: string | null;
   locale: string;
@@ -113,7 +117,8 @@ export interface ProfileStats {
   likes: number;
 }
 
-/* 主页统计。self=false(访客视角)时帖子/评论只数公开且未被屏蔽的,不泄露私密/被屏蔽量。 */
+/* Profile stats. self=false (visitor view) counts only public,
+   unhidden posts/comments — private/hidden counts never leak. */
 export async function getProfileStats(
   userId: number,
   self: boolean,
@@ -142,15 +147,18 @@ export async function getProfileStats(
   };
 }
 
-/* handle:小写字母/数字/下划线,1–28 位,至少含一个字母或数字。 */
+/* Handle: lowercase letters/digits/underscores, 1-28 chars, at least
+   one letter or digit. */
 export function validateHandle(h: string): boolean {
   return /^[a-z0-9_]{1,28}$/.test(h) && /[a-z0-9]/.test(h);
 }
 
 export type UpdateProfileResult = "ok" | "taken" | "invalid" | "avatar_invalid";
 
-/* 资料更新:handle 变更要过格式 + 唯一性(排除自己);空 avatarUrl = 不修改;
-   clearAvatar = 显式清空(恢复默认,下次 OAuth 登录重新同步 provider 头像)。 */
+/* Profile update: handle changes validate format + uniqueness
+   (excluding self); an empty avatarUrl = no change; clearAvatar = an
+   explicit reset to default (the next OAuth login re-syncs the provider
+   avatar). */
 export async function updateProfile(
   userId: number,
   fields: { handle: string; name: string; bio: string; avatarUrl: string; clearAvatar?: boolean },
@@ -184,7 +192,7 @@ export async function updateProfile(
   return res.affectedRows > 0 ? "ok" : "invalid";
 }
 
-/* AI 回复偏好(v2 决策 3 的两个全局开关)。 */
+/* AI reply preferences (the two global switches). */
 export async function updateAiPrefs(
   userId: number,
   prefs: { aiRepliesEnabled: boolean; showAiReplies: boolean },
@@ -195,8 +203,9 @@ export async function updateAiPrefs(
   );
 }
 
-/* 资料展示隐私(20260829_profile_privacy):头像/显示名/简介三个独立开关,
-   1=公开 0=仅自己;仅影响个人主页展示(见 profileDisplay)。 */
+/* Profile display privacy: three independent switches (avatar/display
+   name/bio), 1=public 0=self only; affects the profile page display
+   alone (see profileDisplay). */
 export async function updateProfilePrivacy(
   userId: number,
   prefs: { showAvatar: boolean; showName: boolean; showBio: boolean },

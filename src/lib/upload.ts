@@ -1,6 +1,8 @@
-/* 客户端上传共用 helper:POST /api/upload(multipart:kind + file)。
-   成功返回内容寻址 key 与完整 CDN URL;失败抛出带服务端 error code 的 Error,
-   调用方按自身 UI 落错误态。仅浏览器端使用(依赖 fetch FormData 上传)。 */
+/* Shared client upload helper: POST /api/upload (multipart: kind +
+   file). Success returns the content-addressed key and the full CDN
+   URL; failure throws an Error carrying the server's error code —
+   callers map it to their own UI. Browser-only (relies on fetch
+   FormData upload). */
 export interface UploadedMedia {
   key: string;
   url: string;

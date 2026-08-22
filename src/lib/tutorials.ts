@@ -1,17 +1,23 @@
-/* 教程(payload 契约 + 查询组装,20260820 知识库教程化改造)
-   一集教程 = articles(kind='guide') 一行:标题/摘要/文稿正文/双语版本照旧;
-   频道语义全在 payload(JSON 列):
-   · series      — 所属系列 slug(src/lib/learn-series.ts 注册表在册校验);
-   · video       — { provider: "bilibili" | "youtube", id }(平台嵌入;缺省 = 文稿教程);
-   · deck        — 演示稿链接(站内路径或 https,可选);
-   · durationMin — 时长(分钟,正整数,可选);
-   · scenario    — 场景标签(如「工作流自动化」;≤40 字,可选);
-   · aiNote      — AI 参与披露(≤280 字,可选;渲染进详情页脚);
-   · products    — 产品透镜(≤3,slug 须在 kb-products.ts 在册;主产品在前);
-   · roles       — 职业透镜(≤3,slug 须在 kb-roles.ts 在册);
-   · resources   — 相关链接(≤8 条,可选 kind 分型:official/resource/prompt/skill/file)。
-   校验严格(编辑后台就地报错)与渲染容错(guidePayloadFromDb 回落空)分离,
-   与月刊 letter payload(src/lib/monthly.ts)同一范式。 */
+/* Tutorials (payload contract + query assembly). One episode = one
+   articles row (kind='guide'): title/summary/body/bilingual versions as
+   usual; channel semantics live entirely in the payload (JSON column):
+   - series      - owning series slug (validated against the registry in
+                   src/lib/learn-series.ts);
+   - video       - { provider: "bilibili" | "youtube", id } (platform
+                   embed; absent = text tutorial);
+   - deck        - slide deck link (on-site path or https, optional);
+   - durationMin - duration in minutes (positive integer, optional);
+   - scenario    - scenario label (<=40 chars, optional);
+   - aiNote      - AI participation disclosure (<=280 chars, optional;
+                   rendered in the detail footer);
+   - products    - product lens (<=3, slugs registered in kb-products.ts;
+                   primary first);
+   - roles       - role lens (<=3, slugs registered in kb-roles.ts);
+   - resources   - related links (<=8, optional kind: official/resource/
+                   prompt/skill/file).
+   Strict validation (inline errors in the edit console) is separated from
+   tolerant rendering (guidePayloadFromDb falls back to empty), the same
+   pattern as the letter payload in src/lib/monthly.ts. */
 import {
   getArticleBySlug,
   listArticles,
@@ -25,15 +31,16 @@ import { isCoverTone } from "./cover-tones";
 import { findLearnSeries } from "./learn-series";
 import { normalizeTags } from "./monthly";
 
-/* ---- payload 契约与校验 ---- */
+/* ---- Payload contract and validation ---- */
 
 export interface GuideVideo {
   provider: "bilibili" | "youtube";
   id: string;
 }
 
-/* 资源分型(20260821 透镜改版):官方链接/推荐资源/提示词/SKILLS/源文件,
-   详情页资源 tab 按 kind 分组渲染;缺省 = 推荐资源。 */
+/* Resource kinds: official link / recommended resource / prompt / SKILLS
+   / source file; the detail page's resources tab groups by kind; default
+   = recommended resource. */
 export type GuideResourceKind =
   | "official"
   | "resource"
@@ -57,27 +64,30 @@ export interface GuideResource {
 
 export interface GuidePayload {
   series?: string;
-  /* 所属章(单篇教程用,slug 见 kb-chapters.ts;系列内的集不需要——
-     章挂在系列注册表上,聚合层按继承链解析) */
+  /* Owning chapter (standalone tutorials; slugs in kb-chapters.ts;
+     episodes in a series don't need it — the chapter hangs on the series
+     registry, resolved by inheritance in the aggregation layer). */
   chapter?: string;
-  /* 封面(可选):站内路径或 https 图片;列表横列卡左列。缺省 = 自动章字砖 */
+  /* Cover (optional): on-site path or https image on the list card's
+     left column; default = the automatic chapter brick. */
   cover?: string;
-  /* 章字砖色调(20260822,与作品名称砖同一色板):无上传封面/图挂时生效;
-     白名单见 cover-tones.ts(theme = 跟随主题,缺省) */
+  /* Chapter-brick tone (same palette as work name bricks): applies
+     without an uploaded cover/image; allowlist in cover-tones.ts (theme =
+     follow the theme, default). */
   coverTone?: string;
   video?: GuideVideo;
   deck?: string;
   durationMin?: number;
   scenario?: string;
   aiNote?: string;
-  /* 探索四维的标签维(20260821):≤5 个,每标签 ≤24 字 */
+  /* Tag dimension of the explore lenses: <=5 tags, <=24 chars each. */
   tags?: string[];
-  /* 资源 tab:相关链接(≤8 条) */
+  /* Resources tab: related links (<=8). */
   resources?: GuideResource[];
-  /* 产品透镜(20260821 货架+透镜):slug 须在 kb-products.ts 注册表;
-     ≤3 个,主产品在前 */
+  /* Product lens: slugs must be registered in kb-products.ts; <=3,
+     primary first. */
   products?: string[];
-  /* 职业透镜:slug 须在 kb-roles.ts 注册表;≤3 个 */
+  /* Role lens: slugs must be registered in kb-roles.ts; <=3. */
   roles?: string[];
 }
 
@@ -96,8 +106,9 @@ function boundedString(v: unknown, max: number): string | null {
   return s;
 }
 
-/* 透镜 slug 列表共用校验:数组 ≤max 项、逐项在册(注册表 slug 白名单)、
-   去重。编辑路径严格(不在册就地报错);渲染路径另有容错版。 */
+/* Shared lens-slug validation: array <=max, each registered (registry
+   allowlist), deduped. Strict on the edit path (inline errors); the
+   render path has its own tolerant variant. */
 function normalizeLensIds(
   value: unknown,
   max: number,
@@ -123,7 +134,8 @@ function normalizeLensIds(
   return { ok: true, ids };
 }
 
-/* 渲染路径的容错版:丢非法项,合法项保留(不打掉整页)。 */
+/* Tolerant variant for rendering: drop invalid items, keep valid ones
+   (never kills the page). */
 function lensIdsFromDb(
   value: unknown,
   max: number,
@@ -253,7 +265,8 @@ export function validateGuidePayload(value: unknown): GuidePayloadParse {
   return { ok: true, payload };
 }
 
-/* 编辑后台入口:JSON 文本 → 严格校验;空串 → ok + 空 payload(NULL 语义)。 */
+/* Edit-console entry: JSON text -> strict validation; empty string -> ok
+   + empty payload (NULL semantics). */
 export function parseGuidePayload(raw: string): GuidePayloadParse {
   const text = raw.trim();
   if (!text) return { ok: true, payload: {} };
@@ -266,8 +279,10 @@ export function parseGuidePayload(raw: string): GuidePayloadParse {
   return validateGuidePayload(value);
 }
 
-/* DB 读取入口(渲染路径):容错——非法内容回落空 payload,不打掉整页。
-   注意:渲染路径不做 series 在册校验(系列从注册表删了,已发布的集照常可读)。 */
+/* DB read entry (render path): tolerant — invalid content falls back to
+   an empty payload, never killing the page. Note: the render path skips
+   series-registry validation (if a series is removed from the registry,
+   published episodes stay readable). */
 export function guidePayloadFromDb(raw: unknown): GuidePayload {
   if (raw === null || raw === undefined || raw === "") return {};
   let value: unknown = raw;
@@ -305,7 +320,8 @@ export function guidePayloadFromDb(raw: unknown): GuidePayload {
   if (scenario) payload.scenario = scenario;
   const aiNote = boundedString(value.aiNote, 280);
   if (aiNote) payload.aiNote = aiNote;
-  /* 容错路径:tags/resources 单项非法只丢该项,不拖累整个 payload */
+  /* Tolerant path: an invalid tags/resources item drops alone, never
+     taking down the payload. */
   if (Array.isArray(value.tags)) {
     const r = normalizeTags(value.tags);
     if (r.ok && r.tags.length) payload.tags = r.tags;
@@ -325,7 +341,8 @@ export function guidePayloadFromDb(raw: unknown): GuidePayload {
     }
     if (resources.length) payload.resources = resources;
   }
-  /* 透镜容错:非法 slug 只丢该项(渲染路径不做在册校验的同款口径) */
+  /* Tolerant lenses: an invalid slug drops alone (same idea as skipping
+     registry checks on the render path). */
   const products = lensIdsFromDb(value.products, 3, isKbProductId);
   if (products.length) payload.products = products;
   const roles = lensIdsFromDb(value.roles, 3, isKbRoleId);
@@ -333,9 +350,9 @@ export function guidePayloadFromDb(raw: unknown): GuidePayload {
   return payload;
 }
 
-/* ---- 展示形态与查询组装 ---- */
+/* ---- Display shapes and query assembly ---- */
 
-/* 一集教程(列表/详情共用渲染契约)。 */
+/* One tutorial episode (render contract shared by list/detail). */
 export interface Tutorial {
   slug: string;
   title: string;
@@ -343,10 +360,11 @@ export interface Tutorial {
   locale: "zh" | "en";
   fallback: boolean;
   publishedAt: Date;
-  /* 集序(sort_order,1 起;0 = 未编号,排尾) */
+  /* Episode number (sort_order, 1-based; 0 = unnumbered, sorts last). */
   episode: number;
   payload: GuidePayload;
-  /* 所属系列(渲染期解析;不在册 = null,集仍可读) */
+  /* Owning series (resolved at render; unregistered = null, the episode
+     stays readable). */
   series: string | null;
 }
 
@@ -369,7 +387,8 @@ function toTutorial(a: ArticleListItem): Tutorial {
   };
 }
 
-/* 集排序:集序升序,未编号(0)排尾,再按发布时间。 */
+/* Episode ordering: number ascending, unnumbered (0) last, then by
+   publish time. */
 export function compareTutorials(a: Tutorial, b: Tutorial): number {
   const ea = a.episode > 0 ? a.episode : Number.MAX_SAFE_INTEGER;
   const eb = b.episode > 0 ? b.episode : Number.MAX_SAFE_INTEGER;
@@ -377,7 +396,8 @@ export function compareTutorials(a: Tutorial, b: Tutorial): number {
   return a.publishedAt.getTime() - b.publishedAt.getTime();
 }
 
-/* 频道目录:全部已发布集按系列分组(系列只出「有集」的)+ 最新教程流。 */
+/* Channel catalog: all published episodes grouped by series (only series
+   with episodes appear) + the latest-tutorials stream. */
 export async function getChannelOverview(uiLocale: "zh" | "en"): Promise<{
   bySeries: Map<string, Tutorial[]>;
   latest: Tutorial[];
@@ -398,7 +418,7 @@ export async function getChannelOverview(uiLocale: "zh" | "en"): Promise<{
   return { bySeries, latest };
 }
 
-/* 系列页:该系列的已发布集(按集序)。 */
+/* Series page: the series' published episodes (by number). */
 export async function getSeriesTutorials(
   seriesSlug: string,
   uiLocale: "zh" | "en",
@@ -410,7 +430,8 @@ export async function getSeriesTutorials(
     .sort(compareTutorials);
 }
 
-/* 集详情:系列 slug + 集 slug 双定位;系列不在册/集不归此系列 → null(页面 404)。 */
+/* Episode detail: located by series slug + episode slug; series
+   unregistered or episode not in it -> null (page 404s). */
 export async function getTutorial(
   seriesSlug: string,
   episodeSlug: string,
@@ -427,8 +448,10 @@ export async function getTutorial(
   };
 }
 
-/* 集详情(探索区单 slug 定位,/explore/<slug>):系列从 payload.series 读出,
-   不在册/缺失 → seriesTutorials 空数组(详情仍可读,只是没有系列上下文)。 */
+/* Episode detail (explore single-slug form, /explore/<slug>): the series
+   is read from payload.series; unregistered/missing -> empty
+   seriesTutorials (the detail stays readable, just without series
+   context). */
 export async function getTutorialBySlug(
   episodeSlug: string,
   uiLocale: "zh" | "en",
@@ -445,7 +468,7 @@ export async function getTutorialBySlug(
   return { tutorial, seriesTutorials };
 }
 
-/* 详情页上/下集导航(按集序)。 */
+/* Prev/next episode navigation on the detail page (by number). */
 export function episodeNeighbors(
   list: Tutorial[],
   slug: string,

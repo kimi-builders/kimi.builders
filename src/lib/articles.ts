@@ -1,10 +1,14 @@
-/* 文章引擎(S3-1):一张 articles 表承载两个分区 ——
-   /blog 月刊(kind='letter')与 /learn 策划制学习路径(kind='guide')。
-   双语版本 = 同 slug 两行不同 locale,(slug, locale) 复合唯一;列表按当前 UI 语言优先,
-   缺失时回落另一语言并在卡片标注语言(pickArticleVersions 打 fallback 标)。
-   published_at NULL = 草稿(前台不露出);撤稿 = 置回 NULL;软删 deleted_at 风格对齐 posts。
-   校验 / 查询构建 / 语言回落是纯函数(单测直接测),DB 读写在文件下半部分组装;
-   写法对齐 ./featured。 */
+/* Article engine: one articles table serves two sections — /blog monthly
+   letters (kind='letter') and /learn curated learn series
+   (kind='guide'). Bilingual versions = two rows sharing a slug with
+   different locales, (slug, locale) composite-unique; lists prefer the
+   current UI locale, falling back to the other language and labeling the
+   card (pickArticleVersions sets the fallback flag). published_at NULL =
+   draft (invisible in front); unpublishing sets it back to NULL;
+   soft-delete deleted_at follows the posts convention. Validation /
+   query building / locale fallback are pure functions (unit-tested
+   directly); DB access is assembled in the lower half, aligned with
+   ./featured. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 
@@ -16,7 +20,9 @@ export const ARTICLE_SORT_MAX = 9999;
 export type ArticleKind = "letter" | "guide";
 export type ArticleLocale = "zh" | "en";
 
-/* slug:小写字母/数字/连字符,连字符只在段间(不首尾、不连排)。合法返回规范化值,否则 null。 */
+/* Slug: lowercase letters/digits/hyphens, hyphens only between segments
+   (never leading/trailing/doubled). Returns the normalized value or
+   null. */
 export function normalizeArticleSlug(raw: string): string | null {
   const slug = raw.trim().toLowerCase();
   if (!slug || slug.length > ARTICLE_SLUG_MAX) return null;
@@ -32,15 +38,17 @@ export function normalizeArticleLocale(raw: string): ArticleLocale | null {
   return raw === "zh" || raw === "en" ? raw : null;
 }
 
-/* sort_order:非负整数,非法/越界回落 0(guide 的策划序号,letter 忽略)。 */
+/* sort_order: non-negative integer; invalid/out-of-range falls back to 0
+   (the guide's curated order; letters ignore it). */
 export function normalizeSortOrder(raw: string): number {
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) return 0;
   return Math.min(n, ARTICLE_SORT_MAX);
 }
 
-/* 表单 → 库的输入契约(action 层校验后构造)。
-   payload:letter 期次元数据 JSON 文本(src/lib/monthly.ts 校验),NULL=纯自动组装。 */
+/* Form -> DB input contract (constructed after action-layer validation).
+   payload: the letter's issue metadata as JSON text (validated in
+   src/lib/monthly.ts), NULL = pure automatic assembly. */
 export interface ArticleInput {
   slug: string;
   kind: ArticleKind;
@@ -52,15 +60,17 @@ export interface ArticleInput {
   payload: string | null;
 }
 
-/* 列表条目(月刊卡片 / 编号路径共用);fallback=实际语言≠UI 语言(卡片要标注)。
-   payloadRaw=articles.payload 原样值(驱动已解析 JSON;月刊组装在 monthly.ts 消费)。 */
+/* List entry (shared by monthly cards / numbered paths); fallback =
+   actual language differs from UI locale (the card labels it). payloadRaw
+   = articles.payload as-is (driver-parsed JSON; consumed by monthly.ts
+   assembly). */
 export interface ArticleListItem {
   id: number;
   slug: string;
   locale: ArticleLocale;
   title: string;
   summary: string;
-  authorHandle: string; // 署名编辑
+  authorHandle: string; // credited editor
   publishedAt: Date;
   sortOrder: number;
   fallback: boolean;
@@ -71,7 +81,8 @@ export interface ArticleDetail extends ArticleListItem {
   bodyMd: string;
 }
 
-/* 编辑表单初始值(含草稿:不看 published_at)。payload=JSON 文本(textarea 直编)。 */
+/* Edit-form initial values (drafts included: published_at not consulted).
+   payload = JSON text (textarea-editable). */
 export interface ArticleForEdit {
   id: number;
   slug: string;
@@ -88,8 +99,10 @@ export interface ArticleForEdit {
 const LIST_COLS = `a.id, a.slug, a.locale, a.title, a.summary, a.sort_order, a.published_at,
          a.payload, u.handle AS author_handle`;
 
-/* 列表:两种语言的已发布条目一起取出,语言去重在 JS 侧(pickArticleVersions)。
-   letter 按发布时间倒序(新期在前);guide 按策划序号升序(01/02/03 的路径感)。 */
+/* List: published entries of both languages fetched together; language
+   dedup happens in JS (pickArticleVersions). Letters order by publish
+   time desc (newest first); guides by sort_order asc (the 01/02/03 path
+   feel). */
 export function listArticlesQuery(kind: ArticleKind): {
   sql: string;
   args: string[];
@@ -108,8 +121,10 @@ export function listArticlesQuery(kind: ArticleKind): {
   };
 }
 
-/* 语言回落:同 slug 取 UI 语言版本,缺失时回落另一语言并打 fallback 标。
-   输入已按展示序排好(SQL ORDER BY),同 slug 的两行谁先谁后不定,这里按 slug 归组。 */
+/* Locale fallback: per slug pick the UI-locale version, else the other
+   language with a fallback flag. Input arrives in display order (SQL
+   ORDER BY); the two rows of a slug may come in any order — grouped here
+   by slug. */
 export function pickArticleVersions(
   rows: Omit<ArticleListItem, "fallback">[],
   uiLocale: ArticleLocale,
@@ -128,7 +143,8 @@ export function pickArticleVersions(
   return out;
 }
 
-/* 详情:slug + UI 语言优先,缺失回落另一语言(ORDER BY (locale = ?) DESC 取第一行)。 */
+/* Detail: slug + UI locale preferred, falling back to the other language
+   (ORDER BY (locale = ?) DESC takes the first row). */
 export function articleBySlugQuery(
   kind: ArticleKind,
   slug: string,
@@ -146,7 +162,8 @@ export function articleBySlugQuery(
   };
 }
 
-/* 编辑态:按 slug+locale 精确定位(草稿也要能取到,所以不看 published_at)。 */
+/* Edit state: located by slug+locale exactly (drafts must resolve too —
+   published_at not consulted). */
 export function articleForEditQuery(
   slug: string,
   locale: ArticleLocale,
@@ -161,8 +178,8 @@ export function articleForEditQuery(
   };
 }
 
-/* 新建:publish=true 立即发布(NOW()),否则存草稿(NULL)。
-   payload 由 action 层校验过的 JSON 文本(或 NULL)直接落库。 */
+/* Create: publish=true publishes immediately (NOW()), otherwise a draft
+   (NULL). payload is action-validated JSON text (or NULL) stored as-is. */
 export function insertArticleQuery(
   authorId: number,
   input: ArticleInput,
@@ -187,8 +204,9 @@ export function insertArticleQuery(
   };
 }
 
-/* 更新:发布语义 —— publish=true 保留首次发布时间(COALESCE),false = 撤稿(置 NULL)。
-   WHERE 钉死未删行,affectedRows=0 即目标不存在/已删。 */
+/* Update: publish semantics — true keeps the first publish time
+   (COALESCE), false unpublishes (NULL). WHERE pins undeleted rows;
+   affectedRows=0 = missing/deleted. */
 export function updateArticleQuery(
   id: number,
   input: ArticleInput,
@@ -215,7 +233,8 @@ export function updateArticleQuery(
   };
 }
 
-/* 软删(风格对齐 posts):置 deleted_at,物理行保留。 */
+/* Soft delete (posts convention): set deleted_at, keep the physical
+   row. */
 export function softDeleteArticleQuery(id: number): {
   sql: string;
   args: number[];
@@ -226,7 +245,8 @@ export function softDeleteArticleQuery(id: number): {
   };
 }
 
-/* ---- DB 组装(权限校验在 action 层:登录 + admin/mod,复用 featured.canModerate)---- */
+/* ---- DB assembly (permissions in the action layer: login + admin/mod,
+   reusing featured.canModerate) ---- */
 
 function mapListRow(r: RowDataPacket): Omit<ArticleListItem, "fallback"> {
   return {
@@ -286,7 +306,8 @@ export async function getArticleForEdit(
     bodyMd: r.body_md ?? "",
     sortOrder: Number(r.sort_order) || 0,
     publishedAt: r.published_at ?? null,
-    /* 编辑态给 JSON 文本(驱动可能已解析为对象);无 payload 给空串 */
+    /* Edit state yields JSON text (the driver may already have parsed an
+       object); no payload yields an empty string. */
     payload:
       r.payload === null || r.payload === undefined
         ? ""
@@ -322,9 +343,11 @@ export async function softDeleteArticle(id: number): Promise<boolean> {
   return res.affectedRows > 0;
 }
 
-/* 按行 id 轻量取旧值(slug + payload.series,20260822 P2-6):编辑动作在更新前
-   调用,用于失效「旧 slug 详情页」与「新旧两个系列页」——slug 改名或换系列后,
-   旧路径的缓存不失效就会一直展示过期内容。草稿/已撤稿也要能取到(失效不分状态)。 */
+/* Fetch old values (slug + payload.series) by row id: called before an
+   update to invalidate the old slug's detail page and both series pages
+   — after a rename or series change, stale caches on old paths would
+   keep serving outdated content. Drafts/unpublished included
+   (invalidation ignores state). */
 export async function getArticleSlugAndSeriesById(
   id: number,
 ): Promise<{ slug: string; series: string | null } | null> {
