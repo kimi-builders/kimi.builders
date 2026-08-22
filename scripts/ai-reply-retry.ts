@@ -1,8 +1,8 @@
-/* 手动重跑 AI 回帖任务(走真实 processAiReply,不是旁路):
-     npx tsx scripts/ai-reply-retry.ts <jobId>
-   执行逻辑在 src/lib/ai-reply.ts 的 retryAiReplyJob(与 cron 批量恢复共用),
-   这里只做参数解析和打印。需要环境里有 DATABASE_URL 和 KIMI_API_KEY
-   (本地:source .env.local)。 */
+/* Manually rerun an AI reply job (through the real processAiReply, no
+   bypass): npx tsx scripts/ai-reply-retry.ts <jobId>. The logic lives
+   in retryAiReplyJob in src/lib/ai-reply.ts (shared with the cron batch
+   recovery); this only parses args and prints. Needs DATABASE_URL and
+   KIMI_API_KEY in the environment (locally: source .env.local). */
 import { retryAiReplyJob } from "../src/lib/ai-reply";
 
 async function main() {

@@ -60,8 +60,11 @@ function isAlreadyAppliedDdlError(error) {
   ]).has(error?.code);
 }
 
-/* MySQL DDL 不能与 ledger INSERT 原子提交；逐句 checkpoint 把失败窗口缩到单句。
-   对旧 runner 留下的“statement 已成功但 file 未记账”状态，仅收编明确的重复 DDL。 */
+/* MySQL DDL cannot commit atomically with the ledger INSERT; per-
+   statement checkpoints shrink the failure window to a single
+   statement. For the state legacy runners left behind ("statement
+   applied but the file unrecorded"), only unambiguous duplicate DDL
+   is adopted. */
 export async function applyMigrationFile(connection, file, sql) {
   const statements = splitStatements(sql);
   const [rows] = await connection.query(

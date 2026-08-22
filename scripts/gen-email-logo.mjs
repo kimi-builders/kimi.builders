@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-/* 生成邮件客户端用的 PNG logo:
-   public/brand/logo-tile.svg(小尺寸几何:去轨道、月亮/双星放大)
-   → public/brand/logo-email.png(192×192,圆角瓷砖外透明)。
-   邮件客户端(QQ/163/Gmail)对 SVG 支持差,必须 PNG;可重复执行,产物提交进仓库。 */
+/* Generate the PNG logo for email clients:
+   public/brand/logo-tile.svg (small-size geometry: orbit removed,
+   moon/twin-stars enlarged) -> public/brand/logo-email.png (192x192,
+   transparent outside the rounded tile). Email clients (QQ/163/Gmail)
+   handle SVG poorly — PNG it is; idempotent, and the artifact is
+   committed. */
 import { readFileSync } from "node:fs";
 import sharp from "sharp";
 
