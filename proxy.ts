@@ -36,5 +36,9 @@ export const config = {
     "/settings/:path*",
     "/demo-night/:path*",
     "/admin/:path*",
+    /* (app) 组的单层页同样要右栏分发(20260822 P2-8):漏 matcher 时
+       RailGate 会把右栏藏成 visibility:hidden(20260821 explore 踩过的坑) */
+    "/about/:path*",
+    "/login/:path*",
   ],
 };
