@@ -113,7 +113,7 @@ export default function WorkGallery({
 
   return (
     <div>
-      {/* 主视图轮播:大图可点进灯箱;箭头/计数器叠加其上(multi 才渲染) */}
+      {/* Main-view carousel: the large image opens the lightbox; arrows/counter overlay it (rendered for multi only) */}
       <div
         className="relative"
         onTouchStart={onTouchStart}
@@ -160,7 +160,7 @@ export default function WorkGallery({
         )}
       </div>
 
-      {/* 缩略图:点击切换主视图(不再直接进灯箱);当前张蓝色描边 */}
+      {/* Thumbnails: click switches the main view (never opens the lightbox directly); the current one gets a blue ring */}
       {multi && (
         <div className="scrollbar-none mt-2 flex flex-nowrap gap-2 overflow-x-auto">
           {keys.map((k, i) => (
@@ -191,7 +191,7 @@ export default function WorkGallery({
         </div>
       )}
 
-      {/* 灯箱:从主视图当前张打开;←→ 翻页 / Esc 或背板关闭 / 计数 */}
+      {/* Lightbox: opens on the main view's current image; <-/-> paging, Esc or backdrop to close, counter included */}
       {zoom !== null && (
         <div
           role="dialog"
@@ -230,7 +230,7 @@ export default function WorkGallery({
               </button>
             </>
           )}
-          {/* 点击图片本身不收起(误触多发生在图上) */}
+          {/* Clicking the image itself does not dismiss (mis-taps concentrate on the image) */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={mediaUrl(keys[zoom])}

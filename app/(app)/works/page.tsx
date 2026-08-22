@@ -99,8 +99,9 @@ export default async function WorksPage({
         lede={t(locale, "works.wallIntro")}
       />
 
-      {/* items-start(20260815 三次打磨):排序 seg 与筛选下拉常驻行顶部对齐,
-          筛选结果分组行在 WorksFilterBar 内部向下生长,工具位恒不动 */}
+      {/* items-start: the sort seg and filter dropdowns stay aligned at the
+          top of the standing row while grouped filter results grow downward
+          inside WorksFilterBar — the tool positions never move. */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {(
@@ -120,7 +121,7 @@ export default async function WorksPage({
             </Link>
           ))}
         </nav>
-        {/* 筛选:Agent + 类型 多选下拉(用量中心同款);状态全在 URL */}
+        {/* Filters: agent + type multi-select dropdowns (usage-hub style); all state lives in the URL */}
         <WorksFilterBar
           basePath="/works"
           preservedQuery={preservedQuery}
@@ -147,7 +148,7 @@ export default async function WorksPage({
           ]}
           selected={{ agent: activeAgents, kind: activeKinds }}
         />
-        {/* 视图切换:行式 / 封面墙(cookie 持久,两页共用);移动端恒行式不出 */}
+        {/* View toggle: rows / cover wall (cookie-persisted, shared with Awesome); hidden on mobile, which stays row-style */}
         {!mobile && <WorksViewToggle locale={locale} view={view} />}
       </div>
 
@@ -193,8 +194,10 @@ export default async function WorksPage({
           }`}
         >
           {page.nodes}
-          {/* key 带首屏规模与游标:卡片行内删除触发 refresh 后首屏一变即 remount,
-              已追加的页作废(同 CommentSection 语义);视图切换同理 remount */}
+          {/* The key carries first-page size and cursor: an inline delete triggers a
+            refresh, any first-page change remounts, and already-appended pages are
+            discarded (same semantics as CommentSection); view switches remount the
+            same way. */}
           <LoadMore
             key={`works-${view}-${currentSort}-${activeAgents.join(",")}-${activeKinds.join(",")}-${page.nodes.length}-${page.nextCursor ?? "end"}-${locale}`}
             initialCursor={page.nextCursor}

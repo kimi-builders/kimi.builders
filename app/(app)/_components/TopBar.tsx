@@ -28,14 +28,14 @@ export default function TopBar({
     "flex h-10 w-10 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <header className="fixed inset-x-0 top-0 z-20 hidden h-14 border-b border-line bg-bg/95 backdrop-blur lg:block">
-      {/* 内容与下方三栏共用 1320 居中容器:品牌与左栏左边线、登录态与右栏右边线对齐 */}
+      {/* Shares the 1320px centered container with the three columns below: the brand aligns with the left column's left edge, the auth chip with the right column's right edge */}
       <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-[5vw]">
       <Link
         href="/"
         title="kimi.builders"
         className="flex items-center gap-2 font-mono text-sm font-semibold tracking-wide"
       >
-        {/* 小尺寸瓷砖标(月牙+双星放大版):暗色主题下边缘清晰、双星可辨 */}
+        {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
         <span>

@@ -87,9 +87,10 @@ export default async function CommunityPage({
 
   return (
     <div>
-      {/* 页头迁移共享 PageHeader(20260821 文案一致性):与其他分区同一语法
-          (— 定位语 eyebrow + kb-h1 + kb-lede);原手写 human eyebrow 复读了
-          标题词,serif 的品牌回声已由探索区(章横幅/编辑公约)接棒 */}
+      {/* The page head uses the shared PageHeader (copy consistency): the
+          same grammar as the other sections (— positioning eyebrow + kb-h1
+          + kb-lede); the serif brand echo is carried by the explore area
+          (chapter banner / editor covenant) instead. */}
       <PageHeader
         eyebrow={t(locale, "community.eyebrow")}
         title={t(locale, "nav.community")}
@@ -125,10 +126,13 @@ export default async function CommunityPage({
             </Link>
           ))}
         </nav>
-        {/* 话题 tabs:共享分段语法(20260820 并入 seg-classes,反色实块选中态);
-            可换行变体——选项多或 EN 文案长(Showcase/Feedback)时整组折行,
-            不再用六等分网格硬挤;圆角跟随 vibe 令牌(旧实现 gap-px 网格
-            两种气质都是直角)。已解决开关不动:状态维度,与话题两种心智。 */}
+        {/* Topic tabs: the shared segmented grammar (seg-classes, inverted
+            solid-block selected state) in the wrappable variant — the
+            group folds when there are many options or long EN labels
+            (Showcase/Feedback) instead of squeezing a six-way equal grid;
+            corners follow the vibe tokens (the old gap-px grid was square
+            in both vibes). The solved toggle stays as is: state is a
+            different mental model from topic. */}
         <nav
           aria-label={t(locale, "feed.topicsAll")}
           className={`${SEG_WRAP_FLOW} order-last min-w-0 md:order-none md:justify-self-start`}
@@ -156,9 +160,10 @@ export default async function CommunityPage({
             );
           })}
         </nav>
-        {/* 只看已解决(20260907;20260815 评审移位):状态维度筛选,不属于话题——
-            从话题行移到排序行,用有框 pill 与无边框话题区分两种心智模型。
-            规格与工具行控件统一(rounded-lg + min-h-11 sm:min-h-9,20260815 二次打磨) */}
+        {/* Solved-only: a state filter, not a topic — it sits on the sort row
+            as an outlined pill, distinguishing the two mental models from
+            the borderless topic tabs. Spec matches the tool-row controls
+            (rounded-lg + min-h-11 sm:min-h-9). */}
         <Link
           href={feedHref({ solved: solvedOnly ? null : "1" })}
           scroll={false}

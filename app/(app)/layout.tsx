@@ -57,20 +57,25 @@ export default async function AppLayout({
   return (
     <div>
       <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} loggedIn={!!user} />
-      {/* 桌面固定顶栏(≥lg);内容区 lg:pt-14 让位 */}
+      {/* Fixed desktop top bar (>=lg); the content area yields via lg:pt-14 */}
       <TopBar locale={locale} unread={unread} loggedIn={!!user} />
-      {/* 三栏统一收进 1320 居中容器:栏间距固定,宽屏只剩两侧等宽留白,
-          左栏不再贴视口缘;主列 ≥lg 带竖向 hairline 缝合版面 */}
+      {/* All three columns share one 1320px centered container: gutters
+          stay fixed and wide screens only add equal side margins, so the
+          left column never hugs the viewport edge; >=lg a vertical hairline
+          on the main column stitches the layout together. */}
       <div className="mx-auto flex w-full max-w-[1440px] items-start gap-4 px-[5vw] lg:pt-14">
-        {/* LeftNav 用 usePathname 做激活态,Suspense 兜底 */}
+        {/* LeftNav derives its active state from usePathname; Suspense is the fallback */}
         <Suspense fallback={null}>
           <LeftNav locale={locale} profileHref={profileHref} moderator={moderator} loggedIn={!!user} worksSrc={worksSrc} />
         </Suspense>
-        {/* 主列在容器内靠左;移动端 pb-24 给底部标签栏腾位;lg+ 恢复常规。
-            wide(usage / 个人主页)放宽到 1000 分析画布,其余 720 阅读列(含两侧 padding)。
-            maincol-rail 钩子:右栏隐藏时主列放宽(globals.css 的
-            html[data-sidebar="0"] 块,720 → 1000,与宽画布同宽,切菜单不跳);
-            wide 路由无右栏,不参与 */}
+        {/* The main column hugs the container's left; mobile keeps pb-24 for
+            the bottom tab bar, restored at lg+. wide routes (usage /
+            profile) open up to a 1000px analytics canvas, everything else a
+            720px reading column (padding included). The maincol-rail hook
+            widens the main column when the right rail is hidden (the
+            html[data-sidebar="0"] block in globals.css moves 720 -> 1000,
+            matching the wide canvas so toggling the menu never jumps); wide
+            routes have no right rail and stay out of it. */}
         <main
           className={`maincol w-full min-w-0 flex-1 px-4 py-6 pb-24 lg:border-x lg:border-line lg:px-6 lg:py-8 ${
             rail.wide ? "lg:max-w-[1040px]" : "maincol-rail lg:max-w-[800px]"
@@ -91,7 +96,7 @@ export default async function AppLayout({
       <Suspense fallback={null}>
         <MobileTabBar locale={locale} profileHref={profileHref} loggedIn={!!user} />
       </Suspense>
-      {/* 软导航跨上下文时让布局重估右栏/列宽(同 decision 不全树重取) */}
+      {/* Soft navigation across contexts re-evaluates the rail/column widths (same decision, no full-tree refetch) */}
       <RailRefresher />
     </div>
   );

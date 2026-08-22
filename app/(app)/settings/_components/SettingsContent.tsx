@@ -83,7 +83,7 @@ export default async function SettingsContent({
             </h1>
           </div>
         )}
-        {/* 未登录:统一登录引导卡(20260919) */}
+        {/* Signed out: unified login-prompt card */}
         <div className={showTitle ? "mt-6" : ""}>
           <LoginGate
             locale={locale}
@@ -153,7 +153,7 @@ export default async function SettingsContent({
               <p className="text-sm font-medium text-paper">{t(locale, "set.locale")}</p>
               <LocaleSeg />
             </div>
-            {/* 动效(20260821 评审):手动减动效出口,跟随系统为默认 */}
+            {/* Motion: a manual reduce-motion opt-out; following the system stays the default */}
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line py-4">
               <div>
                 <p className="text-sm font-medium text-paper">{t(locale, "set.motion")}</p>
@@ -175,9 +175,11 @@ export default async function SettingsContent({
               </div>
               <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.vibeNote")}</p>
             </div>
-            {/* 界面布局(20260821 评审):左栏收起/右栏隐藏的第二入口,
-                提升 DISPLAY 双键的可发现性;按钮复用 pref-controls 的
-                NavToggle/SidebarToggle(乐观 cookie 翻转,与左栏同一开关) */}
+            {/* Layout: a second entry point for collapsing the left nav and
+                hiding the right rail, improving discoverability of the two
+                DISPLAY keys; the buttons reuse pref-controls' NavToggle /
+                SidebarToggle (optimistic cookie flip, same switch as the
+                left nav). */}
             <div className="border-t border-line pt-4">
               <p className="text-sm font-medium text-paper">{t(locale, "set.layout")}</p>
               <div className="panel-pair mt-3 flex max-w-md gap-1.5">
@@ -188,8 +190,9 @@ export default async function SettingsContent({
             </div>
           </Panel>
 
-          {/* 隐私与公开:资料展示(本页设置)+ 用量数据(与 /usage 共用同一份设置,
-              任何一处保存全站生效) */}
+          {/* Privacy and visibility: profile display (set here) + usage data
+              (shares one settings record with /usage; saving from either
+              place applies site-wide) */}
           <Panel title={t(locale, "set.privacy")} note={t(locale, "set.privacyNote")}>
             <div>
               <div className="flex items-baseline justify-between gap-4">
@@ -301,7 +304,7 @@ export default async function SettingsContent({
                 );
               })}
             </div>
-            {/* 密码:有密码走「当前 + 新密码」改密;无密码(OAuth 注册)直接设置 */}
+            {/* Password: with an existing one, change via current + new; without one (OAuth signup) set it directly */}
             <div className="mt-2 border-t border-line pt-4">
               <h3 className="text-sm font-semibold text-paper">
                 {t(locale, "set.pwTitle")}

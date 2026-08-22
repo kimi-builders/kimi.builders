@@ -144,7 +144,7 @@ export function GraduatesBlock({
                 href={`/works/${work.id}`}
                 className="group flex items-baseline gap-2.5"
               >
-                {/* 作品名可截断(name ≤120 字符,窄屏不撑破行);tagline 次级,<lg 让位 */}
+                {/* Work name may truncate (name <= 120 chars, narrow screens never break the row); tagline is secondary and yields below lg. */}
                 <span className="min-w-0 truncate text-sm font-semibold text-paper transition-colors group-hover:text-blue">
                   {work.name}
                 </span>

@@ -225,7 +225,7 @@ function TrendCore({
   return (
     <div ref={viewportRef} className={`relative ${hovered ? "z-30" : ""}`} onMouseLeave={() => setHovered(null)}>
       <div className="overflow-x-auto pb-1">
-        {/* 容器窄于 viewBox 时整体等比缩放(width:100% + viewBox);窄于 560px 才横向滚动。 */}
+        {/* Below the viewBox width the whole chart scales proportionally (width:100% + viewBox); horizontal scrolling kicks in only under 560px. */}
         <div style={{ minWidth: Math.min(560, width) }}>
           <div className="relative" style={{ width: "100%", maxWidth: width }}>
             <svg
@@ -560,7 +560,7 @@ export function UsageHeatmapGrid({
           </button>
         ))}
       </div>
-      {/* 格子随列宽自适应,但设最大宽度:超宽容器里格子不被拉大,视觉密度恒定。 */}
+      {/* Cells adapt to column width up to a max: in extra-wide containers they never stretch, keeping visual density constant. */}
       <div className="pb-1">
         <div className="min-w-0 max-w-[620px] sm:min-w-[560px]">
           <div className="space-y-[3px]">

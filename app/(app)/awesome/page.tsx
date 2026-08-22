@@ -107,8 +107,9 @@ export default async function AwesomePage({
         lede={t(locale, "awesome.intro")}
       />
 
-      {/* items-start(20260815 三次打磨):排序 seg 与筛选下拉常驻行顶部对齐,
-          筛选结果分组行在 WorksFilterBar 内部向下生长,工具位恒不动 */}
+      {/* items-start: the sort seg and filter dropdowns stay aligned at the
+          top of the standing row while grouped filter results grow downward
+          inside WorksFilterBar — the tool positions never move. */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {(
@@ -128,7 +129,7 @@ export default async function AwesomePage({
             </Link>
           ))}
         </nav>
-        {/* 筛选:Agent / 类型(多选)+ 收录口径(单选)—— 用量中心同款下拉 */}
+        {/* Filters: agent / type (multi) + listing scope (single) — usage-hub style dropdowns */}
         <WorksFilterBar
           basePath="/awesome"
           preservedQuery={preservedQuery}
@@ -169,7 +170,7 @@ export default async function AwesomePage({
             scope: activeScope ? [activeScope] : [],
           }}
         />
-        {/* 视图切换:行式 / 封面墙(cookie 持久,与 /works 共用偏好);移动端恒行式不出 */}
+        {/* View toggle: rows / cover wall (cookie-persisted, shared with /works); hidden on mobile, which stays row-style */}
         {!mobile && <WorksViewToggle locale={locale} view={view} />}
       </div>
 

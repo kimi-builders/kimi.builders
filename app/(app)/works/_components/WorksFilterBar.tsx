@@ -72,9 +72,12 @@ export default function WorksFilterBar({
      inside the dropdown row, removing the blank band under the seg. */
   return (
     <>
-      {/* 下拉行:移动端整条工具行里排到末尾、占满整行,下拉 w-full 逐行
-          堆叠(对齐用量中心的筛选排版);桌面 order-none + flex-1 回到
-          排序 seg 之后的行内位置,多选再多也不随结果换行——工具位恒定。 */}
+      {/* Dropdown row: on mobile it moves to the end of the tool row and
+          takes the full width, dropdowns stacking w-full line by line
+          (matching the usage hub's filter layout); on desktop order-none +
+          flex-1 puts it back inline after the sort seg — however many the
+          selections, it never wraps with the results; tool positions stay
+          fixed. */}
       <div className="order-last min-w-0 w-full sm:order-none sm:w-auto sm:flex-1">
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {filters.map((f) => (
@@ -94,8 +97,10 @@ export default function WorksFilterBar({
           ))}
         </div>
       </div>
-      {/* 结果行:order-last + w-full 独占工具行下一整行,左缘与排序 seg
-          (热门/最新)对齐——不缩在下拉行内部,消除 seg 下方的空白带。 */}
+      {/* Results row: order-last + w-full takes the whole row below the
+          tool row, left edge aligned with the sort seg (hot/new) — not
+          tucked inside the dropdown row, which would leave a blank band
+          under the seg. */}
       {activeCount > 0 && (
         <div className="order-last flex w-full flex-wrap items-start gap-2">
           {filters.map((f) => {

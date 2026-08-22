@@ -249,7 +249,7 @@ function LetterDetail({
         <DetailTabs tabs={tabs} initialTab={initialTab} ariaLabel={zh ? "本期内容形态" : "In this issue"} />
       </div>
 
-      {/* 页脚:引用纪律 + 数据截止 + AI 参与披露 */}
+      {/* Footer: citation discipline + data cutoff + AI-participation disclosure */}
       <footer className="border-t border-line pt-6 text-[11px] leading-relaxed text-grey/80">
         <p>
           {zh
@@ -271,7 +271,7 @@ function LetterDetail({
         )}
       </footer>
 
-      {/* 期次前后导航 */}
+      {/* Prev/next issue navigation */}
       <nav
         aria-label={zh ? "期次导航" : "Issue navigation"}
         className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"

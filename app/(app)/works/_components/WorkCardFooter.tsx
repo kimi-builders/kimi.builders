@@ -30,8 +30,9 @@ export default function WorkCardFooter({
     >
       {w.source === "awesome" && w.authorLabel ? (
         <span className="min-w-0 truncate">
-          {/* 原作者 = GitHub 作者/团队,可点跳到 GitHub 主页(句柄形状校验,
-              非句柄的自由文本降级为纯文本);推荐人按 2026-08-14 决定暂不展示 */}
+          {/* Original author = GitHub author/org: handle-shaped values link
+              to the GitHub profile, free-form text degrades to plain text.
+              The recommender is deliberately not shown here. */}
           {/^[A-Za-z0-9-]{1,39}$/.test(w.authorLabel) ? (
             <a
               href={`https://github.com/${w.authorLabel}`}
@@ -63,7 +64,7 @@ export default function WorkCardFooter({
           compact ? "gap-2" : "gap-3"
         }`}
       >
-        {/* 支持数(P1-2):只读展示,投票在详情页 */}
+        {/* Support count: read-only here; voting happens on the detail page */}
         <span
           className="inline-flex items-center gap-1"
           title={t(locale, "works.support")}
@@ -91,7 +92,7 @@ export default function WorkCardFooter({
             title={t(locale, "works.repo")}
             className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
           >
-            {/* 网格卡紧凑态:仓库链接用 GitBranch 图标与「访问」外链区分 */}
+            {/* Compact grid-card mode: the repo link uses a GitBranch icon to stand apart from the "visit" external link */}
             {compact ? <Code size={12} /> : null}
             {!compact && t(locale, "works.repo")}
           </a>

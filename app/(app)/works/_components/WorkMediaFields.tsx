@@ -335,8 +335,10 @@ export default function WorkMediaFields({
 
   return (
     <div className={inactive ? "hidden" : "space-y-4"}>
-      {/* 提交载体:只落上传完成的 key(上传中/失败的条目不随表单提交);
-          inactive 时不渲染(服务端对 awesome 条目强制置空,双保险) */}
+      {/* Submission carrier: only completed upload keys land here
+          (in-flight/failed entries never submit); not rendered while
+          inactive (the server force-clears awesome entries too — belt and
+          braces). */}
       {!inactive && (
         <>
           <input type="hidden" name="logoKey" value={logo?.key ?? ""} readOnly />
@@ -346,7 +348,7 @@ export default function WorkMediaFields({
         </>
       )}
 
-      {/* ---- Logo:方形预览 + 客户端裁剪上传 ---- */}
+      {/* ---- Logo: square preview + client-side crop upload ---- */}
       <div>
         <span className="mb-1.5 block text-xs text-grey">
           {t(locale, "works.logo")}
@@ -396,9 +398,12 @@ export default function WorkMediaFields({
         />
       </div>
 
-      {/* ---- 封面(二选一 tab,20260815):上传封面图 / 封面风格(名称砖色卡)。
-          两种来源互斥——tab 切换代替「上传 + 条件色板」并排;色卡常驻挂载,
-          已选色调在两档间切换不丢,隐藏字段始终提交(有封面时服务端以封面优先) ---- */}
+      {/* ---- Cover (two tabs): upload a cover image / cover style (name-tile
+          tint). The two sources are mutually exclusive — the tabs replace a
+          side-by-side upload + conditional palette; the tint picker stays
+          mounted, a chosen tint survives tab switches, and the hidden
+          field always submits (with an uploaded cover the server prefers
+          it) ---- */}
       <div>
         <span className="mb-1.5 block text-xs text-grey">
           {t(locale, "works.cover")}
@@ -506,7 +511,7 @@ export default function WorkMediaFields({
         />
       </div>
 
-      {/* ---- 配图:点击/拖入/粘贴添加,拖拽排序,展示在详情页图集 ---- */}
+      {/* ---- Gallery images: add by click/drag/paste, drag to reorder, shown in the detail-page gallery ---- */}
       <div>
         <span className="mb-1.5 flex items-baseline justify-between text-xs text-grey">
           <span>{t(locale, "works.images")}</span>
@@ -646,7 +651,7 @@ export default function WorkMediaFields({
         )}
       </div>
 
-      {/* ---- 封面适配(有上传封面或配图时生效):裁切填满 / 补边完整 ---- */}
+      {/* ---- Cover fit (applies with an uploaded cover or gallery images): crop-to-fill / pad-to-fit ---- */}
       {(cover || images.length > 0) && (
         <div>
           <span className="mb-1.5 block text-xs text-grey">
@@ -678,8 +683,9 @@ export default function WorkMediaFields({
         </div>
       )}
 
-      {/* 封面风格档在 image 模式下不挂载,隐藏字段带回最近一次选择;
-          tone 模式由 CoverToneField 自带隐藏字段提交(20260815 tab 化) */}
+      {/* The cover-style pane is unmounted in image mode; a hidden field
+          carries the last selection back. In tone mode CoverToneField
+          submits its own hidden field. */}
       {coverMode === "image" && !inactive && (
         <input type="hidden" name="coverTone" value={toneState} readOnly />
       )}
@@ -700,7 +706,7 @@ export default function WorkMediaFields({
         />
       )}
 
-      {/* 封面裁剪(16:9):与 logo 同一交互,裁剪框固定 16:9 */}
+      {/* Cover crop (16:9): same interaction as the logo, crop frame locked to 16:9 */}
       {coverCrop && (
         <ImageCropDialog
           img={coverCrop.img}

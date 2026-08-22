@@ -280,7 +280,7 @@ async function AdminUserList({
                 <span>{relTime(u.createdAt, locale)}</span>
               </span>
             </span>
-            {/* admin 目标不可被处置(防御:不可降/不可禁言/不可重置);action 层同样拒绝 */}
+            {/* Admin targets cannot be moderated (defensive: no demote/mute/reset); the action layer rejects them too */}
             {u.role !== "admin" && (
               <span className="ml-auto">
                 <UserModControls

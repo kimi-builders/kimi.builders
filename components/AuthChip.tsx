@@ -34,8 +34,8 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
             @{user.handle}
           </Link>
         )}
-        {/* 登出表单化(20260822 P2-11):logout 已改 POST-only,
-            不再是可被预取/跨站 img 触发的 GET 链接 */}
+        {/* Sign-out is a form: logout is POST-only, never a GET link that
+            prefetch or a cross-site img tag could trigger. */}
         <form action="/api/auth/logout" method="post">
           <button
             type="submit"

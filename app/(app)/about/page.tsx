@@ -29,7 +29,7 @@ export default async function AboutPage() {
 
   return (
     <div className="rounded-2xl border border-line bg-card p-5 sm:p-8">
-      {/* eyebrow 补齐(20260821 文案一致性):与其他分区同源的「— 定位语」 */}
+      {/* Eyebrow (copy consistency): the same "— positioning line" shape as the other sections */}
       <p className="kb-eyebrow mb-2">{t(locale, "about.eyebrow")}</p>
       <h1 className="text-2xl font-semibold text-paper">
         {t(locale, "about.title")}
@@ -82,8 +82,9 @@ export default async function AboutPage() {
         ))}
       </div>
 
-      {/* 页尾收束(20260821 评审):关于页是犹豫者最后看的一页——以行动
-          邀请结束,而不是以免责声明结束;human 衬线 + 门面标语语汇回声 */}
+      {/* Page closer: About is the last page the hesitant read — end with an
+          invitation to act, not with a disclaimer; human serif + an echo of
+          the front-page slogan vocabulary. */}
       <section className="mt-8 flex flex-col items-center border-t border-line pt-6 text-center">
         <p className="font-human text-lg leading-relaxed text-paper">
           {t(locale, "about.ctaLine")}

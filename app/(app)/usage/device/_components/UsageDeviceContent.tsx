@@ -59,7 +59,7 @@ export default async function UsageDeviceContent({
 
       {!code && (
         <>
-          {/* 连接新设备:本地看板是新手主路径;init 保留为自动化/终端等价入口。 */}
+          {/* Connect a new device: the local dashboard is the beginner's main path; init stays as the automation/terminal equivalent. */}
           <section className="mt-7 rounded-xl border border-line bg-card p-4">
             <h2 className="font-mono text-xs tracking-[0.08em] text-grey">
               {zh ? "连接新设备" : "CONNECT A NEW DEVICE"}

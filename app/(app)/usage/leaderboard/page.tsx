@@ -157,7 +157,7 @@ function LeaderboardRow({
               : undefined
           }
         >
-          {/* 估费为 0 无法区分「免费」与「未定价」,一律显示 —(同看板原则) */}
+          {/* Zero estimated spend is ambiguous between free and unpriced, so it always renders as — (same rule as the dashboard) */}
           {entry.costMicros ? fmtCost(entry.costMicros) : "—"}
         </td>
       ) : null}
@@ -427,9 +427,11 @@ export default async function UsageLeaderboardPage({
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-4 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* 口径折叠(20260821 评审):首屏只留一句核心,完整口径(信任声明 +
-               统计口径 + 估费口径)收进原生 details 展开区——透明度不降,
-               占位让位,榜单更早进入视口 */}
+          {/* Methodology collapse: the first screen keeps one core line; the
+               full statement (trust note + statistical scope + pricing
+               scope) folds into a native details region — transparency
+               unchanged, vertical space yielded, the board enters the
+               viewport sooner. */}
           <details className="max-w-2xl text-xs leading-relaxed text-grey/80">
             <summary className="flex cursor-pointer list-none items-start gap-2 [&::-webkit-details-marker]:hidden">
               <ShieldCheck size={14} className="mt-px shrink-0 text-ui-blue" aria-hidden="true" />
@@ -470,7 +472,7 @@ export default async function UsageLeaderboardPage({
         </div>
       </header>
 
-      {/* 未登录提示(20260815):榜单公开、个人看板需登录——把差异点明并转成登录入口 */}
+      {/* Signed-out note: the board is public, the personal dashboard needs login — state the difference and turn it into a login entry */}
       {!user && (
         <p className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl border border-line bg-card px-4 py-3 text-xs leading-relaxed text-grey sm:px-5">
           <span>{t(locale, "lb.signinHint")}</span>

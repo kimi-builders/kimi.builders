@@ -181,7 +181,7 @@ export default async function CommunityWidgets({
         </Widget>
       )}
 
-      {/* Demo Night:当前场日期 + 报名状态/人数 + 链接;无当前场不渲染 */}
+      {/* Demo Night: current event date + signup state/count + link; renders nothing without a current event */}
       {demoNight && (
         <Widget title={t(locale, "dn.widgetTitle")}>
           <Link
@@ -249,8 +249,9 @@ export default async function CommunityWidgets({
       </Widget>
 
       <Widget title={t(locale, "side.newMembers")}>
-        {/* handle 不再整行复读(20260821 评审):Link title + Avatar alt
-            (无头像时首字母色块)已提供兜底,同一行 @handle 出现两遍是噪音 */}
+        {/* The handle is not repeated on its own line: Link title + Avatar
+            alt (initials tile without an avatar) already provide the
+            fallback; showing @handle twice in one row is noise. */}
         <div className="flex gap-2">
           {data.newMembers.map((m) => (
             <Link

@@ -72,7 +72,7 @@ export default function PostCard({
               {t(locale, "post.private")}
             </span>
           )}
-          {/* 被屏蔽标:feed 只向作者本人放行被屏蔽帖,徽章天然只有作者可见 */}
+          {/* Hidden badge: the feed admits hidden posts to their author only, so the badge is inherently author-only */}
           {p.hiddenAt && (
             <span
               className="rounded-md border border-status-danger/60 px-1.5 py-px text-xs text-status-danger-fg"
@@ -81,13 +81,13 @@ export default function PostCard({
               {t(locale, "mod.hiddenBadge")}
             </span>
           )}
-          {/* 已解决:安静的蓝字 token(20260907) */}
+          {/* Solved: a quiet blue-text token */}
           {p.solvedAt && (
             <span className="inline-flex items-center gap-1 text-blue">
               ✓ {t(locale, "post.solved")}
             </span>
           )}
-          {/* 类别:纯文本 token,不再是 pill */}
+          {/* Category: plain-text token, no longer a pill */}
           <span className="text-grey"># {categoryLabel(locale, p.category)}</span>
         </div>
       </div>

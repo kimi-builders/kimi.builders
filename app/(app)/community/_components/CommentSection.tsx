@@ -346,7 +346,7 @@ export default function CommentSection({
             </button>
           </>
         )}
-        {/* 治理入口:admin/mod 可屏蔽未屏蔽的评论(屏蔽后仅作者可见,解除走 /admin) */}
+        {/* Moderation entry: admin/mod can hide un-hidden comments (hidden ones stay visible to their author only; unhiding happens in /admin) */}
         {moderator && !c.hidden && (
           <button
             type="button"
@@ -449,10 +449,10 @@ export default function CommentSection({
       <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
         {t(locale, "post.comments", { n: total })}
       </h2>
-      {/* 评论行不再套圆角盒: hairline 分隔,融进外层卡片(圆角套圆角显乱) */}
+      {/* Comment rows drop the rounded box: hairline dividers let them merge into the parent card (nested rounded boxes read as clutter) */}
       <ul className="mt-3 divide-y divide-line">{allThreads.map((c) => row(c, false))}</ul>
 
-      {/* 召唤等待占位:AI 回复到达后轮询端自动 refresh 收走 */}
+      {/* Summon-wait placeholder: cleared automatically when the poller refreshes on AI-reply arrival */}
       {summon !== null && <SummonPendingRow locale={locale} />}
 
       {cursor !== null && (

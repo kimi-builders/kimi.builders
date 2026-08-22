@@ -102,7 +102,7 @@ export default async function PostRail({
         )}
       </Widget>
 
-      {/* AI 召唤卡位:AI-Native L1 开工前不渲染(组件内开关) */}
+      {/* AI summon card slot: not rendered until AI-Native L1 ships (switch inside the component) */}
       <AiSummonSlot postId={post.id} locale={locale} />
     </>
   );

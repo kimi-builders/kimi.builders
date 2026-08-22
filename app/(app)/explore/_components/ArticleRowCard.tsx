@@ -41,19 +41,19 @@ export default function ArticleRowCard({
   const overflow = item.products.length - shownProducts.length;
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30 sm:flex-row">
-      {/* 整卡链详情;下方无独立交互元素,不抬 z */}
+      {/* The whole card links to the detail page; no independent interactive elements below, so no z-index lifting */}
       <Link
         href={`/explore/${item.slug}`}
         aria-label={item.title}
         className="absolute inset-0 z-0 rounded-2xl"
       />
-      {/* 封面列:移动端通栏在上,sm+ 固定宽在左(与 WorkCard 行式同构) */}
+      {/* Cover column: full-width above on mobile, fixed width on the left from sm+ (same shape as the row-style WorkCard) */}
       <div className="overflow-hidden border-b border-line sm:w-52 sm:shrink-0 sm:border-b-0 sm:border-r">
         <div className="aspect-video h-full transition-transform duration-base group-hover:scale-[1.02] sm:aspect-auto">
           <ArticleCover item={item} zh={zh} />
         </div>
       </div>
-      {/* 内容列 */}
+      {/* Content column */}
       <div className="flex min-w-0 flex-1 flex-col p-4">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-grey">
           {chapter && <span>{zh ? chapter.zh : chapter.en}</span>}

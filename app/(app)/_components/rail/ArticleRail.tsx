@@ -146,7 +146,7 @@ export default async function ArticleRail({
         </Widget>
       )}
 
-      {/* 时长提示行(有视频/文稿的阅读预期;无时长不上) */}
+      {/* Duration hint row (reading expectation for video/transcript pieces; omitted when there is no duration) */}
       {item.durationMin === undefined && item.formats.includes("video") && (
         <p className="flex items-center gap-1.5 font-mono text-[11px] text-grey/70">
           <Clock3 size={12} aria-hidden="true" />

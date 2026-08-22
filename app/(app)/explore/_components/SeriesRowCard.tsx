@@ -37,13 +37,13 @@ export default function SeriesRowCard({
   const seriesProducts = [...new Set(episodes.flatMap((e) => e.products))].slice(0, 3);
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30 sm:flex-row">
-      {/* 整卡链系列页 */}
+      {/* Whole card links to the series page */}
       <Link
         href={`/explore/series/${series.slug}`}
         aria-label={zh ? series.title.zh : series.title.en}
         className="absolute inset-0 z-0 rounded-2xl"
       />
-      {/* 封面:移动端通栏在上,sm+ 固定宽在左(与 WorkCard 行式同构) */}
+      {/* Cover: full-width above on mobile, fixed width on the left from sm+ (same shape as the row-style WorkCard) */}
       <div className="overflow-hidden border-b border-line sm:w-56 sm:shrink-0 sm:border-b-0 sm:border-r">
         <div className="aspect-video h-full transition-transform duration-300 group-hover:scale-[1.02] sm:aspect-auto">
           <SeriesCover series={series} zh={zh} className="h-full w-full" />

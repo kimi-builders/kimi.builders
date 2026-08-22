@@ -238,7 +238,7 @@ export default async function ExplorePage({
 
   return (
     <div>
-      {/* ←→ 章循环(快捷键;hrefs<2 时组件内自行空转) */}
+      {/* <-/-> chapter cycling (keyboard shortcuts; the component no-ops internally when hrefs < 2) */}
       <ChapterKeys hrefs={chapterHrefs} index={chapterIndex} />
       <PageHeader
         eyebrow={t(locale, "explore.eyebrow")}
@@ -247,21 +247,22 @@ export default async function ExplorePage({
         actions={user && canModerate(user.role) ? composeLink : undefined}
       />
 
-      {/* ---- 工具行:章 seg(主轴)+ 透镜下拉(有内容才出) ---- */}
+      {/* ---- Tool row: chapter seg (the spine) + lens dropdowns (render only where content exists) ---- */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <nav
           aria-label={zh ? "章" : "Chapters"}
           className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
         >
-          {/* 全部 = 默认态(不筛章);四章是永久框架,0 计数置灰恒可见 */}
+          {/* All = default state (no chapter filter); the four chapters are a permanent frame — always visible, greyed at count 0 */}
           <Link
             href={lensHref("/explore", current, { chapter: undefined })}
             scroll={false}
             aria-current={!selChapter ? "page" : undefined}
             className={`${SEG_ITEM} ${!selChapter ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
           >
-            {/* 计数走 ml-1 显式间距:SEG_ITEM 是 inline-flex,元素间的
-                JSX 空格文本节点会被 flex 吞掉(字与数粘连,20260822 修复) */}
+            {/* Counts get explicit ml-1 spacing: SEG_ITEM is inline-flex,
+                and whitespace text nodes between JSX children are
+                swallowed by flex (label and number would fuse). */}
             {zh ? "全部" : "All"} <span className="ml-1 opacity-60">{items.length}</span>
           </Link>
           {KB_CHAPTERS.map((c) => {
@@ -321,8 +322,9 @@ export default async function ExplorePage({
         {items.length > 0 && !mobile && <WorksViewToggle locale={locale} view={view} />}
       </div>
 
-      {/* ---- 章横幅(20260821 评审):选中章时给主轴一次仪式感——serif
-           章字(与封面章字砖同一字族)+ 定义句;不重组扁平列表 ---- */}
+      {/* ---- Chapter banner: selecting a chapter gives the spine a moment of
+           ceremony — serif chapter word (same face as the cover's chapter
+           tile) + definition line; the flat list is never regrouped ---- */}
       {selChapter &&
         (() => {
           const c = findKbChapter(selChapter)!;
@@ -341,7 +343,7 @@ export default async function ExplorePage({
           );
         })()}
 
-      {/* ---- 内容区:一篇一卡,行式 / 封面墙 ---- */}
+      {/* ---- Content area: one card per piece, row list / cover wall ---- */}
       <div className="mt-6">
         {items.length === 0 ? (
           /* An honest empty state for the cold start. */
@@ -393,7 +395,7 @@ export default async function ExplorePage({
           </>
         ) : (
           <>
-            {/* 筛选生效感(20260821 评审):结果计数随筛选即时更新 */}
+            {/* Filters feel live: the result count updates with every filter change */}
             <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.08em] text-grey/80">
               {t(locale, "explore.resultCount", {
                 n: filtered.length,

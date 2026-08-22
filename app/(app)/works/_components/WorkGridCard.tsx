@@ -41,7 +41,7 @@ export default function WorkGridCard({
   const statusLabel = statusLabelOf(w.status, locale);
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30">
-      {/* 整卡链详情页(P1-2);下方交互元素抬 z-10 保持独立跳转 */}
+      {/* Whole card links to the detail page; interactive elements below lift z-10 to keep their own navigation */}
       <Link
         href={`/works/${w.id}`}
         aria-label={w.name}
@@ -69,10 +69,13 @@ export default function WorkGridCard({
             {w.tagline}
           </p>
         )}
-        {/* meta 压缩一行:状态/Agent/声明/精选;蓝只给声明投入与精选。
-           分类不重复出——封面名称砖左上已有类型 eyebrow(20260918)。
-           Agent 在网格下只出图标(最多 3 个 + "+N",title 悬浮全名列表)——
-           卡宽有限,名字会挤爆 meta 行;全名在详情页与行式卡都可看 */}
+        {/* Meta compressed to one row: status/agents/declaration/featured;
+           blue reserved for declared effort and featured. The category is
+           not repeated — the cover's name tile already carries the type
+           eyebrow. Agents are icons only in grid view (max 3 + "+N", full
+           names in the title tooltip) — card width is finite and names
+           would blow out the meta row; full names stay visible on the
+           detail page and row cards. */}
         <div className="mb-3 mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
           <WorkMetaChips
             w={w}

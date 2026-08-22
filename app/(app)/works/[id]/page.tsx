@@ -146,8 +146,10 @@ export default async function WorkPage({
           {work.hiddenReason ? ` — ${work.hiddenReason}` : ""}
         </p>
       )}
-      {/* 面包屑:来源列表记忆优先(成员作品也会出现在 /awesome,按 work.source
-          猜会把从 Awesome 来的用户送回作品墙),无记忆回落 work.source */}
+      {/* Breadcrumb: the remembered source list wins (member works also
+          appear on /awesome, so guessing from work.source would send an
+          Awesome visitor back to the work wall); without memory, fall back
+          to work.source. */}
       <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
         <Link
           href={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
@@ -159,7 +161,7 @@ export default async function WorkPage({
         <span className="truncate">{work.name}</span>
       </div>
 
-      {/* 标题行:H1 保持干净,徽标全部移到下方 meta 行(20260813 改版) */}
+      {/* Title row: the H1 stays clean; badges all move down to the meta row */}
       <div className="mt-4 flex items-start gap-3">
         {work.logoKey && (
           /* eslint-disable-next-line @next/next/no-img-element */
@@ -173,14 +175,18 @@ export default async function WorkPage({
           {work.name}
         </h1>
       </div>
-      {/* meta 拆两层(20260815 打磨):身份行 = 作者/原作者+推荐人 · 时间
-          (信息同族才同行);属性 chips = 类型/口径/状态/声明(蓝)/★精选(蓝)
-          ——徽章化后移动端换行自然对齐,不再 · 分隔挤成参差多行 */}
+      {/* Meta on two levels: identity row = author / original author +
+          recommender · time (same-family information shares a row);
+          attribute chips = type/scope/status/declaration (blue) / *featured
+          (blue) — as badges, mobile wrapping aligns naturally instead of
+          squeezing into ragged dot-separated lines. */}
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-sm leading-5 text-grey">
         {work.source === "awesome" && work.authorLabel ? (
           <>
-            {/* 原作者可点跳 GitHub 主页(句柄形状校验,非句柄降级纯文本);
-                推荐人在详情页保留(列表卡片不显示,2026-08-14 决定) */}
+            {/* The original author links to the GitHub profile when
+                handle-shaped, otherwise degrades to plain text; the
+                recommender is kept on the detail page (list cards omit
+                it). */}
             {/^[A-Za-z0-9-]{1,39}$/.test(work.authorLabel) ? (
               <a
                 href={`https://github.com/${work.authorLabel}`}
@@ -285,8 +291,10 @@ export default async function WorkPage({
         )}
       </div>
 
-      {/* 操作条(媒体之上):体验作品(primary 外链新 tab)/ 支持(登录,乐观更新)/ 分享 / 作者编辑删除。
-          移动端(20260815 打磨):CTA 全宽独占一行,操作重心突出;支持/分享次行。 */}
+      {/* Action bar (above media): try the work (primary external link, new
+          tab) / support (signed-in, optimistic update) / share / owner edit
+          and delete. Mobile: the CTA takes its own full-width row so the
+          primary action stands out; support/share drop to a second row. */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         {work.url && (
           <a
@@ -325,7 +333,7 @@ export default async function WorkPage({
               />
             </span>
           )}
-          {/* 治理工具条:admin/mod(屏蔽/解除;硬删仅 admin),action 层再鉴权 */}
+          {/* Moderation bar: admin/mod (hide/unhide; hard delete is admin-only), re-authorized at the action layer */}
           {user && canModerate(user.role) && (
             <ModToolbar
               targetType="work"
@@ -352,9 +360,11 @@ export default async function WorkPage({
         </span>
       </div>
 
-      {/* 媒体区:有配图走图集(封面大图 + 缩略图);只有存量外链截图则单张直出;
-          都没有就不渲染——生成的名称砖是列表封面的兜底,详情页头部已有
-          logo + 名称,再放同一块砖是重复(20260908) */}
+      {/* Media area: with gallery images, the gallery (large cover +
+          thumbnails); with only a legacy external screenshot, that single
+          image; otherwise nothing renders — the generated name tile is the
+          list-cover fallback, and the detail header already shows logo +
+          name, so repeating the tile here would be redundant. */}
       {(work.imageKeys.length > 0 || work.screenshotUrl) && (
         <div className="mt-6">
           {work.imageKeys.length > 0 ? (
@@ -374,18 +384,20 @@ export default async function WorkPage({
         </div>
       )}
 
-      {/* 正文 + 信息栏:<xl 信息栏沉底两列网格(20260815 打磨:原 220px 侧栏
-          在 640–1023px 视口把正文挤到 ~360px,阅读局促;沉底后正文独占全宽,
-          信息行按两列排布压缩高度);≥xl 由右栏元数据卡取代(右栏注册表 work kind) */}
+      {/* Body + info bar: below xl the info bar sinks to a two-column grid
+          at the bottom (the old 220px sidebar squeezed the body to ~360px
+          at 640-1023px viewports — cramped reading; sunk, the body keeps
+          full width and info rows pack two columns); >=xl the right-rail
+          metadata card replaces it (work kind in the rail registry). */}
       <div className="mt-8 space-y-8">
         <div>
-          {/* 长描述优先(20260824 新增 description_md),缺省回退 tagline */}
+          {/* Long description first (description_md), falling back to tagline */}
           {(work.descriptionMd || work.tagline) && (
             <Markdown source={work.descriptionMd || work.tagline} />
           )}
         </div>
 
-        {/* 内联信息栏(<xl):与右栏同款 label/value hairline 行,sm 起两列 */}
+        {/* Inline info bar (<xl): same label/value hairline rows as the right rail, two columns from sm */}
         <aside className="border-t border-line pt-6 xl:hidden">
           <dl className="grid gap-x-8 font-mono text-sm sm:grid-cols-2">
             <div className="flex items-center justify-between gap-3 border-b border-line py-3">
@@ -492,8 +504,9 @@ export default async function WorkPage({
       </div>
       </article>
 
-      {/* 评论区:与作者聊聊这个作品(单层;登录可发,限流;作者/作品作者可删,
-              AI 评论(召唤)另放行治理) */}
+      {/* Comments: talk with the author about this work (single level;
+              signed-in to post, rate-limited; author or work owner may
+              delete; AI comments (summoned) are moderated separately) */}
       <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-6">
         <h2 id="comments" className="kb-h2">
           {t(locale, "works.discuss")} ·{" "}
@@ -509,8 +522,10 @@ export default async function WorkPage({
              hairline-separated flow; comment rows get no rounded box. */
           <div className="mt-4 divide-y divide-line">
             {comments.nodes}
-            {/* key 带首屏规模与游标:发/删评论触发 refresh 后首屏一变即 remount,
-                已追加的页作废(同作品墙/评论区语义) */}
+            {/* The key carries first-page size and cursor: posting/deleting a
+                comment triggers a refresh, any first-page change remounts,
+                appended pages are discarded (same semantics as the work
+                wall / comment section) */}
             <LoadMore
               key={`wc-${comments.nodes.length}-${comments.nextCursor ?? "end"}-${locale}`}
               initialCursor={comments.nextCursor}

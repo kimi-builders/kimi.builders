@@ -466,10 +466,11 @@ export default function UsageFilterBar({
         </form>
       )}
 
-      {/* 筛选结果分组(20260815 与作品/Awesome 同步):维度名每组一次(蓝),
-          后接各选中值 token(可单个移除),Agent 维度带图标;组内值可换行。
-          取代旧的「每条 chip 重复维度名 / 超 2 个折叠 ×N」模式。
-          清除入口随行——移动端不展开筛选面板也能一键清除。 */}
+      {/* Grouped filter results (same pattern as works/Awesome): dimension
+          name once per group (blue), then one removable token per selected
+          value, icons on the agent dimension; values wrap within a group.
+          The clear control rides the same row — one-tap clearing on mobile
+          without opening the filter panel. */}
       {activeCount > 0 && (
         <div className="mt-2.5 flex flex-wrap items-start gap-2">
           {activeSelections.map(({ dimension, selected }) => (

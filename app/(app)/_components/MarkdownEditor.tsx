@@ -249,7 +249,7 @@ export default function MarkdownEditor({
         </p>
       )}
       <div className="relative">
-        {/* @kimi 召唤补全(mousedown 拦截保持焦点,点选不丢光标) */}
+        {/* @kimi summon autocomplete (mousedown interception keeps focus; picking an option never loses the caret) */}
         {suggest !== null && (
           <button
             type="button"

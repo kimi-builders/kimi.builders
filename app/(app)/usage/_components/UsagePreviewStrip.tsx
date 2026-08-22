@@ -73,7 +73,7 @@ export default async function UsagePreviewStrip({
         {t(locale, "usage.previewNote")}
       </p>
 
-      {/* 与登录态 dashboard 同一套视觉语汇(usage-dashboard 作用域 + Hero 三卡) */}
+      {/* Same visual vocabulary as the signed-in dashboard (usage-dashboard scope + hero trio) */}
       <div className="usage-dashboard mt-4">
         <div className="grid gap-3 sm:grid-cols-3">
           {heroCard(

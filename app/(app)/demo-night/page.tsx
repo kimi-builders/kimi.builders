@@ -89,7 +89,7 @@ export default async function DemoNightPage() {
         </p>
       </header>
 
-      {/* ---- 当前场 ---- */}
+      {/* ---- Current event ---- */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-5 sm:p-6">
         <h2 className="font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "dn.upcoming")}
@@ -155,7 +155,7 @@ export default async function DemoNightPage() {
         )}
       </section>
 
-      {/* ---- 往期归档 ---- */}
+      {/* ---- Past events ---- */}
       <section className="mt-8">
         <h2 className="font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "dn.archive")}

@@ -53,7 +53,7 @@ export default async function NewWorkContent({
             </h1>
           </div>
         )}
-        {/* 未登录:统一登录引导卡(20260919) */}
+        {/* Signed out: unified login-prompt card */}
         <div className={showTitle ? "mt-6" : ""}>
           <LoginGate
             locale={locale}

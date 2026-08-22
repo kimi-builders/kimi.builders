@@ -124,16 +124,19 @@ export default function WorkCard({
     <article className={`kb-work-card group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30 sm:flex-row ${
       w.source === "awesome" ? "kb-awesome-card" : "kb-member-card"
     }`}>
-      {/* 整卡链详情页(P1-2,absolute 覆盖链接);下方交互元素抬 z-10 保持独立跳转 */}
+      {/* Whole card links to the detail page (absolute overlay link); interactive elements below lift z-10 to keep their own navigation */}
       <Link
         href={`/works/${w.id}`}
         aria-label={w.name}
         className="absolute inset-0 z-0 rounded-2xl"
       />
       <div className="kb-work-card-cover shrink-0 border-b border-line sm:w-[232px] sm:self-stretch sm:border-b-0 sm:border-r">
-        {/* 封面 = 独立上传封面(cover_key,20260916 起不再取配图第一张);
-            无封面回落旧 screenshot_url 外链,再空则 WorkScreenshot 兜底色卡名称砖
-            (作品=用户选定色/theme,Awesome=类型族或选定色) */}
+        {/* Cover = the dedicated uploaded cover (cover_key; never the first
+            gallery image); without one, fall back to the legacy
+            screenshot_url external link, and if that is empty too,
+            WorkScreenshot's fallback tinted name tile (works use the
+            user's chosen tint/theme, Awesome entries the type family or
+            chosen tint). */}
         <WorkScreenshot
           url={w.coverKey ? mediaUrl(w.coverKey) : w.screenshotUrl}
           name={w.name}
@@ -155,8 +158,10 @@ export default function WorkCard({
             {w.tagline}
           </p>
         )}
-        {/* meta 区:分类 / Agent / 收录口径分三行,每行带 mute 小标签
-            (类型/参与构建/收录——一眼可读,2026-08-14);蓝只给声明投入与精选 */}
+        {/* Meta block: category / agents / listing scope on three rows, each
+            with a muted mini label (type / built with / listed as —
+            readable at a glance); blue is reserved for declared effort and
+            featured. */}
         <div className="mb-4 mt-3 flex min-w-0 flex-col gap-2 text-xs leading-5 text-grey">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-grey/55">{t(locale, "works.metaKind")}</span>
@@ -206,9 +211,9 @@ export default function WorkCard({
             </span>
           ) : null}
         </div>
-        {/* 底行:hairline 分隔;作者 / 支持 / 链接 / 作者操作(共享 WorkCardFooter) */}
+        {/* Bottom row: hairline divider; author / supports / links / owner actions (shared WorkCardFooter) */}
         <WorkCardFooter work={w} locale={locale} meId={meId} />
-        {/* 声明超额提示(声明制):仅作者本人可见,引导去编辑页重新分配 */}
+        {/* Declared-token over-limit note: author-only, points to the edit page for redistribution */}
         {claimPaused && meId !== null && w.userId === meId && (
           <p className="relative z-10 mt-2 rounded-lg bg-moon px-2 py-1.5 text-xs leading-relaxed text-grey">
             {t(locale, "works.claimPaused")}

@@ -65,8 +65,9 @@ export default async function WorkRail({
   return (
     <>
       <Widget title={t(locale, "rail.workMeta")}>
-        {/* label/value hairline 行(20260813 改版):作者/声明/口径/阶段/Agent/
-            类型/模型/标签/链接/发布/支持/评论 */}
+        {/* Label/value hairline rows: author / declaration / scope / stage /
+            agents / type / models / tags / links / published / supports /
+            comments */}
         <dl className="font-mono text-xs">
           <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
             <dt className="text-grey">

@@ -96,7 +96,7 @@ export default function MobileNavDrawer({
           </div>
 
           <div className="flex-1 overflow-y-auto py-4">
-            {/* 登录态块:头像 + @handle + 退出(未登录 = 登录入口),顶栏迁入 */}
+            {/* Signed-in block: avatar + @handle + sign-out (signed out = login entry), moved in from the top bar */}
             {account && (
               <div className="mx-4 mb-4 flex items-center gap-3 rounded-xl border border-line bg-card px-3 py-2.5 font-mono text-sm [&>a:last-child]:ml-auto">
                 {account}
@@ -112,8 +112,9 @@ export default function MobileNavDrawer({
             </Link>
 
             <nav aria-label={t(locale, "nav.menu")} className="mt-4 space-y-1">
-              {/* SOON 降权(20260815 评审,与桌面 LeftNav 一致):未就绪板块
-                  移到分组细线之后,不再占据列表头部 */}
+              {/* SOON demoted (consistent with the desktop LeftNav):
+                  not-yet-ready sections move behind the group hairline and
+                  no longer lead the list. */}
               {SECTIONS.filter((section) => !section.hidden && !section.soon).map((section) => {
                 const Icon = section.icon;
                 const active = pathname.startsWith(section.href);

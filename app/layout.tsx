@@ -57,10 +57,10 @@ export default async function RootLayout({
     >
       <body suppressHydrationWarning>
         {children}
-        {/* 拦截路由弹窗槽(@modal 在根级:避开 (app)/template 对并行槽的包裹) */}
+        {/* Interception-route modal slot (@modal lives at the root level so (app)/template cannot wrap the parallel slot) */}
         {modal}
         <Toaster />
-        {/* 全局快捷键层(监听 + 帮助面板;按钮在 TopBar/首页) */}
+        {/* Global shortcut layer (listener + help panel; the buttons live in TopBar/home) */}
         <KeyboardShortcuts locale={locale} />
       </body>
     </html>

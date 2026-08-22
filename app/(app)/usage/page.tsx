@@ -511,12 +511,14 @@ export default async function UsagePage({
 
   const header = (
     <header className="flex flex-col gap-4 border-b border-line pb-6">
-      {/* 标题行:标题左、操作按钮右;状态条不再挤在标题列里(与按钮抢宽,
-          英文偏长时被逐项折成多行),而是独占下方整行,中英文都是稳定一行 */}
+      {/* Title row: title left, action buttons right; the status strip takes
+          its own full row below instead of squeezing into the title column
+          (where it fought the buttons for width and wrapped item by item in
+          English) — one stable line in both locales. */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-paper">
           <BarChart3 size={20} aria-hidden="true" /> {zh ? "用量中心" : "Usage center"}
-          {/* 隐私边界说明收进弹窗(原页头常驻副标题,太占位);摘要仍在下方状态条「默认私有」 */}
+          {/* The privacy-boundary explainer lives in a dialog (a standing subhead took too much room); the status strip below still carries the "private by default" summary */}
           <UsagePrivacyDialog zh={zh} />
         </h1>
         <div className="grid w-full shrink-0 grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
@@ -553,7 +555,7 @@ export default async function UsagePage({
           </Link>
         </div>
       </div>
-      {/* 各段 nowrap:段内永不折断;整段只在手机窄屏换行 */}
+      {/* Each segment is nowrap: never broken inside; whole segments wrap only on narrow phone widths. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-xs text-grey" role="status" aria-live="polite">
         <span className="flex items-center gap-1.5 whitespace-nowrap">
           <ShieldCheck size={13} className="text-status-ok-fg" aria-hidden="true" />
@@ -919,7 +921,7 @@ export default async function UsagePage({
       {usageFilterBar}
       {staleNotice}
 
-      {/* Hero 三卡:费用 / 总 Token / 缓存命中率 */}
+      {/* Hero trio: spend / total tokens / cache hit rate */}
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
         <HeroCard
           label={pricingIncomplete ? (zh ? "已定价部分" : "Priced portion") : zh ? "预估费用" : "Est. cost"}
@@ -965,7 +967,7 @@ export default async function UsagePage({
         />
       </section>
 
-      {/* 指标带:10 格 */}
+      {/* Metric band: 10 cells */}
       <section className="mt-3 grid grid-cols-2 rounded-2xl border border-line bg-card sm:grid-cols-3 lg:grid-cols-5">
         {stripCells.map((cellItem) => (
           <div key={cellItem.label} title={cellItem.title} className={STRIP_CELL}>
@@ -1021,7 +1023,7 @@ export default async function UsagePage({
         zh={zh}
       />
 
-      {/* 趋势 */}
+      {/* Trends */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
         <ChartHeader
           title={trendTitle}
@@ -1068,7 +1070,7 @@ export default async function UsagePage({
         </div>
       </section>
 
-      {/* 自然周趋势 */}
+      {/* Natural-week trends */}
       <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -1088,7 +1090,7 @@ export default async function UsagePage({
         </div>
       </section>
 
-      {/* 用量热力图 + 最活跃时段 */}
+      {/* Usage heatmap + most active hours */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1.9fr_1fr]">
         <section className="min-w-0 rounded-2xl border border-line bg-card p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1174,8 +1176,9 @@ export default async function UsagePage({
                     </span>
                   </div>
                   <div className="mt-1.5 h-1 rounded-full bg-paper/[0.06]">
-                    {/* 焦点蓝只给第一名,其余中性灰(20260819 与个人主页同配方,
-                        手册:一图一焦点;此前全蓝) */}
+                    {/* Focus blue on the top entry only, the rest neutral grey
+                        (same recipe as the profile page; one focus per chart,
+                        not all-blue). */}
                     <div
                       className={`h-full rounded-[2px] ${index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"}`}
                       style={{ width: `${Math.max((slot.value / topSlots[0].value) * 100, 2)}%` }}
@@ -1188,7 +1191,7 @@ export default async function UsagePage({
         </section>
       </div>
 
-      {/* 分布 */}
+      {/* Distribution */}
       <p className="mt-6 font-mono text-xs tracking-[0.08em] text-grey/70">
         {filters.metric === "cost"
           ? zh

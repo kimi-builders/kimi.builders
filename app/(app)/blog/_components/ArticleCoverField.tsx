@@ -116,7 +116,7 @@ export default function ArticleCoverField({
       <label className={LABEL_CLS}>
         {locale === "zh" ? "封面(可选)" : "Cover (optional)"}
       </label>
-      {/* 来源二选一 tab(与作品封面同款 seg;切 tab 不清值,状态互不丢) */}
+      {/* Two-source tab (same seg as the work cover); switching tabs keeps both values, no state is lost */}
       <div className={SEG_WRAP} role="radiogroup" aria-label={t(locale, "works.coverModeTone")}>
         {(
           [

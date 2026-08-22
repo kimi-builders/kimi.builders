@@ -145,13 +145,15 @@ export default async function Home({
 
   return (
     <main data-theme-scope="poster" className="bg-bg">
-      {/* ---- 海报区:hero + 主 CTA(全页视觉焦点)---- */}
+      {/* ---- Poster zone: hero + primary CTA (the page's visual anchor) ---- */}
       <section className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        {/* 右上角控件:与壳内 TopBar 同一控件集、同一顺序、同一 iconBtn 形态;
-            flex-wrap 兜底超窄屏。主题切换翻 <html data-theme>,海报双肤即时生效 */}
+        {/* Top-right controls: same set, order, and iconBtn shape as the
+            in-shell TopBar; flex-wrap absorbs ultra-narrow viewports. The
+            theme toggle flips <html data-theme>, re-skinning the poster
+            instantly. */}
         <div className="absolute right-5 top-5 flex max-w-[calc(100vw-2.5rem)] flex-wrap items-center justify-end gap-1.5 font-mono text-xs">
           <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
-          {/* 快捷键按钮仅桌面(≥lg):触屏没有键盘 */}
+          {/* Shortcuts button is desktop-only (>=lg): touch devices have no keyboard */}
           <ShortcutsButton locale={locale} className={`${iconBtn} max-lg:hidden`} />
           {user && (
             <Link
@@ -182,19 +184,20 @@ export default async function Home({
             {t(locale, AUTH_ERRORS[authError] ?? "home.errGeneric")}
           </p>
         )}
-        {/* Logo(20260819):深浅主题统一用深色标志(logo-animated.svg,夜幕 #0E0E13
-            画布)。深色主题下与海报底同色无缝;浅色主题下收进圆角方砖
-            (rounded-2xl 随气质:poster 硬边、soft 圆角)。浅色专版
-            logo-animated-light.svg 同日下线。 */}
+        {/* Both themes share the dark logo mark (logo-animated.svg on a night
+            #0E0E13 canvas): dark theme blends it seamlessly into the poster
+            background; light theme seats it in a rounded tile whose radius
+            follows the vibe (poster square, soft rounded). */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/logo-animated.svg"
           alt={t(locale, "home.logoAlt")}
           className="only-dark h-44 w-44"
         />
-        {/* 浅色主题:深色标志收进圆角方砖(rounded-2xl 走令牌——poster 气质
-            自动归零成硬边方砖,与全站工程棱角一致;soft 气质出 16px 卡圆角),
-            不再是与站点语言冲突的圆形徽章(20260819 三轮) */}
+        {/* Light theme: the dark mark sits in a rounded tile (rounded-2xl via
+            tokens — the poster vibe zeroes it into a square brick matching
+            the site's engineering edges; soft keeps the 16px card radius)
+            instead of a round badge that fights the site's language. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/logo-animated.svg"
@@ -219,9 +222,10 @@ export default async function Home({
         >
           {t(locale, "home.cta")} →
         </Link>
-        {/* 站点入口:主 CTA 下的边框按钮排,固定宽度(中英同宽,一眼可点);
-            按内容分区排列(20260821 评审):探索上线后与社区/作品/Awesome
-            并列,用量榜入口交还右栏与用量分区 */}
+        {/* Site entries: bordered button row under the primary CTA, fixed
+            width (identical for zh/en, easy to hit at a glance); grouped by
+            content section — the usage leaderboard entrance stays with the
+            right rail and the usage section, not here. */}
         <nav className="mt-6 flex flex-wrap items-stretch justify-center gap-2.5 font-mono text-xs">
           {(
             [
@@ -245,7 +249,7 @@ export default async function Home({
         </nav>
       </section>
 
-      {/* ---- 数据条:成员 / 帖子 / 评论 / 全站 token 累计(真实数据)---- */}
+      {/* ---- Stats strip: members / posts / comments / all-time tokens (live data) ---- */}
       {stats && (
         <section className="border-y border-line">
           <div className="mx-auto grid max-w-4xl grid-cols-2 gap-y-8 px-6 py-12 sm:grid-cols-4">
@@ -272,7 +276,7 @@ export default async function Home({
         </section>
       )}
 
-      {/* ---- 本周精选:编辑署名定夺;无精选回落 7 日热门;皆空不渲染 ---- */}
+      {/* ---- Weekly picks: editor-signed; falls back to 7-day hot when empty; renders nothing when both are empty ---- */}
       {home?.featured.length ? (
         <section className="mx-auto max-w-4xl px-6 py-16">
           <h2 className="text-center font-mono text-xs tracking-[0.08em] text-grey">
@@ -315,7 +319,7 @@ export default async function Home({
         </section>
       ) : null}
 
-      {/* ---- 入群 / 订阅 ---- */}
+      {/* ---- Join / subscribe ---- */}
       <section className="mx-auto max-w-4xl px-6 py-16">
         <h2 className="text-center font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "home.join")}
@@ -397,10 +401,12 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ---- 页脚:发丝线收束 + 品牌回声 + 免责声明(随 UI 语言)。
-          容器与数据条/精选/入群同宽(max-w-4xl)落在同一栅格;
-          KIMI.BUILDERS 用页面 section 标签的 mono 大字距语气,蓝点呼应主 wordmark;
-          免责两行做轻层级:社区声明 text-grey,法律声明再降一档 ---- */}
+      {/* ---- Footer: hairline closure + brand echo + disclaimers (follows
+          the UI language). The container shares the stats/picks/join grid
+          width (max-w-4xl); KIMI.BUILDERS borrows the mono wide-tracking
+          voice of page section labels, blue dot echoing the wordmark; the
+          two disclaimer lines sit in a light hierarchy — community note in
+          text-grey, legal note one step dimmer. ---- */}
       <footer className="border-t border-line">
         <div className="mx-auto max-w-4xl px-6 py-12">
           <p className="text-center font-mono text-xs tracking-[0.08em] text-grey">

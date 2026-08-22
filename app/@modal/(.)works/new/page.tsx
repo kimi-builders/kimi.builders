@@ -25,7 +25,7 @@ export default async function NewWorkModalPage({
         discard: t(locale, "modal.discardClose"),
       }}
     >
-      {/* ?path=<slug> 毕业归因上下文同样透传(20260920) */}
+      {/* The ?path=<slug> graduation-attribution context is passed through here too */}
       <NewWorkContent showTitle={false} searchParams={searchParams} />
     </RouteModal>
   );

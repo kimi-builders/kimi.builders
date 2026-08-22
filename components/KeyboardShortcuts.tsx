@@ -252,9 +252,11 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
           <X size={17} aria-hidden="true" />
         </button>
       </div>
-      {/* 双栏(20260822):14 行收进 ~8 行高,900px 视口免内滚。全局区
-          列主序填充(左栏满 6 再进右栏),左右恰好按语义分组:左 = 搜索/
-          帮助/界面偏好,右 = 栏位/全屏/发帖/专注 */}
+      {/* Two columns: 14 rows compress to ~8 rows of height, no inner
+          scrolling at a 900px viewport. The global section fills
+          column-major (left fills to 6 before the right starts), which
+          happens to split by semantics: left = search/help/interface
+          preferences, right = rail/fullscreen/new post/focus. */}
       <div className="max-h-[min(62vh,32rem)] overflow-y-auto p-2">
         <Section label={t(l, "kbd.sectionGlobal")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-flow-col sm:grid-rows-6">
@@ -263,9 +265,10 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
             ))}
           </div>
         </Section>
-        {/* 底部两小区不对称配比(20260822 修复):搜索区文案极短(选择结果/
-            打开所选),探索区描述最长——2:3 分配让长描述在窄窗口也有余量,
-            不再靠截断兜底 */}
+        {/* The two bottom blocks get asymmetric widths: search copy is very
+            short (pick a result / open the selected) while explore has the
+            longest descriptions — a 2:3 split leaves headroom for the long
+            text on narrow windows instead of truncating. */}
         <div className="mt-2 grid grid-cols-1 gap-x-7 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <Section label={t(l, "kbd.sectionSearch")}>
             {searchRows.map(({ keys, key }) => (

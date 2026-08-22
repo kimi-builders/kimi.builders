@@ -105,7 +105,7 @@ export default async function PostPage({
           {t(locale, "nav.community")}
         </Link>
         <span className="font-mono text-xs text-grey"># {categoryLabel(locale, post.category)}</span>
-        {/* 已解决(20260907):安静的蓝字 token,同精选同级 */}
+        {/* Solved: a quiet blue-text token, same weight as featured */}
         {post.solvedAt && (
           <span className="inline-flex items-center gap-1 font-mono text-xs text-ui-blue">
             ✓ {t(locale, "post.solved")}
@@ -127,7 +127,7 @@ export default async function PostPage({
             {t(locale, "mod.hiddenBadge")}
           </span>
         )}
-        {/* 编辑精选徽章:理由 + 定夺编辑放在 title(硬边描边芯片,对齐「私密」标) */}
+        {/* Featured badge: rationale + deciding editor in the title attribute (hard-edged outlined chip, matching the "private" badge) */}
         {postFeatured && (
           <span
             className="rounded-md border border-blue/60 px-1.5 py-px text-xs text-blue"
@@ -223,7 +223,7 @@ export default async function PostPage({
         </div>
       )}
 
-      {/* 动作条:顶/踩 + 评论 + 订阅 + 分享 + 作者操作(编辑/可见性/删除) */}
+      {/* Action bar: upvote/downvote + comment + subscribe + share + owner actions (edit/visibility/delete) */}
       <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
         {user ? (
           <VoteCluster
@@ -274,7 +274,7 @@ export default async function PostPage({
             locale={locale}
           />
         )}
-        {/* 治理工具条:admin/mod(屏蔽/软删;硬删仅 admin),action 层再鉴权 */}
+        {/* Moderation bar: admin/mod (hide/soft-delete; hard delete admin-only), re-authorized at the action layer */}
         {canFeature && (
           <ModToolbar
             targetType="post"

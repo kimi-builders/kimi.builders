@@ -188,12 +188,12 @@ export default async function ExploreSeriesPage({
         }
       />
 
-      {/* 金句(手册:人文字体给引语) */}
+      {/* Pull quote (per the manual: quotes get the human typeface) */}
       <p className="font-human mt-8 max-w-xl text-lg leading-relaxed text-grey">
         {zh ? `「${series.tagline.zh}」` : `“${series.tagline.en}”`}
       </p>
 
-      {/* 覆盖产品 / 适合职业(联合推导,可点回透镜) */}
+      {/* Products covered / fitting roles (jointly derived; click through back into the lenses) */}
       {(coveredProducts.length > 0 || fitRoles.length > 0) && (
         <div className="mt-6 flex flex-wrap items-center gap-1.5">
           {coveredProducts.map((id) => {
@@ -230,14 +230,14 @@ export default async function ExploreSeriesPage({
         </div>
       )}
 
-      {/* 集列表 */}
+      {/* Episode list */}
       <div className="mt-6">
         {episodes.map((ep, i) => (
           <EpisodeRow key={ep.slug} ep={ep} index={i} zh={zh} />
         ))}
       </div>
 
-      {/* 验证记录 + 讨论闭环 + 毕业作品 */}
+      {/* Verification log + discussion loop + graduation works */}
       <div className="mt-6">
         <VerifyLog series={series} zh={zh} />
         {discussion && <DiscussionBlock discussion={discussion} zh={zh} />}

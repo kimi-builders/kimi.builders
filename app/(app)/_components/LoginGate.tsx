@@ -35,8 +35,9 @@ export default function LoginGate({
         {t(locale, "gate.hint")}
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-        {/* Link 软导航(20260919):应用内点击走拦截路由弹出登录弹窗;
-            原生 <a> 会硬导航成完整页,形态跳变 */}
+        {/* Link soft navigation: in-app clicks take the intercepted route and
+            open the login modal; a native <a> hard-navigates to a full page
+            and the shape jumps. */}
         <Link
           href={`/login${query}`}
  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"

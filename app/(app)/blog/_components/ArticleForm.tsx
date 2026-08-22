@@ -359,13 +359,13 @@ export default function ArticleForm({
   return (
     <form action={formAction} className="mt-6 space-y-6">
       {initial && <input type="hidden" name="id" value={initial.id} />}
-      {/* payload 由结构化字段实时组装;服务端校验口径不变 */}
+      {/* payload assembles live from the structured fields; server-side validation is unchanged */}
       <input type="hidden" name="payload" value={payloadJson} />
       <input type="hidden" name="kind" value={kind} />
-      {/* publish:"on" = 发布/上架;缺省 = 草稿/下架(与 action 契约一致) */}
+      {/* publish:"on" means published/listed; absent means draft/unlisted (matches the action contract) */}
       {publishOn && <input type="hidden" name="publish" value="on" />}
 
-      {/* 吸顶结构导览(WorkForm 同款语法) */}
+      {/* Sticky structure nav (same grammar as WorkForm) */}
       <nav
         aria-label={zh ? "结构导览" : "Structure"}
         className="sticky top-16 z-10 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-line bg-bg/95 px-4 py-3 font-mono text-xs uppercase tracking-[0.08em] backdrop-blur sm:-mx-6 sm:px-6 lg:top-14"

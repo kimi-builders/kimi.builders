@@ -63,7 +63,7 @@ export default function PostEditForm({
           <label htmlFor="edit-category" className={labelCls}>
             {t(locale, "form.topic")} <span className="text-ui-blue">*</span>
           </label>
-          {/* 同发帖表单:原生 select 换自绘箭头(与筛选下拉同款) */}
+          {/* Same as the post form: native select with a custom arrow (same as the filter dropdowns) */}
           <div className="relative">
             <select
               id="edit-category"

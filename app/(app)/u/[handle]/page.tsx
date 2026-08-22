@@ -301,7 +301,7 @@ export default async function ProfilePage({
 
   return (
     <div>
-      {/* ===== 身份 Hero：参考频道页，把身份、社交数字、简介与操作收拢在头像右侧 ===== */}
+      {/* ===== Identity hero, channel-page style: name, social counts, bio, and actions gathered right of the avatar ===== */}
       <header className="usage-hero rounded-2xl border border-line p-5 sm:p-6">
         <div className="relative z-[1] flex items-start gap-4 sm:gap-6">
           <Avatar
@@ -373,7 +373,7 @@ export default async function ProfilePage({
             </div>
           </div>
         </div>
-        {/* 统计带:opt-in 公开用量 → 5 格用量统计;否则回退社交三格 */}
+        {/* Stats band: opted-in public usage -> 5 usage cells; otherwise falls back to the 3 social cells */}
         <div className="relative z-[1] mt-5 grid grid-cols-2 border-t border-line sm:grid-cols-3 lg:grid-cols-5">
           {usageStatsReady ? (
             <>
@@ -456,9 +456,9 @@ export default async function ProfilePage({
         </div>
       </header>
 
-      {/* ===== 主区:构建足迹(通栏)+ 动态 Tab 卡 ===== */}
+      {/* ===== Main area: build footprint (full-width) + activity tab card ===== */}
       <div className="mt-4 flex flex-col gap-4">
-          {/* 构建足迹(门禁同用量:仅本人或对方 opt-in) */}
+          {/* Build footprint (same gate as usage: self only, or the owner opted in) */}
           {footprint && fsum && (
             <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -475,7 +475,7 @@ export default async function ProfilePage({
             </section>
           )}
 
-          {/* 动态 Tab 卡 */}
+          {/* Activity tab card */}
           <section className="overflow-hidden rounded-2xl border border-line bg-card">
             <nav
               className="scrollbar-none flex flex-nowrap gap-1 overflow-x-auto border-b border-line px-3 pt-2"
@@ -512,7 +512,7 @@ export default async function ProfilePage({
               })}
             </nav>
 
-            {/* 帖子 */}
+            {/* Posts */}
             {activeTab === "posts" &&
               (posts.length === 0 ? (
                 <EmptyPane
@@ -595,7 +595,7 @@ export default async function ProfilePage({
                 </div>
               ))}
 
-            {/* 评论 */}
+            {/* Comments */}
             {activeTab === "comments" &&
               (comments.length === 0 ? (
                 <EmptyPane
@@ -640,7 +640,7 @@ export default async function ProfilePage({
                 </div>
               ))}
 
-            {/* 作品:复用作品墙的 WorkCard;访客只见公开,本人含私密(卡片带「私密」标) */}
+            {/* Works: reuses the work wall's WorkCard; visitors see public only, the owner also sees private (card carries a "private" badge) */}
             {activeTab === "works" &&
               (works.length === 0 ? (
                 <EmptyPane
@@ -658,7 +658,7 @@ export default async function ProfilePage({
                 </div>
               ))}
 
-            {/* 用量:近 30 天迷你面板 + 全部时间分时热图 */}
+            {/* Usage: last-30-days mini panel + all-time hour-by-day heatmap */}
             {activeTab === "usage" && usageVisible && (
               <div className="p-4 sm:p-5">
                 {snapshot30 && (
@@ -694,7 +694,7 @@ export default async function ProfilePage({
                       })}
                       zh={zh}
                     />
-                    {/* 近 30 天每日趋势:默认比较总量，构成信息在 Tooltip 中按需查看。 */}
+                    {/* Daily trend over the last 30 days: totals compared by default, composition available in the tooltip on demand. */}
                     <div className="mt-4">
                       <ChartHeader
                         headingLevel="h4"
@@ -749,7 +749,7 @@ export default async function ProfilePage({
               </div>
             )}
 
-            {/* 常用 Agent(门禁同用量 tab,用量中心分布卡的行式版本) */}
+            {/* Top agents (same gate as the usage tab; row-style version of the usage hub's distribution card) */}
             {activeTab === "tools" && usageVisible && snapshotAll &&
               (snapshotAll.topTools.length === 0 ? (
                 <p className="px-5 py-10 text-center text-sm text-grey">
@@ -788,7 +788,7 @@ export default async function ProfilePage({
                 </ul>
               ))}
 
-            {/* 构建偏好(无数据的行自动省略,无负面标记) */}
+            {/* Build preferences (rows without data are omitted automatically; no negative labels) */}
             {activeTab === "prefs" && usageVisible && snapshotAll && (
               <dl className="divide-y divide-line px-4 sm:px-5">
                 {busiestSlot && (

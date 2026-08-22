@@ -97,7 +97,7 @@ export async function loadWorkComments(
               </span>
             )}
           </div>
-          {/* AI 评论浅蓝衬底(20260816,与社区评论同款):一眼可辨不抢戏 */}
+          {/* AI comments sit on a pale blue wash (same as community comments): recognizable at a glance without stealing focus */}
           <div
             className={`mt-2 ${c.isAi ? "rounded-lg border border-blue/15 bg-blue/[0.04] px-3 py-2" : ""}`}
           >

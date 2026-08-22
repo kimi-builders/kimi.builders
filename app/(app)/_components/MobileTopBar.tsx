@@ -40,7 +40,7 @@ export default function MobileTopBar({
         href="/"
         className="flex min-w-0 items-center gap-2 font-mono text-sm font-semibold tracking-wide"
       >
-        {/* 小尺寸瓷砖标:双主题稳定 */}
+        {/* Small-size tile mark: stable across both themes */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/logo-tile.svg" alt="" className="h-6 w-6 rounded-md" />
         <span className="truncate">kimi<span className="text-ui-blue">.</span>builders</span>

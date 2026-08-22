@@ -27,14 +27,14 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* 使命引句(与 WorksRail 的 about.quote 同一左蓝线语法) */}
+      {/* Mission quote (same left-blue-line grammar as WorksRail's about.quote) */}
       <p className="border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-grey">
         {zh
           ? "探索将智能转化为创造力的最优解——学、做、得、立。"
           : "Seeking the optimal conversion from intelligence to creativity — Learn, Build, Gain, Become."}
       </p>
 
-      {/* 章分布:条形(与 WorksRail 活跃 Agent 同款) */}
+      {/* Chapter distribution: bars (same style as WorksRail's active agents) */}
       <Widget title={zh ? "章" : "CHAPTERS"} note={zh ? "主轴,按内容计数" : "Primary axis, by content"}>
         <ul className="space-y-2.5">
           {KB_CHAPTERS.map((c) => {
@@ -58,7 +58,7 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
         </ul>
       </Widget>
 
-      {/* 产品透镜(启用且有内容才出;icon + 词 + 计数,链回筛选) */}
+      {/* Product lens (shown when enabled and non-empty; icon + word + count, links back into the filters) */}
       {products.length > 0 && (
         <Widget title={zh ? "产品" : "PRODUCTS"}>
           <ul>
@@ -87,7 +87,7 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
         </Widget>
       )}
 
-      {/* 标签透镜(启用且有内容才出;≤8 个防长尾刷屏) */}
+      {/* Tag lens (shown when enabled and non-empty; capped at 8 so the long tail can't flood the rail) */}
       {tags.length > 0 && (
         <Widget title={zh ? "标签" : "TAGS"}>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">
@@ -105,7 +105,7 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
         </Widget>
       )}
 
-      {/* 最新内容(编号列表,与 WorksRail 本周最受欢迎同款) */}
+      {/* Latest pieces (numbered list, same style as WorksRail's week favorites) */}
       <Widget title={zh ? "最新" : "LATEST"}>
         {latest.length === 0 ? (
           <p className="text-xs text-grey">

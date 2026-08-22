@@ -97,15 +97,16 @@ export default async function LoginContent({
           {t(locale, loginTitleKey(mode))}
         </h1>
       )}
-      {/* 说明文字按模式一句话(20260919):登录/注册各说各的,
-          forgot/reset 的说明在各自表单里,不再全局一句长句 */}
+      {/* One helper sentence per mode: sign-in and sign-up each speak for
+          themselves; forgot/reset carry their own copy inside their forms,
+          not one global long sentence. */}
       {!emailOnly && (
         <p className={`text-xs leading-relaxed text-grey ${showTitle ? "mt-2" : ""}`}>
           {t(locale, mode === "register" ? "login.registerSubtitle" : "login.subtitle")}
         </p>
       )}
 
-      {/* OAuth 入口:共享件(与各受限页引导卡同源,20260919) */}
+      {/* OAuth entries: shared component (same source as the gated-page prompt cards) */}
       {!emailOnly && (
         <div className="mt-6 space-y-2">
           <OAuthButtons next={next} block />
@@ -120,9 +121,11 @@ export default async function LoginContent({
         </div>
       )}
 
-      {/* 模式切换全部走 Link 软导航(20260919):原生 <a> 是硬导航,
-          会绕过拦截路由——弹窗里点页签直接变完整页(宽度/形态跳变)。
-          Link 只变 searchParams,弹窗保持挂载,内容原地切换 */}
+      {/* Mode switches all use Link soft navigation: a native <a> hard-
+          navigates and bypasses the intercepted route — clicking a tab
+          inside the modal would swap in a full page (width/shape jump).
+          Link only changes searchParams, the modal stays mounted, and the
+          content switches in place. */}
       {!emailOnly && (
         <div className="flex justify-center">
           <nav aria-label={t(locale, "login.title")} className={SEG_WRAP}>
@@ -239,7 +242,7 @@ export default async function LoginContent({
             <button type="submit" className={submitCls}>
               <Mail size={12} className="mr-1 inline" /> {t(locale, "login.sendReset")}
             </button>
-            {/* 重置规则(20260919 收编于此,原先全局底栏与登录/注册无关) */}
+            {/* Password reset rules (housed here; the old global footer had nothing to do with sign-in/up) */}
             <p className="font-mono text-xs leading-relaxed text-grey/80">
               · {t(locale, "login.resetRule")}
               <br />· {t(locale, "login.resetContact")}

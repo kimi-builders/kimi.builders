@@ -99,7 +99,7 @@ export default function SocialUsageHeatmap({
               </button>
             ))}
           </div>
-          {/* 移动端分为两个 12 小时时段，桌面端保持完整 24 小时矩阵。 */}
+          {/* Mobile splits into two 12-hour bands; desktop keeps the full 24-hour matrix. */}
           <div className="pb-1">
             <div className="min-w-0 max-w-[620px] sm:min-w-[580px]">
               <div className="flex items-center gap-1.5">
@@ -209,9 +209,10 @@ export default function SocialUsageHeatmap({
                     <span className="mt-0.5 block font-mono text-xs text-grey/65">
                       tokens · {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
                     </span>
-                    {/* 数据条与用量中心「最活跃时段」同一配方(20260819):
-                        轨道 h-1 rounded-full bg-paper/[0.06],填充 rounded-[2px];
-                        焦点蓝只给第一名,其余中性灰(一图一焦点) */}
+                    {/* Data bars share the usage hub's "most active hours"
+                        recipe: h-1 rounded-full bg-paper/[0.06] track,
+                        rounded-[2px] fill; focus blue goes to the top entry
+                        only, the rest neutral grey (one focus per chart). */}
                     <span className="mt-1.5 block h-1 rounded-full bg-paper/[0.06]">
                       <span
                         className={`block h-full rounded-[2px] ${index === 0 ? "bg-viz-blue-primary" : "bg-viz-neutral-muted"}`}

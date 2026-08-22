@@ -195,7 +195,7 @@ export default function PostForm({
           </button>
         </div>
       )}
-      {/* 类型:seg 分段 */}
+      {/* Type: segmented control */}
       <div className={SEG_WRAP} role="radiogroup" aria-label={t(locale, "form.pageTitle")}>
         {TYPES.map((tp) => (
           <label
@@ -215,14 +215,15 @@ export default function PostForm({
         ))}
       </div>
 
-      {/* 话题 + 标题 双列(移动端单列) */}
+      {/* Topic + title in two columns (single column on mobile) */}
       <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
         <div>
           <label htmlFor="post-category" className={labelCls}>
             {t(locale, "form.topic")} <span className="text-ui-blue">*</span>
           </label>
-          {/* 原生 select 外观与站点语言不符(20260815):appearance-none + 自绘
-              ChevronDown(与筛选下拉同款),箭头位置与输入框内边距对齐 */}
+          {/* Native selects clash with the site's visual language:
+              appearance-none + a custom ChevronDown (same as the filter
+              dropdowns), arrow aligned with the input padding. */}
           <div className="relative">
             <select
               id="post-category"

@@ -275,7 +275,7 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
             <path d={maPath} fill="none" stroke={POSTER_ALPHA.paper50} strokeWidth={1.6} strokeDasharray="7 6" />
           ) : null}
         </svg>
-        {/* Satori 不支持 SVG <text>:刻度一律 HTML 绝对定位叠层 */}
+        {/* Satori has no SVG <text> support: tick labels are absolutely positioned HTML overlays */}
         {ticks.map((tick, tickIndex) =>
           tickLabels[tickIndex] === null ? null : (
             <div
@@ -790,7 +790,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         fontFamily: POSTER_FONT_FAMILY,
       }}
     >
-      {/* 身份带:四张海报统一的共享件(poster-kit);右槽 = streak + 数据起止 */}
+      {/* Identity band: shared across all four posters (poster-kit); right slot = streak + data range */}
       <PosterHeader
         section="USAGE"
         eyebrow="TOKEN X-RAY"
@@ -825,7 +825,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         }
       />
 
-      {/* Hero 数字带 */}
+      {/* Hero number band */}
       <div
         style={{
           display: "flex",
@@ -871,7 +871,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         </div>
       </div>
 
-      {/* TOKEN FLOW 桑基 */}
+      {/* TOKEN FLOW sankey */}
       <div
         style={{
           display: "flex",
@@ -890,7 +890,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         </div>
       </div>
 
-      {/* 中段主图 */}
+      {/* Main mid-chart */}
       <div
         style={{
           display: "flex",
@@ -909,7 +909,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         )}
       </div>
 
-      {/* 效率指标带 */}
+      {/* Efficiency metric band */}
       <div
         style={{
           display: "flex",
@@ -922,7 +922,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         <MetricsBand snapshot={snapshot} />
       </div>
 
-      {/* 武器库 */}
+      {/* Arsenal */}
       <div
         style={{
           display: "flex",
@@ -935,7 +935,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         <ArsenalRow snapshot={snapshot} />
       </div>
 
-      {/* 页脚:四张海报统一的共享件(poster-kit);QR 与展示地址同目标 */}
+      {/* Footer: shared across all four posters (poster-kit); the QR and display URL point at the same target */}
       <PosterFooter
         url={snapshot.siteUrl}
         headline={`@${snapshot.user.handle} · ${zh ? snapshot.rangeLabel : snapshot.rangeLabelEn} · ${snapshot.generatedDate}`}

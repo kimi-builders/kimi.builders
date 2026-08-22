@@ -40,7 +40,7 @@ export default function SeriesGridCard({
   const seriesProducts = [...new Set(episodes.flatMap((e) => e.products))].slice(0, 3);
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30">
-      {/* 整卡链系列页;hover 语言与作品卡一致 */}
+      {/* Whole card links to the series page; hover language matches the work cards */}
       <Link
         href={`/explore/series/${series.slug}`}
         aria-label={zh ? series.title.zh : series.title.en}

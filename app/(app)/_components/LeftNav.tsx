@@ -152,14 +152,17 @@ export default function LeftNav({
       </Link>
 
       <nav className="mt-6 space-y-1">
-        {/* 分组标签(20260821 评审):项数超过扫读上限,mono 小字分组
-            (规格同底部「界面」);收起态随 nav-label 隐藏 */}
+        {/* Group labels: once items exceed the skim limit, mono small caps
+            group them (same spec as the bottom "interface" group); collapsed
+            mode hides them along with nav-label. */}
         <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
           {t(locale, "nav.groupSections")}
         </p>
-        {/* SOON 降权(20260815 评审):未就绪板块移到可用板块之后,细线分组
-            + 降不透明度——导航位次是重要性的信号,占位项不再占黄金位。
-            收起态(rail)下分组细线仍在,SOON 徽标保留(item 级标注)。 */}
+        {/* SOON demoted: not-yet-ready sections move after the ready ones,
+            separated by a hairline and dimmed — nav order signals
+            importance, so placeholders don't take the prime slots. In
+            collapsed (rail) mode the hairline stays and the SOON badge
+            remains (item-level annotation). */}
         {SECTIONS.filter((s) => !s.hidden && !s.soon).map((s) => {
           const Icon = s.icon;
           return (
@@ -265,8 +268,10 @@ export default function LeftNav({
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>
-        {/* 「界面」双键:上=收起导航(PanelLeft*),下=隐藏侧栏(PanelRight*);
-            纵排整行,收起态收敛成图标键(globals.css 的 .panel-pair 规则) */}
+        {/* The interface key pair: top = collapse the nav (PanelLeft*),
+            bottom = hide the sidebar (PanelRight*); stacked vertically in
+            one row, converging to icon keys when collapsed (.panel-pair
+            rule in globals.css). */}
         <div className="pt-3">
           <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
             {t(locale, "side.display")}

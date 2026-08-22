@@ -144,7 +144,7 @@ export default function AvatarField({
           className={`${inputCls} mt-2 font-mono`}
         />
       )}
-      {/* 恢复默认时 url 已置空且 URL 输入框卸载,只提交清空标记(avatar_clear=1) */}
+      {/* Reset to default: the url is already empty and the URL input unmounted, so only the clear flag submits (avatar_clear=1) */}
       <input type="hidden" name="avatar_clear" value={clear ? "1" : ""} readOnly />
       <span className="mt-1 block text-xs leading-relaxed text-grey/80">
         {t(locale, "set.avatarHint")}

@@ -50,7 +50,7 @@ export default async function EditArticleContent({
     <div className="rounded-2xl border border-line bg-card p-4 sm:p-6">
       {showTitle && (
         <>
-          {/* 20260819 版式对齐:页头接入 eyebrow + .kb-h2(草稿徽标保留在标题行) */}
+          {/* Layout alignment: page head uses eyebrow + .kb-h2 (draft badge stays on the title row) */}
           <p className="kb-eyebrow">{t(locale, "artf.eyebrow")}</p>
           <h1 className="kb-h2 mt-3">
             {t(locale, "artf.editTitle")}

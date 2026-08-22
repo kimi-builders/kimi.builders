@@ -134,7 +134,7 @@ export default function ImageCropDialog({
  <div className="w-fit max-w-full rounded-2xl border border-line bg-bg p-5 text-paper shadow-2xl">
         <h3 className="font-mono text-sm font-semibold">{title}</h3>
         <p className="mt-1 text-xs leading-relaxed text-grey">{hint}</p>
-        {/* 裁剪视口:指针拖动定位(touch-none 让 pointer 事件接管触屏拖动) */}
+        {/* Crop viewport: pointer-drag positioning (touch-none hands touch drags over to pointer events) */}
         <div
           className="relative mt-4 touch-none select-none overflow-hidden rounded-lg border border-line"
           style={{ width: viewW, height: viewH, maxWidth: "100%" }}

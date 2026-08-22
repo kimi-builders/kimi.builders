@@ -111,7 +111,7 @@ export default function ModToolbar({
           {t(locale, "mod.hide")}
         </button>
       )}
-      {/* 软删:仅帖子/评论(作品无软删态,处置 = 屏蔽或硬删) */}
+      {/* Soft delete: posts and comments only (works have no soft-deleted state; moderating a work means hide or hard delete) */}
       {showSoftDelete && targetType !== "work" && (
         <button
           type="button"

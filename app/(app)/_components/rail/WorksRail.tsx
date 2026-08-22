@@ -23,7 +23,7 @@ export default async function WorksRail({
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
   return (
     <>
-      {/* 引句:一次好的构建,既是终点也是指路牌 */}
+      {/* Quote: a good build is both a destination and a signpost */}
       <p className="border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-grey">
         {t(locale, "about.quote")}
       </p>

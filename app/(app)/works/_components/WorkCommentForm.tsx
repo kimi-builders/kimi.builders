@@ -65,7 +65,7 @@ export default function WorkCommentForm({
   return (
     <form onSubmit={submit} className="mt-4 space-y-3 border-t border-line pt-4">
       <input type="hidden" name="work_id" value={workId} />
-      {/* 召唤等待占位:AI 回复到达后轮询端自动 refresh 收走 */}
+      {/* Summon-wait placeholder: cleared automatically when the poller refreshes on AI-reply arrival */}
       {summon !== null && <SummonPendingRow locale={locale} />}
       <MarkdownEditor
         name="body"

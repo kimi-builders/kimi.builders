@@ -112,7 +112,7 @@ export default function YearFootprint({
       .map((m) => ({ ...m, weekIndex: m.weekIndex - weekOffset }));
     return (
       <div>
-        {/* 月份标签:按列百分比绝对定位,与网格同宽(左留星期标签列) */}
+        {/* Month labels: absolutely positioned by column percentage, same width as the grid (the weekday label column stays clear on the left) */}
         <div className="relative ml-[22px] h-4">
           {monthLabels.map((m) => (
             <span
@@ -154,10 +154,10 @@ export default function YearFootprint({
 
   return (
     <div ref={viewportRef} className="relative" onMouseLeave={() => setHovered(null)}>
-      {/* 桌面:通栏 53 列(限 860px,格子 ~13px,不被拉大) */}
+      {/* Desktop: full-width 53 columns (capped at 860px; cells stay ~13px and never stretch) */}
       <div className="max-w-[860px] max-sm:hidden">{renderGrid(grid.weeks, 0)}</div>
 
-      {/* 移动端:半年一页,按钮/滑动切换,默认含当前月的后半年 */}
+      {/* Mobile: half a year per page, button/swipe navigation, defaulting to the half that contains the current month */}
       <div className="sm:hidden">
         <div className="mb-2 flex items-center justify-between gap-2">
           <button

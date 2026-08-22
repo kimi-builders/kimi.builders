@@ -62,8 +62,9 @@ export default function WorkOwnerActions({
       >
         <MoreHorizontal size={16} aria-hidden="true" />
       </summary>
-      {/* 弹层底色用不透明抬升面 bg-moon(与 FilterDropdown 同源;bg-card 是
-          5% 薄涂会透出下层文字,20260819 修);菜单项 hover 反用 bg-card 浅阶 */}
+      {/* The popover surface is opaque bg-moon (same source as
+          FilterDropdown; bg-card is a 5% wash that lets text below bleed
+          through); menu-item hover inverts to a light bg-card step. */}
       <div className="absolute right-0 top-10 z-30 w-36 rounded-xl border border-line bg-moon p-1.5 shadow-xl">
       <Link
         href={`/works/${workId}/edit`}

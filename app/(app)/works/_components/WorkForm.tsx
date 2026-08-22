@@ -304,8 +304,9 @@ function LabelWithCount({
 }) {
   return (
     <span className="mb-1.5 flex items-baseline justify-between">
-      {/* 不用共享 labelCls(自带 mb-1.5):外层 wrapper 已有下间距,叠双份会
-          比别的字段多出一截 */}
+      {/* No shared labelCls here (it carries mb-1.5): the wrapper already
+          provides bottom spacing, and stacking both would leave this field
+          taller than the rest. */}
       <label htmlFor={htmlFor} className="block text-xs text-grey">
         {label} {required && <span className="text-ui-blue">*</span>}
       </label>
@@ -500,7 +501,7 @@ export default function WorkForm({
       {workId && <input type="hidden" name="work_id" value={workId} />}
       <input type="hidden" name="kind" value={kind} />
 
-      {/* 实时预览:网格卡同款,所见即所得(封面/名称砖随下面的字段实时变) */}
+      {/* Live preview: the grid card itself, WYSIWYG (cover / name tile track the fields below in real time) */}
       <div>
         <span className={labelCls}>{t(locale, "works.preview")}</span>
         <div className="max-w-[280px]">
@@ -517,11 +518,14 @@ export default function WorkForm({
         </div>
       </div>
 
-      {/* 我的作品 / 推荐站外项目:意图在创建时定死——编辑存量条目不再显示切换器
-          (20260919)。编辑中切换会把 awesome 推荐静默转成「我的作品」(原作者/口径
-          随字段失效丢空),误操作后果不可见。
-          最小路径提示(20260815):一句话交代「最少要填什么」,
-          长表单的压迫感来自不知道哪些能跳过 */}
+      {/* My work / recommend external project: intent is fixed at creation —
+          the switcher is not shown when editing existing entries. Switching
+          mid-edit would silently turn an awesome recommendation into "my
+          work" (original author / scope lost as their fields go blank), an
+          invisible consequence of a misclick.
+          Minimal-path hint: one sentence stating the least that must be
+          filled — long forms feel oppressive when you can't tell what is
+          skippable. */}
       {!workId && (
         <div>
           <div className={SEG_WRAP} role="group" aria-label={t(locale, "works.kindSite")}>
@@ -548,9 +552,11 @@ export default function WorkForm({
         </div>
       )}
 
-      {/* 来源路径上下文(毕业归因,20260920):横幅 + 隐藏字段随表单提交;
-          文案由服务端本地化传入(见 NewWorkContent);
-          仅「我的作品」意图显示——awesome 条目无来源路径语义,服务端也强制 null(20260921) */}
+      {/* Origin-path context (graduation attribution): banner + hidden field
+          submit with the form; the copy arrives pre-localized from the
+          server (see NewWorkContent). Shown for the "my work" intent only —
+          awesome entries have no origin-path semantics and the server
+          forces null. */}
       {sourcePath && kind === "site" && (
         <div>
           <input type="hidden" name="source_path" value={sourcePath.slug} />
@@ -560,11 +566,16 @@ export default function WorkForm({
         </div>
       )}
 
-      {/* 结构导览(20260819 发布体验):全区块锚点目录——有哪些可填一眼可见,
-          可选项从「藏起来」变「列出来」;awesome 意图下 03 为推荐信息(必填常开)。
-          sticky 吸顶(20260819 二轮):跳到目标节后导览仍常驻,回程不用滚回顶部;
-          移动端让位 MobileTopBar(64px),桌面让位固定顶栏(56px),弹窗内贴滚动
-          容器顶(0);负边距吃容器 padding 与粘性提交栏同款,两套互斥写。 */}
+      {/* Structure nav: an anchor table of contents for every block — what
+          can be filled is visible at a glance; optional sections move from
+          hidden to listed. Under the awesome intent, 03 is recommendation
+          info (required, always open).
+          Sticky: the nav stays on screen after jumping, so the way back
+          doesn't mean scrolling to the top. It yields to MobileTopBar
+          (64px) on mobile and the fixed top bar (56px) on desktop, and
+          sticks to the scroll container top (0) inside the modal;
+          negative margins eat the container padding exactly like the
+          sticky submit bar, and the two variants are mutually exclusive. */}
       <nav
         aria-label={t(locale, "works.formNav")}
         className={`sticky z-10 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-line bg-bg/95 py-3 font-mono text-xs uppercase tracking-[0.08em] backdrop-blur ${
@@ -596,7 +607,7 @@ export default function WorkForm({
         </a>
       </nav>
 
-      {/* ---- 01 基本信息:必填集中(name/type/agents)+ 链接二选一 ---- */}
+      {/* ---- 01 Basics: required fields clustered (name/type/agents) + one of two link choices ---- */}
       <Section first step={1} id="wf-basic" title={t(locale, "works.secBasic")}>
         <div>
           <LabelWithCount htmlFor="work-name" label={t(locale, "works.name")} count={name.length} max={120} required />
@@ -677,9 +688,10 @@ export default function WorkForm({
           </div>
         </div>
 
-        {/* 参与构建的 Agent(必填,20260815 上移进基本信息):原先埋在第四节
-            「详情」里,必填项应与 name/type 同屏;容器 onChange 事件委托计数,
-            checkbox 仍非受控(无 JS 可提交),0 选中时提前红字提示 */}
+        {/* Agents used to build (required, lives in basics): required fields
+            belong on the same screen as name/type. The container counts via
+            an onChange event delegate while the checkboxes stay uncontrolled
+            (submittable without JS); zero selections warns in red early. */}
         <fieldset>
           <span className={labelCls}>
             {t(locale, "works.agents")} <span className="text-ui-blue">*</span>
@@ -719,7 +731,7 @@ export default function WorkForm({
         </fieldset>
       </Section>
 
-      {/* ---- 02 详情介绍:desc + tags(高频填写字段,保持常开) ---- */}
+      {/* ---- 02 Details: desc + tags (high-traffic fields, always open) ---- */}
       <Section title={t(locale, "works.secDetail")} step={2} id="wf-detail">
         <div>
           <LabelWithCount htmlFor="work-desc" label={t(locale, "works.desc")} count={desc.length} max={10000} />
@@ -750,8 +762,9 @@ export default function WorkForm({
             placeholder="kimi, web, tool"
             className={`${inputCls} font-mono`}
           />
-          {/* chip 预览(20260919):按服务端同口径解析——所见即所存;
-              超 5 个红字提示(多的不保存),单条超 24 字截断显示 */}
+          {/* Chip preview parses exactly like the server — what you see is
+              what gets stored; over 5 tags warns in red (extras are not
+              saved), single tags over 24 chars truncate for display. */}
           {(parsedTags.length > 0 || rawTagCount > 5) && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {parsedTags.map((tag, i) => (
@@ -776,14 +789,16 @@ export default function WorkForm({
         </div>
       </Section>
 
-      {/* 旧的「封面图 URL」退役;编辑存量条目时用隐藏字段原样带回 screenshot_url,
-          不清空历史外链 */}
+      {/* The legacy cover-image URL field is retired; editing an existing
+          entry round-trips screenshot_url through a hidden field, never
+          clearing historical external links. */}
       {initial?.screenshotUrl && (
         <input type="hidden" name="screenshot_url" value={initial.screenshotUrl} />
       )}
 
-      {/* ---- 03 媒体素材(仅「我的作品」;常驻挂载,awesome 意图下整节隐藏;
-              纯可选增强,默认折叠,编辑带回媒体时展开 ---- */}
+      {/* ---- 03 Media ("my work" intent only; always mounted, the whole
+              section hidden under the awesome intent; purely optional,
+              collapsed by default, expanded when an edit brings media back ---- */}
       <div id="wf-media" className={`scroll-mt-28 ${kind === "site" ? "block" : "hidden"}`}>
         <CollapseSection
           title={t(locale, "works.secMedia")}
@@ -806,12 +821,15 @@ export default function WorkForm({
         </CollapseSection>
       </div>
 
-      {/* ---- 03 推荐信息(仅「推荐站外项目」;含必填字段,可见时常开;
-              常驻挂载,site 意图下整节隐藏 ---- */}
+      {/* ---- 03 Recommendation info ("recommend external project" intent
+              only; holds required fields, always open when visible; always
+              mounted, the whole section hidden under the site intent ---- */}
       <div id="wf-recommend" className={`scroll-mt-28 ${kind === "awesome" ? "block" : "hidden"}`}>
         <Section title={t(locale, "works.secRecommend")} step={3}>
-          {/* 控件摘掉 name(无名控件不随表单提交):残留的 author_label 不会把
-              「我的作品」误变成 awesome 条目(服务端按 author_label 非空分流) */}
+          {/* Controls drop their name attribute (nameless controls do not
+              submit): a leftover author_label must not silently turn "my
+              work" into an awesome entry (the server branches on non-empty
+              author_label). */}
           {kind === "awesome" && (
             <p className="rounded-xl border border-dashed border-line bg-moon px-3 py-2 text-xs leading-relaxed text-grey">
               {t(locale, "awesome.rulesBody")}
@@ -861,8 +879,9 @@ export default function WorkForm({
               ))}
             </div>
           </fieldset>
-          {/* Awesome 条目也能定封面风格(20260914);theme 档与作品路径同义
-              (20260815 按类型定色下线);常驻挂载(与作品侧互斥激活,见 inactive) */}
+          {/* Awesome entries can pick a cover style too; the theme option
+              means the same as on the work path; always mounted (mutually
+              exclusive activation with the work side, see inactive). */}
           <CoverToneField
             locale={locale}
             initialTone={media?.tone ?? "theme"}
@@ -874,7 +893,7 @@ export default function WorkForm({
       </div>
 
 
-      {/* ---- 04 模型(可选增强,默认折叠;编辑带回模型时展开) ---- */}
+      {/* ---- 04 Models (optional, collapsed by default; expanded when an edit brings models back) ---- */}
       <CollapseSection
         title={t(locale, "works.models")}
         step={4}
@@ -899,7 +918,7 @@ export default function WorkForm({
                 {modelFamilyName(m.id, locale)}
               </label>
             ))}
-            {/* 自填型号(纯文本 chip,可删) */}
+            {/* Free-form model names (plain-text chips, removable) */}
             {customModels.map((m) => (
               <span
                 key={m}
@@ -947,8 +966,9 @@ export default function WorkForm({
         </fieldset>
       </CollapseSection>
 
-      {/* ---- 05 发布选项:状态/声明/收录与私密(次要选择收尾;默认折叠,
-              编辑带回非默认状态时展开) ---- */}
+      {/* ---- 05 Publishing options: status/declaration/listing and private
+              (secondary choices at the end; collapsed by default, expanded
+              when an edit brings a non-default state back) ---- */}
       <CollapseSection
         title={t(locale, "works.secPublish")}
         step={5}
@@ -1042,8 +1062,9 @@ export default function WorkForm({
           </div>
         )}
 
-        {/* 私密开关 + AI 参与评论区(20260816 召唤)+ 同时收录 Awesome
-            (仅「我的作品」;推荐条目恒在 Awesome,无需开关) */}
+        {/* Private toggle + AI participation in comments (summon) + also
+            list on Awesome ("my work" intent only; recommendations are
+            already on Awesome and need no toggle). */}
         <div className="space-y-2.5">
           {kind === "site" && (
             <CheckBox
@@ -1081,12 +1102,15 @@ export default function WorkForm({
           {state.error}
         </p>
       )}
-      {/* 粘性提交栏(20260815 发布体验打磨):长表单里发布按钮常驻可视区,
-          不再滚丢;负边距吃掉容器的横向/纵向 padding,贴弹窗/主列边缘。
-          弹窗容器 px-6 py-6(20260819 随 RouteModal 归位);完整页主列
-          px-4 py-6 lg:px-6 lg:py-8,移动端抬升 bottom-20 避让底部标签栏。
-          两套负边距/padding 互斥写(20260816):同优先级冲突类靠生成顺序定胜负,
-          与书写顺序无关,并排写会得到两边都不预期的值。 */}
+      {/* Sticky submit bar: on a long form the publish button stays in view
+          instead of scrolling away; negative margins eat the container's
+          horizontal/vertical padding so it hugs the modal/main-column
+          edges. The modal container is px-6 py-6; the full-page main column
+          is px-4 py-6 lg:px-6 lg:py-8, and mobile lifts it bottom-20 above
+          the bottom tab bar. The two negative-margin/padding variants are
+          written as mutually exclusive alternatives: equal-specificity
+          conflicting classes resolve by generation order, not source
+          order, so listing both would yield a value neither side intends. */}
       <div
         className={`sticky z-10 flex items-center gap-3 border-t border-line bg-bg/95 py-3 backdrop-blur ${
           modal
@@ -1094,8 +1118,10 @@ export default function WorkForm({
             : "bottom-20 -mx-4 mb-[-1.5rem] px-4 sm:-mx-6 sm:px-6 lg:bottom-0 lg:mb-[-2rem]"
         }`}
       >
-        {/* 弹窗场景:取消 = router.back() 关窗回原处(RouteModal 监听 URL 变化
-            静默关窗);完整页 = 回来源列表(记忆优先,否则按意图) */}
+        {/* Modal context: cancel = router.back() closes the modal in place
+            (RouteModal listens for URL changes and closes silently); full
+            page = return to the source list (remembered origin first,
+            otherwise by intent). */}
         {modal ? (
           <button
             type="button"
@@ -1117,7 +1143,7 @@ export default function WorkForm({
           disabled={pending}
  className={`ml-auto shrink-0 ${FORM_BTN_PRIMARY}`}
         >
-          {/* 新建 = 发布(动作语义),编辑 = 保存 */}
+          {/* Create = publish (action wording); edit = save */}
           {pending
             ? t(locale, "set.saving")
             : workId

@@ -62,7 +62,7 @@ export default function CoverToneField({
         </span>
       )}
       <div className="flex flex-wrap items-center gap-3">
-        {/* 色块预览:与上传档的图片占位同尺寸(h-24 w-40),tab 切换不跳动 */}
+        {/* Swatch preview: same size as the upload tab's image placeholder (h-24 w-40), so switching tabs never jumps */}
         <span
           aria-hidden="true"
           className={`flex h-24 w-40 shrink-0 items-center justify-center rounded-lg border border-line ${previewCls}`}
@@ -85,7 +85,7 @@ export default function CoverToneField({
                   : "border-line text-grey hover:border-paper/30 hover:text-paper"
               }`}
             >
-              {/* swatch 与名称砖同源:.work-tone-* 随主题换色,所见即所得 */}
+              {/* Swatches share the name tile's source: .work-tone-* recolors with the theme — what you see is what you get */}
               <span
                 aria-hidden="true"
                 className={

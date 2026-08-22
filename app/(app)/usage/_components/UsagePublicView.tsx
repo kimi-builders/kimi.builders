@@ -48,7 +48,7 @@ export default async function UsagePublicView({
         {zh ? "默认私有 · 榜单 opt-in" : "Private by default · opt-in leaderboard"}
       </p>
 
-      {/* 个人面板预览(示例数据活渲染):先看到「会得到什么」,再往下看公开榜 */}
+      {/* Personal-panel preview (live-rendered sample data): show what you get first, the public board follows below */}
       <UsagePreviewStrip locale={locale} />
 
       <section className="mt-8">
