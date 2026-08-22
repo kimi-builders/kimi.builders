@@ -1,11 +1,14 @@
-/* 月刊 mock 夹具:原 app/(app)/blog/_data.ts 的模拟期次(20260920 组装制接真后移入;
-   20260921 产品转向:「给官方的信」层下线,夹具同步摘除 agenda/response)。
-   用途 = 组装函数的测试样本 ——「类型即需求规格」的正确归宿
-   (plan-monthly-learn-launch.md §一.1:mock 数据整体移入 tests/fixtures)。
-   生产仅一处引用:海报路由的 dev-only 预览分支(?preview=1,NODE_ENV=development,
-   动态 import,不进生产渲染路径);渲染契约的真实形态见 src/lib/monthly.ts。 */
+/* Monthly mock fixtures: the simulated issues from the old
+   app/(app)/blog/_data.ts, moved in when assembly went real; the retired
+   "letter to the official" layer took its agenda/response fields along.
+   Purpose = test samples for the assembly functions — the natural home
+   for "the type is the spec". Production references it exactly once:
+   the poster route's dev-only preview branch (?preview=1,
+   NODE_ENV=development, dynamic import, never in the production render
+   path); the real render contract lives in src/lib/monthly.ts. */
 
-/* 与 app/(app)/learn/_data.ts 的 L10n 同形;这里独立定义,夹具不依赖生产文件。 */
+/* Same shape as the old learn _data.ts L10n; defined independently so
+   the fixture depends on no production file. */
 export interface L10n {
   zh: string;
   en: string;
@@ -20,7 +23,7 @@ export interface IssueDecision {
   kind: "best" | "underrated" | "governance";
   title: L10n;
   authorHandle: string;
-  /* 编辑一句话理由:定夺可见 */
+  /* The editor's one-line reason, visible on decisions. */
   note: L10n;
 }
 

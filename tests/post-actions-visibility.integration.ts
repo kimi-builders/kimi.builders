@@ -1,6 +1,8 @@
-/* 社区 Action 数据层门禁集成测试。只在隔离库运行，覆盖私密、屏蔽、软删、
-   不存在目标的评论/反应/订阅/投票拒绝与零写入；loadMore Action 使用的同一
-   getVisiblePostAccess 门禁也逐目标断言拒绝。 */
+/* Community action data-layer gate integration. Runs only against an
+   isolated database. Covers: comments/reactions/subscriptions/votes on
+   private, hidden, soft-deleted, and missing targets all reject with
+   zero writes; the same getVisiblePostAccess gate used by the loadMore
+   action is asserted per target. */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import {
@@ -55,8 +57,9 @@ async function main() {
     const modId = await insertUser("mod", "mod");
     const stranger = { id: strangerId, role: "member" };
 
-    /* 播种迁安全变体(20260822 P1-8):作者视角,顺序保持先评论后隐藏/删除,
-       与真实写入路径同一门禁 */
+    /* Seeding uses the safe variant: the author's view, keeping the
+       comment-first-then-hide/delete order, the same gate as the real
+       write path. */
     const seed = async (postId: number, body: string): Promise<number> => {
       const created = await createCommentForVisiblePost({ id: authorId, role: "member" }, postId, body);
       assert.ok(created);
@@ -84,7 +87,7 @@ async function main() {
     ] as const;
 
     for (const [label, postId, commentId, optionId] of denied) {
-      /* loadMoreCommentsAction 的门禁入口。 */
+      /* The gate entry for loadMoreCommentsAction. */
       assert.equal(await getVisiblePostAccess(postId, stranger), null, `${label}: loadMore gate`);
       assert.equal(
         await createCommentForVisiblePost(stranger, postId, `DENIED-${label}-${stamp}`),
@@ -120,7 +123,8 @@ async function main() {
     const [voteRows] = await pool.query("SELECT COUNT(*) AS n FROM poll_votes WHERE user_id = ?", [strangerId]);
     assert.equal(Number((voteRows as { n: number }[])[0].n), 0);
 
-    /* 正常放行不被误伤:作者可操作自己的私密帖，管理角色可操作屏蔽帖。 */
+    /* Legitimate passes unharmed: the author can act on their private
+       post, moderator roles on hidden posts. */
     const author = { id: authorId, role: "member" };
     assert.ok(await createCommentForVisiblePost(author, privatePost.id, "author private reply"));
     assert.equal(await setPostReactionForViewer(author, privatePost.id, "up"), true);
@@ -133,7 +137,8 @@ async function main() {
   } finally {
     for (const id of postIds) await pool.query("DELETE FROM posts WHERE id = ?", [id]);
     if (userIds.length) {
-      /* reactions 的 target 是多态键、不会随帖子/评论 FK 级联；先按 user 清掉。 */
+      /* Reactions target a polymorphic key with no FK cascade from
+         posts/comments; cleared per user first. */
       await pool.query("DELETE FROM reactions WHERE user_id IN (?)", [userIds]);
       await pool.query("DELETE FROM users WHERE id IN (?)", [userIds]);
     }

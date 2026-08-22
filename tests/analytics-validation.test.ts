@@ -165,7 +165,9 @@ test("viewer hash is stable within a UTC day, rotates across days, and hides inp
 
 test("viewer hash uses the trusted client IP (rightmost XFF, not the spoofable first)", () => {
   const now = new Date("2026-09-03T12:00:00.000Z");
-  /* 伪造的前缀(客户端自带的 XFF 首段)不改变身份:右段是可信代理追加的直连地址 */
+  /* A forged prefix (the client-supplied XFF first segment) never changes
+     identity: the right segment is the direct address appended by our
+     trusted proxy. */
   const spoofed = viewerHash(
     new Headers({ "x-forwarded-for": "1.2.3.4, 203.0.113.1", "user-agent": "ua" }),
     now,
@@ -177,14 +179,14 @@ test("viewer hash uses the trusted client IP (rightmost XFF, not the spoofable f
     "secret",
   );
   assert.equal(spoofed, clean);
-  /* 右段不同 = 不同访客 */
+  /* A different right segment = a different visitor. */
   const otherRightmost = viewerHash(
     new Headers({ "x-forwarded-for": "203.0.113.1, 10.0.0.9", "user-agent": "ua" }),
     now,
     "secret",
   );
   assert.notEqual(clean, otherRightmost);
-  /* cf-connecting-ip 优先于 XFF(20260822 P1-1 可信序) */
+  /* cf-connecting-ip outranks XFF (the trusted order). */
   const viaCf = viewerHash(
     new Headers({
       "cf-connecting-ip": "198.51.100.7",

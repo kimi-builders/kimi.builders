@@ -35,7 +35,8 @@ test("share snapshots keep one shell while adapting the activity story", () => {
   assert.equal(hours.main.cells.length, 24);
   assert.equal(week.main.cells.length, 7);
   assert.equal(month.main.cells.length, 30);
-  /* 贡献图跨度:90D = 13 个自然周(3 个月),ALL = 26 周(半年封顶)。 */
+  /* Contribution span: 90D = 13 natural weeks (3 months), ALL = 26 weeks
+     (capped at half a year). */
   assert.equal(quarter.main.cells.length, 13 * 7);
   assert.equal(all.main.cells.length, 26 * 7);
   assert.match(month.main.eyebrow, /30 天/);
@@ -77,12 +78,12 @@ test("flow aggregates four mutually-exclusive token classes", () => {
 });
 
 test("weekly sequence anchors natural Mondays and ends at the current week", () => {
-  const today = "2026-08-09"; // 周日,当周周一 2026-08-03
+  const today = "2026-08-09"; // Sunday; that week's Monday is 2026-08-03
   const days = [
     { day: "2026-08-04", tokens: 10 },
     { day: "2026-08-06", tokens: 5 },
-    { day: "2026-07-28", tokens: 7 }, // 上一自然周(周一 07-27)
-    { day: "2026-05-10", tokens: 99 }, // 超出 12 周窗口(周一 05-04 < W-12),不计入
+    { day: "2026-07-28", tokens: 7 }, // the previous natural week (Monday 07-27)
+    { day: "2026-05-10", tokens: 99 }, // beyond the 12-week window, not counted
   ];
   const weeks = buildShareWeeks(days, today);
   assert.equal(weeks.length, 12);
@@ -101,7 +102,7 @@ test("weekly streak counts consecutive active natural weeks", () => {
     { day: "2026-08-05", tokens: 3 },
     { day: "2026-07-29", tokens: 2 },
     { day: "2026-07-22", tokens: 1 },
-    { day: "2026-06-01", tokens: 9 }, // 孤立的更早一周
+    { day: "2026-06-01", tokens: 9 }, // an isolated earlier week
   ];
   const streak = weeklyStreak(days, today);
   assert.equal(streak.current, 3);
@@ -159,7 +160,8 @@ test("stacked cells split each day into input / cache / output / reasoning", () 
   assert.equal(cells[0].tokens, 0);
   assert.equal(cells[0].cacheTokens, 0);
   assert.equal(cells[0].reasoningTokens, 0);
-  /* 堆叠四段之和 = 当日总量(mock 快照逐格自洽) */
+  /* The four stack segments sum to the day's total (the mock snapshot is
+     self-consistent cell by cell). */
   const month = mockUsageShareSnapshot("30d");
   for (const cell of month.main.cells) {
     if (cell.tokens <= 0) continue;
@@ -194,7 +196,8 @@ test("share snapshots carry reliable top-model facts", () => {
 test("share snapshots expose the poster target url", () => {
   const snapshot = mockUsageShareSnapshot("30d");
   assert.match(snapshot.siteUrl, /^https:\/\/kimi\.builders\//);
-  /* mock 以公开成员身份出图:指向个人主页用量 tab */
+  /* The mock renders as a public member: pointing at the profile usage
+     tab. */
   assert.match(snapshot.siteUrl, /\/u\/[\w-]+\?tab=usage$/);
 });
 

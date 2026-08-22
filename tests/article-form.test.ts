@@ -8,8 +8,9 @@ import {
 import { validateGuidePayload } from "../src/lib/tutorials";
 import { validateLetterPayload } from "../src/lib/monthly";
 
-/* ---- 结构化表单 → payload 组装(20260822 发布改版):
-   组装产物必须能过服务端严格校验(roundtrip 钉住两端不漂移) ---- */
+/* ---- Structured form -> payload assembly: the output must pass the
+   server's strict validation (a roundtrip pinning both ends against
+   drift) ---- */
 
 test("parseTagInput: split, dedupe, cap 5, drop empties/overlong", () => {
   assert.deepEqual(parseTagInput("入门 工作流, 效率　入门"), ["入门", "工作流", "效率"]);

@@ -23,7 +23,7 @@ test("mediaUrl joins base without double slashes and strips trailing slash", () 
     "https://cdn.kimi.builders/image/202608/abc.webp",
   );
   delete process.env.R2_PUBLIC_BASE_URL;
-  // 未配置时回退默认域名
+  // Falls back to the default domain when unconfigured.
   assert.equal(
     mediaUrl("logo/x.webp"),
     "https://cdn.kimi.builders/logo/x.webp",

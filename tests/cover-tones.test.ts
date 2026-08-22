@@ -8,14 +8,15 @@ import {
   isCoverTone,
 } from "../src/lib/cover-tones";
 
-/* ---- 名称砖色档注册表(cover-tones.ts) ---- */
+/* ---- The name-brick tone registry (cover-tones.ts) ---- */
 
 test("coverToneClass: theme falls back to null, fixed tones get the css pair", () => {
   assert.equal(coverToneClass("theme"), null);
   assert.equal(coverToneClass("green"), "work-tone work-tone-green");
   assert.equal(coverToneClass("blue"), "work-tone work-tone-blue");
   assert.equal(coverToneClass("black"), "work-tone work-tone-black");
-  /* 未知 id 按 theme 兜底(渲染路径容错:坏值回落主题砖,不打掉页面) */
+  /* Unknown ids fall back to theme (render tolerance: bad values fall
+     back to the theme brick, never killing the page). */
   assert.equal(coverToneClass("nope"), null);
 });
 
@@ -26,7 +27,8 @@ test("isCoverTone / coverToneName: registry lookup with fallback", () => {
   assert.equal(coverToneName("unknown", false), COVER_TONES[0].en);
 });
 
-/* ---- 名称砖纹理变体(20260821 评审):按名稳定哈希,约一半带网格 ---- */
+/* ---- Name-brick texture variants: stable hash by name, roughly half
+   carry the grid ---- */
 
 test("coverTextureClass: deterministic per key", () => {
   assert.equal(coverTextureClass("Kimi-Claw"), coverTextureClass("Kimi-Claw"));
@@ -38,7 +40,7 @@ test("coverTextureClass: both variants are reachable (roughly half)", () => {
   const gridded = keys.filter((k) => coverTextureClass(k) === "work-tile-grid");
   assert.equal(gridded.length > 60, true);
   assert.equal(gridded.length < 140, true);
-  /* 输出值只有两种:网格类或无纹理 */
+  /* Only two outputs exist: grid or no texture. */
   for (const k of keys) {
     assert.ok(coverTextureClass(k) === null || coverTextureClass(k) === "work-tile-grid");
   }

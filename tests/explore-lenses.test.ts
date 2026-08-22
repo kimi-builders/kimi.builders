@@ -200,7 +200,8 @@ test("guidePayloadFromDb: invalid lens items dropped, page survives", () => {
   assert.deepEqual(lenient.resources, [{ label: "x", url: "/x" }]);
 });
 
-/* ---- 形态推导(派生不说谎;20260822 P2-5:hasBody 由 SQL 布尔带出) ---- */
+/* ---- Format derivation (derived never lies; hasBody arrives as a SQL
+   boolean) ---- */
 
 test("deriveFormats: presence-driven, read first", () => {
   assert.deepEqual(deriveFormats(true, {}), ["read"]);

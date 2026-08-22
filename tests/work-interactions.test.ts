@@ -86,28 +86,33 @@ test("comment delete is a soft delete pinned by author-or-work-author permission
   /* Soft delete, never physical. */
   assert.match(sql, /SET c\.deleted_at = NOW\(\)/);
   assert.equal(sql.includes("DELETE FROM"), false);
-  /* 权限钉在 WHERE:评论作者本人(c.user_id)或作品作者(w.user_id) */
+  /* Permissions pinned in WHERE: the comment author (c.user_id) or the
+     work author (w.user_id). */
   assert.match(sql, /JOIN works w ON w\.id = c\.work_id/);
   assert.match(sql, /\(c\.user_id = \? OR w\.user_id = \?\)/);
-  /* 只删可见评论:重复删除 affectedRows=0,计数不会被重复扣减(幂等) */
+  /* Deletes only visible comments: a repeat delete yields affectedRows=0
+     and the counter is never decremented twice (idempotent). */
   assert.match(sql, /c\.deleted_at IS NULL/);
   assert.deepEqual(args, [55, 4, 4]);
 });
 
 test("comment delete maintains the denormalized count in the same statement", () => {
   const { sql } = workCommentDeleteQuery(55, 4);
-  /* 多表 UPDATE 一条语句软删 + 计数 -1;减侧同样 CAST SIGNED + GREATEST 兜底 */
+  /* One multi-table UPDATE soft-deletes + decrements; the minus side
+     gets the same CAST SIGNED + GREATEST floor. */
   assert.match(
     sql,
     /w\.comment_count = GREATEST\(0, CAST\(w\.comment_count AS SIGNED\) - 1\)/,
   );
 });
 
-/* ---- @kimi 召唤(20260816 PR2):60s 去重 / AI 评论可见性 / 治理删除 ---- */
+/* ---- @kimi summons: 60s dedup / AI-comment visibility / moderation
+   deletes ---- */
 
 test("comment duplicate query: same author+work+body within 60s (idempotent retry)", () => {
   const { sql, args } = workCommentDuplicateQuery(9, 4, "hello @kimi");
-  /* 对齐社区 createCommentForVisiblePost 的 60s 同人同文窗口(UTC_TIMESTAMP(3)) */
+  /* Aligned with createCommentForVisiblePost's 60s same-user-same-text
+     window (UTC_TIMESTAMP(3)). */
   assert.match(sql, /SELECT id FROM work_comments/);
   assert.match(sql, /work_id = \? AND user_id = \? AND body = \?/);
   assert.match(sql, /deleted_at IS NULL/);
@@ -119,7 +124,7 @@ test("comment duplicate query: same author+work+body within 60s (idempotent retr
 test("comment page query selects is_ai and tolerates NULL user_id (AI comments)", () => {
   const { sql } = workCommentPageQuery(7, 0);
   assert.match(sql, /c\.is_ai/);
-  /* AI 评论 user_id NULL:作者联表必须是 LEFT JOIN */
+  /* AI comments carry NULL user_id: the author join must be LEFT. */
   assert.match(sql, /LEFT JOIN users u ON u\.id = c\.user_id/);
 });
 
@@ -128,7 +133,8 @@ test("comment page + count share the AI filter when the viewer hides AI replies"
   const count = workCommentCountQuery(7, { showAi: false });
   assert.match(page.sql, /AND c\.is_ai = 0/);
   assert.match(count.sql, /AND is_ai = 0/);
-  /* 默认(未传 / showAi:true)不带过滤,向后兼容旧调用 */
+  /* Default (absent / showAi:true) carries no filter — backward
+     compatible with old callers. */
   assert.doesNotMatch(workCommentPageQuery(7, 0).sql, /is_ai = 0/);
   assert.doesNotMatch(workCommentCountQuery(7).sql, /is_ai = 0/);
   assert.deepEqual(page.args, [7, 0]);
@@ -137,7 +143,8 @@ test("comment page + count share the AI filter when the viewer hides AI replies"
 
 test("comment insert stays human-only; AI rows are written by the job runner", () => {
   const { sql } = workCommentInsertQuery(9, 4, "x");
-  /* 人类评论不落 is_ai(列默认 0);AI 插入(is_ai=1, user_id NULL)在 ai-reply.ts */
+  /* Human comments never set is_ai (column default 0); AI inserts
+     (is_ai=1, user_id NULL) live in ai-reply.ts. */
   assert.equal(sql.includes("is_ai"), false);
 });
 
@@ -145,13 +152,13 @@ test("comment delete with moderator flag drops the ownership predicate", () => {
   const mod = workCommentDeleteQuery(55, 4, { moderator: true });
   assert.doesNotMatch(mod.sql, /c\.user_id = \? OR w\.user_id = \?/);
   assert.deepEqual(mod.args, [55]);
-  /* 计数维护与软删语义不变 */
+  /* Counter maintenance and soft-delete semantics unchanged. */
   assert.match(mod.sql, /c\.deleted_at = NOW\(\)/);
   assert.match(
     mod.sql,
     /w\.comment_count = GREATEST\(0, CAST\(w\.comment_count AS SIGNED\) - 1\)/,
   );
-  /* 默认不变:归属校验仍在 */
+  /* Default unchanged: the ownership check stays. */
   const plain = workCommentDeleteQuery(55, 4);
   assert.match(plain.sql, /\(c\.user_id = \? OR w\.user_id = \?\)/);
   assert.deepEqual(plain.args, [55, 4, 4]);

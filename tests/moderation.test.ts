@@ -11,7 +11,8 @@ import {
   muteUntilFor,
 } from "../src/lib/moderation";
 
-/* 角色判定:全站唯一口径(canModerate 收编自 featured,isAdmin 扩展)。 */
+/* Role checks: the site's single definition (canModerate consolidated
+   from featured, isAdmin extends it). */
 test("role helpers: canModerate covers admin/mod, isAdmin only admin", () => {
   assert.equal(canModerate("admin"), true);
   assert.equal(canModerate("mod"), true);
@@ -48,7 +49,7 @@ test("canChangeRole: only admin, never on admins, member<->mod only, not self", 
   assert.equal(canChangeRole({ ...base, targetRole: "mod", nextRole: "member" }), true);
   assert.equal(canChangeRole({ ...base, actorRole: "mod" }), false);
   assert.equal(canChangeRole({ ...base, actorRole: "member" }), false);
-  /* admin 不可被降/被改 */
+  /* Admins can't be demoted or changed. */
   assert.equal(canChangeRole({ ...base, targetRole: "admin" }), false);
   assert.equal(canChangeRole({ ...base, actorId: 2, targetId: 2 }), false);
   assert.equal(canChangeRole({ ...base, nextRole: "admin" }), false);
@@ -76,7 +77,8 @@ test("moderationContentQuery: state filters per type; works have no deleted stat
   assert.match(deleted.sql, /x\.deleted_at IS NOT NULL/);
   const workDeleted = moderationContentQuery({ type: "work", state: "deleted" });
   assert.equal(workDeleted.sql.includes("deleted_at"), false);
-  /* 管理面不过滤可见性(治理权高于可见性):私密内容在 /admin 可见可处置 */
+  /* The admin surface doesn't filter visibility (moderation outranks
+     visibility): private content is visible and actionable in /admin. */
   assert.equal(all.sql.includes("visibility ="), false);
   const paged = moderationContentQuery({ type: "work", state: "hidden", after: 12 });
   assert.match(paged.sql, /x\.hidden_at IS NOT NULL AND x\.id < \?/);

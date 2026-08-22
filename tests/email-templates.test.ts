@@ -1,5 +1,7 @@
-/* 品牌邮件骨架单元测试:结构(table 布局/内联样式/防弹按钮)、内容透传与转义、
-   安全约束(无 script/外部样式表)、logo URL 约定。无数据库、无网络。 */
+/* Brand email skeleton unit tests: structure (table layout/inline
+   styles/bulletproof button), content passthrough and escaping, safety
+   constraints (no script/external stylesheets), and the logo URL
+   conventions. No database, no network. */
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -19,7 +21,7 @@ test("template: CTA href 同时出现在按钮与明文兜底链接", () => {
   const html = renderBrandEmail(SAMPLE);
   const occurrences = html.split(SAMPLE.cta.href).length - 1;
   assert.ok(occurrences >= 2, `href should appear at least twice, got ${occurrences}`);
-  assert.match(html, /bgcolor="#1783ff"/); // 防弹按钮的 td 底色(品牌蓝)
+  assert.match(html, /bgcolor="#1783ff"/); // the bulletproof button td fill
   assert.match(html, /border-radius:8px/);
 });
 
@@ -29,7 +31,7 @@ test("template: 双语关键串 + 标题 + 正文透传", () => {
   assert.ok(html.includes("测试正文 Test body"));
   assert.ok(html.includes("如果这不是你的操作,忽略本邮件即可。"));
   assert.ok(html.includes("If you didn't request this, ignore it."));
-  // 页脚站点链接
+  // Footer site link.
   assert.ok(html.includes('href="https://kimi.builders"'));
 });
 
@@ -47,13 +49,14 @@ test("template: 无 script / 无外部样式表 / 无 flex/grid,纯 table + 内�
 
 test("template: 外层深底(bgcolor+style 双写)+ 深卡 hairline 圆角 + 560px 居中", () => {
   const html = renderBrandEmail(SAMPLE);
-  assert.ok(html.includes('bgcolor="#0e0e13"')); // body/外层 table 的 bgcolor 属性
+  assert.ok(html.includes('bgcolor="#0e0e13"')); // the body/outer table bgcolor
   assert.ok(html.includes("background-color:#0e0e13"));
-  assert.ok(html.includes('bgcolor="#16161f"')); // 深面板卡
+  assert.ok(html.includes('bgcolor="#16161f"')); // the raised panel card
   assert.ok(html.includes("border:1px solid rgba(255,255,255,0.12)"));
   assert.ok(html.includes("width:560px;max-width:100%"));
   assert.ok(html.includes("border-radius:16px"));
-  // 深色邮件:暖白主文字 + 次要灰,不允许深底上压近黑文字
+  // Dark email: warm-white primary text + secondary grey; no near-black
+  // text on dark.
   assert.ok(html.includes("color:#efe8dc"));
   assert.ok(html.includes("color:#9a9aa5"));
   assert.ok(!html.includes("color:#000"));
@@ -115,11 +118,11 @@ test("password reset mail: subject/text/html 齐备,双语文案 + 链接一致"
   });
   assert.ok(mail.subject.includes("重置"));
   assert.ok(mail.subject.includes("Reset"));
-  // text 兜底:纯文本、含链接、无 HTML 标签
+  // The text fallback: plain text, link included, no HTML tags.
   assert.ok(mail.text.includes("https://kimi.builders/login/reset?token=deadbeef"));
   assert.ok(mail.text.includes("1 小时内有效"));
   assert.ok(!mail.text.includes("<p"));
-  // html:品牌骨架 + 同一链接 + 双语 + mono eyebrow
+  // html: brand skeleton + the same link + bilingual + mono eyebrow.
   assert.ok(mail.html.includes("https://kimi.builders/login/reset?token=deadbeef"));
   assert.ok(mail.html.includes("点击下方按钮设置新密码"));
   assert.ok(mail.html.includes("Use the button below"));

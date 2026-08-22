@@ -1,5 +1,6 @@
-/* @kimi 召唤检测与渲染插件的单元测试(20260816):
-   词边界、全角 @、代码块剥离、渲染时 code/pre 跳过。 */
+/* Unit tests for @kimi summon detection and the render plugin: word
+   boundaries, fullwidth @, code-block stripping, and code/pre skipping
+   at render time. */
 import assert from "node:assert/strict";
 import test from "node:test";
 import { hasKimiMention, kimiMentionAt, rehypeKimiMention } from "../src/lib/mention-kimi";
@@ -28,13 +29,14 @@ test("mention: 邮箱、长句柄、连字符词不命中", () => {
 test("mention: 代码块与行内代码里的 @kimi 不触发", () => {
   assert.ok(!hasKimiMention("```\n@kimi 在代码里\n```"));
   assert.ok(!hasKimiMention("用 `@kimi` 这个写法召唤"));
-  /* 未闭合的 fence 也算代码(剥离到文末) */
+  /* An unclosed fence still counts as code (stripped to the end). */
   assert.ok(!hasKimiMention("```\n@kimi"));
-  /* 代码外另有一个真实召唤仍命中 */
+  /* A real summon outside the code still hits. */
   assert.ok(hasKimiMention("```\n@kimi\n```\n外面的 @kimi 算数"));
 });
 
-/* 最小 hast 辅助:构造 element/text 树喂给插件 */type Node = {
+/* Minimal hast helper: builds element/text trees to feed the plugin. */
+type Node = {
   type: string;
   tagName?: string;
   value?: string;
@@ -79,13 +81,13 @@ test("rehype: 无命中时树保持原样(引用不变)", () => {
   assert.equal(p.children!.length, 1);
 });
 
-/* ---- kimiMentionAt:MarkdownEditor 自动补全的匹配逻辑 ---- */
+/* ---- kimiMentionAt: the MarkdownEditor autocomplete matching ---- */
 
 test("autocomplete: @ 及 kimi 前缀触发,光标必须在词尾", () => {
   assert.deepEqual(kimiMentionAt("@", 1), { start: 0, query: "" });
   assert.deepEqual(kimiMentionAt("@k", 2), { start: 0, query: "k" });
   assert.deepEqual(kimiMentionAt("问下 @ki", 6), { start: 3, query: "ki" });
-  /* 光标后是空白(词已断开)不触发 */
+  /* Whitespace after the cursor (word already broken) never triggers. */
   assert.equal(kimiMentionAt("@ki x", 5), null);
 });
 

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canUnlinkProvider } from "../src/lib/auth/users";
 
-/* ---- OAuth 解绑守卫 canUnlinkProvider:不允许拿走最后一个登录方式 ---- */
+/* ---- The OAuth unlink guard canUnlinkProvider: the last login method
+   can't be taken away ---- */
 
 test("unlink guard: passwordless + single provider is the last method", () => {
   assert.equal(canUnlinkProvider(false, 1), "last_method");

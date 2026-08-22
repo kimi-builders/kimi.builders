@@ -7,7 +7,8 @@ import {
 } from "../src/lib/model-families";
 import { AGENTS } from "../src/lib/agents";
 
-/* ---- 模型家族/Agent 注册表的双语与成员钉 ---- */
+/* ---- Bilingual labels and membership pins for the model-family /
+   agent registries ---- */
 
 test("modelFamilyName: Chinese families get English names in en locale", () => {
   assert.equal(modelFamilyName("doubao", "zh"), "豆包");
@@ -33,7 +34,8 @@ test("agents registry: zcode / workbuddy / pi-agent present, qwen stays a model 
   for (const id of ["zcode", "workbuddy", "pi-agent", "qoder"]) {
     assert.ok(ids.includes(id as never), `agent ${id}`);
   }
-  /* WorkBuddy = 腾讯主推名;codebuddy 并入 workbuddy,不再单列 */
+  /* WorkBuddy = Tencent's primary name; codebuddy folded into workbuddy,
+     no longer listed separately. */
   assert.ok(!ids.includes("codebuddy" as never), "codebuddy is folded into workbuddy");
   assert.ok(!ids.includes("qwen" as never), "qwen is a model family, not an agent");
   assert.ok(isModelFamily("qwen"));

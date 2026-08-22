@@ -129,7 +129,8 @@ test("all requested click surfaces send only fixed beacon payloads", () => {
 
 test("analytics retention cron uses bearer auth and the 90-day delete helper", () => {
   const route = source("app/api/cron/analytics-retention/route.ts");
-  /* 20260822 P2-4:鉴权收敛到 cron-auth(恒时比较),路由只留 cronAuthorized 调用 */
+  /* Auth consolidated into cron-auth (constant-time compare); the routes
+     keep only the cronAuthorized call. */
   assert.match(route, /cronAuthorized\(request\)/);
   assert.match(route, /applyAnalyticsRetention\(\)/);
   assert.match(

@@ -1,6 +1,8 @@
-/* provider 头像同步防覆盖集成测试。只在隔离库运行(DATABASE_URL 必须含 kbu-mysql)。
-   覆盖:新建用户落 provider 头像;再次登录同步新 provider 头像(外部 URL 可覆盖);
-   站内自传头像(CDN URL)不被登录冲掉;清空后(恢复默认)下次登录重新同步。 */
+/* Provider avatar sync overwrite-guard integration. Runs only against
+   an isolated database (DATABASE_URL must contain kbu-mysql). Covers:
+   new users store the provider avatar; the next login syncs a new one
+   (external URLs are overridable); on-site uploaded avatars (CDN URL)
+   survive logins; after a reset-to-default, the next login re-syncs. */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import { findOrCreateUser } from "../src/lib/auth/users";
@@ -35,25 +37,29 @@ async function main() {
       avatarUrl,
     });
 
-    /* 新建:provider 头像直接落库 */
+    /* New user: the provider avatar lands directly. */
     uid = await findOrCreateUser("github", profile(GH_AVATAR_1));
     assert.equal(await readAvatar(), GH_AVATAR_1);
 
-    /* 再次登录:当前头像仍是外部 URL(未自定义)→ 同步新 provider 头像 */
+    /* Next login: the current avatar is still an external URL (not
+       customized) -> the new provider avatar syncs. */
     assert.equal(await findOrCreateUser("github", profile(GH_AVATAR_2)), uid);
     assert.equal(await readAvatar(), GH_AVATAR_2);
 
-    /* 用户站内上传头像(CDN URL)→ 后续登录不冲掉 */
+    /* User uploaded an avatar on site (CDN URL) -> later logins never
+       clobber it. */
     await pool.query("UPDATE users SET avatar_url = ? WHERE id = ?", [OWN_AVATAR, uid]);
     assert.equal(await findOrCreateUser("github", profile(GH_AVATAR_1)), uid);
     assert.equal(await readAvatar(), OWN_AVATAR);
 
-    /* 恢复默认(清空 avatar_url)→ 下次登录重新同步 provider 头像 */
+    /* Reset to default (avatar_url cleared) -> the next login re-syncs
+       the provider avatar. */
     await pool.query("UPDATE users SET avatar_url = '' WHERE id = ?", [uid]);
     assert.equal(await findOrCreateUser("github", profile(GH_AVATAR_2)), uid);
     assert.equal(await readAvatar(), GH_AVATAR_2);
 
-    /* provider 不再给头像(空串)→ 保持现状,不清空 */
+    /* Provider stops offering an avatar (empty) -> keep the current one,
+       never clear it. */
     assert.equal(await findOrCreateUser("github", profile("")), uid);
     assert.equal(await readAvatar(), GH_AVATAR_2);
 

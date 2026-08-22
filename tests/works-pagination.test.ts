@@ -41,10 +41,12 @@ test("awesome keeps the agent JSON filter and can combine it with the cursor", (
   assert.match(withAgent.sql, /JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\)/);
   assert.deepEqual(withAgent.args, ["kimi-cli"]);
   const both = worksPageQuery({ source: "awesome", agents: ["kimi-cli"], after: "7" });
-  /* 单个 agent 也是 OR 链包装(括号形式) */
+  /* A single agent also gets the OR-chain wrap (parenthesized). */
   assert.match(both.sql, /\(JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\)\) AND w\.id < \?/);
   assert.deepEqual(both.args, ["kimi-cli", 7]);
-  /* awesome 无筛选时只剩可见性谓词(公开条目;登录浏览者另放行自己的私密条目) */
+  /* Unfiltered awesome keeps only the visibility predicate (public
+     entries; a signed-in viewer additionally gets their own private
+     ones). */
   assert.equal(
     worksPageQuery({ source: "awesome" }).sql.includes("WHERE w.visibility = 'public'"),
     true,
@@ -63,11 +65,14 @@ test("multi-agent filter OR-chains, kind filter uses IN", () => {
 });
 
 test("multi-select filters dedupe and keep placeholders equal to bound args (P0-1)", () => {
-  /* P0-1 回归:占位符曾按全量数组生成、参数按截断常量绑定,重复/超限 id 直接触发
-     绑定数错配(MySQL 1064)→ /works 整页 500。修复后占位符与参数同源同长。 */
+  /* P0-1 regression: placeholders were once generated from the full
+     array while params bound a truncated constant — duplicate/over-cap
+     ids triggered a bind-count mismatch (MySQL 1064) and a whole-page
+     500 on /works. Fixed: placeholders and params share one array. */
   const placeholders = (q: { sql: string }) => (q.sql.match(/\?/g) ?? []).length;
 
-  /* 重复 id:登录态 URL ?agent=kimi×11 的最小复现 */
+  /* Duplicate ids: the minimal repro is ?agent=kimi x11 on a signed-in
+     URL. */
   const dup = worksPageQuery({
     source: "site",
     viewerId: 1,
@@ -77,7 +82,8 @@ test("multi-select filters dedupe and keep placeholders equal to bound args (P0-
   assert.equal(placeholders(dup), dup.args.length);
   assert.deepEqual(dup.args, [1, 1, "kimi", "app"]);
 
-  /* 全注册表 + 重复叠加:去重后恰为注册表大小,全部进 SQL */
+  /* Full registry + stacked duplicates: deduped to exactly the registry
+     size, all entering the SQL. */
   const allAgents = AGENTS.map((a) => a.id);
   const overflow = worksPageQuery({
     source: "site",
@@ -101,7 +107,7 @@ test("hot sort orders by votes with a composite (votes|id) keyset cursor", () =>
   assert.match(sql, /ORDER BY w\.vote_count DESC, w\.id DESC/);
   assert.match(sql, /w\.vote_count < \? OR \(w\.vote_count = \? AND w\.id < \?\)/);
   assert.deepEqual(args, [12, 12, 321]);
-  /* hot 游标与 new 游标不串用 */
+  /* Hot and new cursors never cross. */
   assert.equal(decodeWorksCursor("321", "hot"), null);
   assert.equal(decodeWorksCursor("12|321", "new") === null, true);
   assert.equal(decodeWorksCursor("12|321", "hot")?.id, 321);

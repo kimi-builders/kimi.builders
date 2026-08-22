@@ -19,7 +19,8 @@ test("page query keeps AI comments when showAi=true", () => {
 
 test("page query filters AI on both the anchor parent join and the visible set", () => {
   const { sql } = commentPageQuery(42, { showAi: false, after: 0 });
-  /* 父 Join、锚点自身、递归部分三处都要滤,缺一处就会把 AI 回复或其子树漏进来 */
+  /* The parent join, the anchor itself, and the recursive part all three
+     must filter — miss one and an AI reply or its subtree leaks in. */
   assert.equal(sql.match(/AND p\.is_ai = 0/g)?.length, 1);
   assert.equal(sql.match(/AND c\.is_ai = 0/g)?.length, 2);
 });
@@ -34,7 +35,8 @@ test("page query pages visible roots by id cursor and over-fetches one root", ()
 test("page query resolves the visible root recursively so replies ride with their root", () => {
   const { sql } = commentPageQuery(7, { showAi: true, after: 0 });
   assert.match(sql, /WITH RECURSIVE tree AS/);
-  /* 父被软删/过滤时回复自身升级为顶层(与旧全量拍平的兜底一致) */
+  /* When the parent is soft-deleted/filtered, the reply promotes to top
+     level (same fallback as the old flatten-all behavior). */
   assert.match(sql, /c\.parent_id IS NULL OR p\.id IS NULL/);
 });
 

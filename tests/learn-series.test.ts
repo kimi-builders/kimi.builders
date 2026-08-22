@@ -25,7 +25,8 @@ import {
 
 const NOW = new Date("2026-08-17T00:00:00Z");
 
-/* ---- isPathStale 三态(计算型 stale;自旧 _data.ts 平移)---- */
+/* ---- isPathStale's three states (computed staleness; moved from the
+   old _data.ts) ---- */
 
 test("isPathStale: 新鲜验证戳(同期模型 + 45 天内)→ 非 stale", () => {
   assert.equal(
@@ -36,7 +37,7 @@ test("isPathStale: 新鲜验证戳(同期模型 + 45 天内)→ 非 stale", () =
     ),
     false,
   );
-  /* 边界:恰好 45 天仍算新鲜(超过才过期) */
+  /* Boundary: exactly 45 days still counts fresh (only older expires). */
   assert.equal(
     isPathStale(
       { verifiedModel: CURRENT_KIMI_MODEL, verifiedAt: "2026-07-03" },
@@ -83,7 +84,7 @@ test("STALE_AFTER_DAYS = 45", () => {
   assert.equal(STALE_AFTER_DAYS, 45);
 });
 
-/* ---- 系列注册表卫生(策展数据改坏时的拦截网)---- */
+/* ---- Series registry hygiene (a net for broken curated data) ---- */
 
 test("注册表:slug/code 唯一,L10n 成对非空,discussionPostId 为正整数", () => {
   const slugs = LEARN_SERIES.map((s) => s.slug);
@@ -119,7 +120,7 @@ test("normalizePathSlug: 只接受在册系列 slug,其余置 null", () => {
   }
 });
 
-/* ---- guide payload 校验(编辑后台严格)---- */
+/* ---- Guide payload validation (strict at the edit console) ---- */
 
 test("guide payload: 空串 = 空;合法全字段解析", () => {
   assert.deepEqual(parseGuidePayload(""), { ok: true, payload: {} });
@@ -162,14 +163,16 @@ test("guidePayloadFromDb: 渲染路径容错——坏数据回落空 payload,不
   assert.deepEqual(guidePayloadFromDb("{bad json"), {});
   assert.deepEqual(guidePayloadFromDb({ video: { provider: "tiktok", id: "x" } }), {});
   assert.deepEqual(guidePayloadFromDb({ durationMin: -3 }), {});
-  /* 驱动已解析对象 + 渲染路径不做 series 在册校验(系列注销了集仍可读) */
+  /* Driver-parsed object + the render path skips series-registry
+     validation (episodes stay readable after their series is
+     deregistered). */
   assert.deepEqual(
     guidePayloadFromDb({ series: "retired-series", video: { provider: "youtube", id: "abc" } }),
     { series: "retired-series", video: { provider: "youtube", id: "abc" } },
   );
 });
 
-/* ---- 教程排序与导航 ---- */
+/* ---- Tutorial ordering and navigation ---- */
 
 function tut(slug: string, episode: number, publishedAt: string): Tutorial {
   return {
@@ -205,7 +208,8 @@ test("episodeNeighbors: 首末集的缺省侧为 undefined", () => {
   assert.deepEqual(episodeNeighbors(list, "nope"), { prev: undefined, next: undefined });
 });
 
-/* ---- 毕业归因(自旧 learn-paths.test.ts 平移,机制不变)---- */
+/* ---- Graduation attribution (moved from the old learn-paths tests,
+   mechanism unchanged) ---- */
 
 const WORK_FIELDS: WorkFields = {
   name: "测试作品",

@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { spliceMarkdown } from "../app/(app)/_components/MarkdownEditor";
 
-/* ---- MarkdownEditor 的纯拼接:选区包裹 / 占位词 / 光标恢复 ---- */
+/* ---- MarkdownEditor's pure splicing: selection wrapping / placeholder
+   words / cursor restoration ---- */
 
 test("spliceMarkdown wraps the selection and selects the wrapped text", () => {
   const r = spliceMarkdown("hello world", 6, 11, "**", "**", "粗体文本");
   assert.equal(r.next, "hello **world**");
-  /* 选中 world(含 ** 内侧),方便继续改 */
+  /* "world" selected (inside the **), convenient for further edits. */
   assert.equal(r.next.slice(r.selectionStart, r.selectionEnd), "world");
 });
 

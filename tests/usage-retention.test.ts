@@ -8,7 +8,8 @@ interface FakeCall {
   params: unknown[];
 }
 
-/* 最小假 DB:settings 查询返回固定行,DELETE 按表路由、按脚本依次返回 affectedRows(默认 0) */
+/* Minimal fake DB: the settings query returns fixed rows; DELETEs route
+   by table and return scripted affectedRows in order (default 0). */
 function fakeDb(options: {
   settings: Record<string, unknown>[];
   bucketResults?: number[];
@@ -63,7 +64,7 @@ test("retention deletes rows older than the per-user cutoff in both tables", asy
   });
   await applyUsageRetention(db, NOW);
   const deletes = db.calls.filter((c) => c.sql.startsWith("DELETE"));
-  /* 4 条按用户 + 2 条全局(P1-7) */
+  /* 4 per-user DELETEs + 2 global ones. */
   assert.equal(deletes.length, 6);
   const cutoffOf = (userId: number, table: string) =>
     deletes.find((c) => c.params[0] === userId && c.sql.includes(table))?.params[1];
@@ -80,7 +81,8 @@ test("global cleanup keeps 7-day-old rate-limit rows and terminal device codes b
   assert.equal(stats.deviceCodesDeleted, 5);
   const rateLimits = db.calls.find((c) => c.sql.includes("DELETE FROM usage_rate_limits"));
   assert.ok(rateLimits);
-  /* 全 scope 一起清,不带 scope 条件;截断线 = 7 天前的 window_start */
+  /* All scopes cleared together with no scope condition; the cutoff =
+     window_start 7 days ago. */
   assert.equal(rateLimits.sql.includes("scope ="), false);
   assert.equal(rateLimits.params[0], "2026-08-09 00:00:00.000");
   const codes = db.calls.find((c) => c.sql.includes("DELETE FROM usage_device_codes"));
@@ -95,7 +97,8 @@ test("users without a retention row are left untouched", async () => {
   await applyUsageRetention(db, NOW);
   const deletes = db.calls.filter((c) => c.sql.startsWith("DELETE"));
   assert.ok(deletes.length > 0);
-  /* 按用户的 DELETE 首参是 user_id;全局两条首参是日期串,分开断言 */
+  /* Per-user DELETEs lead with user_id; the two global ones lead with a
+     date string — asserted separately. */
   const perUser = deletes.filter((c) =>
     c.sql.includes("user_id = ?") || c.sql.includes("user_id"));
   assert.ok(perUser.length > 0);
@@ -108,7 +111,8 @@ test("retention reports per-table counts and affected users, batched", async () 
       { user_id: 1, retention_days: 30 },
       { user_id: 2, retention_days: 30 },
     ],
-    /* 用户 1 的 buckets 删满一批再来一批;sessions 无过期;用户 2 只有 sessions 过期 */
+    /* User 1's buckets fill a batch and repeat; their sessions never
+       expire; user 2 has only expiring sessions. */
     bucketResults: [5000, 5000, 1200],
     sessionResults: [0, 7],
   });

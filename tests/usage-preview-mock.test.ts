@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { usagePreviewSnapshot } from "../src/lib/usage/preview-mock";
 
-/* ---- 未登录预览的确定性示例数据(20260822 活渲染方案)----
-   钉住:同一时刻两次生成完全一致(无随机源);形状与 dashboard 组件的
-   契约一致(30 天趋势 / 7×24 热力图);分桶之和恰等于 totalTokens;
-   totals 是 trend 的真聚合(不是另一套手写数字)。 ---- */
+/* ---- Deterministic sample data for the logged-out preview. Pins:
+   two generations at the same instant are identical (no randomness);
+   the shape matches the dashboard components' contract (30-day trend /
+   7x24 heatmap); the bucket sums equal totalTokens exactly; totals are
+   true aggregates of the trend (not a second set of hand-written
+   numbers). ---- */
 
 const NOW = new Date("2026-08-21T12:00:00.000Z");
 const snap = usagePreviewSnapshot(NOW);
@@ -22,7 +24,7 @@ test("trend: 30 consecutive days ending yesterday, breakdown sums to total", () 
     const cur = new Date(`${trend[i].day}T00:00:00.000Z`).getTime();
     assert.equal(cur - prev, 86_400_000, "consecutive UTC days");
   }
-  /* 末日 = 昨日(今日不完整,不进示例) */
+  /* The last day is yesterday (today is incomplete, excluded). */
   assert.equal(trend.at(-1)?.day, "2026-08-20");
   for (const d of trend) {
     assert.equal(
@@ -32,7 +34,8 @@ test("trend: 30 consecutive days ending yesterday, breakdown sums to total", () 
       `breakdown sums to total on ${d.day}`,
     );
   }
-  /* 波形有起伏也有休整日:不全是零,也确有零 */
+  /* The waveform has peaks and rest days: not all nonzero, and truly
+     some zeros. */
   assert.ok(trend.some((d) => d.totalTokens === 0), "has rest days");
   assert.ok(trend.some((d) => d.totalTokens > 0), "has active days");
 });
@@ -57,14 +60,16 @@ test("heatmap: 7×24 matrices, night hours uncollected, hasData honest", () => {
     assert.equal(heatmap[key].length, 7, `${key} has 7 weekday rows`);
     assert.ok(heatmap[key].every((row) => row.length === 24), `${key} has 24 hour cols`);
   }
-  /* 凌晨 0-6 点:零用量且标记无采集(采集缺口语义也被示例如实展示) */
+  /* Small hours 0-6: zero usage flagged no-collection (the sample
+     honestly demonstrates the collection-gap semantics too). */
   for (let weekday = 0; weekday < 7; weekday++) {
     for (let hour = 0; hour < 7; hour++) {
       assert.equal(heatmap.tokens[weekday][hour], 0, "night cell is zero");
       assert.equal(heatmap.hasData[weekday][hour], false, "night cell marked no-data");
     }
   }
-  /* 活跃时段 hasData 与数值一致(有值必有采集) */
+  /* Active slots: hasData agrees with the values (a value implies
+     collection). */
   for (let weekday = 0; weekday < 7; weekday++) {
     for (let hour = 7; hour < 24; hour++) {
       assert.equal(heatmap.hasData[weekday][hour], heatmap.tokens[weekday][hour] > 0);

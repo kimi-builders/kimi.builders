@@ -18,7 +18,7 @@ import {
 test("slug: lowercase letters/digits/hyphens between segments, else null", () => {
   assert.equal(normalizeArticleSlug("hello-world"), "hello-world");
   assert.equal(normalizeArticleSlug("2026-08-letter"), "2026-08-letter");
-  /* 规范化:trim + 小写 */
+  /* Normalization: trim + lowercase. */
   assert.equal(normalizeArticleSlug("  Hello-World  "), "hello-world");
   assert.equal(normalizeArticleSlug(""), null);
   assert.equal(normalizeArticleSlug("   "), null);
@@ -51,12 +51,12 @@ test("kind / locale / sort_order normalization", () => {
 test("letter list: published only, not soft-deleted, newest issue first, author join for byline", () => {
   const { sql, args } = listArticlesQuery("letter");
   assert.match(sql, /a\.kind = \?/);
-  /* 草稿不露出 + 软删不露出 */
+  /* Drafts never surface + soft-deleted never surface. */
   assert.match(sql, /a\.published_at IS NOT NULL/);
   assert.match(sql, /a\.deleted_at IS NULL/);
-  /* 发布时间排序(新期在前) */
+  /* Ordered by publish time (newest first). */
   assert.match(sql, /ORDER BY a\.published_at DESC, a\.id DESC/);
-  /* 署名编辑 join */
+  /* Credited-editor join. */
   assert.match(sql, /JOIN users u ON u\.id = a\.author_id/);
   assert.deepEqual(args, ["letter"]);
 });
@@ -72,7 +72,7 @@ test("guide list: editor-defined order (sort_order ASC) for the numbered path", 
 test("detail query: slug + locale fallback (UI locale first), drafts and soft-deleted hidden", () => {
   const { sql, args } = articleBySlugQuery("letter", "hello", "en");
   assert.match(sql, /a\.slug = \?/);
-  /* 两种语言都取出,UI 语言排第一,LIMIT 1 即回落 */
+  /* Both languages fetched, UI locale first; LIMIT 1 gives the fallback. */
   assert.match(sql, /a\.locale IN \('zh', 'en'\)/);
   assert.match(sql, /ORDER BY \(a\.locale = \?\) DESC/);
   assert.match(sql, /LIMIT 1/);
@@ -106,17 +106,17 @@ test("locale fallback: UI locale preferred per slug, missing language falls back
     payloadRaw: null,
   });
   const rows = [
-    row("a", "zh", "甲"), // 双语都有
+    row("a", "zh", "甲"), // both languages exist
     row("a", "en", "A"),
-    row("b", "en", "B"), // 只有英文
-    row("c", "zh", "丙"), // 只有中文
+    row("b", "en", "B"), // English only
+    row("c", "zh", "丙"), // Chinese only
   ];
   const zh = pickArticleVersions(rows, "zh");
   assert.deepEqual(
     zh.map((r) => [r.slug, r.locale, r.fallback]),
     [
       ["a", "zh", false],
-      ["b", "en", true], // 回落英文,标注
+      ["b", "en", true], // falls back to English, labeled
       ["c", "zh", false],
     ],
   );
@@ -126,10 +126,10 @@ test("locale fallback: UI locale preferred per slug, missing language falls back
     [
       ["a", "en", false],
       ["b", "en", false],
-      ["c", "zh", true], // 回落中文,标注
+      ["c", "zh", true], // falls back to Chinese, labeled
     ],
   );
-  /* 冷启动:无文章 → 空列表(空态文案接管) */
+  /* Cold start: no articles -> empty list (empty-state copy takes over). */
   assert.deepEqual(pickArticleVersions([], "zh"), []);
 });
 
@@ -150,7 +150,7 @@ test("insert: publish flag drives IF(?, NOW(), NULL) — NULL = draft", () => {
   assert.equal(pub.args.at(-1), 1);
   const draft = insertArticleQuery(7, INPUT, false);
   assert.equal(draft.args.at(-1), 0);
-  /* 作者 = 署名编辑 */
+  /* Author = the credited editor. */
   assert.equal(draft.args[7], 7);
 });
 
@@ -167,7 +167,7 @@ test("insert/update: payload 走 CAST(? AS JSON),NULL = 纯自动组装", () => 
 test("update: publish keeps first publish time, unpublish resets to NULL (draft)", () => {
   const { sql, args } = updateArticleQuery(9, INPUT, true);
   assert.match(sql, /published_at = IF\(\?, COALESCE\(published_at, NOW\(\)\), NULL\)/);
-  /* 软删行不可改(WHERE 钉死) */
+  /* Soft-deleted rows are immutable (pinned in WHERE). */
   assert.match(sql, /WHERE id = \? AND deleted_at IS NULL/);
   assert.equal(args.at(-2), 1);
   assert.equal(args.at(-1), 9);

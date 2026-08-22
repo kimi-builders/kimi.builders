@@ -85,7 +85,7 @@ test("session aggregation clips v3 facts and places them in the local heatmap", 
   });
   assert.equal(days.get("2026-08-01 09:00")?.sessions, 1);
   assert.equal(days.get("2026-08-01 09:00")?.activeSeconds, 120);
-  // 2026-08-01 01:00 UTC = 周六 09:00 GMT+8。
+  // 2026-08-01 01:00 UTC = Saturday 09:00 at GMT+8.
   assert.equal(heatmap.activeSeconds[5][9], 120);
   assert.equal(heatmap.prompts[5][9], 2);
   assert.equal(heatmap.activeSeconds.flat().reduce((sum, value) => sum + value, 0), 120);

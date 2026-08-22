@@ -1,4 +1,5 @@
-/* Phase 2 单元测试:价格匹配/估费、筛选解析、CSV 导出防护。无数据库。 */
+/* Phase 2 unit tests: price matching/estimation, filter parsing, and
+   CSV export guards. No database. */
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -91,7 +92,7 @@ test("pricing: effective window is respected (历史价格不回算)", () => {
     matchModelPrice(prices, "claude-sonnet-5-x", day("2026-09-15"))?.version,
     "standard",
   );
-  // 窗口前无任何价格 → unpriced
+  // No price before the window -> unpriced.
   assert.equal(matchModelPrice(prices, "claude-sonnet-5-x", day("2026-01-15")), null);
 });
 
@@ -107,7 +108,8 @@ test("pricing: rate fallbacks — cacheWrite→input, reasoning→output, cacheR
     },
     row,
   );
-  // 1×1 + 1×1(回退 input)+ 1×0.1 + 1×2 + 1×2(回退 output)= 6.1 USD
+  // 1x1 + 1x1 (falls back to input) + 1x0.1 + 1x2 + 1x2 (falls back to
+  // output) = 6.1 USD.
   assert.equal(full.status, "priced");
   assert.ok(Math.abs(full.micros - 6_100_000) < 1e-6);
   assert.equal(full.pricedTokens, 5_000_000);
@@ -316,7 +318,7 @@ test("filters: 预设/兼容 days/自定义范围/跨度上限", () => {
   const custom = parseUsageFilters({ from: "2026-07-01", to: "2026-07-15" }, opts);
   assert.equal(custom.rangeLabel, "custom");
   assert.equal(custom.days, 15);
-  // 本地日界换算 UTC:北京 7/1 00:00 = UTC 6/30 16:00
+  // Local day boundary to UTC: Beijing 7/1 00:00 = UTC 6/30 16:00.
   assert.equal(custom.from.toISOString(), "2026-06-30T16:00:00.000Z");
 
   const tooWide = parseUsageFilters({ from: "2024-01-01", to: "2026-01-01" }, opts);
@@ -344,7 +346,8 @@ test("filters: 维度解析与隐私门禁", () => {
   assert.deepEqual(parsed.models, ["kimi-k3", "gpt-5.2"]);
   assert.deepEqual(parsed.efforts, ["high", "max"]);
   assert.deepEqual(parsed.agentVersions, ["0.146.1", "2.1.220"]);
-  // 项目名上传关闭 → 项目筛选被强制清空,不允许按项目过滤
+  // Project upload off -> the project filter is forcibly cleared; no
+  // filtering by project.
   assert.equal(parsed.projects, null);
   assert.equal(parsed.projectsEnabled, false);
   assert.deepEqual(parsed.devices, ["udv_abc-123"]);
@@ -433,7 +436,7 @@ test("csv: recordsToCsv 表头/未定价不计费/注入防护落行", () => {
   const headers = lines[0].replace(/^﻿/, "").split(",");
   const cells = lines[1].split(",");
   assert.equal(cells[headers.indexOf("project")], "'=evil");
-  assert.equal(cells[headers.indexOf("cost_usd_estimate")], ""); // 未定价 → 费用留空,不是 0
+  assert.equal(cells[headers.indexOf("cost_usd_estimate")], ""); // unpriced -> empty, not 0
   assert.equal(cells[headers.indexOf("price_status")], "unpriced");
   assert.equal(cells[headers.indexOf("context_tier")], "short");
 });
@@ -456,7 +459,7 @@ test("filters: today/24h/粒度推导", () => {
   const today = parseUsageFilters({ range: "today" }, opts);
   assert.equal(today.days, 1);
   assert.equal(today.granularity, "hour");
-  assert.equal(today.from.toISOString(), "2026-08-07T16:00:00.000Z"); // 北京 8/8 00:00
+  assert.equal(today.from.toISOString(), "2026-08-07T16:00:00.000Z"); // Beijing 8/8 00:00
   assert.equal(today.to.toISOString(), now.toISOString());
 
   const rolling = parseUsageFilters({ range: "24h" }, opts);

@@ -49,8 +49,9 @@ test("write actions call transaction-backed guarded mutations after preflight", 
   assert.match(actions, /votePollForViewer\(user, postId, optionId\)/);
 });
 
-/* @kimi 召唤(20260816):duplicate 评论不得触发任何 AI 任务(chain/mention 都在
-   !created.duplicate 分支内),召唤三态 aiNote 返回给客户端 */
+/* @kimi summons: a duplicate comment must trigger no AI job (both chain
+   and mention sit inside the !created.duplicate branch); the three
+   aiNote states return to the client. */
 test("comment action: AI triggers stay behind the duplicate guard", () => {
   const src = actionSource("createCommentAction", "loadMoreCommentsAction");
   const chainIdx = src.indexOf("!created.duplicate && parent?.isAi");

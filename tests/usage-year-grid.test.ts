@@ -27,7 +27,7 @@ test("buildYearGrid places tokens on their dates and ignores out-of-window keys"
       "2026-08-09": 100, // today
       "2025-08-04": 50, // window start
       "2026-01-15": 7,
-      "2020-01-01": 999, // 窗口外的键忽略
+      // Out-of-window keys are ignored.
     },
     "2026-08-09",
   );
@@ -44,7 +44,8 @@ test("buildYearGrid places tokens on their dates and ignores out-of-window keys"
 
 test("buildYearGrid labels a month at the first column whose Monday enters it", () => {
   const grid = buildYearGrid({}, "2026-08-09");
-  /* 首列 2025-08-04(周一,8 月)→ 标签从 9 月起,到末列 2026-08-03(周一)止 */
+  /* First column 2025-08-04 (Monday, August) -> labels start in
+     September and end at the last column 2026-08-03 (Monday). */
   assert.deepEqual(grid.monthLabels, [
     { weekIndex: 4, month: 9 },
     { weekIndex: 9, month: 10 },
@@ -59,22 +60,26 @@ test("buildYearGrid labels a month at the first column whose Monday enters it", 
     { weekIndex: 48, month: 7 },
     { weekIndex: 52, month: 8 },
   ]);
-  assert.equal(grid.monthLabels.length, 12); // 最近 12 个月
+  assert.equal(grid.monthLabels.length, 12); // the last 12 months
 });
 
-/* 2026-08-11 是周二:末列 = 本周(周一 08-10 … 周日 08-16),今天之后的 5 格
-   是未来(inWindow=false);窗口最早的 5 天(08-06…08-10 去年)落在网格左侧之外 */
+/* 2026-08-11 is a Tuesday: the last column = this week (Mon 08-10 ...
+   Sun 08-16); the 5 cells after today are future (inWindow=false); the
+   window's 5 oldest days (08-06...08-10 of last year) fall outside the
+   grid on the left. */
 test("buildYearGrid marks future days out of window when today is mid-week", () => {
   const grid = buildYearGrid({ "2025-08-06": 999, "2026-08-11": 42 }, "2026-08-11");
   assert.equal(grid.weeks[0][0].date, "2025-08-11");
   assert.equal(grid.weeks[52][6].date, "2026-08-16");
-  /* 今天在末列(行 1 = 周二),行 2..6 是未来 */
+  /* Today sits in the last column (row 1 = Tuesday); rows 2..6 are the
+     future. */
   assert.deepEqual(
     grid.weeks[52].map((c) => c.inWindow),
     [true, true, false, false, false, false, false],
   );
   assert.equal(grid.weeks[52][1].tokens, 42);
-  /* 窗口内但网格装不下的最旧几天不显示(371 格恒定的代价,与 GitHub 同) */
+  /* The oldest in-window days the grid can't fit simply don't show (the
+     price of a constant 371 cells, same as GitHub). */
   assert.equal(
     grid.weeks.flat().reduce((s, c) => s + c.tokens, 0),
     42,
@@ -84,10 +89,10 @@ test("buildYearGrid marks future days out of window when today is mid-week", () 
 
 test("localTodayYmd converts now into the user's local calendar day", () => {
   const now = new Date(Date.UTC(2026, 7, 8, 20, 0)); // 2026-08-08 20:00 UTC
-  assert.equal(localTodayYmd(480, now), "2026-08-09"); // 北京 +8 → 次日 04:00
+  assert.equal(localTodayYmd(480, now), "2026-08-09"); // Beijing +8 -> next day 04:00
   assert.equal(localTodayYmd(0, now), "2026-08-08");
-  assert.equal(localTodayYmd(-300, now), "2026-08-08"); // 美东夏令 → 15:00 当天
-  /* 夹取与非法值同 social.ts 约定 */
-  assert.equal(localTodayYmd(100000, now), "2026-08-09"); // 夹到 +840 → 次日 10:00
+  assert.equal(localTodayYmd(-300, now), "2026-08-08"); // US Eastern DST -> 15:00 same day
+  /* Clamping and invalid values follow social.ts's convention. */
+  assert.equal(localTodayYmd(100000, now), "2026-08-09"); // clamped to +840 -> next day 10:00
   assert.equal(localTodayYmd(Number.NaN, now), "2026-08-08");
 });

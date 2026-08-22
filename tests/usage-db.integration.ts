@@ -185,6 +185,7 @@ main()
   .then(() => console.log("usage DB integration: passed"))
   .catch((error) => {
     console.error(error);
-    /* 同 usage-phase2:失败硬退出,池子未关不能把 CI 挂到超时 */
+    /* Same as usage-phase2: hard-exit on failure — an open pool must not
+       hang CI until the timeout. */
     process.exit(1);
   });

@@ -5,7 +5,8 @@ import {
   isPlainShortcutContext,
 } from "../src/lib/shortcut-guards";
 
-/* 快捷键守卫(20260822):触发条件是快捷键层的全部安全边界,钉住防回归 */
+/* Shortcut guards: the trigger conditions are the shortcut layer's
+   entire safety boundary — pinned against regressions. */
 const plain = { metaKey: false, ctrlKey: false, altKey: false, isComposing: false };
 
 test("isPlainShortcutContext: 修饰键组合一律不触发", () => {

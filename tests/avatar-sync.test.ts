@@ -13,7 +13,7 @@ import {
 } from "../src/lib/avatar-urls";
 import type { Pool } from "mysql2/promise";
 
-/* provider 头像同步与可持久化 URL 白名单。 */
+/* Provider avatar sync + the persistable-URL allowlist. */
 
 const CDN_AVATAR = "https://cdn.kimi.builders/avatar/202608/0123456789abcdef.webp";
 const PROVIDER_AVATAR = "https://avatars.githubusercontent.com/u/12345?v=4";
@@ -21,7 +21,8 @@ const PROVIDER_AVATAR = "https://avatars.githubusercontent.com/u/12345?v=4";
 test("isOwnAvatarUrl: CDN host match counts as own (default base)", () => {
   delete process.env.R2_PUBLIC_BASE_URL;
   assert.equal(isOwnAvatarUrl(CDN_AVATAR), true);
-  /* 同 host 的其他 key 前缀(logo/image)也算自家 CDN,同样不覆盖 */
+  /* Other key prefixes on the same host (logo/image) count as our CDN
+     too — equally never overwritten. */
   assert.equal(
     isOwnAvatarUrl("https://cdn.kimi.builders/logo/202608/0123456789abcdef.webp"),
     true,
@@ -54,7 +55,8 @@ test("isOwnAvatarUrl: honors R2_PUBLIC_BASE_URL override", () => {
       isOwnAvatarUrl("https://media.example.com/avatar/202608/0123456789abcdef.webp"),
       true,
     );
-    /* 配置切换后只认新 host，不再按路径把旧/外部域冒充为自有。 */
+    /* After a config switch only the new host counts; old/external
+       domains are no longer impersonated as ours by path. */
     assert.equal(isOwnAvatarUrl(CDN_AVATAR), false);
     assert.equal(
       isOwnAvatarUrl("https://cdn.kimi.builders/image/202608/0123456789abcdef.webp"),

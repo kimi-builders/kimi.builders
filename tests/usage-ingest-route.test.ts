@@ -1,5 +1,7 @@
-/* /api/usage/ingest 路由级测试:设备鉴权先于一切、校验先于写库、
-   排行榜缓存只在「公开且有增量」时作废。同 upload-route.test.ts 的源码断言约定。 */
+/* Route-level tests for /api/usage/ingest: device auth precedes
+   everything, validation precedes writes, and the leaderboard cache
+   invalidates only on "public with increments". Same source-assertion
+   convention as upload-route.test.ts. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -19,8 +21,10 @@ function assertOrder(a: string, b: string, label: string) {
 
 test("ingest POST: 设备鉴权先于请求体解析与写库", () => {
   assertOrder("authenticateUsageRequest(", "readUsageJson(", "鉴权先于解析");
-  /* validateUsageIngest(await readUsageJson(...)) 是嵌套调用,文本序与执行序相反,
-     只对执行序有意义的「解析先于写库」「校验先于写库」做文本断言 */
+  /* validateUsageIngest(await readUsageJson(...)) is a nested call — text
+     order opposes execution order, so we assert textually only the
+     orderings that hold in execution: parse-before-write and
+     validate-before-write. */
   assertOrder("readUsageJson(", "ingestUsage(", "解析先于写库");
   assertOrder("validateUsageIngest(", "ingestUsage(", "校验先于写库");
   assert.ok(src.includes('authenticateUsageRequest(request, "ingest")'));

@@ -1,4 +1,5 @@
-/* cron 路由鉴权(20260822 P2-4)纯函数测试:恒时比较 + 未配置统一 401 语义。 */
+/* Cron route auth pure-function tests: constant-time comparison + the
+   uniform 401 semantics for the unconfigured case. */
 import assert from "node:assert/strict";
 import test from "node:test";
 import { cronAuthorized } from "../src/lib/cron-auth";

@@ -16,7 +16,8 @@ import {
 test("upcoming query picks the nearest upcoming event, deterministically", () => {
   const { sql, args } = upcomingEventQuery();
   assert.match(sql, /WHERE e\.status = 'upcoming'/);
-  /* 最近一场:开场时间正序取第一;同刻按 id 定序,结果确定 */
+  /* The latest event: first by start time ascending; id breaks same-time
+     ties, deterministic. */
   assert.match(sql, /ORDER BY e\.starts_at ASC, e\.id ASC LIMIT 1/);
   assert.deepEqual(args, []);
 });
@@ -25,7 +26,8 @@ test("archive query lists done events newest first with an inline attendee count
   const { sql, args } = archivedEventsQuery(10);
   assert.match(sql, /WHERE e\.status = 'done'/);
   assert.match(sql, /ORDER BY e\.starts_at DESC, e\.id DESC LIMIT \?/);
-  /* 到场人数随行子查询:归档卡片直接渲染,不二次查库 */
+  /* Attendance rides along as a subquery: archive cards render without a
+     second query. */
   assert.match(sql, /SELECT COUNT\(\*\) FROM demo_rsvps r WHERE r\.event_id = e\.id/);
   assert.deepEqual(args, [10]);
 });
@@ -35,7 +37,8 @@ test("roster query joins users and signs first-come-first (created_at asc)", () 
   assert.match(sql, /FROM demo_rsvps r/);
   assert.match(sql, /JOIN users u ON u\.id = r\.user_id/);
   assert.match(sql, /WHERE r\.event_id = \?/);
-  /* 先到场先署名:报名时间正序,同秒按 user_id 定序 */
+  /* First to arrive, first credited: signup time ascending, user_id
+     breaks same-second ties. */
   assert.match(sql, /ORDER BY r\.created_at ASC, r\.user_id ASC/);
   assert.deepEqual(args, [7]);
 });
@@ -49,9 +52,11 @@ test("batch roster query covers many events in one roundtrip, ordered for groupi
 
 test("rsvp is idempotent and pinned to the upcoming event in SQL", () => {
   const { sql, args } = rsvpQuery(42, 9);
-  /* 幂等:复合主键 + INSERT IGNORE —— 重复报名不报错、不重复署名 */
+  /* Idempotent: composite PK + INSERT IGNORE — repeat RSVPs neither
+     error nor double-credit. */
   assert.match(sql, /INSERT IGNORE INTO demo_rsvps \(event_id, user_id\)/);
-  /* 「只能报当前场」钉在 SQL 侧:已归档/不存在的场次写不进名单 */
+  /* "Only the current event" is pinned in SQL: archived/missing events
+     can't be written into any list. */
   assert.match(sql, /SELECT e\.id, \? FROM demo_events e/);
   assert.match(sql, /WHERE e\.id = \? AND e\.status = 'upcoming'/);
   assert.deepEqual(args, [9, 42]);

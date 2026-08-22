@@ -1,5 +1,6 @@
-/* 月刊统计快照缓存(20260822 P2-5)源码钉:同 public-feed-cache 的约定,
-   缓存模块独立、纯模块不被缓存污染,发布/撤稿路径作废 tag。 */
+/* Monthly stats snapshot cache source pinning: same conventions as
+   public-feed-cache — the cache module stands alone, the pure module
+   stays unpolluted, and publish/unpublish paths invalidate the tag. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -31,7 +32,7 @@ test("发布/撤稿/软删都作废 monthly-stats tag", () => {
   assert.equal(actions.match(/updateTag\(PUBLIC_MONTHLY_STATS_CACHE_TAG\)/g)?.length ?? 0, 2);
 });
 
-/* ---- 20260822 P2-6/P2-8:发布失效补全 + proxy matcher ---- */
+/* ---- Publish invalidation completeness + the proxy matcher ---- */
 
 test("发布/删除失效覆盖:旧 slug 详情页 + 新旧系列页", () => {
   const save = actions.slice(actions.indexOf("export async function saveArticleAction"));

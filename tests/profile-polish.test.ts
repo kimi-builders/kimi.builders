@@ -17,7 +17,8 @@ const leaderboard = readFileSync(
 
 test("mobile profile actions stay in one compact, horizontally safe row", () => {
   assert.match(profile, /flex-nowrap items-center.*overflow-x-auto sm:flex-wrap/);
-  /* 20260818 字号统一为 text-xs(12px),高于 11px 可读性下限;触控与截断语义不变。 */
+  /* Font sizes unified at text-xs (12px), above the 11px readability
+     floor; touch and truncation semantics unchanged. */
   assert.match(profile, /min-h-8 shrink-0.*text-xs.*whitespace-nowrap/);
   assert.match(share, /min-h-8 shrink-0.*text-xs.*whitespace-nowrap/);
 });

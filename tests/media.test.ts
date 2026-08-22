@@ -71,7 +71,8 @@ test("Content-Length rejects multipart bodies above 8 MiB before parsing", () =>
 });
 
 test("rejects SVG explicitly (svg_not_allowed), regardless of declared type", async () => {
-  /* librsvg 能栅格化 SVG,但外部引用/脚本语义不该进上传管线(20260822 P2-11) */
+  /* librsvg can rasterize SVG, but external references/script semantics
+     don't belong in the upload pipeline. */
   const svg = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#36c"/></svg>`,
   );

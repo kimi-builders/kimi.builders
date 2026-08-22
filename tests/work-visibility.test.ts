@@ -8,15 +8,17 @@ import {
   worksPageQuery,
 } from "../src/lib/works";
 
-/* works.visibility(20260828_work_visibility)的 SQL 口径:
-   匿名/访客只见 public;登录浏览者额外放行自己的私密条目(同 posts feed)。
-   公共上下文(相关作品/精选/统计/海报)恒 public-only。 */
+/* The works.visibility SQL definitions: anonymous/visitors see public
+   only; a signed-in viewer additionally gets their own private entries
+   (like the posts feed). Public contexts (related works/featured/
+   stats/posters) are public-only, always. */
 
 test("worksPageQuery: anonymous sees public, non-hidden only (wall and awesome)", () => {
   const wall = worksPageQuery({ source: "site" });
   assert.match(wall.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND w\.source = 'site'/);
   assert.deepEqual(wall.args, []);
-  /* Awesome 清单(20260906):推荐条目 ∪ 作者勾选「同时收录」的成员作品 */
+  /* The Awesome listing: recommended entries UNION member works whose
+     authors checked "also list". */
   const awesome = worksPageQuery({ source: "awesome" });
   assert.match(awesome.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND \(w\.source = 'awesome' OR w\.also_awesome = 1\)/);
   assert.deepEqual(awesome.args, []);
@@ -27,7 +29,8 @@ test("worksPageQuery: viewer additionally sees their own private/hidden entries"
   assert.match(sql, /\(w\.visibility = 'public' OR w\.user_id = \?\)/);
   assert.match(sql, /\(w\.hidden_at IS NULL OR w\.user_id = \?\)/);
   assert.deepEqual(args, [7, 7]);
-  /* 可见性谓词在最前,其余过滤/游标依次排后 */
+  /* The visibility predicate leads; the remaining filters/cursors
+     follow in order. */
   const both = worksPageQuery({ source: "awesome", viewerId: 7, kinds: ["app"], after: "9" });
   assert.deepEqual(both.args, [7, 7, "app", 9]);
 });
@@ -60,7 +63,8 @@ test("canViewWork: public for anyone, private only for its author", () => {
   assert.equal(canViewWork(priv, { id: 3, role: "member" }), true);
   assert.equal(canViewWork(priv, { id: 99, role: "member" }), false);
   assert.equal(canViewWork(priv, null), false);
-  /* 编辑收录条目(user_id NULL)恒 public;即便误标 private 也不对任何人放行 */
+  /* Editor-curated entries (user_id NULL) are always public; even a
+     mistaken private label admits no one. */
   assert.equal(
     canViewWork({ visibility: "private", userId: null, hiddenAt: null }, { id: 3, role: "member" }),
     false,

@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { profileDisplay, type UserProfile } from "../src/lib/users";
 
-/* 资料字段级隐私(20260829_profile_privacy)的展示口径:
-   头像隐藏 → 空串(页面回落 handle 首字符);显示名隐藏 → 只显示 @handle;
-   简介隐藏 → 空串(简介区不渲染)。本人视角不受限(开关对自己无效)。 */
+/* Per-field profile privacy display rules: hidden avatar -> empty string
+   (pages fall back to the handle's first character); hidden display name
+   -> @handle only; hidden bio -> empty string (the bio section never
+   renders). The owner's own view is unrestricted (the switches don't
+   apply to oneself). */
 
 function profile(overrides: Partial<UserProfile> = {}): UserProfile {
   return {

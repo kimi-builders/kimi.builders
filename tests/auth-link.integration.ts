@@ -1,6 +1,9 @@
-/* OAuth 绑定/自动并号集成测试。只在隔离库运行(DATABASE_URL 必须含 kbu-mysql)。
-   覆盖:登录后绑定(新建/幂等/抢绑拒绝);已验证邮箱登录自动并号;
-   未验证邮箱不并号(仍建小号);已绑 provider 再次登录落同一账号。 */
+/* OAuth linking / auto-merge integration. Runs only against an isolated
+   database (DATABASE_URL must contain kbu-mysql). Covers: post-login
+   linking (new / idempotent / taken rejected); verified-email login
+   auto-merges; unverified emails never merge (a separate account is
+   still created); logging in again with a bound provider lands on the
+   same account. */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import {
@@ -22,7 +25,7 @@ async function main() {
   const gId = `g_${stamp}`;
   const createdUserIds: number[] = [];
   try {
-    /* 邮箱注册的主账号 + 一个无关账号 */
+    /* The email-registered primary account + one unrelated account. */
     const ownerId = await createEmailUser(email, "Link Owner");
     createdUserIds.push(ownerId);
     const otherId = await createEmailUser(`other_${stamp}@example.com`, "Other");
@@ -37,14 +40,16 @@ async function main() {
       avatarUrl: "",
     };
 
-    // 绑定:未绑 → ok;同人再绑幂等;绑给别人 → taken(不抢绑)
+    // Linking: unbound -> ok; the same person relinking is idempotent;
+    // bound to someone else -> taken (never stolen).
     assert.equal(await findLinkedUserId("github", ghId), null);
     assert.equal(await linkProviderAccount(ownerId, "github", ghProfile), "ok");
     assert.equal(await findLinkedUserId("github", ghId), ownerId);
     assert.equal(await linkProviderAccount(ownerId, "github", ghProfile), "ok");
     assert.equal(await linkProviderAccount(otherId, "github", ghProfile), "taken");
 
-    // 已验证邮箱自动并号:Google 登录同邮箱 → 落回主账号并挂上 provider
+    // Verified-email auto-merge: Google login with the same email lands
+    // on the primary account with the provider attached.
     const gProfile = {
       providerAccountId: gId,
       handle: "linker",
@@ -56,10 +61,11 @@ async function main() {
     assert.equal(await findOrCreateUser("google", gProfile), ownerId);
     assert.equal(await findLinkedUserId("google", gId), ownerId);
 
-    // 已绑 provider 再次登录 → 同一账号
+    // Logging in again with a bound provider -> the same account.
     assert.equal(await findOrCreateUser("github", ghProfile), ownerId);
 
-    // 未验证邮箱不并号:同邮箱但 emailVerified=false → 新建用户
+    // Unverified emails never merge: same email with
+    // emailVerified=false -> a new user.
     const freshId = await findOrCreateUser("google", {
       providerAccountId: `g_new_${stamp}`,
       handle: "newbie",

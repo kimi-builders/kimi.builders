@@ -1,6 +1,7 @@
-/* Resend 邮件通道单元测试:不连真 API,fetch 全部打桩。
-   覆盖:not_configured 软失败(且不发请求)、请求形状、MAIL_FROM 覆盖、
-   非 2xx 截断 200 字、网络/超时异常软失败。无数据库。 */
+/* Resend mail channel unit tests: no real API, every fetch stubbed.
+   Covers: not_configured soft failure (with no request sent), request
+   shape, MAIL_FROM override, non-2xx truncated to 200 chars, and
+   network/timeout exceptions failing soft. No database. */
 import assert from "node:assert/strict";
 import test from "node:test";
 

@@ -37,7 +37,8 @@ test("posts query lists only public featured posts, newest featured first, with 
   assert.match(sql, /p\.deleted_at IS NULL/);
   assert.match(sql, /p\.visibility = 'public'/);
   assert.match(sql, /ORDER BY p\.featured_at DESC/);
-  /* 作者 join + 定夺编辑 join(署名用),缺一处就取不到署名 */
+  /* Author join + deciding-editor join (for attribution); missing either
+     loses the attribution. */
   assert.match(sql, /JOIN users u ON u\.id = p\.user_id/);
   assert.match(sql, /LEFT JOIN users e ON e\.id = p\.featured_by/);
   assert.deepEqual(args, [5]);
@@ -47,7 +48,8 @@ test("works query lists featured works newest featured first, author optional (a
   const { sql, args } = featuredWorksQuery(3);
   assert.match(sql, /w\.featured_at IS NOT NULL/);
   assert.match(sql, /ORDER BY w\.featured_at DESC/);
-  /* 站内作者可空(awesome 外部条目)→ LEFT JOIN;编辑署名同样 LEFT JOIN */
+  /* The on-site author is nullable (awesome external entries) -> LEFT
+     JOIN; the editor attribution likewise LEFT JOIN. */
   assert.match(sql, /LEFT JOIN users u ON u\.id = w\.user_id/);
   assert.match(sql, /LEFT JOIN users e ON e\.id = w\.featured_by/);
   assert.deepEqual(args, [3]);

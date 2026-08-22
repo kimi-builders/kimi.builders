@@ -1,6 +1,9 @@
-/* 评论服务端幂等(去重)集成测试。只在隔离库运行:
-   同人同帖同文 60 秒内的重复提交不产生第二行,返回已有 id 且 duplicate=1;
-   不同文案不受影响。防的是绕过客户端 posting 防抖的网络重试/刷新重提。 */
+/* Server-side comment idempotency (dedup) integration. Runs only against
+   an isolated database: the same user resubmitting the same text on the
+   same post within 60 seconds produces no second row and returns the
+   existing id with duplicate=1; different text is unaffected. The guard
+   targets network retries and refresh re-submits that bypass the
+   client's posting debounce. */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import { createCommentForVisiblePost, createPost } from "../src/lib/posts";

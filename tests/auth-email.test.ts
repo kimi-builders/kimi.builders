@@ -1,4 +1,5 @@
-/* 邮箱凭证单元测试:scrypt 散列往返、篡改检测、邮箱/密码策略校验。无数据库。 */
+/* Email credential unit tests: scrypt round trip, tamper detection,
+   email/password policy validation. No database. */
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -14,7 +15,7 @@ test("password: hash/verify 往返 + 盐随机", async () => {
   const a = await hashPassword("correct horse battery");
   const b = await hashPassword("correct horse battery");
   assert.match(a, /^scrypt\$16384\$8\$1\$/);
-  assert.notEqual(a, b); // 随机盐
+  assert.notEqual(a, b); // random salt
   assert.equal(await verifyPassword("correct horse battery", a), true);
   assert.equal(await verifyPassword("wrong password", a), false);
 });
@@ -24,7 +25,8 @@ test("password: 篡改/畸形存储串拒绝", async () => {
   assert.equal(await verifyPassword("p@ssw0rd!", `${stored}x`), false);
   assert.equal(await verifyPassword("p@ssw0rd!", "scrypt$bogus"), false);
   assert.equal(await verifyPassword("p@ssw0rd!", ""), false);
-  // N 过大盘问直接拒绝(防 DoS 参数注入)
+  // An oversized N rejects the interrogation outright (against DoS
+  // parameter injection).
   assert.equal(
     await verifyPassword("x", "scrypt$999999999$8$1$c2FsdA$aGFzaA"),
     false,

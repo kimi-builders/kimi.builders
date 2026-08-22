@@ -109,7 +109,8 @@ test("v2 contract preserves factual device, model, effort, and Agent version met
   });
   Object.assign(value.sessions[0], { agentVersion: "1.44.0" });
 
-  /* device 元数据的保留前提是用户开了 uploadDeviceLabel(P1-2 服务端强制) */
+  /* Device metadata survives only when the user enabled uploadDeviceLabel
+     (enforced server-side). */
   const labelOn = { ...settings, uploadDeviceLabel: true };
   const parsed = validateUsageIngest(value, labelOn);
   assert.deepEqual(parsed.client.device, value.client.device);
@@ -199,8 +200,9 @@ test("project fields are rejected when project upload is disabled", () => {
 });
 
 test("device label is silently stripped while uploadDeviceLabel is off (P1-2)", () => {
-  /* 契约承诺开关关闭时设备指纹不落库:服务端静默剥离(CLI 无感,不拒请求),
-     其余 client 字段不受影响 */
+  /* The contract promises no device fingerprints when the switch is off:
+     stripped silently server-side (the CLI never notices, no rejection),
+     other client fields unaffected. */
   const value = payload() as ReturnType<typeof payload> & {
     client: ReturnType<typeof payload>["client"] & {
       device: {

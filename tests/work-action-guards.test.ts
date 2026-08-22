@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-/* 作品 action 门禁(源码断言,同 community-action-guards 模式):
-   @kimi 召唤(20260816 PR2)——召唤分支在 duplicate 守卫内、门禁先于限流、
-   限流先于入队、三态 aiNote 齐备;删除 action 把治理标记透传到 SQL 层。 */
+/* Work action guards (source assertions, the community-action-guards
+   pattern): @kimi summons — the summon branch sits behind the duplicate
+   guard, the gate precedes the rate limit, the rate limit precedes
+   enqueue, all three aiNote states exist; the delete action passes the
+   moderator flag down to SQL. */
 
 const actions = readFileSync(
   new URL("../app/(app)/works/actions.ts", import.meta.url),
@@ -28,7 +30,8 @@ function assertOrder(src: string, a: string, b: string, label: string) {
 
 test("comment action: 可见性门禁收进 withVisibleWorkLock 事务,不再先查后写", () => {
   const src = actionSource("createWorkCommentAction", "deleteWorkCommentAction");
-  /* 20260822 P2-2:判定与写入同一把锁(works.ts),action 只看结果 null */
+  /* Check and write share one lock (works.ts); the action only sees a
+     null result. */
   assert.match(src, /createWorkComment\(user, workId, body\)/);
   assert.match(src, /if \(!created\) return \{ ok: false, error: t\(locale, "err\.generic"\) \}/);
   assert.doesNotMatch(src, /canViewWork\(work, user\)/);
@@ -39,7 +42,8 @@ test("comment action: 可见性门禁收进 withVisibleWorkLock 事务,不再先
 
 test("summon branch stays behind the duplicate guard", () => {
   const src = actionSource("createWorkCommentAction", "deleteWorkCommentAction");
-  /* duplicate(60s 同人同文命中)不再触发召唤——网络重试不刷双倍 AI 回复 */
+  /* A duplicate (60s same-user same-text hit) never triggers a summon —
+     a network retry must not double the AI replies. */
   assert.match(
     src,
     /!created\.duplicate && hasKimiMention\(body\) && user\.aiRepliesEnabled/,
@@ -55,7 +59,8 @@ test("summon branch stays behind the duplicate guard", () => {
 test("summon gating order: work switch → rate limit → enqueue; three aiNote states", () => {
   const src = actionSource("createWorkCommentAction", "deleteWorkCommentAction");
   const branch = src.slice(src.indexOf("hasKimiMention(body)"));
-  /* 地盘规则:作品关了 AI 参与 → aiDisabled,不烧召唤配额 */
+  /* Territory rule: AI participation off on the work -> aiDisabled,
+     burning no summon quota. */
   assertOrder(
     branch,
     'aiNote = "aiDisabled"',
@@ -70,7 +75,7 @@ test("summon gating order: work switch → rate limit → enqueue; three aiNote 
   );
   assert.match(branch, /aiNote = "rate"/);
   assert.match(branch, /aiNote = "summoned"/);
-  /* MutationResult 与社区同形:aiNote 三态 */
+  /* MutationResult matches the community shape: three aiNote states. */
   assert.match(actions, /aiNote\?: "summoned" \| "aiDisabled" \| "rate"/);
 });
 

@@ -1,6 +1,8 @@
-/* 邮箱注册/登录集成测试。只在隔离库运行(DATABASE_URL 必须含 kbu-mysql)。
-   覆盖:注册建号→设密→登录校验→会话签发;重复邮箱拒绝;错误密码拒绝;
-   OAuth-only 账号(无密码散列)不能走邮箱登录。 */
+/* Email signup/login integration. Runs only against an isolated
+   database (DATABASE_URL must contain kbu-mysql). Covers:
+   signup -> set password -> login verify -> session issue; duplicate
+   email rejected; wrong password rejected; OAuth-only accounts (no
+   password hash) cannot use email login. */
 import assert from "node:assert/strict";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "../src/lib/db";
@@ -22,7 +24,7 @@ async function main() {
   const email = `auth_${Date.now()}@example.com`;
   let userId = 0;
   try {
-    // 注册
+    // Signup.
     userId = await createEmailUser(email, "Auth Probe");
     await setUserPassword(userId, await hashPassword("hunter2-hunter2"));
 
@@ -33,7 +35,7 @@ async function main() {
     assert.equal(await verifyPassword("hunter2-hunter2", account.passwordHash!), true);
     assert.equal(await verifyPassword("nope-nope", account.passwordHash!), false);
 
-    // handle 从昵称派生
+    // The handle derives from the nickname.
     const [rows] = await pool.query<RowDataPacket[]>(
       "SELECT handle, name, email FROM users WHERE id = ?",
       [userId],
@@ -41,15 +43,15 @@ async function main() {
     assert.equal(rows[0].handle, "auth_probe");
     assert.equal(rows[0].email, email);
 
-    // 会话签发/校验
+    // Session issue/verify.
     const token = createSessionToken(userId);
     assert.equal(verifySessionToken(token), userId);
     assert.equal(verifySessionToken(`${token}x`), null);
 
-    // 重复邮箱唯一约束
+    // Duplicate email hits the unique constraint.
     await assert.rejects(createEmailUser(email), /Duplicate entry/);
 
-    // OAuth-only 账号(无密码散列)走不了邮箱登录
+    // OAuth-only accounts (no hash) can't log in via email.
     const oauthEmail = `oauth_${Date.now()}@example.com`;
     await pool.query<ResultSetHeader>(
       "INSERT INTO users (handle, name, email) VALUES (?, 'OAuth Only', ?)",
@@ -57,7 +59,7 @@ async function main() {
     );
     const oauthAccount = await findEmailAccount(oauthEmail);
     assert.ok(oauthAccount);
-    assert.equal(oauthAccount.passwordHash, null); // 路由层会因此返回 bad_credentials
+    // The route layer returns bad_credentials for this.
 
     console.log("auth email integration: passed");
   } finally {

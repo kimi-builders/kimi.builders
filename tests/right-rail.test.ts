@@ -19,35 +19,41 @@ test("railFor: community feed and unlisted routes fall back to community rail", 
   assert.deepEqual(railFor("/demo-night"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/works"), { kind: "works", id: null, wide: false });
   assert.deepEqual(railFor("/community/new"), { kind: "community", id: null, wide: false });
-  /* 通知页:同 community rail,但 id=0 哨兵给独立 decision key(访问即已读,
-     强制壳重估清角标——见 railFor 与下方 decision key 测试) */
+  /* Notifications page: same community rail, but the id=0 sentinel gives
+     its own decision key (a visit marks everything read, forcing a shell
+     re-evaluation to clear the badge — see railFor and the decision-key
+     tests below). */
   assert.deepEqual(railFor("/community/notifications"), { kind: "community", id: 0, wide: false });
-  /* 头缺失时 layout 传 "/" */
+  /* When the header is missing, the layout passes "/". */
   assert.deepEqual(railFor("/"), { kind: "community", id: null, wide: false });
-  /* 管理台(20260830):无右栏 + 宽画布,与 /usage、个人主页同档 */
+  /* Admin console: no rail + wide canvas, same tier as /usage and the
+     profile. */
   assert.deepEqual(railFor("/admin"), { kind: "none", id: null, wide: true });
 });
 
 test("railFor: post/work detail get contextual rails with route id", () => {
   assert.deepEqual(railFor("/community/123"), { kind: "post", id: 123, wide: false });
   assert.deepEqual(railFor("/works/7"), { kind: "work", id: 7, wide: false });
-  /* 尾斜杠归一 */
+  /* Trailing slash normalization. */
   assert.deepEqual(railFor("/community/123/"), { kind: "post", id: 123, wide: false });
-  /* /edit 子页不是详情 */
+  /* /edit subpages are not detail pages. */
   assert.deepEqual(railFor("/community/123/edit"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/works/7/edit"), { kind: "community", id: null, wide: false });
-  /* 非数字 id 不构成详情 */
+  /* Non-numeric ids don't make a detail page. */
   assert.deepEqual(railFor("/community/abc"), { kind: "community", id: null, wide: false });
 });
 
 test("railFor: awesome / explore sections", () => {
   assert.deepEqual(railFor("/awesome"), { kind: "awesome", id: null, wide: false });
-  /* 板块未就绪(src/lib/upcoming.ts)时专属 rail 回落 community;就绪后恢复 */
+  /* While a section isn't ready (src/lib/upcoming.ts), its dedicated rail
+     falls back to community; it returns once ready. */
   const exploreRail = UPCOMING.explore ? "community" : "explore";
   assert.deepEqual(railFor("/explore"), { kind: exploreRail, id: null, wide: false });
-  /* 系列页同 explore rail(现阶段系列不展示,路由保留) */
+  /* Series pages share the explore rail (series stay unshown for now,
+     routes kept). */
   assert.deepEqual(railFor("/explore/series/kimi-code-in-action"), { kind: exploreRail, id: null, wide: false });
-  /* 文章详情(20260822)独立 article rail:元数据在右栏,slug 进 decision */
+  /* Article detail has its own article rail: metadata in the rail, the
+     slug enters the decision. */
   if (!UPCOMING.explore) {
     assert.deepEqual(railFor("/explore/2026-08-letter"), {
       kind: "article",
@@ -55,16 +61,18 @@ test("railFor: awesome / explore sections", () => {
       slug: "2026-08-letter",
       wide: false,
     });
-    /* slug 进 decision key:两篇文章页之间右栏各自重估,不共用壳缓存 */
+    /* The slug rides the decision key: two article pages re-evaluate
+       their rails independently, no shared shell cache. */
     const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
     assert.notEqual(keyFor("/explore/issue-a"), keyFor("/explore/issue-b"));
-    /* 与目录页也不同 key */
+    /* Also a different key from the catalog page. */
     assert.notEqual(keyFor("/explore"), keyFor("/explore/2026-08-letter"));
   }
-  /* 旧路由已 301(页面层承担),rail 仍回落默认 */
+  /* Legacy routes are 301s (handled at the page layer); the rail still
+     falls back to default. */
   assert.deepEqual(railFor("/blog"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/learn"), { kind: "community", id: null, wide: false });
-  /* admin 编辑页回落默认 */
+  /* Admin edit pages fall back to default. */
   assert.deepEqual(railFor("/blog/admin/new"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/blog/admin/x/edit"), { kind: "community", id: null, wide: false });
 });
@@ -98,19 +106,22 @@ test("rail decision key: context, detail id, and width changes are distinct", ()
 });
 
 test("rail decision key: notifications gets its own key so the unread badge re-evaluates", () => {
-  /* 通知页访问即已读,但顶栏角标在布局里渲染:同 key 不触发壳重取,
-     角标会滞留旧数字——独立 key 让进出各 refresh 一次 */
+  /* A notifications visit marks everything read, but the top-bar badge
+     renders in the layout: the same key triggers no shell refetch and
+     the badge would linger — an independent key refreshes once on each
+     way in and out. */
   const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
   assert.equal(railFor("/community/notifications").kind, "community");
   assert.notEqual(keyFor("/community/notifications"), keyFor("/community"));
 });
 
-/* ---- 相关帖子:同板块近期公开帖,排除本帖 ---- */
+/* ---- Related posts: recent public posts in the same category,
+   excluding this one ---- */
 
 test("relatedPostsQuery: same category, public only, excludes self, newest first", () => {
   const { sql, args } = relatedPostsQuery(42, "showcase");
   assert.match(sql, /p\.deleted_at IS NULL/);
-  /* 右栏是公共上下文:私密帖不借右栏漏出 */
+  /* The rail is a public context: private posts never leak through it. */
   assert.match(sql, /p\.visibility = 'public'/);
   assert.match(sql, /p\.category = \?/);
   assert.match(sql, /p\.id <> \?/);
@@ -124,7 +135,8 @@ test("relatedPostsQuery: limit is clamped and inlined as integer", () => {
   assert.match(relatedPostsQuery(1, "general", 3.9).sql, /LIMIT 3/);
 });
 
-/* ---- 相关作品:同作者或同 Agent,同作者优先 ---- */
+/* ---- Related works: same author or shared agent, same author first
+   ---- */
 
 test("relatedWorksQuery: author OR agent overlap, author first, excludes self", () => {
   const q = relatedWorksQuery({ id: 9, userId: 3, agents: ["kimi", "claude"] });
@@ -133,7 +145,8 @@ test("relatedWorksQuery: author OR agent overlap, author first, excludes self", 
   assert.match(sql, /w\.id <> \?/);
   assert.match(sql, /w\.user_id = \?/);
   assert.match(sql, /JSON_OVERLAPS\(w\.agents, \?\)/);
-  /* 同作者优先,其余按新到旧;order 的 ? 跟在 where 之后按序绑定 */
+  /* Same author first, the rest newest first; the ? in the ORDER BY
+     binds in order after the WHERE. */
   assert.match(sql, /ORDER BY \(w\.user_id = \?\) DESC, w\.id DESC LIMIT 5/);
   assert.deepEqual(args, [9, 3, '["kimi","claude"]', 3]);
 });
@@ -150,7 +163,7 @@ test("relatedWorksQuery: no author and no agents → null (caller skips the quer
   assert.equal(relatedWorksQuery({ id: 9, userId: null, agents: [] }), null);
 });
 
-/* ---- /awesome 来源统计 ---- */
+/* ---- /awesome source stats ---- */
 
 test("awesomeSourceStatsQuery: group by source for site/external counts (public only)", () => {
   const { sql, args } = awesomeSourceStatsQuery();

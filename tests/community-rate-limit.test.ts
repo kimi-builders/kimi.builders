@@ -19,7 +19,8 @@ interface FakeCall {
   params: unknown[];
 }
 
-/* 最小假 DB:INSERT 只记录参数;SELECT 按脚本依次返回计数行(默认空行集) */
+/* Minimal fake DB: the INSERT only records params; SELECTs return
+   scripted count rows in order (default empty set). */
 function fakeDb(options: { selectRows?: Record<string, unknown>[][] } = {}) {
   const calls: FakeCall[] = [];
   const selectRows = [...(options.selectRows ?? [])];
@@ -61,7 +62,8 @@ test("consume SQL is a fixed-window upsert: expired windows reset to 1", () => {
   const sql = buildCommunityRateConsumeSql();
   assert.match(sql, /INSERT INTO usage_rate_limits/);
   assert.match(sql, /ON DUPLICATE KEY UPDATE/);
-  /* 窗口过期条件与重置分支都在库内表达式里,两个 IF 各吃一个 windowSeconds 参数 */
+  /* The expiry condition and reset branch live in DB expressions; the
+     two IFs each take one windowSeconds param. */
   assert.equal((sql.match(/TIMESTAMPADD\(SECOND, -\?, UTC_TIMESTAMP\(3\)\)/g) ?? []).length, 2);
   const select = buildCommunityRateSelectSql();
   assert.match(select, /TIMESTAMPDIFF\(SECOND, UTC_TIMESTAMP\(3\), TIMESTAMPADD\(SECOND, \?, window_start\)\) AS retry_after/);
@@ -81,7 +83,8 @@ test("decision: allowed at the limit boundary, rejected above it", () => {
 
 test("decision: retryAfter is clamped into [1, windowSeconds]", () => {
   const base = { limit: 10, windowSeconds: 3600, attempts: 11 };
-  /* TIMESTAMPDIFF 整秒截断:窗口将尽算出 0、刚过期算出负值,都至少留 1 秒 */
+  /* TIMESTAMPDIFF truncates to whole seconds: a nearly-expired window
+     computes 0 and a just-expired one negative — keep at least 1 second. */
   assert.equal(communityRateDecision({ ...base, retryAfter: 0 }).retryAfterSeconds, 1);
   assert.equal(communityRateDecision({ ...base, retryAfter: -3 }).retryAfterSeconds, 1);
   assert.equal(
@@ -94,7 +97,8 @@ test("over-limit consume rejects with the window's remaining seconds", async () 
   const db = fakeDb({ selectRows: [[{ attempts: 31, retry_after: 2400 }]] });
   const res = await consumeCommunityRateLimit(7, "comment", db);
   assert.deepEqual(res, { allowed: false, retryAfterSeconds: 2400 });
-  /* INSERT 先计数,SELECT 后判定;scope 与 identity_hash 落在两条语句的参数里 */
+  /* The INSERT counts first, the SELECT decides after; scope and
+     identity_hash land in both statements' params. */
   const [insert, select] = db.calls;
   assert.ok(insert.sql.startsWith("INSERT"));
   assert.deepEqual(insert.params[0], "community:comment");
@@ -105,7 +109,8 @@ test("over-limit consume rejects with the window's remaining seconds", async () 
 });
 
 test("expired window: upsert resets the row, the fresh window allows again", async () => {
-  /* 窗口过期后 upsert 已把 attempts 重置为 1、window_start 重置为 now */
+  /* After expiry the upsert has reset attempts to 1 and window_start to
+     now. */
   const db = fakeDb({ selectRows: [[{ attempts: 1, retry_after: 3600 }]] });
   const res = await consumeCommunityRateLimit(7, "post", db);
   assert.deepEqual(res, { allowed: true, retryAfterSeconds: 3600 });

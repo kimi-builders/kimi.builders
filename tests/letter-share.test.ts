@@ -18,16 +18,17 @@ import {
 import { LETTER_POSTER_SIZE } from "../app/api/share/poster-sizes";
 import { BLOG_ISSUES } from "./fixtures/monthly-mock";
 
-/* ---- ?section= 参数归一化 ---- */
+/* ---- ?section= normalization ---- */
 
 test("section 归一化:缺省 facts,大小写/空白容忍,非法回落 facts", () => {
   assert.equal(normalizeLetterSection(null), "facts");
   assert.equal(normalizeLetterSection(""), "facts");
   assert.equal(normalizeLetterSection("facts"), "facts");
   assert.equal(normalizeLetterSection(" Decisions "), "decisions");
-  /* 20260921:letter 节随「给官方的信」层下线,回落 facts */
+  /* The letter section retired with the "letter to the official"
+     layer; it falls back to facts. */
   assert.equal(normalizeLetterSection("LETTER"), "facts");
-  assert.equal(normalizeLetterSection("digest"), "facts"); // 评鉴层无海报
+  assert.equal(normalizeLetterSection("digest"), "facts"); // no poster for the review layer
   assert.equal(normalizeLetterSection("nope"), "facts");
 });
 
@@ -36,7 +37,8 @@ test("disclosureKeyOf:分节键与锚一致(恒等映射)", () => {
   assert.equal(disclosureKeyOf("decisions"), "decisions");
 });
 
-/* ---- 生产快照组装(纯:assembleIssue 输出 → 分节快照)---- */
+/* ---- Production snapshot assembly (pure: assembleIssue output ->
+   section snapshots) ---- */
 
 const STATS: MonthlyStatsSnapshot = {
   members: 203,
@@ -117,14 +119,15 @@ test("decisions 快照:chip 文案与生产页同口径,超出上限进 decision
     featured: [featuredOf(0), featuredOf(1), featuredOf(2), featuredOf(3), featuredOf(4)],
   });
   const s = buildLetterShareSnapshot(issue, "decisions");
-  /* 5 featured + 1 governance = 6 条定夺,海报上 3 张卡 + 余 3 */
+  /* 5 featured + 1 governance = 6 decisions; the poster shows 3 cards
+     + 3 more. */
   assert.equal(s.decisions.length, LETTER_POSTER_DECISIONS_MAX);
   assert.equal(s.decisionsMore, 3);
   assert.equal(s.decisions[0].kind, "work");
   assert.equal(s.decisions[0].kindLabel, "精选构建");
   assert.equal(s.decisions[0].editorHandle, "aklman");
   assert.equal(s.url, "https://kimi.builders/blog/letter-2026-08#decisions");
-  assert.equal(s.aiNote, null); // 披露只给了 facts,decisions 键缺省 = 无
+  assert.equal(s.aiNote, null); // disclosure only for facts
 });
 
 test("decisions 快照:governance 卡无作者无署名行", () => {
@@ -150,7 +153,8 @@ test("letterShareText:动态中文全进字体子集文本(事实值含「亿」
   assert.ok(text.includes("数据聚合脚本生成"));
 });
 
-/* ---- fixture 映射(dev preview:tests/fixtures/monthly-mock 第一期)---- */
+/* ---- Fixture mapping (dev preview: the first
+   tests/fixtures/monthly-mock issue) ---- */
 
 test("fixture 映射 facts:第一期四项大数字,zh 标签", () => {
   const s = letterSnapshotFromMock(BLOG_ISSUES[0], "facts");
@@ -183,7 +187,9 @@ test("fixture 映射 decisions:best/underrated 保留夹具语气,配色归生�
     ],
   );
   assert.equal(s.decisions[0].authorHandle, "moonwalker");
-  /* 夹具无定夺编辑字段,署名到期刊主编;governance 公示不落署名行(同生产口径) */
+  /* The fixture carries no per-decision editor; attribution goes to the
+     editor-in-chief; governance rulings carry no attribution row (same
+     as production). */
   assert.equal(s.decisions[0].editorHandle, "aklman");
   assert.equal(s.decisions[2].editorHandle, "");
   assert.equal(s.decisionsMore, 0);

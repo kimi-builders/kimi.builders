@@ -7,7 +7,8 @@ import {
   feedPageQuery,
 } from "../src/lib/posts";
 
-/* 已解决过滤(20260907):solved=true 追加 solved_at 谓词 */
+/* Solved filter (20260907): solved=true appends the solved_at
+   predicate. */
 test("feedPageQuery: solved filter adds the solved_at predicate", () => {
   assert.match(feedPageQuery({ sort: "new", solved: true }).sql, /p\.solved_at IS NOT NULL/);
   assert.doesNotMatch(feedPageQuery({ sort: "new" }).sql, /solved_at IS NOT NULL/);
@@ -21,9 +22,10 @@ test("page size is 50 posts per page, over-fetching one", () => {
 
 test("hot tab orders by the pinned-as-of hot score with id tiebreak", () => {
   const { sql, args } = feedPageQuery({ sort: "hot", asOf: 1_760_000_000 });
-  /* 基准时刻钉住(FROM_UNIXTIME 而非 NOW()):翻页会话内分值可精确重算 */
+  /* The baseline instant is pinned (FROM_UNIXTIME, not NOW()): scores
+     recompute exactly within one paging session. */
   assert.match(sql, /FROM_UNIXTIME\(1760000000\)/);
-  /* comment_count UNSIGNED × score SIGNED 的坑:CAST 保留 */
+  /* The comment_count UNSIGNED x score SIGNED trap: the CAST stays. */
   assert.match(sql, /CAST\(p\.comment_count AS SIGNED\)/);
   assert.match(sql, /AS hot/);
   assert.match(sql, /ORDER BY hot DESC, p\.id DESC/);
@@ -34,7 +36,8 @@ test("hot cursor is composite (asOf|hot|id) and the predicate is a keyset over (
   const cursor = decodeFeedCursor("1760000000|1.5|42", true)!;
   assert.deepEqual(cursor, { id: 42, hot: 1.5, asOf: 1_760_000_000 });
   const { sql, args } = feedPageQuery({ sort: "hot", asOf: 1_760_000_100, cursor });
-  /* 游标里的 asOf 覆盖调用方给的:同一翻页会话沿用页 1 的基准时刻 */
+  /* The cursor's asOf overrides the caller's: one paging session keeps
+     page 1's baseline. */
   assert.equal(sql.includes("FROM_UNIXTIME(1760000000)"), true);
   assert.equal(sql.includes("FROM_UNIXTIME(1760000100)"), false);
   assert.equal(args.filter((a) => a === 1.5).length, 2);
@@ -60,7 +63,7 @@ test("sub tab is time-ordered even when sort=hot, and keeps the subscription joi
     cursor: { id: 99 },
   });
   assert.match(sql, /JOIN post_subscriptions ps ON ps\.post_id = p\.id AND ps\.user_id = \?/);
-  /* 订阅页签按时间,不算热门分 */
+  /* The subscribed tab orders by time, computing no hot score. */
   assert.equal(sql.includes("FROM_UNIXTIME"), false);
   assert.match(sql, /ORDER BY p\.created_at DESC, p\.id DESC/);
   assert.deepEqual(args, [7, 99]);
@@ -74,7 +77,8 @@ test("viewer/category filters keep their argument order before the cursor args",
     cursor: { id: 10 },
   });
   assert.match(sql, /p\.visibility = 'public' OR p\.user_id = \?/);
-  /* 治理屏蔽:公开侧滤掉被屏蔽帖,作者本人仍可见(20260830) */
+  /* Moderation hiding: hidden posts filtered publicly, the author
+     still sees their own. */
   assert.match(sql, /p\.hidden_at IS NULL OR p\.user_id = \?/);
   assert.match(sql, /rd\.kind = 'down'/);
   assert.match(sql, /p\.category = \?/);
@@ -94,7 +98,8 @@ test("cursor encode/decode round-trips and rejects malformed input", () => {
     "1760000000|1.5|42",
   );
   assert.deepEqual(decodeFeedCursor("42", false), { id: 42 });
-  /* 时间游标不接受复合串,热门游标不接受裸 id —— 防止跨页签串用 */
+  /* Time cursors reject composite strings, hot cursors reject bare ids
+     — no cross-tab reuse. */
   assert.equal(decodeFeedCursor("1760000000|1.5|42", false), null);
   assert.equal(decodeFeedCursor("42", true), null);
   assert.equal(decodeFeedCursor("abc", false), null);
