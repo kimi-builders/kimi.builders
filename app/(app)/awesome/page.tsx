@@ -25,7 +25,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { isWorkKind, WORK_KINDS, workKindLabel } from "@/src/lib/work-kinds";
-import { getWorksView } from "@/src/lib/works-view-server";
+import { getWorksView, isMobileRequest } from "@/src/lib/works-view-server";
 import { loadMoreWorksAction } from "../works/actions";
 import { loadWorksCards } from "../works/_components/works-page";
 import WorksFilterBar from "../works/_components/WorksFilterBar";
@@ -55,8 +55,9 @@ export default async function AwesomePage({
   const user = await getSessionUser();
   const locale = await getLocale(user);
   const zh = locale === "zh";
-  /* 视图偏好(cookie,与 /works 共用):grid=封面墙,list=行式(默认) */
-  const view = await getWorksView();
+  /* 视图偏好(cookie,与 /works 共用):grid=封面墙,list=行式(默认);
+     移动端恒行式(getWorksView 内收敛),切换器也不渲染 */
+  const [view, mobile] = await Promise.all([getWorksView(), isMobileRequest()]);
   const page = await loadWorksCards(
     {
       awesome: true,
@@ -161,8 +162,8 @@ export default async function AwesomePage({
             scope: activeScope ? [activeScope] : [],
           }}
         />
-        {/* 视图切换:行式 / 封面墙(cookie 持久,与 /works 共用偏好) */}
-        <WorksViewToggle locale={locale} view={view} />
+        {/* 视图切换:行式 / 封面墙(cookie 持久,与 /works 共用偏好);移动端恒行式不出 */}
+        {!mobile && <WorksViewToggle locale={locale} view={view} />}
       </div>
 
       {page.nodes.length === 0 ? (

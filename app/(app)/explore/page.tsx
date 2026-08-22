@@ -28,7 +28,7 @@ import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
 import { isExploreFilterEnabled } from "@/src/lib/explore-filters";
 import { canModerate } from "@/src/lib/featured";
 import { UPCOMING } from "@/src/lib/upcoming";
-import { getWorksView } from "@/src/lib/works-view-server";
+import { getWorksView, isMobileRequest } from "@/src/lib/works-view-server";
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import SoonPanel from "../_components/SoonPanel";
@@ -112,8 +112,9 @@ export default async function ExplorePage({
   const anyFilter = !!(selChapter || selProduct || selRole || selTag || selYear);
 
   const items = await listExploreItems(locale);
-  /* 行式/封面墙:与作品墙同一 cookie 偏好(kb-works-view) */
-  const view = await getWorksView();
+  /* 行式/封面墙:与作品墙同一 cookie 偏好(kb-works-view);
+     移动端恒行式(getWorksView 内收敛),切换器也不渲染 */
+  const [view, mobile] = await Promise.all([getWorksView(), isMobileRequest()]);
 
   const sel = {
     chapter: selChapter,
@@ -292,7 +293,7 @@ export default async function ExplorePage({
             }}
           />
         )}
-        {items.length > 0 && <WorksViewToggle locale={locale} view={view} />}
+        {items.length > 0 && !mobile && <WorksViewToggle locale={locale} view={view} />}
       </div>
 
       {/* ---- 内容区:一篇一卡,行式 / 封面墙 ---- */}
