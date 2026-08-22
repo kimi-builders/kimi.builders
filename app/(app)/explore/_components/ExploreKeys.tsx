@@ -1,11 +1,14 @@
 "use client";
 
-/* 探索区页面级方向键(20260822 快捷键方案):
-   - ChapterKeys(列表页):←→ 在「全部 + 有内容的章」间循环,目标 href
-     由服务端用 lensHref 算好传入——透镜(产品/标签等)随章保留;
-   - ArticleKeys(详情页):←上一篇(更早)/ →下一篇(更新),与 letter
-     页脚的期次导航同一方向语义;到头不回绕。
-   守卫复用全局层同一纯函数(修饰键/输入态/弹窗态/IME)。 */
+/* Explore page-level arrow keys:
+   - ChapterKeys (list page): <- -> cycle through "all + chapters with
+     content"; target hrefs are computed server-side via lensHref —
+     lenses (products/tags etc.) survive the chapter switch;
+   - ArticleKeys (detail page): <- previous (older) / -> next (newer),
+     the same direction semantics as the letter footer's issue
+     navigation; no wrap-around at the ends.
+   Guards reuse the global layer's pure functions (modifiers/input
+   state/dialog state/IME). */
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { isPlainShortcutContext } from "@/src/lib/shortcut-guards";

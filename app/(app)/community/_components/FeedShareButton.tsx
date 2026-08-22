@@ -1,7 +1,8 @@
 "use client";
 
-/* feed 卡「分享」:复制帖子链接到剪贴板,成功后变勾 1.6s。
-   与 ShareButton 分开——feed 动作行要的是 pill 小按钮形态。 */
+/* Feed-card "share": copies the post link to the clipboard, checks for
+   1.6s on success. Separate from ShareButton — the feed action row
+   wants a small pill button. */
 import { useState } from "react";
 import { Check, Share2 } from "lucide-react";
 
@@ -24,7 +25,8 @@ export default function FeedShareButton({
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         } catch {
-          /* 剪贴板被拒(权限/非安全上下文)就静默 */
+          /* A rejected clipboard (permissions/insecure context) stays
+             silent. */
         }
       }}
       className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${

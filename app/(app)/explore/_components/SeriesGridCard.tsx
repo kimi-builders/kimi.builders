@@ -1,9 +1,12 @@
-/* 系列网格卡(20260821 探索区):作品网格卡(WorkGridCard)同一语法——
-   封面在上(恒定 16:9,可设置 series.cover 或自动文字封面)、内容在下、
-   hover 边框提亮 + 封面轻放大 + 标题变蓝;整卡覆盖链接进系列页。
-   meta 行:集数 + 总时长 + 验证戳(stale 琥珀/新鲜翡翠)。
-   matched(透镜筛选时):显示「命中 n/N 集」——系列不整卡隐藏,
-   部分命中也留在货架上(episodes 此时是命中集,卡内呈现与结果一致)。 */
+/* Series grid card: the WorkGridCard grammar — cover on top (fixed
+   16:9, either series.cover or the automatic text cover), content
+   below, hover brightens the border + zooms the cover + blues the
+   title; the whole card links into the series page. Meta row: episode
+   count + total duration + the verification stamp (stale amber / fresh
+   mint). matched (under lens filtering): shows "n/N episodes hit" —
+   series never hide whole; partial matches stay on the shelf
+   (episodes are the matching ones, so the card agrees with the
+   results). */
 import Link from "next/link";
 import { Clock3, ShieldCheck } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";
@@ -31,7 +34,8 @@ export default function SeriesGridCard({
     (acc, e) => (acc && acc.publishedAt > e.publishedAt ? acc : e),
     null,
   );
-  /* 章字标(主轴在卡上的最小存在,链回章视图)+ 联合产品图标(≤3) */
+  /* The chapter mark (the axis's minimal presence on the card, linking
+     back to the chapter view) + joint product icons (<=3). */
   const chapter = series.chapter ? findKbChapter(series.chapter) : undefined;
   const seriesProducts = [...new Set(episodes.flatMap((e) => e.products))].slice(0, 3);
   return (

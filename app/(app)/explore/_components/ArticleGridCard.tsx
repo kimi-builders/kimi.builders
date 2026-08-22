@@ -1,7 +1,8 @@
 "use client";
 
-/* 文章封面墙卡(20260822):封面在上恒定 16:9、内容在下,WorkGridCard 同一
-   语法;hover 边框亮起 + 封面轻放大 + 标题变蓝,整卡覆盖链详情。 */
+/* Article cover-wall card: cover on top (fixed 16:9), content below —
+   the WorkGridCard grammar; hover brightens the border + zooms the
+   cover + blues the title; the whole card links to the detail. */
 import Link from "next/link";
 import { FileText, Play, Presentation } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";

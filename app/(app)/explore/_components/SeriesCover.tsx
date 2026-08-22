@@ -1,5 +1,6 @@
-/* 系列封面(20260821 探索区):可设置(series.cover = 站内路径或 https 图片)
-   或自动文字封面(moon 底 + 系列码 + 标题,零图片依赖)。 */
+/* Series cover: settable (series.cover = an on-site path or https
+   image) or an automatic text cover (moon base + series code + title,
+   zero image dependency). */
 import type { LearnSeries } from "@/src/lib/learn-series";
 
 export default function SeriesCover({

@@ -1,10 +1,13 @@
-/* 探索(Explore)· 教程系列页(20260821 月刊 × 教程合并;/learn/<slug> 平移至此)
-   hero(共享 PageHeader:系列码 + 题名 + 金句 + 署名 + 验证戳 + 集数/总时长)
-   → 集列表(EP 序号章 + 标题 + 一句话 + 时长 + 形态 chip)
-   → 讨论闭环 → 毕业作品 → 验证记录(三块在 _components/blocks.tsx)。
-   系列 = src/lib/learn-series.ts 策展注册表;集 = articles(kind='guide')
-   (src/lib/tutorials.ts)。系列在册但 0 已发布集 → notFound(不上架空壳);
-   板块开关未就绪时整页换「正在路上」。 */
+/* Explore · tutorial series page (/learn/<slug> moved here). Hero
+   (shared PageHeader: series code + title + hero quote + attribution +
+   verification stamp + episodes/duration) -> episode list (EP ordinal
+   + title + one-liner + duration + format chips) -> discussion loop ->
+   graduated works -> verification record (three blocks in
+   _components/blocks.tsx). Series = the curated registry in
+   src/lib/learn-series.ts; episodes = articles (kind='guide')
+   (src/lib/tutorials.ts). Registered but zero published episodes ->
+   notFound (no empty shells); while the section switch is off, the
+   whole page shows the placeholder. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -92,7 +95,8 @@ export default async function ExploreSeriesPage({
   const { slug } = await params;
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* 板块未就绪(src/lib/upcoming.ts):详情页同样换「正在路上」,不查库 */
+  /* Section not ready (src/lib/upcoming.ts): the detail page shows the
+     placeholder too, with no DB query. */
   if (UPCOMING.explore) {
     return <SoonPanel title={t(locale, "nav.explore")} locale={locale} />;
   }
@@ -107,17 +111,19 @@ export default async function ExploreSeriesPage({
       : Promise.resolve(null),
     getSeriesGraduateCards(slug),
   ]);
-  /* 在册但 0 已发布集 = 不上架空壳 */
+  /* Registered but zero published episodes = no empty shell. */
   if (episodes.length === 0) notFound();
 
   const stale = isPathStale(series);
   const mins = episodes.reduce((n, e) => n + (e.payload.durationMin ?? 0), 0);
   const first = episodes[0];
-  /* 交叉行(20260821 透镜改版):从集 payload 联合推导「覆盖产品/适合职业」,
-     可点回 /explore 透镜——脊柱与透镜互相成环 */
+  /* Cross-links: "covers products / fits roles" derived jointly from
+     episode payloads, clickable back into the /explore lenses — the
+     spine and the lenses close each other's loop. */
   const coveredProducts = [...new Set(episodes.flatMap((e) => e.payload.products ?? []))];
   const fitRoles = [...new Set(episodes.flatMap((e) => e.payload.roles ?? []))];
-  /* 章字标(20260821 章主轴):路挂章,meta 行首 chip 链回章视图 */
+  /* Chapter mark: paths hang on chapters; the meta row's leading chip
+     links back to the chapter view. */
   const seriesChapter = series.chapter ? findKbChapter(series.chapter) : undefined;
 
   return (

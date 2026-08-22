@@ -1,4 +1,4 @@
-/* 教程频道目录已并入探索区(20260821):/learn → /explore。 */
+/* The tutorial catalog merged into explore: /learn -> /explore. */
 import { redirect } from "next/navigation";
 
 export default function LearnPage() {

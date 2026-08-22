@@ -1,8 +1,10 @@
 "use client";
 
-/* 编辑精选操作(仅 admin/mod 渲染,服务端判断;action 里再兜底一次)。
-   未精选 → 「设为精选」展开理由小表单;已精选 → 显示当前理由 + 取消按钮。
-   成功后 toast + router.refresh();首页 tag 缓存在 action 里即时作废。 */
+/* Editorial featuring controls (rendered for admin/mod only, decided
+   server-side; the action re-checks). Unfeatured -> "feature" expands
+   a small reason form; featured -> shows the current reason + an
+   unfeature button. Success toasts + router.refresh()es; the home tag
+   cache is invalidated immediately inside the action. */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";

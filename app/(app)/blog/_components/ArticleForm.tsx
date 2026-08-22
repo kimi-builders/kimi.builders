@@ -1,13 +1,16 @@
 "use client";
 
-/* 文章发布/编辑(20260822 结构化改版,对齐作品发布的体验):
-   分节编号 + 吸顶结构导览 + 透镜 chips(词表注册表勾选,不再手写 JSON)+
-   资源分型 repeater + 封面实时预览 + 发布/草稿 seg(下架 = 切回草稿保存;
-   首次发布时间保留,重新上架即恢复)。
-   payload 由结构化字段在客户端组装(hidden input),服务端校验口径不变
-   (saveArticleAction → validateGuidePayload / validateLetterPayload 严格报错)。
-   与作品发布的关键差异:仅 admin/mod 可发布/编辑/上下架(页面与 action 双门槛),
-   普通成员不开放提交入口。 */
+/* Article publish/edit (structured rework matching the work-publish
+   experience): numbered sections + a sticky structure overview + lens
+   chips (registry checkboxes, no hand-written JSON) + a kinded
+   resource repeater + live cover preview + a publish/draft seg
+   (unpublish = switch back to draft and save; the first publish time
+   is preserved and republishing restores it). The payload assembles
+   client-side from the structured fields (hidden input); server
+   validation is unchanged (saveArticleAction -> validateGuidePayload /
+   validateLetterPayload, strict errors). Key difference from work
+   publishing: only admin/mod may publish/edit/unpublish (gated at both
+   page and action); members get no submission entry. */
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -50,7 +53,7 @@ export interface ArticleFormInitial {
   payload: string;
 }
 
-/* ---- 结构化状态 → payload 组装(纯函数,单测直接测) ---- */
+/* ---- Structured state -> payload assembly (pure, unit-tested) ---- */
 
 interface ResourceRow {
   label: string;
@@ -96,7 +99,8 @@ export function assembleGuidePayload(s: GuideFormState): string {
   if (s.seriesSel) payload.series = s.seriesSel;
   if (s.chapter) payload.chapter = s.chapter;
   if (s.cover.trim()) payload.cover = s.cover.trim();
-  /* theme = 跟随主题(缺省),不落 payload;固定色才入契约 */
+  /* theme = follow the theme (default), never in the payload; only
+     fixed tones enter the contract. */
   if (s.coverTone && s.coverTone !== "theme") payload.coverTone = s.coverTone;
   if (s.products.length) payload.products = s.products;
   if (s.roles.length) payload.roles = s.roles;
@@ -116,7 +120,8 @@ export function assembleGuidePayload(s: GuideFormState): string {
 export function assembleLetterPayload(s: LetterFormState): string {
   const payload: Record<string, unknown> = {};
   if (s.cover.trim()) payload.cover = s.cover.trim();
-  /* theme = 跟随主题(缺省),不落 payload;固定色才入契约 */
+  /* theme = follow the theme (default), never in the payload; only
+     fixed tones enter the contract. */
   if (s.coverTone && s.coverTone !== "theme") payload.coverTone = s.coverTone;
   const tags = parseTagInput(s.tags);
   if (tags.length) payload.tags = tags;
@@ -182,7 +187,7 @@ function readInitialPayload(raw: string): {
   };
 }
 
-/* ---- 展示基元 ---- */
+/* ---- Display primitives ---- */
 
 function Section({
   title,
@@ -208,7 +213,7 @@ function Section({
   );
 }
 
-/* 透镜 chip(产品/职业共用):可勾选,≤max 项 */
+/* Lens chip (shared by products/roles): checkable, <=max items. */
 function LensPick({
   options,
   selected,
@@ -264,7 +269,8 @@ export default function ArticleForm({
   const zh = locale === "zh";
   const router = useRouter();
   const [kind, setKind] = useState<string>(initial?.kind ?? "guide");
-  /* payload 初值解析一次(直接函数调用,不借 ref——编译器规则禁止渲染期读 ref) */
+  /* The payload's initial value parses once (a direct call, not via
+     ref — compiler rules forbid reading refs during render). */
   const parsed = readInitialPayload(initial?.payload ?? "");
   const [guide, setGuide] = useState<GuideFormState>(parsed.guide);
   const [letter, setLetter] = useState<LetterFormState>(parsed.letter);
@@ -275,7 +281,8 @@ export default function ArticleForm({
   >(saveArticleAction, null);
   const [deleting, setDeleting] = useState(false);
 
-  /* 校验失败:错误条滚进视野(对齐 WorkForm 的防「看似无反应」处理) */
+  /* Validation failure: the error row scrolls into view (the same
+     never-look-unresponsive treatment as WorkForm). */
   const errorRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (state?.error) {
@@ -283,11 +290,14 @@ export default function ArticleForm({
     }
   }, [state?.error]);
 
-  /* 保存成功(20260822 弹窗化,与作品发布同构):发布 → replace 到详情
-     (拦截弹窗静默关、落在 /explore/<slug>);存草稿 → replace 到编辑路由
-     续编——表单由服务端数据重挂、行 id 天然带回(再保存走更新,不重复
-     建行);弹窗态在弹窗内换成编辑表单,完整页则落到编辑页。replace 不用
-     push:已提交的表单不该能通过回退再次进入(POST-redirect 惯例) */
+  /* Save success (modal-ized like work publishing): publish -> replace
+     to the detail (the intercepted modal closes silently, landing on
+     /explore/<slug>); draft -> replace to the edit route and keep
+     writing — the form remounts from server data, naturally carrying
+     the row id (the next save updates, never duplicates); the modal
+     state swaps to the edit form in place, the full page lands on the
+     edit page. replace, not push: a submitted form should never be
+     re-enterable via back (POST-redirect convention). */
   useEffect(() => {
     if (!state?.ok || !state.slug) return;
     if (state.published) {
@@ -331,7 +341,7 @@ export default function ArticleForm({
   const setL = (patch: Partial<LetterFormState>) => setLetter((l) => ({ ...l, ...patch }));
   const coverUrl = kind === "letter" ? letter.cover : guide.cover;
 
-  /* 结构导览锚点(当前 kind 有效的节) */
+  /* Structure-overview anchors (sections valid for the current kind). */
   const toc: { id: string; label: string }[] = [
     { id: "af-basic", label: zh ? "基础" : "Basics" },
     { id: "af-body", label: zh ? "正文" : "Body" },

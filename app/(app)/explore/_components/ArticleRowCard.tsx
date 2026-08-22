@@ -1,10 +1,12 @@
 "use client";
 
-/* 文章横列卡(20260822 探索简化改版):一篇内容一张卡,WorkCard 行式语法——
-   sm 起封面在左固定列、内容在右、整卡覆盖链接、hover 上浮 + 边线亮起。
-   系列 = 内容的一种组合,现阶段不展示(系列码不上卡)。
-   内容列:eyebrow(章 · 日期 · 产品图标 · 形态标记)+ kb-h3 标题 +
-   摘要 + 标签行。 */
+/* Article row card: one card per piece of content, the WorkCard row
+   grammar — from sm the cover sits in a fixed left column, content on
+   the right, the whole card links out, hover lifts + brightens the
+   border. Series are one way to group content and stay unshown for now
+   (no series code on the card). Content column: eyebrow (chapter ·
+   date · product icons · format marks) + kb-h3 title + summary + tag
+   row. */
 import Link from "next/link";
 import { FileText, Play, Presentation } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";

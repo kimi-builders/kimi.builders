@@ -1,10 +1,13 @@
 "use client";
 
-/* 文章封面(20260822):列表行卡/封面墙共用。payload.cover(站内路径或
-   https 图片,加载失败回落自动砖);缺省 = 自动章字砖(类型 eyebrow +
-   serif 章字大字,letter 用「刊」)。payload.coverTone 选砖色(与作品
-   名称砖同一色板:固定色 .work-tone-*,theme/缺省跟随主题 .work-cover-tile);
-   纹理按 slug 稳定哈希,与作品按名生成同源。 */
+/* Article cover: shared by list row cards and the cover wall.
+   payload.cover (on-site path or https image, falling back to the
+   automatic brick on load failure); default = the automatic chapter
+   brick (kind eyebrow + a large serif chapter glyph; letters use the
+   issue glyph). payload.coverTone picks the brick color (the same
+   palette as work name bricks: fixed .work-tone-*, theme/default
+   follows the theme via .work-cover-tile); texture hashes the slug —
+   the same source as works hashing by name. */
 import { useState } from "react";
 import { coverTextureClass, coverToneClass } from "@/src/lib/cover-tones";
 import type { ExploreItem } from "@/src/lib/explore";

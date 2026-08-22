@@ -1,6 +1,7 @@
-/* feed 一页的服务端组装:游标分页查询 + 顶/踩态(一条 IN 批量查,避免 N+1)
-   + 卡片渲染。社区页首屏(SSR)与「加载更多」server action 共用,
-   保证两种入口输出一致(同 comment-page.tsx 的模式)。 */
+/* Server assembly of one feed page: the keyset paged query + vote
+   state (one batched IN query, no N+1) + card rendering. Shared by the
+   community first page (SSR) and the "load more" server action so both
+   entries emit identical output (same pattern as comment-page.tsx). */
 import type { ReactNode } from "react";
 import type { Locale } from "@/src/lib/i18n";
 import { getFeedPage, getPostReactions } from "@/src/lib/posts";

@@ -1,6 +1,7 @@
 "use client";
 
-/* 投票表单:提交 → 等待态 → toast 反馈 → refresh 换出结果条。 */
+/* Poll form: submit -> pending -> toast -> refresh swaps in the result
+   bars. */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";

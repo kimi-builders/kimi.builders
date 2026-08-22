@@ -1,11 +1,17 @@
-/* 帖子详情:正文(Markdown)+ 链接卡 / 投票块 + 动作条(顶踩/评论/订阅/分享/作者操作)+ 评论区。
-   评论按浏览者 show_ai_replies 过滤(v2 决策 3);AI 回复带品牌瓷砖头像和 AI 标。
-   评论分页:首屏 SSR 第一页(每页 50 条顶层,回复随根带出),「加载更多」由
-   CommentSection 走 server action 追加;动作条与评论区标题的计数都用可见评论总数
-   (与列表同口径,滤软删、随 show_ai_replies 过滤),保证计数与可见数始终吻合。
-   楼中楼:parent 链在服务端拍平成「顶层 + 一层回复」,回复层带「回复 @xx」标注。
-   标题非强制:无标题帖正文直接当主体。私密帖仅作者可见(外人 404)。
-   浏览量只记录不展示:after() 里 +1,不阻塞渲染。 */
+/* Post detail: body (Markdown) + link card / poll block + action bar
+   (votes/comments/subscribe/share/owner actions) + comment section.
+   Comments filter by the viewer's show_ai_replies; AI replies carry
+   the brand tile avatar and the AI tag. Comment paging: the first page
+   renders SSR (50 top-level comments per page, replies ride with their
+   roots), "load more" appends via CommentSection's server action; both
+   the action bar and the section title count visible comments (same
+   definition as the list — soft-deleted filtered, show_ai_replies
+   applied) so counts always match what's visible. Threading: the
+   parent chain flattens server-side into "top level + one reply layer"
+   with "replying @x" labels. Titles are optional: an untitled post's
+   body is the main content. Private posts are author-only (others
+   404). View counts are recorded, never shown: +1 inside after(),
+   never blocking render. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -79,7 +85,8 @@ export default async function PostPage({
   ]);
   const upVoted = postReactions.up.has(postId);
   const downVoted = postReactions.down.has(postId);
-  /* 精选操作入口:admin/mod 可见(与是否作者无关),action 层再校验一次 */
+  /* Featuring entry: visible to admin/mod (authorship irrelevant);
+     the action layer re-checks. */
   const canFeature = !!user && canModerate(user.role);
   const isOwner = !!user && post.userId === user.id;
 
@@ -284,7 +291,8 @@ export default async function PostPage({
             path={`/community/${post.id}`}
             title={post.title || plainExcerpt(post.bodyMd, 60)}
             locale={locale}
-            /* 私密帖海报路由 404 不渲染,按钮也不给 */
+            /* The private-post poster route 404s — the button isn't
+               offered either. */
             posterHref={post.visibility === "public" ? `/api/share/post/${post.id}` : undefined}
             posterSurface={post.visibility === "public" ? "post" : undefined}
           />

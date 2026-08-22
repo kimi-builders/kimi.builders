@@ -1,8 +1,8 @@
-/* 教程频道的真实数据装配(20260820 教程化改造;自 _resolve.ts 精简平移,
-   层级/资源 ref 解析随旧路径结构退役):
-   · 讨论闭环(RFC §2.5):系列挂载的社区帖 + 最新 3 条评论;
-   · 毕业归因(plan §二.5):source_path = 本系列 slug 的真实毕业作品。
-   对象不存在、已删或浏览者不可见 → 对应区块整体不渲染(宁缺勿假)。 */
+/* Real-data assembly for the tutorial channel: the discussion loop (the
+   series' linked community post + the latest 3 comments) and graduation
+   attribution (real graduated works with source_path = this series'
+   slug). Missing, deleted, or viewer-invisible objects -> that block
+   never renders (better absent than fake). */
 import { plainExcerpt } from "@/src/lib/format";
 import {
   canViewPost,
@@ -20,17 +20,19 @@ import {
 
 type Viewer = { id: number; role: string } | null;
 
-/* ---- 讨论闭环:系列挂载的社区帖 + 最新讨论 ---- */
+/* ---- Discussion loop: the series' community post + latest discussion
+   ---- */
 
 export interface SeriesDiscussion {
   postId: number;
   title: string;
   commentCount: number;
-  /* 最新优先(最多 3 条,详见 posts.ts getLatestComments) */
+  /* Newest first (at most 3; see getLatestComments in posts.ts). */
   comments: CommentRow[];
 }
 
-/* 帖不存在/已删/对浏览者不可见 → null(讨论区块整体不渲染)。 */
+/* Post missing/deleted/invisible to the viewer -> null (the discussion
+   block never renders). */
 export async function getSeriesDiscussion(
   postId: number,
   viewer: Viewer,
@@ -46,7 +48,7 @@ export async function getSeriesDiscussion(
   };
 }
 
-/* ---- 毕业归因:系列页的真实毕业作品 ---- */
+/* ---- Graduation attribution: the series' real graduated works ---- */
 
 export interface GraduateCard {
   work: WorkRow;

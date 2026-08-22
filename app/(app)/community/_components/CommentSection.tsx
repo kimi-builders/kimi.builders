@@ -1,14 +1,19 @@
 "use client";
 
-/* 评论区(客户端):两级楼中楼 —— 顶层评论 + 缩进回复层(更深的回复由服务端
-   拍平进所属顶层,并带「回复 @xx」标注)。
-   每条评论:VoteCluster 顶/踩(乐观)+ 回复;自己的评论可行内编辑、删除(confirm 后软删)。
-   所有 mutation 走「等待态 → toast 反馈 → router.refresh() 换新数据」,操作必有回响。
-   净分 ≤ -3 的评论淡化显示。锚点 id=comment-<id> 供消息通知精准定位。
-   列表数据在服务端组装:正文 Markdown 已渲成 ReactNode 随 props 传入。
-   分页:首屏 SSR 第一页(按顶层评论计);「加载更多」走 server action 拿回同样
-   渲染好的后续页直接追加,游标 = 已加载最后一个顶层评论 id。mutation 刷新后
-   已追加的页作废,回到首屏第一页(与刷新前全量重取的行为一致)。 */
+/* Comment section (client): two-level threading — top-level comments +
+   an indented reply layer (deeper replies are flattened server-side
+   into their top-level root, carrying a "replying @x" label). Each
+   comment: VoteCluster votes (optimistic) + reply; one's own comments
+   allow inline edit and delete (confirm, then soft). Every mutation
+   goes pending -> toast -> router.refresh() for fresh data — every
+   action answers. Comments at net score <= -3 render dimmed. Anchor
+   ids comment-<id> give notifications precise targets. List data is
+   assembled server-side: bodies arrive as pre-rendered ReactNode
+   props. Paging: the first page renders SSR (counted by top-level
+   comments); "load more" fetches identically rendered later pages via
+   a server action, cursor = the last loaded top-level comment id. After
+   a mutation refresh, appended pages are dropped back to the first
+   page (same behavior as the pre-refresh full refetch). */
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
@@ -41,7 +46,8 @@ export interface CommentView {
   avatarUrl: string;
   time: string;
   edited: boolean;
-  /* 已被管理员屏蔽(仅作者本人视角会拿到 true;公开侧查询已滤) */
+  /* Hidden by a moderator (only the author's own view sees true;
+     public queries already filter it). */
   hidden: boolean;
   score: number;
   replyToAuthor: string | null;
@@ -67,7 +73,8 @@ export default function CommentSection({
   postId: number;
   locale: Locale;
   meId: number | null;
-  /* admin/mod:评论行多一个「屏蔽」治理入口(action 层再鉴权) */
+  /* admin/mod: the comment row gains a "hide" moderation entry (the
+     action layer re-authenticates). */
   moderator?: boolean;
   total: number;
   threads: CommentThread[];
@@ -82,7 +89,8 @@ export default function CommentSection({
   const [posting, setPosting] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [expandedThreads, setExpandedThreads] = useState<Set<number>>(new Set());
-  /* 已追加的后续页;mutation 触发 router.refresh() 后首屏 props 换新,追加页作废 */
+  /* Later pages already appended; after a mutation's router.refresh()
+     the first-page props change and the appended pages are dropped. */
   const [extra, setExtra] = useState<{
     threads: CommentThread[];
     upIds: number[];
@@ -94,13 +102,16 @@ export default function CommentSection({
   const taRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const loggedIn = meId !== null;
-  /* @kimi 召唤等待反馈(20260816):召唤成功 → 占位行 + 轮询,回复到达自动刷新 */
+  /* @kimi summon wait feedback: on success a placeholder row +
+     polling auto-refreshes when the reply lands. */
   const [summon, setSummon] = useState<SummonTarget | null>(null);
   const settleSummon = useCallback(() => setSummon(null), []);
   useSummonPending({ target: summon, locale, onSettle: settleSummon });
 
-  /* mutation 后 router.refresh() 会换来新的首屏 props:追加页作废,回到第一页
-     (与刷新前全量重取的行为一致)。渲染期间比对前 props 重置,不走 effect。 */
+  /* After a mutation, router.refresh() brings fresh first-page props:
+     appended pages drop, back to page one (same as the pre-refresh full
+     refetch). Reset by comparing previous props during render — never
+     in an effect. */
   const [prevThreads, setPrevThreads] = useState(threads);
   if (prevThreads !== threads) {
     setPrevThreads(threads);
@@ -144,7 +155,8 @@ export default function CommentSection({
     });
   };
 
-  /* 发评论/回复:成功 → toast + 清空 + 刷新出新高楼 */
+  /* Post comment/reply: success -> toast + clear + refresh out the new
+     floor. */
   const submitComment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (posting) return;
@@ -158,7 +170,8 @@ export default function CommentSection({
         return;
       }
       toast(t(locale, "toast.commented"));
-      /* @kimi 召唤结果(20260816):评论照常发出,召唤是否成立单独提示 */
+      /* @kimi summon outcome: the comment publishes either way;
+         whether the summon took is a separate notice. */
       if (res.aiNote === "summoned") {
         toast(t(locale, "post.aiSummoned"));
         if (res.commentId) setSummon({ commentId: res.commentId });
@@ -174,7 +187,7 @@ export default function CommentSection({
     }
   };
 
-  /* 行内编辑保存 */
+  /* Inline edit save. */
   const saveEdit = async (e: React.FormEvent<HTMLFormElement>, id: number) => {
     e.preventDefault();
     if (busyId !== null) return;
@@ -196,7 +209,7 @@ export default function CommentSection({
     }
   };
 
-  /* 删除(confirm 后软删) */
+  /* Delete (confirm, then soft). */
   const remove = async (id: number) => {
     if (busyId !== null) return;
     if (!window.confirm(t(locale, "post.commentDeleteConfirm"))) return;
@@ -218,7 +231,8 @@ export default function CommentSection({
     }
   };
 
-  /* 治理屏蔽(admin/mod):填原因 → 落库 → 刷新(公开侧随即不可见) */
+  /* Moderation hide (admin/mod): fill a reason -> write -> refresh
+     (the public side drops it immediately). */
   const hideAsMod = async (id: number) => {
     if (busyId !== null) return;
     const reason = window.prompt(t(locale, "mod.hidePrompt"), "");
@@ -388,7 +402,8 @@ export default function CommentSection({
           </div>
         </form>
       ) : (
-        /* AI 评论浅蓝衬底(20260816):与人类评论一眼可辨,但克制不抢戏 */
+        /* AI comments get a light blue wash: distinguishable at a
+           glance, restrained enough not to steal the show. */
         <div
           className={`mt-2 ${c.isAi ? "rounded-lg border border-blue/15 bg-blue/[0.04] px-3 py-2" : ""}`}
         >

@@ -1,11 +1,15 @@
 "use server";
 
-/* 社区写操作 + UI 偏好切换。UI 对未登录用户不渲染入口,这里再兜底一次(session 为空即拒)。
-   mutation 统一返回 MutationResult({ ok, error? }):客户端按结果 toast 反馈并
-   router.refresh() 换当前页数据;同时这里用 revalidatePath 作废受影响路径的
-   预取缓存(Next 16:Link 预取会被后续导航复用,只有 revalidate* 能 silently 刷新),
-   否则删帖后回 feed 会看到旧卡片。
-   顶/踩走纯乐观更新(只落库、不作废路径):分数展示本来就是客户端态,避免每票都刷新全站。 */
+/* Community write operations + UI preference toggles. The UI hides
+   entries from signed-out users; this re-checks (empty session =
+   reject). Mutations uniformly return a MutationResult ({ ok, error? }):
+   clients toast on the result and router.refresh() for fresh page data;
+   revalidatePath here also invalidates the affected paths' prefetched
+   caches (in Next 16, Link prefetches are reused by later navigations —
+   only revalidate* refreshes them silently), or a deleted post would
+   still show on the feed after returning. Votes are purely optimistic
+   (write only, no path invalidation): scores are client state anyway,
+   and every vote shouldn't refresh the site. */
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -59,10 +63,12 @@ import {
 
 export interface PostFormState {
   error?: string;
-  /* 限流(P1-5):超限时带上的等待秒数,客户端可直接展示 error 文案 */
+  /* Rate limit: wait seconds carried on rejection; clients can show the
+     error copy directly. */
   retryAfterSeconds?: number;
-  /* 保存成功由客户端 router.push 落详情页——action 里 redirect() 只会转背景页,
-     拦截路由的 @modal 插槽不随之卸载(2026-08-14 实测) */
+  /* Success lands on the detail page via client router.push — redirect()
+     inside the action only moves the background page; the intercepted
+     @modal slot doesn't unmount (verified 2026-08-14). */
   ok?: boolean;
   postId?: number;
 }
@@ -71,10 +77,12 @@ export interface MutationResult {
   ok: boolean;
   error?: string;
   retryAfterSeconds?: number;
-  /* AI 召唤结果(20260816):评论里 @kimi 时给客户端 toast 用;
-     评论本身照常发布,该字段只说明召唤是否成立 */
+  /* AI summon outcome: client toast material when a comment @-s kimi;
+     the comment publishes either way and this field only says whether
+     the summon took. */
   aiNote?: "summoned" | "aiDisabled" | "rate";
-  /* 新评论 id(20260816):召唤成功后客户端按它轮询回复到达 */
+  /* New comment id: after a successful summon the client polls for the
+     reply against it. */
   commentId?: number;
 }
 
@@ -85,7 +93,8 @@ export async function createPostAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
-  /* 禁言(20260830):到期自动解除;提示带截止日期 */
+  /* Mutes lift automatically at expiry; the message carries the
+     deadline. */
   const muted = await getActiveMute(user.id);
   if (muted) return { error: muteMessage(locale, muted) };
 
@@ -101,10 +110,12 @@ export async function createPostAction(
   const aiReply = formData.get("ai_reply") === "on";
   const visibility = formData.get("private") === "on" ? "private" : "public";
 
-  /* 标题/正文都不强制:至少填一项即可(降低发布门槛,参考 V2EX/X) */
+  /* Neither title nor body is required — at least one (a low posting
+     bar, after V2EX/X). */
   if (!title && !body) return { error: t(locale, "err.empty") };
   if (title.length > 200) return { error: t(locale, "err.titleLong") };
-  /* 正文上限(20260822 P1-4):超长直接报错,库层另有 slice 兜底 */
+  /* Body cap: over the limit is a direct error; the lib layer keeps a
+     slice backstop. */
   if (body.length > POST_BODY_MAX) return { error: t(locale, "err.bodyLong") };
   if (type === "link" && !/^https?:\/\/.+/.test(linkUrl))
     return { error: t(locale, "err.linkInvalid") };
@@ -119,7 +130,8 @@ export async function createPostAction(
     if (options.length < 2) return { error: t(locale, "err.pollMin") };
   }
 
-  /* 限流(P1-5):校验通过后、写库前消耗额度——校验失败不烧配额 */
+  /* Rate limit: consumed after validation but before the write — a
+     failed validation never burns quota. */
   const rate = await consumeCommunityRateLimit(user.id, "post");
   if (!rate.allowed)
     return {
@@ -140,15 +152,18 @@ export async function createPostAction(
     visibility,
     options,
   });
-  /* 入队 AI 回帖:本帖开关勾选、或正文 @kimi 召唤(作者本人即召唤者,
-     勾选与否都回——与自动回帖合并为一条,kind=mention);作者全局开关最大。
-     enqueue 内部用 after(),必须在 return 之前调用。 */
+  /* Queue the AI reply: the post's switch checked, or an @kimi in the
+     body (the author is the summoner; it replies either way — merged
+     with the auto reply as one, kind=mention); the author's global
+     switch outranks everything. enqueue uses after() internally and
+     must run before the return. */
   const mentioned = hasKimiMention(body);
   if ((aiReply || mentioned) && user.aiRepliesEnabled)
     await enqueueAiReply(postId, null, mentioned ? "mention" : "auto");
   updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath("/community");
-  /* 落详情页:不在 action 里 redirect(弹窗插槽不随转);由客户端 router.push */
+  /* Land on the detail page: no redirect() in the action (the modal
+     slot doesn't follow); the client router.pushes. */
   return { ok: true, postId };
 }
 
@@ -158,7 +173,7 @@ export async function createCommentAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { ok: false, error: t(locale, "err.login") };
-  /* 禁言(20260830):到期自动解除 */
+  /* Mutes lift automatically at expiry. */
   const muted = await getActiveMute(user.id);
   if (muted) return { ok: false, error: muteMessage(locale, muted) };
   const postId = Number(formData.get("post_id"));
@@ -166,7 +181,8 @@ export async function createCommentAction(
   const parentId = Number(formData.get("parent_id")) || null;
   if (!postId) return { ok: false, error: t(locale, "err.generic") };
   if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
-  /* 不可见/不存在统一成 generic，且在消耗限流额度前拒绝，避免旁路与无效写入。 */
+  /* Invisible/missing unify into a generic error, rejected before
+     consuming rate-limit quota — no side channels, no wasted writes. */
   if (!(await getVisiblePostAccess(postId, user)))
     return { ok: false, error: t(locale, "err.generic") };
   const parent = parentId
@@ -174,7 +190,7 @@ export async function createCommentAction(
     : null;
   if (parentId && (!parent || parent.postId !== postId))
     return { ok: false, error: t(locale, "err.generic") };
-  /* 限流(P1-5):parent 校验通过后、写库前消耗额度 */
+  /* Rate limit: consumed after the parent validates, before the write. */
   const rate = await consumeCommunityRateLimit(user.id, "comment");
   if (!rate.allowed)
     return {
@@ -182,20 +198,24 @@ export async function createCommentAction(
       error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
       retryAfterSeconds: rate.retryAfterSeconds,
     };
-  /* 真正 INSERT 前在事务内锁帖并重做门禁，封住预检后的可见性竞态。 */
+  /* Lock the post and re-run the gate inside the transaction before the
+     real INSERT, closing the visibility race after the pre-check. */
   const created = await createCommentForVisiblePost(user, postId, body, parentId);
   if (!created) return { ok: false, error: t(locale, "err.generic") };
-  /* 回复了 AI 的评论 → 触发 AI 接话(带对话链上下文)。
-     门槛:帖子允许 AI + 回帖人全局允许 AI;链路深度上限在执行侧。
-     重复提交(duplicate)不再触发——否则网络重试会刷出双倍 AI 回复。 */
+  /* Replying to an AI comment -> an AI follow-up (with the dialog-chain
+     context). Gates: the post allows AI + the replier globally allows
+     AI; the chain-depth cap lives at execution. Duplicates never
+     trigger — a network retry must not double the AI replies. */
   let aiNote: MutationResult["aiNote"];
   if (!created.duplicate && parent?.isAi && user.aiRepliesEnabled) {
     const post = await getPost(postId);
     if (post?.aiReply) await enqueueAiReply(postId, created.id, "chain");
   } else if (!created.duplicate && hasKimiMention(body) && user.aiRepliesEnabled) {
-    /* @kimi 召唤(20260816):与 chain 互斥(回复 AI 且 @kimi 只接话)。
-       地盘规则:帖主关了本帖 AI 参与则召唤不成立(aiNote 告知召唤者);
-       召唤另计独立限流(ai_summon 20/小时),超限不召唤但评论照常发布。 */
+    /* @kimi summon: mutually exclusive with chain (replying to AI with
+       an @kimi just continues the thread). Territory rule: the post
+       owner's AI switch off means no summon (aiNote tells the
+       summoner); summons carry their own limit (ai_summon 20/hour) —
+       over it, no summon but the comment still publishes. */
     const post = await getPost(postId);
     if (!post?.aiReply) {
       aiNote = "aiDisabled";
@@ -215,8 +235,10 @@ export async function createCommentAction(
   return { ok: true, commentId: created.id, ...(aiNote ? { aiNote } : {}) };
 }
 
-/* 评论「加载更多」:只读,不落库不作废缓存。返回服务端渲染好的一页
-   (ReactNode 随 RSC 序列化),客户端直接追加;私密帖仅作者可翻页(同详情页)。 */
+/* Comment "load more": read-only — no writes, no invalidation. Returns
+   a server-rendered page (ReactNode over RSC) for the client to append;
+   private posts page only for the author (same gate as the detail
+   page). */
 export async function loadMoreCommentsAction(
   postId: number,
   after: number,
@@ -235,9 +257,11 @@ export async function loadMoreCommentsAction(
   return { ok: true, ...data };
 }
 
-/* feed「加载更多」(P1-4):只读,不落库不作废缓存。返回服务端渲染好的一页卡片
-   (ReactNode 随 RSC 序列化),客户端直接追加;私密/点踩/订阅过滤与首屏同口径
-   (都在 getFeedPage 里),游标非法时拿到空页,按钮自然收起。 */
+/* Feed "load more": read-only — no writes, no invalidation. Returns a
+   server-rendered page of cards (ReactNode over RSC) for the client to
+   append; private/down-voted/subscribed filtering matches the first
+   page exactly (all inside getFeedPage); an invalid cursor yields an
+   empty page and the button naturally folds away. */
 export async function loadMorePostsAction(
   scope: { sort: string; cat: string | null; sub: boolean },
   after: string,
@@ -261,9 +285,10 @@ export async function loadMorePostsAction(
   return { ok: true, ...data };
 }
 
-/* 顶/踩:乐观更新路径,只落库;同向再点=取消,反向=换边。
-   限流(P1-5):post/comment 投票共享 vote 配额;超限返回结构化错误,
-   客户端据 !ok 回滚乐观态并 toast。 */
+/* Up/down votes: the optimistic path, write only; same direction again
+   = cancel, opposite = switch. Rate limit: post/comment votes share
+   the vote quota; over it returns a structured error, and clients roll
+   back the optimistic state on !ok and toast. */
 export async function setPostReactionAction(
   formData: FormData,
 ): Promise<MutationResult> {
@@ -308,7 +333,8 @@ export async function setCommentReactionAction(
   return { ok: await setCommentReactionForViewer(user, commentId, kind) };
 }
 
-/* 订阅:乐观更新路径;作废旧 feed 预取(「订阅」页签内容会变)。 */
+/* Subscribe: optimistic path; invalidates stale feed prefetches (the
+   "subscribed" tab's content changes). */
 export async function toggleSubscribeAction(formData: FormData): Promise<void> {
   const user = await getSessionUser();
   if (!user) return;
@@ -333,7 +359,8 @@ export async function votePollAction(
   return { ok: r === "ok" };
 }
 
-/* ---- 作者自助:编辑 / 删除 / 可见性(归属校验在 SQL WHERE 里)---- */
+/* ---- Author self-service: edit / delete / visibility (ownership
+   pinned in SQL WHERE) ---- */
 
 export async function updatePostAction(
   _prev: PostFormState | null,
@@ -342,7 +369,8 @@ export async function updatePostAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
-  /* 禁言补检(20260822 P2-3):编辑也是发声面,与新建同门槛 */
+  /* Mute check on edit too — editing is also a speaking surface, the
+     same bar as creating. */
   const muted = await getActiveMute(user.id);
   if (muted) return { error: muteMessage(locale, muted) };
   const postId = Number(formData.get("post_id"));
@@ -353,7 +381,7 @@ export async function updatePostAction(
   if (!postId) return { error: t(locale, "err.unknownType") };
   if (!title && !body) return { error: t(locale, "err.empty") };
   if (title.length > 200) return { error: t(locale, "err.titleLong") };
-  /* 正文上限(20260822 P1-4):与新建同口径 */
+  /* Body cap: same rule as creating. */
   if (body.length > POST_BODY_MAX) return { error: t(locale, "err.bodyLong") };
   if (linkUrl && !/^https?:\/\/.+/.test(linkUrl))
     return { error: t(locale, "err.linkInvalid") };
@@ -368,7 +396,8 @@ export async function updatePostAction(
   return { ok: true, postId };
 }
 
-/* 删除不 redirect:由客户端 toast 后自行跳转;作废 feed 预取,否则回列表看到旧卡片。 */
+/* Delete doesn't redirect: the client toasts and navigates itself;
+   stale feed prefetches are invalidated or the list shows old cards. */
 export async function deletePostAction(
   formData: FormData,
 ): Promise<MutationResult> {
@@ -403,7 +432,8 @@ export async function setPostVisibilityAction(
   return { ok };
 }
 
-/* 已解决开关(20260907):作者本人或治理(在 setPostSolved 里判);feed 与详情同步 */
+/* Solved toggle: the author or moderation (decided inside
+   setPostSolved); feed and detail stay in sync. */
 export async function setPostSolvedAction(
   formData: FormData,
 ): Promise<MutationResult> {
@@ -420,7 +450,9 @@ export async function setPostSolvedAction(
   return { ok };
 }
 
-/* 评论改/删只有 commentId,取 postId 要多查一次 —— 用动态路由模式整体作废详情页。 */
+/* Comment edit/delete only carry commentId — fetching postId would
+   cost another query, so the dynamic-route pattern invalidates the
+   whole detail page. */
 export async function updateCommentAction(
   formData: FormData,
 ): Promise<MutationResult> {
@@ -450,7 +482,8 @@ export async function deleteCommentAction(
   return { ok };
 }
 
-/* ---- 编辑精选(admin/mod 定夺,署名到编辑本人;每周精选 v0)---- */
+/* ---- Editorial featuring (admin/mod ruling, attributed to the
+   editor; weekly featured v0) ---- */
 
 export async function featurePostAction(
   formData: FormData,
@@ -469,7 +502,8 @@ export async function featurePostAction(
   if (!reason) return { ok: false, error: t(locale, "err.reasonRequired") };
   const ok = await setPostFeatured(user.id, postId, reason);
   if (!ok) return { ok: false, error: t(locale, "err.generic") };
-  /* 首页数据走 tag 缓存(updateTag 即时作废),详情页/首页路径缓存一并清 */
+  /* Home data goes through tag caches (updateTag invalidates now);
+     detail/home path caches are cleared alongside. */
   updateTag(HOME_CACHE_TAG);
   updateTag(PUBLIC_FEATURED_CACHE_TAG);
   revalidatePath(`/community/${postId}`);
@@ -497,7 +531,8 @@ export async function unfeaturePostAction(
   return { ok };
 }
 
-/* ---- UI 偏好(cookie,一年期;语义见 src/lib/prefs.ts)---- */
+/* ---- UI preferences (cookies, one year; semantics in
+   src/lib/prefs.ts) ---- */
 
 const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
 
@@ -513,24 +548,26 @@ export async function toggleSidebarAction(): Promise<void> {
   store.set("kb_sidebar", shown ? "0" : "1", PREF_COOKIE);
 }
 
-/* 主题:暗 ⇄ 亮 翻转(cookie;默认暗)。 */
+/* Theme: dark <-> light flip (cookie; dark by default). */
 export async function setThemeAction(): Promise<void> {
   const store = await cookies();
   const cur = store.get("kb_theme")?.value === "light" ? "light" : "dark";
   store.set("kb_theme", cur === "light" ? "dark" : "light", PREF_COOKIE);
 }
 
-/* 视觉气质(20260815 拍板):工程棱角 poster ⇄ 圆润经典 soft(默认值可配置,
-   见 src/lib/vibe.ts 的 DEFAULT_VIBE);仅翻 cookie——气质是纯 CSS 变量跟随
-   (globals.css 的 data-vibe 块)。 */
+/* Visual vibe: angular poster <-> rounded classic soft (the default is
+   configurable via DEFAULT_VIBE in src/lib/vibe.ts); flips the cookie
+   only — vibes are pure CSS-variable followers (globals.css data-vibe
+   blocks). */
 export async function setVibeAction(): Promise<void> {
   const store = await cookies();
   const cur = normalizeVibe(store.get("kb_vibe")?.value);
   store.set("kb_vibe", cur === "soft" ? "poster" : "soft", PREF_COOKIE);
 }
 
-/* UI 语言:中 ⇄ EN 翻转;登录用户同步写进 users.locale
-   (账号偏好同时是 AI 回帖语言的第一优先级)。 */
+/* UI language: zh <-> EN flip; signed-in users also persist
+   users.locale (the account preference is also the first priority for
+   AI reply language). */
 export async function setLocaleAction(): Promise<void> {
   const user = await getSessionUser();
   const store = await cookies();
@@ -540,8 +577,9 @@ export async function setLocaleAction(): Promise<void> {
   if (user) await setUserLocale(user.id, next);
 }
 
-/* 乐观切换的显式持久化:客户端已翻好 cookie,这里只把登录用户的
-   账号偏好落库(不等界面,幂等)。 */
+/* Explicit persistence for optimistic toggles: the client already
+   flipped the cookie; this only persists the signed-in user's account
+   preference (not waiting on the UI, idempotent). */
 export async function saveLocaleAction(locale: string): Promise<void> {
   if (locale !== "zh" && locale !== "en") return;
   const user = await getSessionUser();

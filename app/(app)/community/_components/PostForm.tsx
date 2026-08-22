@@ -1,9 +1,12 @@
 "use client";
 
-/* 发帖表单(Kimi Design 改造):类型 seg(文字/链接/投票)驱动字段显隐;
-   话题+标题双列;投票选项 2–8 条动态增删;自绘 checkbox(AI 回复/私密);
-   底栏 hint + primary 发布。提交走 server action(createPostAction),校验错误就地显示。
-   完整页(/community/new)与弹窗(@modal)共用,RouteModal 已提供圆角壳。 */
+/* New post form: a type seg (text/link/poll) drives field visibility;
+   topic + title in two columns; 2-8 poll options added/removed
+   dynamically; hand-drawn checkboxes (AI reply / private); footer hint
+   + primary submit. Submission goes through the createPostAction
+   server action with validation errors shown inline. The full page
+   (/community/new) and the modal (@modal) share it; RouteModal
+   provides the rounded shell. */
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Trash2, X } from "lucide-react";
@@ -36,12 +39,13 @@ const TYPES = [
   { id: "poll", key: "form.poll" },
 ] as const;
 
-/* 控件样式收编到共享 form-classes(20260819 版式对齐);
-   别名保留,下方调用点不动。 */
+/* Control styles consolidated into the shared form-classes; aliases
+   kept so the call sites below don't move. */
 const inputCls = INPUT_CLS;
 const labelCls = LABEL_CLS;
 
-/* 自绘复选框:sr-only input + 兄弟节点方盒(peer-checked 驱动),与用量页 switch 同族。 */
+/* Hand-drawn checkbox: an sr-only input + a sibling box (peer-checked
+   driven), the same family as the usage page's switches. */
 function CheckBox({
   name,
   defaultChecked,
@@ -86,15 +90,19 @@ export default function PostForm({
     FormData
   >(createPostAction, null);
 
-  /* 保存成功:客户端导航落详情页(完整页 = 普通跳转;弹窗 = 整条路由树重解析,
-     @modal 插槽随之卸载)。action 里 redirect() 只转背景页,弹窗不会关 */
+  /* Save success: client navigation lands on the detail page (a full
+     page = a normal jump; a modal = the whole route tree re-resolves
+     and the @modal slot unmounts). redirect() inside the action moves
+     only the background page — the modal never closes. */
   const router = useRouter();
   useEffect(() => {
     if (state?.ok && state.postId) router.push(`/community/${state.postId}`);
   }, [state, router]);
 
-  /* 校验失败:错误条滚进视野(对齐 WorkForm 的长表单防「看似无反应」处理,
-     20260821 评审——发布键在表单底部,错误若只出现在原位会被提交键挡住) */
+  /* Validation failure: the error row scrolls into view (the same
+     long-form "never look unresponsive" treatment as WorkForm — the
+     submit key sits at the bottom, and an in-place error hides behind
+     it). */
   const errorRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (state && !state.ok && state.error) {

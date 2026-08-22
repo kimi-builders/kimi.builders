@@ -1,14 +1,17 @@
-/* 系列页共用的三个真实数据区块(20260820 教程化;自旧 [slug]/page.tsx 平移):
-   验证记录时间线(当前戳 + 重验痕迹)、讨论闭环、毕业作品。
-   配色/字距走全局令牌;空态克制(无帖不渲染讨论,无毕业作品给 CTA)。 */
+/* The three real-data blocks shared by series pages: the verification
+   timeline (current stamp + re-verification trail), the discussion
+   loop, and graduated works. Colors/tracking use global tokens; empty
+   states stay restrained (no post = no discussion block; no graduates
+   = a CTA). */
 import Link from "next/link";
 import { GraduationCap, History, MessagesSquare, ShieldCheck } from "lucide-react";
 import { compactNumber, plainExcerpt } from "@/src/lib/format";
 import { isPathStale, type LearnSeries } from "@/src/lib/learn-series";
 import type { GraduateCard, SeriesDiscussion } from "../_blocks";
 
-/* 验证记录:当前验证戳 + reverifyLog 重验痕迹
-   (担保要有担保的机械结构——戳会过期,痕迹不删) */
+/* Verification record: the current stamp + the reverifyLog trail (an
+   endorsement needs mechanical structure — stamps expire, trails are
+   never deleted). */
 export function VerifyLog({ series, zh }: { series: LearnSeries; zh: boolean }) {
   const stale = isPathStale(series);
   return (
@@ -58,7 +61,8 @@ export function VerifyLog({ series, zh }: { series: LearnSeries; zh: boolean }) 
   );
 }
 
-/* 讨论闭环:系列挂载的社区帖 + 最新 3 条评论 +「去讨论」入口 */
+/* Discussion loop: the series' linked community post + the latest 3
+   comments + a "join the discussion" entry. */
 export function DiscussionBlock({
   discussion,
   zh,
@@ -113,8 +117,10 @@ export function DiscussionBlock({
   );
 }
 
-/* 毕业作品:该系列真实毕业作品(works.source_path = 系列 slug,公开未屏蔽,
-   卡片带声明徽章)。空态克制:不做负面标记,给「成为第一个毕业生」CTA。 */
+/* Graduated works: the series' real graduations (works.source_path =
+   the series slug, public and unhidden, cards carrying claim badges).
+   Restrained empty state: no negative signaling, just a "become the
+   first graduate" CTA. */
 export function GraduatesBlock({
   series,
   graduates,

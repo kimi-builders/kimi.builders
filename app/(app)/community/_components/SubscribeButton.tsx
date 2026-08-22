@@ -1,6 +1,7 @@
 "use client";
 
-/* 订阅按钮:乐观翻转(书签填充 + 文案),成功 toast 告知,失败回滚。 */
+/* Subscribe button: optimistic flip (bookmark fill + copy), success
+   toasts, failure rolls back. */
 import { useRef, useState } from "react";
 import { Bookmark } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";

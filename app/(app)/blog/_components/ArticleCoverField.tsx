@@ -1,12 +1,17 @@
 "use client";
 
-/* 文章封面字段(20260822):与作品封面同一交互——「上传封面图 / 封面风格」
-   二选一 tab。上传档:选图比例 ≈16/9(±0.02)直传免打扰,否则先进
-   ImageCropDialog 固定 16:9 裁剪再传(uploadMedia → /api/upload,
-   sharp 归一 webp → R2);外链 URL 仍可手填并存。风格档:CoverToneField
-   色卡(与作品名称砖同一色板),常驻挂载 + inactive 保状态(切 tab 不丢)。
-   两值独立上报父组件:payload 组装 cover(图 URL,优先渲染)+
-   coverTone(无图/图挂时的章字砖色,theme = 跟随主题不落 payload)。 */
+/* Article cover field: the same interaction as the work cover —
+   "upload an image / pick a style" tabs. Upload tab: an image already
+   ~16/9 (±0.02) uploads directly without nagging; otherwise
+   ImageCropDialog fixes a 16:9 crop first, then uploadMedia ->
+   /api/upload (sharp normalizes to webp -> R2); an external URL can
+   still be typed and coexist. Style tab: the CoverToneField palette
+   (the same palette as work name bricks), permanently mounted with
+   inactive state-keeping (tab switches lose nothing). Both values
+   report to the parent independently: the payload assembles cover (the
+   image URL, rendered first) + coverTone (the chapter-brick color when
+   there's no image or it failed to load; theme = follow the theme,
+   never in the payload). */
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, LoaderCircle, X } from "lucide-react";
 import ImageCropDialog from "@/components/ImageCropDialog";
@@ -41,15 +46,18 @@ export default function ArticleCoverField({
   const [crop, setCrop] = useState<{ src: string; img: HTMLImageElement } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  /* 只上报与父级当前值不同的色调(20260822 修复):CoverToneField 激活时会
-     重报当前值,而 inline 回调身份不稳会让该 effect 每渲染跑一次;不比对
-     就派发,每次 set 新对象都触发重渲染 → 自激成 Maximum update depth。
-     与父级 tone 相同则不派发,环在第一步就断掉 */
+  /* Report only tones differing from the parent's current value:
+     CoverToneField re-reports on activation, and an inline callback's
+     unstable identity runs the effect every render; dispatching without
+     comparing re-renders on every new object -> self-excites into
+     Maximum update depth. Equal tone means no dispatch — the loop
+     breaks at step one. */
   const handleTone = (v: string) => {
     if (v !== tone) onToneChange(v);
   };
 
-  /* 裁剪源 blob 用完即收(卸载兜底,防泄漏) */
+  /* The crop-source blob is reclaimed when done (unmount backstop,
+     against leaks). */
   useEffect(() => {
     return () => {
       if (crop) URL.revokeObjectURL(crop.src);
@@ -62,17 +70,20 @@ export default function ArticleCoverField({
       const ref = await uploadMedia(file, "image");
       setFailed(false);
       onUrlChange(ref.url);
-      /* 上传成功自动切到图(与作品同口径:两种来源以图优先) */
+      /* A successful upload auto-switches to the image (same rule as
+         works: the image wins between the two sources). */
       setMode("image");
     } catch {
-      /* 与作品口径一致:失败要出声,静默失败像「传上了但没显示」 */
+      /* Same rule as works: failures must speak up — a silent one
+         reads as "uploaded but not showing". */
       toast(t(locale, "works.uploadFailed"), "error");
     } finally {
       setUploading(false);
     }
   };
 
-  /* 选图:列表封面恒定 16:9 展示——比例已对直传,否则进裁剪框定构图 */
+  /* Picking: list covers always render at 16:9 — on-ratio images
+     upload directly, others enter the crop box to frame first. */
   const pick = (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return;
     const src = URL.createObjectURL(file);
@@ -188,7 +199,8 @@ export default function ArticleCoverField({
           </div>
         </div>
       ) : (
-        /* 常驻挂载 + inactive:色卡状态切回上传档也保留(与作品同方案) */
+        /* Permanent mount + inactive: palette state survives the
+           switch back to upload (same scheme as works). */
         <div className="mt-3">
           <CoverToneField
             locale={locale}

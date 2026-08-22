@@ -1,12 +1,16 @@
 "use server";
 
-/* 文章引擎编辑动作(S3-1,admin/mod 专属):新建/更新/发布/撤稿/软删。
-   UI 只对 admin/mod 渲染入口,这里再兜底一次(session + canModerate)。
-   发布语义:publish 勾选 = 发布(保留首次发布时间),不勾 = 草稿/撤稿(published_at NULL,
-   前台列表与详情均不露出)。写完后作废 /blog 与 /learn 的列表与详情预取缓存。
-   导航交给表单层(20260822 弹窗化,与作品发布同构):action 只返回结果,
-   发布 → replace 到 /explore/<slug>(弹窗静默关、落在详情);存草稿 →
-   停在编辑位续编(带回首行 id,再保存走更新不重复建行)。 */
+/* Article engine edit actions (admin/mod only): create/update/publish/
+   unpublish/soft-delete. The UI renders entries for admin/mod only;
+   this re-checks (session + canModerate). Publish semantics: the
+   publish checkbox = publish (first publish time preserved); unchecked
+   = draft/unpublish (published_at NULL, invisible in front lists and
+   detail). After writing, /blog and /learn list/detail prefetch caches
+   are invalidated. Navigation belongs to the form layer (modal-ized
+   like work publishing): the action only returns a result — publish ->
+   replace to /explore/<slug> (the modal closes silently, landing on
+   detail); draft -> stay at the edit position (returning the row id so
+   the next save updates instead of duplicating). */
 import { revalidatePath, updateTag } from "next/cache";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { PUBLIC_MONTHLY_STATS_CACHE_TAG } from "@/src/lib/cache-tags";
@@ -29,7 +33,8 @@ import { parseLetterPayload } from "@/src/lib/monthly";
 import { parseGuidePayload } from "@/src/lib/tutorials";
 
 export interface ArticleFormState {
-  /* 成功态:表单层据此导航(发布 → 详情;草稿 → 原地续编) */
+  /* Success state: the form layer navigates on it (publish -> detail;
+     draft -> keep editing in place). */
   ok?: boolean;
   id?: number;
   slug?: string;
@@ -43,7 +48,8 @@ export interface ArticleMutationResult {
   error?: string;
 }
 
-/* MySQL 唯一约束冲突((slug, locale) 复合唯一)→ 友好错误。 */
+/* MySQL unique-constraint conflict ((slug, locale) composite unique)
+   -> a friendly error. */
 function isDupEntry(e: unknown): boolean {
   const err = e as { code?: string; errno?: number };
   return err?.code === "ER_DUP_ENTRY" || err?.errno === 1062;
@@ -74,11 +80,13 @@ export async function saveArticleAction(
   const sortOrder = normalizeSortOrder(String(formData.get("sort_order") || ""));
   const publish = formData.get("publish") === "on";
 
-  /* 期次/教程元数据:空 = NULL;非空走严格校验(letter → monthly.ts,
-     guide → tutorials.ts),错误就地提示 */
+  /* Issue/tutorial metadata: empty = NULL; non-empty validates strictly
+     (letter -> monthly.ts, guide -> tutorials.ts), errors shown
+     inline. */
   let payload: string | null = null;
   let guideHasVideo = false;
-  /* guide 的系列 slug:系列页随写路径失效(letter 无系列) */
+  /* The guide's series slug: series pages invalidate with the write
+     (letters have no series). */
   let seriesSlug: string | null = null;
   if (kind === "letter") {
     const parsed = parseLetterPayload(String(formData.get("payload") || ""));
@@ -95,12 +103,15 @@ export async function saveArticleAction(
     guideHasVideo = !!parsed.payload.video;
     seriesSlug = parsed.payload.series ?? null;
   }
-  /* letter 的三层由数据组装(src/lib/monthly.ts),正文可空;guide 以视频为主时
-     文稿可空(集详情显示「本集以视频为主」),其余仍必填 */
+  /* A letter's three layers assemble from data (src/lib/monthly.ts) so
+     its body may be empty; a video-first guide may leave the text empty
+     (the detail shows "video-first episode"), everything else stays
+     required. */
   if (!bodyMd && kind !== "letter" && !guideHasVideo) return { error: t(locale, "err.artBody") };
 
   const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder, payload };
-  /* 更新前取旧值(slug/系列):改 slug 或换系列后,旧路径缓存也要失效(20260822 P2-6) */
+  /* Fetch old values (slug/series) before the update: after a rename or
+     series change, old-path caches must be invalidated too. */
   const prev = id ? await getArticleSlugAndSeriesById(id) : null;
   let rowId = id;
   try {
@@ -117,13 +128,16 @@ export async function saveArticleAction(
 
   revalidatePath("/explore");
   revalidatePath(`/explore/${slug}`);
-  /* 旧 slug:改名的详情页缓存兜底失效 */
+  /* Old slug: the renamed detail page's cache invalidates as a
+     backstop. */
   if (prev && prev.slug !== slug) revalidatePath(`/explore/${prev.slug}`);
-  /* 系列页:新旧系列都失效(换系列时旧页的集列表要摘掉本集) */
+  /* Series pages: both old and new invalidate (the old page's episode
+     list must drop this episode). */
   for (const s of new Set([prev?.series ?? null, seriesSlug])) {
     if (s) revalidatePath(`/explore/series/${s}`);
   }
-  /* 统计快照缓存失效(20260822 P2-5):发布/撤稿都可能改变快照观感 */
+  /* Stats snapshot cache invalidation: publishing/unpublishing can both
+     change the snapshot's look. */
   updateTag(PUBLIC_MONTHLY_STATS_CACHE_TAG);
   return { ok: true, id: rowId, slug, artLocale, published: publish };
 }
@@ -138,7 +152,8 @@ export async function deleteArticleAction(
     return { ok: false, error: t(locale, "err.forbidden") };
   const id = Number(formData.get("id"));
   if (!id) return { ok: false, error: t(locale, "err.generic") };
-  /* 删除动作只带 id:先取 slug/系列再删,详情与系列页都可精确失效(20260822 P2-6) */
+  /* Delete carries only an id: fetch slug/series first, then delete —
+     detail and series pages can be invalidated precisely. */
   const prev = await getArticleSlugAndSeriesById(id);
   const ok = await softDeleteArticle(id);
   if (ok) {

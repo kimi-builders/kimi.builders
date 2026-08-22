@@ -1,7 +1,8 @@
-/* 编辑文章内容体(完整页与拦截弹窗共用,20260822 弹窗化):
-   按 slug + ?locale= 精确定位(同 slug 可有中英两行,草稿也能取到);
-   板块开关 + admin/mod 门槛 + ArticleForm。showTitle=false 时标题交给
-   RouteModal 头部(草稿徽标在表单发布节仍有等价提示)。 */
+/* Edit-article body (shared by the full page and the intercepted
+   modal): located by slug + ?locale= exactly (one slug may hold zh
+   and en rows; drafts resolve too); section switch + admin/mod gate +
+   ArticleForm. showTitle=false hands the title to RouteModal's header
+   (the draft badge still shows in the form's publish section). */
 import { notFound } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
@@ -28,7 +29,8 @@ export default async function EditArticleContent({
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* 板块未就绪(src/lib/upcoming.ts):编辑后台一并关闸 */
+  /* Section not ready (src/lib/upcoming.ts): the edit console closes
+     with it. */
   if (UPCOMING.explore) {
     return <SoonPanel title={t(locale, "nav.explore")} locale={locale} />;
   }

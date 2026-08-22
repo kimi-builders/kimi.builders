@@ -1,7 +1,9 @@
-/* 发帖主体:完整页(/community/new)与弹窗(@modal/(.)community/new)共用。
-   showTitle=false 时收起 h1(弹窗自带标题栏)。
-   登录门槛在服务端,表单交互(PostForm)在客户端;
-   未登录 = 统一登录引导卡(20260919,与全站登录门同一张脸)。 */
+/* New-post body: shared by the full page (/community/new) and the
+   modal (@modal/(.)community/new). showTitle=false collapses the h1
+   (the modal has its own title bar). The login gate is server-side,
+   the form interaction (PostForm) client-side; signed out = the
+   unified login-invitation card (the same face as every login gate on
+   the site). */
 import { getSessionUser } from "@/src/lib/auth/session";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
@@ -18,7 +20,8 @@ export default async function NewPostContent({
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
       {showTitle && (
-        /* 20260819 版式对齐:页头接入 eyebrow + .kb-h2,与分区落地页同一语法 */
+        /* Layout alignment: the header takes eyebrow + .kb-h2, the
+           section landing pages' grammar. */
         <div>
           <p className="kb-eyebrow">{t(locale, "form.eyebrow")}</p>
           <h1 className="kb-h2 mt-3">

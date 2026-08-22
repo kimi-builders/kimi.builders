@@ -1,10 +1,14 @@
-/* 社区 feed:卡片流(Kimi Design 改造:圆角卡 + 格式化摘要 + pill 动作行)。
-   顶部:快速发帖条(登录可见,点击开发帖弹窗)+ 排序 seg(热门/最新/订阅)+ 话题 pills。
-   板块筛选从右栏收编进 feedbar;行内顶/踩可交互(reaction 态一条 IN 批量查,避免 N+1)。
-   标题非强制:无标题帖正文摘要 + 阅读全文承接。登录用户的私密帖只在自己的 feed 出现(带标);
-   被自己点踩的帖不再出现在自己的 feed。
-   分页(P1-4):游标分页 +「加载更多」追加(server action 返回渲染好的一页),
-   卡片渲染抽在 _components/PostCard,首屏与追加共用 _components/feed-page。 */
+/* Community feed: the card stream (rounded cards + formatted excerpts +
+   pill action rows). Top: a quick-post bar (signed-in, opens the new-post
+   modal) + a sort seg (hot/new/subscribed) + topic pills. Category
+   filtering moved from the rail into the feed bar; inline votes are
+   interactive (reaction state via one batched IN query, no N+1).
+   Titles are optional: untitled posts carry a body excerpt + "read
+   full". A signed-in user's private posts appear only in their own feed
+   (labeled); posts they down-voted disappear from their feed. Paging:
+   keyset cursors + "load more" appends (the server action returns a
+   rendered page); card rendering lives in _components/PostCard, and
+   the first page and appends share _components/feed-page. */
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -67,8 +71,9 @@ export default async function CommunityPage({
     return qs ? `/community?${qs}` : "/community";
   };
 
-  /* stagger 入场只在默认视图挂载(20260821 评审):话题/排序切换是服务端
-     重渲染,卡片 key 全换会让前 8 项重放入场动画,观感像卡顿 */
+  /* Stagger entrance only on the default view: topic/sort switches are
+     server re-renders — all card keys change and the first 8 cards
+     would replay the entrance animation, reading as a stutter. */
   const defaultFeedView =
     currentSort === "hot" && !cat && !subOnly && !solvedOnly;
 
@@ -169,8 +174,9 @@ export default async function CommunityPage({
       </div>
 
       {feed.nodes.length === 0 ? (
-        /* 空社区 = 显式 CTA 而非只有鼓励(20260821 评审);订阅空态
-           (subOnly)是筛选无结果,给内容指引但不给发帖按钮 */
+        /* Empty community = an explicit CTA, not cheerleading alone;
+           the subscribed empty state (subOnly) is a filter with no
+           results — content guidance, but no post button. */
         <EmptyState
           className="mt-4"
           message={subOnly ? t(locale, "feed.emptySub") : t(locale, "feed.empty")}

@@ -1,6 +1,7 @@
-/* 新建文章内容体(完整页与拦截弹窗共用,20260822 弹窗化):
-   板块开关 + admin/mod 门槛 + ArticleForm。showTitle=false 时标题交给
-   RouteModal 的头部,正文只留表单(对齐作品 NewWorkContent 的分工)。 */
+/* New-article body (shared by the full page and the intercepted
+   modal): section switch + admin/mod gate + ArticleForm.
+   showTitle=false hands the title to RouteModal's header, leaving just
+   the form (the same division as NewWorkContent). */
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import { t } from "@/src/lib/i18n";
@@ -16,7 +17,8 @@ export default async function NewArticleContent({
 }) {
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* 板块未就绪(src/lib/upcoming.ts):编辑后台一并关闸 */
+  /* Section not ready (src/lib/upcoming.ts): the edit console closes
+     with it. */
   if (UPCOMING.explore) {
     return <SoonPanel title={t(locale, "nav.explore")} locale={locale} />;
   }

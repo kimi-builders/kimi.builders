@@ -1,6 +1,8 @@
-/* 消息页:关注的帖子有新评论 / 我的评论被回复 / 作品召唤被 AI 回应(20260816),
-   按时间倒序;链接锚到具体评论(#comment-<id> / #work-comment-<id>)。
-   打开页面即全部标记已读。actor 为空 = Kimi 小筑(AI),用 bot 头像和名字展示。 */
+/* Notifications page: new comments on subscribed posts / replies to
+   my comments / AI answers to work summons, newest first; links anchor
+   to the exact comment (#comment-<id> / #work-comment-<id>). Opening
+   the page marks everything read. An empty actor = the bot, shown with
+   the bot avatar and name. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
@@ -20,7 +22,7 @@ export default async function NotificationsPage() {
   const locale = await getLocale(user);
 
   if (!user) {
-    /* 未登录:统一登录引导卡(20260919) */
+    /* Signed out: the unified login-invitation card. */
     return (
       <div>
         <h1 className="text-2xl font-semibold text-paper">
@@ -54,8 +56,9 @@ export default async function NotificationsPage() {
       ) : (
         <ul className="mt-6 space-y-3">
           {items.map((n) => {
-            /* work 分支(20260816 作品召唤):AI 回复作品评论,
-               锚到 /works/<id>#work-comment-<cid>;其余同 post 通知 */
+            /* The work branch (work summons): the AI replied to a work
+               comment, anchored at /works/<id>#work-comment-<cid>;
+               otherwise same as post notifications. */
             const isWork = n.workId !== null;
             const href = isWork
               ? `/works/${n.workId}#work-comment-${n.workCommentId}`

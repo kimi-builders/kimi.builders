@@ -1,8 +1,11 @@
-/* feed 帖子卡片(Kimi Design 改造):社区页首屏(SSR)与「加载更多」server action
-   共用同一份渲染,两种入口输出一致(同 comment-page.tsx 的模式)。
-   头行 = 头像 + @handle(官方带 BadgeCheck)+ 时间 + #话题 chip + 私密标;
-   正文摘要为格式化渲染(react-markdown,.md-feed 紧凑截断,图片位已预留);
-   动作行 = 顶/踩 pill + 评论 + 分享 + 小筑标记。标题非强制:无标题帖由摘要 + 阅读全文承接。 */
+/* Feed post card: the community first page (SSR) and the "load more"
+   server action share this exact render so both entries emit identical
+   output (same pattern as comment-page.tsx). Header row = avatar +
+   @handle (officials carry BadgeCheck) + time + #topic chip + private
+   marker; the body excerpt renders formatted (react-markdown, .md-feed
+   compact truncation, image slots reserved); action row = vote pills +
+   comments + share + the bot marker. Titles are optional: untitled
+   posts carry the excerpt + "read full". */
 import Link from "next/link";
 import { ArrowBigUp, BadgeCheck, Bot, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -14,7 +17,7 @@ import type { FeedPost } from "@/src/lib/posts";
 import FeedShareButton from "./FeedShareButton";
 import VoteCluster from "./VoteCluster";
 
-/* 话题 tab 的色点(active 态用)。 */
+/* The topic tab's color dot (for the active state). */
 export const CATEGORY_DOT: Record<string, string> = {
   chat: "bg-blue",
   showcase: "bg-blue",
@@ -37,7 +40,8 @@ export default function PostCard({
   down: boolean;
 }) {
   const official = p.role === "admin" || p.role === "moderator";
-  /* 前缀基本用满 ≈ 正文被截断;无标题帖始终给「阅读全文」主链接位 */
+  /* A nearly-full prefix ~= the body is truncated; untitled posts
+     always keep the "read full" primary link slot. */
   const truncated = p.bodyMd.length >= 499;
   return (
     <article className="rounded-2xl border border-line bg-card px-5 pb-4 pt-5 transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/20">

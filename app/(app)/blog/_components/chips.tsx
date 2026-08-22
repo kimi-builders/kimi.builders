@@ -1,6 +1,8 @@
-/* 月刊页共用的定夺类型 chip(20260921 抽取,此前总览/详情两页逐字重复;
-   同日「给官方的信」层下线,responseChip 一并退役):
-   精选构建/精选讨论/治理公示,配色与海报 DECISION_CHIP_COLORS 同族。 */
+/* Decision-kind chips shared by the monthly pages (extracted from
+   verbatim duplication across overview/detail; the retired "letter to
+   the official" layer took responseChip with it): featured build /
+   featured discussion / governance ruling, colored in the same family
+   as the poster DECISION_CHIP_COLORS. */
 import type { IssueDecision } from "@/src/lib/monthly";
 
 export function decisionChip(kind: IssueDecision["kind"], zh: boolean) {

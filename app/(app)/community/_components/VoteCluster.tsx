@@ -1,8 +1,10 @@
 "use client";
 
-/* 顶/踩投票簇:乐观更新 —— 点击立即改填充/计数,后台落库,失败回滚 + toast。
-   两个箭头之间拉开间距(gap-2.5),各带 hover 文案提示(title);帖子/评论通用。
-   未登录不渲染本组件(调用方渲染只读分数)。 */
+/* Up/down vote cluster: optimistic — the click flips fill/count
+   immediately, the write lands in the background, failures roll back +
+   toast. The arrows space out (gap-2.5) with hover hints (title);
+   shared by posts and comments. Not rendered when signed out (callers
+   show a read-only score). */
 import { useRef, useState } from "react";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -37,7 +39,8 @@ export default function VoteCluster({
     if (busy.current) return;
     busy.current = true;
     const prev = state;
-    /* 同向再点 = 取消;反向 = 换边(与服务端 setReaction 语义一致) */
+    /* Same direction again = cancel; opposite = switch (matching the
+       server's setReaction semantics). */
     let { up, down, score } = state;
     if (kind === "up") {
       if (up) {
@@ -66,7 +69,8 @@ export default function VoteCluster({
       const res = await (target === "post"
         ? setPostReactionAction(fd)
         : setCommentReactionAction(fd));
-      /* 服务端拒绝(限流/未登录等):回滚乐观态,限流文案带等待秒数 */
+      /* Server rejection (rate limit/signed out etc.): roll back the
+         optimistic state; the rate-limit copy carries the wait seconds. */
       if (!res.ok) {
         setState(prev);
         toast(res.error || t(locale, "toast.failed"), "error");

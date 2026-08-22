@@ -1,7 +1,9 @@
-/* 系列行式卡(20260821 探索区):WorkCard 行式语法——sm 起封面在左、内容在右、
-   整卡覆盖链接;与 SeriesGridCard(封面墙)共用 SeriesCover,由视图切换分流。
-   meta 行:系列码 + 集数 + 总时长 + 最新日期 + 验证戳;
-   matched(透镜筛选时)显示「命中 n/N 集」,部分命中不整卡隐藏。 */
+/* Series row card: the WorkCard row grammar — from sm the cover sits
+   left, content right, the whole card links out; shares SeriesCover
+   with SeriesGridCard (cover wall), the view toggle routing between
+   them. Meta row: series code + episode count + total duration +
+   latest date + verification stamp; matched (under lens filtering)
+   shows "n/N episodes hit" — partial matches never hide the card. */
 import Link from "next/link";
 import { Clock3, ShieldCheck } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";
@@ -29,7 +31,8 @@ export default function SeriesRowCard({
     (acc, e) => (acc && acc.publishedAt > e.publishedAt ? acc : e),
     null,
   );
-  /* 章字标(主轴在卡上的最小存在)+ 联合产品图标(≤3) */
+  /* The chapter mark (the axis's minimal presence on the card) + joint
+     product icons (<=3). */
   const chapter = series.chapter ? findKbChapter(series.chapter) : undefined;
   const seriesProducts = [...new Set(episodes.flatMap((e) => e.products))].slice(0, 3);
   return (

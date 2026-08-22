@@ -1,8 +1,10 @@
 "use client";
 
-/* 编辑帖子表单(作者):板块/标题/正文/链接可改(类型与投票选项不改——类型决定
-   帖子结构,保持简单);保存走 server action,成功回详情页。
-   视觉与发帖表单(PostForm)同套语言:标签 + rounded-lg 输入 + 自绘 chevron 下拉。 */
+/* Post edit form (author): category/title/body/link editable (type
+   and poll options are not — type determines the post's structure,
+   keep it simple); saves via a server action, success returns to the
+   detail page. Same visual language as PostForm: labels + rounded-lg
+   inputs + hand-drawn chevron dropdowns. */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
@@ -18,7 +20,8 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { updatePostAction, type PostFormState } from "../actions";
 import MarkdownEditor from "../../_components/MarkdownEditor";
 
-/* 控件样式收编到共享 form-classes(20260819 版式对齐);别名保留,调用点不动 */
+/* Control styles consolidated into the shared form-classes; aliases
+   kept so call sites don't move. */
 const inputCls = INPUT_CLS;
 const labelCls = LABEL_CLS;
 
@@ -44,7 +47,8 @@ export default function PostEditForm({
     FormData
   >(updatePostAction, null);
 
-  /* 同发帖:保存成功由客户端导航落详情页,弹窗随之卸载 */
+  /* Like posting: success lands on the detail page via client
+     navigation, and the modal unmounts with it. */
   const router = useRouter();
   useEffect(() => {
     if (state?.ok && state.postId) router.push(`/community/${state.postId}`);

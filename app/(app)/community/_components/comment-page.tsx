@@ -1,7 +1,10 @@
-/* 评论一页的服务端组装:分页查询 + 顶/踩态 + 两层拍平 + Markdown 渲染。
-   详情页首屏(SSR)与「加载更多」server action 共用,保证两种入口输出一致。
-   楼中楼:parent 链由 SQL 算出可见根后拍平成「顶层 + 一层回复」,
-   回复层带「回复 @xx」标注;AI 回复带品牌瓷砖头像和 AI 标。 */
+/* Server assembly of one comment page: the paged query + vote state +
+   two-level flattening + Markdown rendering. Shared by the detail
+   page's first render (SSR) and the "load more" server action so both
+   entries emit identical output. Threading: the parent chain computes
+   visible roots in SQL, then flattens to "top level + one reply layer"
+   with "replying @x" labels; AI replies carry the brand tile avatar
+   and the AI tag. */
 import Markdown from "@/components/Markdown";
 import { BOT_AVATAR, BOT_NAME } from "@/src/lib/ai-reply";
 import type { SessionUser } from "@/src/lib/auth/session";
@@ -32,7 +35,8 @@ export async function loadCommentPage(
   const page = await getCommentsPage(postId, {
     showAi: user ? user.showAiReplies : true,
     after,
-    /* 治理屏蔽(20260830):被屏蔽评论仅其作者本人可见(带标注),其余人视角滤掉 */
+    /* Moderation hiding: hidden comments are visible only to their
+       author (labeled); everyone else's view filters them out. */
     viewerId: user?.id,
   });
   const reactions = user

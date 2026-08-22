@@ -1,13 +1,18 @@
-/* 探索(Explore)· 章主轴扁平列表(20260822 简化改版):
-   使命:探索将智能转化为创造力的最优解(镜像官方 Seeking the optimal
-   conversion from energy to intelligence 句式)。
-   冷启动形态:一篇内容一张横列卡(封面左、内容右,WorkCard 行式语法),
-   不做系列/教程架子——系列机制在数据层保留,内容长出来再上架。
-   章(学/做/得/立)seg = 主轴,0 计数章置灰恒可见;
-   产品/职业/标签/归档 = 单选下拉,**有内容才出选项,整维无内容连下拉都不出**;
-   形态(文章/视频/演示稿)不筛选——每篇内容三媒体齐备,仅作卡上标记。
-   筛选 URL(含 ?chapter=)noindex;组合空态给「清除筛选 + 最近内容」。
-   板块开关未就绪时整页换「正在路上」。 */
+/* Explore · the chapter-axis flat list. Mission: exploring the optimal
+   conversion from intelligence to creativity (mirroring the official
+   "Seeking the optimal conversion from energy to intelligence").
+   Cold-start shape: one horizontal card per piece of content (cover
+   left, content right, the WorkCard row grammar) — no series/tutorial
+   scaffolding; the series mechanism stays in the data layer until
+   content grows into it. The chapter seg (learn/build/measure/
+   establish) is the spine; zero-count chapters grey out but stay
+   visible. Products/roles/tags/archive are single-select dropdowns —
+   options appear only when content exists, and a dimension with no
+   content doesn't even render its dropdown. Formats (article/video/
+   deck) don't filter — every piece carries all three media, marked on
+   the card only. Filtered URLs (incl. ?chapter=) are noindex; combined
+   empty states offer "clear filters + latest content". While the
+   section switch is off, the whole page shows the placeholder. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -44,7 +49,8 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 
-/* 筛选参数的单选切换(再点取消):其余参数原样保留 */
+/* Single-select filter toggling (click again to clear): every other
+   param survives. */
 function lensHref(
   basePath: string,
   current: Record<string, string | undefined>,
@@ -67,7 +73,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const sp = await searchParams;
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
-  /* 筛选组合 URL(含章)不索引(防组合爬陷);默认视图可索引 */
+  /* Filtered combo URLs (chapter included) are noindex (no crawl traps);
+     the default view is indexable. */
   const filtered =
     first(sp.chapter) || first(sp.product) || first(sp.role) || first(sp.tag) || first(sp.year);
   return {
@@ -95,7 +102,8 @@ export default async function ExplorePage({
   const zh = locale === "zh";
   const sp = await searchParams;
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
-  /* 章/透镜白名单校验(非法值 = 未选);旧四维与形态参数忽略 */
+  /* Chapter/lens allowlist validation (invalid = unselected); legacy
+     four-dimension and format params are ignored. */
   const selChapter = (() => {
     const v = first(sp.chapter);
     return v && isKbChapterId(v) ? v : undefined;
@@ -113,8 +121,9 @@ export default async function ExplorePage({
   const anyFilter = !!(selChapter || selProduct || selRole || selTag || selYear);
 
   const items = await listExploreItems(locale);
-  /* 行式/封面墙:与作品墙同一 cookie 偏好(kb-works-view);
-     移动端恒行式(getWorksView 内收敛),切换器也不渲染 */
+  /* Rows/cover wall: the same cookie preference as the works wall
+     (kb-works-view); mobile is always rows (converged inside
+     getWorksView) and the toggle isn't rendered. */
   const [view, mobile] = await Promise.all([getWorksView(), isMobileRequest()]);
 
   const sel = {
@@ -126,7 +135,8 @@ export default async function ExplorePage({
   };
   const filtered = anyFilter ? filterExploreItems(items, sel) : items;
 
-  /* 章计数(seg 用,恒出四章;0 计数置灰) */
+  /* Chapter counts (for the seg; all four always show, zero-count grey
+     out). */
   const chapterCounts = countByChapter(items);
 
   const productCounts = countByProduct(items);
@@ -141,8 +151,9 @@ export default async function ExplorePage({
     tag: selTag,
     year: selYear,
   };
-  /* ←→ 章循环的目标序列:「全部」+ 有内容的章(空章点了也是死胡同,不入环);
-     href 用 lensHref 生成,透镜随章保留 */
+  /* The <- -> chapter cycle's target sequence: "all" + chapters with
+     content (empty chapters are dead ends and stay out of the cycle);
+     hrefs come from lensHref so lenses survive a chapter switch. */
   const activeChapters = KB_CHAPTERS.filter(
     (c) => (chapterCounts.find((x) => x.value === c.id)?.count ?? 0) > 0,
   );
@@ -159,9 +170,11 @@ export default async function ExplorePage({
     return params.toString();
   })();
 
-  /* 筛选器按配置与内容出现:配置启用(explore-filters.ts)且有选项的维度才给
-     下拉,整维无内容不占位;未启用的维度(职业/归档等)词表与计数都在,
-     翻开配置即用 */
+  /* Filters appear per config and content: only dimensions enabled in
+     explore-filters.ts and holding options get a dropdown — an empty
+     dimension takes no slot; disabled dimensions (roles/archive) keep
+     their vocabularies and counting logic, ready the moment the config
+     flips. */
   const filterSpecs = [
     ...(isExploreFilterEnabled("product") && productCounts.length
       ? [{
@@ -211,7 +224,8 @@ export default async function ExplorePage({
       : []),
   ];
 
-  /* 发布入口:仅 admin/mod 可见(页面门槛之外,action 层再兜底) */
+  /* Publish entry: admin/mod only (beyond the page gate, the action
+     layer re-checks). */
   const composeHref = "/blog/admin/new";
   const composeLink = (
     <Link
@@ -258,8 +272,10 @@ export default async function ExplorePage({
               </>
             );
             if (count === 0) {
-              /* 置灰不隐藏:四章是永久框架,空章也是承诺——悬停给征稿方向
-                 (data-tip 250ms 快出,不用原生 title;20260821 评审) */
+              /* Greyed, not hidden: the four chapters are a permanent
+                 frame and an empty chapter is a promise — hover shows the
+                 call for submissions (data-tip with a 250ms delay, never
+                 native title). */
               return (
                 <span
                   key={c.id}
@@ -328,7 +344,7 @@ export default async function ExplorePage({
       {/* ---- 内容区:一篇一卡,行式 / 封面墙 ---- */}
       <div className="mt-6">
         {items.length === 0 ? (
-          /* 冷启动诚实空态 */
+          /* An honest empty state for the cold start. */
           <EmptyState
             message={
               zh
@@ -352,7 +368,8 @@ export default async function ExplorePage({
             </div>
           )
         ) : filtered.length === 0 ? (
-          /* 组合空态:清除全部 + 最近内容,不给死胡同 */
+          /* Combined empty state: clear-all + latest content — no dead
+             ends. */
           <>
             <EmptyState
               message={t(locale, "explore.emptyFilter")}
@@ -384,8 +401,9 @@ export default async function ExplorePage({
               })}
             </p>
             {view === "grid" ? (
-              /* key={view}:行式⇄封面墙整列重挂,stagger-in 重放入场;
-                 筛选变化不换容器,不重放(同社区 feed 的决策) */
+              /* key={view}: rows <-> wall remounts the whole list and
+                 replays the stagger entrance; filter changes keep the
+                 container and don't replay (same call as the feed). */
               <div key={view} className="stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((i) => (
                   <ArticleGridCard key={i.slug} item={i} locale={locale} />

@@ -1,12 +1,16 @@
-/* 探索(Explore)· 文章详情(20260821 月刊 × 教程合并)
-   月刊期次(letter)与教程集(guide)同构一页:共享 hero(分类 chip + 题名 +
-   摘要 + 日期/署名/标签/语言标),内容形态走 DetailTabs(全 SSR 面板 +
-   ?tab= 可链接):
-   · letter:本月评鉴(bodyMd,有才显示)/ 事实盘点(组装)/ 编辑定夺(组装);
-   · guide:文稿(bodyMd)/ 视频(payload.video)/ 演示稿(payload.deck 链接卡)/
-     资源(payload.resources 链接列表)——没有该形态不出 tab。
-   permalink 纪律:?tab=facts 直达;分节海报按钮进对应面板。
-   旧路由 /blog/<slug>、/learn/<s>/<e> 301 到此页。 */
+/* Explore · article detail (monthly letters x tutorials merged).
+   Letter issues and guide episodes share one page: a common hero
+   (kind chip + title + summary + date/author/tags/language mark) and
+   content formats through DetailTabs (fully SSR panels, ?tab=
+   linkable):
+   - letter: editorial review (bodyMd, shown when present) / fact sheet
+     (assembled) / editorial decisions (assembled);
+   - guide: text (bodyMd) / video (payload.video) / deck (a
+     payload.deck link card) / resources (a payload.resources link
+     list) — a missing format yields no tab.
+   Permalink discipline: ?tab=facts lands directly; section poster
+   buttons enter the matching panel. Legacy /blog/<slug> and
+   /learn/<s>/<e> 301 here. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -56,7 +60,8 @@ export async function generateMetadata({
   return { title: guide ? `${guide.tutorial.title} — kimi.builders` : "kimi.builders" };
 }
 
-/* 分节分享小按钮:复制该节 permalink + 下载该节海报 PNG */
+/* Section share buttons: copy the section permalink + download its
+   poster PNG. */
 function SectionShare({
   issue,
   anchor,
@@ -79,7 +84,7 @@ function SectionShare({
   );
 }
 
-/* ---- letter:月刊期次 ---- */
+/* ---- letter: monthly issue ---- */
 
 function LetterDetail({
   issue,
@@ -206,11 +211,12 @@ function LetterDetail({
     ),
   });
 
-  /* 期次前后导航 */
+  /* Prev/next issue navigation. */
   const idx = metas.findIndex((m) => m.slug === issue.slug);
   const prev = metas[idx + 1];
   const next = idx > 0 ? metas[idx - 1] : undefined;
-  /* ←→ 快捷键与页脚期次导航同一事实来源(方向一致:←更早 / →更新) */
+  /* <- -> shortcut keys and the footer's issue navigation share one
+     source (same direction: <- older / -> newer). */
   const issueKeys = (
     <ArticleKeys
       prev={prev ? `/explore/${prev.slug}` : undefined}
@@ -322,8 +328,9 @@ function LetterDetail({
   );
 }
 
-/* ---- guide:文章(20260822 去「教程/集」概念——一篇一卡,无强关联;
-   系列 = 内容组合,现阶段不显示;元数据在右栏 ArticleRail) ---- */
+/* ---- guide: article (the "tutorial/episode" concept is retired —
+   one card per piece, no forced linkage; series are a grouping, not
+   shown for now; metadata lives in the ArticleRail) ---- */
 
 function GuideDetail({
   tutorial,
@@ -337,7 +344,8 @@ function GuideDetail({
   canEdit: boolean;
 }) {
   const zh = locale === "zh";
-  /* 章:payload.chapter ?? 所属系列的注册表章(系列不显示,章仍生效) */
+  /* Chapter: payload.chapter ?? the owning series' registry chapter
+     (the series isn't displayed; the chapter still applies). */
   const seriesChapterSlug = tutorial.series
     ? findLearnSeries(tutorial.series)?.chapter
     : undefined;
@@ -395,8 +403,9 @@ function GuideDetail({
             href={deck}
             target="_blank"
             rel="noopener noreferrer"
-            /* 站内演示稿是可带走的资产(HTML 导出语义);外链跨域
-               download 无效,只给内链 */
+            /* On-site decks are takeable assets (HTML export
+               semantics); cross-origin links can't download — internal
+               links only. */
             download={deck.startsWith("/") ? true : undefined}
             className="group flex items-center justify-between gap-4 rounded-2xl border border-line bg-card p-5 transition-colors hover:border-ui-blue/60"
           >
@@ -414,9 +423,10 @@ function GuideDetail({
   }
   if (tutorial.payload.resources?.length) {
     const resources = tutorial.payload.resources;
-    /* 分型分组(20260821):官方/推荐/提示词/SKILLS/源文件——builder 最会收
-       的东西各归各位;无 kind 的存量 payload 全落「推荐资源」,单组时不
-       出组头(与旧渲染几乎同形,零迁移)。 */
+    /* Kind grouping: official/recommended/prompt/SKILLS/source file —
+       what builders collect most, each in its place; legacy payloads
+       without a kind all fall into "recommended", and a single group
+       shows no header (nearly the old render, zero migration). */
     const kindLabel = (k: GuideResourceKind) =>
       ({
         official: zh ? "官方链接" : "Official",
@@ -552,7 +562,7 @@ export default async function ExploreDetailPage({
   }
   const canEdit = !!user && canModerate(user.role);
 
-  /* letter 优先,guide 回落 */
+  /* Letters first, guides as fallback. */
   const letter = await getAssembledIssue(slug, locale, { stats: await getCachedMonthlyStatsSnapshot() });
   if (letter) {
     const metas = await listLetterIssueMetas(locale);
@@ -568,14 +578,16 @@ export default async function ExploreDetailPage({
   }
   const guide = await getTutorialBySlug(slug, locale);
   if (!guide) notFound();
-  /* 指南无期次概念:←→ 沿全列表(新→旧)取上下篇,方向与 letter 一致
-     (←更早 / →更新);单查询进 React cache,同请求去重 */
+  /* Guides have no issues: <- -> walk the full list (new -> old) for
+     neighbors, same direction as letters (<- older / -> newer); the
+     single query goes through React cache, deduped per request. */
   const guideList = await listExploreItems(locale);
   const guideIdx = guideList.findIndex((i) => i.slug === slug);
   const guidePrev = guideIdx >= 0 ? guideList[guideIdx + 1] : undefined;
   const guideNext = guideIdx > 0 ? guideList[guideIdx - 1] : undefined;
-  /* 形态偏好回落序(20260821):显式 ?tab= 最优先 → kb_fmt cookie(该集
-     有此形态才生效)→ 第一个 tab;cookie 由 DetailTabs 的 remember 写入 */
+  /* Format preference fallback order: an explicit ?tab= wins -> the
+     kb_fmt cookie (only when this piece has that format) -> the first
+     tab; the cookie is written by DetailTabs' remember. */
   const preferredFormat = (await cookies()).get("kb_fmt")?.value;
   const guideTabIds = new Set<string>([
     ...(guide.tutorial.bodyMd ? ["read"] : []),

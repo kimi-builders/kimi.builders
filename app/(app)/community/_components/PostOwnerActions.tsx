@@ -1,8 +1,10 @@
 "use client";
 
-/* 帖子作者自助操作:编辑(独立页)/ 已解决开关 / 公开⇄私密 / 删除(confirm 后软删)。
-   仅作者本人渲染(服务端判断);治理也可开/关已解决。操作链路:等待态 → toast 反馈 →
-   可见性/已解决切换后 router.refresh();删除成功后 toast + 回 feed。 */
+/* Post owner self-service actions: edit (a standalone page) / solved
+   toggle / public<->private / delete (confirm, then soft). Rendered for
+   the author only (server-decided); moderation can also toggle
+   solved. Chain: pending -> toast -> router.refresh() after
+   visibility/solved toggles; delete toasts + returns to the feed. */
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

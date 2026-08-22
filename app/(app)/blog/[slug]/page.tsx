@@ -1,4 +1,5 @@
-/* 月刊详情已并入探索区(20260821):/blog/<slug> → /explore/<slug>(?tab= 透传)。 */
+/* The monthly detail merged into explore: /blog/<slug> ->
+   /explore/<slug> (?tab= passed through). */
 import { redirect } from "next/navigation";
 
 export default async function LetterRedirectPage({

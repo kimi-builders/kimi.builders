@@ -1,4 +1,5 @@
-/* 教程集详情已并入探索区(20260821):/learn/<s>/<e> → /explore/<e>。 */
+/* The tutorial episode detail merged into explore: /learn/<s>/<e> ->
+   /explore/<e>. */
 import { redirect } from "next/navigation";
 
 export default async function LearnEpisodeRedirectPage({

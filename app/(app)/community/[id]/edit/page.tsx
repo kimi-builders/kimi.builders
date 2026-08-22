@@ -1,5 +1,7 @@
-/* 编辑帖子页(直接访问/刷新的完整页);应用内点击经拦截路由弹窗展示
-   (app/(app)/@modal/(.)community/[id]/edit),两者共用 EditPostContent。 */
+/* The edit-post page (the full page on direct access/refresh); in-app
+   clicks render the intercepted-route modal
+   (app/(app)/@modal/(.)community/[id]/edit) — both share
+   EditPostContent. */
 import type { Metadata } from "next";
 import EditPostContent from "./_components/EditPostContent";
 

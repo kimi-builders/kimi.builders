@@ -1,4 +1,4 @@
-/* 月刊总览已并入探索区(20260821):/blog → /explore。 */
+/* The monthly overview merged into explore: /blog -> /explore. */
 import { redirect } from "next/navigation";
 
 export default function BlogPage() {
