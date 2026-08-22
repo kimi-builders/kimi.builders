@@ -4,9 +4,9 @@
    某个板块就绪后:把它改为 false,并删掉对应页面里的 UPCOMING 分支。
    20260821:blog/learn 合并为 explore(月刊 × 教程同一文章架)。 */
 export const UPCOMING = {
-  /* explore 20260821 开闸:四维内容架(分类/系列/标签/归档),
+  /* explore 20260821 已开闸:四维内容架(分类/系列/标签/归档),
      空内容是诚实空态。 */
-  explore: true,
+  explore: false,
   demoNight: true,
 } as const;
 
