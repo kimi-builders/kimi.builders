@@ -33,12 +33,16 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
             @{user.handle}
           </Link>
         )}
-        <a
-          href="/api/auth/logout"
-          className="text-grey underline underline-offset-4 transition-colors hover:text-ui-blue"
-        >
-          {t(locale, "auth.logout")}
-        </a>
+        {/* 登出表单化(20260822 P2-11):logout 已改 POST-only,
+            不再是可被预取/跨站 img 触发的 GET 链接 */}
+        <form action="/api/auth/logout" method="post">
+          <button
+            type="submit"
+            className="cursor-pointer text-grey underline underline-offset-4 transition-colors hover:text-ui-blue"
+          >
+            {t(locale, "auth.logout")}
+          </button>
+        </form>
       </>
     );
   }

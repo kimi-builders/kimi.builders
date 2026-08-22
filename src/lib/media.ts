@@ -17,7 +17,7 @@ export interface ProcessedMedia {
   ext: "webp";
 }
 
-export type MediaErrorCode = "too_large" | "not_image" | "bad_kind";
+export type MediaErrorCode = "too_large" | "not_image" | "bad_kind" | "svg_not_allowed";
 
 export class MediaError extends Error {
   constructor(public readonly code: MediaErrorCode) {
@@ -60,6 +60,10 @@ export async function processMedia(
   try {
     const meta = await pipeline.metadata();
     if (!meta.width || !meta.height) throw new MediaError("not_image");
+    /* SVG 显式拒绝(20260822 P2-11):sharp(librsvg)确实能栅格化 SVG,但
+       SVG 可携带外部引用(SSRF 面)与脚本语义,上传管线不接受——内容寻址
+       桶只收位图;按检测出的真实格式判,不看声明 Content-Type */
+    if (meta.format === "svg") throw new MediaError("svg_not_allowed");
   } catch (err) {
     if (err instanceof MediaError) throw err;
     throw new MediaError("not_image");

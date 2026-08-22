@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { PollData, PostDetail } from "../src/lib/posts";
 import {
@@ -383,4 +384,31 @@ test("work/profile poster heights follow their content blocks", () => {
     assert.ok(POSTER_STEPS.includes(size.height), `height ${size.height} is a valid step`);
     assert.equal(size.width, POSTER_WIDTH);
   }
+});
+
+/* ---- 20260822 P1-9/P2-11:海报路由防护(源码钉)---- */
+
+test("四条海报路由共享 IP 限流(120/h),先于快照查询与渲染", () => {
+  const routes = [
+    "../app/api/share/post/[id]/route.tsx",
+    "../app/api/share/work/[id]/route.tsx",
+    "../app/api/share/u/[handle]/route.tsx",
+    "../app/api/share/letter/[slug]/route.tsx",
+  ];
+  for (const p of routes) {
+    const src = readFileSync(new URL(p, import.meta.url), "utf8");
+    assert.match(src, /posterRateLimited\(request\)/, p);
+    assert.ok(
+      src.indexOf("posterRateLimited(request)") < src.indexOf("Snapshot("),
+      `${p}: 限流必须先于快照`,
+    );
+  }
+  const guard = readFileSync(new URL("../app/api/share/poster-guard.ts", import.meta.url), "utf8");
+  assert.match(guard, /limit: 120/);
+  assert.match(guard, /windowSeconds: 3600/);
+});
+
+test("poster-fonts 外拉带 5s 超时(两处 fetch),挂起不再拖住路由", () => {
+  const src = readFileSync(new URL("../app/api/share/poster-fonts.ts", import.meta.url), "utf8");
+  assert.equal(src.match(/AbortSignal\.timeout\(5_000\)/g)?.length ?? 0, 2);
 });

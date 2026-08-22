@@ -118,19 +118,25 @@ test("reset: 密码策略先于消费 token(不合规不烧有效 token)", () =>
 
 /* ---- 登出 /api/auth/logout ---- */
 
-test("logout: 删会话 cookie 并回 canonical 首页", () => {
+test("logout: POST-only + 同源校验,删会话 cookie 并回 canonical 首页", () => {
   const src = sourceOf("auth/logout");
+  assert.match(src, /export async function POST/);
+  assert.doesNotMatch(src, /export function GET|export async function GET/);
+  assert.match(src, /isSameOrigin\(req\)/);
   assert.match(src, /cookies\.delete\("kb_session"\)/);
   assert.match(src, /canonicalOrigin\(req\)/);
 });
 
-/* ---- cron 路由的 Bearer 鉴权 ---- */
+/* ---- cron 路由的 Bearer 鉴权(20260822 P2-4:恒时比较 + 未配置统一 401) ---- */
 
 for (const cron of ["cron/ai-reply-retry", "cron/usage-retention", "cron/analytics-retention"]) {
-  test(`${cron}: 未配置 CRON_SECRET 拒绝服务,Bearer 不符即 401`, () => {
+  test(`${cron}: cronAuthorized 恒时鉴权,拒绝一律 401(不区分未配置/凭据错误)`, () => {
     const src = sourceOf(cron);
-    assert.match(src, /CRON_SECRET is not configured/);
-    assert.match(src, /headers\.get\("authorization"\) !== `Bearer \$\{secret\}`/);
-    assert.match(src, /401/);
+    assert.match(src, /import \{ cronAuthorized \} from "@\/src\/lib\/cron-auth"/);
+    assert.match(src, /if \(!cronAuthorized\(request\)\)/);
+    assert.match(src, /status: 401/);
+    /* 旧的内联明文比较与 500 泄露配置态的出口都已移除 */
+    assert.doesNotMatch(src, /headers\.get\("authorization"\)/);
+    assert.doesNotMatch(src, /CRON_SECRET is not configured/);
   });
 }

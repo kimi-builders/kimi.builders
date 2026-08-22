@@ -8,6 +8,7 @@ import {
   workShareText,
 } from "@/src/lib/share-posters";
 import { getPosterFonts } from "@/app/api/share/poster-fonts";
+import { posterRateLimited } from "@/app/api/share/poster-guard";
 import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
 import { workPosterSize } from "@/app/api/share/poster-sizes";
 import { WorkSharePoster } from "./WorkSharePoster";
@@ -18,6 +19,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  /* IP 限流(20260822 P1-9):渲染重,先挡量再进查询/渲染管线 */
+  if (await posterRateLimited(request)) {
+    return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
+  }
   const { id } = await params;
   const preview =
     process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("preview") === "1";

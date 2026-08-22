@@ -22,21 +22,23 @@ function back(req: NextRequest, code: string, token: string, next: string): Next
 }
 
 export async function POST(req: NextRequest) {
-  const form = await req.formData();
-  const token = String(form.get("token") ?? "").trim();
-  const password = String(form.get("password") ?? "");
-  const password2 = String(form.get("password2") ?? "");
-  /* next 透传(20260816):action URL query 带来,重置成功后回到用户最初的目标页 */
-  const next = safeReturnTo(new URL(req.url).searchParams.get("next"));
-
-  if (!isSameOrigin(req)) return back(req, "invalid_origin", token, next);
+  /* 调序(20260822 P2-10):origin 与 IP 限流先于 formData() 解析——
+     不让未过门的请求制造 multipart 解析成本;表单字段在门禁后再读 */
+  if (!isSameOrigin(req)) return back(req, "invalid_origin", "", "/");
   const allowed = await consumeUsageRateLimit({
     scope: "auth-email-reset",
     identity: requestIdentity(req),
     limit: 10,
     windowSeconds: 3600,
   });
-  if (!allowed) return back(req, "rate_limited", token, next);
+  if (!allowed) return back(req, "rate_limited", "", "/");
+
+  const form = await req.formData();
+  const token = String(form.get("token") ?? "").trim();
+  const password = String(form.get("password") ?? "");
+  const password2 = String(form.get("password2") ?? "");
+  /* next 透传(20260816):action URL query 带来,重置成功后回到用户最初的目标页 */
+  const next = safeReturnTo(new URL(req.url).searchParams.get("next"));
 
   /* 先验密码再消费 token:策略不合规不该烧掉用户手里的有效 token */
   const policy = passwordPolicyError(password);

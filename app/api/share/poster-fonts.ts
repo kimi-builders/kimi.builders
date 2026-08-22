@@ -23,10 +23,14 @@ const TTF_UA =
 
 async function fetchTtf(family: string, text?: string): Promise<ArrayBuffer | null> {
   const url = `${CSS_API}?family=${family}&display=swap${text ? `&text=${encodeURIComponent(text)}` : ""}`;
-  const css = await (await fetch(url, { headers: { "User-Agent": TTF_UA } })).text();
+  /* 5s timeout (20260822 P1-9): Google Fonts hanging shouldn't hang the poster route —
+     on timeout/exception, fall back to the existing empty-array return per the contract (better weak than tofu) */
+  const css = await (
+    await fetch(url, { headers: { "User-Agent": TTF_UA }, signal: AbortSignal.timeout(5_000) })
+  ).text();
   const m = /src: url\((.+?)\) format\('(?:opentype|truetype)'\)/.exec(css);
   if (!m) return null;
-  const res = await fetch(m[1]);
+  const res = await fetch(m[1], { signal: AbortSignal.timeout(5_000) });
   return res.ok ? res.arrayBuffer() : null;
 }
 
