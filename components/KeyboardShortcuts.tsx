@@ -38,10 +38,10 @@ function Kbd({ children }: { children: React.ReactNode }) {
 
 function Row({ keys, desc }: { keys: string[]; desc: string }) {
   return (
-    /* 与搜索结果行同一几何(px-3 py-2.5):键列定宽对齐,描述单行截断,
-       行高处处一致(20260822 排版收紧:去掉行内换行与「+」连接符) */
+    /* 行几何与搜索结果行同款;键列 5.5rem 定宽对齐,描述单行截断,
+       双栏下每列行高处处一致 */
     <div className="flex items-center gap-3 px-3 py-2.5">
-      <span className="flex w-[6.5rem] shrink-0 items-center gap-1">
+      <span className="flex w-[5.5rem] shrink-0 items-center gap-1">
         {keys.map((k) => (
           <Kbd key={k}>{k}</Kbd>
         ))}
@@ -51,11 +51,19 @@ function Row({ keys, desc }: { keys: string[]; desc: string }) {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+/* 分区标 = 搜索列表「快速前往」同款;无下划线,分隔靠留白。
+   外边距由调用方给(并排/堆叠两种排布的取舍不同) */
+function Section({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    /* 分区标 = 搜索列表「快速前往」同款;无下划线——分隔靠留白,
-       全面板只有 header/footer 两条线(与搜索弹窗同一节奏) */
-    <section className="mt-2 first:mt-0">
+    <section className={className}>
       <p className="px-3 pb-1 pt-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
         {label}
       </p>
@@ -217,7 +225,7 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
       onClick={(event) => {
         if (event.target === event.currentTarget) dialogRef.current?.close();
       }}
-      className="fixed left-1/2 top-[12vh] m-0 w-[min(92vw,36rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
+      className="fixed left-1/2 top-[12vh] m-0 w-[min(92vw,50rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
     >
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
         <Keyboard size={18} className="shrink-0 text-ui-blue" aria-hidden="true" />
@@ -233,22 +241,32 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
           <X size={17} aria-hidden="true" />
         </button>
       </div>
+      {/* 双栏(20260822):14 行收进 ~8 行高,900px 视口免内滚。全局区
+          列主序填充(左栏满 6 再进右栏),左右恰好按语义分组:左 = 搜索/
+          帮助/界面偏好,右 = 栏位/全屏/发帖/专注 */}
       <div className="max-h-[min(62vh,32rem)] overflow-y-auto p-2">
         <Section label={t(l, "kbd.sectionGlobal")}>
-          {globalRows.map(({ keys, key }) => (
-            <Row key={key} keys={keys} desc={t(l, key)} />
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-flow-col sm:grid-rows-6">
+            {globalRows.map(({ keys, key }) => (
+              <Row key={key} keys={keys} desc={t(l, key)} />
+            ))}
+          </div>
         </Section>
-        <Section label={t(l, "kbd.sectionSearch")}>
-          {searchRows.map(({ keys, key }) => (
-            <Row key={key} keys={keys} desc={t(l, key)} />
-          ))}
-        </Section>
-        <Section label={t(l, "kbd.sectionExplore")}>
-          {exploreRows.map(({ keys, key }) => (
-            <Row key={key} keys={keys} desc={t(l, key)} />
-          ))}
-        </Section>
+        {/* 底部两小区不对称配比(20260822 修复):搜索区文案极短(选择结果/
+            打开所选),探索区描述最长——2:3 分配让长描述在窄窗口也有余量,
+            不再靠截断兜底 */}
+        <div className="mt-2 grid grid-cols-1 gap-x-7 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <Section label={t(l, "kbd.sectionSearch")}>
+            {searchRows.map(({ keys, key }) => (
+              <Row key={key} keys={keys} desc={t(l, key)} />
+            ))}
+          </Section>
+          <Section label={t(l, "kbd.sectionExplore")}>
+            {exploreRows.map(({ keys, key }) => (
+              <Row key={key} keys={keys} desc={t(l, key)} />
+            ))}
+          </Section>
+        </div>
       </div>
       <p className="border-t border-line px-4 py-2 text-right font-mono text-xs text-grey/70">
         {t(l, "kbd.hint")}

@@ -62,10 +62,10 @@ const DICT = {
   "kbd.sidebar": { zh: "隐藏 / 显示右栏", en: "Hide or show sidebar" },
   "kbd.fullscreen": { zh: "全屏 / 退出全屏", en: "Toggle fullscreen" },
   "kbd.newPost": { zh: "发帖 / 推荐作品(按当前分区)", en: "New post or work (by section)" },
-  "kbd.focus": { zh: "专注模式(收左栏 + 藏右栏)", en: "Focus mode (collapse nav + hide sidebar)" },
+  "kbd.focus": { zh: "专注模式(收左栏 + 藏右栏)", en: "Focus mode (hide nav + sidebar)" },
   "kbd.arrows": {
-    zh: "列表页:切换章 · 详情页:上一篇 / 下一篇",
-    en: "List: switch chapter · Detail: prev / next",
+    zh: "列表:切换章 · 详情:上下篇",
+    en: "List: chapters · prev / next",
   },
   "kbd.hint": { zh: "按 ? 随时呼出 · Esc 关闭", en: "Press ? anytime · Esc to close" },
   /* ---- 全局状态页 ---- */
