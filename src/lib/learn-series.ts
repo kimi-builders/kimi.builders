@@ -6,6 +6,7 @@
    stale 不手填,由 isPathStale 计算(超龄或模型换代 → 待重验)——
    验证戳必须自己不会过期说谎;reverifyLog 留每次重验的痕迹。
    讨论闭环(RFC §2.5):discussionPostId 挂社区帖(运营发帖后回填)。 */
+import type { ChapterId } from "./kb-chapters";
 
 export interface L10n {
   zh: string;
@@ -53,6 +54,8 @@ export interface LearnSeries {
   /* mono 短码(目录卡角标),如 "SER-01" */
   code: string;
   title: L10n;
+  /* 所属章(kb-chapters 注册表;章是主浏览轴,每条路挂一章) */
+  chapter?: ChapterId;
   /* hero 金句 */
   tagline: L10n;
   summary: L10n;
@@ -68,7 +71,48 @@ export interface LearnSeries {
 
 /* 在册系列(策展注册表,少而重;首批内容筹备中)。
    注意:目录页只渲染「有已发布集」的系列——注册但不发集 = 不上架,不撑空壳。 */
-export const LEARN_SERIES: LearnSeries[] = [];
+export const LEARN_SERIES: LearnSeries[] = [
+  /* —— 走查临时数据(20260821 视觉走查用,配套 kb_dev 的 lens-* 种子行;
+        看完样式即整体删除本段与对应库行) —— */
+  {
+    slug: "kimi-best-practice",
+    code: "SER-01",
+    chapter: "build",
+    title: { zh: "Kimi 最佳实战", en: "Kimi Best Practices" },
+    tagline: {
+      zh: "每一集都以「跟着做完」收口:产物可验证,路径可复走。",
+      en: "Every episode ends in a followable action: verifiable output, repeatable path.",
+    },
+    summary: {
+      zh: "从起项目到深度研究,Kimi 全家桶各产品各职业的最小可用工作流。编辑逐集验证,换代即重走。",
+      en: "Minimal workable workflows across the Kimi suite, per product and per role. Editor-verified, re-walked on every model generation.",
+    },
+    editorHandle: "aklmans",
+    verifiedModel: "kimi-latest",
+    verifiedAt: "2026-08-20",
+    reverifyLog: [
+      { at: "2026-07-30", model: "kimi-latest", note: { zh: "代际升级后全系列重走。", en: "Re-walked after the model generation bump." } },
+    ],
+  },
+  {
+    slug: "swarm-field-notes",
+    code: "SER-02",
+    chapter: "gain",
+    title: { zh: "Kimi Swarm 实战笔记", en: "Kimi Swarm Field Notes" },
+    tagline: {
+      zh: "多 Agent 不是演示,是排班。",
+      en: "Multi-agent is not a demo — it's a rota.",
+    },
+    summary: {
+      zh: "用 Swarm 编排真实任务的野地笔记:调研、巡检、交接。附编排提示词与失败记录。",
+      en: "Field notes on orchestrating real work with Swarm: research, patrols, handoffs. With prompts and failure logs.",
+    },
+    editorHandle: "aklmans",
+    verifiedModel: "kimi-prev-gen",
+    verifiedAt: "2026-05-12",
+    reverifyLog: [],
+  },
+];
 
 export function findLearnSeries(slug: string): LearnSeries | undefined {
   return LEARN_SERIES.find((s) => s.slug === slug);

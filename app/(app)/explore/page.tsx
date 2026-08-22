@@ -1,33 +1,31 @@
-/* 探索(Explore)· 货架 + 透镜(20260821 透镜改版):
-   脊柱 = 系列货架(策展序列,验证戳/讨论/毕业归因挂在系列级);
-   透镜 = 产品(kb-products)/职业(kb-roles)chips + 形态(read/video/deck)
-   + 标签/年份下拉(WorksFilterBar);形态从 payload 与正文派生,不存储。
-   交互纪律(NN/g 筛选共识):chips 单选、再点取消;计数随其余筛选动态
-   更新,0 计数置灰不隐藏(上下文稳定);组合空态给「清除全部 + 最近内容」,
-   不给死胡同;筛选组合 URL noindex(防组合爬陷),默认视图可索引。
-   旧四维参数兼容:?view=/?category=/?series= 被忽略渲染默认视图,
-   ?tag=/?year= 继续生效——外链不断内容。
+/* 探索(Explore)· 章主轴扁平列表(20260822 简化改版):
+   使命:探索将智能转化为创造力的最优解(镜像官方 Seeking the optimal
+   conversion from energy to intelligence 句式)。
+   冷启动形态:一篇内容一张横列卡(封面左、内容右,WorkCard 行式语法),
+   不做系列/教程架子——系列机制在数据层保留,内容长出来再上架。
+   章(学/做/得/立)seg = 主轴,0 计数章置灰恒可见;
+   产品/职业/标签/归档 = 单选下拉,**有内容才出选项,整维无内容连下拉都不出**;
+   形态(文章/视频/演示稿)不筛选——每篇内容三媒体齐备,仅作卡上标记。
+   筛选 URL(含 ?chapter=)noindex;组合空态给「清除筛选 + 最近内容」。
    板块开关未就绪时整页换「正在路上」。 */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, FileText, Play, Presentation } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { monthLabel } from "@/src/lib/format";
-import { t, type Locale } from "@/src/lib/i18n";
+import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import {
-  categoryLabelOf,
-  countSeries,
+  countByChapter,
+  countByProduct,
+  countByRoles,
   countTags,
   filterExploreItems,
   groupByArchive,
   listExploreItems,
-  type ExploreItem,
-  type GuideFormat,
 } from "@/src/lib/explore";
-import { KB_PRODUCTS, findKbProduct, isKbProductId } from "@/src/lib/kb-products";
+import { KB_CHAPTERS, isKbChapterId } from "@/src/lib/kb-chapters";
+import { findKbProduct, isKbProductId } from "@/src/lib/kb-products";
 import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
-import { findLearnSeries } from "@/src/lib/learn-series";
+import { isExploreFilterEnabled } from "@/src/lib/explore-filters";
 import { UPCOMING } from "@/src/lib/upcoming";
 import { getWorksView } from "@/src/lib/works-view-server";
 import EmptyState from "@/components/EmptyState";
@@ -35,8 +33,8 @@ import PageHeader from "@/components/PageHeader";
 import SoonPanel from "../_components/SoonPanel";
 import WorksFilterBar from "../works/_components/WorksFilterBar";
 import WorksViewToggle from "../works/_components/WorksViewToggle";
-import SeriesGridCard from "./_components/SeriesGridCard";
-import SeriesRowCard from "./_components/SeriesRowCard";
+import ArticleGridCard from "./_components/ArticleGridCard";
+import ArticleRowCard from "./_components/ArticleRowCard";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -44,13 +42,7 @@ import {
   SEG_WRAP,
 } from "@/components/seg-classes";
 
-const FORMAT_KEYS = ["read", "video", "deck"] as const satisfies readonly GuideFormat[];
-
-function normalizeFormat(raw: string | undefined): GuideFormat | undefined {
-  return FORMAT_KEYS.find((f) => f === raw);
-}
-
-/* 透镜/形态 chips 的单选切换(再点取消):其余参数原样保留 */
+/* 筛选参数的单选切换(再点取消):其余参数原样保留 */
 function lensHref(
   basePath: string,
   current: Record<string, string | undefined>,
@@ -58,153 +50,12 @@ function lensHref(
 ): string {
   const merged = { ...current, ...change };
   const params = new URLSearchParams();
-  for (const key of ["product", "role", "format", "tag", "year"]) {
+  for (const key of ["chapter", "product", "role", "tag", "year"]) {
     const v = merged[key];
     if (v) params.set(key, v);
   }
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
-}
-
-const FORMAT_ICON = {
-  read: FileText,
-  video: Play,
-  deck: Presentation,
-} as const;
-
-const FORMAT_LABEL_KEY = {
-  read: "explore.formatRead",
-  video: "explore.formatVideo",
-  deck: "explore.formatDeck",
-} as const;
-
-/* 结果列表行:eyebrow(分类 · 系列码 · 产品 · 形态 · 日期)+ 标题 + 摘要 + 标签 */
-function ItemRow({ item, zh, locale }: { item: ExploreItem; zh: boolean; locale: Locale }) {
-  const series = item.series ? findLearnSeries(item.series) : undefined;
-  const shownProducts = item.products.slice(0, 2);
-  const overflowProducts = item.products.length - shownProducts.length;
-  return (
-    <article className="border-b border-line last:border-b-0">
-      <Link href={`/explore/${item.slug}`} className="group flex gap-4 py-5">
-        <div className="min-w-0 flex-1">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-grey">
-            <span>{categoryLabelOf(item.kind, zh)}</span>
-            {series && <span>· {series.code}</span>}
-            <span>· {monthLabel(item.publishedAt)}</span>
-            {shownProducts.length > 0 && (
-              <span className="inline-flex items-center gap-1 normal-case tracking-normal" aria-label={zh ? "产品" : "Products"}>
-                {shownProducts.map((id) => {
-                  const p = findKbProduct(id);
-                  if (!p) return null;
-                  const Icon = p.icon;
-                  return (
-                    <span key={id} title={zh ? p.zh : p.en} className="inline-flex items-center gap-0.5">
-                      <Icon size={12} aria-hidden="true" />
-                      <span className="hidden sm:inline">{zh ? p.zh : p.en}</span>
-                    </span>
-                  );
-                })}
-                {overflowProducts > 0 && <span>+{overflowProducts}</span>}
-              </span>
-            )}
-            {item.formats.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 normal-case tracking-normal" aria-label={t(locale, "explore.format")}>
-                {item.formats.map((f) => {
-                  const Icon = FORMAT_ICON[f];
-                  return (
-                    <span
-                      key={f}
-                      title={t(locale, FORMAT_LABEL_KEY[f])}
-                      className="inline-flex items-center"
-                    >
-                      <Icon size={12} aria-hidden="true" className="text-grey/70" />
-                    </span>
-                  );
-                })}
-              </span>
-            )}
-            {item.fallback && (
-              <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
-                {t(locale, item.locale === "zh" ? "art.langZh" : "art.langEn")}
-              </span>
-            )}
-          </p>
-          <h3 className="kb-h3 mt-2 transition-colors group-hover:text-ui-blue">
-            {item.title}
-          </h3>
-          {item.summary && (
-            <p className="mt-1.5 line-clamp-2 max-w-2xl text-sm leading-relaxed text-grey">
-              {item.summary}
-            </p>
-          )}
-          {item.tags.length > 0 && (
-            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-grey/80">
-              {item.tags.map((tag) => (
-                <span key={tag}>#{tag}</span>
-              ))}
-            </p>
-          )}
-        </div>
-        <ArrowRight
-          size={15}
-          aria-hidden="true"
-          className="mt-1 shrink-0 text-grey/50 transition-colors group-hover:text-ui-blue"
-        />
-      </Link>
-    </article>
-  );
-}
-
-function ItemList({ items, zh, locale }: { items: ExploreItem[]; zh: boolean; locale: Locale }) {
-  if (items.length === 0) {
-    return (
-      <p className="border-y border-line py-8 text-sm leading-relaxed text-grey">
-        {zh ? "这里还没有内容。" : "Nothing here yet."}
-      </p>
-    );
-  }
-  return (
-    <div>
-      {items.map((i) => (
-        <ItemRow key={i.slug} item={i} zh={zh} locale={locale} />
-      ))}
-    </div>
-  );
-}
-
-/* 透镜 chip:active = 蓝实底(与 solved pill 同语法);0 计数置灰不可点 */
-function LensChip({
-  href,
-  active,
-  disabled,
-  count,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  disabled: boolean;
-  count: number;
-  children: React.ReactNode;
-}) {
-  const cls = `inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-    active
-      ? "border-blue/60 bg-blue/10 font-semibold text-blue"
-      : disabled
-        ? "cursor-default border-line text-grey/40"
-        : "border-line text-grey hover:border-ui-blue/50 hover:text-ui-blue"
-  }`;
-  if (disabled) {
-    return (
-      <span className={cls} aria-disabled="true">
-        {children} <span className="opacity-60">{count}</span>
-      </span>
-    );
-  }
-  return (
-    <Link href={href} scroll={false} aria-pressed={active} className={cls}>
-      {children} <span className="opacity-60">{count}</span>
-    </Link>
-  );
 }
 
 export async function generateMetadata({
@@ -214,9 +65,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const sp = await searchParams;
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
-  /* 筛选组合 URL 不索引(防组合爬陷);默认视图(货架)可索引 */
+  /* 筛选组合 URL(含章)不索引(防组合爬陷);默认视图可索引 */
   const filtered =
-    first(sp.product) || first(sp.role) || first(sp.format) || first(sp.tag) || first(sp.year);
+    first(sp.chapter) || first(sp.product) || first(sp.role) || first(sp.tag) || first(sp.year);
   return {
     title: "探索 — kimi.builders",
     ...(filtered ? { robots: { index: false, follow: true } } : {}),
@@ -242,8 +93,11 @@ export default async function ExplorePage({
   const zh = locale === "zh";
   const sp = await searchParams;
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
-  /* 旧四维参数(?view/?category/?series)忽略——渲染默认货架视图;
-     ?tag/?year 继续生效,透镜参数白名单校验(非法值 = 未选) */
+  /* 章/透镜白名单校验(非法值 = 未选);旧四维与形态参数忽略 */
+  const selChapter = (() => {
+    const v = first(sp.chapter);
+    return v && isKbChapterId(v) ? v : undefined;
+  })();
   const selProduct = (() => {
     const v = first(sp.product);
     return v && isKbProductId(v) ? v : undefined;
@@ -252,69 +106,94 @@ export default async function ExplorePage({
     const v = first(sp.role);
     return v && isKbRoleId(v) ? v : undefined;
   })();
-  const selFormat = normalizeFormat(first(sp.format));
   const selTag = first(sp.tag) || undefined;
   const selYear = first(sp.year) || undefined;
-  const anyFilter = !!(selProduct || selRole || selFormat || selTag || selYear);
+  const anyFilter = !!(selChapter || selProduct || selRole || selTag || selYear);
 
   const items = await listExploreItems(locale);
-  /* 系列货架的行式/网格:与作品墙同一 cookie 偏好(kb-works-view) */
-  const seriesView = await getWorksView();
+  /* 行式/封面墙:与作品墙同一 cookie 偏好(kb-works-view) */
+  const view = await getWorksView();
 
   const sel = {
+    chapter: selChapter,
     product: selProduct,
     role: selRole,
-    format: selFormat,
     tag: selTag,
     year: selYear,
   };
-  const filtered = anyFilter
-    ? filterExploreItems(items, sel)
-    : items;
+  const filtered = anyFilter ? filterExploreItems(items, sel) : items;
 
-  /* 动态计数(NN/g):每一维的计数在「其余筛选生效」的结果集上算,
-     组合下命中 0 的值置灰而非消失——上下文稳定,不玩捉迷藏 */
-  const productScope = filterExploreItems(items, { ...sel, product: undefined });
-  const productChipCount = (id: string) =>
-    productScope.filter((i) => i.products.includes(id)).length;
-  const roleScope = filterExploreItems(items, { ...sel, role: undefined });
-  const roleChipCount = (id: string) =>
-    roleScope.filter((i) => i.roles.includes(id)).length;
-  /* 职业 chips 只出「全站有内容」的职业(词表序;空词不出 = 不撑空墙) */
-  const roleIds = KB_ROLES.filter((r) => items.some((i) => i.roles.includes(r.id)));
+  /* 章计数(seg 用,恒出四章;0 计数置灰) */
+  const chapterCounts = countByChapter(items);
 
+  const productCounts = countByProduct(items);
+  const roleCounts = countByRoles(items);
   const tagCounts = countTags(items);
   const archiveGroups = groupByArchive(items);
 
   const current: Record<string, string | undefined> = {
+    chapter: selChapter,
     product: selProduct,
     role: selRole,
-    format: selFormat,
     tag: selTag,
     year: selYear,
   };
   const preservedQuery = (() => {
     const params = new URLSearchParams();
-    for (const key of ["product", "role", "format"]) {
-      if (current[key]) params.set(key, current[key]!);
-    }
+    if (selChapter) params.set("chapter", selChapter);
     return params.toString();
   })();
 
-  /* 系列货架:无筛选 = 全部在架系列;有筛选 = 命中系列(卡角 命中 n/N) */
-  const shelfSeries = countSeries(anyFilter ? filtered : items).map((c) => {
-    const total = items.filter((i) => i.series === c.slug).length;
-    return { slug: c.slug, hit: c.count, total, episodes: filtered.filter((i) => i.series === c.slug) };
-  });
-
-  /* 无筛选时的单篇流:月刊 + 不入系列的教程 */
-  const standalone = items.filter((i) => !i.series);
-
-  const formatTabs: { key: GuideFormat | undefined; label: string }[] = [
-    { key: undefined, label: t(locale, "explore.formatAll") },
-    { key: "read", label: t(locale, "explore.formatRead") },
-    { key: "video", label: t(locale, "explore.formatVideo") },
-    { key: "deck", label: t(locale, "explore.formatDeck") },
+  /* 筛选器按配置与内容出现:配置启用(explore-filters.ts)且有选项的维度才给
+     下拉,整维无内容不占位;未启用的维度(职业/归档等)词表与计数都在,
+     翻开配置即用 */
+  const filterSpecs = [
+    ...(isExploreFilterEnabled("product") && productCounts.length
+      ? [{
+          key: "product",
+          label: zh ? "产品" : "Product",
+          options: productCounts.map((c) => {
+            const p = findKbProduct(c.value)!;
+            const Icon = p.icon;
+            return {
+              value: c.value,
+              label: `${zh ? p.zh : p.en} (${c.count})`,
+              icon: <Icon size={13} aria-hidden="true" />,
+            };
+          }),
+          single: true,
+        }]
+      : []),
+    ...(isExploreFilterEnabled("role") && roleCounts.length
+      ? [{
+          key: "role",
+          label: zh ? "职业" : "Role",
+          options: roleCounts.map((c) => {
+            const r = KB_ROLES.find((x) => x.id === c.value)!;
+            return { value: c.value, label: `${zh ? r.zh : r.en} (${c.count})` };
+          }),
+          single: true,
+        }]
+      : []),
+    ...(isExploreFilterEnabled("tag") && tagCounts.length
+      ? [{
+          key: "tag",
+          label: zh ? "标签" : "Tag",
+          options: tagCounts.map((tg) => ({ value: tg.value, label: `#${tg.value} (${tg.count})` })),
+          single: true,
+        }]
+      : []),
+    ...(isExploreFilterEnabled("year") && archiveGroups.length
+      ? [{
+          key: "year",
+          label: zh ? "归档" : "Year",
+          options: archiveGroups.map((g) => ({
+            value: g.year,
+            label: `${g.year} (${g.months.reduce((n, m) => n + m.items.length, 0)})`,
+          })),
+          single: true,
+        }]
+      : []),
   ];
 
   return (
@@ -323,206 +202,152 @@ export default async function ExplorePage({
         eyebrow={`— ${zh ? "探索" : "EXPLORE"}`}
         title={
           <>
-            {zh ? "系列是路,产品与职业是门" : "Series are the paths; products and roles are the doors"}
+            {zh ? "探索将智能转化为创造力的最优解" : "Seeking the optimal conversion from intelligence to creativity"}
             <span className="text-ui-blue">.</span>
           </>
         }
         lede={
           zh
-            ? "月刊评鉴与教程住在同一架上——按你在用的产品、你的职业、你偏爱的形态找到入口,沿着系列走完它。"
-            : "The monthly review and the tutorials live on the same shelf — enter by the product you use, the work you do, or the format you prefer, then follow a series to the end."
+            ? "学,把智能变成认知;做,把认知变成东西;得,把东西变成价值;立,把价值变成位置与自我。"
+            : "Learn turns intelligence into judgment; Build turns judgment into things; Gain turns things into value; Become turns value into who you are."
         }
       />
 
-      {/* ---- 透镜区:产品 chips + 职业 chips + 形态 seg + 标签/年份下拉 ---- */}
-      <section aria-label={t(locale, "explore.filterAria")} className="mt-8 space-y-4">
-        <div>
-          <p className="kb-eyebrow mb-2">{t(locale, "explore.lensProducts")}</p>
-          <div className="flex max-w-3xl flex-wrap gap-1.5">
-            {KB_PRODUCTS.map((p) => {
-              const Icon = p.icon;
-              const count = productChipCount(p.id);
-              return (
-                <LensChip
-                  key={p.id}
-                  href={lensHref("/explore", current, {
-                    product: selProduct === p.id ? undefined : p.id,
-                  })}
-                  active={selProduct === p.id}
-                  disabled={count === 0}
-                  count={count}
-                >
-                  <Icon size={13} aria-hidden="true" />
-                  {zh ? p.zh : p.en}
-                </LensChip>
-              );
-            })}
-          </div>
-        </div>
-        {roleIds.length > 0 && (
-          <div>
-            <p className="kb-eyebrow mb-2">{t(locale, "explore.lensRoles")}</p>
-            <div className="flex max-w-3xl flex-wrap gap-1.5">
-              {roleIds.map((r) => {
-                const count = roleChipCount(r.id);
-                return (
-                  <LensChip
-                    key={r.id}
-                    href={lensHref("/explore", current, {
-                      role: selRole === r.id ? undefined : r.id,
-                    })}
-                    active={selRole === r.id}
-                    disabled={count === 0}
-                    count={count}
-                  >
-                    {zh ? r.zh : r.en}
-                  </LensChip>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {/* 工具行:形态 seg + 标签/年份下拉(WorksFilterBar 双行结构,
-            preservedQuery 带上透镜参数,下拉切换不丢) */}
-        <div className="flex flex-wrap items-center gap-3">
-          <nav
-            aria-label={t(locale, "explore.format")}
-            className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
+      {/* ---- 工具行:章 seg(主轴)+ 透镜下拉(有内容才出) ---- */}
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <nav
+          aria-label={zh ? "章" : "Chapters"}
+          className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
+        >
+          {/* 全部 = 默认态(不筛章);四章是永久框架,0 计数置灰恒可见 */}
+          <Link
+            href={lensHref("/explore", current, { chapter: undefined })}
+            scroll={false}
+            aria-current={!selChapter ? "page" : undefined}
+            className={`${SEG_ITEM} ${!selChapter ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
           >
-            {formatTabs.map((f) => (
+            {zh ? "全部" : "All"} <span className="opacity-60">{items.length}</span>
+          </Link>
+          {KB_CHAPTERS.map((c) => {
+            const count = chapterCounts.find((x) => x.value === c.id)?.count ?? 0;
+            const label = (
+              <>
+                {zh ? c.zh : c.en} <span className="opacity-60">{count}</span>
+              </>
+            );
+            if (count === 0) {
+              /* 置灰不隐藏:四章是永久框架,空章也是承诺 */
+              return (
+                <span
+                  key={c.id}
+                  aria-disabled="true"
+                  title={zh ? c.tagline.zh : c.tagline.en}
+                  className={`${SEG_ITEM} cursor-default text-grey/40`}
+                >
+                  {label}
+                </span>
+              );
+            }
+            return (
               <Link
-                key={f.key ?? "all"}
+                key={c.id}
                 href={lensHref("/explore", current, {
-                  format: f.key === undefined ? undefined : f.key,
+                  chapter: selChapter === c.id ? undefined : c.id,
                 })}
                 scroll={false}
-                aria-current={selFormat === f.key ? "page" : undefined}
-                className={`${SEG_ITEM} ${selFormat === f.key ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+                aria-current={selChapter === c.id ? "page" : undefined}
+                className={`${SEG_ITEM} ${selChapter === c.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
               >
-                {f.label}
+                {label}
               </Link>
-            ))}
-          </nav>
+            );
+          })}
+        </nav>
+        {filterSpecs.length > 0 && (
           <WorksFilterBar
             basePath="/explore"
             preservedQuery={preservedQuery}
             locale={locale}
-            filters={[
-              {
-                key: "tag",
-                label: zh ? "标签" : "Tag",
-                options: tagCounts.map((tg) => ({ value: tg.value, label: `#${tg.value} (${tg.count})` })),
-                single: true,
-              },
-              {
-                key: "year",
-                label: zh ? "归档" : "Year",
-                options: archiveGroups.map((g) => ({
-                  value: g.year,
-                  label: `${g.year} (${g.months.reduce((n, m) => n + m.items.length, 0)})`,
-                })),
-                single: true,
-              },
-            ]}
+            filters={filterSpecs}
             selected={{
-              tag: selTag ? [selTag] : [],
-              year: selYear ? [selYear] : [],
+              ...(selProduct ? { product: [selProduct] } : { product: [] }),
+              ...(selRole ? { role: [selRole] } : { role: [] }),
+              ...(selTag ? { tag: [selTag] } : { tag: [] }),
+              ...(selYear ? { year: [selYear] } : { year: [] }),
             }}
           />
-          {!anyFilter && shelfSeries.length > 0 && (
-            <WorksViewToggle locale={locale} view={seriesView} />
-          )}
-        </div>
-      </section>
-
-      {/* ---- 内容区 ---- */}
-      <div className="mt-6">
-        {shelfSeries.length > 0 && (
-          <section>
-            <p className="kb-eyebrow flex items-center justify-between border-b border-line pb-4">
-              <span>
-                {t(locale, "explore.shelfSeries")} · {shelfSeries.length}
-              </span>
-            </p>
-            <div className="mt-4">
-              {seriesView === "grid" ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {shelfSeries.map((s) => {
-                    const meta = findLearnSeries(s.slug)!;
-                    return (
-                      <SeriesGridCard
-                        key={s.slug}
-                        series={meta}
-                        episodes={s.episodes}
-                        zh={zh}
-                        matched={anyFilter ? { hit: s.hit, total: s.total } : undefined}
-                      />
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {shelfSeries.map((s) => {
-                    const meta = findLearnSeries(s.slug)!;
-                    return (
-                      <SeriesRowCard
-                        key={s.slug}
-                        series={meta}
-                        episodes={s.episodes}
-                        zh={zh}
-                        matched={anyFilter ? { hit: s.hit, total: s.total } : undefined}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </section>
         )}
+        {items.length > 0 && <WorksViewToggle locale={locale} view={view} />}
+      </div>
 
-        {/* 条目列表:无筛选 = 单篇与月刊;有筛选 = 全部命中(系列内集也单列行) */}
-        {anyFilter ? (
-          filtered.length === 0 ? (
-            /* 组合空态:清除全部 + 最近内容,不给死胡同 */
-            <>
-              <EmptyState
-                message={t(locale, "explore.emptyFilter")}
-                actions={
-                  <Link
-                    href="/explore"
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-                  >
-                    {t(locale, "works.clearFilters")}
-                  </Link>
-                }
-              />
-              {items.length > 0 && (
-                <section className="mt-8">
-                  <p className="kb-eyebrow border-b border-line pb-4">{t(locale, "explore.latest")}</p>
-                  <ItemList items={items.slice(0, 3)} zh={zh} locale={locale} />
-                </section>
-              )}
-            </>
+      {/* ---- 内容区:一篇一卡,行式 / 封面墙 ---- */}
+      <div className="mt-6">
+        {items.length === 0 ? (
+          /* 冷启动诚实空态 */
+          <EmptyState
+            message={
+              zh
+                ? "这里的第一篇内容,以「做完你拥有什么」为标准在筹备。"
+                : "The first piece is being prepared — measured by what you walk away with."
+            }
+          />
+        ) : !anyFilter ? (
+          view === "grid" ? (
+            <div className="stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((i) => (
+                <ArticleGridCard key={i.slug} item={i} locale={locale} />
+              ))}
+            </div>
           ) : (
-            <section className="mt-8">
-              <ItemList items={filtered} zh={zh} locale={locale} />
-            </section>
+            <div className="stagger-in space-y-4">
+              {items.map((i) => (
+                <ArticleRowCard key={i.slug} item={i} locale={locale} />
+              ))}
+            </div>
           )
+        ) : filtered.length === 0 ? (
+          /* 组合空态:清除全部 + 最近内容,不给死胡同 */
+          <>
+            <EmptyState
+              message={t(locale, "explore.emptyFilter")}
+              actions={
+                <Link
+                  href="/explore"
+                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                >
+                  {t(locale, "works.clearFilters")}
+                </Link>
+              }
+            />
+            <section className="mt-8">
+              <p className="kb-eyebrow border-b border-line pb-4">{t(locale, "explore.latest")}</p>
+              <div className="mt-4 space-y-4">
+                {items.slice(0, 3).map((i) => (
+                  <ArticleRowCard key={i.slug} item={i} locale={locale} />
+                ))}
+              </div>
+            </section>
+          </>
+        ) : view === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((i) => (
+              <ArticleGridCard key={i.slug} item={i} locale={locale} />
+            ))}
+          </div>
         ) : (
-          <section className="mt-8">
-            <p className="kb-eyebrow border-b border-line pb-4">
-              {t(locale, "explore.standalone")} · {standalone.length}
-            </p>
-            <ItemList items={standalone} zh={zh} locale={locale} />
-          </section>
+          <div className="space-y-4">
+            {filtered.map((i) => (
+              <ArticleRowCard key={i.slug} item={i} locale={locale} />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* 纪律一行(原月刊 charter 收编) */}
+      {/* 纪律一行(20260822 随「一篇一卡」形态重写) */}
       <p className="mt-12 border-t border-line pt-6 text-[11px] leading-relaxed text-grey/80">
         {zh
-          ? "组装制:事实与定夺从真实数据汇编 · 署名到人:AI 参与必须披露 · 评鉴手写:选读与点评由编辑写,不外包给算法。"
-          : "Assembled from real data · signed by named humans (AI disclosed) · hand-picked by editors, never delegated to an algorithm."}
+          ? "每篇以「做完你拥有什么」收口——产物可带走、路径可复走 · 署名到人:AI 参与必须披露 · 编辑手选:上不上架由人拍板,不外包给算法。"
+          : "Every piece ends with what you walk away with — assets to take, paths to re-walk · signed by named humans, AI disclosed · hand-picked by editors, never delegated to an algorithm."}
       </p>
     </div>
   );

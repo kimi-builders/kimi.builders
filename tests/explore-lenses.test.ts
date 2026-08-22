@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  KB_CHAPTERS,
+  isKbChapterId,
+  kbChapterLabel,
+} from "../src/lib/kb-chapters";
+import {
   KB_PRODUCTS,
   isKbProductId,
   kbProductLabel,
@@ -11,6 +16,7 @@ import {
   kbRoleLabel,
 } from "../src/lib/kb-roles";
 import {
+  countByChapter,
   countByProduct,
   countByRoles,
   deriveFormats,
@@ -22,6 +28,74 @@ import {
   guidePayloadFromDb,
   validateGuidePayload,
 } from "../src/lib/tutorials";
+import {
+  letterPayloadFromDb,
+  validateLetterPayload,
+} from "../src/lib/monthly";
+
+/* ---- 章注册表(学/做/得/立) ---- */
+
+test("kb-chapters: four fixed chapters, ids unique, labels bilingual", () => {
+  assert.deepEqual(KB_CHAPTERS.map((c) => c.id), ["learn", "build", "gain", "become"]);
+  assert.deepEqual(KB_CHAPTERS.map((c) => c.zh), ["学", "做", "得", "立"]);
+  for (const c of KB_CHAPTERS) {
+    assert.ok(c.tagline.zh && c.tagline.en, `${c.id} tagline bilingual`);
+  }
+  assert.equal(isKbChapterId("gain"), true);
+  assert.equal(isKbChapterId("win"), false);
+  assert.equal(kbChapterLabel("become", true), "立");
+  assert.equal(kbChapterLabel("become", false), "BECOME");
+  assert.equal(kbChapterLabel("nope", true), null);
+});
+
+test("validateGuidePayload: chapter must be in the four-chapter registry", () => {
+  const ok = validateGuidePayload({ chapter: "learn" });
+  assert.equal(ok.ok, true);
+  if (ok.ok) assert.equal(ok.payload.chapter, "learn");
+  assert.equal(validateGuidePayload({ chapter: "win" }).ok, false);
+  /* 渲染容错:非法 chapter 丢弃,页面不倒 */
+  const lenient = guidePayloadFromDb({ chapter: "win" });
+  assert.equal(lenient.chapter, undefined);
+  assert.equal(guidePayloadFromDb({ chapter: "build" }).chapter, "build");
+});
+
+test("validateGuidePayload: cover is a path or http(s) url, lenient on render", () => {
+  assert.equal(validateGuidePayload({ cover: "/covers/a.png" }).ok, true);
+  assert.equal(validateGuidePayload({ cover: "https://x.example/a.png" }).ok, true);
+  assert.equal(validateGuidePayload({ cover: "ftp://nope" }).ok, false);
+  assert.equal(guidePayloadFromDb({ cover: "/covers/a.png" }).cover, "/covers/a.png");
+  assert.equal(guidePayloadFromDb({ cover: "javascript:alert(1)" }).cover, undefined);
+});
+
+test("validateLetterPayload: cover key is accepted on letters too", () => {
+  const ok = validateLetterPayload({ tags: ["评鉴"], cover: "/covers/letter.png" });
+  assert.equal(ok.ok, true);
+  if (ok.ok) assert.equal(ok.payload.cover, "/covers/letter.png");
+  assert.equal(validateLetterPayload({ cover: "not-a-url" }).ok, false);
+  assert.equal(letterPayloadFromDb({ cover: "/covers/letter.png" }).cover, "/covers/letter.png");
+});
+
+/* ---- 章计数 / 过滤(章主轴) ---- */
+
+test("countByChapter: fixed four-chapter order, zero counts kept for grey state", () => {
+  /* item() 是文件底部的提升函数声明,此处可用 */
+  const items: ExploreItem[] = [
+    item({ slug: "a", chapter: "build" }),
+    item({ slug: "b", chapter: "build" }),
+    item({ slug: "c", chapter: "learn" }),
+  ];
+  /* 恒出四章(0 计数保留——页面置灰,不消失) */
+  assert.deepEqual(countByChapter(items), [
+    { value: "learn", count: 1 },
+    { value: "build", count: 2 },
+    { value: "gain", count: 0 },
+    { value: "become", count: 0 },
+  ]);
+  assert.deepEqual(
+    filterExploreItems(items, { chapter: "build" }).map((i) => i.slug),
+    ["a", "b"],
+  );
+});
 
 /* ---- 透镜词表注册表 ---- */
 
@@ -137,6 +211,8 @@ function item(partial: Partial<ExploreItem>): ExploreItem {
     tags: [],
     products: [],
     roles: [],
+    chapter: null,
+    cover: null,
     formats: ["read"],
     ...partial,
   };

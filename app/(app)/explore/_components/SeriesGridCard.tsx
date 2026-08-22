@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { Clock3, ShieldCheck } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";
+import { findKbChapter } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { isPathStale, type LearnSeries } from "@/src/lib/learn-series";
 import type { ExploreItem } from "@/src/lib/explore";
@@ -30,7 +31,8 @@ export default function SeriesGridCard({
     (acc, e) => (acc && acc.publishedAt > e.publishedAt ? acc : e),
     null,
   );
-  /* 联合产品图标(≤3):透镜在货架卡上的最小存在 */
+  /* 章字标(主轴在卡上的最小存在,链回章视图)+ 联合产品图标(≤3) */
+  const chapter = series.chapter ? findKbChapter(series.chapter) : undefined;
   const seriesProducts = [...new Set(episodes.flatMap((e) => e.products))].slice(0, 3);
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30">
@@ -54,6 +56,15 @@ export default function SeriesGridCard({
         </p>
         <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
           <span className="shrink-0">{series.code}</span>
+          {chapter && (
+            <Link
+              href={`/explore?chapter=${chapter.id}`}
+              className="shrink-0 rounded-md border border-line px-1.5 py-px text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+              title={zh ? chapter.tagline.zh : chapter.tagline.en}
+            >
+              {zh ? chapter.zh : chapter.en}
+            </Link>
+          )}
           {seriesProducts.length > 0 && (
             <span className="inline-flex shrink-0 items-center gap-1">
               {seriesProducts.map((id) => {

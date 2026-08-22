@@ -18,6 +18,7 @@ import {
   type ArticleDetail,
   type ArticleListItem,
 } from "./articles";
+import { isKbChapterId } from "./kb-chapters";
 import { isKbProductId } from "./kb-products";
 import { isKbRoleId } from "./kb-roles";
 import { findLearnSeries } from "./learn-series";
@@ -55,6 +56,11 @@ export interface GuideResource {
 
 export interface GuidePayload {
   series?: string;
+  /* 所属章(单篇教程用,slug 见 kb-chapters.ts;系列内的集不需要——
+     章挂在系列注册表上,聚合层按继承链解析) */
+  chapter?: string;
+  /* 封面(可选):站内路径或 https 图片;列表横列卡左列。缺省 = 自动章字砖 */
+  cover?: string;
   video?: GuideVideo;
   deck?: string;
   durationMin?: number;
@@ -131,7 +137,7 @@ function lensIdsFromDb(
 export function validateGuidePayload(value: unknown): GuidePayloadParse {
   if (!isPlainObject(value)) return { ok: false, error: "payload 必须是 JSON 对象" };
   const stray = Object.keys(value).find(
-    (k) => !["series", "video", "deck", "durationMin", "scenario", "aiNote", "tags", "resources", "products", "roles"].includes(k),
+    (k) => !["series", "chapter", "cover", "video", "deck", "durationMin", "scenario", "aiNote", "tags", "resources", "products", "roles"].includes(k),
   );
   if (stray) return { ok: false, error: `payload 未知字段:${stray}` };
   const payload: GuidePayload = {};
@@ -143,6 +149,21 @@ export function validateGuidePayload(value: unknown): GuidePayloadParse {
       return { ok: false, error: `series 不在册:${s}(先注册 src/lib/learn-series.ts)` };
     }
     payload.series = s;
+  }
+  if (value.chapter !== undefined) {
+    const c = boundedString(value.chapter, 16);
+    if (!c) return { ok: false, error: "chapter 需为 ≤16 字文本" };
+    if (!isKbChapterId(c)) {
+      return { ok: false, error: `chapter 不在册:${c}(四章词表见 src/lib/kb-chapters.ts)` };
+    }
+    payload.chapter = c;
+  }
+  if (value.cover !== undefined) {
+    const s = boundedString(value.cover, 500);
+    if (!s || (!s.startsWith("/") && !/^https?:\/\//i.test(s))) {
+      return { ok: false, error: "cover 需为站内路径或 http(s) 图片链接" };
+    }
+    payload.cover = s;
   }
   if (value.video !== undefined) {
     if (!isPlainObject(value.video)) return { ok: false, error: "video 必须是对象" };
@@ -250,6 +271,10 @@ export function guidePayloadFromDb(raw: unknown): GuidePayload {
   const payload: GuidePayload = {};
   const series = boundedString(value.series, 64);
   if (series) payload.series = series;
+  const chapter = boundedString(value.chapter, 16);
+  if (chapter && isKbChapterId(chapter)) payload.chapter = chapter;
+  const cover = boundedString(value.cover, 500);
+  if (cover && (cover.startsWith("/") || /^https?:\/\//i.test(cover))) payload.cover = cover;
   if (isPlainObject(value.video)) {
     const provider = value.video.provider;
     const id = boundedString(value.video.id, 64);

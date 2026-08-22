@@ -6,6 +6,7 @@
    隐藏后本栏整体收起,不再留细轨重开按钮。 */
 import type { Locale } from "@/src/lib/i18n";
 import type { RailDecision } from "./right-rail";
+import ArticleRail from "./rail/ArticleRail";
 import AwesomeRail from "./rail/AwesomeRail";
 import CommunityWidgets from "./rail/CommunityWidgets";
 import ExploreRail from "./rail/ExploreRail";
@@ -35,6 +36,8 @@ export default function RightSidebar({
           <AwesomeRail locale={locale} loggedIn={loggedIn} />
         ) : decision.kind === "explore" ? (
           <ExploreRail locale={locale} />
+        ) : decision.kind === "article" && decision.slug ? (
+          <ArticleRail slug={decision.slug} locale={locale} />
         ) : (
           <CommunityWidgets locale={locale} />
         )}

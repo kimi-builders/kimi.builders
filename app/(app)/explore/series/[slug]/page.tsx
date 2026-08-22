@@ -12,6 +12,7 @@ import { ArrowLeft, ArrowRight, Clock3, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { findKbChapter } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { findKbRole } from "@/src/lib/kb-roles";
 import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
@@ -116,6 +117,8 @@ export default async function ExploreSeriesPage({
      可点回 /explore 透镜——脊柱与透镜互相成环 */
   const coveredProducts = [...new Set(episodes.flatMap((e) => e.payload.products ?? []))];
   const fitRoles = [...new Set(episodes.flatMap((e) => e.payload.roles ?? []))];
+  /* 章字标(20260821 章主轴):路挂章,meta 行首 chip 链回章视图 */
+  const seriesChapter = series.chapter ? findKbChapter(series.chapter) : undefined;
 
   return (
     <div>
@@ -130,6 +133,17 @@ export default async function ExploreSeriesPage({
         lede={zh ? series.summary.zh : series.summary.en}
         meta={
           <p className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+            {seriesChapter && (
+              <Link
+                href={`/explore?chapter=${seriesChapter.id}`}
+                className="flex items-center gap-1.5 rounded-md border border-line px-2 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+                title={zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
+              >
+                {zh ? seriesChapter.zh : seriesChapter.en}
+                <span aria-hidden="true">·</span>
+                {zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
+              </Link>
+            )}
             <span>{episodes.length} {zh ? "集" : "episodes"}</span>
             {mins > 0 && (
               <>

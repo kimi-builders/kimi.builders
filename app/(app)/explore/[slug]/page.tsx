@@ -11,13 +11,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import { monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
+import { findKbChapter } from "@/src/lib/kb-chapters";
+import { findLearnSeries } from "@/src/lib/learn-series";
 import {
   getAssembledIssue,
   listLetterIssueMetas,
@@ -25,11 +26,9 @@ import {
   type LetterIssueMeta,
 } from "@/src/lib/monthly";
 import {
-  episodeNeighbors,
   getTutorialBySlug,
   GUIDE_RESOURCE_KINDS,
   type GuideResourceKind,
-  type Tutorial,
   type TutorialDetail,
 } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
@@ -227,27 +226,6 @@ function LetterDetail({
         </p>
         <h1 className="kb-h1-human mt-3">{issue.title}</h1>
         <p className="kb-lede-human mt-4 max-w-2xl">{issue.summary}</p>
-        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
-          <span>
-            {zh ? "主编" : "ed."}{" "}
-            <Link href={`/u/${issue.editorHandle}`} className="normal-case text-paper transition-colors hover:text-ui-blue">
-              @{issue.editorHandle}
-            </Link>
-          </span>
-          <span aria-hidden="true">·</span>
-          <span>{zh ? "评鉴手写" : "hand-picked"}</span>
-          {canEdit && (
-            <>
-              <span aria-hidden="true">·</span>
-              <Link
-                href={`/blog/admin/${issue.slug}/edit?locale=${metas[idx]?.locale ?? locale}`}
-                className="normal-case tracking-normal text-grey transition-colors hover:text-ui-blue"
-              >
-                {t(locale, "post.edit")}
-              </Link>
-            </>
-          )}
-        </p>
       </header>
 
       <div className="mt-8">
@@ -317,30 +295,43 @@ function LetterDetail({
           <ArrowLeft size={13} aria-hidden="true" />
           {t(locale, "nav.explore")}
         </Link>
-        <ShareButton path={`/explore/${issue.slug}`} title={issue.title} locale={locale} />
+        <div className="flex items-center gap-4">
+          {canEdit && (
+            <Link
+              href={`/blog/admin/${issue.slug}/edit?locale=${metas[idx]?.locale ?? locale}`}
+              className="font-mono text-[11px] text-grey transition-colors hover:text-ui-blue"
+            >
+              {t(locale, "post.edit")}
+            </Link>
+          )}
+          <ShareButton path={`/explore/${issue.slug}`} title={issue.title} locale={locale} />
+        </div>
       </div>
     </article>
   );
 }
 
-/* ---- guide:教程集 ---- */
+/* ---- guide:文章(20260822 去「教程/集」概念——一篇一卡,无强关联;
+   系列 = 内容组合,现阶段不显示;元数据在右栏 ArticleRail) ---- */
 
 function GuideDetail({
   tutorial,
-  seriesTutorials,
   initialTab,
   locale,
   canEdit,
 }: {
   tutorial: TutorialDetail;
-  seriesTutorials: Tutorial[];
   initialTab?: string;
   locale: "zh" | "en";
   canEdit: boolean;
 }) {
   const zh = locale === "zh";
-  const series = tutorial.series ? findLearnSeries(tutorial.series) : undefined;
-  const stale = series ? isPathStale(series) : false;
+  /* 章:payload.chapter ?? 所属系列的注册表章(系列不显示,章仍生效) */
+  const seriesChapterSlug = tutorial.series
+    ? findLearnSeries(tutorial.series)?.chapter
+    : undefined;
+  const chapterSlug = tutorial.payload.chapter ?? seriesChapterSlug;
+  const chapter = chapterSlug ? findKbChapter(chapterSlug) : undefined;
 
   const tabs: DetailTab[] = [];
   if (tutorial.bodyMd) {
@@ -469,37 +460,15 @@ function GuideDetail({
     });
   }
 
-  const { prev, next } = episodeNeighbors(seriesTutorials, tutorial.slug);
-  const epNo = Math.max(seriesTutorials.findIndex((e) => e.slug === tutorial.slug) + 1, 1);
-
   return (
     <article>
-      {/* 面包屑:← 系列(在册才显示) */}
-      {series && (
-        <p className="mb-6">
-          <Link
-            href={`/explore/series/${series.slug}`}
-            className="inline-flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors hover:text-paper"
-          >
-            <ArrowLeft size={13} aria-hidden="true" />
-            {zh ? series.title.zh : series.title.en}
-          </Link>
-        </p>
-      )}
-
       <header>
         <p className="kb-eyebrow flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>
-            — {zh ? "教程" : "TUTORIAL"}
-            {series ? ` · ${series.code} · EP${String(epNo).padStart(2, "0")}` : ""}
+            — {zh ? "文章" : "ARTICLE"}
+            {chapter ? ` · ${zh ? chapter.zh : chapter.en}` : ""}
+            {` · ${monthLabel(tutorial.publishedAt)}`}
           </span>
-          {tutorial.payload.durationMin && (
-            <span className="flex items-center gap-1 normal-case tracking-normal">
-              <Clock3 size={12} aria-hidden="true" />
-              {zh ? `约 ${tutorial.payload.durationMin} 分钟` : `~${tutorial.payload.durationMin} min`}
-            </span>
-          )}
-          {tutorial.payload.scenario && <span>· {tutorial.payload.scenario}</span>}
           {tutorial.fallback && (
             <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
               {tutorial.locale === "zh" ? "中文" : "EN"}
@@ -508,55 +477,14 @@ function GuideDetail({
         </p>
         <h1 className="kb-h1 mt-3">{tutorial.title}</h1>
         {tutorial.summary && <p className="kb-lede mt-4 max-w-2xl">{tutorial.summary}</p>}
-        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
-          <span>{monthLabel(tutorial.publishedAt)}</span>
-          {series && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck
-                  size={13}
-                  className={stale ? "text-status-warn-fg" : "text-status-ok-fg"}
-                  aria-hidden="true"
-                />
-                @{series.editorHandle} {zh ? "验证" : "verified"} · {series.verifiedModel} · {series.verifiedAt}
-              </span>
-              {stale && (
-                <span className="rounded-md border border-status-warn/40 px-1.5 py-px normal-case tracking-normal text-status-warn-fg">
-                  {zh ? "待重验" : "re-verify pending"}
-                </span>
-              )}
-            </>
-          )}
-          {canEdit && (
-            <>
-              <span aria-hidden="true">·</span>
-              <Link
-                href={`/blog/admin/${tutorial.slug}/edit?locale=${tutorial.locale}`}
-                className="normal-case tracking-normal text-grey transition-colors hover:text-ui-blue"
-              >
-                {t(locale, "post.edit")}
-              </Link>
-            </>
-          )}
-        </p>
-        {tutorial.payload.tags && tutorial.payload.tags.length > 0 && (
-          <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-grey/80">
-            {tutorial.payload.tags.map((tag) => (
-              <Link key={tag} href={`/explore?view=tags&tag=${encodeURIComponent(tag)}`} className="transition-colors hover:text-ui-blue">
-                #{tag}
-              </Link>
-            ))}
-          </p>
-        )}
       </header>
 
       <div className="mt-8">
         {tabs.length > 0 ? (
-          <DetailTabs tabs={tabs} initialTab={initialTab} remember ariaLabel={zh ? "本集内容形态" : "In this episode"} />
+          <DetailTabs tabs={tabs} initialTab={initialTab} remember ariaLabel={zh ? "本篇内容形态" : "In this piece"} />
         ) : (
           <p className="border-y border-line py-9 text-sm leading-relaxed text-grey">
-            {zh ? "本集还没有内容。" : "Nothing here yet."}
+            {zh ? "本篇还没有内容。" : "Nothing here yet."}
           </p>
         )}
       </div>
@@ -568,54 +496,29 @@ function GuideDetail({
         </p>
       )}
 
-      {/* 上/下集导航(系列内) */}
-      {seriesTutorials.length > 1 && (
-        <nav
-          aria-label={zh ? "集导航" : "Episode navigation"}
-          className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"
-        >
-          {prev ? (
-            <Link href={`/explore/${prev.slug}`} className="kb-navlink group min-w-0">
-              <span className="flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
-                <ArrowLeft size={13} aria-hidden="true" />
-                {zh ? "上一集" : "PREVIOUS"}
-              </span>
-              <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
-                {prev.title}
-              </span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          {next ? (
-            <Link href={`/explore/${next.slug}`} className="kb-navlink group min-w-0 text-right">
-              <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
-                {zh ? "下一集" : "NEXT"}
-                <ArrowRight size={13} aria-hidden="true" />
-              </span>
-              <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
-                {next.title}
-              </span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
-
       <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-6 pb-2">
         <Link
-          href={series ? `/explore/series/${series.slug}` : "/explore"}
+          href="/explore"
           className="inline-flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors hover:text-paper"
         >
           <ArrowLeft size={13} aria-hidden="true" />
-          {series ? (zh ? "返回系列" : "Back to series") : t(locale, "nav.explore")}
+          {t(locale, "nav.explore")}
         </Link>
-        <ShareButton
-          path={`/explore/${tutorial.slug}`}
-          title={tutorial.title}
-          locale={locale}
-        />
+        <div className="flex items-center gap-4">
+          {canEdit && (
+            <Link
+              href={`/blog/admin/${tutorial.slug}/edit?locale=${tutorial.locale}`}
+              className="font-mono text-[11px] text-grey transition-colors hover:text-ui-blue"
+            >
+              {t(locale, "post.edit")}
+            </Link>
+          )}
+          <ShareButton
+            path={`/explore/${tutorial.slug}`}
+            title={tutorial.title}
+            locale={locale}
+          />
+        </div>
       </div>
     </article>
   );
@@ -672,7 +575,6 @@ export default async function ExploreDetailPage({
   return (
     <GuideDetail
       tutorial={guide.tutorial}
-      seriesTutorials={guide.seriesTutorials}
       initialTab={guideTab}
       locale={locale}
       canEdit={canEdit}

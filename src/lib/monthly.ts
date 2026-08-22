@@ -99,6 +99,8 @@ export interface LetterPayload {
   governance?: LetterGovernanceEntry[];
   /* 探索四维的标签维(20260821):≤5 个,每标签 ≤24 字,去重 */
   tags?: string[];
+  /* 封面(20260822):站内路径或 https 图片,列表横列卡左列;缺省 = 自动章字砖(「刊」) */
+  cover?: string;
 }
 
 export type PayloadParseResult =
@@ -153,9 +155,17 @@ function unknownKey(obj: Record<string, unknown>, known: string[]): string | nul
    渲染路径(letterPayloadFromDb)容错回落空 payload,不让一条坏 payload 打掉整页。 */
 export function validateLetterPayload(value: unknown): PayloadParseResult {
   if (!isPlainObject(value)) return { ok: false, error: "payload 必须是 JSON 对象" };
-  const stray = unknownKey(value, ["aiDisclosure", "governance", "tags"]);
+  const stray = unknownKey(value, ["aiDisclosure", "governance", "tags", "cover"]);
   if (stray) return { ok: false, error: `payload 未知字段:${stray}` };
   const payload: LetterPayload = {};
+
+  if (value.cover !== undefined) {
+    const s = boundedString(value.cover, 500);
+    if (!s || (!s.startsWith("/") && !/^https?:\/\//i.test(s))) {
+      return { ok: false, error: "cover 需为站内路径或 http(s) 图片链接" };
+    }
+    payload.cover = s;
+  }
 
   if (value.tags !== undefined) {
     const r = normalizeTags(value.tags);

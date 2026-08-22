@@ -43,9 +43,22 @@ test("railFor: awesome / explore sections", () => {
   /* 板块未就绪(src/lib/upcoming.ts)时专属 rail 回落 community;就绪后恢复 */
   const exploreRail = UPCOMING.explore ? "community" : "explore";
   assert.deepEqual(railFor("/explore"), { kind: exploreRail, id: null, wide: false });
-  /* 文章详情 + 系列页同 rail */
-  assert.deepEqual(railFor("/explore/2026-08-letter"), { kind: exploreRail, id: null, wide: false });
+  /* 系列页同 explore rail(现阶段系列不展示,路由保留) */
   assert.deepEqual(railFor("/explore/series/kimi-code-in-action"), { kind: exploreRail, id: null, wide: false });
+  /* 文章详情(20260822)独立 article rail:元数据在右栏,slug 进 decision */
+  if (!UPCOMING.explore) {
+    assert.deepEqual(railFor("/explore/2026-08-letter"), {
+      kind: "article",
+      id: null,
+      slug: "2026-08-letter",
+      wide: false,
+    });
+    /* slug 进 decision key:两篇文章页之间右栏各自重估,不共用壳缓存 */
+    const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
+    assert.notEqual(keyFor("/explore/issue-a"), keyFor("/explore/issue-b"));
+    /* 与目录页也不同 key */
+    assert.notEqual(keyFor("/explore"), keyFor("/explore/2026-08-letter"));
+  }
   /* 旧路由已 301(页面层承担),rail 仍回落默认 */
   assert.deepEqual(railFor("/blog"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/learn"), { kind: "community", id: null, wide: false });

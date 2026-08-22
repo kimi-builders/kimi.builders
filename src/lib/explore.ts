@@ -4,8 +4,10 @@
    与正文**派生**不存储(派生不说谎:有文稿才有 read);长尾 = 标签(payload.tags)
    与时间归档。计数/过滤/归档是纯函数(单测直接测),0 计数透镜不渲染
    (与「0 集系列不上架」同口径);DB 读写在文件底部,写法对齐 ./monthly。 */
+import { cache } from "react";
 import type { RowDataPacket } from "mysql2";
 import type { ArticleKind, ArticleLocale } from "./articles";
+import { KB_CHAPTERS } from "./kb-chapters";
 import { KB_PRODUCTS } from "./kb-products";
 import { KB_ROLES } from "./kb-roles";
 import { getPool } from "./db";
@@ -35,6 +37,11 @@ export interface ExploreItem {
   /* 产品/职业透镜(slug;guide 的 payload 打标,letter 契约暂不含 → 恒空) */
   products: string[];
   roles: string[];
+  /* 所属章(章主轴):继承链 payload.chapter ?? 所属系列的 series.chapter;
+     letter(月刊)不挂章 → 恒 null */
+  chapter: string | null;
+  /* 封面(payload.cover;缺省 null → 列表卡自动章字砖) */
+  cover: string | null;
   /* 可得形态(派生:bodyMd/video/deck 的存在性) */
   formats: GuideFormat[];
 }
@@ -135,6 +142,15 @@ export function roleLandingEligible(items: ExploreItem[], role: string): boolean
   return items.filter((i) => i.roles.includes(role)).length >= 3;
 }
 
+/* 章计数(章主轴):四章固定序,计数 = 该章命中的内容数(系列内集按继承链
+   解析后的 chapter);章是永久框架,页面渲染恒出四章、0 计数置灰。 */
+export function countByChapter(items: ExploreItem[]): TaxonomyCount[] {
+  return KB_CHAPTERS.map((c) => ({
+    value: c.id,
+    count: items.filter((i) => i.chapter === c.id).length,
+  }));
+}
+
 /* 归档:年倒序 → 月倒序 → 月内按发布时间倒序(UTC 口径,与 published_at 一致)。 */
 export function groupByArchive(items: ExploreItem[]): ArchiveYear[] {
   const byYear = new Map<string, Map<string, ExploreItem[]>>();
@@ -167,10 +183,12 @@ export interface ExploreSelection {
   series?: string;
   tag?: string;
   year?: string;
+  /* 章主轴(单选;再次点击取消 = 参数缺席) */
+  chapter?: string;
   /* 产品/职业透镜(单选;再次点击取消 = 参数缺席) */
   product?: string;
   role?: string;
-  /* 形态过滤:单元「可得」该形态才命中(不全量隐藏系列,列表层过滤) */
+  /* 形态过滤:单元「可得」该形态才命中(页面已不暴露筛选,lib 能力保留) */
   format?: GuideFormat;
 }
 
@@ -183,6 +201,7 @@ export function filterExploreItems(
     if (sel.series && i.series !== sel.series) return false;
     if (sel.tag && !i.tags.includes(sel.tag)) return false;
     if (sel.year && String(i.publishedAt.getUTCFullYear()) !== sel.year) return false;
+    if (sel.chapter && i.chapter !== sel.chapter) return false;
     if (sel.product && !i.products.includes(sel.product)) return false;
     if (sel.role && !i.roles.includes(sel.role)) return false;
     if (sel.format && !i.formats.includes(sel.format)) return false;
@@ -190,10 +209,11 @@ export function filterExploreItems(
   });
 }
 
-/* 分类维度的展示名(两种 kind 即首批两类) */
+/* 分类维度的展示名(20260822:「教程」概念下线——guide 统称「文章」;
+   系列 = 内容的一种组合,现阶段不展示) */
 export function categoryLabelOf(kind: ArticleKind, zh: boolean): string {
   if (kind === "letter") return zh ? "月刊评鉴" : "Monthly";
-  return zh ? "教程" : "Tutorials";
+  return zh ? "文章" : "Article";
 }
 
 /* ---- DB:两 kind 合集 ---- */
@@ -202,6 +222,11 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
   const kind: ArticleKind = r.kind === "guide" ? "guide" : "letter";
   const payload =
     kind === "guide" ? guidePayloadFromDb(r.payload) : letterPayloadFromDb(r.payload);
+  const seriesSlug = kind === "guide" ? (payload as { series?: string }).series ?? null : null;
+  /* 章继承链:集自带 chapter ?? 所属系列的注册表 chapter;letter 恒 null */
+  const seriesChapter = seriesSlug
+    ? LEARN_SERIES.find((s) => s.slug === seriesSlug)?.chapter
+    : undefined;
   return {
     slug: r.slug,
     kind,
@@ -210,13 +235,15 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
     locale: r.locale === "en" ? "en" : "zh",
     publishedAt: r.published_at,
     editorHandle: r.author_handle ?? "",
-    series: kind === "guide" ? (payload as { series?: string }).series ?? null : null,
+    series: seriesSlug,
     tags: (payload as { tags?: string[] }).tags ?? [],
     durationMin: (payload as { durationMin?: number }).durationMin,
     /* 透镜:payload 已在 fromDb 容错层过滤过非法 slug,这里直接取;
        letter 的 payload 契约不含透镜字段 → 恒空数组 */
     products: (payload as { products?: string[] }).products ?? [],
     roles: (payload as { roles?: string[] }).roles ?? [],
+    chapter: (payload as { chapter?: string }).chapter ?? seriesChapter ?? null,
+    cover: (payload as { cover?: string }).cover ?? null,
     formats: deriveFormats(r.body_md, payload),
   };
 }
@@ -254,3 +281,23 @@ export async function listExploreItems(
   );
   return pickLocaleVersions(rows.map(mapExploreRow), uiLocale);
 }
+
+/* 文章详情右栏(ArticleRail)的元数据:按 slug 单查,React cache 与
+   同请求内的重复调用去重;未发布/不存在 → null(rail 不渲染)。
+   查询与 mapExploreRows 同构(章继承链/透镜/形态一次到位)。 */
+export const getArticleRailMeta = cache(
+  async (slug: string, uiLocale: ArticleLocale): Promise<ExploreItem | null> => {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `SELECT a.slug, a.kind, a.locale, a.title, a.summary, a.body_md,
+              a.published_at, a.payload, u.handle AS author_handle
+       FROM articles a
+       JOIN users u ON u.id = a.author_id
+       WHERE a.slug = ? AND a.published_at IS NOT NULL AND a.deleted_at IS NULL
+       LIMIT 1`,
+      [slug],
+    );
+    if (rows.length === 0) return null;
+    const item = mapExploreRow(rows[0]);
+    return { ...item, fallback: item.locale !== uiLocale };
+  },
+);

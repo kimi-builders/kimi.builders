@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { Clock3, ShieldCheck } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";
+import { findKbChapter } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { isPathStale, type LearnSeries } from "@/src/lib/learn-series";
 import type { ExploreItem } from "@/src/lib/explore";
@@ -28,7 +29,8 @@ export default function SeriesRowCard({
     (acc, e) => (acc && acc.publishedAt > e.publishedAt ? acc : e),
     null,
   );
-  /* 联合产品图标(≤3):透镜在货架卡上的最小存在 */
+  /* 章字标(主轴在卡上的最小存在)+ 联合产品图标(≤3) */
+  const chapter = series.chapter ? findKbChapter(series.chapter) : undefined;
   const seriesProducts = [...new Set(episodes.flatMap((e) => e.products))].slice(0, 3);
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-colors hover:border-paper/30 sm:flex-row">
@@ -46,6 +48,15 @@ export default function SeriesRowCard({
       </div>
       <div className="flex min-w-0 flex-1 flex-col p-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
+          {chapter && (
+            <Link
+              href={`/explore?chapter=${chapter.id}`}
+              className="mr-2 rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+              title={zh ? chapter.tagline.zh : chapter.tagline.en}
+            >
+              {zh ? chapter.zh : chapter.en}
+            </Link>
+          )}
           — {zh ? "系列" : "Series"} · {series.code}
         </p>
         <h2 className="mt-1.5 truncate text-base font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">

@@ -16,6 +16,7 @@ export type RailKind =
   | "works"
   | "awesome"
   | "explore"
+  | "article"
   | "none";
 
 export interface RailDecision {
@@ -23,20 +24,28 @@ export interface RailDecision {
   /* post/work 详情的路由 id;其余 kind 恒为 null(仅通知页用 0 哨兵,
      同 rail 但需强制壳重估——见 railFor 内注释) */
   id: number | null;
+  /* 文章详情(/explore/<slug>)的 slug;仅 kind=article 时非空 */
+  slug?: string | null;
   /* 主列加宽(1000);目前仅 kind=none 的宽画布路由 */
   wide: boolean;
 }
 
-/* 布局需要重取的最小上下文:同一种 rail + 同一详情 id + 同一列宽时,
+/* 布局需要重取的最小上下文:同一种 rail + 同一详情 id/slug + 同一列宽时,
    pathname 改变不影响右栏或壳宽度,无需 router.refresh() 全树重取。 */
-export function railDecisionKey({ kind, id, wide }: RailDecision): string {
-  return `${kind}:${id ?? "-"}:${wide ? 1 : 0}`;
+export function railDecisionKey({ kind, id, slug, wide }: RailDecision): string {
+  return `${kind}:${slug ?? id ?? "-"}:${wide ? 1 : 0}`;
 }
 
 const decision = (
   kind: RailKind,
-  opts: { id?: number; wide?: boolean } = {},
-): RailDecision => ({ kind, id: opts.id ?? null, wide: opts.wide ?? false });
+  opts: { id?: number; slug?: string; wide?: boolean } = {},
+): RailDecision => ({
+  kind,
+  id: opts.id ?? null,
+  /* slug 仅 article 决策携带(可选字段,缺省不出——与既有 deepEqual 测试兼容) */
+  ...(opts.slug !== undefined ? { slug: opts.slug } : {}),
+  wide: opts.wide ?? false,
+});
 
 export function railFor(pathname: string): RailDecision {
   /* 去尾斜杠,空串按根处理 */
@@ -67,10 +76,16 @@ export function railFor(pathname: string): RailDecision {
   if (p === "/works") return decision("works");
 
   if (p === "/awesome") return decision("awesome");
-  /* 探索区(20260821 月刊 × 教程合并):目录/详情/系列页同 rail;
-     板块未就绪时(UPCOMING.explore)回落 community;
+  /* 探索区(20260821 合并;20260822 详情独立 rail):
+     目录页与系列页用 explore rail;文章详情(/explore/<slug>,非 series)
+     用 article rail(元数据在右栏,slug 进 decision key 供壳重估)。
+     板块未就绪时(UPCOMING.explore)统一回落 community;
      旧 /blog、/learn 路由已 301,不再出 rail 分支 */
   if (!UPCOMING.explore && (p === "/explore" || p.startsWith("/explore/"))) {
+    if (p.startsWith("/explore/series/")) return decision("explore");
+    if (p !== "/explore") {
+      return decision("article", { slug: p.slice("/explore/".length) });
+    }
     return decision("explore");
   }
 
