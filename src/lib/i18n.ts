@@ -16,6 +16,14 @@ const DICT = {
   "nav.about": { zh: "关于", en: "About" },
   "nav.post": { zh: "发帖", en: "Post" },
   "nav.soon": { zh: "SOON", en: "SOON" },
+  /* 分组标签(20260821 评审):左栏项数超过扫读上限,mono 小字分组
+     (规格同「界面」的 DISPLAY);收起态 nav-label 隐藏,标签自动消失 */
+  "nav.groupSections": { zh: "分区", en: "SECTIONS" },
+  "nav.groupAccount": { zh: "个人", en: "ACCOUNT" },
+  "nav.groupMore": { zh: "更多", en: "MORE" },
+  /* 登录墙预告(20260821 评审):受限入口把「需要登录」前置到点击前 */
+  "nav.gatedPost": { zh: "登录后发帖", en: "Log in to post" },
+  "nav.lockHint": { zh: "登录后可用", en: "Sign-in required" },
   "nav.collapse": { zh: "收起导航", en: "Collapse" },
   "nav.expand": { zh: "展开导航", en: "Expand" },
   "nav.menu": { zh: "打开功能导航", en: "Open navigation" },
@@ -122,6 +130,13 @@ const DICT = {
     en: "Nothing under this combination yet — relax a filter, or start from the latest.",
   },
   "explore.latest": { zh: "最近的内容", en: "LATEST" },
+  /* 筛选生效感(20260821 评审):结果计数随筛选即时更新,不依赖用户对比列表长度 */
+  "explore.resultCount": { zh: "{n} / {total} 篇", en: "{n} of {total}" },
+  /* 0 计数章的悬停提示(20260821 评审):空章是征稿承诺,不是死胡同 */
+  "explore.chapterCall": {
+    zh: "征稿中 · {tagline}",
+    en: "Open for submissions · {tagline}",
+  },
   "explore.filterAria": { zh: "探索筛选", en: "Explore filters" },
   /* ---- 帖子详情 ---- */
   "post.comments": { zh: "{n} 条评论", en: "{n} comments" },  "post.commentPh": {
@@ -521,6 +536,9 @@ const DICT = {
   },
   "vibe.poster": { zh: "工程棱角", en: "Sharp" },
   "vibe.soft": { zh: "圆润经典", en: "Classic" },
+  /* 气质切换确认(20260821 评审):变化是全站圆角/投影,渐进且弱感知,
+     toast 一次确认「操作生效了」 */
+  "pref.vibeToast": { zh: "已切换:{name}", en: "Switched to {name}" },
   /* 界面布局(20260821 评审):左栏收起/右栏隐藏的设置页入口,
      提升两个 DISPLAY 开关的可发现性 */
   "set.layout": { zh: "界面布局", en: "Layout" },
@@ -948,7 +966,6 @@ const DICT = {
     en: "Explore together, build together — the community is growing.",
   },
   "home.cta": { zh: "进入社区", en: "Enter the community" },
-  "home.entryLeaderboard": { zh: "用量榜", en: "Leaderboard" },
   "home.tokens": { zh: "累计 tokens", en: "total tokens" },
   "home.featured": { zh: "本周精选", en: "PICKS OF THE WEEK" },
   "home.featuredSub": {
@@ -971,11 +988,12 @@ const DICT = {
     en: "Collaboration, feedback, submissions — or just say hi.",
   },
   "home.joinMailCta": { zh: "写信给我们", en: "Write to us" },
-  /* 首页入口按钮副文案(20260815):术语型入口(Awesome/用量榜)给首访用户一句预期 */
+  /* 首页入口按钮副文案(20260815):术语型入口给首访用户一句预期;
+     用量榜入口随探索区上线让位(20260821 评审:入口卡按内容分区排列) */
   "home.subCommunity": { zh: "讨论 · 晒作品", en: "Discuss & share" },
+  "home.subExplore": { zh: "月刊 × 教程", en: "Monthly × guides" },
   "home.subWorks": { zh: "成员作品墙", en: "Member builds" },
   "home.subAwesome": { zh: "生态项目精选", en: "Curated picks" },
-  "home.subLeaderboard": { zh: "Token 排行", en: "Token ranking" },
   /* ---- 关于页(/about)---- */
   "about.title": { zh: "关于", en: "About" },
   "about.who": {
@@ -1008,6 +1026,13 @@ const DICT = {
     en: "Usage — token and activity stats synced by the Collector; private by default, leaderboards opt-in.",
   },
   "about.linksTitle": { zh: "联系与链接", en: "Links" },
+  /* 页尾收束(20260821 评审):关于页是「犹豫者」最后看的一页,
+     以行动邀请结束,而不是以免责声明结束 */
+  "about.ctaLine": {
+    zh: "轮到你了——用 Kimi 构建一件好东西。",
+    en: "Your turn — build something good with Kimi.",
+  },
+  "about.ctaGithub": { zh: "先去 GitHub 逛逛", en: "Browse GitHub first" },
   "about.disclaimer": {
     zh: "kimi.builders 与 Moonshot AI(月之暗面)无隶属、赞助或背书关系。",
     en: "kimi.builders is not affiliated with, sponsored, or endorsed by Moonshot AI.",
@@ -1038,6 +1063,13 @@ const DICT = {
     zh: "数据来自成员自愿同步的自报日志,可能不完整;仅含周期聚合数字,作为社区参考,不是可验证的计量凭证。",
     en: "Self-reported logs synced voluntarily by members and may be incomplete; period aggregates only, as a community reference — not verified metering.",
   },
+  /* 口径折叠(20260821 评审):首屏只留一句核心,完整口径收进「数据口径」
+     展开区,榜单更早进入视口;透明度不降,占位让位 */
+  "lb.trustShort": {
+    zh: "自报数据 · 自愿公开 · 仅供参考",
+    en: "Self-reported · opt-in · reference only",
+  },
+  "lb.method": { zh: "数据口径", en: "Methodology" },
   "lb.scope": {
     zh: "口径:仅主动 opt-in 的成员 · 只公开聚合 token 与活跃天数 · 不含项目名、设备或时段明细 · 活跃天数按 UTC 自然日计。",
     en: "Scope: opt-in members only · aggregate tokens and active days only · no project names, devices, or time-of-day detail · active days counted in UTC.",

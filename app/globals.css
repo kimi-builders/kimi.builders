@@ -171,6 +171,23 @@
   display: none !important;
 }
 
+/* 主题切换过渡(20260821 评审):ThemeToggle 翻 data-theme 时短暂挂
+   data-theme-anim(260ms 后摘除),窗口内大面积颜色走 200ms 过渡
+   (动效令牌 fast 档);范围限 background/border/color/fill/stroke,
+   transform/opacity 不掺和。!important 盖过组件各自的 120ms
+   transition-colors,窗口结束即回归。reduce 态(手动或系统)全跳过。 */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"])[data-theme-anim] body,
+  html:not([data-motion="reduce"])[data-theme-anim] body * {
+    transition:
+      background-color 200ms var(--ease-standard),
+      border-color 200ms var(--ease-standard),
+      color 200ms var(--ease-standard),
+      fill 200ms var(--ease-standard),
+      stroke 200ms var(--ease-standard) !important;
+  }
+}
+
 /* 海报门面作用域(首页):跟随 UI 主题的双皮肤暖纸编辑色
    (不跟随 App UI 的官方中性灰,保持品牌暖纸气质)。
    默认暗色「夜幕版」;亮色「日间纸感版」由下方 [data-theme="light"] 覆盖,
@@ -709,6 +726,10 @@ html[data-motion="reduce"] .usage-pulse-dot {
 .md-longform .md {
   font-size: 16.5px;
   line-height: 1.9;
+  /* 长文行宽(20260821 评审):主列 800px 下正文约 46 字/行,中文无词间
+     空格,回扫成本高;收窄到 40em(≈660px,38-40 字/行)进最佳阅读区间。
+     表格/pre 跟随窄列,溢出各自已有兜底(overflow-x)。 */
+  max-width: 40em;
 }
 .md-longform .md p,
 .md-longform .md ul,

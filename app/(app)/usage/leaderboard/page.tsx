@@ -414,10 +414,25 @@ export default async function UsageLeaderboardPage({
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-4 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex max-w-2xl items-start gap-2 text-xs leading-relaxed text-grey/80">
-            <ShieldCheck size={14} className="mt-px shrink-0 text-ui-blue" aria-hidden="true" />
-            <span>{t(locale, "lb.trust")}</span>
-          </p>
+          {/* 口径折叠(20260821 评审):首屏只留一句核心,完整口径(信任声明 +
+               统计口径 + 估费口径)收进原生 details 展开区——透明度不降,
+               占位让位,榜单更早进入视口 */}
+          <details className="max-w-2xl text-xs leading-relaxed text-grey/80">
+            <summary className="flex cursor-pointer list-none items-start gap-2 [&::-webkit-details-marker]:hidden">
+              <ShieldCheck size={14} className="mt-px shrink-0 text-ui-blue" aria-hidden="true" />
+              <span>
+                {t(locale, "lb.trustShort")}
+                <span className="ml-1.5 font-mono text-ui-blue underline decoration-ui-blue/40 underline-offset-2">
+                  {t(locale, "lb.method")} ▾
+                </span>
+              </span>
+            </summary>
+            <p className="mt-2 border-l border-line pl-3">{t(locale, "lb.trust")}</p>
+            <p className="mt-1.5">{t(locale, "lb.scope")}</p>
+            {board === "overall" ? (
+              <p className="mt-1.5">{t(locale, "lb.costScope")}</p>
+            ) : null}
+          </details>
           <nav
             aria-label={t(locale, "lb.title")}
             className={`${SEG_WRAP} shrink-0 max-sm:w-full`}
@@ -584,11 +599,6 @@ export default async function UsageLeaderboardPage({
           )}
         </section>
       )}
-
-      <div className="mt-4 rounded-xl border border-line bg-card/60 px-4 py-3 text-xs leading-relaxed text-grey/80">
-        <p>{t(locale, "lb.scope")}</p>
-        {board === "overall" ? <p className="mt-1.5">{t(locale, "lb.costScope")}</p> : null}
-      </div>
     </div>
   );
 }

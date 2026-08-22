@@ -19,6 +19,7 @@ import {
   Sun,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
+import { toast } from "@/src/lib/toast";
 import { DEFAULT_VIBE, type Vibe } from "@/src/lib/vibe";
 import {
   SEG_ITEM,
@@ -40,6 +41,18 @@ const YEAR = 365 * 86400;
 
 function writeCookie(name: string, value: string) {
   document.cookie = `${name}=${value}; path=/; max-age=${YEAR}; samesite=lax`;
+}
+
+/* 主题切换过渡(20260821 评审):翻 data-theme 时短暂挂 data-theme-anim,
+   globals.css 给大面积颜色 200ms 过渡(令牌 fast 档),摘除后组件回归
+   各自的 120ms transition-colors。连点重置计时,不叠加窗口。 */
+let themeAnimTimer: ReturnType<typeof setTimeout> | undefined;
+
+function flashThemeAnim() {
+  const el = document.documentElement;
+  el.setAttribute("data-theme-anim", "");
+  clearTimeout(themeAnimTimer);
+  themeAnimTimer = setTimeout(() => el.removeAttribute("data-theme-anim"), 260);
 }
 
 /* 主题:纯客户端翻转(cookie-only 偏好,无需任何服务器往返)。 */
@@ -66,6 +79,7 @@ export function ThemeToggle({
           e.preventDefault();
           const el = document.documentElement;
           const next = el.dataset.theme === "light" ? "dark" : "light";
+          flashThemeAnim();
           el.dataset.theme = next;
           writeCookie("kb_theme", next);
         }}
@@ -227,6 +241,8 @@ export function VibeToggle({
           const next = el.dataset.vibe === "soft" ? "poster" : "soft";
           el.dataset.vibe = next;
           writeCookie("kb_vibe", next);
+          /* 变化是全站圆角/投影,渐进且弱感知——toast 一次确认(20260821 评审) */
+          toast(t(locale, "pref.vibeToast", { name: t(locale, next === "soft" ? "vibe.soft" : "vibe.poster") }));
         }}
         className={className}
       >

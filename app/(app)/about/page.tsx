@@ -78,6 +78,33 @@ export default async function AboutPage() {
         ))}
       </div>
 
+      {/* 页尾收束(20260821 评审):关于页是犹豫者最后看的一页——以行动
+          邀请结束,而不是以免责声明结束;human 衬线 + 门面标语语汇回声 */}
+      <section className="mt-8 flex flex-col items-center border-t border-line pt-6 text-center">
+        <p className="font-human text-lg leading-relaxed text-paper">
+          {t(locale, "about.ctaLine")}
+        </p>
+        <p className="mt-1.5 font-mono text-xs tracking-[0.08em] text-grey">
+          EXPLORE TOGETHER. BUILD TOGETHER.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 font-mono text-xs">
+          <Link
+            href="/community"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue px-5 font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "home.cta")} →
+          </Link>
+          <a
+            href="https://github.com/kimi-builders"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          >
+            {t(locale, "about.ctaGithub")} →
+          </a>
+        </div>
+      </section>
+
       <p className="mt-8 border-t border-line pt-4 text-xs leading-relaxed text-grey/80">
         {t(locale, "about.disclaimer")}
       </p>

@@ -22,7 +22,7 @@ import {
   groupByArchive,
   listExploreItems,
 } from "@/src/lib/explore";
-import { KB_CHAPTERS, isKbChapterId } from "@/src/lib/kb-chapters";
+import { KB_CHAPTERS, findKbChapter, isKbChapterId } from "@/src/lib/kb-chapters";
 import { findKbProduct, isKbProductId } from "@/src/lib/kb-products";
 import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
 import { isExploreFilterEnabled } from "@/src/lib/explore-filters";
@@ -252,12 +252,15 @@ export default async function ExplorePage({
               </>
             );
             if (count === 0) {
-              /* 置灰不隐藏:四章是永久框架,空章也是承诺 */
+              /* 置灰不隐藏:四章是永久框架,空章也是承诺——悬停给征稿方向
+                 (data-tip 250ms 快出,不用原生 title;20260821 评审) */
               return (
                 <span
                   key={c.id}
                   aria-disabled="true"
-                  title={zh ? c.tagline.zh : c.tagline.en}
+                  data-tip={t(locale, "explore.chapterCall", {
+                    tagline: zh ? c.tagline.zh : c.tagline.en,
+                  })}
                   className={`${SEG_ITEM} cursor-default text-grey/40`}
                 >
                   {label}
@@ -296,6 +299,26 @@ export default async function ExplorePage({
         {items.length > 0 && !mobile && <WorksViewToggle locale={locale} view={view} />}
       </div>
 
+      {/* ---- 章横幅(20260821 评审):选中章时给主轴一次仪式感——serif
+           章字(与封面章字砖同一字族)+ 定义句;不重组扁平列表 ---- */}
+      {selChapter &&
+        (() => {
+          const c = findKbChapter(selChapter)!;
+          return (
+            <section className="mt-6 flex items-center gap-4 border-b border-line pb-4">
+              <span
+                aria-hidden="true"
+                className="font-human text-5xl leading-none text-paper"
+              >
+                {zh ? c.zh : c.en}
+              </span>
+              <p className="min-w-0 text-sm leading-relaxed text-grey">
+                {zh ? c.tagline.zh : c.tagline.en}
+              </p>
+            </section>
+          );
+        })()}
+
       {/* ---- 内容区:一篇一卡,行式 / 封面墙 ---- */}
       <div className="mt-6">
         {items.length === 0 ? (
@@ -310,13 +333,13 @@ export default async function ExplorePage({
           />
         ) : !anyFilter ? (
           view === "grid" ? (
-            <div className="stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div key={view} className="stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((i) => (
                 <ArticleGridCard key={i.slug} item={i} locale={locale} />
               ))}
             </div>
           ) : (
-            <div className="stagger-in space-y-4">
+            <div key={view} className="stagger-in space-y-4">
               {items.map((i) => (
                 <ArticleRowCard key={i.slug} item={i} locale={locale} />
               ))}
@@ -345,27 +368,44 @@ export default async function ExplorePage({
               </div>
             </section>
           </>
-        ) : view === "grid" ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((i) => (
-              <ArticleGridCard key={i.slug} item={i} locale={locale} />
-            ))}
-          </div>
         ) : (
-          <div className="space-y-4">
-            {filtered.map((i) => (
-              <ArticleRowCard key={i.slug} item={i} locale={locale} />
-            ))}
-          </div>
+          <>
+            {/* 筛选生效感(20260821 评审):结果计数随筛选即时更新 */}
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.08em] text-grey/80">
+              {t(locale, "explore.resultCount", {
+                n: filtered.length,
+                total: items.length,
+              })}
+            </p>
+            {view === "grid" ? (
+              /* key={view}:行式⇄封面墙整列重挂,stagger-in 重放入场;
+                 筛选变化不换容器,不重放(同社区 feed 的决策) */
+              <div key={view} className="stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((i) => (
+                  <ArticleGridCard key={i.slug} item={i} locale={locale} />
+                ))}
+              </div>
+            ) : (
+              <div key={view} className="stagger-in space-y-4">
+                {filtered.map((i) => (
+                  <ArticleRowCard key={i.slug} item={i} locale={locale} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* 纪律一行(20260822 随「一篇一卡」形态重写) */}
-      <p className="mt-12 border-t border-line pt-6 text-[11px] leading-relaxed text-grey/80">
-        {zh
-          ? "每篇以「做完你拥有什么」收口——产物可带走、路径可复走 · 署名到人:AI 参与必须披露 · 编辑手选:上不上架由人拍板,不外包给算法。"
-          : "Every piece ends with what you walk away with — assets to take, paths to re-walk · signed by named humans, AI disclosed · hand-picked by editors, never delegated to an algorithm."}
-      </p>
+      {/* 编辑公约(20260821 评审升格):这是探索区的定位声明,细线框 +
+           人文字体把「价值观」从页脚小字升为可被看见的承诺 */}
+      <section className="mt-12 border-t border-line pt-6">
+        <p className="kb-eyebrow">{zh ? "编辑公约" : "EDITORIAL COVENANT"}</p>
+        <p className="font-human mt-3 max-w-2xl text-sm leading-relaxed text-grey">
+          {zh
+            ? "每篇以「做完你拥有什么」收口——产物可带走、路径可复走 · 署名到人:AI 参与必须披露 · 编辑手选:上不上架由人拍板,不外包给算法。"
+            : "Every piece ends with what you walk away with — assets to take, paths to re-walk · signed by named humans, AI disclosed · hand-picked by editors, never delegated to an algorithm."}
+        </p>
+      </section>
     </div>
   );
 }

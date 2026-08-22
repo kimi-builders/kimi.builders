@@ -208,14 +208,15 @@ export default async function Home({
           {t(locale, "home.cta")} →
         </Link>
         {/* 站点入口:主 CTA 下的边框按钮排,固定宽度(中英同宽,一眼可点);
-            术语型入口(Awesome/用量榜)带副文案,给首访用户一句预期(20260815) */}
+            按内容分区排列(20260821 评审):探索上线后与社区/作品/Awesome
+            并列,用量榜入口交还右栏与用量分区 */}
         <nav className="mt-6 flex flex-wrap items-stretch justify-center gap-2.5 font-mono text-xs">
           {(
             [
               ["/community", "nav.community", "home.subCommunity"],
+              ["/explore", "nav.explore", "home.subExplore"],
               ["/works", "nav.works", "home.subWorks"],
               ["/awesome", "nav.awesome", "home.subAwesome"],
-              ["/usage/leaderboard", "home.entryLeaderboard", "home.subLeaderboard"],
             ] as const
           ).map(([href, key, subKey]) => (
             <Link

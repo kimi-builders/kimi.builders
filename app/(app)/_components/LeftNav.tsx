@@ -16,6 +16,7 @@ import {
   Compass,
   GalleryVerticalEnd,
   Info,
+  Lock,
   MessagesSquare,
   Presentation,
   Settings,
@@ -78,14 +79,22 @@ export default function LeftNav({
   /* 详情页归属:来自 Awesome 的 /works/* 高亮 Awesome,否则高亮作品 */
   const fromAwesome = pathname.startsWith("/works") && src === "awesome";
 
-  /* 未登录时受限入口的目标(登录弹窗带回跳);工具入口(关于/GitHub)不受限 */
+  /* 未登录时受限入口的目标(登录弹窗带回跳);工具入口(关于/GitHub)不受限。
+     受限动作的文案带登录预告(20260821 评审):点击前就知道这步是登录,
+     减少一次无效跳转 */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
+  const gatedLabel = (label: string) =>
+    loggedIn
+      ? label
+      : locale === "zh"
+        ? `登录后${label}`
+        : `Log in to ${label.toLowerCase()}`;
   const createAction = pathname.startsWith("/awesome")
-    ? { href: "/works/new", label: t(locale, "awesome.recommend") }
+    ? { href: "/works/new", label: gatedLabel(t(locale, "awesome.recommend")) }
     : pathname.startsWith("/works")
-      ? { href: "/works/new", label: t(locale, "works.submit") }
-      : { href: "/community/new", label: t(locale, "nav.post") };
+      ? { href: "/works/new", label: gatedLabel(t(locale, "works.submit")) }
+      : { href: "/community/new", label: gatedLabel(t(locale, "nav.post")) };
 
   /* 激活态:详情页 /works/[id] 按来源列表判定归属(见上方 fromAwesome),
      其余路由按前缀;Awesome 在来自 Awesome 的作品详情里同样激活 */
@@ -121,6 +130,11 @@ export default function LeftNav({
       </Link>
 
       <nav className="mt-6 space-y-1">
+        {/* 分组标签(20260821 评审):项数超过扫读上限,mono 小字分组
+            (规格同底部「界面」);收起态随 nav-label 隐藏 */}
+        <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+          {t(locale, "nav.groupSections")}
+        </p>
         {/* SOON 降权(20260815 评审):未就绪板块移到可用板块之后,细线分组
             + 降不透明度——导航位次是重要性的信号,占位项不再占黄金位。
             收起态(rail)下分组细线仍在,SOON 徽标保留(item 级标注)。 */}
@@ -142,15 +156,20 @@ export default function LeftNav({
           );
         })}
         {profileHref && (
-          <Link prefetch={false}
-            href={profileHref}
-            data-tip={t(locale, "nav.profile")}
-            data-tip-side="right"
-            className={itemCls(pathname.startsWith("/u/"))}
-          >
-            <User size={15} className="shrink-0" />
-            <span className="nav-label">{t(locale, "nav.profile")}</span>
-          </Link>
+          <div className="mt-3 border-t border-line pt-3">
+            <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+              {t(locale, "nav.groupAccount")}
+            </p>
+            <Link prefetch={false}
+              href={profileHref}
+              data-tip={t(locale, "nav.profile")}
+              data-tip-side="right"
+              className={itemCls(pathname.startsWith("/u/"))}
+            >
+              <User size={15} className="shrink-0" />
+              <span className="nav-label">{t(locale, "nav.profile")}</span>
+            </Link>
+          </div>
         )}
         {SECTIONS.filter((s) => !s.hidden && s.soon).length > 0 && (
           <div className="mt-3 space-y-1 border-t border-line pt-3">
@@ -179,6 +198,9 @@ export default function LeftNav({
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
+        <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+          {t(locale, "nav.groupMore")}
+        </p>
         {moderator && (
           <Link prefetch={false}
             href="/admin"
@@ -192,12 +214,21 @@ export default function LeftNav({
         )}
         <Link prefetch={false}
           href={gate("/settings")}
-          data-tip={t(locale, "nav.settings")}
+          data-tip={
+            loggedIn
+              ? t(locale, "nav.settings")
+              : `${t(locale, "nav.settings")} · ${t(locale, "nav.lockHint")}`
+          }
           data-tip-side="right"
           className={itemCls(pathname.startsWith("/settings"))}
         >
           <Settings size={15} className="shrink-0" />
-          <span className="nav-label">{t(locale, "nav.settings")}</span>
+          <span className="nav-label flex items-center gap-1.5">
+            {t(locale, "nav.settings")}
+            {!loggedIn && (
+              <Lock size={11} className="shrink-0 text-grey/50" aria-label={t(locale, "nav.lockHint")} />
+            )}
+          </span>
         </Link>
         <a
           href="https://github.com/kimi-builders"
