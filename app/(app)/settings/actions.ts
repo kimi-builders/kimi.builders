@@ -21,6 +21,7 @@ import { PUBLIC_USERS_CACHE_TAG } from "@/src/lib/cache-tags";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { consumeUsageRateLimit } from "@/src/lib/usage/rate-limit";
+import { normalizeVibe } from "@/src/lib/vibe";
 import { updateAiPrefs, updateProfile, updateProfilePrivacy } from "@/src/lib/users";
 
 const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
@@ -32,10 +33,11 @@ export async function setThemeToAction(formData: FormData): Promise<void> {
   store.set("kb_theme", formData.get("theme") === "light" ? "light" : "dark", PREF_COOKIE);
 }
 
-/* 视觉气质显式选择(设置页气质卡的无 JS 兜底;默认 poster)。 */
+/* 视觉气质显式选择(设置页气质卡的无 JS 兜底;非法值/缺省回落站点默认,
+   见 src/lib/vibe.ts 的 DEFAULT_VIBE)。 */
 export async function setVibeToAction(formData: FormData): Promise<void> {
   const store = await cookies();
-  store.set("kb_vibe", formData.get("vibe") === "soft" ? "soft" : "poster", PREF_COOKIE);
+  store.set("kb_vibe", normalizeVibe(String(formData.get("vibe") ?? "")), PREF_COOKIE);
 }
 
 /* 动效偏好显式选择(设置页「减少动效」seg 的无 JS 兜底):

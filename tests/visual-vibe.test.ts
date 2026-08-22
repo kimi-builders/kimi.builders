@@ -34,9 +34,22 @@ test("root layout SSR-writes data-vibe from prefs (no-flash first paint)", () =>
   assert.match(layout, /data-vibe=\{prefs\.vibe\}/);
 });
 
-test("prefs: kb_vibe parses with poster as default", () => {
+test("prefs: kb_vibe parses via normalizeVibe (default configurable in vibe.ts)", () => {
+  /* 20260822:默认气质从字面量改为单一事实源 src/lib/vibe.ts 的 DEFAULT_VIBE;
+     prefs 只做 cookie 归一,「默认是哪档」不再散落在解析表达式里 */
   const prefs = read("src/lib/prefs.ts");
-  assert.match(prefs, /vibe: store\.get\("kb_vibe"\)\?\.value === "soft" \? "soft" : "poster"/);
+  assert.match(prefs, /vibe: normalizeVibe\(store\.get\("kb_vibe"\)\?\.value\)/);
+
+  const vibe = read("src/lib/vibe.ts");
+  assert.match(vibe, /export const DEFAULT_VIBE: Vibe = "(poster|soft)";/, "DEFAULT_VIBE is a legal vibe");
+  /* 兜底 action 同源:回落值走 normalizeVibe,不再各自写死 poster */
+  const settingsActions = read("app/(app)/settings/actions.ts");
+  assert.match(
+    settingsActions,
+    /set\("kb_vibe", normalizeVibe\(String\(formData\.get\("vibe"\) \?\? ""\)\)/,
+  );
+  const communityActions = read("app/(app)/community/actions.ts");
+  assert.match(communityActions, /normalizeVibe\(store\.get\("kb_vibe"\)\?\.value\)/);
 });
 
 test("vibe surfaces: toggle in topbar/drawer, cards in settings, no-JS fallbacks", () => {

@@ -46,6 +46,7 @@ import {
   updatePost,
   votePollForViewer,
 } from "@/src/lib/posts";
+import { normalizeVibe } from "@/src/lib/vibe";
 import {
   loadCommentPage,
   type CommentPageData,
@@ -511,11 +512,12 @@ export async function setThemeAction(): Promise<void> {
   store.set("kb_theme", cur === "light" ? "dark" : "light", PREF_COOKIE);
 }
 
-/* 视觉气质(20260815 拍板):工程棱角 poster(默认) ⇄ 圆润经典 soft;
-   仅翻 cookie——气质是纯 CSS 变量跟随(globals.css 的 data-vibe 块)。 */
+/* 视觉气质(20260815 拍板):工程棱角 poster ⇄ 圆润经典 soft(默认值可配置,
+   见 src/lib/vibe.ts 的 DEFAULT_VIBE);仅翻 cookie——气质是纯 CSS 变量跟随
+   (globals.css 的 data-vibe 块)。 */
 export async function setVibeAction(): Promise<void> {
   const store = await cookies();
-  const cur = store.get("kb_vibe")?.value === "soft" ? "soft" : "poster";
+  const cur = normalizeVibe(store.get("kb_vibe")?.value);
   store.set("kb_vibe", cur === "soft" ? "poster" : "soft", PREF_COOKIE);
 }
 

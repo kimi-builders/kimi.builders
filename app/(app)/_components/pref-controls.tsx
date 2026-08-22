@@ -19,6 +19,7 @@ import {
   Sun,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
+import { DEFAULT_VIBE, type Vibe } from "@/src/lib/vibe";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -244,15 +245,21 @@ export function VibeToggle({
 
 /* 气质卡片(设置页「偏好」):工程棱角/圆润经典两张卡,激活态走 globals.css
    的 html[data-vibe] 态类;预览小块用字面量圆角(rounded-[..] 任意值不经过
-   --radius-* 变量,海报模式下不会被归零,两种气质下预览都如实)。 */
+   --radius-* 变量,海报模式下不会被归零,两种气质下预览都如实)。
+   「默认」徽标跟着 DEFAULT_VIBE 走(20260822 起默认可配置,src/lib/vibe.ts)。 */
 export function VibeCards({ locale }: { locale: Locale }) {
-  const pick = (next: "poster" | "soft") => (event: React.MouseEvent<HTMLButtonElement>) => {
+  const pick = (next: Vibe) => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     document.documentElement.dataset.vibe = next;
     writeCookie("kb_vibe", next);
   };
   const card =
     "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+  const defaultBadge = (
+    <span className="rounded-[2px] border border-line px-1 text-xs text-grey">
+      {t(locale, "set.vibeDefault")}
+    </span>
+  );
   return (
     <div className="flex flex-wrap gap-3">
       <form action={setVibeToAction} className="contents">
@@ -263,9 +270,7 @@ export function VibeCards({ locale }: { locale: Locale }) {
           </span>
           <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "vibe.poster")}
-            <span className="rounded-[2px] border border-line px-1 text-xs text-grey">
-              {t(locale, "set.vibeDefault")}
-            </span>
+            {DEFAULT_VIBE === "poster" && defaultBadge}
           </span>
         </button>
         <button type="submit" name="vibe" value="soft" onClick={pick("soft")} className={`${card} vibe-card-soft`}>
@@ -275,6 +280,7 @@ export function VibeCards({ locale }: { locale: Locale }) {
           </span>
           <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
             {t(locale, "vibe.soft")}
+            {DEFAULT_VIBE === "soft" && defaultBadge}
           </span>
         </button>
       </form>
