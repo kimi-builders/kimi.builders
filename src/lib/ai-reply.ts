@@ -15,12 +15,17 @@
    帖主关了 AI 参与,其帖内召唤也不响应)。作品侧同理:works.ai_reply +
    作者 ai_replies_enabled;works.user_id NULL 的 awesome 站外条目
    无地盘主,跳过作者检查(仅作品开关)。
+   目标存活(20260822 P1-3):已删/被屏蔽的帖子、非公开作品不回
+   (认领 SQL 内联谓词,提纯函数见 aiReplyPostClaimSql / aiReplyWorkClaimSql);
+   评论写入 + 计数 + mark('done') 收进单事务——崩溃整体回滚、任务留在
+   pending 由重试兜底,不再产生重复评论;通知一律移到 commit 之后。
    失败恢复:after() 可能被杀,由 /api/cron/ai-reply-retry 周期调用
    recoverAiReplyJobs 兜底(指数退避、封顶 AI_REPLY_MAX_ATTEMPTS 次);
    单个任务也可手动 retryAiReplyJob(scripts/ai-reply-retry.ts)。
    after 用动态 import:保持本文件可被 Next 之外的普通 Node 脚本引用
    (如手动重跑任务),顶层静态 import "next/server" 在裸 Node 下解析不了。 */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { PoolConnection } from "mysql2/promise";
 import { getPool } from "./db";
 import { notifyOnComment } from "./posts";
 import { notifyOnWorkComment } from "./works";
@@ -169,9 +174,45 @@ async function getCommentChain(
   return { chain, aiCount: chain.filter((e) => e.isAi).length };
 }
 
+/* 认领查询(20260822 P1-3 提纯钉形态):post 存活谓词内联在 JOIN 里——
+   已删(deleted_at)/被屏蔽(hidden_at)的帖子不回;私密帖照回(作者地盘
+   自决,与入队侧口径一致)。post_alive 标记位区分「目标不可见」(JOIN 落空
+   p.* 全 NULL)与开关关闭,给得出准确的 skipped 理由。 */
+export function aiReplyPostClaimSql(): string {
+  return `SELECT j.post_id, j.comment_id, j.kind, j.work_id, j.work_comment_id,
+              p.title, p.body_md, p.category, p.ai_reply,
+              p.lang AS post_lang, u.ai_replies_enabled, u.locale, u.handle AS author_handle,
+              (p.id IS NOT NULL) AS post_alive
+       FROM ai_reply_jobs j
+       LEFT JOIN posts p ON p.id = j.post_id
+            AND p.deleted_at IS NULL AND p.hidden_at IS NULL
+       LEFT JOIN users u ON u.id = p.user_id
+       WHERE j.id = ? AND j.status = 'pending' LIMIT 1`;
+}
+
+/* 单事务写路径(20260822 P1-3):评论插入 + 冗余计数 + mark('done') 同一
+   commit,任一步崩溃整体回滚、任务留在 pending(重试兜底,不再产生重复评论);
+   通知只准在 commit 之后发(回滚了就不该有通知)。 */
+async function commitAiReplyWrite(
+  writes: (conn: PoolConnection) => Promise<unknown>,
+): Promise<void> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    await writes(conn);
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 export async function processAiReply(jobId: number): Promise<void> {
   const pool = getPool();
-  const mark = (status: "done" | "failed" | "skipped", error = "") =>
+  /* done 只经由事务内 UPDATE 落库,这里只剩 skipped/failed 两种出口 */
+  const mark = (status: "failed" | "skipped", error = "") =>
     pool.query(
       "UPDATE ai_reply_jobs SET status = ?, error = ?, processed_at = NOW() WHERE id = ?",
       [status, error.slice(0, 500), jobId],
@@ -184,16 +225,7 @@ export async function processAiReply(jobId: number): Promise<void> {
     }
     /* work 任务的 post_id 是 NULL(20260816 PR2):JOIN 放宽为 LEFT 并带上
        work 目标列;post 分支语义不变(FK 兜底,post 任务恒能联上)。 */
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT j.post_id, j.comment_id, j.kind, j.work_id, j.work_comment_id,
-              p.title, p.body_md, p.category, p.ai_reply,
-              p.lang AS post_lang, u.ai_replies_enabled, u.locale, u.handle AS author_handle
-       FROM ai_reply_jobs j
-       LEFT JOIN posts p ON p.id = j.post_id
-       LEFT JOIN users u ON u.id = p.user_id
-       WHERE j.id = ? AND j.status = 'pending' LIMIT 1`,
-      [jobId],
-    );
+    const [rows] = await pool.query<RowDataPacket[]>(aiReplyPostClaimSql(), [jobId]);
     const job = rows[0];
     if (!job) return;
     if (job.work_id !== null && job.work_id !== undefined) {
@@ -203,6 +235,11 @@ export async function processAiReply(jobId: number): Promise<void> {
         Number(job.work_id),
         Number(job.work_comment_id),
       );
+      return;
+    }
+    /* 目标不可见(20260822 P1-3):帖子在排队后被删/被屏蔽,JOIN 落空 */
+    if (!job.post_alive) {
+      await mark("skipped", "post gone or hidden");
       return;
     }
     if (!job.ai_reply || !job.ai_replies_enabled) {
@@ -248,21 +285,28 @@ export async function processAiReply(jobId: number): Promise<void> {
           convo,
         },
       );
-      const [ins] = await pool.query<ResultSetHeader>(
-        "INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md) VALUES (?, ?, NULL, 1, ?)",
-        [job.post_id, triggerCommentId, reply.slice(0, 5000)],
-      );
-      await pool.query(
-        "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
-        [job.post_id],
-      );
+      let replyCommentId = 0;
+      await commitAiReplyWrite(async (conn) => {
+        const [ins] = await conn.query<ResultSetHeader>(
+          "INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md) VALUES (?, ?, NULL, 1, ?)",
+          [job.post_id, triggerCommentId, reply.slice(0, 5000)],
+        );
+        replyCommentId = Number(ins.insertId);
+        await conn.query(
+          "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
+          [job.post_id],
+        );
+        await conn.query(
+          "UPDATE ai_reply_jobs SET status = 'done', error = '', processed_at = NOW() WHERE id = ?",
+          [jobId],
+        );
+      });
       await notifyOnComment({
         postId: Number(job.post_id),
-        commentId: Number(ins.insertId),
+        commentId: replyCommentId,
         actorId: null,
         parentId: triggerCommentId,
       });
-      await mark("done");
       return;
     }
 
@@ -283,24 +327,40 @@ export async function processAiReply(jobId: number): Promise<void> {
             : undefined,
       },
     );
-    const [ins] = await pool.query<ResultSetHeader>(
-      "INSERT INTO comments (post_id, user_id, is_ai, body_md) VALUES (?, NULL, 1, ?)",
-      [job.post_id, reply.slice(0, 5000)],
-    );
-    await pool.query(
-      "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
-      [job.post_id],
-    );
+    let replyCommentId = 0;
+    await commitAiReplyWrite(async (conn) => {
+      const [ins] = await conn.query<ResultSetHeader>(
+        "INSERT INTO comments (post_id, user_id, is_ai, body_md) VALUES (?, NULL, 1, ?)",
+        [job.post_id, reply.slice(0, 5000)],
+      );
+      replyCommentId = Number(ins.insertId);
+      await conn.query(
+        "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
+        [job.post_id],
+      );
+      await conn.query(
+        "UPDATE ai_reply_jobs SET status = 'done', error = '', processed_at = NOW() WHERE id = ?",
+        [jobId],
+      );
+    });
     await notifyOnComment({
       postId: Number(job.post_id),
-      commentId: Number(ins.insertId),
+      commentId: replyCommentId,
       actorId: null,
       parentId: null,
     });
-    await mark("done");
   } catch (e) {
     await mark("failed", e instanceof Error ? e.message : String(e));
   }
+}
+
+/* work 侧认领查询(20260822 P1-3):存活谓词与 works.ts 公共口径一致
+   (hidden_at IS NULL + visibility='public'),不可见与不存在同按跳过处理 */
+export function aiReplyWorkClaimSql(): string {
+  return `SELECT w.user_id, w.name, w.tagline, w.kind, w.agents, w.description_md,
+              w.ai_reply, u.ai_replies_enabled
+       FROM works w LEFT JOIN users u ON u.id = w.user_id
+       WHERE w.id = ? AND w.hidden_at IS NULL AND w.visibility = 'public' LIMIT 1`;
 }
 
 /* 作品/Awesome 评论区召唤执行(20260816 PR2):gating(作品 ai_reply +
@@ -314,22 +374,17 @@ async function processAiWorkMention(
   workCommentId: number,
 ): Promise<void> {
   const pool = getPool();
-  const mark = (status: "done" | "failed" | "skipped", error = "") =>
+  /* done 只经由事务内 UPDATE 落库,这里只剩 skipped/failed 两种出口 */
+  const mark = (status: "failed" | "skipped", error = "") =>
     pool.query(
       "UPDATE ai_reply_jobs SET status = ?, error = ?, processed_at = NOW() WHERE id = ?",
       [status, error.slice(0, 500), jobId],
     );
   try {
-    const [wrows] = await pool.query<RowDataPacket[]>(
-      `SELECT w.user_id, w.name, w.tagline, w.kind, w.agents, w.description_md,
-              w.ai_reply, u.ai_replies_enabled
-       FROM works w LEFT JOIN users u ON u.id = w.user_id
-       WHERE w.id = ? LIMIT 1`,
-      [workId],
-    );
+    const [wrows] = await pool.query<RowDataPacket[]>(aiReplyWorkClaimSql(), [workId]);
     const work = wrows[0];
     if (!work) {
-      await mark("skipped", "work gone");
+      await mark("skipped", "work gone or not public");
       return;
     }
     if (
@@ -400,21 +455,28 @@ async function processAiWorkMention(
       },
       "作品",
     );
-    const [ins] = await pool.query<ResultSetHeader>(
-      "INSERT INTO work_comments (work_id, user_id, is_ai, body) VALUES (?, NULL, 1, ?)",
-      [workId, reply.slice(0, 5000)],
-    );
-    await pool.query(
-      "UPDATE works SET comment_count = comment_count + 1 WHERE id = ?",
-      [workId],
-    );
+    let workReplyId = 0;
+    await commitAiReplyWrite(async (conn) => {
+      const [ins] = await conn.query<ResultSetHeader>(
+        "INSERT INTO work_comments (work_id, user_id, is_ai, body) VALUES (?, NULL, 1, ?)",
+        [workId, reply.slice(0, 5000)],
+      );
+      workReplyId = Number(ins.insertId);
+      await conn.query(
+        "UPDATE works SET comment_count = comment_count + 1 WHERE id = ?",
+        [workId],
+      );
+      await conn.query(
+        "UPDATE ai_reply_jobs SET status = 'done', error = '', processed_at = NOW() WHERE id = ?",
+        [jobId],
+      );
+    });
     await notifyOnWorkComment({
       workId,
-      workCommentId: Number(ins.insertId),
+      workCommentId: workReplyId,
       actorId: null,
       triggerCommentId: workCommentId,
     });
-    await mark("done");
   } catch (e) {
     await mark("failed", e instanceof Error ? e.message : String(e));
   }

@@ -198,6 +198,57 @@ test("unread 路由:登录门禁 + 未读计数来源", () => {
   assertOrder(src, "getSessionUser()", "getUnreadNotificationCount(", "会话先于计数");
 });
 
+/* ---- 20260822 P1-3:目标存活谓词 + 写路径单事务 ---- */
+
+test("认领查询带存活谓词(纯函数钉形态):posts deleted/hidden;works hidden+public", async () => {
+  const { aiReplyPostClaimSql, aiReplyWorkClaimSql } = await import("../src/lib/ai-reply");
+  const post = aiReplyPostClaimSql();
+  assert.match(
+    post,
+    /LEFT JOIN posts p ON p\.id = j\.post_id\s+AND p\.deleted_at IS NULL AND p\.hidden_at IS NULL/,
+  );
+  /* post_alive 标记位:区分「目标不可见」与「开关关闭」 */
+  assert.match(post, /AS post_alive/);
+  const work = aiReplyWorkClaimSql();
+  assert.match(
+    work,
+    /WHERE w\.id = \? AND w\.hidden_at IS NULL AND w\.visibility = 'public' LIMIT 1/,
+  );
+});
+
+test("不可见目标跳过:post/work 分支各自给出准确的 skipped 理由", () => {
+  const fn = aiReply.slice(aiReply.indexOf("export async function processAiReply"));
+  assertOrder(
+    fn,
+    "!job.post_alive",
+    'mark("skipped", "post gone or hidden")',
+    "post 存活检查先于跳过",
+  );
+  assert.match(aiReply, /mark\("skipped", "work gone or not public"\)/);
+});
+
+test("写路径单事务:插入+计数+done 同 commit,通知移到 commit 后", () => {
+  const helper = aiReply.slice(aiReply.indexOf("async function commitAiReplyWrite"));
+  assert.match(helper, /beginTransaction/);
+  assert.match(helper, /rollback/);
+  assert.match(helper, /conn\.release\(\)/);
+  /* done 状态只经由事务内 UPDATE 落库(三处写路径),裸 mark("done") 不复存在 */
+  assert.equal(aiReply.match(/SET status = 'done'/g)?.length ?? 0, 3);
+  assert.doesNotMatch(aiReply, /mark\("done"\)/);
+  const branches: [string, string][] = [
+    ["INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md)", "notifyOnComment({"],
+    ["INSERT INTO comments (post_id, user_id, is_ai, body_md)", "notifyOnComment({"],
+    ["INSERT INTO work_comments (work_id, user_id, is_ai, body)", "notifyOnWorkComment({"],
+  ];
+  for (const [anchor, notify] of branches) {
+    const branch = aiReply.slice(aiReply.indexOf(anchor));
+    assert.ok(branch.length > 0, anchor);
+    /* done 落库与插入同处一个事务回调,且先于事务外的通知 */
+    assertOrder(branch, "SET status = 'done'", notify, "done 与插入同事务,先于通知");
+    assertOrder(branch, "});", notify, "事务回调先于通知");
+  }
+});
+
 test("等待反馈接线:两个评论表单都轮询且都渲染占位行", () => {
   for (const p of [
     "../app/(app)/community/_components/CommentSection.tsx",
