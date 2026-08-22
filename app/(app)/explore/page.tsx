@@ -212,18 +212,9 @@ export default async function ExplorePage({
   return (
     <div>
       <PageHeader
-        eyebrow={`— ${zh ? "探索" : "EXPLORE"}`}
-        title={
-          <>
-            {zh ? "探索将智能转化为创造力的最优解" : "Seeking the optimal conversion from intelligence to creativity"}
-            <span className="text-ui-blue">.</span>
-          </>
-        }
-        lede={
-          zh
-            ? "学,把智能变成认知;做,把认知变成东西;得,把东西变成价值;立,把价值变成位置与自我。"
-            : "Learn turns intelligence into judgment; Build turns judgment into things; Gain turns things into value; Become turns value into who you are."
-        }
+        eyebrow={t(locale, "explore.eyebrow")}
+        title={t(locale, "nav.explore")}
+        lede={t(locale, "explore.lede")}
         actions={user && canModerate(user.role) ? composeLink : undefined}
       />
 
@@ -395,17 +386,6 @@ export default async function ExplorePage({
           </>
         )}
       </div>
-
-      {/* 编辑公约(20260821 评审升格):这是探索区的定位声明,细线框 +
-           人文字体把「价值观」从页脚小字升为可被看见的承诺 */}
-      <section className="mt-12 border-t border-line pt-6">
-        <p className="kb-eyebrow">{zh ? "编辑公约" : "EDITORIAL COVENANT"}</p>
-        <p className="font-human mt-3 max-w-2xl text-sm leading-relaxed text-grey">
-          {zh
-            ? "每篇以「做完你拥有什么」收口——产物可带走、路径可复走 · 署名到人:AI 参与必须披露 · 编辑手选:上不上架由人拍板,不外包给算法。"
-            : "Every piece ends with what you walk away with — assets to take, paths to re-walk · signed by named humans, AI disclosed · hand-picked by editors, never delegated to an algorithm."}
-        </p>
-      </section>
     </div>
   );
 }

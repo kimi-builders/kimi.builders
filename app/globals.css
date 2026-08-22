@@ -925,18 +925,6 @@ main h1 {
   color: var(--color-grey);
 }
 
-/* 海报→App 的品牌语汇回声(20260821 评审):首页暖纸海报的人文字体
-   (--font-human,引语/宣言)在进入 App 的第一站(社区页头)回响一次,
-   衔接海报编辑气质与 App 工程气质。规范与 .kb-eyebrow 同参(12px/+0.08em),
-   仅字族换 human serif;EN 不强制大写——serif 小字号全大写字距开会糊,
-   保持句首大写更利读。 */
-.kb-eyebrow-human {
-  font-family: var(--font-human);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--color-grey);
-}
-
 .kb-h1 {
   font-size: clamp(2.25rem, 1.75rem + 1.6vw, 2.75rem);
   line-height: 1.18;

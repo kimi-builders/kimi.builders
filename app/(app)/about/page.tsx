@@ -27,6 +27,8 @@ export default async function AboutPage() {
 
   return (
     <div className="rounded-2xl border border-line bg-card p-5 sm:p-8">
+      {/* eyebrow 补齐(20260821 文案一致性):与其他分区同源的「— 定位语」 */}
+      <p className="kb-eyebrow mb-2">{t(locale, "about.eyebrow")}</p>
       <h1 className="text-2xl font-semibold text-paper">
         {t(locale, "about.title")}
       </h1>

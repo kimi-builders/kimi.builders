@@ -10,6 +10,7 @@ import { SquarePen } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import EmptyState from "@/components/EmptyState";
 import LoadMore from "@/components/LoadMore";
+import PageHeader from "@/components/PageHeader";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -81,18 +82,18 @@ export default async function CommunityPage({
 
   return (
     <div>
-      {/* 海报→App 的品牌语汇回声(20260821 评审):首页暖纸海报的人文字体
-          在进入 App 的第一站回响一次,衔接两种气质(kb-eyebrow-human) */}
-      <p className="kb-eyebrow-human mb-2">
-        {locale === "zh" ? "社区 — 讨论与分享" : "Community — discuss & share"}
-      </p>
-      <h1 className="mb-4 text-2xl font-semibold text-paper">
-        {t(locale, "nav.community")}
-      </h1>
+      {/* 页头迁移共享 PageHeader(20260821 文案一致性):与其他分区同一语法
+          (— 定位语 eyebrow + kb-h1 + kb-lede);原手写 human eyebrow 复读了
+          标题词,serif 的品牌回声已由探索区(章横幅/编辑公约)接棒 */}
+      <PageHeader
+        eyebrow={t(locale, "community.eyebrow")}
+        title={t(locale, "nav.community")}
+        lede={t(locale, "community.lede")}
+      />
       {user && (
         <Link
           href="/community/new"
-          className="mb-4 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3.5 transition-colors hover:border-paper/25"
+          className="mb-4 mt-6 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3.5 transition-colors hover:border-paper/25"
         >
           <Avatar url={user.avatarUrl} handle={user.handle} size={32} />
           <span className="min-w-0 flex-1 truncate text-sm text-grey">
@@ -105,7 +106,7 @@ export default async function CommunityPage({
         </Link>
       )}
 
-      <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
+      <div className="mt-4 grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
         <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
           {sortItems.map((item) => (
             <Link

@@ -110,8 +110,23 @@ const DICT = {
     zh: "发布第一帖",
     en: "Start the first thread",
   },
+  /* 社区页头(20260821 文案一致性):迁移共享 PageHeader,eyebrow 只说
+     定位(原「社区 — 讨论与分享」复读标题词),导语三个动词收住板块气质 */
+  "community.eyebrow": { zh: "— 讨论与分享", en: "— Discuss & share" },
+  "community.lede": {
+    zh: "问问题、晒进度、聊踩坑。",
+    en: "Ask, share progress, swap lessons.",
+  },
   /* ---- 探索(货架 + 透镜,20260821) ---- */
   "explore.lensProducts": { zh: "产品", en: "PRODUCTS" },
+  /* 分区页头统一语法(20260821 文案一致性评审):eyebrow = 「— 定位语」,
+     不复读标题词(标题就在正下方);句式与详情页「— 月刊评鉴 · ISSUE 07」
+     同源。探索标题保持短词(使命句由右栏顶部承担,页头不复述) */
+  "explore.eyebrow": { zh: "— 月刊 × 教程", en: "— Monthly × guides" },
+  "explore.lede": {
+    zh: "学,把智能变成认知;做,把认知变成东西;得,把东西变成价值;立,把价值变成位置与自我。",
+    en: "Learn turns intelligence into judgment; Build turns judgment into things; Gain turns things into value; Become turns value into who you are.",
+  },
   "explore.compose": { zh: "+ 发内容", en: "+ Publish" },
   "explore.lensRoles": { zh: "职业", en: "ROLES" },
   "explore.format": { zh: "形态", en: "FORMAT" },
@@ -875,10 +890,10 @@ const DICT = {
   "works.kind": { zh: "作品类型", en: "Type" },
   "works.desc": { zh: "详细说说(支持 Markdown)", en: "Tell the story (Markdown)" },
   "works.wallTitle": { zh: "作品墙", en: "Works" },
-  /* 页头 eyebrow(20260819 版式对齐):works/awesome 接入共享 PageHeader,
-     与 learn/blog 同一 eyebrow 语法(.kb-eyebrow 全大写技术标签) */
-  "works.eyebrow": { zh: "— 作品墙 · 社区构建", en: "— WORKS · MEMBER BUILDS" },
-  "awesome.eyebrow": { zh: "— AWESOME · 生态精选", en: "— AWESOME · ECOSYSTEM PICKS" },
+  /* 页头 eyebrow(20260819 版式对齐;20260821 文案一致性:去标题词复读,
+     eyebrow 只说定位——「— 定位语」语法与详情页/其他分区页同源) */
+  "works.eyebrow": { zh: "— 社区构建", en: "— Member builds" },
+  "awesome.eyebrow": { zh: "— 生态精选", en: "— Ecosystem picks" },
   "works.wallIntro": {
     zh: "社区成员用 Kimi 构建的真实作品;「声明投入」徽章由作者自行申报,并按可验证用量封顶。",
     en: "Real works built by members with Kimi · the build-investment badge is a declared token figure capped by verifiable usage",
@@ -996,6 +1011,9 @@ const DICT = {
   "home.subAwesome": { zh: "生态项目精选", en: "Curated picks" },
   /* ---- 关于页(/about)---- */
   "about.title": { zh: "关于", en: "About" },
+  /* 关于页头(20260821 文案一致性):补上与其他分区同源的「— 定位语」eyebrow;
+     「社区自建 · 非官方」是这页最要紧的事实 */
+  "about.eyebrow": { zh: "— 社区自建 · 非官方", en: "— Member-built · unofficial" },
   "about.who": {
     zh: "kimi.builders 是 Kimi 用户自建的非商业 builder 社区(非官方)。这里聚着用 Kimi 构建、创造、生成实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着构建者声明的 token 投入。",
     en: "kimi.builders is a non-commercial, user-built community of builders using Kimi (unofficial). It gathers people who build, create and generate real things with Kimi — agent writers, workflow automators, prompt crafters — and the works they ship, each carrying the builder's declared token investment.",
