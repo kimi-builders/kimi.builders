@@ -489,7 +489,8 @@ html[data-sidebar="0"] .only-sidebar-full {
 html:not([data-sidebar="0"]) .only-sidebar-hidden {
   display: none !important;
 }
-/* 左栏「界面」双键:两个 form 等宽;左栏收起时纵排成图标键 */
+/* 左栏「界面」双键:纵排整行(20260822——并排半宽时 EN "Hide sidebar"
+   被截成 side…);左栏收起时 nav-label 隐藏,自然收敛成纵排图标键 */
 .panel-pair > form {
   flex: 1 1 0;
   min-width: 0;
@@ -500,15 +501,14 @@ html:not([data-sidebar="0"]) .only-sidebar-hidden {
 .panel-pair > form > button {
   width: 100%;
   min-width: 0;
-  padding-inline: 0.5rem;
+  /* 0.75rem 与导航项/「界面」标签的 px-3 左缘对齐(此规则未分层,
+     优先于 Tailwind utilities 层,组件里的 padding 类不生效) */
+  padding-inline: 0.75rem;
 }
 .panel-pair .nav-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-html[data-nav="1"] .panel-pair {
-  flex-direction: column;
 }
 
 /* 设置页偏好控件(语言 seg / 主题卡)的激活态:跟随 <html> 直出属性,SSR 即正确。

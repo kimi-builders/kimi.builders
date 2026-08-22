@@ -113,9 +113,12 @@ export default function LeftNav({
         : "border-transparent text-grey hover:bg-card hover:text-paper"
     }`;
 
-  /* 「界面」双键共用的紧凑盒样式;form 等宽由 globals.css 的 .panel-pair 规则给。 */
+  /* 「界面」双键共用的紧凑盒样式;form 等宽由 globals.css 的 .panel-pair 规则给。
+     纵排整行(20260822):并排半宽时 EN "Hide sidebar" 被截成 side…;
+     整行任何语言都放得下,与收起态(纵排图标键)同方向。左对齐 px-3
+     与导航项/「界面」标签的左缘对齐。 */
   const pairBtnCls =
-    "flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
+    "flex min-h-10 w-full items-center justify-start gap-1.5 whitespace-nowrap rounded-lg border border-line px-3 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
 
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
@@ -243,13 +246,13 @@ export default function LeftNav({
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>
-        {/* 「界面」双键:左=收起导航(PanelLeft*),右=隐藏侧栏(PanelRight*);
-            左栏收起时纵排成图标键(globals.css 的 .panel-pair 规则) */}
+        {/* 「界面」双键:上=收起导航(PanelLeft*),下=隐藏侧栏(PanelRight*);
+            纵排整行,收起态收敛成图标键(globals.css 的 .panel-pair 规则) */}
         <div className="pt-3">
           <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
             {t(locale, "side.display")}
           </p>
-          <div className="panel-pair flex gap-1.5">
+          <div className="panel-pair flex flex-col gap-1.5">
             <NavToggle locale={locale} className={pairBtnCls} />
             <SidebarToggle locale={locale} className={pairBtnCls} />
           </div>
