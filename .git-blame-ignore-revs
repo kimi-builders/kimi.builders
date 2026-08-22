@@ -1,0 +1,19 @@
+# git-blame ignores the commits listed below (one 40-char hash per
+# line, comments allowed). Enable once per clone:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# The bulk comment-translation commits (Chinese -> English); ignoring
+# them keeps `git blame` pointing at the last real code change.
+
+09ebf7905ac85a9b8cf6da464c63e8ff1b2f582f
+fadc9184fc0ed5bba6fbc2d992c18a8fa09a1c18
+842663476628d2b617bc48d85456dc1f4f96c197
+25d6047b7dd5f089ca8ca3b254d63185b79f5fab
+1605d339fdc9b96aedf75ae0dd8e5cc8f24b800b
+4bde9b066223792649989a80ee00b80306e3674d
+850a97c9deb87b1e02ab1b8ef6ce054c484714d3
+530656a58f928cf45ffbfe843a0c4303887134f3
+236cc058586dfb19273a857872b61c857debbbcc
+b676e213d60481840d5ab2bdfffaae3a6e3586eb
+a6c8db68eb72fb5d8a969e7d43da11d2ef051dd7
+2cc3c97b662bc3ae417dd529c355afd8f0b67562
+45b2ee591374ab0bdfb32ff9858a8635ce7fafe7
