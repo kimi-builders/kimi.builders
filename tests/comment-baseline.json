@@ -1,6 +1,5 @@
 {
   "areas": {
-    "src/lib": 94,
     "app/(app)": 1345,
     "app/@modal": 29,
     "app/api": 222,
@@ -44,6 +43,7 @@
     "src/lib/format.ts",
     "src/lib/home.ts",
     "src/lib/i18n-server.ts",
+    "src/lib/i18n.ts",
     "src/lib/kb-chapters.ts",
     "src/lib/kb-products.ts",
     "src/lib/kb-roles.ts",
