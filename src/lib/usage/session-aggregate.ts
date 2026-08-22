@@ -80,7 +80,7 @@ export function createEmptyUsageHeatmap(): UsageHeatmap {
   };
 }
 
-/* 跨日会话只按 [from,to) 内的 UTC 小时事实累计；v2/legacy 保留受控回退。 */
+/* Cross-day sessions accumulate only the UTC hour facts inside [from, to); v2/legacy keep a controlled fallback. */
 export function aggregateUsageSessionRows(
   rows: RowDataPacket[],
   filters: UsageFilters,

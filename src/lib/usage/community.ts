@@ -1,7 +1,9 @@
-/* 社区级聚合:全站 token 累计(首页数据条)+ 近 N 天窗口聚合(月刊 L1 事实盘点)。
-   跨用户只做 SUM/GROUP BY,不暴露任何个人维度;口径与看板总量一致
-   (input + cache write + cache read + output + reasoning,见 query.ts TOKEN_TOTAL_SQL)。
-   窗口聚合只做归集,命中率/模型分布的成型是纯函数(src/lib/monthly.ts)。 */
+/* Community-level aggregates: site-wide token totals (home stats bar) plus an
+   N-day window (monthly letter L1 facts). Cross-user queries only SUM/GROUP
+   BY — no per-person dimension is exposed. Totals match the dashboard
+   definition (input + cache write + cache read + output + reasoning, see
+   TOKEN_TOTAL_SQL in query.ts); the window only collects rows, shaping
+   (hit rate, model mix) happens in pure functions (monthly.ts). */
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "../db";
 
@@ -14,8 +16,9 @@ export async function getCommunityTokenTotal(): Promise<number> {
   return Number(rows[0]?.total ?? 0);
 }
 
-/* 近 N 天窗口(月刊 L1 的命中率/模型分布窗口):总量五项 + 按模型分组的原行。
-   模型分布的 canonical 合并/命名在 monthly.ts(topUsageModels),与看板同口径。 */
+/* N-day window (letter L1 hit rate / model mix): five totals plus per-model
+   raw rows. Canonical model merging and naming live in monthly.ts
+   (topUsageModels), same definition as the dashboard. */
 export interface CommunityUsageWindow {
   days: number;
   inputTokens: number;
@@ -50,7 +53,7 @@ export async function getCommunityUsageWindow(
          WHERE bucket_start > NOW() - INTERVAL ${n} DAY`,
       )
       .then(([rows]) => rows),
-    /* 模型分组取前 50 组(canonical 合并前);窗口内长尾合并在 JS 侧完成 */
+    /* Top 50 model groups before canonical merging; long-tail merging happens in JS. */
     pool
       .query<RowDataPacket[]>(
         `SELECT source, model, model_canonical, model_provider,

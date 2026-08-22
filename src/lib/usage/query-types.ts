@@ -23,7 +23,7 @@ export interface UsageTrendDay extends UsageTokenBreakdown {
 }
 
 export interface UsageHeatmap {
-  /* 7（周一到周日）× 24（本地小时）。 */
+  /* 7 (Mon-Sun) x 24 local hours. */
   tokens: number[][];
   inputTokens: number[][];
   cacheWriteInputTokens: number[][];
@@ -33,7 +33,7 @@ export interface UsageHeatmap {
   costMicros: number[][];
   activeSeconds: number[][];
   prompts: number[][];
-  /* 该格是否有任何采集事实落入:false = 采集缺口(区别于「有采集但零用量」)。 */
+  /* Whether any collected fact falls in the cell: false means a collection gap, distinct from "collected but zero usage". */
   hasData: boolean[][];
 }
 
@@ -86,14 +86,14 @@ export interface UsageAttributionContributor {
   key: string;
   label: string;
   tokens: number;
-  /* 在该维度已归因 Token 中的占比。 */
+  /* Share of attributed tokens within this dimension. */
   share: number;
 }
 
 export interface UsageAttributionDimension {
   rows: UsageAttributionContributor[];
   attributedTokens: number;
-  /* 该维度已归因 Token ÷ 当前切片全部 Token。 */
+  /* Attributed tokens in this dimension / all tokens in the current slice. */
   coverage: number;
 }
 
@@ -103,7 +103,7 @@ export interface UsageAttributionPair {
   secondaryKey: string;
   secondaryLabel: string;
   tokens: number;
-  /* 在该组合维度已归因 Token 中的占比。 */
+  /* Share within this combined dimension. */
   share: number;
 }
 
@@ -127,7 +127,7 @@ export interface UsageAttributionSlice {
 }
 
 export interface UsageAttributionPeak extends UsageAttributionSlice {
-  /* 与趋势粒度一致的峰值键（日、小时或自然周）；无用量时为 null。 */
+  /* Peak key aligned with the trend grain (day, hour, or natural week); null when idle. */
   key: string | null;
 }
 
@@ -138,7 +138,7 @@ export interface UsageAttribution {
 
 export interface UsageRecordRow extends UsageTokenBreakdown {
   day: string;
-  /* grain=bucket 时为桶起点（UTC ISO），day 粒度为 null。 */
+  /* Bucket start (UTC ISO) when grain=bucket; null at day grain. */
   time: string | null;
   source: string;
   model: string;
@@ -189,7 +189,7 @@ export interface UsageOverview {
     trend: UsageTrendDay[];
   };
   heatmap: UsageHeatmap;
-  /* 热图「单周」模式的周网格;未开启时为 null。 */
+  /* Week grid for the heatmap's single-week mode; null when disabled. */
   weekHeatmap: UsageHeatmap | null;
   distributions: {
     source: UsageDistribution;
@@ -222,7 +222,7 @@ export interface UsageOverview {
   };
   activeDevices: number;
   lastSyncAt: Date | null;
-  /* 最早一条 bucket 事实的时间;热图周翻页的下界。 */
+  /* Time of the earliest bucket fact; lower bound for heatmap week paging. */
   firstDataAt: Date | null;
   meta: {
     pricingVersions: string[];

@@ -1,13 +1,14 @@
-/* 热图「单周」模式的周计算:以用户自报时区(tzOffsetMinutes)为准的自然周
-   (周一 00:00 → 下周一 00:00),ISO-8601 周数。计算在「本地平移毫秒」空间
-   完成(localMs = utcMs + tz),不依赖服务器时区。 */
+/* Week math for the heatmap's single-week mode: natural weeks (Mon 00:00 to
+   next Mon 00:00) in the user's self-reported timezone (tzOffsetMinutes),
+   ISO-8601 week numbers. All math happens in locally shifted milliseconds
+   (localMs = utcMs + tz), independent of the server timezone. */
 
 export interface WeekWindow {
   fromUtcMs: number;
   toUtcMs: number;
 }
 
-/* 所在周周一 00:00 的本地平移毫秒。 */
+/* Monday 00:00 of the containing week, in locally shifted milliseconds. */
 function mondayLocalMs(instantMs: number, tzMs: number): number {
   const localMs = instantMs + tzMs;
   const dayStartMs = Math.floor(localMs / 86_400_000) * 86_400_000;
@@ -15,7 +16,7 @@ function mondayLocalMs(instantMs: number, tzMs: number): number {
   return dayStartMs - weekday * 86_400_000;
 }
 
-/* 某时刻所在自然周的 UTC 边界 [from, to)。 */
+/* UTC boundaries [from, to) of the natural week containing the instant. */
 export function weekWindowFor(instantMs: number, tzOffsetMinutes: number): WeekWindow {
   const tzMs = tzOffsetMinutes * 60_000;
   const mondayLocal = mondayLocalMs(instantMs, tzMs);
@@ -27,7 +28,7 @@ export function isoWeekNumberTz(weekFromUtcMs: number, tzOffsetMinutes: number):
   const mondayLocal = weekFromUtcMs + tzMs;
   const thursdayLocal = mondayLocal + 3 * 86_400_000;
   const isoYear = new Date(thursdayLocal).getUTCFullYear();
-  // 1 月 4 日必在 ISO 第 1 周;round 吸收任何 DST 小时差。
+  // Jan 4 always falls in ISO week 1; rounding absorbs any DST hour drift.
   const week1MondayLocal = mondayLocalMs(Date.UTC(isoYear, 0, 4), 0);
   return Math.round((mondayLocal - week1MondayLocal) / (7 * 86_400_000)) + 1;
 }
@@ -47,12 +48,12 @@ export function weekLabel(weekFromUtcMs: number, tzOffsetMinutes: number, zh: bo
   return `Week ${week} · ${EN_MONTHS[month - 1]} ${day}–${endMonth === month ? "" : `${EN_MONTHS[endMonth - 1]} `}${endDay}`;
 }
 
-/* heatweek 查询参数值:用户时区里周一的本地日期(YYYY-MM-DD)。 */
+/* heatweek query-param value: the Monday date (YYYY-MM-DD) in the user's timezone. */
 export function weekKeyFor(weekFromUtcMs: number, tzOffsetMinutes: number): string {
   return new Date(weekFromUtcMs + tzOffsetMinutes * 60_000).toISOString().slice(0, 10);
 }
 
-/* 解析 heatweek 参数;任意合法日期吸附到所在周周一,非法返回 null。 */
+/* Parse the heatweek param; any valid date snaps to its week's Monday, invalid input returns null. */
 export function parseWeekKey(value: unknown, tzOffsetMinutes: number): WeekWindow | null {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const [year, month, day] = value.split("-").map(Number);

@@ -8,7 +8,7 @@ export interface UsageSettings {
   uploadProject: boolean;
   uploadDeviceLabel: boolean;
   uploadQuotaSnapshots: boolean;
-  /* P1-1:自愿公开聚合用量(社区榜/热力图/作品徽章共用);默认 false(deny)。 */
+  /* Opt-in flag for publishing aggregated usage (community leaderboard, heatmap, work badges); defaults to false (deny). */
   showOnLeaderboard: boolean;
   retentionDays: number;
 }

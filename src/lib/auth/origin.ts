@@ -1,9 +1,10 @@
-/* 站点 canonical origin。
-   生产部署在 Caddy 反代之后,req.url 的 origin 会变成内网地址
-   (localhost:3210)——直接拼 OAuth redirect_uri / 回调落点 / 邮件链接会全部
-   污染成内网地址;纯请求 origin 又有 Host 头注入风险。
-   统一走 NEXT_PUBLIC_SITE_URL(构建期注入、部署工作流校验过的 https origin),
-   本地开发未设置时回退请求 origin。 */
+/* The site's canonical origin. Production sits behind a Caddy proxy, so
+   req.url's origin becomes an internal address (localhost:3210) —
+   building OAuth redirect_uris, callback targets, or email links from it
+   would poison them all; trusting the raw request origin invites
+   Host-header injection. Always use NEXT_PUBLIC_SITE_URL (injected at
+   build time, validated by the deploy workflow), falling back to the
+   request origin in local dev when unset. */
 export function canonicalOrigin(req: Request): string {
   return (
     process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin

@@ -1,6 +1,7 @@
-/* 事务邮件:Resend HTTP API(零依赖,不引 nodemailer)。
-   RESEND_API_KEY 未配置 → {ok:false,error:"not_configured"},调用方软失败
-   (只留服务端日志,绝不当 500 抛给用户)。发信域 mail.kimi.builders(已 verified)。 */
+/* Transactional email via the Resend HTTP API (zero dependencies, no
+   nodemailer). Without RESEND_API_KEY -> {ok:false,error:"not_configured"}
+   and callers fail soft (server log only, never a 500 to the user).
+   Sending domain mail.kimi.builders (verified). */
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const DEFAULT_FROM = "kimi.builders <noreply@mail.kimi.builders>";
@@ -17,7 +18,8 @@ export async function sendMail({
   to: string;
   subject: string;
   text: string;
-  /* 品牌 HTML(模板见 src/lib/email-templates.ts);text 必填兜底,html 可选 */
+  /* Brand HTML (templates in src/lib/email-templates.ts); text is the
+     required fallback, html optional. */
   html?: string;
 }): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;

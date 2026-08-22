@@ -1,7 +1,8 @@
-/* 私人用量导出(Phase 2)。
-   两条路径共用:CSV = 当前筛选下的聚合明细(listUsageRecords);
-   JSON = 全量原始事实(不含内容、hash、内部 id、任何凭据)。
-   CSV 注入防护:以 = + - @ 或制表/回车开头的单元格前置单引号。 */
+/* Private usage export (Phase 2). Two paths share this module: CSV =
+   aggregated detail under the current filters (listUsageRecords); JSON =
+   full raw facts (no content, hashes, internal ids, or credentials).
+   CSV injection guard: cells starting with = + - @ or tab/CR get a leading
+   single quote. */
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "../db";
 import type { UsageFilters } from "./filters";
@@ -78,7 +79,7 @@ export function recordsToCsv(records: readonly UsageRecordRow[]): string {
         .join(","),
     );
   }
-  // BOM 让 Excel 按 UTF-8 打开(项目名/设备名可能是中文)
+  // BOM so Excel opens it as UTF-8 (project/device names may be Chinese)
   return `﻿${lines.join("\r\n")}\r\n`;
 }
 
@@ -115,8 +116,9 @@ export interface UsagePrivateExport {
   truncated: boolean;
 }
 
-/* 全量私人导出:buckets/sessions 原始事实行(按时间倒序,各封顶 10 万行)。
-   不导出:内部自增 id、session_hash、project_hash、API Key、设备授权材料。 */
+/* Full private export: raw buckets/sessions rows (newest first, capped at
+   100k rows each). Never exports internal auto-increment ids, session_hash,
+   project_hash, API keys, or device authorization material. */
 export async function exportUsageData(userId: number): Promise<UsagePrivateExport> {
   const pool = getPool();
   const [

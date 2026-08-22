@@ -1,8 +1,10 @@
-/* 用量看板查询层(Phase 2)。
-   所有 section 共用 filters.ts 的 WHERE;估费统一走 pricing.ts。
-   粒度策略:bucket 侧 SQL 按 (本地日, source, model) 细粒度返回,JS 里用同一份行集
-   汇总 totals/trend,并逐行估费 —— 趋势、总览、估费不可能互相漂移。
-   会话表没有 model 列:模型筛选只作用于 bucket 派生指标(见 filters.ts 注释)。 */
+/* Usage dashboard query layer (Phase 2). Every section shares the WHERE
+   from filters.ts; cost estimation uniformly goes through pricing.ts.
+   Grain strategy: bucket-side SQL returns fine-grained (local day, source,
+   model) rows, and JS derives totals/trend from that one row set, pricing
+   row by row — trend, overview, and cost can never drift apart. The
+   session table has no model column: the model filter applies only to
+   bucket-derived metrics (see filters.ts). */
 import type { RowDataPacket } from "mysql2";
 import { getPool } from "../db";
 import {
@@ -113,7 +115,8 @@ function canonicalModelOf(row: RowDataPacket): string {
   });
 }
 
-/* 明细查询(分页/导出共用同一段 SQL,防止口径漂移)。 */
+/* Record query (pagination and export share the same SQL, so the
+   definitions cannot drift). */
 function recordsQuery(
   userId: number,
   filters: UsageFilters,
@@ -307,7 +310,8 @@ function mapRecordRows(
   return [...grouped.values()];
 }
 
-/* 导出/明细列表专用:按当前筛选取聚合记录(最多 limit 行)。 */
+/* Export / record list only: aggregated records under the current filters
+   (at most limit rows). */
 export async function listUsageRecords(
   userId: number,
   filters: UsageFilters,
@@ -360,7 +364,8 @@ export async function getUsageOverview(
   options?: { heatWeek?: { fromUtcMs: number; toUtcMs: number } | null },
 ): Promise<UsageOverview> {
   const pool = getPool();
-  /* 热图「单周」模式:额外取所选自然周的事实行,不影响主范围聚合。 */
+  /* Heatmap single-week mode: also fetch the selected natural week's fact
+     rows, without affecting the main-range aggregates. */
   const heatWeek = options?.heatWeek ?? null;
   const pricesPromise = loadModelPrices(pool);
 
@@ -383,8 +388,10 @@ export async function getUsageOverview(
     to: filters.from,
   };
 
-  /* Lifetime 忽略日期范围但保留维度筛选；自然周固定取筛选结束点之前
-     最近 12 个周一边界。Lifetime 以请求时刻为终点，避免自定义范围截断累计值。 */
+  /* Lifetime ignores the date range but keeps dimension filters; natural
+     weeks always take the 12 most recent Monday boundaries before the end
+     of the filter range. Lifetime ends at request time so a custom range
+     never truncates the cumulative total. */
   const generatedAt = new Date();
   const lifetimeFilters: UsageFilters = {
     ...filters,
@@ -393,8 +400,10 @@ export async function getUsageOverview(
   };
   const lifetimeBucket = bucketFilterSql(userId, lifetimeFilters, "b");
   const tzMs = filters.tzOffsetMinutes * 60_000;
-  /* 自然周以主筛选结束点为锚；历史自定义范围因此仍能看到对应时期的 12 周，
-     普通预设的 filters.to 就是当前请求时刻。减 1ms 处理恰好落在周一 00:00 的右开边界。 */
+  /* Natural weeks anchor to the main filter's end point; historical custom
+     ranges therefore still see that period's 12 weeks, while preset ranges
+     have filters.to = now. Subtracting 1ms handles the right-open boundary
+     landing exactly on Monday 00:00. */
   const weeklyAnchor = new Date(filters.to.getTime() - 1);
   const localNowMs = weeklyAnchor.getTime() + tzMs;
   const localDayStartMs = Math.floor(localNowMs / 86_400_000) * 86_400_000;
@@ -430,7 +439,8 @@ export async function getUsageOverview(
     (filters.page - 1) * filters.pageSize,
   );
   const recordsCountQ = recordsCountQuery(userId, filters);
-  /* 所有筛选候选合成一个结果集：仍按各自索引扫描，但只占一次数据库往返。 */
+  /* All filter candidates union into one result set: each branch still
+     scans its own index, but with a single database round trip. */
   const optionParts: { sql: string; params: unknown[] }[] = [
     {
       sql: `SELECT 'source' AS kind, source AS option_value,
@@ -499,8 +509,9 @@ export async function getUsageOverview(
   const projectColumn = filters.projectsEnabled ? "project_label" : "NULL";
   const projectGroup = filters.projectsEnabled ? "project_label, " : "";
   const queries: Promise<RowDataPacket[]>[] = [
-    /* current/previous/weekly 共用一个事实包络。保留 bucket_start 精度，
-       才能按历史价格的 effective window 逐行估费。 */
+    /* current/previous/weekly share one fact envelope. Keeping bucket_start
+       precision lets each row be priced against its historical price's
+       effective window. */
     pool
       .query<RowDataPacket[]>(
         `SELECT device_id, ${projectColumn} AS project_label,
@@ -515,7 +526,8 @@ export async function getUsageOverview(
         bucketEnvelope.params,
       )
       .then(([rows]) => rows),
-    // current/previous 共用 overlap envelope；v3 小时事实仍由 JS 精确裁剪。
+    // current/previous share the overlap envelope; v3 hour facts are still
+    // clipped precisely in JS.
     pool
       .query<RowDataPacket[]>(
         `SELECT device_id, first_message_at, last_message_at,
@@ -526,15 +538,18 @@ export async function getUsageOverview(
         sessionEnvelope.params,
       )
       .then(([rows]) => rows),
-    // 明细:本地日 × source × model × project × device(分页+窗口总数)
+    // Records: local day x source x model x project x device (paged +
+    // window totals)
     pool
       .query<RowDataPacket[]>(recordsQ.sql, recordsQ.params)
       .then(([rows]) => rows),
-    // 筛选项候选(只看用户+时间范围；单次往返返回 kind/value)
+    // Filter candidates (user + time range only; one round trip returns
+    // kind/value)
     pool
       .query<RowDataPacket[]>(optionsQ.sql, optionsQ.params)
       .then(([rows]) => rows),
-    /* 分布需要撤销设备的历史标签；筛选项/顶层计数再在 JS 过滤 revoked_at。 */
+    /* Distributions need revoked devices' historical labels; filter
+       candidates and top-level counts then filter revoked_at again in JS. */
     pool
       .query<RowDataPacket[]>(
         `SELECT id, public_id, name, platform, surface, client_version, parser_version,
@@ -545,8 +560,9 @@ export async function getUsageOverview(
         [userId],
       )
       .then(([rows]) => rows),
-    /* Lifetime 保留维度筛选；同一次 bucket 扫描顺带取无筛选最近同步，
-       session 最近同步用 scalar subquery 合入同一 statement。 */
+    /* Lifetime keeps dimension filters; the same bucket scan also picks up
+       the unfiltered latest sync, with the session's latest sync folded in
+       via a scalar subquery in the same statement. */
     pool
       .query<RowDataPacket[]>(
         `WITH scoped AS (
@@ -628,10 +644,11 @@ export async function getUsageOverview(
     .filter((row) => String(row.kind) === kind)
     .map((row) => String(row.option_value));
 
-  // 全量估费台账:unpriced/partial 名册 + 总估费(trend 部分)。
+  // Full cost ledger: unpriced/partial roster + total estimate (trend
+  // part).
   const ledger = createPricingLedger();
 
-  // —— 趋势 + 总览(同一份 本地日×source×model 行集) ——
+  // ---- trend + overview (one shared local-day x source x model row set)
   const byDay = new Map<string, UsageTrendDay>();
   const ensureDay = (key: string): UsageTrendDay => {
     let value = byDay.get(key);
@@ -683,7 +700,9 @@ export async function getUsageOverview(
     return estimate;
   };
 
-  /* 逐事实时间估费并累计覆盖率。热图/分布只复用 estimateRow,不得重复污染台账。 */
+  /* Price per fact time and accumulate coverage. The heatmap and
+     distributions reuse estimateRow only — they must not pollute the ledger
+     twice. */
   const priceRow = (
     row: RowDataPacket,
     tokens: UsageTokenBreakdown,
@@ -733,14 +752,16 @@ export async function getUsageOverview(
     const date = value instanceof Date ? value : new Date(value);
     return Number.isNaN(date.getTime()) ? null : date;
   })();
-  // 范围内活跃设备 = bucket ∪ session 事实里的去重 device_id
+  // Active devices in range = distinct device_id across bucket and session
+  // facts
   totals.activeDevices = new Set(
     [
       ...bucketRows.map((row) => String(row.device_id)),
       ...sessionDeviceIds,
     ],
   ).size;
-  // —— 上一等长周期(环比);独立台账,不污染当前范围的 unpriced/partial 名册 ——
+  // ---- previous equal-length period (period-over-period); separate
+  // ledger, never pollutes the current range's unpriced/partial roster
   const previous = {
     inputTokens: 0,
     cacheWriteInputTokens: 0,
@@ -790,7 +811,7 @@ export async function getUsageOverview(
     previous.cacheReadInputTokens +
     previous.outputTokens +
     previous.reasoningOutputTokens;
-  // —— 热图 ——
+  // ---- heatmap ----
   const inGrid = (weekday: unknown, hour: unknown): weekday is number =>
     Number.isInteger(weekday) &&
     Number.isInteger(hour) &&
@@ -798,8 +819,9 @@ export async function getUsageOverview(
     (weekday as number) <= 6 &&
     (hour as number) >= 0 &&
     (hour as number) <= 23;
-  /* bucketRows 已保留事实时间；热图直接复用它，避免为相同 Token 再扫描一次范围。
-     单周热图复用同一填充逻辑，行由包络分类得出。 */
+  /* bucketRows already carries fact times; the heatmap reuses them instead
+     of scanning the range again for the same tokens. The single-week
+     heatmap reuses the same fill logic, rows classified by the envelope. */
   const fillBucketHeatmap = (target: UsageHeatmap, rows: RowDataPacket[]) => {
     for (const row of rows) {
       const sampleAt = new Date(row.sample_at as string);
@@ -820,7 +842,8 @@ export async function getUsageOverview(
     }
   };
   fillBucketHeatmap(heatmap, bucketRows);
-  /* 单周热图：session 事实按周窗口由聚合函数自行裁剪；scratch totals 只作占位。 */
+  /* Single-week heatmap: session facts are clipped by the aggregate
+     function to the week window; scratch totals are placeholders only. */
   const weekHeatmap = heatWeek ? createEmptyUsageHeatmap() : null;
   if (heatWeek && weekHeatmap) {
     fillBucketHeatmap(weekHeatmap, weekBucketRows);
@@ -833,7 +856,7 @@ export async function getUsageOverview(
   }
   const trend = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
 
-  // —— 最近 12 个自然周 ——
+  // ---- last 12 natural weeks ----
   const weeklyByDay = new Map<string, UsageTrendDay>();
   for (const row of weeklyRows) {
     const key = trendKeyFromInstant(row.sample_at, weeklyFilters);
@@ -862,7 +885,8 @@ export async function getUsageOverview(
   for (const item of weeklyByDay.values()) item.totalTokens = totalOf(item);
   const weeklyTrend = [...weeklyByDay.values()].sort((a, b) => a.day.localeCompare(b.day));
 
-  // 当前筛选范围内实际出现过的模型与其价格命中，供“计算与数据说明”直接解释。
+  // Models actually seen in the current filter range and their price hits,
+  // for the "computation & data notes" explainer.
   const pricingMatchMap = new Map<string, UsagePricingMatch>();
   const statusRank = { priced: 0, partial: 1, unpriced: 2 } as const;
   for (const row of bucketRows) {
@@ -936,7 +960,7 @@ export async function getUsageOverview(
     (a, b) => b.tokens - a.tokens || a.model.localeCompare(b.model),
   );
 
-  // —— 分布(token + 估费,Top 6 + 其他) ——
+  // ---- distributions (tokens + cost, top 6 + others) ----
   interface DistInput {
     device_id?: unknown;
     project_label?: unknown;
@@ -985,7 +1009,8 @@ export async function getUsageOverview(
       const model = String(row.model);
       const stored = num(row.stored_cost_micros);
       let estimated = 0;
-      // legacy 迁入行的存储成本是旧口径假值,标记未定价,避免把 $0.00 伪装成准确值
+      // Legacy migrated rows carry a fake stored cost under the old
+      // definition; mark unpriced so $0.00 never masquerades as accurate.
       let unpriced = model === LEGACY_MODEL;
       if (model !== LEGACY_MODEL) {
         const estimate = estimateRow(row as unknown as RowDataPacket, tokens);
@@ -1032,7 +1057,8 @@ export async function getUsageOverview(
     };
   };
   const distributions: UsageOverview["distributions"] = {
-    /* source/model 都能从主事实行集派生，不再重复扫描同一时间范围。 */
+    /* source/model both derive from the main fact row set — no second scan
+       of the same range. */
     source: buildDistribution(
       bucketRows as unknown as DistInput[],
       (row) => String(row.source),
@@ -1064,7 +1090,9 @@ export async function getUsageOverview(
       },
     ),
   };
-  // model 分布直接由精确时间行集派生;不得先跨价格窗口合并再套用首个价格。
+  // The model distribution derives directly from the exact-time row set;
+  // never merge across price windows first and then apply the earliest
+  // price.
   distributions.model = buildDistribution(
     bucketRows as unknown as DistInput[],
     (row) => canonicalUsageModel({
@@ -1084,7 +1112,8 @@ export async function getUsageOverview(
     },
   );
 
-  // —— 联合归因：直接复用当前完整事实行集，不能由独立分布或分页明细反推。 ——
+  // ---- joint attribution: reuses the current full fact row set; cannot
+  // be derived from independent distributions or paged records ----
   const buildAttributionSlice = (
     rows: RowDataPacket[],
   ): UsageOverview["attribution"]["period"] => {
@@ -1236,7 +1265,7 @@ export async function getUsageOverview(
     },
   };
 
-  // —— 明细 ——
+  // ---- records ----
   const records = mapRecordRows(recordRows, prices);
 
   return {
@@ -1327,8 +1356,9 @@ export async function getUsageOverview(
   };
 }
 
-/* 兼容包装:Phase 1 的调用方(CLI summary 经 HTTP;旧集成测试)仍可按 days 获取
-   与旧 getUsageDashboard 同形的数据。 */
+/* Compatibility wrapper: Phase 1 callers (CLI summary over HTTP; old
+   integration tests) can still fetch days-based data in the same shape as
+   the old getUsageDashboard. */
 export interface UsageDashboardData {
   days: number;
   from: string;

@@ -1,6 +1,7 @@
-/* 登录会话:无服务端状态的签名 cookie(HMAC-SHA256,AUTH_SECRET 签名)。
-   格式 base64url({uid,exp}).base64url(sig),httpOnly + sameSite=lax,30 天。
-   小社区够用;要支持强制下线再换 sessions 表。 */
+/* Login sessions: stateless signed cookies (HMAC-SHA256, signed with
+   AUTH_SECRET). Format base64url({uid,exp}).base64url(sig), httpOnly +
+   sameSite=lax, 30 days. Enough for a small community; move to a sessions
+   table if forced logout is ever required. */
 import { createHmac, timingSafeEqual } from "crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
@@ -58,7 +59,8 @@ export function verifySessionToken(token: string): number | null {
   }
 }
 
-/* 以下三个只能在 Route Handler / Server Action 里写 cookie;页面里只读。 */
+/* The three below may write cookies only in Route Handlers / Server
+   Actions; pages read only. */
 
 export async function setSessionCookie(uid: number): Promise<void> {
   const store = await cookies();
@@ -71,7 +73,8 @@ export async function setSessionCookie(uid: number): Promise<void> {
   });
 }
 
-/* React cache():同一请求里 Header / 页面 / 表单多处调用只查一次库。 */
+/* React cache(): Header / page / form calls within one request hit the
+   DB once. */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
@@ -80,7 +83,8 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   try {
     uid = verifySessionToken(token);
   } catch {
-    return null; // AUTH_SECRET 未配置时按未登录处理,不拖垮页面
+    return null; // unset AUTH_SECRET treats as logged out, never breaks
+                  // the page
   }
   if (!uid) return null;
   try {

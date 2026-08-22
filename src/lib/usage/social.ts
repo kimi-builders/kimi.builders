@@ -1,10 +1,13 @@
-/* 用量社交面(S2-2):个人主页分时热图 + 作品「已验证构建投入」徽章。
-   隐私门禁:两者都只消费 usage_settings.show_on_leaderboard(P1-1 自愿公开开关,
-   DEFAULT 0 = 不公开;该列由榜单任务引入,settings.ts 的读写不归本文件管)。
-   未 opt-in 一律视为无数据,调用方不渲染任何标记(无负面标记原则)。
-   热图聚合口径对齐用量看板(query.ts 的 JS 侧聚合):星期×本地小时,
-   token = 输入+缓存写+缓存读+输出+推理;时区偏移为「本地 − UTC」分钟数(北京 +480),
-   按 filters.ts 的约定夹取后内联进 SQL(MySQL 预备语句对 INTERVAL ? 支持不稳)。 */
+/* Usage social surface: the profile heatmap and the work "verified build
+   effort" badge. Privacy gate: both consume only
+   usage_settings.show_on_leaderboard (the opt-in flag; column default 0 =
+   private; settings.ts owns that column, not this file). Without opt-in
+   there is no data — callers render no marker at all (no negative
+   signaling). Heatmap aggregation matches the dashboard (query.ts
+   JS-side): weekday x local hour, tokens = input + cache write + cache read
+   + output + reasoning; tz offset = local - UTC minutes (Beijing +480),
+   clamped and inlined per filters.ts (MySQL prepared statements handle
+   INTERVAL ? inconsistently). */
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
 import { usageDeviceDisplayName } from "./device-label";
@@ -24,8 +27,10 @@ export interface ProfileUsageQueryPlan {
   topDimensions: boolean;
 }
 
-/* 主页的年度足迹与全量快照跨 tab 共用,调用方始终保留。这里只规划
-   仅服务特定 tab 的额外查询,避免帖子/评论/作品等页面读取不会渲染的数据。 */
+/* The profile's yearly footprint and full snapshot are shared across tabs
+   and always fetched by the caller. Only plan queries here that serve one
+   specific tab, so pages that never render them (posts, comments, works)
+   don't pay for the reads. */
 export function profileUsageQueryPlan(
   activeTab: ProfileUsageTab,
   usageVisible: boolean,
@@ -36,14 +41,14 @@ export function profileUsageQueryPlan(
   };
 }
 
-/* 与 filters.ts clampTzOffset 同区间。 */
+/* Same range as clampTzOffset in filters.ts. */
 function clampTz(value: unknown): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.min(840, Math.max(-720, Math.trunc(parsed)));
 }
 
-/* ---- opt-in 状态 ---- */
+/* ---- opt-in status ---- */
 
 export function socialOptInQuery(userId: number): { sql: string; args: number[] } {
   return {
@@ -52,7 +57,8 @@ export function socialOptInQuery(userId: number): { sql: string; args: number[] 
   };
 }
 
-/* 该用户是否自愿公开聚合用量。无设置行 = 走列默认 0 = 不公开(deny by default)。 */
+/* Whether the user publishes aggregated usage. No settings row = column
+   default 0 = private (deny by default). */
 export async function isUsagePublic(
   userId: number,
   db: Queryable = getPool(),
@@ -62,8 +68,9 @@ export async function isUsagePublic(
   return !!rows[0]?.show_on_leaderboard;
 }
 
-/* ---- 个人主页分时热图(星期×小时 token 总量,全部时间) ----
-   WEEKDAY() 周一=0,与看板 JS 侧 (getUTCDay()+6)%7 同口径;HOUR() = 本地小时。 */
+/* ---- Profile heatmap (weekday x hour token totals, all time) ----
+   WEEKDAY() Monday=0, same as the dashboard's JS (getUTCDay()+6)%7;
+   HOUR() = local hour. */
 
 export function socialHeatmapQuery(
   userId: number,
@@ -81,7 +88,8 @@ export function socialHeatmapQuery(
   };
 }
 
-/* 聚合行 → 7×24 网格(周一起);越界行忽略。 */
+/* Aggregate rows -> the 7x24 grid (Monday-first); out-of-range rows
+   ignored. */
 export function heatmapGridFromRows(rows: RowDataPacket[]): number[][] {
   const grid = Array.from({ length: 7 }, () => Array<number>(24).fill(0));
   for (const r of rows) {
@@ -94,7 +102,8 @@ export function heatmapGridFromRows(rows: RowDataPacket[]): number[][] {
   return grid;
 }
 
-/* 可见性门禁在页面侧(仅本人或 isUsagePublic 为真才调用),本函数只管取数。 */
+/* The visibility gate lives on the page side (called only for the owner or
+   when isUsagePublic holds); this function only fetches. */
 export async function getSocialUsageHeatmap(
   userId: number,
   tzOffsetMinutes: number,
@@ -105,9 +114,10 @@ export async function getSocialUsageHeatmap(
   return heatmapGridFromRows(rows);
 }
 
-/* ---- 个人主页年度构建足迹:最近 371 天(53 周)按日 token 总量 ----
-   日粒度 = 用户本地日历日(DATE 按 tz 偏移换算,与分时热图同一套夹取内联约定);
-   窗口 = 本地今天往前 370 天,含今天共 371 天,只 SUM tokens,无其他维度。 */
+/* ---- Profile yearly build footprint: daily token totals for the last
+   371 days (53 weeks). Day grain = the user's local calendar day (DATE
+   shifted by the tz offset, same clamped-inline convention as the heatmap);
+   window = local today minus 370 days inclusive, SUM of tokens only. */
 
 export function socialDailyActivityQuery(
   userId: number,
@@ -129,8 +139,8 @@ export function socialDailyActivityQuery(
   };
 }
 
-/* DATE() 在 mysql2 下可能落 string 也可能落 Date(池端 timezone:'Z' → UTC 零点),
-   统一归一成 YYYY-MM-DD。 */
+/* DATE() under mysql2 may arrive as string or Date (pool timezone:'Z' ->
+   UTC midnight); normalize to YYYY-MM-DD. */
 function dayKey(value: unknown): string | null {
   if (typeof value === "string") return value.slice(0, 10);
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
@@ -140,8 +150,9 @@ function dayKey(value: unknown): string | null {
   return null;
 }
 
-/* 可见性门禁在页面侧(仅本人或 isUsagePublic 为真才调用),本函数只管取数。
-   返回 YYYY-MM-DD → 当天 tokens 的映射,网格组装见 year-grid.ts。 */
+/* The visibility gate lives on the page side (owner or opt-in); this
+   function only fetches. Returns YYYY-MM-DD -> tokens for that day; grid
+   assembly lives in year-grid.ts. */
 export async function getSocialDailyActivity(
   userId: number,
   tzOffsetMinutes: number,
@@ -157,9 +168,10 @@ export async function getSocialDailyActivity(
   return days;
 }
 
-/* ---- 作品徽章:一组作者 → 各自全部时间 token 总量(只 SUM,无其他维度) ----
-   opt-in 门禁钉在 SQL JOIN 里:未公开的作者根本不会出现在结果集,
-   即使页面组装出纰漏也漏不出数字。批量一条查询,避免 N+1。 */
+/* ---- Work badges: a set of authors -> all-time token totals (SUM only).
+   The opt-in gate is pinned inside the SQL JOIN: private authors never
+   appear in the result set, so even a page-assembly bug cannot leak their
+   numbers. One batched query avoids N+1. */
 
 export function socialTokenTotalsQuery(
   userIds: (number | null)[],
@@ -195,9 +207,10 @@ export async function getPublicTokenTotals(
   return map;
 }
 
-/* ---- 个人主页「构建偏好」:全部时间 tokens 最多的设备与项目 ----
-   可见性门禁在页面侧(仅本人或 opt-in);项目只在用户开过「上传项目目录名」
-   才有数据,无数据返回 null,调用方省略该行(无负面标记)。 */
+/* ---- Profile "build preferences": the device and project with the most
+   all-time tokens. Visibility gate on the page side (owner or opt-in);
+   projects have data only if the user enabled uploading project directory
+   names; null means the caller omits the row (no negative signaling). */
 
 export async function getSocialTopDimensions(
   userId: number,

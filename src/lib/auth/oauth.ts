@@ -1,21 +1,25 @@
-/* OAuth 提供方:GitHub / Google 授权跳转、code 换 token、拉取资料。
-   不引第三方 auth 库 —— 两家都是标准 OAuth2,手写几十个请求头就够,
-   账号结构完全落在我们自己的 users + oauth_accounts 表上。 */
+/* OAuth providers: GitHub / Google authorize redirects, code-for-token
+   exchange, profile fetching. No third-party auth library — both are
+   standard OAuth2, a few dozen hand-written request headers suffice, and
+   the account structure lives entirely in our own users + oauth_accounts
+   tables. */
 import { randomBytes } from "crypto";
 
 export type Provider = "github" | "google";
 export const PROVIDERS: Provider[] = ["github", "google"];
 
 export const STATE_COOKIE = "kb_oauth_state";
-/* 绑定模式标记:登录用户从设置页发起 OAuth 时置 1,回调把 provider 挂到当前账号。 */
+/* Link-mode flag: set to 1 when a logged-in user starts OAuth from
+   settings; the callback attaches the provider to the current account. */
 export const LINK_COOKIE = "kb_oauth_link";
 
 export interface OAuthProfile {
   providerAccountId: string;
-  handle: string; // 建议 handle(入库前去重)
+  handle: string; // suggested handle (deduped before insert)
   name: string;
   email: string | null;
-  /* 邮箱是否经提供方验证:只有已验证邮箱才参与登录时的自动并号。 */
+  /* Whether the provider verified the email: only verified emails
+     participate in login-time account merging. */
   emailVerified: boolean;
   avatarUrl: string;
 }
@@ -54,7 +58,7 @@ export function authorizeUrl(
   return `https://accounts.google.com/o/oauth2/v2/auth?${p}`;
 }
 
-/* code → token → 资料,统一归一成 OAuthProfile */
+/* code -> token -> profile, normalized into one OAuthProfile */
 export async function fetchProfile(
   provider: Provider,
   code: string,
@@ -85,7 +89,7 @@ async function fetchGitHubProfile(
   }
   const headers = {
     Authorization: `Bearer ${tokenJson.access_token}`,
-    "User-Agent": "kimi.builders", // GitHub API 强制要求
+    "User-Agent": "kimi.builders", // required by the GitHub API
     Accept: "application/vnd.github+json",
   };
   const user = (await (
@@ -97,8 +101,9 @@ async function fetchGitHubProfile(
     email?: string | null;
     avatar_url?: string;
   };
-  /* 优先取 /user/emails 里已验证的邮箱(自动并号的安全前提);
-     公开邮箱(user.email)未验证,只做兜底展示,不参与并号。 */
+  /* Prefer a verified email from /user/emails (the security precondition
+     for automatic account merging); the public email (user.email) is
+     unverified — display fallback only, never merged on. */
   let email: string | null = null;
   let emailVerified = false;
   const emails = (await (

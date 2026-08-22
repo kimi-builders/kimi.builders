@@ -1,33 +1,39 @@
-/* 用量看板共享筛选层(Phase 2)。
-   页面、GET /api/usage、GET /api/usage/export 全部通过 parseUsageFilters +
-   bucketFilterSql/sessionFilterSql 走同一套条件,任何图表不得自造 WHERE。
-   时区约定:tzOffsetMinutes = 本地时间 − UTC 的分钟数(北京 +480);
-   SQL 里以整数内联(已夹取),不用占位符(MySQL 预备语句对 INTERVAL ? 支持不稳)。 */
+/* Shared filter layer for the usage dashboard (Phase 2). The page,
+   GET /api/usage, and GET /api/usage/export all go through parseUsageFilters
+   + bucketFilterSql/sessionFilterSql — no chart builds its own WHERE.
+   Timezone: tzOffsetMinutes = local - UTC minutes (Beijing +480); inlined
+   as a clamped integer, not a placeholder (MySQL prepared statements handle
+   INTERVAL ? inconsistently). */
 import { isUsageSourceId } from "../usage-contract";
 
 export type UsageRangeLabel = "today" | "24h" | "7d" | "30d" | "90d" | "custom";
 export type UsageMetric = "tokens" | "cost" | "duration";
-/* 明细时间粒度:day = 按本地日聚合;bucket = 按 30 分钟事实桶(最细可查粒度)。 */
+/* Record granularity: day = local-day aggregate; bucket = 30-minute fact
+   buckets (finest queryable grain). */
 export type UsageRecordGrain = "day" | "bucket";
-/* 趋势粒度:today/24h/≤2 天自定义 → 小时;≥60 天 → 周(周一起);其余按本地日。 */
+/* Trend grain: today/24h/custom <= 2 days -> hour; >= 60 days -> week
+   (Mon-start); otherwise local day. */
 export type UsageGranularity = "hour" | "day" | "week";
 
 export interface UsageFilters {
-  /* UTC 边界,[from, to)。预设范围 to=查询时刻;自定义 to=本地结束日次日(夹到 now)。 */
+  /* UTC boundaries [from, to). Presets set to=now; custom sets
+     to=next local day (clamped to now). */
   from: Date;
   to: Date;
   rangeLabel: UsageRangeLabel;
-  /* 覆盖的本地日数(7/30/90;custom 按实际跨度) */
+  /* Local days covered (7/30/90; custom by actual span) */
   days: number;
   sources: string[] | null;
   models: string[] | null;
   efforts: string[] | null;
   agentVersions: string[] | null;
-  /* 仅 uploadProject=true 时非 null;否则强制 null(不允许按项目筛选) */
+  /* Non-null only when uploadProject=true; otherwise forced null (no
+     project filtering allowed) */
   projects: string[] | null;
-  /* 用户是否开启了项目名上传(决定项目维度/筛选是否展示) */
+  /* Whether the user uploads project names (gates the project dimension
+     and filter) */
   projectsEnabled: boolean;
-  /* usage_devices.public_id 列表 */
+  /* usage_devices.public_id list */
   devices: string[] | null;
   tzOffsetMinutes: number;
   metric: UsageMetric;
@@ -90,7 +96,8 @@ export function parseUsageFilters(
   const now = options.now ?? new Date();
   const tzOffsetMinutes = clampTzOffset(options.tzOffsetMinutes);
 
-  // 预设范围优先;兼容旧参数 days=7|30|90;from/to 为预留的自定义范围接口。
+  // Preset ranges win; days=7|30|90 kept for old links; from/to reserved
+  // for custom ranges.
   let days = 1;
   let rangeLabel: UsageRangeLabel = USAGE_DEFAULT_RANGE;
   let from: Date;
@@ -131,7 +138,7 @@ export function parseUsageFilters(
     new Date(localNowMs).getUTCDate(),
   );
   if (rangeLabel === "24h") {
-    // 滚动 24 小时,不按日界对齐
+    // Rolling 24 hours, not day-aligned
     from = new Date(now.getTime() - 86_400_000);
     to = now;
   } else if (rangeLabel === "today") {
@@ -240,8 +247,10 @@ function sharedClauses(
   return { clauses, params };
 }
 
-/* usage_buckets 筛选。会话表没有 model/reasoning_effort 列:这两个筛选只作用于
-   bucket 派生指标；agent_version 是会话可用的独立事实。页面需注明口径差异。 */
+/* usage_buckets filter. The session table has no model/reasoning_effort
+   columns: those two filters apply only to bucket-derived metrics;
+   agent_version is an independent session fact. Pages must label the
+   difference. */
 export function bucketFilterSql(
   userId: number,
   filters: UsageFilters,
@@ -280,7 +289,8 @@ export function sessionFilterSql(
   return { where: clauses.join(" AND "), params: [userId, ...params] };
 }
 
-/* 本地日 / 星期×小时 分组表达式(tz 偏移已夹取为整数,内联安全)。 */
+/* Local-day / weekday-x-hour grouping expressions (tz offset clamped to an
+   integer, safe to inline). */
 export function localDayExpr(column: string, filters: UsageFilters): string {
   return `DATE(DATE_ADD(${column}, INTERVAL ${filters.tzOffsetMinutes} MINUTE))`;
 }
@@ -293,7 +303,8 @@ export function localHourExpr(column: string, filters: UsageFilters): string {
   return `HOUR(DATE_ADD(${column}, INTERVAL ${filters.tzOffsetMinutes} MINUTE))`;
 }
 
-/* 把筛选状态写回 URL(分享/刷新可恢复)。空维度不出现在 URL。 */
+/* Serialize filter state back into the URL (restorable by share/refresh).
+   Empty dimensions stay out of the URL. */
 export function usageFiltersToSearch(filters: UsageFilters): string {
   const params = new URLSearchParams();
   if (filters.rangeLabel !== "custom") params.set("range", filters.rangeLabel);

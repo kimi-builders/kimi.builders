@@ -2,8 +2,7 @@ export type UsageDashboardViewState = "first-run" | "empty-range" | "ready";
 
 export const USAGE_STALE_AFTER_HOURS = 24;
 
-/* 显式把 instant 移到看板固定偏移后再按 UTC 格式化，避免服务端 UTC 与
-   浏览器本地时区不同引发 hydration 文本不一致。 */
+/* Format instants at a fixed dashboard offset in UTC so server and browser timezones cannot diverge into hydration mismatches. */
 export function formatUsageLocalDateTime(
   iso: string,
   locale: string,
@@ -21,8 +20,7 @@ export function formatUsageLocalDateTime(
   }).format(shifted);
 }
 
-/* 展示状态只依赖服务端事实：lastSyncAt 是跨全部历史的 ingest 时间，
-   因此不会把“当前范围没数据”误判成从未使用。 */
+/* Presence depends only on server facts: lastSyncAt spans all history, so an empty current range is never mistaken for "never used". */
 export function usageDashboardViewState(input: {
   lastSyncAt: Date | string | null;
   totalTokens: number;

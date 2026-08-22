@@ -170,9 +170,10 @@ function clientMeta(value: unknown, settings: UsageSettings): UsageClientMetaV2 
     throw new UsageRequestError("invalid_payload", "client batch metadata is inconsistent.");
   }
   let device: UsageClientMetaV2["device"];
-  /* 设备标签隐私开关(20260822 P1-2):契约承诺 uploadDeviceLabel=false 时
-     不落终端/OS 指纹。静默剥离而非报错——CLI 可以照常上报(它无法感知开关
-     变化),服务端丢弃字段即可;ingest 侧 COALESCE 自然保持设备行的旧值 */
+  /* Device-label privacy switch: the contract promises no terminal/OS
+     fingerprints land when uploadDeviceLabel=false. Stripped silently rather
+     than rejected — the CLI cannot observe the switch, and ingest-side
+     COALESCE keeps the device row's existing label. */
   if (input.device !== undefined && settings.uploadDeviceLabel) {
     const rawDevice = record(input.device, "client.device");
     const terminal = record(rawDevice.terminal, "client.device.terminal");

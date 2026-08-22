@@ -4,7 +4,7 @@ export function isSameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
-    /* 与站点 canonical origin 比对:生产在反代后,request.url 是内网地址 */
+    /* Compare against the site's canonical origin: in production the app sits behind a proxy, so request.url is an internal address. */
     return new URL(origin).origin === canonicalOrigin(request);
   } catch {
     return false;

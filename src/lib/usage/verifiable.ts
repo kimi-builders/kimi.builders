@@ -1,17 +1,21 @@
-/* 系统内部验证用总量(作品用量声明制,20260822_work_claims)。
-   与公开社交面(social.ts)刻意解耦:不做 show_on_leaderboard opt-in 门禁。
-   隐私边界取舍:作者为自己的作品声明构建投入,声明行为本身即公开授权;
-   本模块的总量数字只用于 (a) 写时校验作者自己的声明额度、(b) 展示时不变式
-   (同作者 Σ声明 ≤ 总量)兜底,从不直接公开渲染 —— 公开出去的只有作者自己
-   写下的声明值。仅服务端调用,不进任何客户端包。 */
+/* System-internal verifiable token totals (work claims). Deliberately
+   decoupled from the public social surface (social.ts): no
+   show_on_leaderboard opt-in gate here. Privacy boundary: an author
+   claiming build effort for their own work is itself a public act; these
+   totals only back (a) the author's own claim allowance at write time and
+   (b) the display invariant (per-author sum of claims <= totals) — the
+   published number is always the author's own claim, never this module's
+   raw total. Server-side only; never imported into client bundles. */
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
 
 type Queryable = Pool | PoolConnection;
 
-/* 一组作者 → 各自全部时间 token 可验证总量(usage_buckets 只 SUM,无其他维度)。
-   口径与 socialTokenTotalsQuery 相同,差别只在不做 opt-in JOIN(内部验证用)。
-   批量一条查询,避免 N+1;空/非法 id 集 → null(调用方跳过查询)。 */
+/* Per-author all-time verifiable totals for a set of ids (pure SUM over
+   usage_buckets, no other dimension). Same definition as
+   socialTokenTotalsQuery minus the opt-in JOIN (internal verification).
+   One batched query avoids N+1; empty/invalid id sets return null and the
+   caller skips the query. */
 export function verifiableTokenTotalsQuery(
   userIds: (number | null)[],
 ): { sql: string; args: unknown[] } | null {
@@ -44,9 +48,10 @@ export async function getVerifiableTokenTotals(
   return map;
 }
 
-/* 声明建议预填的项目分布:作者开了 upload_project 且有带 label 的桶时,
-   按项目全部时间 tokens 降序取前若干(表单按作品名匹配,匹配不上不给建议)。
-   同样仅服务端、仅作者本人视角(自己的表单自己的数据),不公开。 */
+/* Project mix suggested as claim prefill: when the author enabled
+   upload_project and has labeled buckets, take the top projects by all-time
+   tokens (the form matches by work name; no suggestion when nothing
+   matches). Also server-side, author-eyes-only; never public. */
 export function suggestedClaimProjectsQuery(userId: number): {
   sql: string;
   args: number[];

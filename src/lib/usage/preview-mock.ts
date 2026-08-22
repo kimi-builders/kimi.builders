@@ -1,10 +1,12 @@
-/* 未登录用量预览的确定性示例数据(20260822):给 UsagePreviewStrip 渲染真实
-   面板组件(Hero 卡 / 趋势图 / 热力图)用的 snapshot——「真组件活渲染」
-   替代静态截图,语言/主题/气质自动跟随,UI 迭代永不腐化。
-   写法沿用 share.ts 的 mockUsageShareSnapshot 先例:无随机源,sin 波形 +
-   固定分桶比率,同一访客每次看到同一份;日期相对 now 滚动(示例永远是
-   「近 30 天」,不会停留在某个写死的月份)。
-   纯函数,单测直接测(tests/usage-preview-mock.test.ts)。 */
+/* Deterministic sample data for the logged-out usage preview: rendered by
+   UsagePreviewStrip with the real panel components (hero card, trend chart,
+   heatmap). Live components replace static screenshots — language, theme,
+   and vibe follow automatically, so the preview never rots as the UI
+   evolves. Follows the mockUsageShareSnapshot precedent in share.ts: no
+   randomness — a sine waveform with fixed bucket ratios, so the same
+   visitor always sees the same data; dates roll relative to now (always
+   "last 30 days", never stuck in a hardcoded month). Pure functions,
+   unit-tested in tests/usage-preview-mock.test.ts. */
 import type {
   UsageHeatmap,
   UsageTotals,
@@ -17,20 +19,23 @@ export interface UsagePreviewSnapshot {
   heatmap: UsageHeatmap;
 }
 
-/* 分桶比率(占当日 totalTokens):缓存读为主 → 命中率 ~87%,
-   贴合站内真实重度用户的形态(缓存读是最长的那截堆叠柱) */
+/* Bucket ratios of the day's totalTokens: cache-read heavy -> ~87% hit
+   rate, matching real heavy users on site (cache read is the tallest stack
+   segment) */
 const RATIO = {
   input: 0.09,
   cacheWrite: 0.02,
   output: 0.04,
   reasoning: 0.02,
 } as const;
-/* 缓存读 = 余量(保证分桶之和恰等于 totalTokens,不漂移) */
+/* Cache read = remainder (bucket sums always equal totalTokens exactly, no
+   drift) */
 const CACHE_READ_RATIO =
   1 - RATIO.input - RATIO.cacheWrite - RATIO.output - RATIO.reasoning;
 
-/* 混合估费 $0.48/Mtok(输入重缓存场景的加权价):tokens × 0.48 恰为
-   微美元数(1 Mtok × $0.48 = $0.48 = 480000 micros) */
+/* Blended $0.48/MTok estimate (input-cache-heavy weighted price):
+   tokens x 0.48 lands on micro-dollars exactly (1 MTok x $0.48 = $0.48 =
+   480000 micros) */
 const COST_PER_MTOK = 0.48;
 
 function dayKeyAt(base: Date, offsetDays: number): string {
@@ -39,10 +44,11 @@ function dayKeyAt(base: Date, offsetDays: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/* 单日趋势:工作日重、周末淡,每 11 天休一天(波形不假);休整日全零 */
+/* Daily trend: heavy weekdays, light weekends, one rest day every 11 days
+   (no fake uniformity); rest days are all-zero */
 function previewDay(base: Date, offsetDays: number, i: number): UsageTrendDay {
   const day = dayKeyAt(base, offsetDays);
-  const weekday = (new Date(`${day}T00:00:00.000Z`).getUTCDay() + 6) % 7; // 0=周一
+  const weekday = (new Date(`${day}T00:00:00.000Z`).getUTCDay() + 6) % 7; // 0=Monday
   const weekend = weekday >= 5 ? 0.45 : 1;
   const rest = i % 11 === 3;
   const totalTokens = rest
@@ -77,9 +83,10 @@ function emptyBoolMatrix(): boolean[][] {
   return Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => false));
 }
 
-/* 7×24 热力图:工作时段重、周末淡、凌晨休(0-6 点无采集)——与真实
-   Builder 的作息形态一致,夜里的空档让「采集缺口 vs 零用量」的语义
-   也被示例如实展示(hasData=false 走网格底色) */
+/* 7x24 heatmap: heavy work hours, light weekends, silent small hours (no
+   collection 00:00-06:00) — a real builder's rhythm. The overnight gaps
+   also demonstrate the "collection gap vs zero usage" semantics in the
+   sample (hasData=false renders the grid base color) */
 function previewHeatmap(): UsageHeatmap {
   const heatmap: UsageHeatmap = {
     tokens: emptyMatrix(),
@@ -95,7 +102,7 @@ function previewHeatmap(): UsageHeatmap {
   };
   for (let weekday = 0; weekday < 7; weekday++) {
     for (let hour = 0; hour < 24; hour++) {
-      if (hour < 7) continue; // 凌晨休:零用量 + 无采集
+      if (hour < 7) continue; // overnight rest: zero usage + no collection
       const work = hour >= 9 ? 1 : 0.3;
       const weekend = weekday >= 5 ? 0.45 : 1;
       const tokens = Math.round(
@@ -117,7 +124,7 @@ function previewHeatmap(): UsageHeatmap {
 }
 
 export function usagePreviewSnapshot(now = new Date()): UsagePreviewSnapshot {
-  /* 近 30 天,截止昨日(今日不完整,不进示例) */
+  /* Last 30 days ending yesterday (today is incomplete, excluded) */
   const trend = Array.from({ length: 30 }, (_, i) => previewDay(now, i - 30, i));
 
   const totals: UsageTotals = {

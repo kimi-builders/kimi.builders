@@ -44,8 +44,9 @@ export async function consumeUsageRateLimit({
   return Number(rows[0]?.attempts ?? limit + 1) <= limit;
 }
 
-/* 限流身份(20260822 P1-1 改):可信头序见 client-ip.ts;取不到(本机直连)
-   回落 "unknown"——开发场景全体共享同一桶,可接受。 */
+/* Rate-limit identity: trusted header order lives in client-ip.ts. Falls back
+   to "unknown" on direct local access — everyone shares one bucket in dev,
+   which is acceptable. */
 export function requestIdentity(request: Request): string {
   return trustedClientIp(request.headers) ?? "unknown";
 }

@@ -56,8 +56,11 @@ function cjkCommentLines(file: string): number {
     } else if (line.startsWith("//")) {
       text = line;
     } else if (line.startsWith("/*")) {
-      inBlock = true;
+      /* A block that opens and closes on one line must not leave inBlock
+         set, or every later line (including code with CJK strings) would
+         be miscounted as a comment. */
       text = line.replace("*/", "");
+      if (!line.includes("*/")) inBlock = true;
     } else if (line.startsWith("*")) {
       text = line.replace("*/", "");
     }

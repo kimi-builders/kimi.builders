@@ -2,10 +2,10 @@ import { compactNumber } from "../format";
 import type { UsageMetric } from "./filters";
 import type { UsageHeatmap } from "./query-types";
 
-/* 热图可切换的指标:页面主指标 + 用户消息(prompts)。 */
+/* Metrics switchable on the heatmap: the page's main metric plus user prompts. */
 export type UsageHeatMetric = UsageMetric | "prompts";
 
-/* 按指标取出 7×24 数值网格。 */
+/* Extract the 7x24 value grid for a metric. */
 export function heatGridFor(heatmap: UsageHeatmap, metric: UsageHeatMetric): number[][] {
   if (metric === "cost") return heatmap.costMicros;
   if (metric === "duration") return heatmap.activeSeconds;
@@ -19,11 +19,11 @@ export interface HeatSlot {
   value: number;
 }
 
-/* TOP5 卡(服务端渲染)与热图共用星期名。 */
+/* Weekday names shared by the TOP5 cards (server-rendered) and the heatmap. */
 export const USAGE_WEEKDAYS_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
 export const USAGE_WEEKDAYS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
-/* 最活跃时段:按当前指标在 7×24 网格上取 TOP N(value>0)。 */
+/* Most active slots: TOP N cells (value > 0) on the 7x24 grid for the current metric. */
 export function heatTopSlots(
   heatmap: UsageHeatmap,
   metric: UsageHeatMetric,
@@ -36,13 +36,14 @@ export function heatTopSlots(
     .slice(0, count);
 }
 
-/* 峰值格(白圈):当前指标下最大值所在格;全零返回 null。 */
+/* Peak cell (white ring): the max cell under the current metric; null when all zero. */
 export function heatPeakSlot(heatmap: UsageHeatmap, metric: UsageHeatMetric): HeatSlot | null {
   return heatTopSlots(heatmap, metric, 1)[0] ?? null;
 }
 
-/* 趋势堆叠柱的卡头图例(用量中心 page.tsx 与个人主页 page.tsx 共用);
-   颜色与 UsageVisualizations 的 FILL_* 填充一一对应,改色两边同步。 */
+/* Trend-stack card header legend (shared by the usage page and the profile
+   page); colors map 1:1 to the FILL_* constants in UsageVisualizations —
+   change them on both sides. */
 export const USAGE_TREND_LEGEND = [
   { key: "input", zh: "输入(含缓存写)", en: "Input (incl. cache write)", chip: "bg-blue" },
   { key: "cache", zh: "缓存读", en: "Cache read", chip: "bg-status-ok/80" },
@@ -66,7 +67,7 @@ function durationText(seconds: number, zh: boolean): string {
   return zh ? `${minutes} 分钟` : `${minutes}m`;
 }
 
-/* 热图/TOP5 共用的数值文案(token / 估费 / 时长 / 用户消息)。 */
+/* Numeric copy shared by the heatmap and TOP5 (tokens / cost / duration / prompts). */
 export function heatMetricText(
   metric: UsageHeatMetric,
   value: number,

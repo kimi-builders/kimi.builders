@@ -1,6 +1,7 @@
-/* 用户落库:oauth_accounts 命中 → 返回既有 user_id;
-   未命中 → 建新 users 行(handle 去重)+ 绑定 oauth_accounts。
-   不按邮箱自动并号(防撞号);同人多绑留到设置页再做。 */
+/* User upsert: an oauth_accounts hit returns the existing user_id; a miss
+   creates a new users row (handle deduped) and binds the oauth_accounts
+   row. No automatic account merging by email (anti-hijack); linking
+   multiple providers to one person happens later in settings. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool } from "mysql2/promise";
 import { getPool } from "../db";
@@ -12,8 +13,9 @@ import type { OAuthProfile, Provider } from "./oauth";
 
 export { isOwnAvatarUrl } from "../avatar-urls";
 
-/* provider 头像是否允许同步到账号:当前头像为空,或不是站内自传的,才同步;
-   用户自己上传过的头像不被后续 OAuth 登录冲掉。 */
+/* Whether a provider avatar may sync into the account: only when the
+   current avatar is empty or was not uploaded on site — a user-uploaded
+   avatar is never overwritten by later OAuth logins. */
 export function shouldSyncProviderAvatar(
   current: string | null | undefined,
 ): boolean {
@@ -21,7 +23,8 @@ export function shouldSyncProviderAvatar(
   return cur === "" || !isOwnAvatarUrl(cur);
 }
 
-/* 登录时的 provider 头像同步:带防覆盖条件(见上),无 provider 头像或无需变更时不动。 */
+/* Login-time provider avatar sync: guarded against overwrite (see
+   above); no provider avatar or no change means no write. */
 export async function syncProviderAvatar(
   pool: Pool,
   userId: number,
@@ -35,8 +38,9 @@ export async function syncProviderAvatar(
   );
   const current = rows[0] ? String(rows[0].avatar_url ?? "") : "";
   if (current === next || !shouldSyncProviderAvatar(current)) return false;
-  /* 把已读旧值钉进 UPDATE，若用户在 SELECT 后刚上传自有头像，affectedRows=0，
-     OAuth 登录不会覆盖并发的新值。 */
+  /* Pin the previously read value into the UPDATE: if the user uploaded
+     their own avatar right after the SELECT, affectedRows=0 and the OAuth
+     login does not clobber the concurrent new value. */
   const [res] = await pool.query<ResultSetHeader>(
     "UPDATE users SET avatar_url = ? WHERE id = ? AND avatar_url = ?",
     [next, userId, current],
@@ -44,7 +48,7 @@ export async function syncProviderAvatar(
   return res.affectedRows > 0;
 }
 
-/* provider 账号 → 已绑定用户 id;未绑定返回 null。 */
+/* Provider account -> bound user id; null when unbound. */
 export async function findLinkedUserId(
   provider: Provider,
   providerAccountId: string,
@@ -56,8 +60,9 @@ export async function findLinkedUserId(
   return rows[0] ? Number(rows[0].user_id) : null;
 }
 
-/* 登录后绑定(设置页发起):已绑给本人幂等 ok;已绑给别人 → taken(不抢绑);
-   否则新建绑定行。 */
+/* Post-login linking (initiated from settings): idempotent ok when
+   already bound to the same user; "taken" when bound to someone else
+   (never stolen); otherwise a new binding row. */
 export async function linkProviderAccount(
   userId: number,
   provider: Provider,
@@ -80,15 +85,20 @@ export async function findOrCreateUser(
   const pool = getPool();
   const linkedId = await findLinkedUserId(provider, profile.providerAccountId);
   if (linkedId !== null) {
-    /* 老用户登录:provider 头像同步带防覆盖条件(自传头像不冲掉;
-       「恢复默认」清空 avatar_url 后,下次登录在这里重新同步 provider 头像) */
+    /* Returning user login: provider avatar sync with overwrite guard
+       (uploaded avatars survive; after "reset to default" clears
+       avatar_url, the next login re-syncs the provider avatar here). */
     await syncProviderAvatar(pool, linkedId, profile.avatarUrl);
     return linkedId;
   }
 
-  /* 邮箱占用检查:已验证邮箱 → 自动并号(挂 provider 后登录既有账号,不再新建小号);
-     未验证邮箱撞上既有账号 → 新号不落该邮箱(防唯一约束冲突 + 防撞号)。
-     GitHub 只取 verified 邮箱、Google 要 email_verified=true(见 oauth.ts)。 */
+  /* Email occupancy check: a verified email merges accounts automatically
+     (logging in with the provider attaches to the existing account
+     instead of creating a duplicate); an unverified email colliding with
+     an existing account is simply not stored on the new one (avoids the
+     unique constraint and account preemption). GitHub yields only
+     verified emails and Google requires email_verified=true (see
+     oauth.ts). */
   let emailTaken = false;
   if (profile.email) {
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -127,7 +137,8 @@ export async function findOrCreateUser(
   return uid;
 }
 
-/* 邮箱注册:不自动并号(防撞号);handle 从邮箱本地部分派生去重。 */
+/* Email signup: no automatic merging (anti-hijack); the handle derives
+   from the email local-part with dedup. */
 export async function createEmailUser(email: string, name?: string): Promise<number> {
   const pool = getPool();
   const localPart = email.split("@")[0] || "builder";
@@ -147,8 +158,9 @@ export async function setUserPassword(userId: number, passwordHash: string): Pro
   ]);
 }
 
-/* 设置页改密/展示用:返回当前密码哈希,无密码(OAuth 注册)为 null。
-   哈希只留在服务端,不进任何客户端 props。 */
+/* For settings-page password change and display: returns the current
+   password hash, null when the account has no password (OAuth signup).
+   Hashes stay server-side, never in client props. */
 export async function getUserPasswordHash(userId: number): Promise<string | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT password_hash FROM users WHERE id = ? LIMIT 1",
@@ -158,8 +170,9 @@ export async function getUserPasswordHash(userId: number): Promise<string | null
   return row?.password_hash == null ? null : String(row.password_hash);
 }
 
-/* 解绑守卫(纯函数):不能拿走账号最后一个登录方式——
-   无密码且只剩这一条 OAuth 绑定时,解绑后账号将永远无法登录。 */
+/* Unlink guard (pure): the last login method cannot be removed — with no
+   password and only one OAuth binding left, unlinking would lock the
+   account out forever. */
 export function canUnlinkProvider(
   hasPassword: boolean,
   linkedCount: number,
@@ -169,8 +182,9 @@ export function canUnlinkProvider(
   return "ok";
 }
 
-/* 解绑 OAuth:事务里锁用户行重数登录方式(并发解绑两个 provider 也不会双双通过),
-   守卫通过后删除绑定行;affectedRows=0 即本来就没绑。 */
+/* Unlink OAuth: locks the user row and recounts login methods inside a
+   transaction (two concurrent unlinks cannot both pass the guard), then
+   deletes the binding; affectedRows=0 means it was never bound. */
 export async function unlinkProviderAccount(
   userId: number,
   provider: Provider,

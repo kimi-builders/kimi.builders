@@ -1,6 +1,6 @@
-/* 用量看板展示标签:source id → 展示名。
-   页面(服务端)与筛选栏(客户端)共用,必须保持客户端可引 —— 不得引入
-   next/headers、db 或任何服务端专属模块。 */
+/* Display labels for the usage dashboard: source id -> display name.
+   Shared by the server-rendered page and the client filter bar, so this module
+   must stay client-importable: no next/headers, db, or server-only imports. */
 
 const SOURCE_LABELS: Record<string, string> = {
   "kimi-code": "Kimi Code",

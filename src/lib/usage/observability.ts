@@ -18,9 +18,10 @@ function errorSummary(error: unknown): Record<string, string> {
   };
 }
 
-/* Vercel/Node 日志可直接按 event、operation、reference 检索。
-   默认只记录失败和慢操作；USAGE_OBSERVABILITY_VERBOSE=1 时记录全部成功操作。
-   metadata 只接受调用方主动提供的低基数字段，禁止传项目名、设备名或筛选值。 */
+/* Structured logs searchable by event, operation, and reference. Failures and
+   slow operations are always logged; USAGE_OBSERVABILITY_VERBOSE=1 also logs
+   successful ones. Metadata accepts only caller-provided low-cardinality
+   fields: never project names, device names, or filter values. */
 export async function captureUsageOperation<T>(
   operation: string,
   work: () => Promise<T>,

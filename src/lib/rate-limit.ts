@@ -1,10 +1,13 @@
-/* 社区写操作限流(P1-5):发帖 / 评论 / 顶踩投票 / 图片上传的 DB 固定窗口计数器。
-   复用 usage_rate_limits 表(scope 前缀 community: 区分),窗口与计数语义同
-   src/lib/usage/rate-limit.ts —— upsert 时窗口过期即重置,窗口内 attempts 只增,
-   计数先于判定(本次调用即占一个额度)。identity 同 usage 侧存 peppered HMAC,
-   不落明文 userId。
-   与 usage 侧的差别:社区写操作要给用户可见的等待时长,所以 SELECT 一并算
-   retry_after(窗口剩余秒数),返回结构化结果而非纯布尔。 */
+/* Rate limiting for community writes (posts, comments, votes, uploads):
+   DB fixed-window counters. Reuses the usage_rate_limits table (scope
+   prefix community:) with the same window semantics as
+   src/lib/usage/rate-limit.ts — an upsert resets an expired window,
+   attempts only grow within a window, and counting precedes the verdict
+   (each call consumes one unit). Identity is a peppered HMAC, never a
+   plaintext userId. Difference from the usage side: community writes owe
+   the user a visible wait time, so the SELECT also computes retry_after
+   (seconds to window reset) and returns a structured result, not a bare
+   boolean. */
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "./db";
 import { usageHmac } from "./usage/crypto";
@@ -15,13 +18,14 @@ export type CommunityRateAction = "post" | "comment" | "vote" | "upload" | "ai_s
 
 export interface CommunityRateResult {
   allowed: boolean;
-  /* 距窗口重置的秒数,夹在 [1, windowSeconds];超限时即用户需等待的时长 */
+  /* Seconds to window reset, clamped to [1, windowSeconds]; when over the
+     limit this is the user's wait time. */
   retryAfterSeconds: number;
 }
 
-/* 限额(P1-5):发帖 10/小时、评论 30/小时、顶踩投票 120/小时、上传 30/小时、
-   AI 召唤(@kimi)20/小时(20260816);作品创建 10/小时(20260822 P1-5,
-   与发帖同档,写库前消耗);固定窗口 1 小时 */
+/* Limits: posts 10/h, comments 30/h, votes 120/h, uploads 30/h, @kimi
+   summons 20/h, work creation 10/h (same tier as posts, consumed before
+   the write). Fixed one-hour windows. */
 export const COMMUNITY_RATE_WINDOW_SECONDS = 60 * 60;
 
 export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
@@ -33,7 +37,8 @@ export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
   work: 10,
 };
 
-/* 限流键:scope = community:<action>,同一用户不同 action 各自独立计数 */
+/* Rate-limit key: scope = community:<action>; each action counts
+   independently per user. */
 export function communityRateScope(action: CommunityRateAction): string {
   return `community:${action}`;
 }
@@ -45,7 +50,8 @@ export function communityRateIdentityHash(
   return usageHmac(`${communityRateScope(action)}\0${userId}`);
 }
 
-/* 计数 +1;窗口_start 早于 windowSeconds 前则整窗重置(与 usage 侧同一段 upsert) */
+/* Count +1; a window_start older than windowSeconds resets the whole
+   window (same upsert as the usage side). */
 export function buildCommunityRateConsumeSql(): string {
   return `INSERT INTO usage_rate_limits (scope, identity_hash, window_start, attempts)
      VALUES (?, ?, UTC_TIMESTAMP(3), 1)
@@ -62,7 +68,9 @@ export function buildCommunityRateConsumeSql(): string {
        )`;
 }
 
-/* 读回计数,并在库内算窗口剩余秒数(两端时钟以库为准,避免服务器时钟漂移) */
+/* Read the count back and compute the remaining window seconds in SQL
+   (the database clock is authoritative on both ends, immune to server
+   clock drift). */
 export function buildCommunityRateSelectSql(): string {
   return `SELECT attempts,
        TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(3), TIMESTAMPADD(SECOND, ?, window_start)) AS retry_after
@@ -71,8 +79,10 @@ export function buildCommunityRateSelectSql(): string {
      LIMIT 1`;
 }
 
-/* 计数行 → 结构化结果:attempts 超限即拒;retry_after 夹到 [1, windowSeconds]
-   (TIMESTAMPDIFF 整秒截断,窗口将尽/刚过期时可能算出 0 或负值,至少留 1 秒) */
+/* Count row -> structured result: over-limit attempts are rejected;
+   retry_after clamps to [1, windowSeconds] (TIMESTAMPDIFF truncates to
+   whole seconds, so a nearly-expired or just-expired window can compute
+   0 or negative — keep at least 1 second). */
 export function communityRateDecision({
   attempts,
   retryAfter,
@@ -93,8 +103,9 @@ export function communityRateDecision({
   };
 }
 
-/* 消耗一次额度并判定。行必然存在(刚 upsert 过);查不到按超限拒,
-   与 usage 侧同一防御姿态。 */
+/* Consume one unit and decide. The row must exist (just upserted); a
+   miss is treated as over-limit — same defensive posture as the usage
+   side. */
 export async function consumeCommunityRateLimit(
   userId: number,
   action: CommunityRateAction,

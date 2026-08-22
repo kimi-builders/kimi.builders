@@ -1,7 +1,8 @@
-/* 用量设备 onboarding 的单一事实源(2026-08-14):三条 CLI 命令与其口径文案。
-   首开引导(UsageFirstRun)、「同步数据」弹窗、设备连接页都从这里取,
-   改命令或措辞只动这一个文件;usage-device-onboarding.test.ts 钉住文案契约
-   (如「init 只授权,不扫描不上传」)。 */
+/* Single source of truth for usage-device onboarding: the three CLI commands
+   and their canonical copy. The first-run guide, the sync dialog, and the
+   device connection page all read from here — change commands or wording in
+   this file only; usage-device-onboarding.test.ts pins the copy contract
+   (e.g. "init only authorizes; it does not scan or upload"). */
 export const USAGE_DASHBOARD_COMMAND = "npx @kimi.builders/usage@latest dashboard";
 export const USAGE_INIT_COMMAND = "npx @kimi.builders/usage@latest init";
 export const USAGE_SYNC_COMMAND = "npx @kimi.builders/usage@latest sync";

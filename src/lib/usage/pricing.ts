@@ -1,10 +1,13 @@
-/* 版本化价格目录。社区公开 API 与站内估费共享同一份 canonical catalog;
-   usage_model_prices 表保留历史迁移与审计兼容,不再是运行时唯一事实源。
-   匹配规则:exact 优先于 prefix;prefix 取最长命中;同长度时 source 限定行优先于通用行;
-   生效窗口 [effective_from, effective_to) 按 bucket 发生时间取价,不用今日价格回算历史。
-   费率回退链:cacheWrite NULL → input 价(Moonshot/OpenAI 不单收 cache 写);
-   reasoning NULL → output 价(OpenAI/Moonshot 把 reasoning 计入 output 计费);
-   cacheRead NULL → 该类目未定价,token 照常统计但不计入估费(模型标记 partial)。 */
+/* Versioned price catalog. The community API and on-site cost estimates
+   share one canonical catalog; the usage_model_prices table stays for
+   migration history and audit, no longer the single runtime source of truth.
+   Matching: exact beats prefix; longest prefix wins; at equal length a
+   source-scoped row beats a generic one; the [effective_from, effective_to)
+   window prices by bucket time — never today's price for history.
+   Fallback chain: cacheWrite NULL -> input price (Moonshot/OpenAI bill no
+   separate cache write); reasoning NULL -> output price (OpenAI/Moonshot
+   count reasoning into output); cacheRead NULL -> category unpriced, tokens
+   still counted but excluded from cost (model marked partial). */
 import type mysql from "mysql2/promise";
 import { USAGE_PRICE_CATALOG } from "./price-catalog";
 
@@ -43,8 +46,8 @@ export interface UsageTokenBreakdown {
 export type UsagePriceStatus = "priced" | "partial" | "unpriced";
 
 export interface UsagePriceEstimate {
-  /* 微美元。unpriced 时恒为 0 —— 调用方必须连同 status 一起展示,
-     不得把 0 当作「免费」。 */
+  /* Micro-dollars. Always 0 when unpriced — show it together with the
+     status; a 0 is never "free". */
   micros: number;
   status: UsagePriceStatus;
   version: string | null;
@@ -88,9 +91,10 @@ export async function loadModelPrices(
   }));
 }
 
-/* 在 at 时刻生效的行里挑最优:exact > 最长 prefix > source 限定 > 最新 effective_from。
-   归一化:先按原样匹配;未命中再试最后一个 / 之后的形式
-   (如 openrouter/moonshotai/kimi-k3 → kimi-k3;供应商前缀形态多见于聚合渠道)。 */
+/* Pick the best row effective at "at": exact > longest prefix >
+   source-scoped > latest effective_from. Normalization: match as-is first,
+   then retry the segment after the last slash (openrouter/moonshotai/kimi-k3
+   -> kimi-k3; aggregator prefixes are the common source of that shape). */
 export function matchModelPrice(
   prices: readonly UsageModelPrice[],
   model: string,
@@ -184,7 +188,8 @@ function matchExactOrPrefix(
   return prefixed[0] ?? null;
 }
 
-/* 展示层汇率(静态,手工维护;只影响展示,不改美元存储与估费口径)。 */
+/* Display-layer FX rates (static, hand-maintained; display only — USD
+   storage and cost math are unaffected). */
 export const USAGE_FX_AS_OF = "2026-08-08";
 export const USAGE_DISPLAY_CURRENCIES = {
   usd: { rate: 1, symbol: "$", label: "USD" },
@@ -192,8 +197,8 @@ export const USAGE_DISPLAY_CURRENCIES = {
 } as const;
 export type UsageDisplayCurrency = keyof typeof USAGE_DISPLAY_CURRENCIES;
 
-/* 单条 token 组合的估费。micros = tokens × 每 MTok 美元价(单位恰好抵消)。
-   任何一个「有 token 但无费率」的类目都会把结果降级为 partial。 */
+/* Cost for one token combo. micros = tokens x per-MTok USD (units cancel).
+   Any category with tokens but no rate downgrades the result to partial. */
 export function estimateCostMicros(
   tokens: UsageTokenBreakdown,
   price: UsageModelPrice | null,
@@ -277,7 +282,8 @@ export function estimateCostMicros(
   };
 }
 
-/* 聚合辅助:把一条 (model, tokens) 行估费并累计到 priced/unpriced/partial 名册。 */
+/* Aggregate helper: price one (model, tokens) row and fold it into the
+   priced/unpriced/partial roster. */
 export interface PricingLedger {
   micros: number;
   pricedTokens: number;

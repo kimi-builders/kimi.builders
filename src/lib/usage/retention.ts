@@ -1,31 +1,35 @@
-/* usage retention 清理(P0-2):按 usage_settings.retention_days 删除过期的
-   usage_buckets / usage_sessions 行,兑现隐私设置里的保留期承诺。
-   由 /api/cron/usage-retention 每日触发;分批 DELETE,幂等——重跑只会再删 0 行。
-   边界:bucket 看 bucket_start,session 看 last_message_at(还在更新的会话保留)。 */
+/* Usage retention: delete expired usage_buckets / usage_sessions rows per
+   usage_settings.retention_days, honoring the retention promise made in
+   privacy settings. Triggered daily by /api/cron/usage-retention; batched
+   DELETEs, idempotent — a rerun deletes 0 more rows. Boundaries: buckets by
+   bucket_start, sessions by last_message_at (still-updating sessions stay). */
 import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
 
 type Queryable = Pool | PoolConnection;
 
 export interface UsageRetentionStats {
-  /* 本次有行被实际删除的用户数 */
+  /* Users whose rows were actually deleted this run */
   users: number;
   bucketsDeleted: number;
   sessionsDeleted: number;
-  /* 全局公共表清理(20260822 P1-7),与按用户保留期无关 */
+  /* Global shared-table cleanup, independent of per-user retention */
   rateLimitsDeleted: number;
   deviceCodesDeleted: number;
 }
 
-/* 单条 DELETE 的最大行数;删满就再来一批,避免长事务锁表 */
+/* Max rows per DELETE; a full batch repeats, avoiding long table-locking
+   transactions */
 const DELETE_BATCH_SIZE = 5000;
 
-/* 全局清理保留期:
-   - usage_rate_limits:窗口过期后行即失效,留 7 天仅作追溯;全 scope 一起清
-     (此前只有 analytics scope 有人清,其余无限增长)。7 天远大于最长窗口(1h),
-     不会释放仍在计数的活跃桶;
-   - usage_device_codes:终态(expired/denied/delivered)行只剩审计价值,7 天后删
-     (生命周期只有状态流转、从不 DELETE,同样无限增长)。 */
+/* Global cleanup retention:
+   - usage_rate_limits: rows are inert once the window expires; keep 7 days
+     for forensics only. Clears every scope together (previously only the
+     analytics scope was cleaned; the rest grew unbounded). 7 days far
+     exceeds the longest window (1h), so active counters are never released.
+   - usage_device_codes: terminal states (expired/denied/delivered) are audit
+     residue, deleted after 7 days (their lifecycle only transitions status,
+     never DELETEs — same unbounded growth). */
 const RATE_LIMIT_RETENTION_DAYS = 7;
 const DEVICE_CODE_RETENTION_DAYS = 7;
 
@@ -35,7 +39,7 @@ export function usageRetentionCutoff(retentionDays: number, now: Date): Date {
   return new Date(now.getTime() - retentionDays * DAY_MS);
 }
 
-/* DATETIME(3) 按 UTC 比较(连接池两端都是 UTC,见 db.ts) */
+/* DATETIME(3) compares in UTC (both pool ends are UTC, see db.ts) */
 function toUtcDateTime(value: Date): string {
   return value.toISOString().slice(0, 23).replace("T", " ");
 }
@@ -88,7 +92,8 @@ export async function applyUsageRetention(
     stats.bucketsDeleted += buckets;
     stats.sessionsDeleted += sessions;
   }
-  /* 全局公共表清理(P1-7):按最近命中/创建时间截断,与上面的按用户保留期无关 */
+  /* Global shared-table cleanup: truncate by last-hit/created time,
+     independent of the per-user loop above */
   const rateLimitCutoff = toUtcDateTime(
     new Date(now.getTime() - RATE_LIMIT_RETENTION_DAYS * DAY_MS),
   );

@@ -1,6 +1,7 @@
-/* 邮箱+密码凭证:scrypt 散列(node:crypto 内置,零依赖)。
-   存储格式 scrypt$N$r$p$salt_b64url$hash_b64url,校验用 timingSafeEqual。
-   用同步版:注册/登录是低频路径,~50ms 计算可接受且省去 promisify 类型包袱。 */
+/* Email+password credentials: scrypt via node:crypto (zero deps). Stored
+   as scrypt$N$r$p$salt_b64url$hash_b64url, verified with timingSafeEqual.
+   The synchronous variant on purpose: signup/login are low-frequency
+   paths, ~50ms is fine, and it avoids promisify typing. */
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const N = 16384;

@@ -1,24 +1,36 @@
-/* 社区用量榜(P1-1 + 增强):只聚合主动 opt-in(usage_settings.show_on_leaderboard=1)成员的
-   usage_buckets,输出周期 token 总量与活跃天数两个聚合数字,联 users 取展示身份
-   (handle/显示名/头像)。隐私边界:项目名、设备、时段等明细列根本不进 SQL。
-   token 口径与看板总量一致(见 community.ts / query.ts);活跃天数按 UTC 自然日计
-   (社区参考口径,连接池两端都是 UTC,见 db.ts)。
+/* Community usage leaderboard: aggregates only members who opted in
+   (usage_settings.show_on_leaderboard=1), outputting period token totals
+   and active-day counts, joined with users for display identity
+   (handle/name/avatar). Privacy boundary: project, device, and time-of-day
+   detail columns never enter the SQL. Tokens match the dashboard total
+   (community.ts / query.ts); active days count UTC calendar days (the
+   community reference — both pool ends are UTC, see db.ts).
 
-   增强(24H/7D/30D 周期、分 Agent/分模型榜、预估费用、我的排名):
-   - 周期 cutoff = now - 24h/7d/30d 的 DATETIME(3) UTC 串(比较口径同 retention.ts)。
-   - 分维度榜在同一查询上加 source / canonical 模型表达式过滤,只改 WHERE,不改输出列。
-   - 预估费用只在总榜 TOP 50 候选池内计算:估费要逐「用户 × 日 × source × 模型」
-     匹配版本化价格表(pricing.ts,与看板同口径:stored cost_micros 事实 + 查询期估算),
-     对全量 opt-in 群体逐桶估价超出一个榜单页的预算。行按 UTC 日聚合仅为匹配价格
-     生效窗口(窗口跨日的边缘天按当天 00:00 UTC 取价,价格极少日内变更,可忽略),
-     day 列不输出到页面。legacy(measurement='legacy' 或 model='legacy/unknown')行
-     只计 stored 事实,不估算(同看板)。
-   - 我的排名:token/活跃天数名次在全量 opt-in 聚合(无 LIMIT,返回行数 = 周期内有
-     数据的公开成员数)上取稳定排序位置;费用名次只在 TOP 50 候选池内排序。
-     同分处理:主指标降序 → 副指标降序 → handle 字典序,同分不并列,名次即该
-     全序下的位置;超出 TOP 50 一律显示 "50+",不暴露精确名次。
-   build 前缀 / aggregateUsageLeaderboardCosts / usageLeaderboardRank 是纯函数,便于单测;
-   get 前缀才碰 DB。 */
+   Enhancements (24H/7D/30D periods, per-agent and per-model boards,
+   estimated cost, my rank):
+   - Period cutoff = now - 24h/7d/30d as a DATETIME(3) UTC string (same
+     comparison convention as retention.ts).
+   - Dimension boards add a source / canonical-model expression filter on
+     the same query — WHERE only, output columns unchanged.
+   - Estimated cost is computed only inside the TOP 50 candidate pool:
+     pricing must match the versioned price table per user x day x source x
+     model (pricing.ts, same as the dashboard: stored cost_micros facts plus
+     query-time estimation); per-bucket pricing for every opt-in member
+     exceeds a leaderboard page's budget. Rows aggregate by UTC day only to
+     match price effective windows (edge days spanning a window price at
+     that day's 00:00 UTC — prices rarely change intra-day); the day column
+     never reaches the page. Legacy rows (measurement='legacy' or
+     model='legacy/unknown') count stored facts only, no estimation (same
+     as the dashboard).
+   - My rank: token/active-day positions come from the full opt-in
+     aggregate (no LIMIT; row count = public members with data in the
+     period) under a stable total order; cost ranks order only within the
+     TOP 50 pool. Ties: primary desc -> secondary desc -> handle
+     lexicographic — no shared ranks; the rank is the position in that
+     total order. Beyond TOP 50 always displays "50+", never an exact rank.
+   build-prefixed helpers / aggregateUsageLeaderboardCosts /
+   usageLeaderboardRank are pure functions for unit tests; only get-prefixed
+   functions touch the DB. */
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
 import { canonicalUsageModel } from "./model-meta";
@@ -35,15 +47,16 @@ type Queryable = Pool | PoolConnection;
 export const USAGE_LEADERBOARD_PERIODS = ["24h", "7d", "30d"] as const;
 export type UsageLeaderboardPeriod = (typeof USAGE_LEADERBOARD_PERIODS)[number];
 
-/* 榜单最长展示条数;limit 参数会被钳制到这个上界。 */
+/* Max leaderboard rows shown; the limit parameter is clamped to this
+   ceiling. */
 export const USAGE_LEADERBOARD_LIMIT = 50;
 
-/* 分维度 chips 最多展示的候选数(按周期 token 权重排序)。 */
+/* Max dimension-chip candidates shown (ordered by period token weight). */
 export const USAGE_LEADERBOARD_DIMENSION_LIMIT = 10;
 
 export interface UsageLeaderboardEntry {
   rank: number;
-  /* 内部 join key(费用回填 / 我的排名定位),不在页面渲染。 */
+  /* Internal join key (cost backfill / my-rank lookup), never rendered. */
   userId: number;
   handle: string;
   name: string;
@@ -58,19 +71,22 @@ const PERIOD_MS: Record<UsageLeaderboardPeriod, number> = {
   "30d": 30 * 24 * 60 * 60 * 1000,
 };
 
-/* 五段观测 token 的求和表达式,三个查询共用同一口径(与看板 TOKEN_TOTAL_SQL 一致)。 */
+/* Sum expression over the five observed token segments; all three queries
+   share it (same as the dashboard's TOKEN_TOTAL_SQL). */
 const TOKEN_TOTAL_SQL = `SUM(b.input_tokens + b.cache_write_input_tokens + b.cache_read_input_tokens
                      + b.output_tokens + b.reasoning_output_tokens)`;
 
-/* 分模型榜的分组键:优先采集端归一好的 model_canonical,空则回退原始 model
-   (JS 侧别名归一见 model-meta.ts,只在缺失 canonical 的旧行上才有细微差异)。 */
+/* Per-model board grouping key: prefer the collected model_canonical,
+   fall back to the raw model (JS-side alias merging lives in
+   model-meta.ts; only old rows missing canonical differ slightly). */
 const MODEL_KEY_SQL = "COALESCE(NULLIF(b.model_canonical, ''), b.model)";
 
 export function normalizeUsageLeaderboardPeriod(value: unknown): UsageLeaderboardPeriod {
   return value === "24h" || value === "30d" ? value : "7d";
 }
 
-/* 周期下界:now - N,输出 DATETIME(3) UTC 串(比较口径同 retention.ts)。 */
+/* Period lower bound: now - N as a DATETIME(3) UTC string (same comparison
+   convention as retention.ts). */
 export function usageLeaderboardCutoff(period: UsageLeaderboardPeriod, now: Date): string {
   return new Date(now.getTime() - PERIOD_MS[period])
     .toISOString()
@@ -79,16 +95,19 @@ export function usageLeaderboardCutoff(period: UsageLeaderboardPeriod, now: Date
 }
 
 export interface UsageLeaderboardQueryOptions {
-  /* 默认 USAGE_LEADERBOARD_LIMIT;0 = 不限(我的排名需要全量 opt-in 排序)。 */
+  /* Defaults to USAGE_LEADERBOARD_LIMIT; 0 = unlimited (my-rank needs the
+     full opt-in ordering). */
   limit?: number;
-  /* 分 Agent 榜:只看该 source 的桶。 */
+  /* Per-agent board: only that source's buckets. */
   source?: string;
-  /* 分模型榜:按 canonical 模型表达式匹配。 */
+  /* Per-model board: match on the canonical model expression. */
   model?: string;
 }
 
-/* 纯 SQL 构建:WHERE 先卡 show_on_leaderboard = 1,再按周期下界聚合;
-   SELECT 只有内部 join key + 展示身份 + SUM/COUNT 聚合,没有任何明细维度。 */
+/* Pure SQL building: WHERE pins show_on_leaderboard = 1 first, then
+   aggregates above the period cutoff; SELECT carries only the internal
+   join key + display identity + SUM/COUNT aggregates — no detail
+   dimension. */
 export function buildUsageLeaderboardQuery(
   period: UsageLeaderboardPeriod,
   now: Date,
@@ -122,8 +141,9 @@ export function buildUsageLeaderboardQuery(
 
 export type UsageLeaderboardDimension = "source" | "model";
 
-/* 分维度 chips 候选:opt-in 群体内按周期 token 权重取前 N 个 source / canonical 模型。
-   维度值只来自聚合分组键,不含任何项目/设备/时段明细。 */
+/* Dimension-chip candidates: top N sources / canonical models by period
+   token weight within the opt-in group. Values come only from grouping
+   keys — no project/device/time detail. */
 export function buildUsageLeaderboardDimensionQuery(
   dimension: UsageLeaderboardDimension,
   period: UsageLeaderboardPeriod,
@@ -144,11 +164,15 @@ export function buildUsageLeaderboardDimensionQuery(
   };
 }
 
-/* 费用明细查询:只服务于 TOP 50 候选池(userIds 来自榜单查询结果,同请求内派生,
-   非用户输入;仍在本语句 JOIN 中重新卡 show_on_leaderboard = 1,避免共享快照
-   与隐私开关并发变化时读出已退出成员的费用)。ID 校验为整数后字面展开,
-   避免依赖驱动的 IN 数组展开行为。输出按「用户 × UTC 日 × source × 模型 × 计费档」聚合,
-   供 JS 侧逐行匹配版本化价格表;项目/设备/小时内时段等明细列不进语句。 */
+/* Cost detail query: serves only the TOP 50 candidate pool (userIds
+   derive from the leaderboard result within the same request, not user
+   input; the statement still re-pins show_on_leaderboard = 1 in its JOIN,
+   so a privacy flip racing the shared snapshot cannot leak a leaver's
+   costs). Ids are validated as integers and expanded literally, avoiding
+   driver-dependent IN-array expansion. Output aggregates by user x UTC
+   day x source x model x billing tier for JS-side per-row matching against
+   the versioned price table; project/device/hour detail columns never
+   enter the statement. */
 export function buildUsageLeaderboardCostQuery(
   userIds: readonly number[],
   period: UsageLeaderboardPeriod,
@@ -208,8 +232,9 @@ function num(value: unknown): number {
 
 const LEGACY_MODEL = "legacy/unknown";
 
-/* 把费用明细行逐行估费并累加为 用户 → 微美元。口径同看板:stored cost_micros
-   事实 + 版本化价格表估算;legacy 行只计 stored。 */
+/* Price the cost-detail rows and fold them into user -> micro-dollars.
+   Same definition as the dashboard: stored cost_micros facts + versioned
+   price estimation; legacy rows count stored facts only. */
 export function aggregateUsageLeaderboardCosts(
   rows: readonly UsageLeaderboardCostRow[],
   prices: readonly UsageModelPrice[],
@@ -271,8 +296,9 @@ function metricValue(entry: UsageLeaderboardRankInput, metric: UsageLeaderboardM
   return entry.totalTokens;
 }
 
-/* 稳定全序:主指标降序 → 副指标降序 → handle 字典序(与榜单 SQL 的
-   ORDER BY 同风格);同分不并列,名次 = 该全序下的 1 起位置,不在榜返回 null。 */
+/* Stable total order: primary desc -> secondary desc -> handle
+   lexicographic (same style as the board SQL's ORDER BY); no shared ranks,
+   rank = 1-based position in that order, null when absent. */
 export function usageLeaderboardRank(
   entries: readonly UsageLeaderboardRankInput[],
   userId: number,
@@ -288,7 +314,8 @@ export function usageLeaderboardRank(
   return index < 0 ? null : index + 1;
 }
 
-/* 展示口径:超出 TOP N 一律 "N+",不暴露精确名次;不在榜为 "—"。 */
+/* Display convention: beyond TOP N always "N+", never an exact rank;
+   absent is "—". */
 export function displayUsageLeaderboardRank(
   rank: number | null,
   limit: number = USAGE_LEADERBOARD_LIMIT,
@@ -334,7 +361,8 @@ export async function getUsageLeaderboardDimensions(
     options.limit,
   );
   const [rows] = await db.query<RowDataPacket[]>(query.sql, query.params);
-  /* 空串维度值(历史脏数据)不出现在 chips 里,避免选中态永远落回默认值 */
+  /* Empty dimension values (legacy dirty data) never appear in chips, so
+     the selected state can't fall back to default forever. */
   return rows.map((row) => String(row.k)).filter((k) => k.length > 0);
 }
 
@@ -348,6 +376,7 @@ export async function getUsageLeaderboardCosts(
   const prices = await loadModelPrices(db);
   const query = buildUsageLeaderboardCostQuery(userIds, period, options.now ?? new Date());
   const [rows] = await db.query<RowDataPacket[]>(query.sql, query.params);
-  /* 驱动行 ⇄ 契约行:DB 边界一次性转换(列集由 buildUsageLeaderboardCostQuery 固定) */
+  /* Driver row <-> contract row: converted once at the DB boundary
+     (column set fixed by buildUsageLeaderboardCostQuery). */
   return aggregateUsageLeaderboardCosts(rows as unknown as UsageLeaderboardCostRow[], prices);
 }

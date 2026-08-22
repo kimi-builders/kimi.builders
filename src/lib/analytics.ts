@@ -1,6 +1,7 @@
-/* 位置价值分析 v1:只收事件计数与当日去重访客 HMAC。
-   与用量模块同一隐私口径:只收计数,不收 user_id、完整 URL、referrer、
-   原始 IP、User-Agent 原文、对话内容、完整路径或凭据。 */
+/* Position-value analytics v1: event counts and per-day deduplicated
+   visitor HMACs only. Same privacy posture as the usage module: counts
+   only — no user_id, full URLs, referrers, raw IPs, raw User-Agents,
+   conversation content, full paths, or credentials. */
 import { createHmac } from "node:crypto";
 import type {
   Pool,
@@ -110,8 +111,10 @@ function validTargetId(value: string, rule: EventRule): boolean {
   return true;
 }
 
-/* API 与服务端采集共用同一逐字段校验器。未知根字段、未知 meta 键、
-   非白名单值、过长值或错误 target 组合全部拒绝,避免把任意文本写入分析表。 */
+/* API and server-side collection share one field-by-field validator.
+   Unknown root fields, unknown meta keys, non-allowlisted values,
+   overlong values, or wrong target combinations are all rejected —
+   arbitrary text never reaches the analytics tables. */
 export function parseAnalyticsEventPayload(input: unknown): AnalyticsEventPayload | null {
   if (!isPlainRecord(input)) return null;
   if (Object.keys(input).some((key) => !BODY_KEYS.has(key))) return null;
@@ -177,15 +180,17 @@ function analyticsSecret(): string {
   return secret;
 }
 
-/* viewer 只在同一 UTC 日内稳定:跨天输入前缀变化,无法形成长期浏览轨迹。
-   原始 IP/UA 只在进程内参与 HMAC,从不写表、日志或响应。 */
+/* The viewer hash is stable only within one UTC day: inputs change
+   prefix across days, so no long-term browsing trail can form. Raw IP/UA
+   enter the HMAC in-process only and are never written to tables, logs,
+   or responses. */
 export function viewerHash(
   source: HeaderSource,
   now: Date = new Date(),
   secret: string = analyticsSecret(),
 ): string {
   const headers = sourceHeaders(source);
-  /* 可信 IP 序(20260822 P1-1):与限流同源,详见 client-ip.ts */
+  /* Trusted IP order: shared with rate limiting, see client-ip.ts. */
   const ip = trustedClientIp(headers) ?? "anon";
   const ua = headers.get("user-agent")?.trim() || "anon";
   const day = now.toISOString().slice(0, 10);
@@ -206,8 +211,9 @@ export interface TrackEventOptions {
   db?: Queryable;
 }
 
-/* 页面渲染不能被分析写入阻塞:校验、HMAC 或 DB 失败只记错误。
-   调用点必须在页面组件函数体内,不得放进 unstable_cache 回调。 */
+/* Page rendering must never block on analytics writes: validation, HMAC,
+   or DB failures only log. Call sites must live inside page component
+   bodies, never inside unstable_cache callbacks. */
 export function trackEvent(
   event: AnalyticsEvent,
   target: { kind: string; id: string | number },
@@ -427,8 +433,9 @@ export async function applyAnalyticsRetention(
   db: Queryable = getPool(),
 ): Promise<{ deleted: number; rateLimitDeleted: number }> {
   const [result] = await db.query<ResultSetHeader>(ANALYTICS_RETENTION_SQL);
-  /* 限速表里的 identity_hash 是 viewer 的二次 HMAC，也必须遵守同一 90 天
-     生命周期；scope 条件确保不触碰 auth/community/usage 的现有限速记录。 */
+  /* identity_hash rows in the rate-limit table are a second HMAC over
+     the viewer and obey the same 90-day lifecycle; the scope condition
+     keeps this away from auth/community/usage rate-limit rows. */
   const [rateLimitResult] = await db.query<ResultSetHeader>(
     ANALYTICS_RATE_LIMIT_RETENTION_SQL,
   );

@@ -1,11 +1,14 @@
-/* 对象存储抽象层(Cloudflare R2,S3 兼容 API)。
-   环境变量:
+/* Object-storage abstraction (Cloudflare R2, S3-compatible API).
+   Environment:
      R2_ENDPOINT            https://<account_id>.r2.cloudflarestorage.com
-     R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY   单 bucket 读写 token
-     R2_BUCKET              默认 kb-media
-     R2_PUBLIC_BASE_URL     公开访问域名,默认 https://cdn.kimi.builders
-   key 带内容哈希、同一内容永不复写,上传即写 immutable 长缓存,
-   配合 CF 代理缓存把回源操作压到最低(R2 只对存储量+操作次数计费,流量免费)。 */
+     R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY   single-bucket read/write token
+     R2_BUCKET              defaults to kb-media
+     R2_PUBLIC_BASE_URL     public access domain, defaults to
+                            https://cdn.kimi.builders
+   Keys carry a content hash and the same content is never rewritten;
+   uploads set immutable long-cache headers, and the CF proxy cache keeps
+   origin operations minimal (R2 bills storage + operations only; egress
+   is free). */
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createHash } from "node:crypto";
 
@@ -38,7 +41,8 @@ export function mediaBucket(): string {
   return process.env.R2_BUCKET || "kb-media";
 }
 
-/* key → 公开 URL。存储侧只落 key,URL 在渲染/响应时拼接,换域名不动存量数据。 */
+/* key -> public URL. Storage keeps keys only; URLs are assembled at
+   render/response time, so changing domains never touches stored data. */
 export function mediaUrl(key: string): string {
   const base = (
     process.env.R2_PUBLIC_BASE_URL || "https://cdn.kimi.builders"
@@ -46,7 +50,8 @@ export function mediaUrl(key: string): string {
   return `${base}/${key}`;
 }
 
-/* 内容寻址 key:prefix/yyyyMM/<hash16>.<ext> —— 同内容同 key,天然去重 */
+/* Content-addressed key: prefix/yyyyMM/<hash16>.<ext> — same content,
+   same key, dedup for free. */
 export function mediaKey(prefix: string, body: Buffer, ext = "webp"): string {
   const hash = createHash("sha256").update(body).digest("hex").slice(0, 16);
   const month = new Date().toISOString().slice(0, 7).replace("-", "");

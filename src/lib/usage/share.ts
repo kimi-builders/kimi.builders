@@ -15,14 +15,17 @@ export interface UsageShareActivityCell {
   tokens: number;
   level: number;
   future: boolean;
-  /* stacked 主图(30d)专用:当日输入(含缓存写)/缓存读/输出/推理。 */
+  /* Stacked main chart (30d) only: daily input (incl. cache write) /
+     cache read / output / reasoning. */
   inputTokens?: number;
   cacheTokens?: number;
   outputTokens?: number;
   reasoningTokens?: number;
 }
 
-/* 桑基流四类总量(范围内互斥):fresh input = 输入 + 缓存写;输出与推理分列。 */
+/* Four totals for the sankey flow (mutually exclusive within the range):
+   fresh input = input + cache write; output and reasoning listed
+   separately. */
 export interface UsageShareFlow {
   inputTokens: number;
   cacheReadTokens: number;
@@ -38,16 +41,18 @@ export interface UsageShareTool {
 }
 
 export interface UsageShareWeek {
-  /* 本地周一日 key(YYYY-MM-DD)。 */
+  /* Key of the local Monday (YYYY-MM-DD). */
   key: string;
   tokens: number;
 }
 
 export interface UsageShareSnapshot {
   range: UsageShareRange;
-  /* 导出界面语言:zh 可中英混搭,en 纯英文(构建期按它出文案)。 */
+  /* Export-facing UI language: zh mixes Chinese and English, en is
+     English-only (copy derives from it at build time). */
   zh: boolean;
-  /* 海报展示地址 + QR 目标:公开成员(参与社区榜)指向个人主页用量 tab,否则 /usage。 */
+  /* Poster display URL + QR target: public members (on the community
+     leaderboard) point at their profile usage tab, others at /usage. */
   siteUrl: string;
   rangeLabel: string;
   rangeLabelEn: string;
@@ -65,22 +70,26 @@ export interface UsageShareSnapshot {
   peakLabel: string;
   cacheHitRate: number | null;
   topModel: string;
-  /* 主力模型的范围内 token 与占比(分布直接采集,比残缺的推理强度可靠)。 */
+  /* Top model by tokens and share within the range (distribution is
+     collected directly — more reliable than the sparse reasoning-effort
+     field). */
   topModelTokens: number;
   topModelShare: number;
   toolCount: number;
   requests: number;
   flow: UsageShareFlow;
   sessions: number;
-  /* 自然周连续有量:current 到本周为止;本周暂无量时回退展示 longest。 */
+  /* Natural-week streak: current counts up to this week; when this week
+     has no tokens yet, fall back to showing longest. */
   streakWeeks: { current: number; longest: number };
-  /* 最近 12 个自然周(周一锚定,最旧 → 当前周),velocity 图专用。 */
+  /* Last 12 natural weeks (Monday-anchored, oldest -> current), for the
+     velocity chart. */
   weeks: UsageShareWeek[];
-  /* source 维度 token TOP 5(不含 __other__),id 供工具图标用。 */
+  /* Top 5 sources by tokens (excluding __other__); ids power tool icons. */
   topTools: UsageShareTool[];
-  /* totalTokens ÷ fresh input;输入为 0 时 null(海报显示 —)。 */
+  /* totalTokens / fresh input; null when input is 0 (poster shows —). */
   leverage: number | null;
-  /* 数据起止月份(本地 YYYY-MM):首条 bucket 所在月 → 当前月。 */
+  /* First-to-current months of data (local YYYY-MM). */
   span: { from: string; to: string };
   main: {
     kind: "hours" | "weekheat" | "stacked" | "calendar";
@@ -90,7 +99,7 @@ export interface UsageShareSnapshot {
     columns: number;
     rows: number;
     cells: UsageShareActivityCell[];
-    /* weekheat(7D)专用:7(周一起)×24(本地小时)的 token 总量。 */
+    /* weekheat (7D) only: 7 (Mon-first) x 24 (local hour) token totals. */
     heat?: number[][];
   };
 }
@@ -98,23 +107,26 @@ export interface UsageShareSnapshot {
 interface DailyUsage {
   day: string;
   tokens: number;
-  /* 输入 + 缓存写(fresh input)。 */
+  /* Input + cache write (fresh input). */
   inputTokens: number;
   cacheReadTokens: number;
-  /* 输出与推理分列(海报四段堆叠用)。 */
+  /* Output and reasoning listed separately (four poster stack segments). */
   outputTokens: number;
   reasoningOutputTokens: number;
 }
 
 const DAY_MS = 86_400_000;
-/* 短周期也把日序列拉满 12 周:streak/velocity 日历在全周期口径一致。 */
+/* Short ranges still stretch the daily series to 12 weeks: streak and
+   velocity calendars share one full-period definition. */
 const SHARE_WEEKS = 12;
-/* 贡献图跨度:90D ≈ 3 个月(13 个自然周),ALL 封顶半年(26 周,整年没必要)。 */
+/* Contribution-graph span: 90D ~ 3 months (13 natural weeks); ALL caps
+   at half a year (26 weeks — a full year adds nothing). */
 const SHARE_CALENDAR_WEEKS: Partial<Record<UsageShareRange, number>> = { "90d": 13, all: 26 };
 const WEEKDAY_ZH = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const WEEKDAY_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
-/* 星期×小时网格的峰值格(7D 海报 subline 用);全零返回 null。 */
+/* Peak cell of the weekday-x-hour grid (7D poster subline); null when all
+   zero. */
 function peakSlotOf(grid: number[][]): { weekday: number; hour: number } | null {
   let best: { weekday: number; hour: number } | null = null;
   let maximum = 0;
@@ -228,7 +240,8 @@ export function weeklyStreak(
   return { current, longest };
 }
 
-/* 最近 12 个自然周序列(周一锚定,含当周;无量的周为 0)。 */
+/* Last 12 natural weeks (Monday-anchored, including the current week;
+   zero-token weeks count as 0). */
 export function buildShareWeeks(
   days: Pick<DailyUsage, "day" | "tokens">[],
   today: string,
@@ -273,7 +286,8 @@ function buildDayCells(daily: DailyUsage[], today: string): UsageShareActivityCe
   });
 }
 
-/* 30d 堆叠主图:最近 30 个本地日,每日 输入(含缓存写)/缓存读/输出/推理。 */
+/* 30d stacked main chart: last 30 local days, each day input (incl. cache
+   write) / cache read / output / reasoning. */
 export function buildShareStackedCells(
   daily: DailyUsage[],
   today: string,
@@ -298,7 +312,8 @@ export function buildShareStackedCells(
   });
 }
 
-/* source 分布行 → TOP 工具(__other__ 剔除,按 token 降序取前 limit)。 */
+/* Source distribution rows -> top tools (__other__ excluded, top limit by
+   tokens desc). */
 export function shareTopTools(
   rows: { key: string; tokens: number; share: number }[],
   limit = 5,
@@ -350,16 +365,19 @@ function initials(name: string, handle: string): string {
 }
 
 export async function getUsageShareSnapshot(input: {
-  /* 只用 id/handle/name(已 grep 确认):收窄到 Pick,个人主页访客视角
-     才能用公开用户的资料构造调用(门禁在调用方)。 */
+  /* Only id/handle/name (grep-verified): narrowing to Pick lets the
+     profile visitor view construct this from public users' data (the gate
+     lives with the caller). */
   user: Pick<SessionUser, "id" | "handle" | "name">;
   range: UsageShareRange;
   tzOffsetMinutes: number;
   uploadProject: boolean;
   retentionDays: number;
-  /* 海报语言:zh 可中英混搭,en 纯英文;默认 zh。 */
+  /* Poster language: zh mixes Chinese and English, en is English-only;
+     defaults to zh. */
   zh?: boolean;
-  /* 参与社区榜(show_on_leaderboard)成员:海报地址指向公开的个人主页用量 tab。 */
+  /* Community-leaderboard members (show_on_leaderboard): poster URLs
+     point at their public profile usage tab. */
   publicProfile?: boolean;
   now?: Date;
 }): Promise<UsageShareSnapshot> {
@@ -373,7 +391,8 @@ export async function getUsageShareSnapshot(input: {
     now,
   );
   const today = localDayKey(now, filters.tzOffsetMinutes);
-  /* 日序列窗口 = max(范围, 贡献图跨度, 最近 12 个自然周),短周期也能算 streak/velocity。 */
+  /* Daily-series window = max(range, contribution span, last 12 natural
+     weeks) so short ranges can still compute streak/velocity. */
   const calendarWeeks = SHARE_CALENDAR_WEEKS[input.range] ?? SHARE_WEEKS;
   const weekWindowStartUtc = new Date(
     utcDateOfDay(dayKeyAt(mondayOf(today), -(calendarWeeks - 1) * 7)).getTime()
@@ -427,7 +446,8 @@ export async function getUsageShareSnapshot(input: {
   const isStacked = input.range === "30d";
   const trendMax = Math.max(0, ...overview.trend.map((item) => item.totalTokens));
   const dailyMax = Math.max(0, ...daily.map((item) => item.tokens));
-  /* 小时柱同 30d 主图口径:输入(含缓存写)/缓存读/输出/推理 四段堆叠。 */
+  /* Hour bars match the 30d main chart: input (incl. cache write) / cache
+     read / output / reasoning, four stacked segments. */
   const hourCells: UsageShareActivityCell[] = overview.trend.map((item) => ({
     key: item.day,
     tokens: item.totalTokens,
@@ -559,8 +579,9 @@ export async function getUsageShareSnapshot(input: {
   };
 }
 
-/* 海报动态文本(CJK 粗体子集抓取用,同 share-posters 的 *ShareText pattern):
-   用户名/范围/主图文案/峰值标签/模型与 Agent 名等会变的中文。 */
+/* Poster dynamic text (for CJK bold-subset fetching, same *ShareText
+   pattern as share-posters): the variable Chinese — names, range labels,
+   chart copy, peak labels, model and agent names. */
 export function usageShareText(s: UsageShareSnapshot): string {
   return [
     s.user.name,
@@ -575,8 +596,10 @@ export function usageShareText(s: UsageShareSnapshot): string {
   ].join(" ");
 }
 
-/* mock 数据量级对齐参考海报(总量 3.8B / 缓存读 3.6B / 12 周 streak),
-   方便 dev preview 下做视觉验收;短周期按比例缩放。 */const MOCK_FLOW_90D: UsageShareFlow = {
+/* Mock magnitudes match the reference poster (3.8B total / 3.6B cache
+   read / 12-week streak) for visual review under dev preview; short ranges
+   scale proportionally. */
+const MOCK_FLOW_90D: UsageShareFlow = {
   inputTokens: 130_800_000,
   cacheReadTokens: 3_615_500_000,
   outputTokens: 10_900_000,
@@ -621,7 +644,8 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
     }
     return cell;
   });
-  /* weekheat 网格 mock:工作时段重、周末淡的确定性图案。 */
+  /* weekheat grid mock: deterministic pattern of heavy work hours and
+     light weekends. */
   const heat = Array.from({ length: 7 }, (_, weekday) =>
     Array.from({ length: 24 }, (_, hour) => {
       const work = hour >= 9 && hour <= 23 ? 1 : 0.12;

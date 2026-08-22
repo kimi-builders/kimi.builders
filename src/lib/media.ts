@@ -1,7 +1,9 @@
-/* 上传图片的 sharp 处理管线:校验 → 归一化 → webp。
-   - logo / avatar:方形居中裁剪(attention 定位,尽量保住主体)
-   - image:限长边 1600,不放大
-   - 限输入字节与像素,防解压炸弹;动图只取首帧(输出静态 webp) */
+/* Sharp pipeline for uploaded images: validate -> normalize -> webp.
+   - logo / avatar: square center-crop (attention positioning, keeps the
+     subject)
+   - image: long side capped at 1600, never upscaled
+   - input bytes and pixels capped against decompression bombs; animations
+     take the first frame (static webp output) */
 import sharp, { type OutputInfo } from "sharp";
 
 export type MediaKind = "logo" | "image" | "avatar";
@@ -39,8 +41,9 @@ export function isMediaKind(value: string): value is MediaKind {
   return value === "logo" || value === "image" || value === "avatar";
 }
 
-/* multipart 整体 Content-Length 的早期拒绝。缺失/非法长度(chunked 等)不能据此
-   判定，继续解析并由 File.size + sharp 输入上限兜底。 */
+/* Early rejection on the multipart Content-Length. A missing/invalid
+   length (chunked etc.) cannot decide anything here — keep parsing and
+   let File.size + the sharp input cap catch it. */
 export function isUploadContentLengthTooLarge(
   contentLength: string | null,
 ): boolean {
@@ -60,9 +63,10 @@ export async function processMedia(
   try {
     const meta = await pipeline.metadata();
     if (!meta.width || !meta.height) throw new MediaError("not_image");
-    /* SVG 显式拒绝(20260822 P2-11):sharp(librsvg)确实能栅格化 SVG,但
-       SVG 可携带外部引用(SSRF 面)与脚本语义,上传管线不接受——内容寻址
-       桶只收位图;按检测出的真实格式判,不看声明 Content-Type */
+    /* SVG is rejected explicitly: sharp (librsvg) can rasterize SVG, but
+       SVG can carry external references (an SSRF surface) and script
+       semantics — the content-addressed bucket takes bitmaps only; judged
+       by the detected format, never the declared Content-Type. */
     if (meta.format === "svg") throw new MediaError("svg_not_allowed");
   } catch (err) {
     if (err instanceof MediaError) throw err;
