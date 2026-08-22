@@ -26,6 +26,7 @@ import { KB_CHAPTERS, isKbChapterId } from "@/src/lib/kb-chapters";
 import { findKbProduct, isKbProductId } from "@/src/lib/kb-products";
 import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
 import { isExploreFilterEnabled } from "@/src/lib/explore-filters";
+import { canModerate } from "@/src/lib/featured";
 import { UPCOMING } from "@/src/lib/upcoming";
 import { getWorksView } from "@/src/lib/works-view-server";
 import EmptyState from "@/components/EmptyState";
@@ -196,6 +197,17 @@ export default async function ExplorePage({
       : []),
   ];
 
+  /* 发布入口:仅 admin/mod 可见(页面门槛之外,action 层再兜底) */
+  const composeHref = "/blog/admin/new";
+  const composeLink = (
+    <Link
+      href={composeHref}
+      className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+    >
+      {t(locale, "explore.compose")}
+    </Link>
+  );
+
   return (
     <div>
       <PageHeader
@@ -211,6 +223,7 @@ export default async function ExplorePage({
             ? "学,把智能变成认知;做,把认知变成东西;得,把东西变成价值;立,把价值变成位置与自我。"
             : "Learn turns intelligence into judgment; Build turns judgment into things; Gain turns things into value; Become turns value into who you are."
         }
+        actions={user && canModerate(user.role) ? composeLink : undefined}
       />
 
       {/* ---- 工具行:章 seg(主轴)+ 透镜下拉(有内容才出) ---- */}
@@ -290,6 +303,7 @@ export default async function ExplorePage({
                 ? "这里的第一篇内容,以「做完你拥有什么」为标准在筹备。"
                 : "The first piece is being prepared — measured by what you walk away with."
             }
+            actions={user && canModerate(user.role) ? composeLink : undefined}
           />
         ) : !anyFilter ? (
           view === "grid" ? (

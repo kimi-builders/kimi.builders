@@ -67,6 +67,25 @@ test("validateGuidePayload: cover is a path or http(s) url, lenient on render", 
   assert.equal(guidePayloadFromDb({ cover: "javascript:alert(1)" }).cover, undefined);
 });
 
+test("coverTone: shared works palette, strict on edit, lenient on render", () => {
+  /* guide 严格校验:白名单色档 + theme */
+  const ok = validateGuidePayload({ coverTone: "blue" });
+  assert.equal(ok.ok, true);
+  if (ok.ok) assert.equal(ok.payload.coverTone, "blue");
+  assert.equal(validateGuidePayload({ coverTone: "magenta" }).ok, false);
+  assert.equal(validateGuidePayload({ coverTone: "theme" }).ok, true);
+  /* letter 同口径 */
+  const letter = validateLetterPayload({ coverTone: "green" });
+  assert.equal(letter.ok, true);
+  if (letter.ok) assert.equal(letter.payload.coverTone, "green");
+  assert.equal(validateLetterPayload({ coverTone: "nope" }).ok, false);
+  /* 渲染容错:非法色档丢弃,不拖累 payload */
+  assert.equal(guidePayloadFromDb({ coverTone: "blue" }).coverTone, "blue");
+  assert.equal(guidePayloadFromDb({ coverTone: "magenta" }).coverTone, undefined);
+  assert.equal(letterPayloadFromDb({ coverTone: "black" }).coverTone, "black");
+  assert.equal(letterPayloadFromDb({ coverTone: "magenta" }).coverTone, undefined);
+});
+
 test("validateLetterPayload: cover key is accepted on letters too", () => {
   const ok = validateLetterPayload({ tags: ["评鉴"], cover: "/covers/letter.png" });
   assert.equal(ok.ok, true);
@@ -213,6 +232,7 @@ function item(partial: Partial<ExploreItem>): ExploreItem {
     roles: [],
     chapter: null,
     cover: null,
+    coverTone: null,
     formats: ["read"],
     ...partial,
   };

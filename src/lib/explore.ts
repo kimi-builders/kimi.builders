@@ -42,6 +42,9 @@ export interface ExploreItem {
   chapter: string | null;
   /* 封面(payload.cover;缺省 null → 列表卡自动章字砖) */
   cover: string | null;
+  /* 章字砖色调(payload.coverTone,与作品名称砖同一色板;
+     null/theme = 跟随主题;封面图优先,图挂才回落色砖) */
+  coverTone: string | null;
   /* 可得形态(派生:bodyMd/video/deck 的存在性) */
   formats: GuideFormat[];
 }
@@ -244,6 +247,7 @@ function mapExploreRow(r: RowDataPacket): Omit<ExploreItem, "fallback"> {
     roles: (payload as { roles?: string[] }).roles ?? [],
     chapter: (payload as { chapter?: string }).chapter ?? seriesChapter ?? null,
     cover: (payload as { cover?: string }).cover ?? null,
+    coverTone: (payload as { coverTone?: string }).coverTone ?? null,
     formats: deriveFormats(r.body_md, payload),
   };
 }

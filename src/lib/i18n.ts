@@ -104,6 +104,7 @@ const DICT = {
   },
   /* ---- 探索(货架 + 透镜,20260821) ---- */
   "explore.lensProducts": { zh: "产品", en: "PRODUCTS" },
+  "explore.compose": { zh: "+ 发内容", en: "+ Publish" },
   "explore.lensRoles": { zh: "职业", en: "ROLES" },
   "explore.format": { zh: "形态", en: "FORMAT" },
   "explore.formatAll": { zh: "全部", en: "All" },
@@ -1176,6 +1177,10 @@ const DICT = {
   "artf.publish": {
     zh: "发布(不勾 = 存草稿,前台不显示)",
     en: "Publish (unchecked = draft, hidden from lists)",
+  },
+  "artf.draftSaved": {
+    zh: "草稿已保存,可继续编辑",
+    en: "Draft saved — keep editing",
   },
   "artf.deleteConfirm": {
     zh: "确定删除这篇文章?删除后不可恢复。",

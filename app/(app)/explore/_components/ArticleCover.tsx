@@ -1,9 +1,12 @@
 "use client";
 
 /* 文章封面(20260822):列表行卡/封面墙共用。payload.cover(站内路径或
-   https 图片,加载失败回落自动砖);缺省 = 自动章字砖(work-cover-tile
-   名称砖语汇:类型 eyebrow + serif 章字大字,letter 用「刊」)。 */
+   https 图片,加载失败回落自动砖);缺省 = 自动章字砖(类型 eyebrow +
+   serif 章字大字,letter 用「刊」)。payload.coverTone 选砖色(与作品
+   名称砖同一色板:固定色 .work-tone-*,theme/缺省跟随主题 .work-cover-tile);
+   纹理按 slug 稳定哈希,与作品按名生成同源。 */
 import { useState } from "react";
+import { coverTextureClass, coverToneClass } from "@/src/lib/cover-tones";
 import type { ExploreItem } from "@/src/lib/explore";
 import { findKbChapter } from "@/src/lib/kb-chapters";
 
@@ -29,9 +32,15 @@ export default function ArticleCover({
       />
     );
   }
+  const toneCls = item.coverTone ? coverToneClass(item.coverTone) : null;
+  const textureCls = coverTextureClass(item.slug);
   return (
-    <div className="work-cover-tile flex h-full w-full flex-col items-center justify-center gap-1.5">
-      <span className="work-cover-tile__eyebrow font-mono text-[10px] uppercase tracking-[0.14em]">
+    <div
+      className={`${toneCls ?? "work-cover-tile"} ${textureCls ?? ""} flex h-full w-full flex-col items-center justify-center gap-1.5`}
+    >
+      <span
+        className={`${toneCls ? "work-tone__eyebrow" : "work-cover-tile__eyebrow"} font-mono text-[10px] uppercase tracking-[0.14em]`}
+      >
         {kindText}
       </span>
       <span className="font-human text-4xl leading-none">

@@ -3,9 +3,11 @@
 /* 文章引擎编辑动作(S3-1,admin/mod 专属):新建/更新/发布/撤稿/软删。
    UI 只对 admin/mod 渲染入口,这里再兜底一次(session + canModerate)。
    发布语义:publish 勾选 = 发布(保留首次发布时间),不勾 = 草稿/撤稿(published_at NULL,
-   前台列表与详情均不露出)。写完后作废 /blog 与 /learn 的列表与详情预取缓存。 */
+   前台列表与详情均不露出)。写完后作废 /blog 与 /learn 的列表与详情预取缓存。
+   导航交给表单层(20260822 弹窗化,与作品发布同构):action 只返回结果,
+   发布 → replace 到 /explore/<slug>(弹窗静默关、落在详情);存草稿 →
+   停在编辑位续编(带回首行 id,再保存走更新不重复建行)。 */
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
   createArticle,
@@ -25,6 +27,12 @@ import { parseLetterPayload } from "@/src/lib/monthly";
 import { parseGuidePayload } from "@/src/lib/tutorials";
 
 export interface ArticleFormState {
+  /* 成功态:表单层据此导航(发布 → 详情;草稿 → 原地续编) */
+  ok?: boolean;
+  id?: number;
+  slug?: string;
+  artLocale?: string;
+  published?: boolean;
   error?: string;
 }
 
@@ -87,12 +95,13 @@ export async function saveArticleAction(
   if (!bodyMd && kind !== "letter" && !guideHasVideo) return { error: t(locale, "err.artBody") };
 
   const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder, payload };
+  let rowId = id;
   try {
     if (id) {
       const ok = await updateArticle(id, input, publish);
       if (!ok) return { error: t(locale, "err.generic") };
     } else {
-      await createArticle(user.id, input, publish);
+      rowId = await createArticle(user.id, input, publish);
     }
   } catch (e) {
     if (isDupEntry(e)) return { error: t(locale, "err.artSlugTaken") };
@@ -101,10 +110,7 @@ export async function saveArticleAction(
 
   revalidatePath("/explore");
   revalidatePath(`/explore/${slug}`);
-  /* 发布 → 落到公开页;存草稿 → 回到编辑页(草稿前台不显示,编辑页是唯一工作位) */
-  redirect(
-    publish ? `/explore/${slug}` : `/blog/admin/${slug}/edit?locale=${artLocale}`,
-  );
+  return { ok: true, id: rowId, slug, artLocale, published: publish };
 }
 
 export async function deleteArticleAction(

@@ -21,6 +21,7 @@ import {
 import { isKbChapterId } from "./kb-chapters";
 import { isKbProductId } from "./kb-products";
 import { isKbRoleId } from "./kb-roles";
+import { isCoverTone } from "./cover-tones";
 import { findLearnSeries } from "./learn-series";
 import { normalizeTags } from "./monthly";
 
@@ -61,6 +62,9 @@ export interface GuidePayload {
   chapter?: string;
   /* 封面(可选):站内路径或 https 图片;列表横列卡左列。缺省 = 自动章字砖 */
   cover?: string;
+  /* 章字砖色调(20260822,与作品名称砖同一色板):无上传封面/图挂时生效;
+     白名单见 cover-tones.ts(theme = 跟随主题,缺省) */
+  coverTone?: string;
   video?: GuideVideo;
   deck?: string;
   durationMin?: number;
@@ -137,7 +141,7 @@ function lensIdsFromDb(
 export function validateGuidePayload(value: unknown): GuidePayloadParse {
   if (!isPlainObject(value)) return { ok: false, error: "payload 必须是 JSON 对象" };
   const stray = Object.keys(value).find(
-    (k) => !["series", "chapter", "cover", "video", "deck", "durationMin", "scenario", "aiNote", "tags", "resources", "products", "roles"].includes(k),
+    (k) => !["series", "chapter", "cover", "coverTone", "video", "deck", "durationMin", "scenario", "aiNote", "tags", "resources", "products", "roles"].includes(k),
   );
   if (stray) return { ok: false, error: `payload 未知字段:${stray}` };
   const payload: GuidePayload = {};
@@ -164,6 +168,13 @@ export function validateGuidePayload(value: unknown): GuidePayloadParse {
       return { ok: false, error: "cover 需为站内路径或 http(s) 图片链接" };
     }
     payload.cover = s;
+  }
+  if (value.coverTone !== undefined) {
+    const c = boundedString(value.coverTone, 16);
+    if (!c || !isCoverTone(c)) {
+      return { ok: false, error: `coverTone 不在册:${String(value.coverTone)}(色板见 src/lib/cover-tones.ts)` };
+    }
+    payload.coverTone = c;
   }
   if (value.video !== undefined) {
     if (!isPlainObject(value.video)) return { ok: false, error: "video 必须是对象" };
@@ -275,6 +286,8 @@ export function guidePayloadFromDb(raw: unknown): GuidePayload {
   if (chapter && isKbChapterId(chapter)) payload.chapter = chapter;
   const cover = boundedString(value.cover, 500);
   if (cover && (cover.startsWith("/") || /^https?:\/\//i.test(cover))) payload.cover = cover;
+  const coverTone = boundedString(value.coverTone, 16);
+  if (coverTone && isCoverTone(coverTone)) payload.coverTone = coverTone;
   if (isPlainObject(value.video)) {
     const provider = value.video.provider;
     const id = boundedString(value.video.id, 64);

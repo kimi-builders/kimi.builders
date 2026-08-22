@@ -27,8 +27,10 @@ test("gated pages short-circuit to SoonPanel before any data fetch", () => {
     ["app/(app)/explore/page.tsx", "UPCOMING.explore"],
     ["app/(app)/explore/[slug]/page.tsx", "UPCOMING.explore"],
     ["app/(app)/explore/series/[slug]/page.tsx", "UPCOMING.explore"],
-    ["app/(app)/blog/admin/new/page.tsx", "UPCOMING.explore"],
-    ["app/(app)/blog/admin/[slug]/edit/page.tsx", "UPCOMING.explore"],
+    /* 20260822 弹窗化:闸门与数据取用移进共享内容组件(完整页与拦截弹窗
+       两条路由都过同一道闸),页面本身是薄壳 */
+    ["app/(app)/blog/admin/new/_components/NewArticleContent.tsx", "UPCOMING.explore"],
+    ["app/(app)/blog/admin/[slug]/edit/_components/EditArticleContent.tsx", "UPCOMING.explore"],
     ["app/(app)/demo-night/page.tsx", "UPCOMING.demoNight"],
   ];
   for (const [path, flag] of gated) {
