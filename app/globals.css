@@ -471,15 +471,31 @@ html:not([data-nav="1"]) .only-nav-collapsed {
    的 railFor;usage/个人主页无右栏且主列放宽到 1000)——原 :has(> .usage-dashboard)
    加宽 hack 已收编进注册表,布局壳不再靠内容嗅探。
    隐藏时整列(含 gap-6 与 lg:ml-2)退出 flex 布局;主列放宽到 1000,与
-   usage / 个人主页的宽画布同宽——隐藏态下切菜单列宽不跳(不取恰好填满的
-   1072,多出的 72px 留给右侧留白)。
-   未加 layer,优先于 Tailwind utilities 层;仅 ≥xl 生效(右栏本就只在 xl 显示)。 */
+   usage / 个人主页的宽画布同宽。
+   宽度补偿的统一逻辑(20260822):收起导航与隐藏侧栏同一语义——腾出的
+   宽度补给中栏上限,而不是整组左移、右侧留洞;两态叠加时在 1000 基础上
+   再加收导航腾出的 10.5rem。文本阅读宽度由 .md-longform .md 的 40em
+   上限独立保护,中栏变宽只惠及卡片/栅格/页头。
+   未加 layer,优先于 Tailwind utilities 层;仅 ≥lg/xl 生效(两栏本就只在
+   桌面显示)。 */
 html[data-sidebar="0"] .railgate {
   display: none;
 }
 @media (min-width: 1280px) {
   html[data-sidebar="0"] .maincol-rail {
     max-width: 1000px;
+  }
+}
+/* 收起导航:14rem 栏宽 - 3.5rem 图标轨 = 10.5rem 补给中栏 */
+@media (min-width: 1024px) {
+  html[data-nav="1"] .maincol-rail {
+    max-width: 968px; /* 800 + 10.5rem */
+  }
+}
+/* 双开(收导航 + 藏侧栏):两份补偿叠加 */
+@media (min-width: 1280px) {
+  html[data-nav="1"][data-sidebar="0"] .maincol-rail {
+    max-width: 1168px; /* 1000 + 10.5rem */
   }
 }
 /* 侧栏开关自身的图标/文案按态切换 */
