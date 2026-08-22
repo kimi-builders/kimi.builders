@@ -48,7 +48,8 @@ export default async function AwesomePage({
   const requestHeaders = await headers();
   trackEvent("awesome_view", { kind: "page", id: "awesome" }, { headers: requestHeaders });
   const currentSort = sort === "hot" ? "hot" : "new";
-  const csv = (value?: string) => (value ?? "").split(",").filter(Boolean);
+  /* csv 顺手去重(P0-1):URL 是外部输入,重复 id 不收敛会放大到查询层 */
+  const csv = (value?: string) => [...new Set((value ?? "").split(",").filter(Boolean))];
   const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));
   const activeKinds = csv(kind).filter(isWorkKind);
   const activeScope = SCOPES.some((s) => s.id === scope) ? scope : undefined;

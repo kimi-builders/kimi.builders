@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { AGENTS } from "../src/lib/agents";
+import { WORK_KINDS } from "../src/lib/work-kinds";
 import {
   AWESOME_PAGE_SIZE,
   WORKS_PAGE_SIZE,
@@ -58,6 +60,32 @@ test("multi-agent filter OR-chains, kind filter uses IN", () => {
   assert.match(sql, /JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\) OR JSON_CONTAINS\(w\.agents, JSON_QUOTE\(\?\)\)/);
   assert.match(sql, /w\.kind IN \(\?,\?\)/);
   assert.deepEqual(args, ["kimi-code", "codex", "app", "skill"]);
+});
+
+test("multi-select filters dedupe and keep placeholders equal to bound args (P0-1)", () => {
+  /* P0-1 回归:占位符曾按全量数组生成、参数按截断常量绑定,重复/超限 id 直接触发
+     绑定数错配(MySQL 1064)→ /works 整页 500。修复后占位符与参数同源同长。 */
+  const placeholders = (q: { sql: string }) => (q.sql.match(/\?/g) ?? []).length;
+
+  /* 重复 id:登录态 URL ?agent=kimi×11 的最小复现 */
+  const dup = worksPageQuery({
+    source: "site",
+    viewerId: 1,
+    agents: Array.from({ length: 11 }, () => "kimi"),
+    kinds: Array.from({ length: 13 }, () => "app"),
+  });
+  assert.equal(placeholders(dup), dup.args.length);
+  assert.deepEqual(dup.args, [1, 1, "kimi", "app"]);
+
+  /* 全注册表 + 重复叠加:去重后恰为注册表大小,全部进 SQL */
+  const allAgents = AGENTS.map((a) => a.id);
+  const overflow = worksPageQuery({
+    source: "site",
+    agents: [...allAgents, ...allAgents, "kimi"],
+    kinds: [...WORK_KINDS.map((k) => k.id), "app"],
+  });
+  assert.equal(placeholders(overflow), overflow.args.length);
+  assert.deepEqual(overflow.args, [...allAgents, ...WORK_KINDS.map((k) => k.id)]);
 });
 
 test("invalid cursors are ignored (treated as page 1)", () => {

@@ -46,7 +46,8 @@ export default async function WorksPage({
   const requestHeaders = await headers();
   trackEvent("works_view", { kind: "page", id: "works" }, { headers: requestHeaders });
   const currentSort = sort === "hot" ? "hot" : "new";
-  const csv = (value?: string) => (value ?? "").split(",").filter(Boolean);
+  /* csv 顺手去重(P0-1):URL 是外部输入,重复 id 不收敛会放大到查询层 */
+  const csv = (value?: string) => [...new Set((value ?? "").split(",").filter(Boolean))];
   const activeAgents = csv(agent).filter((id) => AGENTS.some((a) => a.id === id));
   const activeKinds = csv(kind).filter(isWorkKind);
   const user = await getSessionUser();

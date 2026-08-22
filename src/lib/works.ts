@@ -8,9 +8,11 @@
 import { cache } from "react";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
+import { AGENTS } from "./agents";
 import { getPool } from "./db";
 import { canModerate } from "./featured";
 import { getVerifiableTokenTotals, type ClaimProjectTotal } from "./usage/verifiable";
+import { WORK_KINDS } from "./work-kinds";
 
 type Queryable = Pool | PoolConnection;
 
@@ -226,15 +228,20 @@ export function worksPageQuery(opts: {
   if (opts.source === "site") where.push("w.source = 'site'");
   /* Awesome 清单(20260906):见 AWESOME_LISTED——普通作品不再自动出现在 Awesome */
   if (opts.source === "awesome") where.push(AWESOME_LISTED);
-  /* 参与 Agent 多选:任一命中即可(JSON 数组成员,OR 链) */
+  /* 参与 Agent 多选:任一命中即可(JSON 数组成员,OR 链)。
+     多选上限 = 注册表大小(20260822 P0-1 修复):占位符与绑定参数必须同源同长——
+     曾按全量生成占位符、按截断常量(10)绑定参数,URL 带重复/超限 id 即整页 500;
+     取注册表大小让「全选」不被静默截断,也随注册表增长自维护 */
   if (opts.agents && opts.agents.length > 0) {
-    where.push(`(${opts.agents.map(() => "JSON_CONTAINS(w.agents, JSON_QUOTE(?))").join(" OR ")})`);
-    args.push(...opts.agents.slice(0, 10));
+    const agents = [...new Set(opts.agents)].slice(0, AGENTS.length);
+    where.push(`(${agents.map(() => "JSON_CONTAINS(w.agents, JSON_QUOTE(?))").join(" OR ")})`);
+    args.push(...agents);
   }
-  /* 作品类型多选:IN 列表 */
+  /* 作品类型多选:IN 列表(同源收敛,理由同上) */
   if (opts.kinds && opts.kinds.length > 0) {
-    where.push(`w.kind IN (${opts.kinds.map(() => "?").join(",")})`);
-    args.push(...opts.kinds.slice(0, 12));
+    const kinds = [...new Set(opts.kinds)].slice(0, WORK_KINDS.length);
+    where.push(`w.kind IN (${kinds.map(() => "?").join(",")})`);
+    args.push(...kinds);
   }
   /* awesome 收录口径过滤(base/eco/part) */
   if (opts.scope) {
