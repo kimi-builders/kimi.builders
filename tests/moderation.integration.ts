@@ -26,7 +26,7 @@ import {
   unhideContent,
   unmuteUser,
 } from "../src/lib/moderation";
-import { createComment, createPost, getCommentsPage, getFeedPage, getPost } from "../src/lib/posts";
+import { createCommentForVisiblePost, createPost, getCommentsPage, getFeedPage, getPost } from "../src/lib/posts";
 import { getPostShareSnapshot, getWorkShareSnapshot } from "../src/lib/share-posters";
 import { createWork, getWorksPage, type WorkFields } from "../src/lib/works";
 
@@ -69,8 +69,14 @@ async function main() {
       bodyMd: "body", linkUrl: "", lang: "zh", aiReply: false, visibility: "public", options: [],
     });
     postIds.push(postId);
-    const commentId = await createComment(postId, member, "一楼");
-    await createComment(postId, member, "一楼回复", commentId);
+    /* 播种迁安全变体(20260822 P1-8):createComment 已删,统一走
+       createCommentForVisiblePost——作者视角对自己公开帖播种,语义不变 */
+    const memberViewer = { id: member, role: "member" };
+    const firstFloor = await createCommentForVisiblePost(memberViewer, postId, "一楼");
+    assert.ok(firstFloor);
+    const commentId = firstFloor.id;
+    const reply = await createCommentForVisiblePost(memberViewer, postId, "一楼回复", commentId);
+    assert.ok(reply);
 
     assert.equal(await hideContent(mod, "post", postId, "违规"), true);
     audit += 1;
@@ -161,7 +167,7 @@ async function main() {
       bodyMd: "b", linkUrl: "", lang: "zh", aiReply: false, visibility: "public", options: [],
     });
     postIds.push(post2);
-    await createComment(post2, member, "随帖级联");
+    assert.ok(await createCommentForVisiblePost(memberViewer, post2, "随帖级联"));
     assert.equal(await hardDeletePost(admin, post2, "硬删"), true);
     audit += 1;
     const [orphans] = await pool.query("SELECT COUNT(*) AS n FROM comments WHERE post_id = ?", [post2]);

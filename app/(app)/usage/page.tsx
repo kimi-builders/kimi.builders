@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
-import { ChartHeader, InsightHeader, MetricCard } from "@/components/data-display";
+import { ChartHeader, MetricCard } from "@/components/data-display";
 import UsageInsightPanel from "@/components/UsageInsightPanel";
 import UsageAttributionSummary from "@/components/UsageAttributionSummary";
 import UsagePublicView from "./_components/UsagePublicView";

@@ -740,31 +740,6 @@ export async function notifyOnComment(input: {
   );
 }
 
-export async function createComment(
-  postId: number,
-  userId: number,
-  bodyMd: string,
-  parentId: number | null = null,
-): Promise<number> {
-  const pool = getPool();
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO comments (post_id, parent_id, user_id, is_ai, body_md) VALUES (?, ?, ?, 0, ?)",
-    [postId, parentId, userId, bodyMd.slice(0, 10000)],
-  );
-  const id = Number(res.insertId);
-  await pool.query(
-    "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
-    [postId],
-  );
-  /* 评论即自动 Follow 该帖(决策:点赞/评论都算参与讨论) */
-  await pool.query(
-    "INSERT IGNORE INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
-    [userId, postId],
-  );
-  await notifyOnComment({ postId, commentId: id, actorId: userId, parentId });
-  return id;
-}
-
 export interface VisibleCommentCreated {
   id: number;
   parent: VisibleCommentAccess | null;
@@ -878,29 +853,6 @@ async function setReaction(
   );
 }
 
-export async function setPostReaction(
-  userId: number,
-  postId: number,
-  kind: "up" | "down",
-): Promise<void> {
-  await setReaction(userId, "post", postId, kind);
-  /* 点赞即自动 Follow(点踩不算参与,不订阅) */
-  if (kind === "up") {
-    await getPool().query(
-      "INSERT IGNORE INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
-      [userId, postId],
-    );
-  }
-}
-
-export async function setCommentReaction(
-  userId: number,
-  commentId: number,
-  kind: "up" | "down",
-): Promise<void> {
-  await setReaction(userId, "comment", commentId, kind);
-}
-
 export async function setPostReactionForViewer(
   viewer: Exclude<PostViewer, null>,
   postId: number,
@@ -966,33 +918,6 @@ export function getCommentReactions(
   commentIds: number[],
 ): Promise<ReactionState> {
   return getReactedIds(userId, "comment", commentIds);
-}
-
-/* 订阅=重点关注这个帖子的讨论;通知通道(回帖提醒)后补,先存关系。 */
-export async function toggleSubscribe(
-  userId: number,
-  postId: number,
-): Promise<void> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT user_id FROM post_subscriptions WHERE user_id = ? AND post_id = ? LIMIT 1",
-    [userId, postId],
-  );
-  if (rows[0]) {
-    await pool.query(
-      "DELETE FROM post_subscriptions WHERE user_id = ? AND post_id = ?",
-      [userId, postId],
-    );
-  } else {
-    try {
-      await pool.query(
-        "INSERT INTO post_subscriptions (user_id, post_id) VALUES (?, ?)",
-        [userId, postId],
-      );
-    } catch {
-      /* 并发重复订阅 → 主键挡住,当已订阅处理 */
-    }
-  }
 }
 
 export async function toggleSubscribeForViewer(
@@ -1144,39 +1069,6 @@ export async function getSidebarData(): Promise<SidebarData> {
       avatarUrl: r.avatar_url,
     })),
   };
-}
-
-/* 一人一票(整个投票维度);投过即返回 "voted"。 */
-export async function votePoll(
-  userId: number,
-  postId: number,
-  optionId: number,
-): Promise<"ok" | "voted" | "bad_option"> {
-  const pool = getPool();
-  const [opt] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM poll_options WHERE id = ? AND post_id = ? LIMIT 1",
-    [optionId, postId],
-  );
-  if (!opt[0]) return "bad_option";
-  const [dup] = await pool.query<RowDataPacket[]>(
-    `SELECT v.id FROM poll_votes v JOIN poll_options o ON o.id = v.option_id
-     WHERE o.post_id = ? AND v.user_id = ? LIMIT 1`,
-    [postId, userId],
-  );
-  if (dup[0]) return "voted";
-  try {
-    await pool.query(
-      "INSERT INTO poll_votes (option_id, user_id) VALUES (?, ?)",
-      [optionId, userId],
-    );
-  } catch {
-    return "voted"; // 唯一键撞了 = 已投过
-  }
-  await pool.query(
-    "UPDATE poll_options SET vote_count = vote_count + 1 WHERE id = ?",
-    [optionId],
-  );
-  return "ok";
 }
 
 export type VisiblePollVoteResult = "ok" | "voted" | "bad_option" | "not_visible";

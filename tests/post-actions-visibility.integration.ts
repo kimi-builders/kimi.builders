@@ -4,7 +4,6 @@
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import {
-  createComment,
   createCommentForVisiblePost,
   createPost,
   getVisiblePostAccess,
@@ -56,15 +55,22 @@ async function main() {
     const modId = await insertUser("mod", "mod");
     const stranger = { id: strangerId, role: "member" };
 
+    /* 播种迁安全变体(20260822 P1-8):作者视角,顺序保持先评论后隐藏/删除,
+       与真实写入路径同一门禁 */
+    const seed = async (postId: number, body: string): Promise<number> => {
+      const created = await createCommentForVisiblePost({ id: authorId, role: "member" }, postId, body);
+      assert.ok(created);
+      return created.id;
+    };
     const privatePost = await makePoll(authorId, "private");
-    const privateComment = await createComment(privatePost.id, authorId, "private seed");
+    const privateComment = await seed(privatePost.id, "private seed");
 
     const hiddenPost = await makePoll(authorId, "public");
-    const hiddenComment = await createComment(hiddenPost.id, authorId, "hidden seed");
+    const hiddenComment = await seed(hiddenPost.id, "hidden seed");
     await pool.query("UPDATE posts SET hidden_at = NOW(), hidden_reason = 'test' WHERE id = ?", [hiddenPost.id]);
 
     const deletedPost = await makePoll(authorId, "public");
-    const deletedComment = await createComment(deletedPost.id, authorId, "deleted seed");
+    const deletedComment = await seed(deletedPost.id, "deleted seed");
     await pool.query("UPDATE posts SET deleted_at = NOW() WHERE id = ?", [deletedPost.id]);
 
     const missingPostId = Math.max(...postIds) + 1_000_000;

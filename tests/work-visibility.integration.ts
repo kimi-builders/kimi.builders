@@ -18,7 +18,7 @@ import {
   profileDisplay,
   updateProfilePrivacy,
 } from "../src/lib/users";
-import { createComment, createPost, getCommunityStats } from "../src/lib/posts";
+import { createCommentForVisiblePost, createPost, getCommunityStats } from "../src/lib/posts";
 import {
   canViewWork,
   createWork,
@@ -98,8 +98,14 @@ async function main() {
       visibility: "public", options: [],
     });
     postIds.push(privatePost, hiddenPost);
-    const privateComment = await createComment(privatePost, author, "private comment");
-    const hiddenComment = await createComment(hiddenPost, author, "hidden comment");
+    /* 播种迁安全变体(20260822 P1-8):作者视角,私密帖作者可自见 */
+    const seedComment = async (postId: number, body: string): Promise<number> => {
+      const created = await createCommentForVisiblePost({ id: author, role: "member" }, postId, body);
+      assert.ok(created);
+      return created.id;
+    };
+    const privateComment = await seedComment(privatePost, "private comment");
+    const hiddenComment = await seedComment(hiddenPost, "hidden comment");
     await pool.query("UPDATE posts SET hidden_at = NOW() WHERE id = ?", [hiddenPost]);
     await pool.query("UPDATE comments SET hidden_at = NOW() WHERE id = ?", [hiddenComment]);
     for (const [targetType, targetId] of [
