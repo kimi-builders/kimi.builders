@@ -63,6 +63,8 @@ export interface WorkFormState {
      拦截路由的 @modal 插槽不随之卸载(2026-08-14 实测) */
   ok?: boolean;
   workId?: number;
+  /* 作品创建限流(20260822 P1-5)超限时的等待秒数,客户端可直接展示 error 文案 */
+  retryAfterSeconds?: number;
 }
 
 export interface MutationResult {
@@ -219,6 +221,14 @@ export async function createWorkAction(
     awesome: !!f.authorLabel,
   });
   if ("error" in claim) return { error: claim.error };
+  /* 限流(20260822 P1-5):校验与 claim 都通过后、写库前消耗——
+     与社区发帖同款 10/小时,防批量灌作品 */
+  const rate = await consumeCommunityRateLimit(user.id, "work");
+  if (!rate.allowed)
+    return {
+      error: t(locale, "err.rateWork", { s: rate.retryAfterSeconds }),
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
   const newWorkId = await createWork(user.id, {
     ...f,
     imageKeys: f.imageKeys ?? [],

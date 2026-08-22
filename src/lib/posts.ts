@@ -259,6 +259,11 @@ function mapFeed(r: RowDataPacket): FeedPost {
    - 最新/订阅按时间:id 自增随 created_at 单调(同评论分页),游标就是帖子 id。
    subscriberId 给「订阅」页签用:只看自己订阅过的帖子,按时间倒序。
    viewerId(登录浏览者):私密帖仅作者本人可见;被 viewer 点踩的帖从其 feed 消失。 */
+/* 帖子正文上限(20260822 P1-4):action 层校验给用户报错;这里的 slice 只是
+   写库兜底(编辑后台/内部调用绕过 action 时也不落超长正文,避免 LONGTEXT
+   无界)。10 万字符 ≈ Markdown 长文的合理天花板,远大于真实使用。 */
+export const POST_BODY_MAX = 100_000;
+
 export const FEED_PAGE_SIZE = 50;
 
 export interface FeedCursor {
@@ -665,7 +670,7 @@ export async function createPost(input: {
         input.type,
         input.category,
         input.title.slice(0, 200),
-        input.bodyMd,
+        input.bodyMd.slice(0, POST_BODY_MAX),
         input.linkUrl.slice(0, 500),
         input.lang,
         input.aiReply ? 1 : 0,
@@ -1223,7 +1228,7 @@ export async function updatePost(
      WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
     [
       fields.title.slice(0, 200),
-      fields.bodyMd,
+      fields.bodyMd.slice(0, POST_BODY_MAX),
       fields.linkUrl.slice(0, 500),
       fields.category,
       postId,

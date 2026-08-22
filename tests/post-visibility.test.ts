@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { canViewPost, postMetadataTitle } from "../src/lib/posts";
 
@@ -43,4 +44,38 @@ test("public post remains visible and untitled posts use a plain body excerpt", 
     postMetadataTitle({ ...publicPost, title: "", bodyMd: "**Readable** body" }, null),
     "Readable body — kimi.builders",
   );
+});
+
+/* ---- 20260822 P1-4:正文上限(action 报错 + 库层 slice 兜底)---- */
+
+test("POST_BODY_MAX = 100k,create/update 两处写路径都按它 slice 兜底", async () => {
+  const { POST_BODY_MAX } = await import("../src/lib/posts");
+  assert.equal(POST_BODY_MAX, 100_000);
+  const lib = readFileSync(new URL("../src/lib/posts.ts", import.meta.url), "utf8");
+  assert.equal(lib.match(/\.slice\(0, POST_BODY_MAX\)/g)?.length ?? 0, 2);
+  /* action 层同口径报错:新建 + 编辑各一处 */
+  const actions = readFileSync(
+    new URL("../app/(app)/community/actions.ts", import.meta.url),
+    "utf8",
+  );
+  assert.equal(actions.match(/body\.length > POST_BODY_MAX/g)?.length ?? 0, 2);
+  assert.match(actions, /err\.bodyLong/);
+});
+
+test("作品创建限流(20260822 P1-5):work 档 10/小时,写库前消耗", async () => {
+  const { COMMUNITY_RATE_LIMITS, communityRateScope } = await import("../src/lib/rate-limit");
+  assert.equal(COMMUNITY_RATE_LIMITS.work, 10);
+  assert.equal(communityRateScope("work"), "community:work");
+  const actions = readFileSync(
+    new URL("../app/(app)/works/actions.ts", import.meta.url),
+    "utf8",
+  );
+  const create = actions.slice(actions.indexOf("export async function createWorkAction"));
+  assert.ok(create.indexOf('consumeCommunityRateLimit(user.id, "work")') >= 0);
+  /* 消耗先于写库 */
+  assert.ok(
+    create.indexOf('consumeCommunityRateLimit(user.id, "work")') <
+      create.indexOf("await createWork(user.id"),
+  );
+  assert.match(actions, /err\.rateWork/);
 });

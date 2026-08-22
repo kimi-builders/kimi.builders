@@ -37,6 +37,7 @@ import {
   getPost,
   getVisibleCommentAccess,
   getVisiblePostAccess,
+  POST_BODY_MAX,
   setCommentReactionForViewer,
   setPostReactionForViewer,
   setPostVisibility,
@@ -103,6 +104,8 @@ export async function createPostAction(
   /* 标题/正文都不强制:至少填一项即可(降低发布门槛,参考 V2EX/X) */
   if (!title && !body) return { error: t(locale, "err.empty") };
   if (title.length > 200) return { error: t(locale, "err.titleLong") };
+  /* 正文上限(20260822 P1-4):超长直接报错,库层另有 slice 兜底 */
+  if (body.length > POST_BODY_MAX) return { error: t(locale, "err.bodyLong") };
   if (type === "link" && !/^https?:\/\/.+/.test(linkUrl))
     return { error: t(locale, "err.linkInvalid") };
 
@@ -347,6 +350,8 @@ export async function updatePostAction(
   if (!postId) return { error: t(locale, "err.unknownType") };
   if (!title && !body) return { error: t(locale, "err.empty") };
   if (title.length > 200) return { error: t(locale, "err.titleLong") };
+  /* 正文上限(20260822 P1-4):与新建同口径 */
+  if (body.length > POST_BODY_MAX) return { error: t(locale, "err.bodyLong") };
   if (linkUrl && !/^https?:\/\/.+/.test(linkUrl))
     return { error: t(locale, "err.linkInvalid") };
   if (!CATEGORIES.some((c) => c.id === category))

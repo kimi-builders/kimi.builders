@@ -417,6 +417,11 @@ const DICT = {
     zh: "标题太长了(200 字以内)",
     en: "Title too long (200 chars max)",
   },
+  /* 正文上限(20260822 P1-4):与库层 POST_BODY_MAX 同值 */
+  "err.bodyLong": {
+    zh: "正文太长了(10 万字符以内)",
+    en: "Body too long (100,000 chars max)",
+  },
   "err.linkInvalid": {
     zh: "链接需要以 http(s):// 开头",
     en: "Link must start with http(s)://",
@@ -437,6 +442,11 @@ const DICT = {
   "err.ratePost": {
     zh: "发帖太频繁了,请 {s} 秒后再试",
     en: "Posting too fast — try again in {s}s",
+  },
+  /* 作品创建限流(20260822 P1-5):与发帖同档 10/小时 */
+  "err.rateWork": {
+    zh: "提交作品太频繁了,请 {s} 秒后再试",
+    en: "Submitting works too fast — try again in {s}s",
   },
   "err.rateComment": {
     zh: "评论太频繁了,请 {s} 秒后再试",
