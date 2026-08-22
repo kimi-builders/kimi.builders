@@ -5,7 +5,6 @@ export type ExploreFilterKey = "product" | "role" | "tag" | "year";
 
 export const ENABLED_EXPLORE_FILTERS: readonly ExploreFilterKey[] = [
   "product",
-  "tag",
 ];
 
 export function isExploreFilterEnabled(key: ExploreFilterKey): boolean {
