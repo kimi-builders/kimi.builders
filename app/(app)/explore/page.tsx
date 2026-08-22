@@ -36,6 +36,7 @@ import WorksFilterBar from "../works/_components/WorksFilterBar";
 import WorksViewToggle from "../works/_components/WorksViewToggle";
 import ArticleGridCard from "./_components/ArticleGridCard";
 import ArticleRowCard from "./_components/ArticleRowCard";
+import { ChapterKeys } from "./_components/ExploreKeys";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -140,6 +141,18 @@ export default async function ExplorePage({
     tag: selTag,
     year: selYear,
   };
+  /* ←→ 章循环的目标序列:「全部」+ 有内容的章(空章点了也是死胡同,不入环);
+     href 用 lensHref 生成,透镜随章保留 */
+  const activeChapters = KB_CHAPTERS.filter(
+    (c) => (chapterCounts.find((x) => x.value === c.id)?.count ?? 0) > 0,
+  );
+  const chapterHrefs = [
+    lensHref("/explore", current, { chapter: undefined }),
+    ...activeChapters.map((c) => lensHref("/explore", current, { chapter: c.id })),
+  ];
+  const chapterIndex = selChapter
+    ? activeChapters.findIndex((c) => c.id === selChapter) + 1
+    : 0;
   const preservedQuery = (() => {
     const params = new URLSearchParams();
     if (selChapter) params.set("chapter", selChapter);
@@ -211,6 +224,8 @@ export default async function ExplorePage({
 
   return (
     <div>
+      {/* ←→ 章循环(快捷键;hrefs<2 时组件内自行空转) */}
+      <ChapterKeys hrefs={chapterHrefs} index={chapterIndex} />
       <PageHeader
         eyebrow={t(locale, "explore.eyebrow")}
         title={t(locale, "nav.explore")}

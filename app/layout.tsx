@@ -4,6 +4,7 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUiPrefs } from "@/src/lib/prefs";
 import Toaster from "@/components/Toaster";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import "./globals.css";
 
 /* 本地化字体(2026-08):Google Fonts 边缘节点抖动曾咬挂 CI 构建,
@@ -56,6 +57,8 @@ export default async function RootLayout({
         {/* 拦截路由弹窗槽(@modal 在根级:避开 (app)/template 对并行槽的包裹) */}
         {modal}
         <Toaster />
+        {/* 全局快捷键层(监听 + 帮助面板;按钮在 TopBar/首页) */}
+        <KeyboardShortcuts locale={locale} />
       </body>
     </html>
   );

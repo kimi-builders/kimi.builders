@@ -20,6 +20,7 @@ import AuthChip from "@/components/AuthChip";
 import CountUpStat from "@/components/CountUpStat";
 import { DataMeta } from "@/components/data-display";
 import UnreadBadge from "@/components/UnreadBadge";
+import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { TrackClick } from "@/app/(app)/_components/track";
 import GlobalSearch from "./(app)/_components/GlobalSearch";
 import { trackEvent } from "@/src/lib/analytics";
@@ -141,6 +142,8 @@ export default async function Home({
             flex-wrap 兜底超窄屏。主题切换翻 <html data-theme>,海报双肤即时生效 */}
         <div className="absolute right-5 top-5 flex max-w-[calc(100vw-2.5rem)] flex-wrap items-center justify-end gap-1.5 font-mono text-xs">
           <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
+          {/* 快捷键按钮仅桌面(≥lg):触屏没有键盘 */}
+          <ShortcutsButton locale={locale} className={`${iconBtn} max-lg:hidden`} />
           {user && (
             <Link
               href="/community/notifications"

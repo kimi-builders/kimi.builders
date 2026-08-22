@@ -18,6 +18,7 @@ import { monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
+import { listExploreItems } from "@/src/lib/explore";
 import { findLearnSeries } from "@/src/lib/learn-series";
 import {
   getAssembledIssue,
@@ -37,6 +38,7 @@ import Markdown from "@/components/Markdown";
 import ShareButton from "@/components/ShareButton";
 import VideoEmbed from "@/components/VideoEmbed";
 import SoonPanel from "../../_components/SoonPanel";
+import { ArticleKeys } from "../_components/ExploreKeys";
 import { decisionChip } from "../../blog/_components/chips";
 
 export async function generateMetadata({
@@ -207,6 +209,13 @@ function LetterDetail({
   const idx = metas.findIndex((m) => m.slug === issue.slug);
   const prev = metas[idx + 1];
   const next = idx > 0 ? metas[idx - 1] : undefined;
+  /* ←→ 快捷键与页脚期次导航同一事实来源(方向一致:←更早 / →更新) */
+  const issueKeys = (
+    <ArticleKeys
+      prev={prev ? `/explore/${prev.slug}` : undefined}
+      next={next ? `/explore/${next.slug}` : undefined}
+    />
+  );
 
   const disclosure = issue.aiDisclosure;
   const disclosureRows = disclosure
@@ -215,6 +224,7 @@ function LetterDetail({
 
   return (
     <article>
+      {issueKeys}
       <header>
         <p className="kb-eyebrow flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>— {zh ? "月刊评鉴" : "MONTHLY"} · ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month}</span>
@@ -557,6 +567,12 @@ export default async function ExploreDetailPage({
   }
   const guide = await getTutorialBySlug(slug, locale);
   if (!guide) notFound();
+  /* 指南无期次概念:←→ 沿全列表(新→旧)取上下篇,方向与 letter 一致
+     (←更早 / →更新);单查询进 React cache,同请求去重 */
+  const guideList = await listExploreItems(locale);
+  const guideIdx = guideList.findIndex((i) => i.slug === slug);
+  const guidePrev = guideIdx >= 0 ? guideList[guideIdx + 1] : undefined;
+  const guideNext = guideIdx > 0 ? guideList[guideIdx - 1] : undefined;
   /* 形态偏好回落序(20260821):显式 ?tab= 最优先 → kb_fmt cookie(该集
      有此形态才生效)→ 第一个 tab;cookie 由 DetailTabs 的 remember 写入 */
   const preferredFormat = (await cookies()).get("kb_fmt")?.value;
@@ -573,11 +589,17 @@ export default async function ExploreDetailPage({
         ? preferredFormat
         : undefined;
   return (
-    <GuideDetail
-      tutorial={guide.tutorial}
-      initialTab={guideTab}
-      locale={locale}
-      canEdit={canEdit}
-    />
+    <>
+      <ArticleKeys
+        prev={guidePrev ? `/explore/${guidePrev.slug}` : undefined}
+        next={guideNext ? `/explore/${guideNext.slug}` : undefined}
+      />
+      <GuideDetail
+        tutorial={guide.tutorial}
+        initialTab={guideTab}
+        locale={locale}
+        canEdit={canEdit}
+      />
+    </>
   );
 }

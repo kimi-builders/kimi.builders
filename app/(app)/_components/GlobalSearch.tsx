@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -74,9 +75,14 @@ export default function GlobalSearch({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  /* ↑↓ 键盘选择(20260822 快捷键方案):首项预选,Enter 打开所选;
+     query 变化重置;结果缩短时钳到范围内 */
+  const [active, setActive] = useState(0);
   const items = useMemo(() => catalog(locale), [locale]);
   const results = useMemo(() => searchSiteItems(items, query), [items, query]);
+  const activeIndex = Math.min(active, Math.max(results.length - 1, 0));
 
   const open = () => {
     dialogRef.current?.showModal();
@@ -85,6 +91,28 @@ export default function GlobalSearch({
   const close = () => {
     dialogRef.current?.close();
     setQuery("");
+    setActive(0);
+  };
+  const go = (href: string) => {
+    close();
+    router.push(href);
+  };
+
+  /* 输入框内的 ↑↓/↵:只在这一个输入域上监听,不影响页面级快捷键 */
+  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (results.length === 0) return;
+      event.preventDefault();
+      const dir = event.key === "ArrowDown" ? 1 : -1;
+      setActive((activeIndex + dir + results.length) % results.length);
+      return;
+    }
+    if (event.key === "Enter") {
+      const item = results[activeIndex];
+      if (!item) return;
+      event.preventDefault();
+      go(item.href);
+    }
   };
 
   useEffect(() => {
@@ -130,7 +158,11 @@ export default function GlobalSearch({
           <input
             ref={inputRef}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onInputKeyDown}
             aria-label="站内搜索 / Search site"
             placeholder={t(locale, "search.placeholder")}
             className="min-w-0 flex-1 bg-transparent font-mono text-sm text-paper outline-none placeholder:text-grey/70"
@@ -149,19 +181,24 @@ export default function GlobalSearch({
             {query ? t(locale, "search.results") : t(locale, "search.jumpTo")}
           </h2>
           {results.length > 0 ? (
-            <div className="space-y-1">
-              {results.map((item) => (
+            <div className="space-y-1" role="listbox" aria-label={t(locale, "search.results")}>
+              {results.map((item, i) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={close}
-                  className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-moon focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                  onMouseEnter={() => setActive(i)}
+                  role="option"
+                  aria-selected={i === activeIndex}
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                    i === activeIndex ? "bg-moon" : ""
+                  }`}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-mono text-sm font-semibold text-paper">{item.label}</span>
                     <span className="mt-0.5 block truncate text-xs text-grey">{item.description}</span>
                   </span>
-                  <ArrowUpRight size={16} className="shrink-0 text-grey transition-colors group-hover:text-ui-blue" aria-hidden="true" />
+                  <ArrowUpRight size={16} className={`shrink-0 text-grey transition-colors ${i === activeIndex ? "text-ui-blue" : "group-hover:text-ui-blue"}`} aria-hidden="true" />
                 </Link>
               ))}
             </div>

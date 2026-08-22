@@ -19,7 +19,14 @@ import {
   Sun,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
-import { toast } from "@/src/lib/toast";
+import {
+  applyLocale,
+  applyTheme,
+  applyVibe,
+  flipNav,
+  flipSidebar,
+  writePrefCookie,
+} from "@/src/lib/prefs-client";
 import { DEFAULT_VIBE, type Vibe } from "@/src/lib/vibe";
 import {
   SEG_ITEM,
@@ -35,27 +42,15 @@ import {
   toggleNavAction,
   toggleSidebarAction,
 } from "../community/actions";
-import { setLocaleToAction, setMotionToAction, setThemeToAction, setVibeToAction } from "../settings/actions";
+import {
+  setLocaleToAction,
+  setMotionToAction,
+  setThemeToAction,
+  setVibeToAction,
+} from "../settings/actions";
 
-const YEAR = 365 * 86400;
-
-function writeCookie(name: string, value: string) {
-  document.cookie = `${name}=${value}; path=/; max-age=${YEAR}; samesite=lax`;
-}
-
-/* 主题切换过渡(20260821 评审):翻 data-theme 时短暂挂 data-theme-anim,
-   globals.css 给大面积颜色 200ms 过渡(令牌 fast 档),摘除后组件回归
-   各自的 120ms transition-colors。连点重置计时,不叠加窗口。 */
-let themeAnimTimer: ReturnType<typeof setTimeout> | undefined;
-
-function flashThemeAnim() {
-  const el = document.documentElement;
-  el.setAttribute("data-theme-anim", "");
-  clearTimeout(themeAnimTimer);
-  themeAnimTimer = setTimeout(() => el.removeAttribute("data-theme-anim"), 260);
-}
-
-/* 主题:纯客户端翻转(cookie-only 偏好,无需任何服务器往返)。 */
+/* 主题:纯客户端翻转(cookie-only 偏好,无需任何服务器往返)。
+   动作逻辑在 src/lib/prefs-client(与快捷键层同一代码路径)。 */
 export function ThemeToggle({
   locale,
   className,
@@ -77,11 +72,9 @@ export function ThemeToggle({
         aria-label={t(locale, "topbar.theme")}
         onClick={(e) => {
           e.preventDefault();
-          const el = document.documentElement;
-          const next = el.dataset.theme === "light" ? "dark" : "light";
-          flashThemeAnim();
-          el.dataset.theme = next;
-          writeCookie("kb_theme", next);
+          applyTheme(
+            document.documentElement.dataset.theme === "light" ? "dark" : "light",
+          );
         }}
         className={className}
       >
@@ -121,10 +114,8 @@ export function LocaleToggle({
         aria-label={t(locale, "topbar.lang")}
         onClick={(e) => {
           e.preventDefault();
-          const el = document.documentElement;
-          const next = el.lang === "zh-CN" ? "en" : "zh";
-          el.lang = next === "zh" ? "zh-CN" : "en";
-          writeCookie("kb_locale", next);
+          const next = document.documentElement.lang === "zh-CN" ? "en" : "zh";
+          applyLocale(next);
           void saveLocaleAction(next);
           startTransition(() => router.refresh());
         }}
@@ -161,10 +152,7 @@ export function NavToggle({
         aria-label="收起或展开导航 / Collapse or expand navigation"
         onClick={(e) => {
           e.preventDefault();
-          const el = document.documentElement;
-          const next = el.dataset.nav === "1" ? "0" : "1";
-          el.dataset.nav = next;
-          writeCookie("kb_nav", next);
+          flipNav();
         }}
         className={`${className} rail-tip`}
       >
@@ -196,10 +184,7 @@ export function SidebarToggle({
         aria-label="隐藏或显示右侧栏 / Hide or show the sidebar"
         onClick={(e) => {
           e.preventDefault();
-          const el = document.documentElement;
-          const next = el.dataset.sidebar === "0" ? "1" : "0";
-          el.dataset.sidebar = next;
-          writeCookie("kb_sidebar", next);
+          flipSidebar();
         }}
         className={`${className} rail-tip`}
       >
@@ -237,12 +222,10 @@ export function VibeToggle({
         aria-label={t(locale, "topbar.vibe")}
         onClick={(e) => {
           e.preventDefault();
-          const el = document.documentElement;
-          const next = el.dataset.vibe === "soft" ? "poster" : "soft";
-          el.dataset.vibe = next;
-          writeCookie("kb_vibe", next);
-          /* 变化是全站圆角/投影,渐进且弱感知——toast 一次确认(20260821 评审) */
-          toast(t(locale, "pref.vibeToast", { name: t(locale, next === "soft" ? "vibe.soft" : "vibe.poster") }));
+          applyVibe(
+            document.documentElement.dataset.vibe === "soft" ? "poster" : "soft",
+            locale,
+          );
         }}
         className={className}
       >
@@ -267,7 +250,7 @@ export function VibeCards({ locale }: { locale: Locale }) {
   const pick = (next: Vibe) => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     document.documentElement.dataset.vibe = next;
-    writeCookie("kb_vibe", next);
+    writePrefCookie("kb_vibe", next);
   };
   const card =
     "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
@@ -313,7 +296,7 @@ export function LocaleSeg() {
   const pick = (next: "zh" | "en") => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
-    writeCookie("kb_locale", next);
+    writePrefCookie("kb_locale", next);
     void saveLocaleAction(next);
     startTransition(() => router.refresh());
   };
@@ -353,7 +336,7 @@ export function ThemeCards({ locale }: { locale: Locale }) {
   const pick = (next: "dark" | "light") => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     document.documentElement.dataset.theme = next;
-    writeCookie("kb_theme", next);
+    writePrefCookie("kb_theme", next);
   };
   const card =
     "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
@@ -407,7 +390,7 @@ export function MotionSeg({
       } else {
         document.documentElement.removeAttribute("data-motion");
       }
-      writeCookie("kb_motion", next);
+      writePrefCookie("kb_motion", next);
     };
   return (
     <div className={SEG_WRAP} role="group" aria-label={t(locale, "set.motion")}>

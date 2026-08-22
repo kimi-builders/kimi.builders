@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import UnreadBadge from "@/components/UnreadBadge";
+import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { t, type Locale } from "@/src/lib/i18n";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
 import GlobalSearch from "./GlobalSearch";
@@ -42,6 +43,7 @@ export default function TopBar({
 
       <div className="ml-auto flex items-center gap-1.5 text-xs">
         <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
+        <ShortcutsButton locale={locale} className={iconBtn} />
         {loggedIn && (
           <Link
             href="/community/notifications"
