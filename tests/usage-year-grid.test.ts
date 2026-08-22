@@ -7,13 +7,15 @@ import {
   localTodayYmd,
 } from "../src/lib/usage/year-grid";
 
-/* 2026-08-09 是周日:网格末日 = 今天,首列周一 = 窗口首日,371 格全在窗口内 */
+/* 2026-08-09 is a Sunday: grid end = today, the first column's Monday
+   = the window's first day, all 371 cells in-window. */
 test("buildYearGrid: 53x7 grid anchored so the last column ends on today's week", () => {
   const grid = buildYearGrid({}, "2026-08-09");
   assert.equal(grid.weeks.length, FOOTPRINT_WEEKS);
   for (const week of grid.weeks) assert.equal(week.length, 7);
   assert.equal(FOOTPRINT_DAYS, 371);
-  /* 首格 = 窗口首日(今天往前 370 天)且是周一;末格 = 今天(周日) */
+  /* First cell = the window's first day (today minus 370) and a
+     Monday; last cell = today (Sunday). */
   assert.equal(grid.weeks[0][0].date, "2025-08-04");
   assert.equal(grid.weeks[52][6].date, "2026-08-09");
   assert.equal(grid.weeks.flat().filter((c) => c.inWindow).length, 371);
@@ -22,8 +24,8 @@ test("buildYearGrid: 53x7 grid anchored so the last column ends on today's week"
 test("buildYearGrid places tokens on their dates and ignores out-of-window keys", () => {
   const grid = buildYearGrid(
     {
-      "2026-08-09": 100, // 今天
-      "2025-08-04": 50, // 窗口首日
+      "2026-08-09": 100, // today
+      "2025-08-04": 50, // window start
       "2026-01-15": 7,
       "2020-01-01": 999, // 窗口外的键忽略
     },

@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-/* 部署流水线配置的轻量守卫:防回归(误删 standalone、改丢必配密钥名、
-   迁移步骤被跳过等)。只断言文本,不解析 YAML/shell。 */
+/* Lightweight guard over the deploy pipeline config: against
+   regressions like dropping standalone, losing required secret names,
+   or skipping the migration step. Text assertions only — no YAML or
+   shell parsing. */
 
 function readRepoFile(path: string): string {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -13,8 +15,8 @@ test("next.config.ts builds a standalone bundle with a deployment id", () => {
   const config = readRepoFile("next.config.ts");
   assert.match(config, /output:\s*"standalone"/);
   assert.match(config, /deploymentId:\s*process\.env\.DEPLOYMENT_VERSION/);
-  // mysql2 必须外部化,否则 standalone node_modules 里没有它,
-  // release 内的 db-migrate.mjs 无法 require
+  // mysql2 must stay externalized, or the standalone node_modules lacks it
+  // and the release's db-migrate.mjs can't require it.
   assert.match(config, /serverExternalPackages:\s*\[\s*"mysql2"\s*\]/);
 });
 
@@ -24,9 +26,9 @@ test(".nvmrc pins Node 22 (kb-sg runtime)", () => {
 
 test("ops/deploy-release.sh exists and carries the release pipeline", () => {
   const script = readRepoFile("ops/deploy-release.sh");
-  // 切换 current 之前跑迁移,失败必须 die
+  // Migrations run before switching current; failure must die.
   assert.match(script, /node scripts\/db-migrate\.mjs migrate/);
-  // 必配运行时密钥校验
+  // Required runtime secret validation.
   for (const name of [
     "DATABASE_URL",
     "AUTH_SECRET",
@@ -38,7 +40,7 @@ test("ops/deploy-release.sh exists and carries the release pipeline", () => {
   ]) {
     assert.ok(script.includes(name), `deploy-release.sh must validate ${name}`);
   }
-  // 健康探针按 release SHA 匹配
+  // The health probe matches the release SHA.
   assert.match(script, /\\"version\\":\\"\$\{expected\}\\"/);
 });
 
@@ -86,12 +88,13 @@ test("deploy.yml wires secrets, packaging and migration", () => {
   ]) {
     assert.ok(workflow.includes(name), `deploy.yml must reference var ${name}`);
   }
-  // 迁移由 release 内的 runner 执行(Activate 步骤注释锚定该契约)
+  // Migrations run via the release's own runner (the Activate step's
+  // comment anchors this contract).
   assert.match(workflow, /db-migrate\.mjs migrate/);
-  // release 包必须带迁移所需文件
+  // The release package must carry the files migrations need.
   assert.match(workflow, /cp -a scripts \.release\/scripts/);
   assert.match(workflow, /cp -a db \.release\/db/);
   assert.match(workflow, /\.release\/node_modules\/mysql2/);
-  // 构建期注入版本,健康检查按它验收
+  // The build injects the version; the health check accepts by it.
   assert.match(workflow, /DEPLOYMENT_VERSION: \$\{\{ github\.sha \}\}/);
 });

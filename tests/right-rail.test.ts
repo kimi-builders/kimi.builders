@@ -8,11 +8,13 @@ import {
 import { relatedPostsQuery } from "../src/lib/posts";
 import { awesomeSourceStatsQuery, relatedWorksQuery } from "../src/lib/works";
 
-/* ---- 右栏注册表 railFor:路由段 → 右栏上下文 + 主列宽度 ---- */
+/* ---- Rail registry railFor: route segment -> rail context + main
+   column width ---- */
 
 test("railFor: community feed and unlisted routes fall back to community rail", () => {
   assert.deepEqual(railFor("/community"), { kind: "community", id: null, wide: false });
-  /* 未列出路由(/settings、/demo-night、/community 子页)同改版前;/works 有专属 rail */
+  /* Unlisted routes (/settings, /demo-night, /community subpages) match
+     the pre-rework behavior; /works has its own rail. */
   assert.deepEqual(railFor("/settings"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/demo-night"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/works"), { kind: "works", id: null, wide: false });

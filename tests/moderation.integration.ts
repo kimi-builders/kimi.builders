@@ -1,13 +1,15 @@
-/* 社区治理集成测试(20260830_moderation)。只在隔离库运行
-   (DATABASE_URL 必须含 kbu-mysql)。覆盖:
-   - 屏蔽:帖子/评论/作品 hide → 公开面不可见、作者可见;unhide 恢复;重复操作幂等拒绝;
-   - 海报快照:被屏蔽帖/作品 → null(路由 404);被屏蔽不可设精选;
-   - 软删(管理路径):帖/评论 deleted_at + 计数;硬删:仅 admin 语义,
-     目标必须存在且未删;评论硬删整棵子树 + 帖计数按活条数减;帖硬删级联评论;
-   - 禁言:mute → getActiveMute 生效;过期自动解除;unmute;admin 目标拒绝;
-   - 资料重置:清空头像/名字/简介;admin 目标拒绝;
-   - 角色:setUserRole 往返;admin 目标拒绝;
-   - 审计:每个动作都在 moderation_actions 落行。 */
+/* Community moderation integration. Runs only against an isolated
+   database (DATABASE_URL must contain kbu-mysql). Covers: hide
+   (posts/comments/works -> invisible publicly, visible to the author;
+   unhide restores; repeats reject idempotently); poster snapshots
+   (hidden -> null, route 404s; hidden can't be featured); management
+   soft delete (deleted_at + counters); hard delete (admin semantics,
+   target must exist and be undeleted; comment hard delete removes the
+   subtree and decrements by live rows; post hard delete cascades
+   comments); mutes (effective, auto-expiring, unmute, admin targets
+   rejected); profile reset (avatar/name/bio cleared, admin targets
+   rejected); roles (setUserRole round trip, admin targets rejected);
+   audit (every action writes a moderation_actions row). */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import { getPostFeatured, setPostFeatured } from "../src/lib/featured";
@@ -63,14 +65,16 @@ async function main() {
     const member = await insertUser("m");
     let audit = 0;
 
-    /* ---- 屏蔽帖子:公开面消失、作者仍见、解除恢复 ---- */
+    /* ---- Hide post: gone publicly, author still sees, unhide
+       restores ---- */
     const postId = await createPost({
       userId: member, type: "text", category: "chat", title: "治理测试帖",
       bodyMd: "body", linkUrl: "", lang: "zh", aiReply: false, visibility: "public", options: [],
     });
     postIds.push(postId);
-    /* 播种迁安全变体(20260822 P1-8):createComment 已删,统一走
-       createCommentForVisiblePost——作者视角对自己公开帖播种,语义不变 */
+    /* Seeding uses the safe variant: createComment is gone, everything
+       goes through createCommentForVisiblePost — the author's view
+       seeding their own public post, same semantics. */
     const memberViewer = { id: member, role: "member" };
     const firstFloor = await createCommentForVisiblePost(memberViewer, postId, "一楼");
     assert.ok(firstFloor);
@@ -86,7 +90,7 @@ async function main() {
     const authorFeed = await getFeedPage({ sort: "new", viewerId: member });
     const ownHidden = authorFeed.posts.find((p) => p.id === postId);
     assert.ok(ownHidden && ownHidden.hiddenAt !== null);
-    /* 被屏蔽不可设精选;海报快照 null */
+    /* Hidden can't be featured; the poster snapshot is null. */
     assert.equal(await setPostFeatured(mod, postId, "x"), false);
     assert.equal(await getPostShareSnapshot(postId), null);
     assert.equal(await unhideContent(mod, "post", postId), true);
@@ -94,7 +98,8 @@ async function main() {
     assert.ok((await getFeedPage({ sort: "new" })).posts.some((p) => p.id === postId));
     assert.ok(await getPostShareSnapshot(postId));
 
-    /* ---- 先精选后屏蔽(20260822 P2-1):hide 同事务清 featured 三列,不残留 ---- */
+    /* ---- Feature-then-hide: hide clears the three featured columns in
+       the same transaction, no residue ---- */
     assert.equal(await setPostFeatured(mod, postId, "值得一读"), true);
     assert.ok(await getPostFeatured(postId));
     assert.equal(await hideContent(mod, "post", postId, "又违规"), true);
@@ -110,15 +115,17 @@ async function main() {
     }
     assert.equal(await unhideContent(mod, "post", postId), true);
     audit += 1;
-    /* 解除不自动恢复精选,需编辑重新定夺 */
+    /* Unhiding doesn't restore featuring — re-feature deliberately. */
     assert.equal(await getPostFeatured(postId), null);
 
-    /* ---- 屏蔽评论:公开面消失(回复升级为顶层),作者仍见 ---- */
+    /* ---- Hide comment: gone publicly (replies promoted to top level),
+       author still sees ---- */
     assert.equal(await hideContent(mod, "comment", commentId, "引战"), true);
     audit += 1;
     const anonComments = await getCommentsPage(postId, { showAi: true });
     assert.ok(!anonComments.comments.some((c) => c.id === commentId));
-    /* 父被屏蔽 → 回复升级为顶层(与软删同语义) */
+    /* Parent hidden -> the reply promotes to top level (same semantics
+       as soft delete). */
     assert.equal(anonComments.comments.length, 1);
     assert.equal(anonComments.total, 1);
     assert.equal((await getPost(postId))?.commentCount, 1);
@@ -134,7 +141,8 @@ async function main() {
     assert.equal((await getPost(postId))?.commentCount, 2);
     assert.equal((await getPostShareSnapshot(postId))?.commentCount, 2);
 
-    /* ---- 审计失败注入:业务更新必须随事务回滚 ---- */
+    /* ---- Audit-failure injection: the business update must roll back
+       with the transaction ---- */
     const rollbackPost = await createPost({
       userId: member, type: "text", category: "chat", title: "审计回滚",
       bodyMd: "body", linkUrl: "", lang: "zh", aiReply: false, visibility: "public", options: [],
@@ -146,7 +154,7 @@ async function main() {
     );
     assert.equal((rollbackRows as { deleted_at: Date | null }[])[0]?.deleted_at, null);
 
-    /* ---- 屏蔽作品:墙/海报口径 ---- */
+    /* ---- Hide work: wall/poster definitions ---- */
     const wFields: WorkFields = {
       name: "治理测试作品", tagline: "", url: "https://example.com", repoUrl: "",
       screenshotUrl: "", tags: [], agents: ["kimi"], authorLabel: "", visibility: "public",
@@ -165,7 +173,7 @@ async function main() {
     assert.equal(await unhideContent(mod, "work", workId), true);
     audit += 1;
 
-    /* ---- 管理软删 + 硬删 ---- */
+    /* ---- Management soft delete + hard delete ---- */
     assert.equal(await adminDeleteComment(mod, commentId, "清理"), true);
     audit += 1;
     assert.equal(await hardDeleteComment(admin, commentId, "x"), false); /* 已软删不可硬删 */
@@ -193,7 +201,8 @@ async function main() {
     assert.equal(Number((orphans as { n: number }[])[0]?.n), 0); /* 级联 */
     assert.equal(await hardDeletePost(admin, post2, "再来"), false); /* 不存在 */
 
-    /* ---- 禁言:生效/到期自动解除/解禁/admin 目标拒绝 ---- */
+    /* ---- Mutes: effective / auto-expiring / unmute / admin targets
+       rejected ---- */
     const until = muteUntilFor(7);
     assert.ok(until);
     assert.equal(await muteUser(mod, member, until, "刷屏"), true);
@@ -211,7 +220,7 @@ async function main() {
     await pool.query("UPDATE users SET muted_until = '2020-01-01 00:00:00' WHERE id = ?", [member]);
     assert.equal(await getActiveMute(member), null); /* 过期自动解除 */
 
-    /* ---- 资料重置 ---- */
+    /* ---- Profile reset ---- */
     assert.equal(await resetUserProfile(mod, member, "头像违规"), true);
     audit += 1;
     const [cleared] = await pool.query(
@@ -223,14 +232,15 @@ async function main() {
     );
     assert.equal(await resetUserProfile(mod, admin, "x"), false);
 
-    /* ---- 角色:提 mod ⇄ 降 member;admin 目标拒绝 ---- */
+    /* ---- Roles: promote to mod <-> demote to member; admin targets
+       rejected ---- */
     assert.equal(await setUserRole(admin, member, "mod"), true);
     audit += 1;
     assert.equal(await setUserRole(admin, member, "member"), true);
     audit += 1;
     assert.equal(await setUserRole(admin, admin, "member"), false); /* admin 不可被降 */
 
-    /* ---- 审计:动作数与预期逐一对应 ---- */
+    /* ---- Audit: action counts match expectations one by one ---- */
     assert.equal(await auditCount(), audit);
     const log = await getModerationLog();
     assert.ok(log.rows.some((r) => r.action === "hard_delete" && r.targetType === "post"));

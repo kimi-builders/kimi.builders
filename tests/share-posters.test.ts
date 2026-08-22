@@ -44,7 +44,7 @@ function postDetail(overrides: Partial<PostDetail> = {}): PostDetail {
     avatarUrl: "",
     role: "member",
     userId: 3,
-    bodyMd: "正文 **加粗** 还有 `代码` 和 [链接](https://example.com)。",
+    bodyMd: "Body **bold** plus `code` and a [link](https://example.com).",
     linkUrl: "",
     lang: "zh",
     aiReply: false,
@@ -84,7 +84,7 @@ test("post snapshot: markdown body stripped and excerpt capped at 140 chars", ()
   assert.ok(s);
   assert.ok(s.excerpt.length <= POSTER_EXCERPT_MAX + 1);
   assert.ok(s.excerpt.endsWith("…"));
-  /* markdown 语法被 strip */
+  /* Markdown syntax gets stripped. */
   const s2 = buildPostShareSnapshot(postDetail(), null);
   assert.ok(s2);
   assert.equal(s2.excerpt.includes("**"), false);
@@ -99,10 +99,11 @@ test("post snapshot: title clipped; no-title post falls back to body excerpt as 
   const s = buildPostShareSnapshot(postDetail({ title: "题".repeat(100) }), null);
   assert.ok(s);
   assert.equal(s.title.length, 66);
-  /* 无标题帖:正文摘要坐到主标题位,excerpt 留空避免重复 */
+  /* Untitled post: the body excerpt takes the headline slot, excerpt
+     stays empty to avoid repetition. */
   const s2 = buildPostShareSnapshot(postDetail({ title: "" }), null);
   assert.ok(s2);
-  assert.equal(s2.title, "正文 加粗 还有 代码 和 链接。");
+  assert.equal(s2.title, "Body bold plus code and a link.");
   assert.equal(s2.excerpt, "");
 });
 
@@ -206,18 +207,21 @@ function workRow(overrides: Partial<WorkRow> = {}): WorkRow {
 }
 
 test("work snapshot: claimed tokens gated by the display invariant", () => {
-  /* 声明制(20260822_work_claims):hero 数字 = 本作品 claimed_tokens,
-     且作者 Σ声明 ≤ 可验证总量;未声明 → 无 hero */
+  /* Claim-based: the hero number is this work's claimed_tokens with the
+     author's sum of claims <= the verifiable total; unclaimed -> no
+     hero. */
   const noClaim = buildWorkShareSnapshot(workRow(), new Map([[3, 5_000_000]]), new Map());
   assert.equal(noClaim.claimedTokens, null);
-  /* 已声明且不变式满足(Σ300万 ≤ 总量500万)→ hero 带声明值 */
+  /* Claimed with the invariant holding (claims 3M <= total 5M) -> the
+     hero carries the claim. */
   const withClaim = buildWorkShareSnapshot(
     workRow({ claimedTokens: 2_000_000 }),
     new Map([[3, 5_000_000]]),
     new Map([[3, 3_000_000]]),
   );
   assert.equal(withClaim.claimedTokens, 2_000_000);
-  /* 总量缩水:Σ声明 > 可验证总量 → 不渲染(无负面标记) */
+  /* Shrunk total: claims > verifiable total -> not rendered (no
+     negative signaling). */
   const over = buildWorkShareSnapshot(
     workRow({ claimedTokens: 2_000_000 }),
     new Map([[3, 1_000_000]]),
@@ -325,7 +329,7 @@ test("works count query scopes to member works of the user", () => {
   assert.deepEqual(args, [3]);
 });
 
-/* ---- 分档自适应高度(poster-sizes.ts) ---- */
+/* ---- Tiered adaptive heights (poster-sizes.ts) ---- */
 
 const POSTER_STEPS = [960, 1080, 1200, 1320, 1440];
 
@@ -336,7 +340,8 @@ test("post poster height follows content: short sparse shortest, long title/poll
   assert.equal(shortSize.width, POSTER_WIDTH);
   assert.equal(shortSize.height, 960);
 
-  /* 长标题稀疏帖(截图里的情形):66 字上档,不再硬撑 1440 */
+  /* A long-titled sparse post (the screenshot case): 66 chars tiers
+     up instead of stretching 1440. */
   const longTitle = buildPostShareSnapshot(postDetail({ title: "长".repeat(60), bodyMd: "" }), null);
   assert.ok(longTitle);
   const longSize = postPosterSize(longTitle);
@@ -386,7 +391,7 @@ test("work/profile poster heights follow their content blocks", () => {
   }
 });
 
-/* ---- 20260822 P1-9/P2-11:海报路由防护(源码钉)---- */
+/* ---- Poster route guards (source pinning) ---- */
 
 test("四条海报路由共享 IP 限流(120/h),先于快照查询与渲染", () => {
   const routes = [

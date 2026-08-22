@@ -1,6 +1,8 @@
-/* /api/auth/* 与 /api/cron/* 的路由级测试:鉴权判断、限速顺序、错误分支的
-   回归护栏。与 upload-route.test.ts 同约定——直接断言路由源码的关键顺序,
-   不起服务;逻辑细节由 lib 层单测/集成测试覆盖。 */
+/* Route-level tests for /api/auth/* and /api/cron/*: regression guards
+   for auth decisions, rate-limit ordering, and error branches. Same
+   convention as upload-route.test.ts — assert key orderings directly
+   against the route source, start no server; logic details live in
+   lib-level unit/integration tests. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -9,7 +11,8 @@ function sourceOf(path: string): string {
   return readFileSync(new URL(`../app/api/${path}/route.ts`, import.meta.url), "utf8");
 }
 
-/* 前后顺序断言:a 必须出现在 b 之前(鉴权/限速先于解析与写库)。 */
+/* Order assertion: a must appear before b (auth/rate limiting precede
+   parsing and writes). */
 function assertOrder(src: string, a: string, b: string, label: string) {
   const ia = src.indexOf(a);
   const ib = src.indexOf(b);
@@ -18,7 +21,7 @@ function assertOrder(src: string, a: string, b: string, label: string) {
   assert.ok(ia < ib, `${label}: ${a} 必须先于 ${b}`);
 }
 
-/* ---- OAuth 起点 /api/auth/[provider] ---- */
+/* ---- OAuth start /api/auth/[provider] ---- */
 
 test("oauth start: unknown provider 404 before issuing any redirect", () => {
   const src = sourceOf("auth/[provider]");
@@ -31,11 +34,12 @@ test("oauth start: state cookie 是 CSRF 防线,httpOnly+lax+10 分钟", () => {
   assert.match(src, /sameSite: "lax"/);
   assert.match(src, /maxAge: 600/);
   assertOrder(src, "STATE_COOKIE, state", "return res", "state cookie 写入先于返回");
-  /* redirect_uri 走 canonical origin,不用裸请求 Host(Host 头注入防线) */
+  /* redirect_uri uses the canonical origin, never the raw request Host
+     (the Host-header injection defense). */
   assert.match(src, /canonicalOrigin\(req\)/);
 });
 
-/* ---- OAuth 回调 /api/auth/callback/[provider] ---- */
+/* ---- OAuth callback /api/auth/callback/[provider] ---- */
 
 test("oauth callback: state 校验先于 code 换资料", () => {
   const src = sourceOf("auth/callback/[provider]");
@@ -50,12 +54,13 @@ test("oauth callback: 绑定模式必须先有会话再写绑定", () => {
 test("oauth callback: 所有跳转统一清流程 cookie", () => {
   const src = sourceOf("auth/callback/[provider]");
   assert.match(src, /clearFlowCookies\(NextResponse\.redirect/);
-  /* 失败出口统一走 fail/linkFail,不裸抛 */
+  /* Failure exits uniformly go through fail/linkFail, never bare
+     throws. */
   assert.match(src, /auth_error/);
   assert.match(src, /link_error/);
 });
 
-/* ---- 邮箱注册 /api/auth/email/register ---- */
+/* ---- Email signup /api/auth/email/register ---- */
 
 test("register: 同源校验 + IP 限速都在解析表单之前", () => {
   const src = sourceOf("auth/email/register");
@@ -72,7 +77,7 @@ test("register: 全部校验先于建号,会话只在成功后种下", () => {
   assertOrder(src, "createEmailUser(", "setSessionCookie(", "建号先于种会话");
 });
 
-/* ---- 邮箱登录 /api/auth/email/login ---- */
+/* ---- Email login /api/auth/email/login ---- */
 
 test("login: IP 限速先于解析,账号限速先于查库", () => {
   const src = sourceOf("auth/email/login");
@@ -83,19 +88,20 @@ test("login: IP 限速先于解析,账号限速先于查库", () => {
 
 test("login: 失败口径统一 bad_credentials,不暴露邮箱是否注册", () => {
   const src = sourceOf("auth/email/login");
-  /* 查无此号与密码错误走同一个出口 */
+  /* Unknown email and wrong password share one exit. */
   assert.match(src, /account\?\.passwordHash != null\s*&&/);
   assert.equal((src.match(/"bad_credentials"/g) ?? []).length, 1);
   assertOrder(src, "verifyPassword(", "setSessionCookie(", "验密先于种会话");
 });
 
-/* ---- 忘记密码 /api/auth/email/forgot ---- */
+/* ---- Forgot password /api/auth/email/forgot ---- */
 
 test("forgot: 无论邮箱是否注册都回 sent=1(不泄露注册状态)", () => {
   const src = sourceOf("auth/email/forgot");
   assertOrder(src, "isSameOrigin(req)", "req.formData()", "同源校验先于表单解析");
   assertOrder(src, "consumeUsageRateLimit(", "req.formData()", "限速先于表单解析");
-  /* 查库结果只决定发不发信,成功出口只有 sent=1(next 只是透传的回跳目标) */
+  /* The lookup only decides whether to send; the success exit is
+     always sent=1 (next merely passes the redirect target through). */
   assert.ok(src.includes('back(req, { ...extras, sent: "1" })'));
   assertOrder(src, "issuePasswordResetToken(", 'sent: "1"', "发信分支不改变对外口径");
 });
@@ -106,7 +112,7 @@ test("forgot: 重置链接用 canonical origin 拼,防 Host 头注入", () => {
   assertOrder(src, "canonicalOrigin(req)", "resetUrl", "origin 先于链接拼接");
 });
 
-/* ---- 重置密码 /api/auth/email/reset ---- */
+/* ---- Reset password /api/auth/email/reset ---- */
 
 test("reset: 密码策略先于消费 token(不合规不烧有效 token)", () => {
   const src = sourceOf("auth/email/reset");
@@ -116,7 +122,7 @@ test("reset: 密码策略先于消费 token(不合规不烧有效 token)", () =>
   assertOrder(src, "setUserPassword(", "setSessionCookie(", "换散列先于种会话");
 });
 
-/* ---- 登出 /api/auth/logout ---- */
+/* ---- Logout /api/auth/logout ---- */
 
 test("logout: POST-only + 同源校验,删会话 cookie 并回 canonical 首页", () => {
   const src = sourceOf("auth/logout");
@@ -127,7 +133,8 @@ test("logout: POST-only + 同源校验,删会话 cookie 并回 canonical 首页"
   assert.match(src, /canonicalOrigin\(req\)/);
 });
 
-/* ---- cron 路由的 Bearer 鉴权(20260822 P2-4:恒时比较 + 未配置统一 401) ---- */
+/* ---- Cron Bearer auth (constant-time compare + a uniform 401 for
+   the unconfigured case) ---- */
 
 for (const cron of ["cron/ai-reply-retry", "cron/usage-retention", "cron/analytics-retention"]) {
   test(`${cron}: cronAuthorized 恒时鉴权,拒绝一律 401(不区分未配置/凭据错误)`, () => {
@@ -135,7 +142,8 @@ for (const cron of ["cron/ai-reply-retry", "cron/usage-retention", "cron/analyti
     assert.match(src, /import \{ cronAuthorized \} from "@\/src\/lib\/cron-auth"/);
     assert.match(src, /if \(!cronAuthorized\(request\)\)/);
     assert.match(src, /status: 401/);
-    /* 旧的内联明文比较与 500 泄露配置态的出口都已移除 */
+    /* The old inline plaintext compare and the 500 that leaked
+       configuration state are both gone. */
     assert.doesNotMatch(src, /headers\.get\("authorization"\)/);
     assert.doesNotMatch(src, /CRON_SECRET is not configured/);
   });

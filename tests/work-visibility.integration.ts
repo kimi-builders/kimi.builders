@@ -1,13 +1,14 @@
-/* 作品可见性(20260828_work_visibility)集成测试。只在隔离库运行
-   (DATABASE_URL 必须含 kbu-mysql)。覆盖全口径:
-   - /works 墙与 /awesome 列表:匿名只见公开;作者额外见自己的私密条目;
-   - 个人主页作品页签与计数:getUserWorks / userWorksCountQuery 的 self/访客口径;
-   - 详情可见性判定(canViewWork):私密仅作者;
-   - 分享海报快照:私密作品 → null(路由 404);
-   - 公共上下文:相关作品 / 右栏统计 / 热门 / 精选位 全部 public-only;
-   - 私密作品不可被设精选;
-   - 编辑往返:public → private 即时从访客视野消失,作者仍可见。
-   附带资料展示隐私(updateProfilePrivacy)的存取往返。 */
+/* Work visibility integration. Runs only against an isolated database
+   (DATABASE_URL must contain kbu-mysql). Covers the full surface:
+   /works wall and /awesome list (anonymous sees public only; the
+   author additionally sees their private entries); profile works tab
+   and counts (getUserWorks / userWorksCountQuery self vs visitor);
+   detail visibility (canViewWork: private is author-only); poster
+   snapshots (private -> null, route 404s); public contexts (related
+   works / rail stats / hot / featured slots all public-only); private
+   works can't be featured; edit round trip (public -> private
+   disappears from visitors immediately, the author still sees). Also
+   covers profile-privacy (updateProfilePrivacy) round trips. */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import { featuredWorksQuery, setWorkFeatured, clearWorkFeatured } from "../src/lib/featured";
@@ -85,7 +86,8 @@ async function main() {
     const author = await insertUser("a");
     const stranger = await insertUser("b");
 
-    /* 公开聚合基线:后续只加私密/屏蔽内容，不应改变访客社区总量。 */
+    /* Public aggregate baseline: adding only private/hidden content
+       afterwards must not move the visitor totals. */
     const communityBefore = await getCommunityStats();
     const privatePost = await createPost({
       userId: author, type: "text", category: "chat", title: "私密聚合",
@@ -98,7 +100,8 @@ async function main() {
       visibility: "public", options: [],
     });
     postIds.push(privatePost, hiddenPost);
-    /* 播种迁安全变体(20260822 P1-8):作者视角,私密帖作者可自见 */
+    /* Seeding uses the safe variant: the author's view — private posts
+       are self-visible. */
     const seedComment = async (postId: number, body: string): Promise<number> => {
       const created = await createCommentForVisiblePost({ id: author, role: "member" }, postId, body);
       assert.ok(created);
@@ -123,19 +126,21 @@ async function main() {
     assert.equal(communityAfter.posts, communityBefore.posts);
     assert.equal(communityAfter.comments, communityBefore.comments);
 
-    /* 种子:公开作品 / 私密作品 / 公开 awesome 推荐 / 私密 awesome 推荐 / 编辑收录(NULL 作者) */
+    /* Seeds: public work / private work / public awesome entry /
+       private awesome entry / editor-curated (NULL author). */
     const pubWork = await createWork(author, fields({ name: "公开作品" }));
     const privWork = await createWork(author, fields({ name: "私密作品", visibility: "private" }));
     const pubAwesome = await createWork(author, fields({ name: "公开推荐", authorLabel: "外部作者", scope: "base" }));
     const privAwesome = await createWork(author, fields({ name: "私密推荐", authorLabel: "外部作者", scope: "eco", visibility: "private" }));
     workIds.push(pubWork, privWork, pubAwesome, privAwesome);
     const [ed] = await pool.query(
-      "INSERT INTO works (user_id, name, tagline, url, agents, source, author_label, scope) VALUES (NULL, '编辑收录', 'editorial', 'https://example.com', JSON_ARRAY('kimi'), 'awesome', '编辑', 'base')",
+      "INSERT INTO works (user_id, name, tagline, url, agents, source, author_label, scope) VALUES (NULL, 'editor-curated', 'editorial', 'https://example.com', JSON_ARRAY('kimi'), 'awesome', 'editorial', 'base')",
     );
     const editorial = Number((ed as { insertId: number }).insertId);
     workIds.push(editorial);
 
-    /* 1. 作品墙:匿名不见私密;作者见;陌生人不见 */
+    /* 1. Works wall: anonymous misses private; the author sees;
+       strangers don't. */
     const anonWall = await getWorksPage();
     assert.ok(anonWall.works.some((w) => w.id === pubWork));
     assert.ok(!anonWall.works.some((w) => w.id === privWork));
@@ -144,8 +149,9 @@ async function main() {
     const strangerWall = await getWorksPage({ viewerId: stranger });
     assert.ok(!strangerWall.works.some((w) => w.id === privWork));
 
-    /* 2. Awesome:匿名见公开推荐 + 编辑收录,不见私密推荐;推荐人本人见;
-          成员作品默认不进 Awesome,勾选「同时收录」才出现(20260906) */
+    /* 2. Awesome: anonymous sees public entries + editor-curated, not
+       private ones; the recommender sees their own; member works stay
+       off Awesome unless "also list" is checked. */
     const anonAwesome = await getAwesomeWorksPage();
     assert.ok(anonAwesome.works.some((w) => w.id === pubAwesome));
     assert.ok(anonAwesome.works.some((w) => w.id === editorial));
@@ -161,7 +167,8 @@ async function main() {
     const authorAwesome = await getAwesomeWorksPage({ viewerId: author });
     assert.ok(authorAwesome.works.some((w) => w.id === privAwesome));
 
-    /* 3. 详情可见性判定 + 海报快照:私密 → 非作者不可见 / 快照 null */
+    /* 3. Detail visibility + poster snapshot: private -> invisible to
+       non-authors / snapshot null. */
     const privRow = await getWork(privWork);
     assert.ok(privRow);
     assert.equal(canViewWork(privRow, { id: author, role: "member" }), true);
@@ -170,8 +177,8 @@ async function main() {
     assert.equal(await getWorkShareSnapshot(privWork), null);
     assert.ok(await getWorkShareSnapshot(pubWork));
 
-    /* 4. 个人主页作品页签 + 计数:self 含私密,访客只公开
-          (第 2 节多了一个「同步收录」的公开作品:3/2) */
+    /* 4. Profile works tab + counts: self includes private, visitors
+       public only (section 2 added one also-listed public work: 3/2). */
     const selfWorks = await getUserWorks(author, true);
     const guestWorks = await getUserWorks(author, false);
     assert.ok(selfWorks.some((w) => w.id === privWork));
@@ -182,7 +189,8 @@ async function main() {
     assert.equal(Number((selfCount as { n: number }[])[0]?.n), 3);
     assert.equal(Number((guestCount as { n: number }[])[0]?.n), 2);
 
-    /* 5. 公共上下文:相关作品 / 右栏热门 / 墙统计 均不含私密 */
+    /* 5. Public contexts: related / rail hot / wall stats carry no
+       private works. */
     const related = await getRelatedWorks({ id: pubWork, userId: author, agents: ["kimi"] });
     assert.ok(!related.some((w) => w.id === privWork));
     const top = await getTopWorks(20);
@@ -193,7 +201,8 @@ async function main() {
     );
     assert.equal(stats.works, Number((pubOnly as { n: number }[])[0]?.n));
 
-    /* 6. 精选:私密作品设精选失败;公开作品设上后转私密即离开精选位 */
+    /* 6. Featuring: private works fail to feature; a featured public
+       work turned private leaves the slot. */
     assert.equal(await setWorkFeatured(author, privWork, "私密不可精选"), false);
     assert.equal(await setWorkFeatured(author, pubWork, "精选测试"), true);
     let featured = await (async () => {
@@ -212,12 +221,13 @@ async function main() {
       return (rows as { id: number }[]).map((r) => Number(r.id));
     })();
     assert.ok(!featured.includes(pubWork));
-    /* 作者仍能在墙上看到转为私密的它,访客/匿名不能 */
+    /* The author still sees it on the wall after it turned private;
+       visitors/anonymous don't. */
     assert.ok((await getWorksPage({ viewerId: author })).works.some((w) => w.id === pubWork));
     assert.ok(!(await getWorksPage()).works.some((w) => w.id === pubWork));
     await clearWorkFeatured(pubWork);
 
-    /* 7. 资料展示隐私:开关存取往返 + 展示口径 */
+    /* 7. Profile-privacy: switch round trips + display rules. */
     await updateProfilePrivacy(author, { showAvatar: false, showName: false, showBio: false });
     const p = await getProfileByHandle(`vis_a_${stamp}`);
     assert.ok(p);

@@ -1,9 +1,10 @@
-/* 设置页「账号」:改密码 + OAuth 解绑集成测试。只在隔离库运行
-   (DATABASE_URL 必须含 kbu-mysql)。覆盖:
-   - getUserPasswordHash:无密码 → null;设置后 → 哈希,新密码可验证
-   - unlinkProviderAccount:无密码 + 单绑定 → last_method(行保留);
-     设密码后 → ok;重复解绑 → not_linked;
-     无密码 + 双绑定 → 解一个 ok,剩下一个再解 → last_method */
+/* Settings "account" tab: change-password + OAuth unlink integration.
+   Runs only against an isolated database (DATABASE_URL must contain
+   kbu-mysql). Covers: getUserPasswordHash (no password -> null; set ->
+   hash, new password verifies); unlinkProviderAccount (no password +
+   single binding -> last_method, row kept; after setting a password ->
+   ok; repeat unlink -> not_linked; no password + two bindings -> one
+   unlink ok, the last one -> last_method). */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import { hashPassword, verifyPassword } from "../src/lib/auth/password";
@@ -35,7 +36,7 @@ async function main() {
   const stamp = Date.now();
   const createdUserIds: number[] = [];
   try {
-    /* —— 改密码链路:无 → 有 → 新密码可登录 —— */
+    /* Change-password chain: none -> set -> new password logs in. */
     const pwUser = await createEmailUser(`pw_${stamp}@example.com`, "Pw User");
     createdUserIds.push(pwUser);
     assert.equal(await getUserPasswordHash(pwUser), null);
@@ -52,7 +53,8 @@ async function main() {
     assert.equal(await verifyPassword("new-secret-2", secondHash), true);
     assert.equal(await verifyPassword("old-secret-1", secondHash), false);
 
-    /* —— 解绑守卫:无密码 + 单绑定 = 唯一登录方式 —— */
+    /* Unlink guard: no password + single binding = the only login
+       method. */
     const solo = await createEmailUser(`solo_${stamp}@example.com`, "Solo");
     createdUserIds.push(solo);
     assert.equal(
@@ -60,19 +62,20 @@ async function main() {
       "ok",
     );
     assert.equal(await unlinkProviderAccount(solo, "github"), "last_method");
-    /* 行还在,没真删 */
+    /* The row survives — not really deleted. */
     const [soloRows] = await pool.query(
       "SELECT COUNT(*) AS n FROM oauth_accounts WHERE user_id = ?",
       [solo],
     );
     assert.equal(Number((soloRows as { n: number }[])[0].n), 1);
 
-    /* 设了密码 → 可解;再解 → not_linked */
+    /* Password set -> unlinkable; unlink again -> not_linked. */
     await setUserPassword(solo, await hashPassword("solo-secret-1"));
     assert.equal(await unlinkProviderAccount(solo, "github"), "ok");
     assert.equal(await unlinkProviderAccount(solo, "github"), "not_linked");
 
-    /* —— 无密码 + 双绑定:解一个 ok,最后一个仍拒 —— */
+    /* No password + two bindings: one unlink ok, the last one still
+       refused. */
     const dual = await createEmailUser(`dual_${stamp}@example.com`, "Dual");
     createdUserIds.push(dual);
     assert.equal(

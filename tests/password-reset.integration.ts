@@ -1,7 +1,11 @@
-/* 忘记密码集成测试。只在隔离库运行(DATABASE_URL 必须含 kbu-mysql)。
-   覆盖:token 生命周期(生成→消费→重放拒绝→过期拒绝→新签发作废旧);
-   库中只存 HMAC 不落明文;forgot 路由对注册/未注册邮箱响应一致(不泄露注册状态),
-   且 RESEND_API_KEY 缺失时发信软失败仍回 sent=1;换密后旧密码失效、新密码可登录。 */
+/* Forgot-password integration. Runs only against an isolated database
+   (DATABASE_URL must contain kbu-mysql). Covers: the token lifecycle
+   (issue -> consume -> replay rejected -> expiry rejected -> new issue
+   voids old ones); only the HMAC lands in the DB, never plaintext; the
+   forgot route answers registered and unregistered emails identically
+   (no registration oracle), and a missing RESEND_API_KEY still fails
+   soft with sent=1; after a reset the old password dies and the new
+   one logs in. */
 import assert from "node:assert/strict";
 import type { NextRequest } from "next/server";
 import type { RowDataPacket } from "mysql2";
@@ -22,7 +26,8 @@ if (!process.env.DATABASE_URL?.includes("kbu-mysql")) {
 }
 process.env.AUTH_SECRET ||= "integration-only-auth-secret-at-least-32-chars";
 process.env.USAGE_KEY_PEPPER ||= "integration-only-usage-pepper-at-least-32-characters";
-/* 隔离环境绝不发真邮件;顺带覆盖 mailer not_configured 软失败路径 */
+/* The isolated environment never sends real mail; this also covers the
+   mailer's not_configured soft-failure path. */
 delete process.env.RESEND_API_KEY;
 
 const FORGOT_URL = "https://kimi.builders/api/auth/email/forgot";
@@ -66,7 +71,8 @@ async function main() {
     userId = await createEmailUser(email, "Reset Probe");
     await setUserPassword(userId, await hashPassword("old-password-1"));
 
-    /* ---- token 生成:64 hex;库中只存 HMAC,不落明文 ---- */
+    /* ---- Token issue: 64 hex; only the HMAC lands in the DB, never
+       plaintext ---- */
     const t1 = await issuePasswordResetToken(userId);
     assert.match(t1, /^[0-9a-f]{64}$/);
     assert.equal(isResetTokenFormat(t1), true);
@@ -81,17 +87,17 @@ async function main() {
     assert.notEqual(rows1[0].token_hash, t1);
     assert.equal(rows1[0].used_at, null);
 
-    /* ---- 消费成功 → 单次使用,重放拒绝 ---- */
+    /* ---- Successful consumption -> single use, replay rejected ---- */
     assert.equal(await consumePasswordResetToken(t1), userId);
     assert.equal(await consumePasswordResetToken(t1), null);
 
-    /* ---- 新请求作废旧 token ---- */
+    /* ---- A new request voids old tokens ---- */
     const t2 = await issuePasswordResetToken(userId);
     const t3 = await issuePasswordResetToken(userId);
-    assert.equal(await consumePasswordResetToken(t2), null); // 已被 t3 签发作废
+    // Voided by t3's issue.
     assert.equal(await consumePasswordResetToken(t3), userId);
 
-    /* ---- 过期拒绝 ---- */
+    /* ---- Expiry rejected ---- */
     const t4 = await issuePasswordResetToken(userId);
     await pool.query(
       `UPDATE password_reset_tokens
@@ -101,18 +107,20 @@ async function main() {
     );
     assert.equal(await consumePasswordResetToken(t4), null);
 
-    /* ---- 畸形 / 未知 token ---- */
+    /* ---- Malformed / unknown tokens ---- */
     assert.equal(await consumePasswordResetToken("not-a-token"), null);
     assert.equal(await consumePasswordResetToken("f".repeat(64)), null);
 
-    /* ---- reset 写路径:换散列后旧密码失效、新密码可验 ---- */
+    /* ---- Reset write path: old password dead after the hash swap, the
+       new one verifies ---- */
     await setUserPassword(userId, await hashPassword("new-password-2"));
     const account = await findEmailAccount(email);
     assert.ok(account?.passwordHash);
     assert.equal(await verifyPassword("new-password-2", account.passwordHash), true);
     assert.equal(await verifyPassword("old-password-1", account.passwordHash), false);
 
-    /* ---- forgot 路由:注册 / 未注册两个分支响应一致(不泄露注册状态)---- */
+    /* ---- Forgot route: registered / unregistered branches answer
+       identically (no registration oracle) ---- */
     const registered = await forgotPost(forgotRequest(email));
     const unregistered = await forgotPost(forgotRequest(`nobody_${stamp}@example.com`));
     for (const res of [registered, unregistered]) {
@@ -122,19 +130,21 @@ async function main() {
         "https://kimi.builders/login?mode=forgot&sent=1",
       );
     }
-    /* 注册分支确实走完了签发(RESEND_API_KEY 缺失 → 发信软失败,仍 sent=1) */
+    /* The registered branch really completed the issue (missing
+       RESEND_API_KEY -> soft mail failure, still sent=1). */
     const [rows2] = await pool.query<RowDataPacket[]>(
       "SELECT COUNT(*) AS n FROM password_reset_tokens WHERE user_id = ? AND used_at IS NULL",
       [userId],
     );
     assert.equal(Number(rows2[0].n), 1);
 
-    /* ---- 跨源请求拒绝 ---- */
+    /* ---- Cross-origin requests rejected ---- */
     const crossSite = await forgotPost(forgotRequest(email, "https://evil.example"));
     assert.equal(crossSite.status, 303);
     assert.ok(crossSite.headers.get("location")?.includes("error=invalid_origin"));
 
-    /* ---- reset 路由错误分支(成功分支要种 cookie,由 HTTP 级 QA 覆盖)---- */
+    /* ---- Reset route error branches (the success branch plants a
+       cookie — covered by HTTP-level QA) ---- */
     const badToken = await resetPost(resetRequest("f".repeat(64), "valid-password-9", "valid-password-9"));
     assert.equal(badToken.status, 303);
     const badLoc = badToken.headers.get("location") ?? "";
@@ -142,7 +152,8 @@ async function main() {
     assert.ok(badLoc.includes("error=invalid_token"));
     assert.ok(badLoc.includes(`token=${"f".repeat(64)}`));
 
-    /* 密码不一致不消费 token:先 mismatch,再凭同一 token 正常消费 */
+    /* A password mismatch never consumes the token: mismatch first,
+       then consume normally with the same token. */
     const live = await issuePasswordResetToken(userId);
     const mismatch = await resetPost(resetRequest(live, "valid-password-9", "different-1"));
     assert.equal(mismatch.status, 303);

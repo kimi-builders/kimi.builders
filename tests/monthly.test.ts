@@ -19,7 +19,7 @@ import {
 } from "../src/lib/monthly";
 import { BLOG_ISSUES, findBlogIssue } from "./fixtures/monthly-mock";
 
-/* ---- 夹具(mock 期次 = 类型即需求规格,plan-monthly-learn-launch.md §一.1)---- */
+/* ---- Fixtures (mock issues — the types are the spec) ---- */
 
 test("fixture: mock 期次仍是合法样本(3 期、slug 可查、事实与定夺非空)", () => {
   assert.equal(BLOG_ISSUES.length, 3);
@@ -30,7 +30,7 @@ test("fixture: mock 期次仍是合法样本(3 期、slug 可查、事实与定�
   }
 });
 
-/* ---- payload 解析校验 ---- */
+/* ---- Payload parsing ---- */
 
 test("payload: 空串 = 纯自动组装;合法全字段解析", () => {
   assert.deepEqual(parseLetterPayload(""), { ok: true, payload: {} });
@@ -68,7 +68,8 @@ test("payload: 非法 JSON / 非对象 / 未知字段被拒(letter 层字段已�
   const r = parseLetterPayload('{"responce":"none"}');
   assert.equal(r.ok, false);
   if (!r.ok) assert.match(r.error, /未知字段:responce/);
-  /* 20260921 转向:response / agenda 不再是合法 payload 字段 */
+  /* Product pivot: response / agenda are no longer valid payload
+     fields. */
   assert.equal(parseLetterPayload('{"response":"received"}').ok, false);
   assert.equal(parseLetterPayload('{"agenda":{"postIds":[1]}}').ok, false);
 });
@@ -80,7 +81,7 @@ test("payload: 字段级校验(governance 必填 / rulingUrl 形态)", () => {
   const g2 = parseLetterPayload('{"governance":[{"title":"t","note":"n","rulingUrl":"ftp://x"}]}');
   assert.equal(g2.ok, false);
   if (!g2.ok) assert.match(g2.error, /rulingUrl/);
-  /* 站内路径与 https 链接可过 */
+  /* On-site paths and https links pass. */
   assert.equal(
     parseLetterPayload('{"governance":[{"title":"t","note":"n","rulingUrl":"https://example.com/x"}]}').ok,
     true,
@@ -100,13 +101,14 @@ test("letterPayloadFromDb: 渲染路径容错——坏数据回落空 payload,�
   assert.deepEqual(letterPayloadFromDb(undefined), {});
   assert.deepEqual(letterPayloadFromDb("{bad json"), {});
   assert.deepEqual(letterPayloadFromDb('{"unknown":1}'), {});
-  /* 退役字段的存量 payload 容错回落(渲染路径不炸) */
+  /* Legacy payloads with retired fields tolerate and fall back (the
+     render path never blows up). */
   assert.deepEqual(letterPayloadFromDb({ response: "received" }), {});
-  /* 驱动已解析 JSON 对象的情形 */
+  /* The case where the driver already parsed the JSON object. */
   assert.deepEqual(letterPayloadFromDb({ governance: [] }), { governance: [] });
 });
 
-/* ---- 月份窗口 ---- */
+/* ---- Month windows ---- */
 
 test("monthOf / monthWindow: UTC 月窗半开区间,12 月跨年,非法输入 null", () => {
   assert.equal(monthOf(new Date(Date.UTC(2026, 7, 15, 23, 59))), "2026-08");
@@ -123,7 +125,7 @@ test("monthOf / monthWindow: UTC 月窗半开区间,12 月跨年,非法输入 nu
   assert.equal(monthWindow(""), null);
 });
 
-/* ---- 事实盘点 ---- */
+/* ---- Fact sheet ---- */
 
 const STATS: MonthlyStatsSnapshot = {
   members: 203,
@@ -146,7 +148,7 @@ test("facts: 七项口径(累计 token/成员/帖/作品/评论 + 30 天命中�
   assert.equal(byLabel.get("社区评论"), "1320");
   assert.equal(byLabel.get("缓存命中率 · 近 30 天"), "81.3%");
   assert.equal(byLabel.get("TOP 模型 · 近 30 天"), "Kimi K3 · 41.0%");
-  /* en 版 */
+  /* The en version. */
   const en = new Map(buildFacts(STATS, "en").map((f) => [f.label, f.value]));
   assert.equal(en.get("Tokens synced (all-time)"), "3.8B");
 });
@@ -156,7 +158,8 @@ test("facts: 缺项诚实显示「—」,不编数", () => {
   const byLabel = new Map(facts.map((f) => [f.label, f.value]));
   assert.equal(byLabel.get("缓存命中率 · 近 30 天"), MISSING);
   assert.equal(byLabel.get("TOP 模型 · 近 30 天"), MISSING);
-  /* 数据少照发:1 个成员、0 评论也是诚实起点 */
+  /* Sparse data still ships: 1 member and 0 comments is an honest
+     starting point. */
   const cold = buildFacts(
     { members: 1, posts: 3, works: 0, comments: 0, tokensTotal: 460_000_000, cacheHitRate: null, topModel: null },
     "en",
@@ -169,7 +172,7 @@ test("facts: 缺项诚实显示「—」,不编数", () => {
 test("facts 模型分布:canonical 合并 + 份额 + 前三", () => {
   const rows = [
     { source: "kimi-code", model: "kimi-k3", modelCanonical: "kimi-k3", modelProvider: "moonshot", tokens: 60 },
-    /* 别名归并:k3 → kimi-k3 */
+    /* Alias merging: k3 -> kimi-k3. */
     { source: "kimi-code", model: "K3", modelCanonical: "", modelProvider: "moonshot", tokens: 40 },
     { source: "claude-code", model: "claude-opus-4", modelCanonical: "", modelProvider: "anthropic", tokens: 50 },
   ];
@@ -179,11 +182,11 @@ test("facts 模型分布:canonical 合并 + 份额 + 前三", () => {
   assert.equal(top[0].tokens, 100);
   assert.ok(Math.abs(top[0].share - 100 / 150) < 1e-9);
   assert.equal(top[1].name, "claude-opus-4");
-  /* 空窗口 → 空分布(调用方回落「—」) */
+  /* Empty window -> empty distribution (callers fall back to "—"). */
   assert.deepEqual(topUsageModels([], 3), []);
 });
 
-/* ---- 编辑定夺 ---- */
+/* ---- Editorial decisions ---- */
 
 const FEATURED: MonthlyFeaturedEntry[] = [
   {
@@ -225,11 +228,11 @@ test("decisions: featured 帖子/作品带理由与定夺编辑,governance 排�
   const gov = decisions[2];
   assert.equal(gov.rulingUrl, "/community/99");
   assert.equal(gov.editorHandle, "");
-  /* 无 governance 时只有 featured */
+  /* Without governance entries, only featured. */
   assert.equal(buildDecisions(FEATURED, []).length, 2);
 });
 
-/* ---- 期次组装与期号 ---- */
+/* ---- Issue assembly and numbering ---- */
 
 function articleFixture(i: number) {
   const mock = BLOG_ISSUES[i];
@@ -244,7 +247,7 @@ function articleFixture(i: number) {
 
 test("assembleIssue: 月份取 published_at;评鉴/AI 披露读 payload 与正文", () => {
   const issue = assembleIssue({
-    article: { ...articleFixture(2), bodyMd: "本月评鉴正文" }, // 创刊号 letter-2026-06
+    article: { ...articleFixture(2), bodyMd: "editorial body" }, // letter-2026-06
     issueNumber: 1,
     stats: STATS,
     featured: FEATURED,
@@ -258,10 +261,11 @@ test("assembleIssue: 月份取 published_at;评鉴/AI 披露读 payload 与正�
   assert.equal(issue.slug, "letter-2026-06");
   assert.equal(issue.issue, 1);
   assert.equal(issue.month, "2026-06");
-  assert.equal(issue.bodyMd, "本月评鉴正文");
+  assert.equal(issue.bodyMd, "editorial body");
   assert.equal(issue.aiDisclosure?.facts, "数据聚合脚本生成");
   assert.equal(issue.decisions.at(-1)?.kind, "governance");
-  /* 无 payload:aiDisclosure=null;总览不取 bodyMd → 空串 */
+  /* No payload: aiDisclosure=null; the overview skips bodyMd -> empty
+     string. */
   const bare = assembleIssue({
     article: articleFixture(0),
     issueNumber: 3,
@@ -305,11 +309,13 @@ test("letterIssueMetas: 期号 = 发布正序 1 起(列表新→旧)", () => {
     ],
   );
   assert.equal(metas[1].month, "2026-06");
-  /* 空态谓词:一封未发 → 空列表(页面渲染「首期筹备中」) */
+  /* Empty-state predicate: nothing published -> empty list (the page
+     renders "first issue in preparation"). */
   assert.deepEqual(letterIssueMetas([]), []);
 });
 
-/* ---- 查询构建(SQL 钉;风格对齐 articles.test.ts)---- */
+/* ---- Query building (SQL pinning; style aligned with
+   articles.test.ts) ---- */
 
 test("works 计数:公开且未被屏蔽", () => {
   const { sql, args } = communityWorksCountQuery();

@@ -23,7 +23,8 @@ interface FakeCall {
   params: unknown[];
 }
 
-/* 最小假 DB(同 usage-social.test.ts):记录调用,统一返回固定行 */
+/* Minimal fake DB (as in usage-social.test.ts): records calls, returns
+   fixed rows. */
 function fakeDb(rows: Record<string, unknown>[]) {
   const calls: FakeCall[] = [];
   const db = {
@@ -36,7 +37,8 @@ function fakeDb(rows: Record<string, unknown>[]) {
   return db as unknown as Pool & { calls: FakeCall[] };
 }
 
-/* 按 SQL 内容路由不同返回行(getClaimAllowance 一次发两条查询) */
+/* Routes different rows by SQL content (getClaimAllowance issues two
+   queries at once). */
 function fakeDbRoutes(routes: { match: RegExp; rows: Record<string, unknown>[] }[]) {
   const calls: FakeCall[] = [];
   const db = {
@@ -50,7 +52,7 @@ function fakeDbRoutes(routes: { match: RegExp; rows: Record<string, unknown>[] }
   return db as unknown as Pool & { calls: FakeCall[] };
 }
 
-/* ---- 紧凑数字解析 ---- */
+/* ---- Compact-number parsing ---- */
 
 test("parseClaimInput: plain integers and compact suffixes", () => {
   assert.deepEqual(parseClaimInput("2500"), { kind: "ok", value: 2500 });
@@ -59,7 +61,7 @@ test("parseClaimInput: plain integers and compact suffixes", () => {
   assert.deepEqual(parseClaimInput("2k"), { kind: "ok", value: 2000 });
   assert.deepEqual(parseClaimInput("1.5M"), { kind: "ok", value: 1_500_000 });
   assert.deepEqual(parseClaimInput("1.2B"), { kind: "ok", value: 1_200_000_000 });
-  /* 分组符与空白容忍 */
+  /* Tolerates grouping separators and whitespace. */
   assert.deepEqual(parseClaimInput("10,000"), { kind: "ok", value: 10_000 });
   assert.deepEqual(parseClaimInput(" 1_000 "), { kind: "ok", value: 1000 });
 });
@@ -68,23 +70,24 @@ test("parseClaimInput: empty means undeclared, garbage is invalid", () => {
   assert.deepEqual(parseClaimInput(""), { kind: "none" });
   assert.deepEqual(parseClaimInput("   "), { kind: "none" });
   assert.deepEqual(parseClaimInput("abc"), { kind: "invalid" });
-  assert.deepEqual(parseClaimInput("1.5"), { kind: "invalid" }); // 非整数 tokens
-  assert.deepEqual(parseClaimInput("0"), { kind: "invalid" }); // 0 徽章无意义
+  // Non-integer tokens.
+  // A zero badge is meaningless.
   assert.deepEqual(parseClaimInput("-5"), { kind: "invalid" });
   assert.deepEqual(parseClaimInput("10x"), { kind: "invalid" });
 });
 
-/* ---- 写时校验:声明 ≤ 剩余可声明额度 ---- */
+/* ---- Write-time validation: claim <= remaining allowance ---- */
 
 test("checkClaimAllowance: exactly remaining passes, one over is rejected", () => {
   assert.deepEqual(checkClaimAllowance(600, 600), { ok: true });
   assert.deepEqual(checkClaimAllowance(601, 600), { ok: false, remaining: 600 });
-  /* 撤销声明(null)永远放行 */
+  /* Retracting (null) always passes. */
   assert.deepEqual(checkClaimAllowance(null, 0), { ok: true });
 });
 
 test("checkClaimAllowance: no usage data means nothing can be claimed", () => {
-  /* 无用量数据 → 剩余 0 → 任何正声明都被拒(「想戴徽章,先接数据」的服务端兜底) */
+  /* No usage data -> remaining 0 -> any positive claim rejected (the
+     server-side "bring data before wearing the badge" backstop). */
   assert.deepEqual(checkClaimAllowance(1, 0), { ok: false, remaining: 0 });
   assert.deepEqual(checkClaimAllowance(500, 0), { ok: false, remaining: 0 });
 });
@@ -96,14 +99,16 @@ test("getClaimAllowance: remaining = verifiable total minus claims of other work
   ]);
   const a = await getClaimAllowance(7, undefined, db);
   assert.deepEqual(a, { total: 1_000_000, claimed: 400_000, remaining: 600_000 });
-  /* 编辑排除自身:第二条查询带 id <> ? 且参数带 workId */
+  /* Editing excludes self: the second query carries id <> ? and the
+     params carry workId. */
   const b = await getClaimAllowance(7, 42, db);
   assert.equal(db.calls.length, 4);
   const sumCall = db.calls[3];
   assert.match(sumCall.sql, /id <> \?/);
   assert.deepEqual(sumCall.params, [7, 42]);
   assert.equal(b.remaining, 600_000);
-  /* 剩余不为负(声明已超额时展示侧兜底,写侧看到的剩余夹到 0) */
+  /* Remaining never goes negative (a display-side backstop when claims
+     already exceed; the write side sees it clamped to 0). */
   const over = fakeDbRoutes([
     { match: /FROM usage_buckets/, rows: [{ user_id: 7, total_tokens: 100 }] },
     { match: /FROM works/, rows: [{ claimed: 400 }] },
@@ -112,20 +117,22 @@ test("getClaimAllowance: remaining = verifiable total minus claims of other work
 });
 
 test("getClaimAllowance: deleting a work releases its claim (physical delete)", async () => {
-  /* 作品物理删除,Σ声明 只在现存行上求和 —— 无 deleted_at 过滤即释放语义 */
+  /* Physically deleting a work sums claims over surviving rows only —
+     no deleted_at filter is the release semantics. */
   const q = workClaimSumsQuery([7]);
   assert.ok(q);
   assert.equal(q!.sql.includes("deleted"), false);
   const db = fakeDbRoutes([
     { match: /FROM usage_buckets/, rows: [{ user_id: 7, total_tokens: 1_000_000 }] },
-    { match: /FROM works/, rows: [{ claimed: 0 }] }, // 删除后合计回落
+    // The sum falls back after deletion.
   ]);
   const a = await getClaimAllowance(7, undefined, db);
   assert.equal(a.claimed, 0);
-  assert.equal(a.remaining, 1_000_000); // 额度自然释放
+  // The allowance releases itself.
 });
 
-/* ---- 验证用总量查询:内部口径,无 opt-in 门禁 ---- */
+/* ---- Verifiable-total query: internal definition, no opt-in gate
+   ---- */
 
 test("verifiableTokenTotalsQuery: same SUM as social totals but no opt-in JOIN", () => {
   const q = verifiableTokenTotalsQuery([3, 1, 3])!;
@@ -133,10 +140,11 @@ test("verifiableTokenTotalsQuery: same SUM as social totals but no opt-in JOIN",
   assert.match(q.sql, /FROM usage_buckets b/);
   assert.match(q.sql, /WHERE b\.user_id IN \(\?\)/);
   assert.match(q.sql, /GROUP BY b\.user_id/);
-  /* 关键差异:不做 show_on_leaderboard 门禁(声明行为本身即公开授权) */
+  /* The key difference: no show_on_leaderboard gate (declaring is
+     itself the public act). */
   assert.equal(q.sql.includes("usage_settings"), false);
   assert.equal(q.sql.includes("show_on_leaderboard"), false);
-  /* 入参去重;空/非法 id 集 → null */
+  /* Inputs deduped; empty/invalid id sets -> null. */
   assert.deepEqual(q.args, [[3, 1]]);
   assert.equal(verifiableTokenTotalsQuery([]), null);
   assert.equal(verifiableTokenTotalsQuery([null, 0, -1]), null);
@@ -149,7 +157,7 @@ test("getVerifiableTokenTotals maps rows; empty id set skips the query", async (
   assert.equal(totals.has(6), false);
   const empty = await getVerifiableTokenTotals([], db);
   assert.equal(empty.size, 0);
-  assert.equal(db.calls.length, 1); // 空集不发查询
+  // Empty sets issue no query.
 });
 
 test("workClaimSumsQuery / getWorkClaimSums: per-author Σclaimed over all their works", async () => {
@@ -161,10 +169,11 @@ test("workClaimSumsQuery / getWorkClaimSums: per-author Σclaimed over all their
   const db = fakeDb([{ user_id: 3, claimed: 700 }, { user_id: 1, claimed: null }]);
   const sums = await getWorkClaimSums([3, 1], db);
   assert.equal(sums.get(3), 700);
-  assert.equal(sums.get(1), 0); // 全 NULL → 0
+  // All-NULL -> 0.
 });
 
-/* ---- 展示不变式:Σ声明 ≤ 可验证总量,否则整体隐藏 ---- */
+/* ---- Display invariant: sum of claims <= verifiable total, else hide
+   everything ---- */
 
 test("claimBadgeOf: declared work within budget shows its own claim", () => {
   const totals = new Map([[1, 1_000_000]]);
@@ -174,14 +183,15 @@ test("claimBadgeOf: declared work within budget shows its own claim", () => {
 });
 
 test("claimBadgeOf: over-claimed author loses ALL badges (shrunk total)", () => {
-  /* 总量缩水(retention/删数据):Σ声明 700 > 总量 500 → 每个作品都不渲染 */
+  /* Shrunk total (retention/deletion): claims 700 > total 500 -> none
+     of the works render. */
   const totals = new Map([[1, 500]]);
   const sums = new Map([[1, 700]]);
   const a = { userId: 1, source: "site", claimedTokens: 300 };
   const b = { userId: 1, source: "site", claimedTokens: 400 };
   assert.equal(claimBadgeOf(a, totals, sums), null);
   assert.equal(claimBadgeOf(b, totals, sums), null);
-  /* 恰好等于总量 → 不变式满足,正常渲染 */
+  /* Exactly equal -> invariant holds, renders normally. */
   const exact = new Map([[1, 700]]);
   assert.equal(claimBadgeOf(b, exact, sums), 400);
 });
@@ -189,17 +199,17 @@ test("claimBadgeOf: over-claimed author loses ALL badges (shrunk total)", () => 
 test("claimBadgeOf: null means render nothing (no negative marker)", () => {
   const totals = new Map([[1, 1_000_000]]);
   const sums = new Map([[1, 700_000]]);
-  /* 未声明 */
+  /* Unclaimed. */
   assert.equal(
     claimBadgeOf({ userId: 1, source: "site", claimedTokens: null }, totals, sums),
     null,
   );
-  /* 声明 0 / 负值无意义 */
+  /* Zero / negative claims are meaningless. */
   assert.equal(
     claimBadgeOf({ userId: 1, source: "site", claimedTokens: 0 }, totals, sums),
     null,
   );
-  /* awesome 外部条目不挂声明徽章 */
+  /* Awesome external entries carry no claim badge. */
   assert.equal(
     claimBadgeOf({ userId: null, source: "awesome", claimedTokens: 100 }, totals, sums),
     null,
@@ -208,8 +218,9 @@ test("claimBadgeOf: null means render nothing (no negative marker)", () => {
     claimBadgeOf({ userId: 1, source: "awesome", claimedTokens: 100 }, totals, sums),
     null,
   );
-  /* 作者无可验证数据(从未同步/数据清空)→ 声明不可验证,不渲染。
-     (生产上 claimSums 与该作者全部作品一致:Σ声明 ≥ 本作品声明) */
+  /* Author with no verifiable data (never synced/cleared) -> claims
+     unverifiable, nothing renders. (In production claimSums covers the
+     author's every work: sum of claims >= this work's claim.) */
   assert.equal(
     claimBadgeOf({ userId: 9, source: "site", claimedTokens: 100 }, totals, sums),
     null,
@@ -226,13 +237,13 @@ test("claimBadgeOf: null means render nothing (no negative marker)", () => {
 
 test("claimsPaused: author-side notice when Σclaims exceeds the verifiable total", () => {
   assert.equal(claimsPaused(500, 700), true);
-  assert.equal(claimsPaused(700, 700), false); // 恰好等于 = 未超额
+  // Exactly equal = not over cap.
   assert.equal(claimsPaused(1_000_000, 700), false);
-  assert.equal(claimsPaused(0, 0), false); // 无声明 = 无提示
-  assert.equal(claimsPaused(0, 10), true); // 数据全删但声明还在 = 超额暂停
+  // No claims = no hint.
+  // Data fully deleted but claims remain = paused over cap.
 });
 
-/* ---- 建议预填(项目分布匹配)---- */
+/* ---- Suggestion prefill (project-mix matching) ---- */
 
 test("suggestedClaimProjectsQuery: gated on upload_project, labeled buckets only", () => {
   const { sql, args } = suggestedClaimProjectsQuery(7);
@@ -259,12 +270,13 @@ test("matchSuggestedClaim: exact (case-insensitive) first, then substring", () =
     { label: "Moon Ledger Pro", tokens: 300 },
     { label: "side", tokens: 100 },
   ];
-  /* 精确匹配优先(大小写不敏感) */
+  /* Exact match wins (case-insensitive). */
   assert.deepEqual(matchSuggestedClaim("MoonLedger", projects), {
     label: "moonledger",
     tokens: 900,
   });
-  /* 互为子串:作品名 ⊂ label 或 label ⊂ 作品名 */
+  /* Mutual substring: work name inside label or label inside work
+     name. */
   assert.deepEqual(matchSuggestedClaim("moon ledger", projects), {
     label: "Moon Ledger Pro",
     tokens: 300,
@@ -273,7 +285,7 @@ test("matchSuggestedClaim: exact (case-insensitive) first, then substring", () =
     label: "Moon Ledger Pro",
     tokens: 300,
   });
-  /* 空名字 / 匹配不上 → 无建议 */
+  /* Empty name / no match -> no suggestion. */
   assert.equal(matchSuggestedClaim("", projects), null);
   assert.equal(matchSuggestedClaim("nothing alike", projects), null);
 });

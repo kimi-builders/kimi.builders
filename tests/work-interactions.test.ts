@@ -13,8 +13,10 @@ import {
   workVoteInsertQuery,
 } from "../src/lib/works";
 
-/* P1-2 作品互动:支持 toggle(顶只有,再点取消)+ 单层评论(软删)。
-   无 DB 环境,测 SQL 构建与纯决策函数(同 comment-pagination / community-rate-limit)。 */
+/* Work interactions: support toggle (up-only, click again to cancel) +
+   single-level comments (soft delete). No DB here — testing SQL
+   building and pure decision functions (like comment-pagination /
+   community-rate-limit). */
 
 test("comment page size is 50 per page", () => {
   assert.equal(WORK_COMMENT_PAGE_SIZE, 50);
@@ -24,7 +26,8 @@ test("comment page query pages visible comments by id cursor, ascending, over-fe
   const { sql, args } = workCommentPageQuery(7, 123);
   assert.match(sql, /c\.work_id = \?/);
   assert.match(sql, /c\.deleted_at IS NULL/);
-  /* id 游标:比上一页最后一条大,正序翻页(对话从下往上长) */
+  /* id cursor: greater than the last row of the previous page,
+     ascending (threads grow bottom-up). */
   assert.match(sql, /c\.id > \?/);
   assert.match(sql, /ORDER BY c\.id ASC/);
   assert.match(sql, new RegExp(`LIMIT ${WORK_COMMENT_PAGE_SIZE + 1}`));
@@ -46,7 +49,8 @@ test("vote insert uses INSERT IGNORE on the composite key (concurrent/double-cli
 });
 
 test("vote branch: first insert = support, duplicate insert = cancel (toggle)", () => {
-  /* INSERT IGNORE 的 affectedRows:1 = 新行(之前没支持过);0 = 主键已存在(这次是取消) */
+  /* INSERT IGNORE affectedRows: 1 = a new row (never supported
+     before); 0 = the PK already existed (this call cancels). */
   assert.equal(workVoteBranch(1), "support");
   assert.equal(workVoteBranch(0), "cancel");
   assert.equal(workVoteBranch(2), "support");
@@ -62,7 +66,8 @@ test("vote count: increment is plain +1; decrement casts to SIGNED inside GREATE
   const up = workVoteCountQuery(9, 1);
   assert.match(up.sql, /vote_count = vote_count \+ 1/);
   const down = workVoteCountQuery(9, -1);
-  /* UNSIGNED 直接 -1 会回绕成巨值(同 posts hotExpr 的坑):先 CAST 再 GREATEST 兜底 */
+  /* Subtracting 1 from UNSIGNED wraps to a huge value (the posts
+     hotExpr trap): CAST first, then GREATEST as the floor. */
   assert.match(down.sql, /GREATEST\(0, CAST\(vote_count AS SIGNED\) - 1\)/);
   assert.deepEqual(up.args, [9]);
   assert.deepEqual(down.args, [9]);
@@ -78,7 +83,7 @@ test("comment insert is single-layer (no parent) and slices body at 10000", () =
 
 test("comment delete is a soft delete pinned by author-or-work-author permission", () => {
   const { sql, args } = workCommentDeleteQuery(55, 4);
-  /* 软删,不物理删 */
+  /* Soft delete, never physical. */
   assert.match(sql, /SET c\.deleted_at = NOW\(\)/);
   assert.equal(sql.includes("DELETE FROM"), false);
   /* 权限钉在 WHERE:评论作者本人(c.user_id)或作品作者(w.user_id) */

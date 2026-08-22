@@ -3,18 +3,21 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { NAV_HIDDEN, UPCOMING } from "../src/lib/upcoming";
 
-/* ---- 未就绪板块开关(src/lib/upcoming.ts)的源码钉:
-   探索区 / Demo Night 关闸期间,页面、导航、搜索、右栏四处必须一致;
-   Demo Night 近期不上线,入口连 SOON 标都不挂,直接屏蔽(NAV_HIDDEN)。
-   20260821:blog/learn 合并为 explore(月刊 × 教程同一文章架),
-   旧 /blog、/learn 页面层 301,不再挂闸门分支。 ---- */
+/* ---- Source pinning for the not-yet-ready section switches
+   (src/lib/upcoming.ts): while explore / Demo Night are gated, the
+   page, navigation, search, and rail must agree in all four places;
+   Demo Night isn't shipping soon — its entry wears no SOON badge,
+   simply hidden (NAV_HIDDEN). The 20260821 merge turned blog/learn into
+   explore; the legacy /blog and /learn pages 301 and carry no gate
+   branches. ---- */
 
 const read = (path: string) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("upcoming flags: explore open; demoNight stays gated", () => {
-  /* explore 于 20260821 开闸(四维内容架,空内容是诚实空态);
-     demoNight 仍关闸。UPCOMING 分支保留在页面里,随时可重新关闸。 */
+  /* explore opened up (the four-dimension shelf; empty content is an
+     honest empty state); demoNight stays gated. UPCOMING branches stay
+     in the pages, ready to re-gate anytime. */
   assert.deepEqual(UPCOMING, { explore: false, demoNight: true });
 });
 
@@ -27,8 +30,9 @@ test("gated pages short-circuit to SoonPanel before any data fetch", () => {
     ["app/(app)/explore/page.tsx", "UPCOMING.explore"],
     ["app/(app)/explore/[slug]/page.tsx", "UPCOMING.explore"],
     ["app/(app)/explore/series/[slug]/page.tsx", "UPCOMING.explore"],
-    /* 20260822 弹窗化:闸门与数据取用移进共享内容组件(完整页与拦截弹窗
-       两条路由都过同一道闸),页面本身是薄壳 */
+    /* Modalization moved the gate and data fetching into the shared
+       content component (both the full page and the intercepted modal
+       pass the same gate); the page itself is a thin shell. */
     ["app/(app)/blog/admin/new/_components/NewArticleContent.tsx", "UPCOMING.explore"],
     ["app/(app)/blog/admin/[slug]/edit/_components/EditArticleContent.tsx", "UPCOMING.explore"],
     ["app/(app)/demo-night/page.tsx", "UPCOMING.demoNight"],
@@ -50,11 +54,12 @@ test("nav surfaces: SOON badge for gated, hidden for nav-hidden", () => {
     left.includes("hidden: NAV_HIDDEN.demoNight"),
     "LeftNav demoNight hidden",
   );
-  /* 20260815 评审:LeftNav 把分区拆成 live/soon 两组渲染,过滤谓词是
-     复合表达式(!s.hidden && !s.soon),只钉「hidden 必须被过滤」的语义 */
+  /* LeftNav renders sections in live/soon groups; the filter predicate
+     is a compound (!s.hidden && !s.soon) — we pin only the "hidden
+     must be filtered" semantics. */
   assert.match(left, /\.filter\(\(\w+\) => !\w+\.hidden/, "LeftNav filters hidden");
-  /* 移动端抽屉与桌面共享同一份 SECTIONS 注册表(20260821 开闸同步):
-     两端入口永远一致,不允许再出现本地副本 */
+  /* The mobile drawer shares the desktop's SECTIONS registry: both
+     surfaces always agree — no local copies allowed. */
   const drawer = read("app/(app)/_components/MobileNavDrawer.tsx");
   assert.ok(
     drawer.includes(`import { SECTIONS } from "./LeftNav"`),

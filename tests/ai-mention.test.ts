@@ -1,5 +1,6 @@
-/* @kimi 召唤(20260816)的路由/库级源码断言——与 api-auth-routes.test.ts 同约定:
-   断言关键结构顺序,不起服务;逻辑细节由 mention-kimi.test.ts 单测覆盖。 */
+/* Source assertions for @kimi summons at the route/lib level — same
+   convention as api-auth-routes.test.ts: assert key structural order,
+   start no server; logic details are covered by mention-kimi.test.ts. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -29,7 +30,7 @@ test("enqueue: mention 按触发评论去重,重复 @ 只回一次", () => {
     "mention 去重先于入队",
   );
   assert.match(aiReply, /WHERE comment_id = \? AND kind = 'mention'/);
-  /* kind 落库:三种任务类型齐备 */
+  /* kind lands in the DB: all three job types present. */
   assert.match(aiReply, /INSERT INTO ai_reply_jobs \(post_id, comment_id, kind\)/);
   assert.match(aiReply, /"auto" \| "chain" \| "mention"/);
 });
@@ -56,7 +57,8 @@ test("发帖:@kimi 与自动回帖合并(勾选与否都回,合并为 mention �
 });
 
 test("评论召唤:与 chain 互斥、duplicate 不触发、限流先于入队", () => {
-  /* chain 分支在前(else if 召唤):回复 AI 且 @kimi 只接话 */
+  /* The chain branch comes first (else-if summon): replying to AI
+     with an @kimi just continues the thread. */
   assertOrder(
     actions,
     'enqueueAiReply(postId, created.id, "chain")',
@@ -72,7 +74,8 @@ test("评论召唤:与 chain 互斥、duplicate 不触发、限流先于入队",
     'enqueueAiReply(postId, created.id, "mention")',
     "召唤限流先于入队",
   );
-  /* 地盘规则:帖主关了 AI → aiDisabled;三态 aiNote 齐备 */
+  /* Territory rule: the owner's AI off -> aiDisabled; all three
+     aiNote states present. */
   assert.match(mentionBranch, /aiNote = "aiDisabled"/);
   assert.match(mentionBranch, /aiNote = "rate"/);
   assert.match(mentionBranch, /aiNote = "summoned"/);
@@ -87,7 +90,7 @@ test("召唤限流额度登记:ai_summon 20/小时", () => {
   assert.match(rateLimit, /\| "ai_summon"/);
 });
 
-/* ---- PR2:作品/Awesome 评论区召唤 ---- */
+/* ---- PR2: summons in work/Awesome comment sections ---- */
 
 test("enqueueAiWorkMention:同 work_comment_id 的 mention 只入队一次", () => {
   const fn = aiReply.slice(aiReply.indexOf("enqueueAiWorkMention"));
@@ -101,7 +104,8 @@ test("enqueueAiWorkMention:同 work_comment_id 的 mention 只入队一次", () 
 
 test("processAiReply 双目标:work 任务(post_id NULL)LEFT JOIN 后单独分支,post 分支不变", () => {
   assert.match(aiReply, /LEFT JOIN posts p ON p\.id = j\.post_id/);
-  /* work 分支在 post 开关检查之前分流,post 侧 gating 不被 work 任务误触 */
+  /* The work branch forks before the post switch check, so post-side
+     gating never misfires on work jobs. */
   assertOrder(
     aiReply,
     "job.work_id !== null",
@@ -120,7 +124,8 @@ test("work 召唤执行:专属 prompt、≤50 封顶先于写入、AI 评论 is_
     "INSERT INTO work_comments (work_id, user_id, is_ai, body) VALUES (?, NULL, 1, ?)",
     "50 条上限判定先于 AI 评论写入",
   );
-  /* 冗余计数 + 通知(召唤触发者 + 作品作者)随写路径维护 */
+  /* Redundant counters + notifications (the summoner + the work
+     author) follow the write path. */
   assertOrder(
     fn,
     "UPDATE works SET comment_count = comment_count + 1",
@@ -131,7 +136,8 @@ test("work 召唤执行:专属 prompt、≤50 封顶先于写入、AI 评论 is_
 
 test("work gating:works.user_id NULL 的 awesome 站外条目跳过作者检查", () => {
   assert.match(aiReply, /export function aiWorkReplySwitchesAllow/);
-  /* 无作者(null)→ 只看作品开关;有作者 → 作者全局开关一并参与 */
+  /* No author (null) -> the work switch alone; with an author, the
+     author's global switch joins in. */
   const fn = aiReply.slice(aiReply.indexOf("aiWorkReplySwitchesAllow"));
   assert.match(fn, /authorEnabled === null/);
   const exec = aiReply.slice(aiReply.indexOf("async function processAiWorkMention"));
@@ -152,22 +158,22 @@ test("recoverAiReplyJobs 双目标:开关检查同时覆盖 post 与 work 任务
 
 test("aiWorkReplySwitchesAllow 行为:开关矩阵(纯函数)", async () => {
   const { aiWorkReplySwitchesAllow } = await import("../src/lib/ai-reply");
-  /* 作品关 → 恒不回 */
+  /* Work switch off -> never replies. */
   assert.equal(
     aiWorkReplySwitchesAllow({ aiReply: 0, authorEnabled: 1 }),
     false,
   );
-  /* 作品开 + 作者关 → 不回 */
+  /* Work on + author off -> no reply. */
   assert.equal(
     aiWorkReplySwitchesAllow({ aiReply: 1, authorEnabled: 0 }),
     false,
   );
-  /* 作品开 + 作者开 → 回 */
+  /* Work on + author on -> replies. */
   assert.equal(
     aiWorkReplySwitchesAllow({ aiReply: 1, authorEnabled: 1 }),
     true,
   );
-  /* 站外条目(无作者,null)→ 只看作品开关 */
+  /* External entries (no author, null) -> the work switch alone. */
   assert.equal(
     aiWorkReplySwitchesAllow({ aiReply: 1, authorEnabled: null }),
     true,
@@ -178,7 +184,7 @@ test("aiWorkReplySwitchesAllow 行为:开关矩阵(纯函数)", async () => {
   );
 });
 
-/* ---- 召唤状态/未读数轮询接口(20260816 体验优化)---- */
+/* ---- Summon status / unread-count polling endpoints ---- */
 
 test("status 路由:登录门禁 + 只查 mention 任务 + no-store", () => {
   const src = readFileSync(
@@ -198,7 +204,7 @@ test("unread 路由:登录门禁 + 未读计数来源", () => {
   assertOrder(src, "getSessionUser()", "getUnreadNotificationCount(", "会话先于计数");
 });
 
-/* ---- 20260822 P1-3:目标存活谓词 + 写路径单事务 ---- */
+/* ---- Target-liveness predicates + single-transaction writes ---- */
 
 test("认领查询带存活谓词(纯函数钉形态):posts deleted/hidden;works hidden+public", async () => {
   const { aiReplyPostClaimSql, aiReplyWorkClaimSql } = await import("../src/lib/ai-reply");
@@ -207,7 +213,8 @@ test("认领查询带存活谓词(纯函数钉形态):posts deleted/hidden;works
     post,
     /LEFT JOIN posts p ON p\.id = j\.post_id\s+AND p\.deleted_at IS NULL AND p\.hidden_at IS NULL/,
   );
-  /* post_alive 标记位:区分「目标不可见」与「开关关闭」 */
+  /* The post_alive flag distinguishes "target not visible" from
+     "switched off". */
   assert.match(post, /AS post_alive/);
   const work = aiReplyWorkClaimSql();
   assert.match(
@@ -232,7 +239,8 @@ test("写路径单事务:插入+计数+done 同 commit,通知移到 commit 后",
   assert.match(helper, /beginTransaction/);
   assert.match(helper, /rollback/);
   assert.match(helper, /conn\.release\(\)/);
-  /* done 状态只经由事务内 UPDATE 落库(三处写路径),裸 mark("done") 不复存在 */
+  /* done only lands via the in-transaction UPDATE (three write paths);
+     the bare mark("done") is gone. */
   assert.equal(aiReply.match(/SET status = 'done'/g)?.length ?? 0, 3);
   assert.doesNotMatch(aiReply, /mark\("done"\)/);
   const branches: [string, string][] = [
@@ -243,7 +251,8 @@ test("写路径单事务:插入+计数+done 同 commit,通知移到 commit 后",
   for (const [anchor, notify] of branches) {
     const branch = aiReply.slice(aiReply.indexOf(anchor));
     assert.ok(branch.length > 0, anchor);
-    /* done 落库与插入同处一个事务回调,且先于事务外的通知 */
+    /* done commits inside the same transaction callback as the insert,
+       before the out-of-transaction notification. */
     assertOrder(branch, "SET status = 'done'", notify, "done 与插入同事务,先于通知");
     assertOrder(branch, "});", notify, "事务回调先于通知");
   }

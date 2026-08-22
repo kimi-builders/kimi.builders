@@ -14,15 +14,16 @@ import {
   socialTokenTotalsQuery,
 } from "../src/lib/usage/social";
 
-/* 注:作品徽章已改声明制(20260822_work_claims),原 badgeTokensOf 移除;
-   新徽章逻辑 claimBadgeOf 的用例见 tests/work-claims.test.ts。 */
+/* Note: work badges went claim-based; the old badgeTokensOf is gone —
+   claimBadgeOf's cases live in tests/work-claims.test.ts. */
 
 interface FakeCall {
   sql: string;
   params: unknown[];
 }
 
-/* 最小假 DB(同 usage-retention.test.ts):记录调用,统一返回固定行 */
+/* Minimal fake DB (as in usage-retention.test.ts): records calls,
+   returns fixed rows. */
 function fakeDb(rows: Record<string, unknown>[]) {
   const calls: FakeCall[] = [];
   const db = {
@@ -45,18 +46,20 @@ test("opt-in query reads the shared show_on_leaderboard switch", () => {
 test("isUsagePublic is deny-by-default: missing row or 0 both mean private", async () => {
   assert.equal(await isUsagePublic(1, fakeDb([{ show_on_leaderboard: 1 }])), true);
   assert.equal(await isUsagePublic(1, fakeDb([{ show_on_leaderboard: 0 }])), false);
-  /* 没有 usage_settings 行 = 走列默认 0 = 不公开 */
+  /* No usage_settings row = column default 0 = private. */
   assert.equal(await isUsagePublic(1, fakeDb([])), false);
 });
 
 test("heatmap query aggregates weekday x local hour over all-time buckets", () => {
   const { sql, args } = socialHeatmapQuery(7, 480);
-  /* WEEKDAY() 周一=0,与看板 JS 侧 (getUTCDay()+6)%7 同口径;tz 夹取后内联 */
+  /* WEEKDAY() Monday=0, matching the dashboard's JS (getUTCDay()+6)%7;
+     tz clamped then inlined. */
   assert.match(sql, /WEEKDAY\(DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\)\) AS wd/);
   assert.match(sql, /HOUR\(DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\)\) AS hr/);
   assert.match(sql, /FROM usage_buckets/);
   assert.match(sql, /GROUP BY wd, hr/);
-  /* token 总量 = 输入+缓存写+缓存读+输出+推理,无其他维度 */
+  /* Token totals = input + cache write + cache read + output +
+     reasoning, no other dimension. */
   assert.match(
     sql,
     /SUM\(input_tokens \+ cache_write_input_tokens \+ cache_read_input_tokens\s+\+ output_tokens \+ reasoning_output_tokens\) AS tokens/,
@@ -100,14 +103,15 @@ test("getSocialUsageHeatmap runs the aggregate query and maps rows", async () =>
 
 test("token totals query gates on show_on_leaderboard = 1 in the JOIN itself", () => {
   const q = socialTokenTotalsQuery([3, 1, 3])!;
-  /* 门禁钉在 SQL 里:未 opt-in 的作者根本不会出现在结果集 */
+  /* The gate is pinned inside the SQL: authors who never opted in
+     simply never appear in the result set. */
   assert.match(q.sql, /JOIN usage_settings s\s+ON s\.user_id = b\.user_id AND s\.show_on_leaderboard = 1/);
   assert.match(q.sql, /FROM usage_buckets b/);
   assert.match(q.sql, /WHERE b\.user_id IN \(\?\)/);
   assert.match(q.sql, /GROUP BY b\.user_id/);
-  /* 只 SUM token 总量,无周期/项目/设备等任何其他维度 */
+  /* SUMs token totals only — no period/project/device dimension. */
   assert.equal(q.sql.includes("bucket_start"), false);
-  /* 入参去重 */
+  /* Inputs deduped. */
   assert.deepEqual(q.args, [[3, 1]]);
 });
 
@@ -120,7 +124,8 @@ test("getPublicTokenTotals maps only opted-in authors; others are absent", async
   const db = fakeDb([{ user_id: 5, total_tokens: 123456 }]);
   const totals = await getPublicTokenTotals([5, 6], db);
   assert.equal(totals.get(5), 123456);
-  /* 未 opt-in 的作者不在结果里 —— 调用方拿不到数字,只能不显示 */
+  /* Non-opted-in authors are absent — callers get no number and can
+     only not display. */
   assert.equal(totals.has(6), false);
   const empty = await getPublicTokenTotals([], db);
   assert.equal(empty.size, 0);
@@ -128,16 +133,18 @@ test("getPublicTokenTotals maps only opted-in authors; others are absent", async
 
 test("daily activity query aggregates tokens per local calendar day over 371 days", () => {
   const { sql, args } = socialDailyActivityQuery(7, 480);
-  /* 日粒度 = DATE(本地桶时间);tz 夹取后内联,与分时热图同约定 */
+  /* Day grain = DATE(local bucket time); tz clamped then inlined, the
+     same convention as the hourly heatmap. */
   assert.match(sql, /DATE\(DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\)\) AS day/);
-  /* 窗口 = 本地今天往前 370 天(含今天共 371 天 = 53 周) */
+  /* Window = local today minus 370 days (371 days incl. today = 53
+     weeks). */
   assert.match(
     sql,
     /AND DATE_ADD\(bucket_start, INTERVAL 480 MINUTE\) >= DATE_SUB\(DATE\(DATE_ADD\(UTC_TIMESTAMP\(\), INTERVAL 480 MINUTE\)\), INTERVAL 370 DAY\)/,
   );
   assert.match(sql, /FROM usage_buckets/);
   assert.match(sql, /GROUP BY day/);
-  /* 只 SUM tokens,无其他维度 */
+  /* SUMs tokens only, no other dimension. */
   assert.match(
     sql,
     /SUM\(input_tokens \+ cache_write_input_tokens \+ cache_read_input_tokens\s+\+ output_tokens \+ reasoning_output_tokens\) AS tokens/,
@@ -153,7 +160,8 @@ test("daily activity query clamps tz offset like the dashboard filters", () => {
 });
 
 test("getSocialDailyActivity maps rows to a YYYY-MM-DD -> tokens record", async () => {
-  /* mysql2 下 DATE() 可能落 string 也可能落 Date(池端 timezone:'Z' → UTC 零点) */
+  /* Under mysql2, DATE() may arrive as string or Date (pool timezone:'Z'
+     -> UTC midnight). */
   const db = fakeDb([
     { day: "2026-08-09", tokens: 321 },
     { day: new Date(Date.UTC(2026, 7, 8)), tokens: "654" },

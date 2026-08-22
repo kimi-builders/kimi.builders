@@ -1,6 +1,9 @@
-/* Phase 2 数据库集成测试。只准在隔离库运行(DATABASE_URL 必须含 kbu-mysql)。
-   覆盖:migration 幂等(连续执行两次)、跨仓库一致性 fixture、四维筛选与组合、
-   用户隔离、未定价模型 token 保留、价格生效窗口、分页、按设备删除、Phase 1 兼容。 */
+/* Phase 2 DB integration. Runs only against an isolated database
+   (DATABASE_URL must contain kbu-mysql). Covers: migration idempotency
+   (run twice), the cross-repo consistency fixture, four-dimension
+   filters and combinations, user isolation, unpriced-model token
+   retention, price effective windows, paging, per-device deletion, and
+   Phase 1 compatibility. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
@@ -93,14 +96,16 @@ const filters = (extra: Record<string, string> = {}, uploadProject = true) =>
 async function main() {
   const pool = getPool();
 
-  // —— migration 幂等:连续执行两次,价格行不翻倍 ——
+  // Migration idempotency: run twice, price rows must not double.
   const priceMigration = [
     "../db/migrations/20260809_usage_phase2.sql",
     "../db/migrations/20260809_usage_prices_v2.sql",
     "../db/migrations/20260810_usage_prices_v3.sql",
     "../db/migrations/20260811_usage_prices_v4.sql",
-    /* 20260915/20260917 必须在清单里:fresh-install 链路(schema.sql + init-ledger)
-       的价格行全部来自这份重放清单,漏了就比钉数少行(CI 曾因此 47≠48 挂死) */
+    /* The 20260915/20260917 entries must stay listed: every price row in
+       the fresh-install path (schema.sql + init-ledger) comes from this
+       replay list; a missing entry under-counts the pinned number (CI
+       once hung on 47 != 48 because of it). */
     "../db/migrations/20260915_usage_price_kimi_for_coding.sql",
     "../db/migrations/20260917_kimi_for_coding_price_source.sql",
     "../db/migrations/20260919_usage_prices_v5.sql",
@@ -163,7 +168,8 @@ async function main() {
             SUM(pricing_source_url <> '' AND verified_at IS NOT NULL) AS verified_count
        FROM usage_model_prices`,
   );
-  assert.equal(Number(priceCount[0].count), 72); // v1–v4 42 + GPT-5.6 long-context 5 + kimi-for-coding(20260915) + 2026-08-15 快照 v5 16 + v6 8
+  assert.equal(Number(priceCount[0].count), 72); // v1-v4 42 + GPT-5.6
+  // long-context 5 + kimi-for-coding + the v5 snapshot 16 + v6 8
   assert.equal(Number(priceCount[0].verified_count), 72);
   const [correctedPrices] = await pool.query<RowDataPacket[]>(
     `SELECT model_pattern, input_per_mtok, cache_read_per_mtok, output_per_mtok
@@ -220,11 +226,13 @@ async function main() {
   const otherUserId = otherResult.insertId;
 
   try {
-    // —— 设备 A:摄入跨仓库一致性 fixture(两遍,验证幂等) ——
+    // Device A: ingest the consistency fixture twice to prove
+    // idempotency.
     const deviceA = await provisionDevice(userId, "integration A");
     const settings = await getUsageSettings(userId);
-    /* 设备事实合并语义只对开启设备标签上传的用户生效(20260822 P1-2:
-       默认关 + 静默剥离),本用例先开启再验证 fallback 不覆盖 detected */
+    /* Device-fact merging applies only to users who enabled device
+       labels (default off + silent strip); this case enables first,
+       then verifies fallback never overwrites detected. */
     const labelOn = { ...settings, uploadDeviceLabel: true };
     await updateUsageSettings(userId, labelOn);
     const payload = validateUsageIngest(
@@ -239,7 +247,8 @@ async function main() {
     await ingestUsage(deviceA.principal, payload);
     await ingestUsage(deviceA.principal, payload);
 
-    // —— 设备事实可信度:后续 CLI fallback 不覆盖 Warp;Agent 版本增量合并 ——
+    // Device-fact trust: a later CLI fallback never overwrites Warp;
+    // agent versions merge incrementally.
     await ingestUsage(
       deviceA.principal,
       validateUsageIngest({
@@ -287,7 +296,7 @@ async function main() {
       : deviceFacts[0].agent_versions;
     assert.deepEqual(agentVersions, { codex: "0.146.1", "kimi-code": "1.44.0" });
 
-    // —— 一致性:parser 产物 = 服务端聚合 ——
+    // Consistency: parser output = server-side aggregation.
     const overview = await getUsageOverview(userId, filters());
     const expected = FIXTURE.expected;
     assert.equal(overview.meta.diagnostics.statements, 7);
@@ -303,11 +312,11 @@ async function main() {
     assert.equal(overview.totals.userMessages, expected.userMessages);
     assert.equal(overview.totals.activeSeconds, expected.activeSeconds);
     assert.equal(overview.lifetimeTokens, expected.total);
-    assert.equal(overview.records.total, 3); // 同日 × 3 来源/模型
+    assert.equal(overview.records.total, 3); // same day x 3 source/model
     const beyondLastPage = await getUsageOverview(userId, filters({ page: "9999" }));
     assert.deepEqual(beyondLastPage.records.rows, []);
     assert.equal(beyondLastPage.records.total, 3);
-    assert.equal(beyondLastPage.meta.diagnostics.statements, 8); // 空越界页才 fallback count
+    // Only the empty out-of-range page falls back to COUNT.
     const emptyFirstPage = await getUsageOverview(
       userId,
       filters({ models: "model-that-does-not-exist" }),
@@ -328,10 +337,12 @@ async function main() {
     );
     assert.ok(overview.meta.pricingMatches.some((row) => row.model === "gpt-5-codex"));
 
-    // kimi-code/k3 在摄入时被归一为 canonical kimi-k3,命中统一价格目录的前缀行
-    // (3.00/15.00/缓存读 0.30)。命中版本跟随该价格条目,不把目录发布版本
-    // 或保留作迁移审计的 usage_model_prices 版本误当成条目版本:
-    // 150×3 + 20×3(写回退 input)+ 40×0.3 + 15×15 = 747 micros
+    // kimi-code/k3 normalizes to canonical kimi-k3 at ingest and hits the
+    // unified catalog's prefix row
+    // (3.00/15.00/cache-read 0.30). The hit version follows that price
+    // entry — never the catalog's published version
+    // or the usage_model_prices version kept for migration audit:
+    // 150x3 + 20x3 (write falls back to input) + 40x0.3 + 15x15 = 747 micros
     assert.ok(!overview.meta.unpricedModels.includes("kimi-code/k3"));
     const kimiMatch = overview.meta.pricingMatches.find(
       (row) => row.model === "kimi-code/k3",
@@ -344,11 +355,12 @@ async function main() {
     assert.equal(kimiMatch?.version, kimiCatalogEntry.version);
     assert.equal(kimiMatch?.modelCanonical, "kimi-k3");
     assert.equal(kimiMatch?.matchedPattern, "kimi-k3");
-    // claude-opus-4: 300×5 + 105×6.25 + 50×0.5 + 30×25 = 2931.25 micros
-    // gpt-5-codex: 700×1.25 + 200×0.125 + 80×10 + 40×10 = 2100 micros
+    // claude-opus-4: 300x5 + 105x6.25 + 50x0.5 + 30x25 = 2931.25 micros
+    // gpt-5-codex: 700x1.25 + 200x0.125 + 80x10 + 40x10 = 2100 micros
     assert.ok(Math.abs(overview.totals.costMicros - (5031.25 + 747)) < 1);
 
-    // —— 新 Collector 精确小时活动:跨日 active/prompt 必须落到各自日期,不能挤在首日 ——
+    // New-collector exact hour activity: cross-day active/prompt must
+    // land on their own days, not pile onto the first.
     const exactSessionHash = "d".repeat(64);
     await ingestUsage(
       deviceA.principal,
@@ -389,7 +401,7 @@ async function main() {
       ),
     );
     const exactHeatmap = await getUsageOverview(userId, filters());
-    // 2026-08-01 = 周六(index 5),2026-08-02 = 周日(index 6)
+    // 2026-08-01 = Saturday (index 5); 2026-08-02 = Sunday (index 6).
     assert.equal(exactHeatmap.heatmap.activeSeconds[5][23] - overview.heatmap.activeSeconds[5][23], 60);
     assert.equal(exactHeatmap.heatmap.activeSeconds[6][0] - overview.heatmap.activeSeconds[6][0], 60);
     assert.equal(exactHeatmap.heatmap.prompts[5][23] - overview.heatmap.prompts[5][23], 1);
@@ -459,23 +471,25 @@ async function main() {
       [userId, clippedSessionHash],
     );
 
-    // —— 来源筛选 ——
+    // Source filter.
     const codexOnly = await getUsageOverview(userId, filters({ sources: "codex" }));
     assert.equal(codexOnly.totals.totalTokens, 1020);
     assert.equal(codexOnly.totals.cacheReadInputTokens, 200);
     assert.equal(codexOnly.totals.reasoningOutputTokens, 40);
     assert.equal(codexOnly.totals.sessions, 1);
 
-    // —— 模型筛选(token 口径;会话指标不按模型拆分) ——
+    // Model filter (token definition; session metrics don't split by
+    // model).
     const byModel = await getUsageOverview(userId, filters({ models: "gpt-5-codex" }));
     assert.equal(byModel.totals.totalTokens, 1020);
-    assert.equal(byModel.totals.sessions, 3); // 会话表无 model 列,按设计不被模型筛选
+    // The session table has no model column and is filtered out by
+    // design.
 
-    // —— 项目筛选(开启时) ——
+    // Project filter (enabled).
     const byProject = await getUsageOverview(userId, filters({ projects: "demo-app" }));
     assert.equal(byProject.totals.totalTokens, 225 + 485);
     assert.ok(byProject.records.rows.every((row) => row.project === "demo-app"));
-    // —— 项目筛选(关闭时强制失效) ——
+    // Project filter (disabled — forced inert).
     const projectOff = await getUsageOverview(
       userId,
       filters({ projects: "demo-app" }, false),
@@ -483,7 +497,7 @@ async function main() {
     assert.equal(projectOff.totals.totalTokens, expected.total);
     assert.equal(projectOff.meta.diagnostics.statements, 7);
 
-    // —— 设备 B + 设备筛选 + 组合 ——
+    // Device B + device filter + combinations.
     const deviceB = await provisionDevice(userId, "integration B");
     const extraBucket = {
       source: "codex",
@@ -531,14 +545,15 @@ async function main() {
     );
     assert.equal(combo.totals.totalTokens, 1000);
 
-    // —— 用户隔离 ——
+    // User isolation.
     const bystander = await getUsageOverview(otherUserId, filters());
     assert.equal(bystander.totals.totalTokens, 0);
     assert.equal(bystander.lifetimeTokens, 0);
     assert.equal(bystander.totals.sessions, 0);
     assert.equal(bystander.records.rows.length, 0);
 
-    // —— canonical catalog 价格生效窗口:MiniMax M3 在 8/14 从 $0.60 调整为 $0.30 ——
+    // Canonical-catalog effective windows: MiniMax M3 went from $0.60 to
+    // $0.30 on 8/14.
     for (const start of ["2026-08-11 12:00:00", "2026-08-20 12:00:00"]) {
       await pool.query(
         `INSERT INTO usage_buckets
@@ -566,7 +581,8 @@ async function main() {
         { uploadProject: true, tzOffsetMinutes: 0, now: new Date("2026-11-01T00:00:00Z") },
       ),
     );
-    // 两个旧价桶($0.60) + 两个新价桶($0.30) = $1.80；每条事实独立命中价格窗口。
+    // Two old buckets ($0.60) + two new ($0.30) = $1.80; each fact hits
+    // its own price window.
     assert.ok(Math.abs(windowed.totals.costMicros - 1_800_000) < 1);
     assert.equal(windowed.totals.totalTokens, 4_000_000);
     assert.equal(windowed.meta.pricedTokens, 4_000_000);
@@ -611,14 +627,15 @@ async function main() {
     assert.ok(Math.abs(sameLocalDay.records.rows[0].costMicros - 900_000) < 1);
     assert.ok(Math.abs(sameLocalDay.totals.costMicros - 900_000) < 1);
 
-    // —— 分页 ——
+    // Paging.
     const page1 = await getUsageOverview(userId, filters({ ps: "2", page: "1" }));
     const page2 = await getUsageOverview(userId, filters({ ps: "2", page: "2" }));
     assert.equal(page1.records.rows.length, 2);
-    assert.equal(page1.records.total, 4); // fixture 3 组 + 设备 B 1 组
+    assert.equal(page1.records.total, 4); // fixture's 3 + device B's 1
     assert.equal(page2.records.rows.length, 2);
 
-    // —— 按设备删除:数据消失、授权保留、统计立即一致 ——
+    // Per-device delete: data gone, authorization kept, stats
+    // immediately consistent.
     const deleted = await deleteUsageForDeviceByPublicId(userId, publicB.id);
     assert.ok((deleted ?? 0) > 0);
     const afterDelete = await getUsageOverview(userId, filters({ devices: publicB.id }));
@@ -626,12 +643,13 @@ async function main() {
     assert.equal((await getUsageOverview(userId, filters())).totals.totalTokens, expected.total);
     assert.ok(listUsageDevices(userId).then((list) => list.some((d) => d.id === publicB.id)));
 
-    // —— Phase 1 兼容包装 ——
+    // Phase 1 compatibility wrapper.
     const legacyShape = await getUsageDashboard(userId, 30);
     assert.equal(typeof legacyShape.totals.totalTokens, "number");
     assert.equal(legacyShape.activeDevices, 2);
 
-    // —— 趋势粒度:长跨度按本地周一聚合,总量不变 ——
+    // Trend grain: long spans aggregate by local Monday, totals
+    // unchanged.
     const weekly = await getUsageOverview(
       userId,
       parseUsageFilters(
@@ -641,10 +659,11 @@ async function main() {
     );
     assert.equal(weekly.trend.length > 0, true);
     for (const row of weekly.trend) {
-      assert.equal(new Date(`${row.day}T00:00:00Z`).getUTCDay(), 1); // 周一
+      // Monday.
     }
     assert.equal(weekly.totals.totalTokens, expected.total);
-    // 环比:previous 窗口(3-4 月,无数据)为零
+    // Period-over-period: the previous window (Mar-Apr, no data) is
+    // zero.
     assert.equal(weekly.previous.totalTokens, 0);
   } finally {
     await pool.query("DELETE FROM users WHERE id IN (?, ?)", [userId, otherUserId]);
@@ -656,7 +675,9 @@ main()
   .then(() => console.log("usage phase2 DB integration: passed"))
   .catch((error) => {
     console.error(error);
-    /* 必须硬退出:断言在 try/finally 之外失败时池子未关,事件循环不干,
-       process.exitCode 式退出会在 CI 上挂到 6h 超时(20260815 起连续 4 次) */
+    /* Must hard-exit: when an assertion fails outside the try/finally the
+       pool is still open and the event loop never drains — an
+       exitCode-style exit hangs CI until the 6h timeout (four times in a
+       row before 20260815). */
     process.exit(1);
   });

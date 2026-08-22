@@ -33,7 +33,7 @@ import {
   validateLetterPayload,
 } from "../src/lib/monthly";
 
-/* ---- 章注册表(学/做/得/立) ---- */
+/* ---- Chapter registry (learn/build/measure/establish) ---- */
 
 test("kb-chapters: four fixed chapters, ids unique, labels bilingual", () => {
   assert.deepEqual(KB_CHAPTERS.map((c) => c.id), ["learn", "build", "gain", "become"]);
@@ -53,7 +53,7 @@ test("validateGuidePayload: chapter must be in the four-chapter registry", () =>
   assert.equal(ok.ok, true);
   if (ok.ok) assert.equal(ok.payload.chapter, "learn");
   assert.equal(validateGuidePayload({ chapter: "win" }).ok, false);
-  /* 渲染容错:非法 chapter 丢弃,页面不倒 */
+  /* Render tolerance: invalid chapters drop, the page never falls. */
   const lenient = guidePayloadFromDb({ chapter: "win" });
   assert.equal(lenient.chapter, undefined);
   assert.equal(guidePayloadFromDb({ chapter: "build" }).chapter, "build");
@@ -68,18 +68,18 @@ test("validateGuidePayload: cover is a path or http(s) url, lenient on render", 
 });
 
 test("coverTone: shared works palette, strict on edit, lenient on render", () => {
-  /* guide 严格校验:白名单色档 + theme */
+  /* Guide strict validation: allowlisted tones + theme. */
   const ok = validateGuidePayload({ coverTone: "blue" });
   assert.equal(ok.ok, true);
   if (ok.ok) assert.equal(ok.payload.coverTone, "blue");
   assert.equal(validateGuidePayload({ coverTone: "magenta" }).ok, false);
   assert.equal(validateGuidePayload({ coverTone: "theme" }).ok, true);
-  /* letter 同口径 */
+  /* Letters share the rule. */
   const letter = validateLetterPayload({ coverTone: "green" });
   assert.equal(letter.ok, true);
   if (letter.ok) assert.equal(letter.payload.coverTone, "green");
   assert.equal(validateLetterPayload({ coverTone: "nope" }).ok, false);
-  /* 渲染容错:非法色档丢弃,不拖累 payload */
+  /* Render tolerance: invalid tones drop without dragging the payload. */
   assert.equal(guidePayloadFromDb({ coverTone: "blue" }).coverTone, "blue");
   assert.equal(guidePayloadFromDb({ coverTone: "magenta" }).coverTone, undefined);
   assert.equal(letterPayloadFromDb({ coverTone: "black" }).coverTone, "black");
@@ -94,16 +94,18 @@ test("validateLetterPayload: cover key is accepted on letters too", () => {
   assert.equal(letterPayloadFromDb({ cover: "/covers/letter.png" }).cover, "/covers/letter.png");
 });
 
-/* ---- 章计数 / 过滤(章主轴) ---- */
+/* ---- Chapter counts / filtering (the chapter axis) ---- */
 
 test("countByChapter: fixed four-chapter order, zero counts kept for grey state", () => {
-  /* item() 是文件底部的提升函数声明,此处可用 */
+  /* item() is a hoisted function declaration at the file bottom,
+     usable here. */
   const items: ExploreItem[] = [
     item({ slug: "a", chapter: "build" }),
     item({ slug: "b", chapter: "build" }),
     item({ slug: "c", chapter: "learn" }),
   ];
-  /* 恒出四章(0 计数保留——页面置灰,不消失) */
+  /* All four chapters always present (zero counts kept — greyed on the
+     page, never gone). */
   assert.deepEqual(countByChapter(items), [
     { value: "learn", count: 1 },
     { value: "build", count: 2 },
@@ -116,7 +118,7 @@ test("countByChapter: fixed four-chapter order, zero counts kept for grey state"
   );
 });
 
-/* ---- 透镜词表注册表 ---- */
+/* ---- Lens vocabularies ---- */
 
 test("kb-products: ids unique, labels bilingual, lookup helpers", () => {
   const ids = KB_PRODUCTS.map((p) => p.id);
@@ -140,7 +142,8 @@ test("kb-roles: ids unique, labels bilingual, lookup helpers", () => {
   assert.equal(kbRoleLabel("lawyer", false), "Lawyer");
 });
 
-/* ---- guide payload 契约:透镜与资源分型(严格校验 / 容错渲染分离) ---- */
+/* ---- Guide payload contract: lenses and resource kinds (strict
+   validation / tolerant rendering split) ---- */
 
 test("validateGuidePayload: lens slugs must be registered, ≤3, deduped", () => {
   const ok = validateGuidePayload({
@@ -160,7 +163,7 @@ test("validateGuidePayload: lens slugs must be registered, ≤3, deduped", () =>
   );
   assert.equal(validateGuidePayload({ products: [] }).ok, false);
   assert.equal(validateGuidePayload({ products: "kimi-code" }).ok, false);
-  /* 空对象与未知字段照旧 */
+  /* Empty objects and unknown fields behave as before. */
   assert.equal(validateGuidePayload({}).ok, true);
   assert.equal(validateGuidePayload({ stray: 1 }).ok, false);
 });
@@ -189,7 +192,8 @@ test("guidePayloadFromDb: invalid lens items dropped, page survives", () => {
   assert.deepEqual(payload.products, ["kimi-code", "sheet"]);
   assert.deepEqual(payload.roles, ["lawyer"]);
   assert.deepEqual(payload.resources, [{ label: "提示词", url: "/p/1", kind: "prompt" }]);
-  /* 非法 kind 渲染回落为无 kind(默认推荐资源组) */
+  /* Invalid kinds render as kindless (the default recommended
+     group). */
   const lenient = guidePayloadFromDb({
     resources: [{ label: "x", url: "/x", kind: "weird" }],
   });
@@ -210,7 +214,7 @@ test("deriveFormats: presence-driven, read first", () => {
   assert.deepEqual(deriveFormats(false, {}), []);
 });
 
-/* ---- 透镜计数 / 过滤 / 落地页门槛 ---- */
+/* ---- Lens counts / filtering / landing thresholds ---- */
 
 function item(partial: Partial<ExploreItem>): ExploreItem {
   return {
@@ -242,19 +246,21 @@ const LENS_ITEMS = [
 ];
 
 test("countByProduct / countByRoles: registry order, zero counts dropped", () => {
-  /* 词表序(kb-products.ts):kimi-code(0) < sheet(6) < plugin(9),
-     计数并列时按词表位次,主产品永远靠前 */
+  /* Vocabulary order (kb-products.ts): kimi-code (0) < sheet (6) <
+     plugin (9); count ties break by position — primary products always
+     first. */
   assert.deepEqual(countByProduct(LENS_ITEMS), [
     { value: "kimi-code", count: 2 },
     { value: "sheet", count: 1 },
     { value: "plugin", count: 1 },
   ]);
-  /* 0 计数的产品(chip 之外)完全不出 */
+  /* Zero-count products never appear at all (beyond chips). */
   assert.equal(
     countByProduct(LENS_ITEMS).some((c) => c.value === "kimi-design"),
     false,
   );
-  /* 词表序(kb-roles.ts):student(0) < lawyer(1) < software(12) */
+  /* Vocabulary order (kb-roles.ts): student (0) < lawyer (1) <
+     software (12). */
   assert.deepEqual(countByRoles(LENS_ITEMS), [
     { value: "student", count: 1 },
     { value: "lawyer", count: 1 },
@@ -275,7 +281,8 @@ test("filterExploreItems: product / role / format conditions compose", () => {
     filterExploreItems(LENS_ITEMS, { format: "video" }).map((i) => i.slug),
     ["a"],
   );
-  /* 组合空集 = 空数组(页面层给放宽筛选,不给死胡同) */
+  /* An empty combination = an empty array (the page offers widened
+     filters, no dead ends). */
   assert.deepEqual(filterExploreItems(LENS_ITEMS, { role: "lawyer", product: "kimi-code" }), []);
 });
 

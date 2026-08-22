@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-/* ---- 视觉气质(kb_vibe: poster 默认 / soft)的源码钉(20260815 拍板)----
-   实现原理:Tailwind v4 的 rounded-* 全部解析为 var(--radius-*),投影经
-   --tw-shadow 组合,因此气质切换 = globals.css 覆盖变量,组件零改动跟随。
-   本测试钉住管线四环:变量块存在、<html data-vibe> 直出、cookie 解析、
-   切换入口(TopBar/抽屉/设置页)与无 JS 兜底 action——任何一环被误删,
-   气质切换会静默退化成"永远经典",这里负责第一时间红。 ---- */
+/* ---- Source pinning for the visual vibe (kb_vibe: poster default /
+   soft). How it works: Tailwind v4 resolves every rounded-* to
+   var(--radius-*) and shadows compose through --tw-shadow, so a vibe
+   switch = globals.css overriding variables with zero component
+   changes. This test pins four links of the chain: the variable block
+   exists, <html data-vibe> renders directly, the cookie parses, and
+   the toggle entries (TopBar/drawer/settings) plus the no-JS backstop
+   action exist — break any link and vibe switching silently degrades
+   to "classic forever"; this goes red first. ---- */
 
 const read = (path: string) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -16,16 +19,19 @@ test("globals.css: poster vibe zeroes radius/shadow and flattens card wash", () 
   const css = read("app/globals.css");
   assert.match(css, /:root\[data-vibe="poster"\]\s*\{[\s\S]*?--radius-2xl: 0px/);
   assert.match(css, /--radius-lg: 0px/);
-  /* 裸 rounded 与 rounded-4xl 不在 xs…3xl 序列里,归零须显式列出(20260816 补漏) */
+  /* Bare rounded and rounded-4xl sit outside the xs..3xl ladder — zeroing
+     must list them explicitly. */
   assert.match(css, /:root\[data-vibe="poster"\]\s*\{[\s\S]*?--radius: 0px/);
   assert.match(css, /--radius-4xl: 0px/);
-  /* 投影置空必须只灭 --tw-shadow 一项(ring/焦点环走独立变量,不得波及) */
+  /* Emptying shadows must kill only --tw-shadow (rings/focus rings ride
+     independent variables and must survive). */
   assert.match(css, /:root\[data-vibe="poster"\][^{]*\{[\s\S]*?--tw-shadow: 0 0 #0000/);
   assert.match(css, /:root\[data-vibe="poster"\]\s*\{[\s\S]*?--color-card:/);
-  /* 首页海报作用域(跟随 UI 主题,scope="poster")就近重声明令牌,
-     poster 的降档必须显式跟进 */
+  /* The home poster scope (following the UI theme, scope="poster")
+     redeclares tokens locally — the poster's demotion must follow
+     explicitly. */
   assert.match(css, /:root\[data-vibe="poster"\] \[data-theme-scope="poster"\]/);
-  /* 设置页气质卡激活态 */
+  /* Settings page vibe-card active states. */
   assert.match(css, /html\[data-vibe="poster"\] \.vibe-card-poster/);
 });
 
@@ -35,14 +41,16 @@ test("root layout SSR-writes data-vibe from prefs (no-flash first paint)", () =>
 });
 
 test("prefs: kb_vibe parses via normalizeVibe (default configurable in vibe.ts)", () => {
-  /* 20260822:默认气质从字面量改为单一事实源 src/lib/vibe.ts 的 DEFAULT_VIBE;
-     prefs 只做 cookie 归一,「默认是哪档」不再散落在解析表达式里 */
+  /* The default vibe moved from literals to the single source
+     DEFAULT_VIBE in src/lib/vibe.ts; prefs only normalizes the cookie —
+     "which is default" no longer scatters across parse expressions. */
   const prefs = read("src/lib/prefs.ts");
   assert.match(prefs, /vibe: normalizeVibe\(store\.get\("kb_vibe"\)\?\.value\)/);
 
   const vibe = read("src/lib/vibe.ts");
   assert.match(vibe, /export const DEFAULT_VIBE: Vibe = "(poster|soft)";/, "DEFAULT_VIBE is a legal vibe");
-  /* 兜底 action 同源:回落值走 normalizeVibe,不再各自写死 poster */
+  /* The backstop action shares the source: fallbacks go through
+     normalizeVibe, no more hand-written poster literals. */
   const settingsActions = read("app/(app)/settings/actions.ts");
   assert.match(
     settingsActions,

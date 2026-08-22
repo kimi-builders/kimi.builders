@@ -28,9 +28,11 @@ interface FakeCall {
 
 const NOW = new Date("2026-08-18T12:00:00.000Z");
 
-/* 所有榜单/明细查询共有的隐私红线:项目名、设备、小时内时段、agent 版本、
-   会话标识、价格表本身都不得出现在语句里(source/model 只出现在分维度榜
-   与费用明细的 WHERE/GROUP BY 中,属榜单功能本身,逐测试单独断言)。 */
+/* The privacy red line shared by every board/detail query: project
+   names, devices, hourly times, agent versions, session identifiers,
+   and the price table itself never appear in the statements (source /
+   model appear only in the dimension boards' and cost detail's
+   WHERE/GROUP BY — the board's own function, asserted per test). */
 const PRIVACY_FORBIDDEN = [
   "project_label",
   "project_hash",
@@ -58,16 +60,19 @@ test("period normalization only accepts 24h/7d/30d and defaults to 7d", () => {
 
 test("leaderboard query only includes opt-in users and aggregate outputs", () => {
   const { sql, params } = buildUsageLeaderboardQuery("7d", NOW);
-  /* 默认 deny:WHERE 先卡 show_on_leaderboard = 1,周期下界走参数 */
+  /* Deny by default: WHERE pins show_on_leaderboard = 1 first; the
+     period lower bound rides a param. */
   assert.match(sql, /WHERE s\.show_on_leaderboard = 1/);
   assert.match(sql, /b\.bucket_start >= \?/);
   assert.deepEqual(params, ["2026-08-11 12:00:00.000"]);
-  /* 只输出聚合:token 五段 SUM + UTC 活跃天数;身份只取 handle/name/avatar
-     (s.user_id 是内部 join key,不渲染) */
+  /* Aggregates only: the five token SUMs + UTC active days; identity
+     limited to handle/name/avatar (s.user_id is an internal join key,
+     never rendered). */
   assert.match(sql, /SUM\(b\.input_tokens \+ b\.cache_write_input_tokens \+ b\.cache_read_input_tokens\s*\+ b\.output_tokens \+ b\.reasoning_output_tokens\)/);
   assert.match(sql, /COUNT\(DISTINCT DATE\(b\.bucket_start\)\)/);
   assert.match(sql, /u\.handle, u\.name, u\.avatar_url/);
-  /* 隐私边界:项目/设备/模型/工具/时段等明细列不得出现在语句里 */
+  /* Privacy boundary: project/device/model/tool/hour detail columns
+     never appear in the statement. */
   for (const col of [
     ...PRIVACY_FORBIDDEN,
     "model",
@@ -104,7 +109,8 @@ test("dimension boards filter by source / canonical model and keep the gate", ()
   assert.match(byModel.sql, /AND COALESCE\(NULLIF\(b\.model_canonical, ''\), b\.model\) = \?/);
   assert.deepEqual(byModel.params, ["2026-08-11 12:00:00.000", "kimi-k3"]);
 
-  /* 分维度榜同样不得引入项目/设备/时段等明细列(source/model 仅作等值过滤) */
+  /* Dimension boards introduce no detail columns either (source/model
+     serve only as equality filters). */
   for (const sql of [bySource.sql, byModel.sql]) {
     for (const col of [...PRIVACY_FORBIDDEN, "cost_micros"]) {
       assert.ok(!sql.includes(col), `unexpected privacy detail in dimension SQL: ${col}`);
@@ -136,7 +142,9 @@ test("dimension option queries rank candidates by period token weight", () => {
 
 test("cost query is user-scoped, day-granular and free of detail columns", () => {
   const { sql, params } = buildUsageLeaderboardCostQuery([7, 42], "7d", NOW);
-  /* userIds 来自榜单查询,费用语句仍独立重做 opt-in 门禁,并校验为整数后字面展开 */
+  /* userIds come from the board query; the cost statement still
+     re-applies the opt-in gate independently and expands ids literally
+     after integer validation. */
   assert.match(
     sql,
     /JOIN usage_settings s\s+ON s\.user_id = b\.user_id AND s\.show_on_leaderboard = 1/,
@@ -144,7 +152,8 @@ test("cost query is user-scoped, day-granular and free of detail columns", () =>
   assert.match(sql, /b\.user_id IN \(7,42\)/);
   assert.match(sql, /b\.bucket_start >= \?/);
   assert.match(sql, /SUM\(COALESCE\(b\.cost_micros, 0\)\) AS stored_cost_micros/);
-  /* 日粒度只为匹配价格生效窗口,不允许小时内时段 */
+  /* Day grain exists only to match price effective windows; no hourly
+     detail. */
   assert.match(sql, /DATE\(b\.bucket_start\) AS day/);
   assert.deepEqual(params, ["2026-08-11 12:00:00.000"]);
   for (const col of PRIVACY_FORBIDDEN) {
@@ -204,21 +213,22 @@ function costRow(over: Partial<UsageLeaderboardCostRow>): UsageLeaderboardCostRo
 
 test("cost aggregation follows the dashboard: stored facts + versioned price estimate", () => {
   const rows: UsageLeaderboardCostRow[] = [
-    /* 定价内:1M input × $1 + 2M cache_read × $0.5 + 0.5M output × $2 = $3,
-       加 stored $0.25 → 3_250_000 micros */
+    /* Priced: 1M input x $1 + 2M cache_read x $0.5 + 0.5M output x $2
+       = $3, plus stored $0.25 -> 3_250_000 micros. */
     costRow({
       input_tokens: 1_000_000,
       cache_read_input_tokens: 2_000_000,
       output_tokens: 500_000,
       stored_cost_micros: 250_000,
     }),
-    /* legacy 行只计 stored 事实,不估算 */
+    /* Legacy rows count stored facts only, no estimation. */
     costRow({ measurement: "legacy", input_tokens: 5_000_000, stored_cost_micros: 100_000 }),
-    /* 无价格命中:照常统计 token 但不计费 */
+    /* No price hit: tokens still counted, no cost. */
     costRow({ model: "other-x", input_tokens: 9_000_000 }),
-    /* 价格生效窗口之前(2026-08-01 生效,行在 07-20):不估算,只计 stored */
+    /* Before the effective window (effective 2026-08-01, row on 07-20):
+       no estimation, stored facts only. */
     costRow({ day: "2026-07-20", input_tokens: 4_000_000, stored_cost_micros: 50_000 }),
-    /* 另一用户独立累计:1M input × $1 = $1 */
+    /* Another user accumulates independently: 1M input x $1 = $1. */
     costRow({ user_id: 8, input_tokens: 1_000_000 }),
   ];
   const micros = aggregateUsageLeaderboardCosts(rows, [PRICE]);
@@ -233,15 +243,15 @@ test("rank uses a deterministic total order: metric desc, tiebreaks, handle asc"
     { userId: 2, handle: "bob", totalTokens: 1000, activeDays: 5 },
     { userId: 3, handle: "cyd", totalTokens: 2000, activeDays: 1 },
   ];
-  /* 同分不并列:token 同分按活跃天数再分胜负 */
+  /* No shared ranks: token ties break by active days. */
   assert.equal(usageLeaderboardRank(entries, 3, "tokens"), 1);
   assert.equal(usageLeaderboardRank(entries, 2, "tokens"), 2);
   assert.equal(usageLeaderboardRank(entries, 1, "tokens"), 3);
-  /* 活跃天数口径独立排序 */
+  /* Active days order independently. */
   assert.equal(usageLeaderboardRank(entries, 2, "days"), 1);
   assert.equal(usageLeaderboardRank(entries, 1, "days"), 2);
   assert.equal(usageLeaderboardRank(entries, 3, "days"), 3);
-  /* 费用口径:同分按 token 总量再分胜负 */
+  /* Cost definition: ties break by token totals. */
   const pool = entries.map((entry) => ({
     ...entry,
     costMicros: entry.userId === 1 ? 500 : 900,
@@ -249,7 +259,7 @@ test("rank uses a deterministic total order: metric desc, tiebreaks, handle asc"
   assert.equal(usageLeaderboardRank(pool, 3, "cost"), 1);
   assert.equal(usageLeaderboardRank(pool, 2, "cost"), 2);
   assert.equal(usageLeaderboardRank(pool, 1, "cost"), 3);
-  /* 不在榜为 null(调用方显示 "—") */
+  /* Off-board is null (callers show "—"). */
   assert.equal(usageLeaderboardRank(entries, 99, "tokens"), null);
 });
 
@@ -345,6 +355,7 @@ test("settings write persists show_on_leaderboard as 1/0", async () => {
     db,
   );
   assert.match(calls[0].sql, /show_on_leaderboard = VALUES\(show_on_leaderboard\)/);
-  /* 参数顺序:user_id, upload_project, upload_device_label, upload_quota, show_on_leaderboard, retention_days */
+  /* Param order: user_id, upload_project, upload_device_label,
+     upload_quota, show_on_leaderboard, retention_days. */
   assert.deepEqual(calls[0].params, [7, 0, 0, 0, 1, 365]);
 });
