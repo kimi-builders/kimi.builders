@@ -143,14 +143,17 @@ export async function getFeaturedFeed(limit = 6): Promise<FeaturedItem[]> {
   return mergeFeatured(posts, works, limit);
 }
 
-/* 详情页徽章/操作态:当前帖的精选信息(未精选 → null)。 */
+/* 详情页徽章/操作态:当前帖的精选信息(未精选 → null)。
+   存活谓词与 featuredPostsQuery 同口径(20260822 P2-1):已删/被屏蔽/私密帖
+   即便残留 featured_at 也不出徽章——精选位只属于公共面可见的内容。 */
 export async function getPostFeatured(
   postId: number,
 ): Promise<{ reason: string; editorHandle: string | null; at: Date } | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT p.featured_at, p.featured_reason, e.handle AS editor_handle
      FROM posts p LEFT JOIN users e ON e.id = p.featured_by
-     WHERE p.id = ? AND p.featured_at IS NOT NULL LIMIT 1`,
+     WHERE p.id = ? AND p.deleted_at IS NULL AND p.visibility = 'public'
+       AND p.hidden_at IS NULL AND p.featured_at IS NOT NULL LIMIT 1`,
     [postId],
   );
   const r = rows[0];

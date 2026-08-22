@@ -1116,8 +1116,10 @@ export function workCommentDuplicateQuery(
   };
 }
 
-/* 发评论:60s 去重 → 插入 + 冗余计数 +1(两条语句,同社区 createComment 的非事务取舍);
-   不发通知(人类评论从简)。AI 评论由 ai-reply.ts 直接写入(is_ai=1, user_id NULL)。 */
+/* 发评论:withVisibleWorkLock 事务内 60s 去重 → 插入 + 冗余计数 +1,一次
+   commit(20260822 P2-2,对齐社区 createCommentForVisiblePost);可见性判定
+   与写入同锁,消掉 action 层先查后写的 TOCTOU。不发通知(人类评论从简)。
+   AI 评论由 ai-reply.ts 直接写入(is_ai=1, user_id NULL)。 */
 export function workCommentInsertQuery(
   workId: number,
   userId: number,
@@ -1133,24 +1135,80 @@ export interface WorkCommentCreated {
   id: number;
   /* 命中 60s 去重时置位(幂等成功,不产生新行);action 层据此跳过召唤触发 */
   duplicate: boolean;
+  /* 目标作品的 ai_reply 开关(召唤地盘判定随锁定读数带出,替代先查后写) */
+  aiReply: boolean;
+}
+
+/* 单作品可见性访问(works 侧门禁,20260822 P2-2):复用 canViewWork 口径,
+   lock=true 时 SELECT ... FOR UPDATE,给写路径的「判定 + 写入」同一把锁。 */
+export async function getVisibleWorkAccess(
+  workId: number,
+  viewer: { id: number; role: string },
+  db: Queryable = getPool(),
+  lock = false,
+): Promise<{ id: number; aiReply: boolean } | null> {
+  const [rows] = await db.query<RowDataPacket[]>(
+    `SELECT w.id, w.visibility, w.hidden_at, w.user_id, w.ai_reply
+     FROM works w WHERE w.id = ? LIMIT 1${lock ? " FOR UPDATE" : ""}`,
+    [workId],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  const visible = canViewWork(
+    {
+      visibility: String(r.visibility),
+      userId: r.user_id === null ? null : Number(r.user_id),
+      hiddenAt: r.hidden_at ?? null,
+    },
+    viewer,
+  );
+  if (!visible) return null;
+  return { id: Number(r.id), aiReply: !!r.ai_reply };
+}
+
+/* 可见作品上的事务化写路径(对齐 posts 的 withVisiblePostLock):
+   不可见 → null(调用方按 generic 失败处理);回调内读写同事务。 */
+export async function withVisibleWorkLock<T>(
+  workId: number,
+  viewer: { id: number; role: string },
+  work: (conn: PoolConnection, access: { id: number; aiReply: boolean }) => Promise<T>,
+): Promise<T | null> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const access = await getVisibleWorkAccess(workId, viewer, conn, true);
+    if (!access) {
+      await conn.rollback();
+      return null;
+    }
+    const result = await work(conn, access);
+    await conn.commit();
+    return result;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
 }
 
 export async function createWorkComment(
+  viewer: { id: number; role: string },
   workId: number,
-  userId: number,
   body: string,
-): Promise<WorkCommentCreated> {
-  const pool = getPool();
-  const dupQ = workCommentDuplicateQuery(workId, userId, body);
-  const [dup] = await pool.query<RowDataPacket[]>(dupQ.sql, dupQ.args);
-  if (dup[0]) return { id: Number(dup[0].id), duplicate: true };
-  const ins = workCommentInsertQuery(workId, userId, body);
-  const [res] = await pool.query<ResultSetHeader>(ins.sql, ins.args);
-  await pool.query(
-    "UPDATE works SET comment_count = comment_count + 1 WHERE id = ?",
-    [workId],
-  );
-  return { id: Number(res.insertId), duplicate: false };
+): Promise<WorkCommentCreated | null> {
+  return withVisibleWorkLock(workId, viewer, async (conn, access) => {
+    const dupQ = workCommentDuplicateQuery(workId, viewer.id, body);
+    const [dup] = await conn.query<RowDataPacket[]>(dupQ.sql, dupQ.args);
+    if (dup[0]) return { id: Number(dup[0].id), duplicate: true, aiReply: access.aiReply };
+    const ins = workCommentInsertQuery(workId, viewer.id, body);
+    const [res] = await conn.query<ResultSetHeader>(ins.sql, ins.args);
+    await conn.query(
+      "UPDATE works SET comment_count = comment_count + 1 WHERE id = ?",
+      [workId],
+    );
+    return { id: Number(res.insertId), duplicate: false, aiReply: access.aiReply };
+  });
 }
 
 /* AI 回复作品评论后的通知(20260816 召唤):召唤触发者 + 作品作者

@@ -26,14 +26,15 @@ function assertOrder(src: string, a: string, b: string, label: string) {
   assert.ok(ia < ib, `${label}: ${a} 必须先于 ${b}`);
 }
 
-test("comment action keeps the visibility gate before any write", () => {
+test("comment action: 可见性门禁收进 withVisibleWorkLock 事务,不再先查后写", () => {
   const src = actionSource("createWorkCommentAction", "deleteWorkCommentAction");
-  assertOrder(
-    src,
-    "canViewWork(work, user)",
-    "createWorkComment(workId, user.id, body)",
-    "可见性门禁先于写库",
-  );
+  /* 20260822 P2-2:判定与写入同一把锁(works.ts),action 只看结果 null */
+  assert.match(src, /createWorkComment\(user, workId, body\)/);
+  assert.match(src, /if \(!created\) return \{ ok: false, error: t\(locale, "err\.generic"\) \}/);
+  assert.doesNotMatch(src, /canViewWork\(work, user\)/);
+  const lib = readFileSync(new URL("../src/lib/works.ts", import.meta.url), "utf8");
+  const fn = lib.slice(lib.indexOf("export async function createWorkComment"));
+  assertOrder(fn, "withVisibleWorkLock(workId, viewer", "workCommentInsertQuery", "锁定判定先于插入");
 });
 
 test("summon branch stays behind the duplicate guard", () => {
@@ -45,7 +46,7 @@ test("summon branch stays behind the duplicate guard", () => {
   );
   assertOrder(
     src,
-    "createWorkComment(workId, user.id, body)",
+    "createWorkComment(user, workId, body)",
     "hasKimiMention(body)",
     "写库(去重)先于召唤判定",
   );

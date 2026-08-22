@@ -248,6 +248,9 @@ export async function updateWorkAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
+  /* 禁言补检(20260822 P2-3):编辑与新建同门槛,防被禁言后借编辑绕道发声 */
+  const mutedWork = await getActiveMute(user.id);
+  if (mutedWork) return { error: muteMessage(locale, mutedWork) };
   const workId = Number(formData.get("work_id"));
   if (!workId) return { error: t(locale, "err.generic") };
   const f = readFields(formData);
@@ -428,9 +431,6 @@ export async function createWorkCommentAction(
   if (!Number.isSafeInteger(workId) || workId <= 0)
     return { ok: false, error: t(locale, "err.generic") };
   if (!body) return { ok: false, error: t(locale, "err.commentEmpty") };
-  /* 私密作品对非作者拒绝评论(页面本不可达,这里挡手搓请求) */
-  const work = await getWork(workId);
-  if (!work || !canViewWork(work, user)) return { ok: false, error: t(locale, "err.generic") };
   /* 限流(P1-5):作品评论共用社区 comment 配额,写库前消耗额度 */
   const rate = await consumeCommunityRateLimit(user.id, "comment");
   if (!rate.allowed)
@@ -439,14 +439,18 @@ export async function createWorkCommentAction(
       error: t(locale, "err.rateComment", { s: rate.retryAfterSeconds }),
       retryAfterSeconds: rate.retryAfterSeconds,
     };
-  const created = await createWorkComment(workId, user.id, body);
+  /* 私密作品对非作者拒绝评论:可见性判定已收进 createWorkComment 的
+     withVisibleWorkLock 事务(20260822 P2-2),不再先查后写 */
+  const created = await createWorkComment(user, workId, body);
+  if (!created) return { ok: false, error: t(locale, "err.generic") };
   /* @kimi 召唤(20260816 PR2,语义同社区评论召唤):duplicate 不触发(网络重试
-     不刷双倍 AI 回复);地盘 = 作品 ai_reply 开关(作者全局开关在执行侧复查,
-     awesome 站外条目无作者、仅作品开关);召唤另计独立限流(ai_summon 20/小时),
-     超限不召唤但评论照常发布。enqueue 内部用 after(),必须在 return 之前调用。 */
+     不刷双倍 AI 回复);地盘 = 作品 ai_reply 开关(锁定读数随返回值带出;作者
+     全局开关在执行侧复查,awesome 站外条目无作者、仅作品开关);召唤另计独立
+     限流(ai_summon 20/小时),超限不召唤但评论照常发布。enqueue 内部用
+     after(),必须在 return 之前调用。 */
   let aiNote: MutationResult["aiNote"];
   if (!created.duplicate && hasKimiMention(body) && user.aiRepliesEnabled) {
-    if (!work.aiReply) {
+    if (!created.aiReply) {
       aiNote = "aiDisabled";
     } else {
       const summonRate = await consumeCommunityRateLimit(user.id, "ai_summon");

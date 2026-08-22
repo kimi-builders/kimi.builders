@@ -10,7 +10,7 @@
    - 审计:每个动作都在 moderation_actions 落行。 */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
-import { setPostFeatured } from "../src/lib/featured";
+import { getPostFeatured, setPostFeatured } from "../src/lib/featured";
 import {
   adminDeleteComment,
   adminDeletePost,
@@ -93,6 +93,25 @@ async function main() {
     audit += 1;
     assert.ok((await getFeedPage({ sort: "new" })).posts.some((p) => p.id === postId));
     assert.ok(await getPostShareSnapshot(postId));
+
+    /* ---- 先精选后屏蔽(20260822 P2-1):hide 同事务清 featured 三列,不残留 ---- */
+    assert.equal(await setPostFeatured(mod, postId, "值得一读"), true);
+    assert.ok(await getPostFeatured(postId));
+    assert.equal(await hideContent(mod, "post", postId, "又违规"), true);
+    audit += 1;
+    {
+      const [row] = await pool.query(
+        "SELECT featured_at, featured_by, featured_reason FROM posts WHERE id = ?",
+        [postId],
+      );
+      const r = (row as { featured_at: Date | null }[])[0];
+      assert.equal(r.featured_at, null); /* 三列齐清,取数层还有谓词双保险 */
+      assert.equal(await getPostFeatured(postId), null);
+    }
+    assert.equal(await unhideContent(mod, "post", postId), true);
+    audit += 1;
+    /* 解除不自动恢复精选,需编辑重新定夺 */
+    assert.equal(await getPostFeatured(postId), null);
 
     /* ---- 屏蔽评论:公开面消失(回复升级为顶层),作者仍见 ---- */
     assert.equal(await hideContent(mod, "comment", commentId, "引战"), true);

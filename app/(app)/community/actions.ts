@@ -342,6 +342,9 @@ export async function updatePostAction(
   const user = await getSessionUser();
   const locale = await getLocale(user);
   if (!user) return { error: t(locale, "err.login") };
+  /* 禁言补检(20260822 P2-3):编辑也是发声面,与新建同门槛 */
+  const muted = await getActiveMute(user.id);
+  if (muted) return { error: muteMessage(locale, muted) };
   const postId = Number(formData.get("post_id"));
   const title = String(formData.get("title") || "").trim();
   const body = String(formData.get("body") || "").trim();

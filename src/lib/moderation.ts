@@ -156,6 +156,15 @@ export async function hideContent(
       `UPDATE ${TABLE[type]} SET hidden_at = NOW(), hidden_by = ?, hidden_reason = ? WHERE id = ?`,
       [actorId, reason.slice(0, 280), id],
     );
+    /* 同事务清精选三列(20260822 P2-1):被屏蔽内容不再携带精选态,
+       公共面与徽章取数即便漏过滤也不露出;解除屏蔽不自动恢复,需重新定夺 */
+    if (type === "post" || type === "work") {
+      await conn.query(
+        `UPDATE ${TABLE[type]} SET featured_at = NULL, featured_by = NULL, featured_reason = NULL
+         WHERE id = ? AND featured_at IS NOT NULL`,
+        [id],
+      );
+    }
     if (type === "comment") {
       await conn.query(
         `UPDATE posts SET comment_count = GREATEST(0, CAST(comment_count AS SIGNED) - 1)
