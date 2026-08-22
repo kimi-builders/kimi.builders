@@ -43,19 +43,26 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-/* CJK lines inside // or block comments. Line-based on purpose: a real
-   tokenizer is overkill for a ratchet; string literals starting with "*" are
-   vanishingly rare and would only inflate a baseline, never unlock anything. */
+/* CJK lines inside // or block comments, including JSX comment blocks: a
+   JSX comment opens with a brace followed by the block-comment opener, and
+   its continuation lines may start with anything. Line-based on purpose: a
+   real tokenizer is overkill for a ratchet; string literals starting with
+   "*" are vanishingly rare and would only inflate a baseline, never unlock
+   anything. */
 function cjkCommentLines(file: string): number {
   const lines = readFileSync(path.join(ROOT, file), "utf8").split("\n");
   let count = 0;
   let inBlock = false;
+  let inJsx = false;
   for (const raw of lines) {
     const line = raw.trim();
     let text: string | null = null;
     if (inBlock) {
       text = line;
       if (line.includes("*/")) inBlock = false;
+    } else if (inJsx) {
+      text = line;
+      if (line.includes("*/")) inJsx = false;
     } else if (line.startsWith("//")) {
       text = line;
     } else if (line.startsWith("/*")) {
@@ -64,6 +71,9 @@ function cjkCommentLines(file: string): number {
          be miscounted as a comment. */
       text = line.replace("*/", "");
       if (!line.includes("*/")) inBlock = true;
+    } else if (line.startsWith("{/*")) {
+      text = line.replace("*/", "");
+      if (!line.includes("*/")) inJsx = true;
     } else if (line.startsWith("*")) {
       text = line.replace("*/", "");
     }
