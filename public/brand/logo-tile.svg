@@ -1,8 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
-  <!-- kimi.builders · 小尺寸瓷砖标(导航 20–28px / 评论头像 / favicon)
-       与母版 v2「月之暗面 · 双星并肩」同源,按 icon.svg 的小尺寸几何:
-       去轨道,月亮放大,双星放大呈对角并肩;衬深色圆角瓷砖 ——
-       暗色 UI 里瓷砖边缘和双星都清晰,亮色 UI 里也不隐形。 -->
+  <!-- kimi.builders small tile mark (navigation 20-28px / comment
+       avatars / favicon). Derived from master v2 "dark side of the moon,
+       twin stars side by side" via icon.svg's small-size geometry: orbit
+       dropped, moon enlarged, stars enlarged into a diagonal pair, seated
+       on a dark rounded tile — tile edges and both stars stay clear in
+       dark UIs and never disappear in light ones. -->
   <defs>
     <mask id="tile-crescent-cut">
       <circle cx="460" cy="545" r="355" fill="#fff"/>

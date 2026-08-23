@@ -1,32 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
   <!-- ============================================================
-    kimi.builders 社区标志 · 母版 v2「月之暗面 · 双星并肩」
-    原创设计,不使用 Kimi 官方 Logo 资产。
+    kimi.builders community mark · master v2 "dark side of the moon,
+    twin stars side by side". Original design; no Kimi official logo
+    assets are used.
 
-    设计语义(直接在几何里,不靠叙事):
-      月亮      = 月之暗面 / AGI 未探明的疆域
-      月牙      = 折射进暗面的一束光;咬合线 = 真理未校准的裂缝
-      earthshine = 暗面靠近裂缝处被微微照亮(地照,天文真实)
-      环形山    = 暗面不是平地,未知疆域有细节
-      蓝星      = Kimi(品牌蓝 #1783FF)
-      纸星      = builders(与月牙同色 #EFE8DC —— 从裂缝启程的一粒光)
-      双星同轨、相邻、等大 = 与 Kimi 并肩探索;纸星沿轨稍前一步
+    Design semantics (carried by the geometry itself, not by narrative):
+      moon       = the dark side / the uncharted territory of AGI
+      crescent   = a beam of light refracted into the dark; the bite
+                   line = the not-yet-calibrated crack in truth
+      earthshine = the dark side faintly lit near the crack (real
+                   astronomy: earthshine)
+      craters    = the dark side is not flat — the unknown has texture
+      blue star  = Kimi (brand blue #1783FF)
+      paper star = builders (same color as the crescent, #EFE8DC — a
+                   mote of light setting out from the crack)
+      twin stars on one orbit, adjacent, equal size = exploring
+      beside Kimi; the paper star leads by one small step along the
+      track
 
-    参数化规格(动画/视频以此为唯一事实源):
+    Parametric spec (the single source of truth for animation/video):
       moon:    center M=(500,480)  R=270
       orbit:   center M, rx=408, ry=131, x-rotation=-14deg
       point(theta) = M + Rot(-14deg) · (rx·cosθ, ry·sinθ)
-      蓝星 θ=-27°  纸星 θ=-14°  (Δθ=13° 恒定 = 并肩)
-      动画约定: 两星同角速度沿 #orbit-motion 行进, θ 增大方向,
-               周期 8s; 纸星领先蓝星 13°(begin 偏移 -0.289s);
-               earthshine 透明度 0.72↔1 同周期呼吸。
+      blue star θ=-27°  paper star θ=-14°  (Δθ=13° constant = side by
+      side)
+      Animation contract: both stars travel #orbit-motion at the same
+      angular speed in the direction of increasing θ, 8s period; the
+      paper star leads the blue star by 13° (begin offset -0.289s);
+      earthshine breathes 0.72↔1 over the same period.
 
-    轨道遮挡(土星环关系): 轨道与月面的交点在 θ≈52.3° / 127.7°。
-      远弧(θ∈[127.7°,332.3°] 经过月后)压在月亮下面;
-      近弧 #orbit-near(θ∈[52.3°,127.7°],从月面正面下半部扫过)
-      画在月亮之上、双星之下 —— 星在线上,遮挡一致。
-      动画里双星进入远弧段时短暂被月亮遮挡(蓝 5.76–7.44s,
-      纸 5.47–7.15s),从月缘后面重新升起。
+    Orbit occlusion (Saturn-ring relation): the orbit crosses the
+    lunar disc at θ≈52.3° / 127.7°.
+      The far arc (θ∈[127.7°,332.3°], passing behind the moon) sits
+      under the moon;
+      the near arc #orbit-near (θ∈[52.3°,127.7°], sweeping across the
+      lower front of the disc) is drawn above the moon and below the
+      stars — stars ride on the line, occlusion stays consistent.
+      In the animation both stars are briefly hidden by the moon
+      inside the far arc (blue 5.76–7.44s, paper 5.47–7.15s), rising
+      again from behind the lunar rim.
   ============================================================ -->
   <defs>
     <mask id="crescent-cut">
@@ -42,7 +54,9 @@
       <stop offset="0" stop-color="#F9F4EA"/>
       <stop offset="1" stop-color="#ECE4D5"/>
     </linearGradient>
-    <!-- 动画运动路径:从蓝星位置(θ=-27°)出发的完整轨道(相对位移,可直接叠加在静态坐标上) -->
+    <!-- Animation motion path: the full orbit starting at the blue star's
+         position (θ=-27°); relative displacement, composable onto the
+         static coordinates. -->
     <path id="orbit-motion" d="m 0 0 a 408 131 -14 1 1 -676.6 291.2 a 408 131 -14 1 1 676.6 -291.2" fill="none"/>
   </defs>
 
@@ -66,7 +80,8 @@
     <circle cx="500" cy="480" r="270" fill="url(#crescent-light)" mask="url(#crescent-cut)"/>
   </g>
 
-  <!-- 近弧:轨道从月面正面跨过的那段(θ 52.3°→127.7°) -->
+  <!-- Near arc: the segment where the orbit crosses the moon's front
+       (θ 52.3°→127.7°). -->
   <g id="orbit-near">
     <path d="M 767.0 520.3 A 408 131 -14 0 1 283.2 640.9" fill="none"
           stroke="#EFE8DC" stroke-opacity="0.26" stroke-width="1.8"/>

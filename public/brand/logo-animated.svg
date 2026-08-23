@@ -1,12 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
   <!-- ============================================================
-    kimi.builders · 标志动画演示(SMIL,浏览器直接打开可播)
-    与 src/logo-mark.svg 同参数;动画语义:
-      · 双星同角速度沿轨道行进(θ 增大方向),周期 8s
-      · Δθ=13° 恒定 —— 纸星始终领先蓝星一步:「并肩」不是队形变化,是始终同行
-      · earthshine 0.72↔1 同周期呼吸 —— 光持续照进暗面
-    视频重制(AE 等)以本文件的参数注释 + logo-mark.svg 的规格为准;
-    遮挡关系(星绕到月后)在视频里可做真 3D 遮挡,logo 循环里始终在前。
+    kimi.builders mark, animated demo (SMIL; opens and plays directly
+    in browsers). Same parameters as public/brand/logo-mark.svg;
+    animation semantics:
+      · both stars travel the orbit at the same angular speed
+        (increasing θ), 8s period
+      · Δθ=13° constant — the paper star always leads the blue star by
+        one step: "side by side" is not a formation change, it is
+        constant companionship
+      · earthshine breathes 0.72↔1 over the same period — light keeps
+        reaching into the dark side
+    Remaking this as video (AE etc.) defers to this file's parameter
+    comments plus the logo-mark.svg spec; the occlusion (stars passing
+    behind the moon) may use true 3D occlusion in video — in the logo
+    loop the stars are always in front.
   ============================================================ -->
   <defs>
     <mask id="crescent-cut">
@@ -59,7 +66,9 @@
     <animateMotion dur="8s" repeatCount="indefinite" begin="0s">
       <mpath href="#orbit-motion"/>
     </animateMotion>
-    <!-- 绕到月后(远弧 θ∈[232.3°,307.7°])时被月亮遮挡:抵达月缘前 0.18s 渐隐,穿出月缘后 0.18s 渐显 -->
+    <!-- Occluded by the moon while passing behind it (far arc
+         θ∈[232.3°,307.7°]): fades out 0.18s before reaching the lunar
+         rim, fades back in 0.18s after leaving it. -->
     <animate attributeName="opacity" values="1;1;0;0;1;1"
              keyTimes="0;0.6979;0.7204;0.9296;0.9321;1"
              dur="8s" repeatCount="indefinite"/>

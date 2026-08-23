@@ -22,8 +22,8 @@ const BASELINE_PATH = new URL("./comment-baseline.json", import.meta.url);
 const ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 /* Scanned trees plus root-level source files. db/ (SQL) and ops/ (shell)
-   are out of scope. */
-const SCAN_DIRS = ["src", "app", "components", "tests", "scripts"];
+   are out of scope. public/ holds brand SVG assets only. */
+const SCAN_DIRS = ["src", "app", "components", "tests", "scripts", "public"];
 const SCAN_FILES = ["proxy.ts"];
 
 interface Snapshot {
@@ -36,24 +36,26 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
     if (entry.isDirectory()) {
       if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
       listSourceFiles(path.join(dir, entry.name), acc);
-    } else if (/\.(ts|tsx|css)$/.test(entry.name)) {
+    } else if (/\.(ts|tsx|css|svg)$/.test(entry.name)) {
       acc.push(path.join(dir, entry.name));
     }
   }
   return acc;
 }
 
-/* CJK lines inside // or block comments, including JSX comment blocks: a
-   JSX comment opens with a brace followed by the block-comment opener, and
-   its continuation lines may start with anything. Line-based on purpose: a
-   real tokenizer is overkill for a ratchet; string literals starting with
-   "*" are vanishingly rare and would only inflate a baseline, never unlock
-   anything. */
+/* CJK lines inside // or block comments, including JSX comment blocks
+   (a JSX comment opens with a brace followed by the block-comment opener,
+   and its continuation lines may start with anything) and XML/HTML
+   comment blocks in .svg assets (opening with <!--, closing with -->).
+   Line-based on purpose: a real tokenizer is overkill for a ratchet;
+   string literals starting with "*" are vanishingly rare and would only
+   inflate a baseline, never unlock anything. */
 function cjkCommentLines(file: string): number {
   const lines = readFileSync(path.join(ROOT, file), "utf8").split("\n");
   let count = 0;
   let inBlock = false;
   let inJsx = false;
+  let inXml = false;
   for (const raw of lines) {
     const line = raw.trim();
     let text: string | null = null;
@@ -63,6 +65,9 @@ function cjkCommentLines(file: string): number {
     } else if (inJsx) {
       text = line;
       if (line.includes("*/")) inJsx = false;
+    } else if (inXml) {
+      text = line;
+      if (line.includes("-->")) inXml = false;
     } else if (line.startsWith("//")) {
       text = line;
     } else if (line.startsWith("/*")) {
@@ -74,6 +79,9 @@ function cjkCommentLines(file: string): number {
     } else if (line.startsWith("{/*")) {
       text = line.replace("*/", "");
       if (!line.includes("*/")) inJsx = true;
+    } else if (line.startsWith("<!--")) {
+      text = line.replace("-->", "");
+      if (!line.includes("-->")) inXml = true;
     } else if (line.startsWith("*")) {
       text = line.replace("*/", "");
     }

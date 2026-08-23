@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
-  <!-- kimi.builders · favicon:与小尺寸瓷砖标 public/brand/logo-tile.svg 同稿
-       (母版 v2 月之暗面 · 双星并肩 的小尺寸几何:去轨道、月亮放大、双星放大对角)。
-       深色圆角瓷砖兜底:亮/暗浏览器 UI 里都清晰。 -->
+  <!-- kimi.builders favicon: same artwork as the small tile mark
+       public/brand/logo-tile.svg (master v2 "dark side of the moon, twin
+       stars side by side" reduced to small-size geometry: orbit dropped,
+       moon enlarged, stars enlarged into a diagonal pair). The dark
+       rounded tile is the fallback — legible in both light and dark
+       browser UIs. -->
   <defs>
     <mask id="tile-crescent-cut">
       <circle cx="460" cy="545" r="355" fill="#fff"/>
