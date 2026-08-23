@@ -72,13 +72,14 @@ export async function generateMetadata({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const sp = await searchParams;
+  const locale = await getLocale();
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
   /* Filtered combo URLs (chapter included) are noindex (no crawl traps);
      the default view is indexable. */
   const filtered =
     first(sp.chapter) || first(sp.product) || first(sp.role) || first(sp.tag) || first(sp.year);
   return {
-    title: "探索 — kimi.builders",
+    title: t(locale, "meta.explore"),
     ...(filtered ? { robots: { index: false, follow: true } } : {}),
   };
 }

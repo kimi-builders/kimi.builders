@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUiPrefs } from "@/src/lib/prefs";
 import Toaster from "@/components/Toaster";
@@ -18,12 +19,14 @@ const jetbrains = localFont({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "kimi.builders — Build good things with Kimi.",
-  description:
-    "An open community of builders creating good things with Kimi. 用 Kimi,构建美好。",
-  metadataBase: new URL("https://kimi.builders"),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: t(locale, "site.metaTitle"),
+    description: t(locale, "site.metaDescription"),
+    metadataBase: new URL("https://kimi.builders"),
+  };
+}
 
 /* viewport-fit=cover: enables env(safe-area-inset-*), so the bottom
    tab bar yields to the iPhone home bar. */

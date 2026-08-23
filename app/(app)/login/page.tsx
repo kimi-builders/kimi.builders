@@ -2,9 +2,14 @@
    in-app clicks render the intercepted-route modal
    (app/(app)/@modal/(.)login) — both share LoginContent. */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import LoginContent from "./_components/LoginContent";
 
-export const metadata: Metadata = { title: "登录 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.login") };
+}
 
 export default function LoginPage({
   searchParams,

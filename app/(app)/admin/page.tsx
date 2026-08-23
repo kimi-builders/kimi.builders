@@ -38,7 +38,10 @@ import { renderContentRows, renderLogRows } from "./_components/admin-lists";
 import AnalyticsInsights from "./_components/AnalyticsInsights";
 import UserModControls from "./_components/UserModControls";
 
-export const metadata: Metadata = { title: "管理 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.admin") };
+}
 
 const CONTENT_TYPES = ["post", "comment", "work"] as const;
 const CONTENT_STATES = ["all", "hidden", "deleted"] as const;

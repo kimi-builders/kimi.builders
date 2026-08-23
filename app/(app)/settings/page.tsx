@@ -3,9 +3,14 @@
    settings) — both share SettingsContent. Passes the OAuth link
    receipt (?linked / ?link_error&p) through to the "account" tab. */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import SettingsContent from "./_components/SettingsContent";
 
-export const metadata: Metadata = { title: "设置 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.settings") };
+}
 
 export default async function SettingsPage({
   searchParams,

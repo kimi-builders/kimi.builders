@@ -3,9 +3,14 @@
    (app/(app)/@modal/(.)usage/device) — both share
    UsageDeviceContent. */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import UsageDeviceContent from "./_components/UsageDeviceContent";
 
-export const metadata: Metadata = { title: "连接用量设备 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.device") };
+}
 
 export default function UsageDevicePage({
   searchParams,

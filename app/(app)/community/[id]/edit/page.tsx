@@ -3,9 +3,14 @@
    (app/(app)/@modal/(.)community/[id]/edit) — both share
    EditPostContent. */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import EditPostContent from "./_components/EditPostContent";
 
-export const metadata: Metadata = { title: "编辑帖子 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.editPost") };
+}
 
 export default function EditPostPage({
   params,

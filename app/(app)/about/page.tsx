@@ -1,5 +1,5 @@
 /* About page (/about): who we are / what's here (in-site section
-   links) / slogan / contact & links / the unofficial disclaimer. Flat
+   links) / contact & links / the unofficial disclaimer. Flat
    inside the (app) shell with the community rail fallback; all copy
    goes through i18n. */
 import type { Metadata } from "next";
@@ -9,7 +9,10 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 
-export const metadata: Metadata = { title: "关于 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.about") };
+}
 
 export default async function AboutPage() {
   const user = await getSessionUser();
@@ -39,9 +42,6 @@ export default async function AboutPage() {
       </p>
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-grey">
         {t(locale, "about.whoMore")}
-      </p>
-      <p className="mt-5 border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-paper">
-        {t(locale, "about.quote")}
       </p>
 
       <h2 className="mt-8 font-mono text-xs tracking-[0.08em] text-grey">
@@ -83,14 +83,10 @@ export default async function AboutPage() {
       </div>
 
       {/* Page closer: About is the last page the hesitant read — end with an
-          invitation to act, not with a disclaimer; human serif + an echo of
-          the front-page slogan vocabulary. */}
+          invitation to act, not with a disclaimer. */}
       <section className="mt-8 flex flex-col items-center border-t border-line pt-6 text-center">
         <p className="font-human text-lg leading-relaxed text-paper">
           {t(locale, "about.ctaLine")}
-        </p>
-        <p className="mt-1.5 font-mono text-xs tracking-[0.08em] text-grey">
-          EXPLORE TOGETHER. BUILD TOGETHER.
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 font-mono text-xs">
           <Link

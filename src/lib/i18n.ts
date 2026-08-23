@@ -90,8 +90,8 @@ const DICT = {
   "side.subs": { zh: "我的订阅", en: "Subscribed" },
   "side.about": { zh: "关于 KIMI.BUILDERS", en: "ABOUT KIMI.BUILDERS" },
   "side.aboutBody": {
-    zh: "Kimi 用户自建的非商业 builder 社区(非官方)。并肩探索,一起构建。",
-    en: "A user-built, non-commercial community of Kimi builders (unofficial). Explore together, build together.",
+    zh: "Kimi 用户自建的社区(非官方):讨论、作品、月刊与用量数据都在这里。",
+    en: "A user-run community of Kimi builders (unofficial): discussions, works, the Monthly, and usage data.",
   },
   "side.hot": { zh: "7 日热门", en: "TRENDING (7D)" },
   "side.hotEmpty": {
@@ -373,7 +373,7 @@ const DICT = {
   },
   "form.clearDraft": { zh: "清空草稿", en: "Clear draft" },
   "form.draftSaved": { zh: "草稿已自动保存到此设备", en: "Draft saved on this device" },
-  "post.official": { zh: "官方账号", en: "Official account" },
+  "post.official": { zh: "站务账号", en: "Site team" },
   "post.aiJoin": { zh: "小筑参与互动", en: "Kimi bot joins" },
   "edit.pageTitle": { zh: "编辑帖子", en: "Edit post" },
   "err.notOwner": { zh: "只能编辑自己的帖子", en: "You can only edit your own posts" },
@@ -700,7 +700,7 @@ const DICT = {
     en: "This section is still being prepared. Meanwhile, browse the community — or post what you'd like to see here.",
   },
   "soon.back": { zh: "去社区看看", en: "Browse the community" },
-  "home.tagline": { zh: "用 Kimi,构建美好。", en: "Build good things with Kimi." },
+  "home.tagline": { zh: "用 Kimi,把东西做出来。", en: "Build real things with Kimi." },
   "home.footerLine1": {
     zh: "kimi.builders 是用户自建的非商业社区。",
     en: "kimi.builders is a user-built, non-commercial community.",
@@ -1061,8 +1061,8 @@ const DICT = {
     en: "kimi.builders — a paper crescent on the dark side of the moon, with two companion stars in orbit",
   },
   "home.heroSub": {
-    zh: "并肩探索,一起构建 —— 社区正在生长。",
-    en: "Explore together, build together — the community is growing.",
+    zh: "成员真实跑出来的作品、方法与用量数据。",
+    en: "Real works, methods, and usage data from the community.",
   },
   "home.cta": { zh: "进入社区", en: "Enter the community" },
   "home.tokens": { zh: "累计 tokens", en: "total tokens" },
@@ -1101,8 +1101,8 @@ const DICT = {
      important fact on this page. */
   "about.eyebrow": { zh: "— 社区自建 · 非官方", en: "— Member-built · unofficial" },
   "about.who": {
-    zh: "kimi.builders 是 Kimi 用户自建的非商业 builder 社区(非官方)。这里聚着用 Kimi 构建、创造、生成实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着构建者声明的 token 投入。",
-    en: "kimi.builders is a non-commercial, user-built community of builders using Kimi (unofficial). It gathers people who build, create and generate real things with Kimi — agent writers, workflow automators, prompt crafters — and the works they ship, each carrying the builder's declared token investment.",
+    zh: "kimi.builders 是 Kimi 用户自建的非商业 Builder 社区(非官方)。这里聚着用 Kimi 做出实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着 Builder 声明的 token 投入。",
+    en: "kimi.builders is a non-commercial, user-built community of builders using Kimi (unofficial). It gathers people who make real things with Kimi — agent writers, workflow automators, prompt crafters — and the works they ship, each carrying the Builder's declared token investment.",
   },
   "about.whoMore": {
     zh: "这里没有空话和营销稿:跑通的工作流、踩过的坑、能复用的提示词,都值得留下;你卡住的地方,多半有人刚蹚过。",
@@ -1118,8 +1118,8 @@ const DICT = {
     en: "Community — Q&A, discussions, pitfalls and lessons.",
   },
   "about.whatWorks": {
-    zh: "作品墙 —— 成员用 AI 构建的真实作品,带构建者声明投入的徽章。",
-    en: "Works — real things members built with AI, carrying the builder's declared-effort badge.",
+    zh: "作品墙 —— 成员用 AI 构建的真实作品,带 Builder 声明投入的徽章。",
+    en: "Works — real things members built with AI, carrying the Builder's declared-effort badge.",
   },
   "about.whatAwesome": {
     zh: "Awesome —— 全世界用 Kimi 构建的项目清单。",
@@ -1133,13 +1133,13 @@ const DICT = {
   /* Closing note: the about page is the last page the hesitant read —
      end with an invitation, not a disclaimer. */
   "about.ctaLine": {
-    zh: "轮到你了——用 Kimi 构建一件好东西。",
-    en: "Your turn — build something good with Kimi.",
+    zh: "轮到你了——把你用 Kimi 做的东西挂上来。",
+    en: "Your turn — put what you made with Kimi on the wall.",
   },
   "about.ctaGithub": { zh: "先去 GitHub 逛逛", en: "Browse GitHub first" },
   "about.disclaimer": {
-    zh: "kimi.builders 与 Moonshot AI(月之暗面)无隶属、赞助或背书关系。",
-    en: "kimi.builders is not affiliated with, sponsored, or endorsed by Moonshot AI.",
+    zh: "kimi.builders 由 Kimi 用户自建自运营,现阶段为非商业社区。本站与 Moonshot AI(月之暗面)无隶属、赞助、背书或授权关系;「Kimi」「Moonshot AI」等名称与商标归其权利人所有,本站仅作事实性指称。站内 AI 助手「小筑」由社区部署、通过公开接口调用模型,其回复不代表 Moonshot AI 官方立场。",
+    en: "kimi.builders is built and run by Kimi users and operates as a non-commercial community at this stage. It is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). \"Kimi\", \"Moonshot AI\" and related marks belong to their respective owners and are referenced here only factually. The on-site AI assistant 小筑 is operated by the community over public APIs; its replies do not represent Moonshot AI.",
   },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
@@ -1808,6 +1808,26 @@ const DICT = {
     zh: "你已被永久禁言;期间不能发帖、评论或发布作品。",
     en: "You are permanently muted; posting, commenting, and publishing works are disabled.",
   },
+  /* ---- Localized route titles + site meta (brand language pass) ---- */
+  "site.metaTitle": { zh: "kimi.builders — 用 Kimi,把东西做出来。", en: "kimi.builders — Build real things with Kimi." },
+  "site.metaDescription": { zh: "Kimi 用户自建的社区(非官方):真实作品、讨论、月刊评鉴与自愿公开的用量数据。", en: "A user-run community of Kimi builders (unofficial): real works, discussions, a monthly review, and opt-in usage data." },
+  "meta.explore": { zh: "探索 — kimi.builders", en: "Explore — kimi.builders" },
+  "meta.works": { zh: "作品库 — kimi.builders", en: "Works — kimi.builders" },
+  "meta.awesome": { zh: "Awesome — kimi.builders", en: "Awesome — kimi.builders" },
+  "meta.usage": { zh: "用量 — kimi.builders", en: "Usage — kimi.builders" },
+  "meta.leaderboard": { zh: "社区用量榜 — kimi.builders", en: "Community leaderboard — kimi.builders" },
+  "meta.device": { zh: "连接用量设备 — kimi.builders", en: "Connect device — kimi.builders" },
+  "meta.about": { zh: "关于 — kimi.builders", en: "About — kimi.builders" },
+  "meta.login": { zh: "登录 — kimi.builders", en: "Sign in — kimi.builders" },
+  "meta.settings": { zh: "设置 — kimi.builders", en: "Settings — kimi.builders" },
+  "meta.notifications": { zh: "消息 — kimi.builders", en: "Notifications — kimi.builders" },
+  "meta.newPost": { zh: "发帖 — kimi.builders", en: "New post — kimi.builders" },
+  "meta.editPost": { zh: "编辑帖子 — kimi.builders", en: "Edit post — kimi.builders" },
+  "meta.newWork": { zh: "提交作品 — kimi.builders", en: "Submit work — kimi.builders" },
+  "meta.editWork": { zh: "编辑作品 — kimi.builders", en: "Edit work — kimi.builders" },
+  "meta.admin": { zh: "管理 — kimi.builders", en: "Moderation — kimi.builders" },
+  "meta.newArticle": { zh: "新建文章 — kimi.builders", en: "New article — kimi.builders" },
+  "meta.editArticle": { zh: "编辑文章 — kimi.builders", en: "Edit article — kimi.builders" },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

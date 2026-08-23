@@ -34,7 +34,10 @@ import { loadWorksCards } from "../works/_components/works-page";
 import WorksFilterBar from "../works/_components/WorksFilterBar";
 import WorksViewToggle from "../works/_components/WorksViewToggle";
 
-export const metadata: Metadata = { title: "Awesome — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.awesome") };
+}
 
 const SCOPES = [
   { id: "base", key: "awesome.scopeBase" as const },

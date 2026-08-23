@@ -15,7 +15,10 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getNotifications, markNotificationsRead } from "@/src/lib/posts";
 
-export const metadata: Metadata = { title: "消息 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.notifications") };
+}
 
 export default async function NotificationsPage() {
   const user = await getSessionUser();

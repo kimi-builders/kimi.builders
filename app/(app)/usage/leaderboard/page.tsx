@@ -50,7 +50,10 @@ import { getUsageSettings } from "@/src/lib/usage/settings";
 const LEADERBOARD_SEG_ACTIVE =
   "bg-blue/10 text-blue ring-1 ring-inset ring-blue/20";
 
-export const metadata: Metadata = { title: "社区用量榜 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.leaderboard") };
+}
 
 /* Compact numbers matching the /usage dashboard: 1.2k / 3.4M / 5.6B;
    exact values ride in the title. */

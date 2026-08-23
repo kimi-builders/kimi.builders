@@ -4,9 +4,14 @@
    kind is chosen in the form: letter = monthly, guide = learn path
    (one table, one form). */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import NewArticleContent from "./_components/NewArticleContent";
 
-export const metadata: Metadata = { title: "新建文章 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.newArticle") };
+}
 
 export default function NewArticlePage() {
   return <NewArticleContent />;

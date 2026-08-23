@@ -4,9 +4,14 @@
    ?path=<slug> = the graduation source series (passed through to
    NewWorkContent). */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import NewWorkContent from "./_components/NewWorkContent";
 
-export const metadata: Metadata = { title: "提交作品 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.newWork") };
+}
 
 export default function NewWorkPage({
   searchParams,

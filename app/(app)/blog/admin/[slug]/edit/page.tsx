@@ -4,9 +4,14 @@
    EditArticleContent. Located by slug + ?locale= exactly; drafts
    resolve too. admin/mod only. */
 import type { Metadata } from "next";
+import { t } from "@/src/lib/i18n";
+import { getLocale } from "@/src/lib/i18n-server";
 import EditArticleContent from "./_components/EditArticleContent";
 
-export const metadata: Metadata = { title: "编辑文章 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.editArticle") };
+}
 
 export default function EditArticlePage({
   params,

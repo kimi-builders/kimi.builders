@@ -77,7 +77,10 @@ import {
   UsageWeeklyTrend,
 } from "./_components/UsageVisualizations";
 
-export const metadata: Metadata = { title: "用量 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.usage") };
+}
 
 function compact(value: number, zh: boolean): string {
   return compactNumber(value, zh ? "zh" : "en");

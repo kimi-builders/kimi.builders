@@ -1,4 +1,4 @@
-/* /explore rail: the mission quote + chapter distribution (bars) +
+/* /explore rail: a section intro line + chapter distribution (bars) +
    enabled lens data (only dimensions explore-filters.ts enables and
    content fills — currently products and tags; roles/archive ready
    via config) + latest content. Series are a grouping and stay
@@ -27,11 +27,11 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* Mission quote (same left-blue-line grammar as WorksRail's about.quote) */}
+      {/* Section intro line (same left-blue-line grammar as WorksRail's about.quote) */}
       <p className="border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-grey">
         {zh
-          ? "探索将智能转化为创造力的最优解——学、做、得、立。"
-          : "Seeking the optimal conversion from intelligence to creativity — Learn, Build, Gain, Become."}
+          ? "月刊与指南:每篇都交出方法、证据与出处。"
+          : "The Monthly and the guides — every piece ships method, evidence, and sources."}
       </p>
 
       {/* Chapter distribution: bars (same style as WorksRail's active agents) */}

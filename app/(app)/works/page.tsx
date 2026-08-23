@@ -36,7 +36,10 @@ import { loadWorksCards } from "./_components/works-page";
 import WorksFilterBar from "./_components/WorksFilterBar";
 import WorksViewToggle from "./_components/WorksViewToggle";
 
-export const metadata: Metadata = { title: "作品库 — kimi.builders" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "meta.works") };
+}
 
 export default async function WorksPage({
   searchParams,
