@@ -145,7 +145,7 @@ export default function PostCard({
         <Link
           href={`/community/${p.id}#comments`}
           title={t(locale, "post.comments", { n: p.commentCount })}
-          className="inline-flex items-center gap-1.5 min-h-9 rounded-lg px-2.5 py-2 font-mono text-xs text-grey transition-colors hover:bg-paper/[0.05] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 py-2 font-mono text-xs text-grey transition-colors hover:bg-paper/[0.05] hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue lg:min-h-9"
         >
           <MessageCircle size={13} />
           {p.commentCount}

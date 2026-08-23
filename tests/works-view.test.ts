@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isMobileUA, WORKS_VIEW_COOKIE } from "../src/lib/works-view";
+import {
+  isMobileUA,
+  readWorksSourceCookie,
+  WORKS_SRC_COOKIE,
+  WORKS_VIEW_COOKIE,
+} from "../src/lib/works-view";
 
 /* ---- Mobile UA detection (mobile is always rows) ---- */
 
@@ -42,4 +47,12 @@ test("isMobileUA: phones detected, desktop UA not", () => {
 
 test("works-view cookie name stays stable (kb-works-view)", () => {
   assert.equal(WORKS_VIEW_COOKIE, "kb-works-view");
+});
+
+test("works source cookie parses the active list lens", () => {
+  assert.equal(WORKS_SRC_COOKIE, "kb-works-src");
+  assert.equal(readWorksSourceCookie("kb_theme=dark; kb-works-src=awesome"), "awesome");
+  assert.equal(readWorksSourceCookie("kb-works-src=works; kb_locale=zh"), "works");
+  assert.equal(readWorksSourceCookie("kb-works-src=unknown"), null);
+  assert.equal(readWorksSourceCookie("other=awesome"), null);
 });

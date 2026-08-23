@@ -93,7 +93,7 @@ export default function VoteCluster({
         onClick={() => vote("up")}
         aria-label={upLabel}
         data-tip={upLabel}
-        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+        className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue lg:min-h-9 lg:min-w-9 ${
           state.up ? "text-ui-blue" : "text-grey hover:bg-paper/[0.05] hover:text-ui-blue"
         }`}
       >
@@ -111,7 +111,7 @@ export default function VoteCluster({
         onClick={() => vote("down")}
         aria-label={downLabel}
         data-tip={downLabel}
-        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+        className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue lg:min-h-9 lg:min-w-9 ${
           state.down ? "text-paper" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
         }`}
       >

@@ -22,6 +22,57 @@ import CopyUsageCommandButton from "../../_components/CopyUsageCommandButton";
 import DeviceApprovalForm from "../../_components/DeviceApprovalForm";
 import DeviceCodeUrlCleanup from "./DeviceCodeUrlCleanup";
 
+function DeviceCodeForm({
+  zh,
+  invalid = false,
+}: {
+  zh: boolean;
+  invalid?: boolean;
+}) {
+  return (
+    <form method="get" className="mt-4 rounded-xl border border-line bg-card p-4">
+      {invalid && (
+        <div role="alert" className="mb-4 border-l-2 border-status-danger px-3">
+          <p className="text-sm text-paper">
+            {zh ? "验证码无效或不存在。" : "Code not found."}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-grey">
+            {zh
+              ? "检查验证码后重新尝试；如果已经过期，请回到本地看板重新生成。"
+              : "Check the code and try again. If it expired, generate a new one in the local dashboard."}
+          </p>
+        </div>
+      )}
+      <label htmlFor="usage-device-code" className="font-mono text-xs tracking-[0.08em] text-grey">
+        {zh ? "连接验证码" : "CONNECTION CODE"}
+      </label>
+      <p id="usage-device-code-help" className="mt-1 text-xs leading-relaxed text-grey">
+        {zh ? "输入本地看板或 Collector 显示的 8 位验证码。" : "Enter the 8-character code shown by the local dashboard or Collector."}
+      </p>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="usage-device-code"
+          name="code"
+          placeholder="ABCD-EFGH"
+          autoCapitalize="characters"
+          autoComplete="one-time-code"
+          autoFocus={invalid}
+          aria-describedby="usage-device-code-help"
+          aria-invalid={invalid || undefined}
+          minLength={8}
+          maxLength={9}
+          pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}"
+          required
+          className="min-h-11 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 font-mono text-sm uppercase tracking-[0.08em] text-paper outline-none focus:border-blue"
+        />
+        <button className="min-h-11 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
+          {invalid ? (zh ? "重新尝试" : "Try again") : (zh ? "继续" : "Continue")}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default async function UsageDeviceContent({
   searchParams,
   showTitle = true,
@@ -100,43 +151,12 @@ export default async function UsageDeviceContent({
             </details>
           </section>
 
-          <form method="get" className="mt-4 rounded-xl border border-line bg-card p-4">
-            <label htmlFor="usage-device-code" className="font-mono text-xs tracking-[0.08em] text-grey">
-              {zh ? "连接验证码" : "CONNECTION CODE"}
-            </label>
-            <p id="usage-device-code-help" className="mt-1 text-xs leading-relaxed text-grey">
-              {zh ? "输入本地看板或 Collector 显示的 8 位验证码。" : "Enter the 8-character code shown by the local dashboard or Collector."}
-            </p>
-            <div className="mt-2 flex gap-2">
-              <input
-                id="usage-device-code"
-                name="code"
-                placeholder="ABCD-EFGH"
-                autoCapitalize="characters"
-                autoComplete="one-time-code"
-                aria-describedby="usage-device-code-help"
-                minLength={8}
-                maxLength={9}
-                pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}"
-                required
-                className="min-h-11 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 font-mono text-sm uppercase tracking-[0.08em] text-paper outline-none focus:border-blue"
-              />
-              <button className="min-h-11 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue">
-                {zh ? "继续" : "Continue"}
-              </button>
-            </div>
-          </form>
+          <DeviceCodeForm zh={zh} />
         </>
       )}
 
       {code && !preview && (
-        <div className="mt-7 rounded-xl border border-line bg-card p-4">
-          <DeviceCodeUrlCleanup />
-          <p className="text-sm text-paper">{zh ? "验证码无效或不存在。" : "Code not found."}</p>
-          <p className="mt-2 text-xs leading-relaxed text-grey">
-            {zh ? "请回到本地看板重新生成，或在终端重新运行 init。" : "Generate a new code in the local dashboard, or run init again in the terminal."}
-          </p>
-        </div>
+        <DeviceCodeForm zh={zh} invalid />
       )}
 
       {preview && (

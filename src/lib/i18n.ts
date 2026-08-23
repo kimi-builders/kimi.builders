@@ -979,6 +979,11 @@ const DICT = {
     en: "Your projects are already burning tokens in your usage — list one and claim the badge.",
   },
   "works.emptyCta": { zh: "上架第一件作品 →", en: "List your first work →" },
+  "works.filteredEmptyTitle": { zh: "当前筛选下没有作品", en: "No works match these filters" },
+  "works.filteredEmptyBody": {
+    zh: "换一个 Agent 或类型,或清除筛选查看全部作品。",
+    en: "Try another agent or type, or clear the filters to see every work.",
+  },
   "works.emptyQuota": { zh: "可声明额度 {n}", en: "Claimable {n}" },
   "works.statWorks": { zh: "上架作品", en: "works" },
   "works.statAuthors": { zh: "构建者", en: "builders" },

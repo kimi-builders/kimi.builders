@@ -8,21 +8,31 @@
    main area gets pb-24 in (app)/layout so nothing hides behind it. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Compass, MessagesSquare, Shell, SquarePen, User } from "lucide-react";
+import { BarChart3, Compass, MessagesSquare, Shell, Sprout, SquarePen, User } from "lucide-react";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
+import type { WorksSource } from "@/src/lib/works-view";
+import useWorksSource from "./useWorksSource";
 
 export default function MobileTabBar({
   locale,
   profileHref,
   loggedIn = false,
+  worksSrc = null,
 }: {
   locale: Locale;
   profileHref?: string;
   /* Signed out: gated items (post/usage/me) link straight into the
      login modal with a post-login redirect. */
   loggedIn?: boolean;
+  worksSrc?: WorksSource | null;
 }) {
   const pathname = usePathname();
+  const src = useWorksSource(worksSrc);
+  const fromAwesome =
+    pathname.startsWith("/works") &&
+    !pathname.startsWith("/works/new") &&
+    src === "awesome";
+  const awesomeLens = pathname.startsWith("/awesome") || fromAwesome;
   /* Targets for gated entries when signed out (the login modal carries
      the redirect). */
   const gate = (path: string) =>
@@ -51,10 +61,12 @@ export default function MobileTabBar({
       active: pathname.startsWith("/explore"),
     },
     {
-      href: "/works",
-      icon: Shell,
-      key: "nav.works" as const,
-      active: pathname.startsWith("/works") && !pathname.startsWith("/works/new"),
+      href: awesomeLens ? "/awesome" : "/works",
+      icon: awesomeLens ? Sprout : Shell,
+      key: awesomeLens ? "nav.awesome" as const : "nav.works" as const,
+      active:
+        awesomeLens ||
+        (pathname.startsWith("/works") && !pathname.startsWith("/works/new")),
     },
     {
       href: gate(contextualCreate.href),

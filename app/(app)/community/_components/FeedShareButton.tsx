@@ -29,7 +29,7 @@ export default function FeedShareButton({
              silent. */
         }
       }}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue lg:min-h-9 ${
         copied ? "text-ui-blue" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
       }`}
     >

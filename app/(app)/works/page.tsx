@@ -78,9 +78,12 @@ export default async function WorksPage({
     return qs ? `/works?${qs}` : "/works";
   };
 
-  /* Empty state (signed in): carries a claimable-allowance pill when
-     usage data exists. */
-  const allowance = user && page.nodes.length === 0
+  const hasActiveFilters = activeAgents.length > 0 || activeKinds.length > 0;
+  const clearFiltersHref = currentSort === "new" ? "/works" : `/works?sort=${currentSort}`;
+
+  /* The unfiltered signed-in empty state carries a claimable-allowance
+     pill. Filtered emptiness is a search result, not an author state. */
+  const allowance = user && page.nodes.length === 0 && !hasActiveFilters
     ? await getClaimAllowance(user.id)
     : null;
 
@@ -158,7 +161,7 @@ export default async function WorksPage({
             <Shell size={20} aria-hidden="true" />
           </div>
           <h2 className="mt-4 text-sm font-semibold text-paper">
-            {t(locale, "works.emptyTitle")}
+            {t(locale, hasActiveFilters ? "works.filteredEmptyTitle" : "works.emptyTitle")}
           </h2>
           {allowance && allowance.total > 0 && (
             <p className="mt-2">
@@ -170,9 +173,17 @@ export default async function WorksPage({
             </p>
           )}
           <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-grey">
-            {t(locale, "works.emptyBody")}
+            {t(locale, hasActiveFilters ? "works.filteredEmptyBody" : "works.emptyBody")}
           </p>
-          {user ? (
+          {hasActiveFilters ? (
+            <Link
+              href={clearFiltersHref}
+              scroll={false}
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-xs text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              {t(locale, "works.clearFilters")}
+            </Link>
+          ) : user ? (
             <Link
               href="/works/new"
               className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 font-mono text-xs text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"

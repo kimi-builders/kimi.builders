@@ -94,7 +94,12 @@ export default async function AppLayout({
         )}
       </div>
       <Suspense fallback={null}>
-        <MobileTabBar locale={locale} profileHref={profileHref} loggedIn={!!user} />
+        <MobileTabBar
+          locale={locale}
+          profileHref={profileHref}
+          loggedIn={!!user}
+          worksSrc={worksSrc}
+        />
       </Suspense>
       {/* Soft navigation across contexts re-evaluates the rail/column widths (same decision, no full-tree refetch) */}
       <RailRefresher />

@@ -26,3 +26,10 @@ export function isMobileUA(ua: string): boolean {
    pages, read server-side. */
 export const WORKS_SRC_COOKIE = "kb-works-src";
 export type WorksSource = "works" | "awesome";
+
+export function readWorksSourceCookie(cookie: string): WorksSource | null {
+  const match = cookie.match(
+    new RegExp(`(?:^|;\\s*)${WORKS_SRC_COOKIE}=(works|awesome)(?:;|$)`),
+  );
+  return match?.[1] === "works" || match?.[1] === "awesome" ? match[1] : null;
+}

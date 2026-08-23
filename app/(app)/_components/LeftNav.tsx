@@ -15,7 +15,6 @@
    structure renders for both states. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useSyncExternalStore } from "react";
 import {
   BarChart3,
   Compass,
@@ -32,9 +31,10 @@ import {
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
-import { WORKS_SRC_COOKIE, type WorksSource } from "@/src/lib/works-view";
+import type { WorksSource } from "@/src/lib/works-view";
 import GithubIcon from "./GithubIcon";
 import { NavToggle, SidebarToggle } from "./pref-controls";
+import useWorksSource from "./useWorksSource";
 
 /* hidden: entries for sections not shipping soon (NAV_HIDDEN) never
    render. The mobile drawer (MobileNavDrawer) reuses the same registry
@@ -79,16 +79,7 @@ export default function LeftNav({
      events, so the subscribe is a no-op: the snapshot rereads on every
      render, and a pathname change (soft navigation) re-renders and
      picks up the new source (same pattern as app/error.tsx). */
-  const src = useSyncExternalStore(
-    useCallback(() => () => {}, []),
-    () => {
-      const match = document.cookie.match(
-        new RegExp(`(?:^|;\\s*)${WORKS_SRC_COOKIE}=(works|awesome)`),
-      );
-      return match ? match[1] : "";
-    },
-    () => worksSrc ?? "",
-  );
+  const src = useWorksSource(worksSrc);
   /* Detail-page ownership: /works/* arrived at from Awesome highlights
      Awesome, otherwise works. */
   const fromAwesome = pathname.startsWith("/works") && src === "awesome";
@@ -159,7 +150,7 @@ export default function LeftNav({
         {/* Group labels: once items exceed the skim limit, mono small caps
             group them (same spec as the bottom "interface" group); collapsed
             mode hides them along with nav-label. */}
-        <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+        <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "nav.groupSections")}
         </p>
         {/* SOON demoted: not-yet-ready sections move after the ready ones,
@@ -187,7 +178,7 @@ export default function LeftNav({
         })}
         {profileHref && (
           <div className="mt-3 border-t border-line pt-3">
-            <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+            <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey">
               {t(locale, "nav.groupAccount")}
             </p>
             <Link prefetch={false}
@@ -230,7 +221,7 @@ export default function LeftNav({
       </nav>
 
       <div className="mt-auto space-y-1 pt-8">
-        <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+        <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey">
           {t(locale, "nav.groupMore")}
         </p>
         {moderator && (
@@ -283,7 +274,7 @@ export default function LeftNav({
             one row, converging to icon keys when collapsed (.panel-pair
             rule in globals.css). */}
         <div className="pt-3">
-          <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey/60">
+          <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey">
             {t(locale, "side.display")}
           </p>
           <div className="panel-pair flex flex-col gap-1.5">
