@@ -6,8 +6,10 @@
    black 90%·60% / separators black 13%.
    Three blues, three jobs: blue #007CFF = focus (active states, key
    data, the single primary CTA); ui-blue = interactive blue (links,
-   hover, secondary actions) — #1A88FF dark / #1783FF light (official UI
-   colors); the brand signal blue #1783FF lives in icon.svg and the poster
+   hover, secondary actions) — #1A88FF dark / #0064DC light (dark is
+   the official UI color; light is deepened from the official #1783FF
+   to clear WCAG AA on the light ground, like warn below); the brand
+   signal blue #1783FF lives in icon.svg and the poster
    facade.
    moon = raised surface (code blocks/dropdowns/progress tracks, official
    Bg.Secondary); line = hairline separator (official Separators.S1);
@@ -123,7 +125,12 @@
   --color-moon: #f5f5f5;
   --color-paper: rgb(0 0 0 / 0.9);
   --color-blue: #007cff;
-  --color-ui-blue: #1783ff;
+  /* Deepened from the official #1783FF for WCAG AA: link-blue text on
+     the light ground sat at 3.52:1 (needs 4.5:1 at 12-13px); #0064DC
+     measures 5.23:1. Dark keeps the official #1A88FF (5.36:1, passes).
+     Same accessibility-over-official precedent as warn's amber shift
+     below. */
+  --color-ui-blue: #0064dc;
   --color-blue-text: #002f5b;
   --color-grey: rgb(0 0 0 / 0.62);
   --color-line: rgb(0 0 0 / 0.13);
