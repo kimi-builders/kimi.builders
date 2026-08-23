@@ -92,7 +92,7 @@ export default function VoteCluster({
         onClick={() => vote("up")}
         aria-label={upLabel}
         title={upLabel}
-        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-all active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
           state.up ? "text-ui-blue" : "text-grey hover:bg-paper/[0.05] hover:text-ui-blue"
         }`}
       >
@@ -110,7 +110,7 @@ export default function VoteCluster({
         onClick={() => vote("down")}
         aria-label={downLabel}
         title={downLabel}
-        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-all active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+        className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
           state.down ? "text-paper" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
         }`}
       >

@@ -722,27 +722,10 @@ html[data-motion="reduce"] ::after {
 
 /* ---- Usage hub: restyled after the Kimi Design spec (page-scoped,
    never promoted to global tokens) ---- */
-/* Hero card: a thin top gradient plus a blue radial glow in the top-right
-   corner. color-mix derives from --color-blue, safe on both themes; the
-   glow is texture only and carries no information. */
+/* Hero card: flat card surface — the border hairline holds the
+   silhouette (dark theme bumps it below). */
 .usage-hero {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 3%, transparent), transparent),
-    var(--color-card);
-}
-.usage-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(
-    240px 90px at 85% 0%,
-    color-mix(in srgb, var(--color-blue) 8%, transparent),
-    transparent 70%
-  );
+  background: var(--color-card);
 }
 /* Dark only: the hero's card wash sits 4.7% off the page ground, and
    the 12% line border wasn't enough to hold the silhouette; 20% keeps

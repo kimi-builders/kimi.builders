@@ -597,7 +597,7 @@ export function UsageHeatmapGrid({
                         } ${stepClass(value)}`}
                         style={
                           isPeak
-                            ? { boxShadow: "0 0 0 1.5px var(--color-paper), 0 0 16px color-mix(in srgb, var(--color-viz-blue-electric) 45%, transparent)" }
+                            ? { boxShadow: "0 0 0 1.5px var(--color-paper)" }
                             : undefined
                         }
                         onMouseEnter={(event) => setHovered({ weekday, hour, ...tooltipPos(event, viewportRef.current, 252, 230) })}
