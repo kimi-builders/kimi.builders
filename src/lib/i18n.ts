@@ -1768,6 +1768,7 @@ const DICT = {
     en: "Hidden by moderators — no longer public; only you and moderators can see it.",
   },
   "mod.menu": { zh: "管理", en: "Moderate" },
+  "video.play": { zh: "播放视频", en: "Play video" },
   "mod.hide": { zh: "屏蔽", en: "Hide" },
   "mod.unhide": { zh: "解除屏蔽", en: "Unhide" },
   "mod.hidePrompt": {

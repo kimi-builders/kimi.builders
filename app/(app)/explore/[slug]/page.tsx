@@ -471,7 +471,7 @@ async function GuideDetail({
       label: zh ? "视频" : "Video",
       panel: (
         <div className="border-b border-line py-9">
-          <VideoEmbed provider={v.provider} id={v.id} title={tutorial.title} />
+          <VideoEmbed provider={v.provider} id={v.id} title={tutorial.title} locale={locale} />
           <p className="mt-4">
             <a
               href={watchUrl}

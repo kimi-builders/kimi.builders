@@ -515,6 +515,14 @@ html[data-nav="1"] .leftnav .nav-item {
   padding-left: 0;
   padding-right: 0;
 }
+/* The interface pair's bordered keys center their icons the same way
+   when collapsed: the label hides, and justify-start's left-hugging
+   icon sat off-center inside the full-width border. */
+html[data-nav="1"] .leftnav .panel-pair button {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
 /* The collapse/expand button's own icon swaps by state. */
 html[data-nav="1"] .only-nav-full {
   display: none !important;
