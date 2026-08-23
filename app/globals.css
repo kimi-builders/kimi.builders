@@ -1,13 +1,17 @@
 @import "tailwindcss";
 
-/* kimi.builders UI tokens —— 对齐 Kimi 官方设计令牌(抓自 kimi.com theme-*.js):
-   暗色 Bg.Primary #121212 / Labels 白 84%·56% / Separators 白 12%;
-   亮色 GroundPC #FBFAF9 / Labels 黑 90%·60% / Separators 黑 13%。
-   三蓝分工(20260818):blue #007CFF = 焦点(当前态、关键数据、唯一主 CTA);
-   ui-blue = 交互蓝(链接、hover、次级操作),暗色 #1A88FF / 亮色 #1783FF(官方 UI 色);
-   品牌信号蓝 #1783FF 见 icon.svg 与 poster 门面。
-   moon = 抬升面(代码块/下拉/进度轨,官方 Bg.Secondary),line = 发丝分隔线
-   (官方 Separators.S1),card = 面板薄涂(官方 Fills.F1)。 */
+/* kimi.builders UI tokens — aligned with Kimi's official design tokens
+   (captured from kimi.com theme-*.js): dark Bg.Primary #121212 / labels
+   white 84%·56% / separators white 12%; light GroundPC #FBFAF9 / labels
+   black 90%·60% / separators black 13%.
+   Three blues, three jobs: blue #007CFF = focus (active states, key
+   data, the single primary CTA); ui-blue = interactive blue (links,
+   hover, secondary actions) — #1A88FF dark / #1783FF light (official UI
+   colors); the brand signal blue #1783FF lives in icon.svg and the poster
+   facade.
+   moon = raised surface (code blocks/dropdowns/progress tracks, official
+   Bg.Secondary); line = hairline separator (official Separators.S1);
+   card = panel wash (official Fills.F1). */
 @theme {
   --color-bg: #121212;
   --color-moon: #1f1f1f;
@@ -15,14 +19,16 @@
   --color-blue: #007cff;
   --color-ui-blue: #1a88ff;
   --color-blue-text: #a0daf7;
-  /* grey 0.56→0.62(20260815 评审):10-11px 小字在 #121212 上约 4.5:1 踩 WCAG AA 线,
-     提到 0.62 ≈ 6.4:1,小字号场景留出安全余量;层级观感几乎不变。 */
+  /* grey 0.56 -> 0.62: 10-11px copy on #121212 sat at ~4.5:1, right on the
+     WCAG AA line; 0.62 lands at ~6.4:1, leaving headroom for small sizes
+     while the visual hierarchy barely moves. */
   --color-grey: rgb(255 255 255 / 0.62);
   --color-line: rgb(255 255 255 / 0.12);
   --color-card: rgb(255 255 255 / 0.05);
 
-  /* Kimi 数据可视化语义色。品牌色、图表色和状态色分层，
-     组件不得再通过单一 blue 的透明度临时拼出色阶。 */
+  /* Kimi data-visualization semantic colors. Brand, chart, and status
+     colors are layered; components must not improvise scales by alpha of
+     the single blue. */
   --color-viz-blue-deep: #002f5b;
   --color-viz-blue-primary: #007cff;
   --color-viz-blue-bright: #00a1ff;
@@ -48,12 +54,15 @@
   --color-viz-sequential-4: #a0daf7;
   --color-viz-sequential-5: #00f6ff;
 
-  /* UI 状态色(20260818 收编):柔和底 + 文字/图标冗余,替代 Tailwind 字面
-     red/amber/emerald(亮色主题下对比度不达标)。-fg 后缀为文字态,随主题翻转;
-     底色用法如 bg-status-danger/10,描边如 border-status-danger/40。
-     warn 20260821 调离官方柠檬黄绿 #F4F9A7:与 ok #B3F4A8 明度色相双近,
-     同屏(热图 ok/warn 相邻格、stale 三元)难瞬间区分;向琥珀拉到 #F7E08E,
-     保持柔和底体质,色相与绿/粉拉开(评审建议 1)。 */
+  /* UI status colors: soft fill plus redundant text/icon, replacing
+     Tailwind's literal red/amber/emerald (contrast failed on light theme).
+     The -fg suffix is the text variant and flips with the theme; fills go
+     like bg-status-danger/10, borders like border-status-danger/40.
+     warn deliberately sits off the official lemon-yellow #F4F9A7: too
+     close to ok #B3F4A8 in both lightness and hue — adjacent heatmap
+     cells and the stale triad couldn't be told apart at a glance. Pulled
+     to amber #F7E08E, keeping the soft-fill body and separating its hue
+     from green and pink. */
   --color-status-ok: #b3f4a8;
   --color-status-ok-fg: #b3f4a8;
   --color-status-warn: #f7e08e;
@@ -61,9 +70,10 @@
   --color-status-danger: #ffd1d4;
   --color-status-danger-fg: #ffd1d4;
 
-  /* 动效令牌(20260818 P2):与 kimi-brand tokens 第 10 节对齐。时长五档
-     120/200/350/600/900ms;生长类一律 ease-grow(快入稳收);
-     transition-* 默认时长收敛到 120ms。 */
+  /* Motion tokens: aligned with kimi-brand tokens section 10. Five
+     duration steps 120/200/350/600/900ms; growth animations always use
+     ease-grow (fast in, settled out); transition-* defaults converge on
+     120ms. */
   --transition-duration-instant: 120ms;
   --transition-duration-fast: 200ms;
   --transition-duration-base: 350ms;
@@ -73,30 +83,37 @@
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --default-transition-duration: 120ms;
 
-  /* 圆角对齐四级序列 6/10/16/24(20260818 P2):lg 8→10、xl 12→16;
-     poster 气质由下方 data-vibe 规则全部归零,不受影响。 */
+  /* Radii align to the four-step scale 6/10/16/24 (lg 8->10, xl 12->16);
+     the poster vibe zeroes them all via the data-vibe rules below and is
+     unaffected. */
   --radius-lg: 10px;
   --radius-xl: 16px;
 
-  /* 深色锚点登记:ink #121212 为主锚点;夜幕系是首页海报门面的品牌氛围派生,
-     登记在此,不再散落。 */
+  /* Dark anchors registry: ink #121212 is the primary anchor; the
+     night series is the home poster facade's brand-ambience derivative,
+     registered here so it stops scattering. */
   --color-night: #0e0e13;
   --color-night-moon: #1b1b25;
 
-  /* 字体角色唯一来源在下方 :root(--font-ui / --font-technical / --font-human),
-     这里只做引用,保持 Tailwind 工具类与自定义类同栈。
-     --font-human 例外(20260819):@theme 不能自引用同名变量,这里落字面栈,
-     值与 :root 保持一致——引语/宣言的人文字体质感(手册:Sentient/宋体系)。 */
+  /* Font roles have their single source in :root below (--font-ui /
+     --font-technical / --font-human); these only reference them so
+     Tailwind utilities and custom classes share one stack.
+     --font-human is the exception: @theme cannot self-reference a
+     variable of the same name, so the literal stack lands here and must
+     stay in sync with :root — the human typeface for quotes and
+     manifestos (per the manual: Sentient/Song families). */
   --font-mono: var(--font-technical);
   --font-sans: var(--font-ui);
   --font-human: "Iowan Old Style", "Songti SC", "Noto Serif SC", serif;
 }
 
-/* 亮色主题:root layout 按 cookie 给 <html data-theme>,这里覆盖令牌即可,
-   组件全部引用 var(--color-*) 所以零改动跟随。 */
+/* Light theme: the root layout sets <html data-theme> from the cookie,
+   so overriding tokens here is enough — every component reads
+   var(--color-*) and follows with zero changes. */
 :root {
-  /* UA 控件(原生滚动条/表单控件)配色跟随主题:默认暗色,亮色覆盖。
-     没这句,常显滚动条在暗色页里渲染成刺眼的白色轨道。 */
+  /* UA widgets (native scrollbars/form controls) follow the theme: dark
+     by default, overridden for light. Without this, persistent
+     scrollbars render glaring white tracks on dark pages. */
   color-scheme: dark;
 }
 
@@ -121,24 +138,32 @@
   --color-viz-sequential-3: #00a1ff;
   --color-viz-sequential-4: #007cff;
   --color-viz-sequential-5: #002f5b;
-  /* 状态文字色亮版: pastel 文字在 #fbfaf9 上不达标,换成深底字(与 viz 一致) */
+  /* Status text, light variant: pastel text fails on #fbfaf9, so flip to
+     dark-on-pastel (same as the viz palette). */
   --color-status-ok-fg: #25613b;
   --color-status-warn-fg: #6b5d10;
   --color-status-danger-fg: #a61b32;
 }
 
-/* ---- 视觉气质(20260815 拍板):工程棱角 poster(默认) / 圆润经典 soft ----
-   Tailwind v4 的 rounded-* 全部解析为 var(--radius-*)(裸 rounded 例外,
-   走裸 --radius),投影经 --tw-shadow
-   组合——气质切换只需覆盖变量,全站组件零改动跟随(与主题色同一手法):
-   poster = 圆角归零 + 投影置空 + 卡片涂层降档(纯细线分隔,hover 微反馈保留);
-   rounded-full 是字面量,头像/角标/开关/×钮等功能圆按规格保留。
-   --tw-shadow 置空不触碰 ring/焦点环变量,选中态描边(leaderboard ring)不受影响。
-   未分层规则优先于 utilities 层,与上方 .leftnav 注释同一依据。
-   切换器见 pref-controls 的 VibeToggle:cookie kb_vibe + <html data-vibe> 乐观 UI。 */
+/* ---- Visual vibe: angular poster (default) / rounded classic soft ----
+   Tailwind v4 resolves every rounded-* to var(--radius-*) (bare `rounded`
+   is the exception, using bare --radius) and composes shadows through
+   --tw-shadow — so switching the vibe only overrides variables and the
+   whole site follows with zero component changes (same lever as theme
+   colors): poster = radii zeroed + shadows emptied + card washes demoted
+   (thin-line separation only, hover feedback kept); rounded-full is a
+   literal, so functional circles (avatars/badges/toggles/close buttons)
+   keep their spec.
+   Emptying --tw-shadow never touches ring/focus-ring variables, so
+   selected-state outlines (leaderboard ring) are unaffected.
+   Unlayered rules beat the utilities layer, same basis as the .leftnav
+   comment above.
+   The switch is pref-controls' VibeToggle: cookie kb_vibe +
+   <html data-vibe>, optimistic UI. */
 :root[data-vibe="poster"] {
-  /* 裸 rounded 解析为 var(--radius)、rounded-4xl 走 --radius-4xl,
-     两者不在 --radius-xs…3xl 序列里,归零必须显式列出(20260816 补漏) */
+  /* Bare `rounded` resolves to var(--radius) and rounded-4xl to
+     --radius-4xl; neither is in the --radius-xs…3xl series, so zeroing
+     must list them explicitly. */
   --radius: 0px;
   --radius-xs: 0px;
   --radius-sm: 0px;
@@ -153,17 +178,20 @@
 :root[data-theme="light"][data-vibe="poster"] {
   --color-card: rgb(0 0 0 / 0.025);
 }
-/* 首页海报作用域会就近重声明令牌,盖掉 :root 级覆盖——须显式跟进降档 */
+/* The home poster scope re-declares tokens locally, beating :root-level
+   overrides — the demotion must be repeated here explicitly. */
 :root[data-vibe="poster"] [data-theme-scope="poster"] {
   --color-card: rgb(255 255 255 / 0.01);
 }
-/* 投影统一置空(0 0 #0000 与 Tailwind 空影初始值同形,只灭 --tw-shadow 一项) */
+/* Shadows emptied uniformly (0 0 #0000 matches Tailwind's empty-shadow
+   initial value; only --tw-shadow is killed). */
 :root[data-vibe="poster"] *,
 :root[data-vibe="poster"] ::before,
 :root[data-vibe="poster"] ::after {
   --tw-shadow: 0 0 #0000;
 }
-/* 气质切换按钮的图标/文案按态显隐(模式同 only-dark/only-light) */
+/* Vibe-toggle icons/copy swap by state (same pattern as
+   only-dark/only-light). */
 :root[data-vibe="poster"] .only-soft {
   display: none !important;
 }
@@ -171,11 +199,13 @@
   display: none !important;
 }
 
-/* 主题切换过渡(20260821 评审):ThemeToggle 翻 data-theme 时短暂挂
-   data-theme-anim(260ms 后摘除),窗口内大面积颜色走 200ms 过渡
-   (动效令牌 fast 档);范围限 background/border/color/fill/stroke,
-   transform/opacity 不掺和。!important 盖过组件各自的 120ms
-   transition-colors,窗口结束即回归。reduce 态(手动或系统)全跳过。 */
+/* Theme-switch transition: ThemeToggle briefly sets data-theme-anim
+   while flipping data-theme (removed after 260ms); inside that window
+   large-surface colors transition over 200ms (the fast motion step),
+   limited to background/border/color/fill/stroke — transform/opacity
+   stay out. !important beats each component's own 120ms
+   transition-colors, and normal service resumes when the window closes.
+   Reduce mode (manual or system) skips all of it. */
 @media (prefers-reduced-motion: no-preference) {
   html:not([data-motion="reduce"])[data-theme-anim] body,
   html:not([data-motion="reduce"])[data-theme-anim] body * {
@@ -188,15 +218,19 @@
   }
 }
 
-/* 海报门面作用域(首页):跟随 UI 主题的双皮肤暖纸编辑色
-   (不跟随 App UI 的官方中性灰,保持品牌暖纸气质)。
-   默认暗色「夜幕版」;亮色「日间纸感版」由下方 [data-theme="light"] 覆盖,
-   ThemeToggle 翻 <html data-theme> 即整页即时切换(乐观 UI,零网络)。
-   在 wrapper 上重声明令牌,子树 var() 解析就近取这里的值。
-   background/color 也要在这里显式重设:body 规则算出的颜色是按 <html>
-   主题解析后再继承下来的,光换令牌挡不住继承。 */
+/* Poster facade scope (home): warm-paper editorial colors with two skins
+   following the UI theme (not the App UI's neutral greys — the brand's
+   warm-paper character is kept). Dark "night" is the default; the light
+   "daytime paper" variant comes from the [data-theme="light"] override
+   below — ThemeToggle flips <html data-theme> and the whole facade
+   switches instantly (optimistic UI, zero network).
+   Tokens redeclared on the wrapper win the subtree's var() lookups.
+   background/color must be reset here too: body's computed colors were
+   resolved under the <html> theme before inheriting down, so swapping
+   tokens alone cannot beat inheritance. */
 [data-theme-scope="poster"] {
-  /* 夜幕海报:连 UA 滚动条也按暗色渲染(亮色 UI 下进入海报不突兀) */
+  /* Night poster: UA scrollbars render dark too (entering the poster
+     from a light UI doesn't jar). */
   color-scheme: dark;
   --color-bg: var(--color-night);
   --color-moon: var(--color-night-moon);
@@ -208,10 +242,12 @@
   background: var(--color-bg);
   color: var(--color-paper);
 }
-/* 日间纸感海报:暖纸编辑色系翻成纸面墨色;
-   画布 20260819 起与站点内部亮色底一致(#FBFAF9,官方 GroundPC 观察值);
-   文字/边线保留暖纸墨色系。hero Logo 同日统一为深色标志(浅色主题裁圆形
-   夜幕徽章),原浅色专版 logo-animated-light.svg 下线。 */
+/* Daytime paper poster: the warm-paper editorial palette flips to ink on
+   paper; the canvas matches the site's interior light ground (#FBFAF9,
+   the observed official GroundPC), while text/edges keep the warm-paper
+   inks. The hero logo is the dark mark in both themes (light crops it
+   into the round night badge; the light-only logo-animated-light.svg is
+   retired). */
 [data-theme="light"] [data-theme-scope="poster"] {
   color-scheme: light;
   --color-bg: #fbfaf9;
@@ -222,13 +258,15 @@
   --color-line: rgb(43 38 32 / 0.14);
   --color-card: rgb(0 0 0 / 0.022);
 }
-/* poster 气质在亮色海报下的涂层降档(与上方暗色跟进同思路,放最后保优先) */
+/* Poster-vibe wash demotion under the light facade (same idea as the
+   dark follow-up above; placed last to keep precedence). */
 :root[data-theme="light"][data-vibe="poster"] [data-theme-scope="poster"] {
   --color-card: rgb(0 0 0 / 0.018);
 }
 
-/* 数据提示卡统一贴近锚点上方。亮色使用 Kimi 式中性深灰浮层，
-   不再让白色卡片与浅色图表背景混在一起。 */
+/* Data tip cards sit just above their anchor. On light they use the
+   Kimi-style neutral dark-grey popover, so white cards stop blending
+   into light chart backgrounds. */
 .kb-data-tooltip {
   transform: translateY(-100%);
   transform-origin: bottom center;
@@ -252,8 +290,10 @@
   --color-viz-surface: #4a4a4a;
 }
 
-/* 始终为纵向滚动条预留槽位。内容长短切换时三栏画布宽度不再变化，
-   社区 / 关于 / 作品 / Awesome 等菜单页保持同一主列边界。 */
+/* Always reserve the vertical-scrollbar gutter. Switching between long
+   and short content no longer changes the three-column canvas width —
+   menu pages (community / about / works / Awesome) keep one stable
+   main-column edge. */
 html {
   scrollbar-gutter: stable;
 }
@@ -269,8 +309,8 @@ body {
   background: color-mix(in srgb, var(--color-blue) 35%, transparent);
 }
 
-/* 社区 Markdown 正文(components/Markdown.tsx)—— 硬边、细线、蓝强调,
-   无圆角无阴影,与品牌语言一致。 */
+/* Community markdown body (components/Markdown.tsx) — hard edges, thin
+   lines, blue accents; no radii, no shadows, in the brand language. */
 .md {
   font-size: 15px;
   line-height: 1.8;
@@ -361,11 +401,12 @@ body {
   color: var(--color-grey);
 }
 
-/* ---- 偏好切换:乐观 UI 的支撑规则 ----
-   切换动作在客户端先改 <html> 属性 + 写 cookie(零网络,立即生效);
-   SSR 首屏按 cookie 直出同一组属性,两侧永远一致。 */
+/* ---- Preference toggles: the rules backing the optimistic UI ----
+   Toggling first changes the <html> attribute client-side and writes
+   the cookie (zero network, instant effect); SSR first paint emits the
+   same attributes from the cookie, so both sides always agree. */
 
-/* 按当前主题显隐(dark 下藏 .only-light,反之亦然) */
+/* Show/hide by current theme (dark hides .only-light, and vice versa). */
 [data-theme="dark"] .only-light {
   display: none !important;
 }
@@ -373,7 +414,7 @@ body {
   display: none !important;
 }
 
-/* 按 UI 语言显隐(<html lang> 由 root layout 直出) */
+/* Show/hide by UI language (<html lang> is emitted by the root layout). */
 html[lang="zh-CN"] .only-en {
   display: none !important;
 }
@@ -381,13 +422,17 @@ html[lang="en"] .only-zh {
   display: none !important;
 }
 
-/* ---- 纯图标控件的即时提示(data-tip):原生 title 悬停 ~1s 才出、触屏不出、
-   易被忽略——纯图标按钮(顶栏/首页右上角、左栏收起后的图标轨)常被看不出
-   作用。这里 hover / focus-visible 约 250ms 即浮出。
-   默认浮在上方居中;data-tip-side="bottom" 翻下方(贴视口上缘的按钮群),
-   data-tip-side="right" 右弹(左栏图标轨的菜单项),data-tip-align="right"
-   右对齐(贴视口右缘的按钮,居中会溢出)。取 .rail-tip 的元素仅在左栏
-   收起态弹提示(展开态有可见文案,不再叠加)。 */
+/* ---- Instant tooltips for icon-only controls (data-tip): native title
+   takes ~1s on hover, never appears on touch, and reads as noise —
+   icon-only buttons (top bar / home top-right / the collapsed left
+   rail) often go unexplained. Here hover / focus-visible surfaces a tip
+   in ~250ms.
+   Default floats above, centered; data-tip-side="bottom" flips below
+   (buttons hugging the viewport top), data-tip-side="right" pops right
+   (collapsed-rail menu items), data-tip-align="right" aligns right
+   (buttons at the viewport's right edge, where centering would
+   overflow). Elements carrying .rail-tip only tip while the left rail is
+   collapsed (the expanded state has visible labels — no stacking). */
 [data-tip] {
   position: relative;
 }
@@ -430,19 +475,22 @@ html[lang="en"] .only-zh {
 [data-tip]:focus-visible::after {
   opacity: 1;
 }
-/* 左栏项(.rail-tip)仅在收起态弹提示;展开态文案可见,提示反而是噪音 */
+/* Left-rail items (.rail-tip) only tip while collapsed; the expanded
+   state shows labels, a tip would be noise. */
 html:not([data-nav="1"]) .rail-tip[data-tip]:hover::after,
 html:not([data-nav="1"]) .rail-tip[data-tip]:focus-visible::after {
   opacity: 0;
 }
-/* 图标轨模式下放开左栏滚动裁切,右弹提示才不被剪;
-   轨道内容只剩图标,正常视口下不会纵向溢出 */
+/* Icon-track mode releases the left rail's scroll clipping so
+   right-popping tips don't get cut; the track holds icons only and
+   won't overflow vertically in normal viewports. */
 html[data-nav="1"] .leftnav {
   overflow: visible;
 }
 
-/* 左栏收起:结构常渲染、纯 CSS 收束,切换不等网络。
-   未加 layer,优先于 Tailwind utilities 层。 */
+/* Left-rail collapse: structure always rendered, pure CSS retraction —
+   toggling never waits on the network.
+   Unlayered, so it beats the Tailwind utilities layer. */
 .leftnav {
   width: 14rem; /* w-56,与三栏居中容器的栏宽数学一致 */
 }
@@ -457,7 +505,7 @@ html[data-nav="1"] .leftnav .nav-item {
   padding-left: 0;
   padding-right: 0;
 }
-/* 收起/展开按钮自身的图标按态切换 */
+/* The collapse/expand button's own icon swaps by state. */
 html[data-nav="1"] .only-nav-full {
   display: none !important;
 }
@@ -465,19 +513,26 @@ html:not([data-nav="1"]) .only-nav-collapsed {
   display: none !important;
 }
 
-/* 右栏隐藏:结构常渲染、纯 CSS 收束,切换零网络。开关在左栏底部「界面」组
-   (pref-controls 的 SidebarToggle),隐藏后不再留细轨重开按钮。
-   哪些路由有右栏、主列多宽,由右栏注册表决定(app/(app)/_components/right-rail.ts
-   的 railFor;usage/个人主页无右栏且主列放宽到 1000)——原 :has(> .usage-dashboard)
-   加宽 hack 已收编进注册表,布局壳不再靠内容嗅探。
-   隐藏时整列(含 gap-6 与 lg:ml-2)退出 flex 布局;主列放宽到 1000,与
-   usage / 个人主页的宽画布同宽。
-   宽度补偿的统一逻辑(20260822):收起导航与隐藏侧栏同一语义——腾出的
-   宽度补给中栏上限,而不是整组左移、右侧留洞;两态叠加时在 1000 基础上
-   再加收导航腾出的 10.5rem。文本阅读宽度由 .md-longform .md 的 40em
-   上限独立保护,中栏变宽只惠及卡片/栅格/页头。
-   未加 layer,优先于 Tailwind utilities 层;仅 ≥lg/xl 生效(两栏本就只在
-   桌面显示)。 */
+/* Right-rail hiding: structure always rendered, pure CSS retraction,
+   zero network on toggle. The switch lives in the left rail's
+   "interface" group (pref-controls' SidebarToggle); hidden leaves no
+   thin-track reopen button.
+   Which routes get a rail, and how wide the main column is, comes from
+   the right-rail registry (railFor in app/(app)/_components/right-rail.ts;
+   usage/profile have no rail and widen to 1000) — the old
+   :has(> .usage-dashboard) widening hack was folded into the registry,
+   so the layout shell no longer sniffs content.
+   Hidden, the whole column (gap-6 and lg:ml-2 included) leaves the flex
+   layout; the main column relaxes to 1000, matching the usage/profile
+   wide canvas.
+   Width compensation, unified rule: collapsing the nav and hiding the
+   sidebar mean the same thing — freed width feeds the main column's cap
+   instead of the group shifting left and leaving a hole; both states
+   together add the nav's freed 10.5rem on top of 1000. The reading
+   measure is independently guarded by .md-longform .md's em cap, so a
+   wider column only benefits cards/grids/headers.
+   Unlayered, beating the utilities layer; effective only at >=lg/xl
+   (the columns are desktop-only anyway). */
 html[data-sidebar="0"] .railgate {
   display: none;
 }
@@ -486,27 +541,30 @@ html[data-sidebar="0"] .railgate {
     max-width: 1000px;
   }
 }
-/* 收起导航:14rem 栏宽 - 3.5rem 图标轨 = 10.5rem 补给中栏 */
+/* Nav collapsed: 14rem rail - 3.5rem icon track = 10.5rem to the main
+   column. */
 @media (min-width: 1024px) {
   html[data-nav="1"] .maincol-rail {
     max-width: 968px; /* 800 + 10.5rem */
   }
 }
-/* 双开(收导航 + 藏侧栏):两份补偿叠加 */
+/* Both (nav collapsed + sidebar hidden): the two compensations stack. */
 @media (min-width: 1280px) {
   html[data-nav="1"][data-sidebar="0"] .maincol-rail {
     max-width: 1168px; /* 1000 + 10.5rem */
   }
 }
-/* 侧栏开关自身的图标/文案按态切换 */
+/* The sidebar toggle's own icon/copy swaps by state. */
 html[data-sidebar="0"] .only-sidebar-full {
   display: none !important;
 }
 html:not([data-sidebar="0"]) .only-sidebar-hidden {
   display: none !important;
 }
-/* 左栏「界面」双键:纵排整行(20260822——并排半宽时 EN "Hide sidebar"
-   被截成 side…);左栏收起时 nav-label 隐藏,自然收敛成纵排图标键 */
+/* Left-rail "interface" key pair: stacked vertically as full rows
+   (side by side at half width, EN "Hide sidebar" truncated to side…);
+   with the rail collapsed the nav-labels hide and it naturally converges
+   to icon keys. */
 .panel-pair > form {
   flex: 1 1 0;
   min-width: 0;
@@ -517,8 +575,9 @@ html:not([data-sidebar="0"]) .only-sidebar-hidden {
 .panel-pair > form > button {
   width: 100%;
   min-width: 0;
-  /* 0.75rem 与导航项/「界面」标签的 px-3 左缘对齐(此规则未分层,
-     优先于 Tailwind utilities 层,组件里的 padding 类不生效) */
+  /* 0.75rem aligns with the px-3 left edge of nav items / "interface"
+     labels (this rule is unlayered and beats the utilities layer, so
+     padding classes in components have no effect here). */
   padding-inline: 0.75rem;
 }
 .panel-pair .nav-label {
@@ -527,14 +586,17 @@ html:not([data-sidebar="0"]) .only-sidebar-hidden {
   white-space: nowrap;
 }
 
-/* 设置页偏好控件(语言 seg / 主题卡)的激活态:跟随 <html> 直出属性,SSR 即正确。
-   类名常量与 components/seg-classes.ts / pref-controls.tsx 的 ThemeCards 同步。 */
+/* Settings preference controls (language seg / theme cards) active
+   state: driven by the <html> attributes SSR emits, correct on first
+   paint. Class-name constants stay in sync with
+   components/seg-classes.ts and pref-controls.tsx's ThemeCards. */
 html[lang="zh-CN"] .seg-zh,
 html[lang="en"] .seg-en {
   background: var(--color-paper);
   color: var(--color-bg);
 }
-/* 设置页偏好控件的激活态:主题卡之外,气质卡同样跟随 <html> 直出属性 */
+/* Settings preference active state: beyond theme cards, vibe cards
+   follow the SSR <html> attributes the same way. */
 html[data-theme="dark"] .theme-card-dark,
 html[data-theme="light"] .theme-card-light {
   border-color: var(--color-blue);
@@ -544,7 +606,7 @@ html[data-vibe="soft"] .vibe-card-soft {
   border-color: var(--color-blue);
 }
 
-/* ---- toast:操作反馈轻提示(Toaster 出口,2.6s 自灭)---- */
+/* ---- toast: light action feedback (Toaster outlet, 2.6s self-dismiss) ---- */
 @keyframes kb-toast-in {
   from {
     opacity: 0;
@@ -559,9 +621,11 @@ html[data-vibe="soft"] .vibe-card-soft {
   animation: kb-toast-in 0.2s ease-out;
 }
 
-/* ---- 首屏列表入场(20260815 评审):前 8 项 50ms 递增上浮淡入,
-   建立「内容在流动」的感知;「加载更多」追加的项(nth-child>8)不参与,
-   追加重放会显得刻意。容器加 .stagger-in 即可,纯 CSS 无组件改动。 ---- */
+/* ---- First-screen list entrance: the first 8 items rise-and-fade in
+   with 50ms steps, building the feel of content flowing; items appended
+   by "load more" (nth-child>8) don't join — replaying it on append
+   would read as forced. Add .stagger-in to the container; pure CSS, no
+   component changes. ---- */
 @keyframes kb-rise {
   from {
     opacity: 0;
@@ -581,9 +645,11 @@ html[data-vibe="soft"] .vibe-card-soft {
 .stagger-in > *:nth-child(7) { animation: kb-rise 0.35s ease-out 300ms both; }
 .stagger-in > *:nth-child(8) { animation: kb-rise 0.35s ease-out 350ms both; }
 
-/* ---- 全局动效降级(20260815 评审):前庭敏感用户对所有 CSS 动效/过渡的
-   统一出口,替代逐组件零散处理(此前仅 usage-pulse 一处有降级)。
-   SMIL(logo 双星绕轨)不受 CSS 管辖,属恒定慢速轨道运动,保留。 ---- */
+/* ---- Global motion opt-out: one outlet covering every CSS animation
+   and transition for vestibular-sensitive users, replacing
+   per-component patching (previously only usage-pulse had one).
+   SMIL (the logo's twin-star orbit) is outside CSS's reach — a constant
+   slow orbital motion, kept. ---- */
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
@@ -595,9 +661,11 @@ html[data-vibe="soft"] .vibe-card-soft {
   }
 }
 
-/* 手动「减少动效」(20260821 评审):设置页开关写 <html data-motion="reduce">,
-   与上方系统 prefers-reduced-motion 同一套降级——不是所有用户都知道系统级
-   设置在哪。两块规则保持同参,改一处记得同步另一处。 */
+/* Manual reduce-motion: the settings switch writes
+   <html data-motion="reduce"> and shares the degradation above with the
+   system prefers-reduced-motion — not everyone knows where the OS
+   setting lives. Keep both rule blocks in lockstep: change one, sync the
+   other. */
 html[data-motion="reduce"] *,
 html[data-motion="reduce"] ::before,
 html[data-motion="reduce"] ::after {
@@ -628,9 +696,11 @@ html[data-motion="reduce"] ::after {
   }
 }
 
-/* ---- 用量中心:Kimi Design 设计稿改造(页级 scoped,不进全局 token)---- */
-/* Hero 卡:顶部细渐变 + 右上角蓝色径向微光。color-mix 基于 --color-blue,
-   深浅主题都安全;微光只做质感,不承担信息。 */
+/* ---- Usage hub: restyled after the Kimi Design spec (page-scoped,
+   never promoted to global tokens) ---- */
+/* Hero card: a thin top gradient plus a blue radial glow in the top-right
+   corner. color-mix derives from --color-blue, safe on both themes; the
+   glow is texture only and carries no information. */
 .usage-hero {
   position: relative;
   overflow: hidden;
@@ -650,7 +720,8 @@ html[data-motion="reduce"] ::after {
     transparent 70%
   );
 }
-/* 同步状态脉冲圆点(状态 mint 令牌 = 同步链路健康;连续脉冲保持匀速)。 */
+/* Sync-status pulsing dot (the mint status token = a healthy sync link;
+   the pulse stays uniform). */
 @keyframes usage-pulse {
   0% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-status-ok) 45%, transparent);
@@ -678,7 +749,8 @@ html[data-motion="reduce"] .usage-pulse-dot {
   animation: none;
 }
 
-/* ---- feed 卡格式化摘要(.md 的紧凑降档位,~5 行截断 + 底部渐隐)---- */
+/* ---- Feed-card formatted digest (.md's compact tier: ~5-line clamp
+   plus a bottom fade) ---- */
 .md-feed .md {
   font-size: 13px;
   line-height: 1.75;
@@ -708,7 +780,9 @@ html[data-motion="reduce"] .usage-pulse-dot {
 .md-feed .md strong {
   color: var(--color-paper);
 }
-/* 图片位预留:外链图现在就能渲染(限高圆角);对象存储就绪后只补上传,版式不动。 */
+/* Image slot reserved: external images render today (height-capped,
+   rounded); when object storage lands, only upload gets added — the
+   layout stays. */
 .md-feed .md img {
   max-height: 160px;
   border-radius: 10px;
@@ -727,7 +801,7 @@ html[data-motion="reduce"] .usage-pulse-dot {
   left: 0;
   height: 2.6em;
   pointer-events: none;
-  /* 渐隐到卡片合成底色(paper 5% 叠在 bg 上) */
+  /* Fades into the card's composite ground (paper 5% over bg). */
   background: linear-gradient(
     180deg,
     transparent,
@@ -735,16 +809,20 @@ html[data-motion="reduce"] .usage-pulse-dot {
   );
 }
 
-/* ---- 长文阅读档(20260821 评审):月刊评鉴与教程文稿是「读文章」场景,
-   与社区帖/评论的「刷列表」拉开排版档次——CJK 字形密度高,长读 15px 偏小
-   易疲劳;16.5px/1.9 是月刊正文主档。外层挂类(Markdown 内部仍是 .md),
-   模式同 .md-feed;社区帖/评论不受影响。 ---- */
+/* ---- Longform reading tier: monthly reviews and guide transcripts are
+   a "reading an article" scene and get a typographic step above the
+   community feed's "skimming lists" — CJK glyphs are dense and 15px
+   tires over long reads; 16.5px/1.9 is the magazine-body setting. The
+   class goes on the wrapper (Markdown's interior stays .md), same
+   pattern as .md-feed; community posts/comments are unaffected. ---- */
 .md-longform .md {
   font-size: 16.5px;
   line-height: 1.9;
-  /* 长文行宽(20260821 评审):主列 800px 下正文约 46 字/行,中文无词间
-     空格,回扫成本高;收窄到 40em(≈660px,38-40 字/行)进最佳阅读区间。
-     表格/pre 跟随窄列,溢出各自已有兜底(overflow-x)。 */
+  /* Longform measure: an 800px main column runs ~46 chars/line and
+     Chinese has no inter-word spaces, making the return sweep costly;
+     narrowed to 40em (~660px, 38-40 chars/line) into the best reading
+     band. Tables/pre follow the narrow column; their overflows already
+     have overflow-x guards. */
   max-width: 40em;
 }
 .md-longform .md p,
@@ -765,8 +843,10 @@ html[data-motion="reduce"] .usage-pulse-dot {
   font-size: 1.05em;
 }
 
-/* 名称砖 · theme 档(20260914):不用中性 moon——深色取首页门面的深空
-   #0E0E13 + 品牌纸 #EFE8DC,浅色取站点背景白(令牌随主题);与品牌资产同一色系。 */
+/* Name tile, theme tier: not the neutral moon — dark takes the home
+   facade's deep-space #0E0E13 + brand paper #EFE8DC, light takes the
+   site's background white (token-flipped); same family as the brand
+   assets. */
 .work-cover-tile {
   background: #0e0e13;
   color: #efe8dc;
@@ -782,12 +862,15 @@ html[data-motion="reduce"] .usage-pulse-dot {
   color: var(--color-grey);
 }
 
-/* 名称砖 · 固定色档(20260918 双主题 + 降饱和统一色温;红档同日下线):色值与
-   主题切换都在 CSS——深色取降饱和深调(冷白文字,全站同一套白),浅色取同色相
-   淡染(色档深色文字),深色块不再贴浅底。色档 id 与 src/lib/cover-tones.ts
-   注册表一一对应。
-   .work-tone 公共层:底部渐变给纯平色一点层次;文字冷白 88%,eyebrow 走继承
-   降不透明度。 */
+/* Name tile, fixed tints (dual-theme, desaturated to one color
+   temperature): values and theme flipping both live in CSS — dark uses
+   desaturated deep tints (cold-white text, one shared white site-wide),
+   light uses pale washes of the same hue (tint-dark text), so dark
+   blocks never sit on light grounds. Tint ids map 1:1 to the registry
+   in src/lib/cover-tones.ts.
+   Shared .work-tone layer: a bottom gradient gives the flat color a hint
+   of depth; text is 88% cold white, the eyebrow inherits with lowered
+   opacity. */
 .work-tone {
   position: relative;
   color: rgb(255 255 255 / 0.88);
@@ -806,10 +889,13 @@ html[data-motion="reduce"] .usage-pulse-dot {
 .work-tone .work-tone__logo {
   border-color: rgb(255 255 255 / 0.15);
 }
-/* 名称砖纹理变体(20260821 评审):细网格给纯平色档一点工程气质的节奏,
-   按砖面标识哈希取舍(cover-tones.ts 的 coverTextureClass),色档不变、
-   密度上来后同色砖不再千篇一律。纹理用 currentColor 派生——深砖(冷白
-   文字)出白线、浅砖(深字)出墨线,双主题零额外覆盖;置于文字层下。 */
+/* Name tile texture variant: a fine grid gives flat tints some
+   engineering rhythm, chosen by the tile's slug hash
+   (coverTextureClass in cover-tones.ts) — the tint is unchanged, and
+   once density rises same-tint tiles stop looking identical. Texture
+   derives from currentColor: dark tiles (cold-white text) get white
+   lines, light tiles (dark text) get ink lines — both themes with zero
+   extra overrides; layered under the text. */
 .work-tile-grid::before {
   content: "";
   position: absolute;
@@ -827,11 +913,16 @@ html[data-motion="reduce"] .usage-pulse-dot {
       transparent 1px 12px
     );
 }
-/* 色档色值(20260819 换入 Kimi 品牌体系,不再自造色相;id 不变,存量零迁移):
-   蓝 = 官方深蓝 #002F5B(深色)/ 官方浅蓝 #A0DAF7(浅色,深蓝字);
-   绿档改薄荷 = 官方状态绿 #B3F4A8 + ink 字(官方「柔和底+深字」状态色对,
-   深浅主题同渲染;浅底不压底部黑渐变,改白色柔光);
-   黑 = 官方 CLI 纯黑 #000(深色,比页底 #121212 更黑)/ ink #121212(浅色深砖)。 */
+/* Tint values (drawn from the Kimi brand system — no invented hues; ids
+   unchanged, zero migration for existing rows):
+   blue = official deep blue #002F5B (dark) / official pale blue #A0DAF7
+   (light, deep-blue text);
+   green is mint = official status green #B3F4A8 + ink text (the official
+   "soft fill + dark text" status pair, rendered the same on both
+   themes; on the pale base it swaps the bottom black gradient for a
+   white glow);
+   black = official CLI pure black #000 (dark, blacker than the page's
+   #121212) / ink #121212 (light's dark tile). */
 .work-tone-green {
   background: #b3f4a8;
   color: #121212;
@@ -875,9 +966,11 @@ html[data-motion="reduce"] .usage-pulse-dot {
   background: linear-gradient(to top, rgb(0 0 0 / 0.28), transparent 36%);
 }
 
-/* @kimi 召唤词高亮(20260816):正文/评论里的 @kimi 包成蓝色 chip,
-   参照评论 AI 徽章的 blue 描边规格;rehypeKimiMention 注入。
-   圆角走 var(--radius-md) 跟随 vibe(poster 下归零)。 */
+/* @kimi summon highlight: @kimi in bodies/comments wraps as a blue
+   chip, matching the comment AI badge's blue outline spec; injected by
+   rehypeKimiMention.
+   Radius goes through var(--radius-md) to follow the vibe (zeroed
+   under poster). */
 .mention-kimi {
   display: inline-block;
   border: 1px solid color-mix(in srgb, var(--color-ui-blue) 45%, transparent);
@@ -927,12 +1020,17 @@ main h1 {
   letter-spacing: -0.025em;
 }
 
-/* ---- 版式基元(20260819 版式对齐):Kimi 品牌手册字阶的站内落地,
-   对齐 kimi-brand tokens 第 6 节(字阶/字距/行高)。
-   手册 H1 44-52px 按 800px 主列收敛为 36-44 clamp;H2 取手册下限区 26-32;
-   H3 定 20px 是密度折衷(手册 H3 24-28 是区块级,行内条目标题保列表密度);
-   eyebrow = mono 12px 全大写 +0.08em(技术标签规范);lede = 正文级 16px 导语。
-   类选择器优先级高于上方 main h1 全局规则,迁移页面用它覆盖,未迁移页面不受影响。 ---- */
+/* ---- Typographic primitives: the brand manual's type scale landed
+   on-site, aligned with kimi-brand tokens section 6 (scale/tracking/
+   leading).
+   The manual's 44-52px H1 compresses to a 36-44 clamp for the 800px
+   main column; H2 takes the manual's lower band, 26-32; H3 sits at
+   20px as a density trade-off (the manual's 24-28 H3 is block-level —
+   inline item titles keep list density);
+   eyebrow = mono 12px uppercase +0.08em (technical-label spec); lede =
+   body-size 16px intro.
+   These class selectors outrank the global main h1 rules above:
+   migrated pages override with them, unmigrated pages are untouched. ---- */
 .kb-eyebrow {
   font-family: var(--font-technical);
   font-size: 12px;
@@ -972,11 +1070,13 @@ main h1 {
   color: var(--color-grey);
 }
 
-/* 月刊(letter)标题/导语的人文字体档(20260821 评审):letter 与 guide 同表
-   共架,需要一眼可辨的内容形态信号——字体比角标更强。serif 与 sans 的
-   同视觉重量换算:500/-0.01em(对照 sans 档的 600/-0.02em);导语同步
-   serif + 半档字号。guide 保持 sans 工程气质,eyebrow 仍 mono
-   (技术标签规范不破)。 */
+/* Monthly-letter (letter) title/lede human-typeface tier: letters and
+   guides share one table and scaffold, and need a shape signal readable
+   at a glance — a typeface says it louder than a badge. Serif at equal
+   visual weight to sans converts to 500/-0.01em (vs the sans tier's
+   600/-0.02em); the lede goes serif at half a step down in size. Guides
+   keep the sans engineering voice, eyebrows stay mono (technical-label
+   spec intact). */
 .kb-h1-human {
   font-family: var(--font-human);
   font-size: clamp(2.25rem, 1.75rem + 1.6vw, 2.75rem);
@@ -997,12 +1097,14 @@ main article p {
   line-height: 1.65;
 }
 
-/* 真导航链接的触控命中(20260821 收敛):原 main nav a 全局规则
-   (min-height + 字号)+ kb-control-group 豁免改为专门类——全局元素
-   选择器每多一个 nav 工具栏就要打一次豁免补丁,收敛后只有真导航
-   (页签条/前后篇导航/结构导览/首页入口)挂本类;工具栏分段控件
-   (seg)自带 h-11/min-h-0 外高,不受影响。字号由各站点自己的
-   text-* 控制,不再全局强设。 */
+/* Touch hit targets for true navigation links: the old global `main nav
+   a` rule (min-height + font size) plus kb-control-group exemptions
+   became a dedicated class — every new nav-shaped toolbar meant another
+   exemption patch on a global element selector. Now only true
+   navigation (tab bars / prev-next nav / structure nav / home entries)
+   carries this class; toolbar segmented controls (seg) bring their own
+   h-11/min-h-0 outer height and are unaffected. Font size is set by
+   each page's own text-* classes, never forced globally. */
 .kb-navlink {
   min-height: 2.5rem;
 }
@@ -1047,7 +1149,8 @@ form textarea {
   line-height: 1.5rem;
 }
 
-/* h1 不再全局强制 mono(20260818 评审):标题走 sans,字标场景由页面用 font-mono 类显式声明。 */
+/* h1 is no longer forced mono: headings go sans; wordmark cases declare
+   font-mono explicitly on the page. */
 
 body > main p {
   font-family: var(--font-ui);

@@ -1,6 +1,6 @@
 /* Comment-language ratchet: code comments migrate from Chinese to English
-   (docs/comment-style.md). This test scans .ts/.tsx sources for comment
-   lines containing CJK and enforces two invariants:
+   (docs/comment-style.md). This test scans .ts/.tsx/.css sources for
+   comment lines containing CJK and enforces two invariants:
    1. per-area counts never exceed the snapshot in tests/comment-baseline.json
       (conversions may only lower them; regenerate deliberately with
       UPDATE_BASELINE=1 npm test);
@@ -36,7 +36,7 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
     if (entry.isDirectory()) {
       if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
       listSourceFiles(path.join(dir, entry.name), acc);
-    } else if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) {
+    } else if (/\.(ts|tsx|css)$/.test(entry.name)) {
       acc.push(path.join(dir, entry.name));
     }
   }

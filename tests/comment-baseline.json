@@ -213,6 +213,7 @@
     "app/api/usage/share/route.tsx",
     "app/api/usage/share/tool-glyphs.ts",
     "app/api/usage/sync/route.ts",
+    "app/globals.css",
     "app/layout.tsx",
     "app/page.tsx",
     "components/AgentIcon.tsx",
