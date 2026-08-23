@@ -1767,6 +1767,7 @@ const DICT = {
     zh: "该内容已被管理员屏蔽,公开页面不再展示,仅你与管理员可见。",
     en: "Hidden by moderators — no longer public; only you and moderators can see it.",
   },
+  "mod.menu": { zh: "管理", en: "Moderate" },
   "mod.hide": { zh: "屏蔽", en: "Hide" },
   "mod.unhide": { zh: "解除屏蔽", en: "Unhide" },
   "mod.hidePrompt": {

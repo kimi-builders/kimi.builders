@@ -17,7 +17,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
-import { ArrowBigUp, ArrowLeft, Check, ExternalLink, MessageCircle } from "lucide-react";
+import { ArrowBigUp, ArrowLeft, Check, ExternalLink } from "lucide-react";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
@@ -40,6 +40,7 @@ import ShareButton from "@/components/ShareButton";
 import CommentSection from "../_components/CommentSection";
 import { loadCommentPage } from "../_components/comment-page";
 import FeaturedToggle from "../_components/FeaturedToggle";
+import ModMenu from "../_components/ModMenu";
 import PollVoteForm from "../_components/PollVoteForm";
 import PostOwnerActions from "../_components/PostOwnerActions";
 import SubscribeButton from "../_components/SubscribeButton";
@@ -99,15 +100,17 @@ export default async function PostPage({
           {post.hiddenReason ? ` — ${post.hiddenReason}` : ""}
         </p>
       )}
+      {/* Breadcrumb line stays a path: back + category + visibility
+          badges. Solved is a state, not a path segment — it rides next
+          to the title below (untitled posts keep it here). */}
       <div className="flex flex-wrap items-center gap-2 font-mono text-xs tracking-wider text-grey">
         <Link href="/community" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
           <ArrowLeft size={13} aria-hidden="true" />
           {t(locale, "nav.community")}
         </Link>
         <span className="font-mono text-xs text-grey"># {categoryLabel(locale, post.category)}</span>
-        {/* Solved: a quiet blue-text token, same weight as featured */}
-        {post.solvedAt && (
-          <span className="inline-flex items-center gap-1 font-mono text-xs text-ui-blue">
+        {!post.title && post.solvedAt && (
+          <span className="inline-flex items-center gap-1 rounded-md border border-ui-blue/50 px-1.5 py-px font-mono text-xs text-ui-blue">
             ✓ {t(locale, "post.solved")}
           </span>
         )}
@@ -142,14 +145,10 @@ export default async function PostPage({
         )}
       </div>
 
-      {post.title && (
-        <h1 className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">{post.title}</h1>
-      )}
-      <div
-        className={`flex items-center gap-3 font-mono text-xs text-grey ${
-          post.title ? "mt-3" : "mt-4"
-        }`}
-      >
+      {/* Byline above the title: the author anchors the card, the title
+          reads as their words — author-then-title also matches the feed
+          card grammar, so list -> detail keeps one reading direction. */}
+      <div className="mt-4 flex items-center gap-3 font-mono text-xs text-grey">
         <Avatar url={post.avatarUrl} handle={post.handle} size={20} />
         <Link
           href={`/u/${post.handle}`}
@@ -160,6 +159,19 @@ export default async function PostPage({
         <span>{relTime(post.createdAt, locale)}</span>
         {post.editedAt && <span>({t(locale, "post.edited")})</span>}
       </div>
+
+      {post.title && (
+        /* The solved chip sits outside the h1 so it never pollutes the
+           heading's accessible name. */
+        <div className="mt-2 flex flex-wrap items-center gap-x-3">
+          <h1 className="text-2xl font-semibold leading-snug sm:text-3xl">{post.title}</h1>
+          {post.solvedAt && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-ui-blue/50 px-1.5 py-px font-mono text-xs text-ui-blue">
+              ✓ {t(locale, "post.solved")}
+            </span>
+          )}
+        </div>
+      )}
 
       {post.bodyMd && (
         <div className={post.title ? "mt-8" : "mt-6"}>
@@ -244,14 +256,6 @@ export default async function PostPage({
             {post.score}
           </span>
         )}
-        <a
-          href="#comments"
-          title={t(locale, "post.comments", { n: commentPage.total })}
-          className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-ui-blue"
-        >
-          <MessageCircle size={14} />
-          {commentPage.total}
-        </a>
         {user && (
           <SubscribeButton
             postId={post.id}
@@ -267,24 +271,27 @@ export default async function PostPage({
             locale={locale}
           />
         )}
+        {/* Moderation cluster behind one menu entry: featuring + hide/
+            soft/hard delete lined up beside user actions read as noise
+            (re-authorized at the action layer regardless). The comment
+            count lives on the section heading below, not here. */}
         {canFeature && (
-          <FeaturedToggle
-            postId={post.id}
-            featured={postFeatured}
-            locale={locale}
-          />
-        )}
-        {/* Moderation bar: admin/mod (hide/soft-delete; hard delete admin-only), re-authorized at the action layer */}
-        {canFeature && (
-          <ModToolbar
-            targetType="post"
-            targetId={post.id}
-            hidden={!!post.hiddenAt}
-            isAdmin={user?.role === "admin"}
-            showSoftDelete={!isOwner}
-            locale={locale}
-            redirectAfter="/community"
-          />
+          <ModMenu locale={locale}>
+            <FeaturedToggle
+              postId={post.id}
+              featured={postFeatured}
+              locale={locale}
+            />
+            <ModToolbar
+              targetType="post"
+              targetId={post.id}
+              hidden={!!post.hiddenAt}
+              isAdmin={user?.role === "admin"}
+              showSoftDelete={!isOwner}
+              locale={locale}
+              redirectAfter="/community"
+            />
+          </ModMenu>
         )}
         <span className="ml-auto">
           <ShareButton

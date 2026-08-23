@@ -296,8 +296,12 @@ export default function CommentSection({
   const actions = (c: CommentView) => {
     const mine = meId !== null && c.authorId === meId;
     const busy = busyId === c.id;
+    /* Text actions idle at grey/60 and settle to grey when the row is
+       hovered (the li carries group) — the vote cluster keeps its
+       steady grey: votes are primary affordances, not chrome. */
+    const idle = "text-grey/60 transition-colors group-hover:text-grey";
     return (
-      <div className="mt-1.5 flex items-center gap-4 font-mono text-xs text-grey">
+      <div className="mt-1.5 flex items-center gap-4 font-mono text-xs">
         {loggedIn ? (
           <VoteCluster
             target="comment"
@@ -310,7 +314,7 @@ export default function CommentSection({
           />
         ) : (
           <span
-            className="inline-flex items-center gap-1"
+            className="inline-flex items-center gap-1 text-grey"
             title={t(locale, "post.loginToUpvote")}
           >
             <ArrowBigUp size={13} />
@@ -321,7 +325,7 @@ export default function CommentSection({
           <button
             type="button"
             onClick={() => startReply(c.id, c.author)}
-            className="transition-colors hover:text-ui-blue"
+            className={`${idle} hover:text-ui-blue`}
           >
             {t(locale, "post.reply")}
           </button>
@@ -332,7 +336,7 @@ export default function CommentSection({
               type="button"
               disabled={busy}
               onClick={() => setEditingId(editingId === c.id ? null : c.id)}
-              className="transition-colors hover:text-ui-blue disabled:opacity-40"
+              className={`${idle} hover:text-ui-blue disabled:opacity-40`}
             >
               {t(locale, "post.edit")}
             </button>
@@ -340,7 +344,7 @@ export default function CommentSection({
               type="button"
               disabled={busy}
               onClick={() => remove(c.id)}
-              className="transition-colors hover:text-paper disabled:opacity-40"
+              className={`${idle} hover:text-paper disabled:opacity-40`}
             >
               {busy ? t(locale, "post.submitting") : t(locale, "post.delete")}
             </button>
@@ -352,7 +356,7 @@ export default function CommentSection({
             type="button"
             disabled={busy}
             onClick={() => hideAsMod(c.id)}
-            className="transition-colors hover:text-status-danger-fg disabled:opacity-40"
+            className={`${idle} hover:text-status-danger-fg disabled:opacity-40`}
           >
             {t(locale, "mod.hide")}
           </button>
@@ -365,7 +369,7 @@ export default function CommentSection({
     <li
       key={c.id}
       id={`comment-${c.id}`}
-      className={`scroll-mt-24 ${!nested ? "py-4" : ""} ${
+      className={`group scroll-mt-24 ${!nested ? "py-4" : ""} ${
         c.score <= -3 ? "opacity-55" : ""
       }`}
       title={c.score <= -3 ? t(locale, "post.dimmed") : undefined}
@@ -446,30 +450,19 @@ export default function CommentSection({
 
   return (
     <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
-      <h2 id="comments" className="font-mono text-sm font-semibold text-paper">
+      {/* Section title in the site's quiet mono eyebrow grammar; the
+          #comments anchor (post action bar / notifications) stays. */}
+      <h2
+        id="comments"
+        className="font-mono text-xs font-medium tracking-[0.08em] text-grey"
+      >
         {t(locale, "post.comments", { n: total })}
       </h2>
-      {/* Comment rows drop the rounded box: hairline dividers let them merge into the parent card (nested rounded boxes read as clutter) */}
-      <ul className="mt-3 divide-y divide-line">{allThreads.map((c) => row(c, false))}</ul>
 
-      {/* Summon-wait placeholder: cleared automatically when the poller refreshes on AI-reply arrival */}
-      {summon !== null && <SummonPendingRow locale={locale} />}
-
-      {cursor !== null && (
-        <button
-          type="button"
-          onClick={loadMore}
-          disabled={loadingMore}
-          className="mt-6 rounded-lg border border-line px-4 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue disabled:opacity-40"
-        >
-          {loadingMore
-            ? t(locale, "post.submitting")
-            : t(locale, "post.loadMore", { n: remaining })}
-        </button>
-      )}
-
+      {/* Composer above the list: reply flows scroll up to it, and the
+          entry point reads before the thread, not after it. */}
       {loggedIn ? (
-        <form ref={formRef} onSubmit={submitComment} className="mt-4 space-y-3 border-t border-line pt-4">
+        <form ref={formRef} onSubmit={submitComment} className="mt-3 space-y-3">
           <input type="hidden" name="post_id" value={postId} />
           {replyTo && (
             <>
@@ -479,7 +472,7 @@ export default function CommentSection({
                 <button
                   type="button"
                   onClick={() => setReplyTo(null)}
-                  aria-label="取消回复 / Cancel reply"
+                  aria-label={t(locale, "post.cancel")}
                   className="flex size-7 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper"
                 >
                   <X size={14} aria-hidden="true" />
@@ -500,13 +493,13 @@ export default function CommentSection({
           <button
             type="submit"
             disabled={posting}
- className="rounded-lg bg-blue px-5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="rounded-lg bg-blue px-5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {posting ? t(locale, "post.submitting") : t(locale, "post.comment")}
           </button>
         </form>
       ) : (
-        <p className="mt-4 border-t border-line pt-4 text-sm text-grey">
+        <p className="mt-3 text-sm text-grey">
           {t(locale, "post.loginToComment")}
           <a
             href="/api/auth/github"
@@ -521,6 +514,25 @@ export default function CommentSection({
             Google
           </a>
         </p>
+      )}
+
+      {/* Comment rows drop the rounded box: hairline dividers let them merge into the parent card (nested rounded boxes read as clutter) */}
+      <ul className="mt-4 divide-y divide-line border-t border-line">{allThreads.map((c) => row(c, false))}</ul>
+
+      {/* Summon-wait placeholder: cleared automatically when the poller refreshes on AI-reply arrival */}
+      {summon !== null && <SummonPendingRow locale={locale} />}
+
+      {cursor !== null && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="mt-6 rounded-lg border border-line px-4 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue disabled:opacity-40"
+        >
+          {loadingMore
+            ? t(locale, "post.submitting")
+            : t(locale, "post.loadMore", { n: remaining })}
+        </button>
       )}
     </section>
   );
