@@ -87,7 +87,9 @@ export default function WorkGridCard({
           {w.agents.length > 0 && (
             <span
               className="inline-flex shrink-0 items-center gap-1"
-              title={w.agents.map((a) => agentName(a)).join(", ")}
+              data-tip={w.agents.map((a) => agentName(a)).join(", ")}
+              data-tip-side="bottom"
+              aria-label={w.agents.map((a) => agentName(a)).join(", ")}
             >
               {w.agents.slice(0, 3).map((a) => (
                 <AgentIcon key={a} id={a} size={12} />
@@ -96,12 +98,21 @@ export default function WorkGridCard({
             </span>
           )}
           {claimBadge !== null && claimBadge > 0 && (
-            <span className="shrink-0 text-ui-blue" title={t(locale, "works.badgeTitle")}>
+            <span
+              className="shrink-0 text-ui-blue"
+              data-tip={t(locale, "works.badgeTitle")}
+              data-tip-side="bottom"
+            >
               {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
             </span>
           )}
           {w.featuredAt && (
-            <span className="shrink-0 text-ui-blue" title={w.featuredReason ?? undefined}>
+            <span
+              className="shrink-0 text-ui-blue"
+              data-tip={w.featuredReason ?? undefined}
+              data-tip-side="bottom"
+              aria-label={w.featuredReason ?? t(locale, "works.featuredFallback")}
+            >
               ★
             </span>
           )}

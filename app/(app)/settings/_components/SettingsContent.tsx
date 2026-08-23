@@ -151,7 +151,7 @@ export default async function SettingsContent({
             />
             <div className="flex items-center justify-between gap-4 border-t border-line py-4">
               <p className="text-sm font-medium text-paper">{t(locale, "set.locale")}</p>
-              <LocaleSeg />
+              <LocaleSeg locale={locale} />
             </div>
             {/* Motion: a manual reduce-motion opt-out; following the system stays the default */}
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line py-4">

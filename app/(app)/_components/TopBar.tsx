@@ -32,7 +32,6 @@ export default function TopBar({
       <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-[5vw]">
       <Link
         href="/"
-        title="kimi.builders"
         className="flex items-center gap-2 font-mono text-sm font-semibold tracking-wide"
       >
         {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}

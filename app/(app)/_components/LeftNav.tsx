@@ -141,10 +141,14 @@ export default function LeftNav({
 
   return (
     <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
+      {/* Every tipped link also carries an explicit aria-label: collapsed
+          mode hides .nav-label via display:none, and the tooltip's
+          alt-discarded ::after no longer contributes a name. */}
       <Link prefetch={false}
         href={gate(createAction.href)}
         data-tip={createAction.label}
         data-tip-side="right"
+        aria-label={createAction.label}
  className="nav-item rail-tip flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <SquarePen size={16} className="shrink-0" />
@@ -171,6 +175,7 @@ export default function LeftNav({
               href={s.href}
               data-tip={t(locale, s.key)}
               data-tip-side="right"
+              aria-label={t(locale, s.key)}
               className={itemCls(isActive(s.href))}
             >
               <Icon size={15} className="shrink-0" />
@@ -189,6 +194,7 @@ export default function LeftNav({
               href={profileHref}
               data-tip={t(locale, "nav.profile")}
               data-tip-side="right"
+              aria-label={t(locale, "nav.profile")}
               className={itemCls(pathname.startsWith("/u/"))}
             >
               <User size={15} className="shrink-0" />
@@ -206,6 +212,7 @@ export default function LeftNav({
                   href={s.href}
                   data-tip={`${t(locale, s.key)} · ${t(locale, "nav.soon")}`}
                   data-tip-side="right"
+                  aria-label={`${t(locale, s.key)} · ${t(locale, "nav.soon")}`}
                   className={`${itemCls(isActive(s.href))} opacity-75`}
                 >
                   <Icon size={15} className="shrink-0" />
@@ -231,6 +238,7 @@ export default function LeftNav({
             href="/admin"
             data-tip={t(locale, "nav.admin")}
             data-tip-side="right"
+            aria-label={t(locale, "nav.admin")}
             className={itemCls(pathname.startsWith("/admin"))}
           >
             <ShieldCheck size={15} className="shrink-0" />
@@ -245,6 +253,7 @@ export default function LeftNav({
               : `${t(locale, "nav.settings")} · ${t(locale, "nav.lockHint")}`
           }
           data-tip-side="right"
+          aria-label={t(locale, "nav.settings")}
           className={itemCls(pathname.startsWith("/settings"))}
         >
           <Settings size={15} className="shrink-0" />
@@ -259,12 +268,13 @@ export default function LeftNav({
           href="https://github.com/kimi-builders"
           data-tip="GitHub"
           data-tip-side="right"
+          aria-label="GitHub"
           className={itemCls(false)}
         >
           <GithubIcon size={15} />
           <span className="nav-label">GitHub</span>
         </a>
-        <Link prefetch={false} href="/about" data-tip={t(locale, "nav.about")} data-tip-side="right" className={itemCls(false)}>
+        <Link prefetch={false} href="/about" data-tip={t(locale, "nav.about")} data-tip-side="right" aria-label={t(locale, "nav.about")} className={itemCls(false)}>
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>

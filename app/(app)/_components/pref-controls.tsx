@@ -157,7 +157,7 @@ export function NavToggle({
         type="submit"
         data-tip={`${t(locale, "nav.collapse")} / ${t(locale, "nav.expand")}`}
         data-tip-side="right"
-        aria-label="收起或展开导航 / Collapse or expand navigation"
+        aria-label={t(locale, "nav.collapseOrExpand")}
         onClick={(e) => {
           e.preventDefault();
           flipNav();
@@ -190,7 +190,7 @@ export function SidebarToggle({
         type="submit"
         data-tip={`${t(locale, "side.hide")} / ${t(locale, "side.show")}`}
         data-tip-side="right"
-        aria-label="隐藏或显示右侧栏 / Hide or show the sidebar"
+        aria-label={t(locale, "side.hideOrShow")}
         onClick={(e) => {
           e.preventDefault();
           flipSidebar();
@@ -304,7 +304,7 @@ export function VibeCards({ locale }: { locale: Locale }) {
    seg, active state riding globals.css's html[lang] classes (correct
    from SSR first paint); logic shares LocaleToggle's source (cookie +
    html.lang + refresh + background account-preference write). */
-export function LocaleSeg() {
+export function LocaleSeg({ locale }: { locale: Locale }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const pick = (next: "zh" | "en") => (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -318,7 +318,7 @@ export function LocaleSeg() {
     <div
       className={`${SEG_WRAP}${pending ? " opacity-50" : ""}`}
       role="group"
-      aria-label="界面语言 / Interface language"
+      aria-label={t(locale, "set.languageGroup")}
     >
       <form action={setLocaleToAction} className="contents">
         <button

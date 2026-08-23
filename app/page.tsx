@@ -303,9 +303,13 @@ export default async function Home({
                   href={`/community/${h.id}`}
                   className="flex items-baseline gap-4 py-3 transition-colors hover:text-ui-blue"
                 >
-                  <span className="shrink-0 font-mono text-xs text-grey">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
+                  {/* Rank numbers read as a leaderboard; a lone item is
+                      just a link, so the index only renders from 2 up. */}
+                  {home.hot.length >= 2 && (
+                    <span className="shrink-0 font-mono text-xs text-grey">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1 truncate text-sm text-paper">
                     {h.title}
                   </span>

@@ -210,9 +210,13 @@ export default async function CommunityWidgets({
           <ul className="space-y-2.5">
             {data.hot.map((h, i) => (
               <li key={h.id} className="flex items-baseline gap-2 text-xs">
-                <span className="shrink-0 font-mono text-xs text-grey">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+                {/* Rank numbers only from two entries up: a lone item is
+                    a plain link, not a leaderboard. */}
+                {data.hot.length >= 2 && (
+                  <span className="shrink-0 font-mono text-xs text-grey">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                )}
                 <Link
                   href={`/community/${h.id}`}
                   className="min-w-0 flex-1 truncate text-paper transition-colors hover:text-ui-blue"

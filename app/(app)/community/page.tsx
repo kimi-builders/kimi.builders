@@ -10,6 +10,7 @@
    rendered page); card rendering lives in _components/PostCard, and
    the first page and appends share _components/feed-page. */
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SquarePen } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import EmptyState from "@/components/EmptyState";
@@ -29,6 +30,13 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { loadMorePostsAction } from "./actions";
 import { loadFeedCards } from "./_components/feed-page";
+
+/* Every other section ships a page-specific title; without this the
+   tab/history/SEO fell back to the site-default title. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: t(locale, "community.pageTitle") };
+}
 
 export default async function CommunityPage({
   searchParams,
@@ -113,7 +121,7 @@ export default async function CommunityPage({
       )}
 
       <div className="mt-4 grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
-        <nav aria-label={t(locale, "feed.hot")} className={SEG_WRAP}>
+        <nav aria-label={t(locale, "feed.sortNav")} className={SEG_WRAP}>
           {sortItems.map((item) => (
             <Link
               key={item.key}
@@ -134,7 +142,7 @@ export default async function CommunityPage({
             in both vibes). The solved toggle stays as is: state is a
             different mental model from topic. */}
         <nav
-          aria-label={t(locale, "feed.topicsAll")}
+          aria-label={t(locale, "feed.topicNav")}
           className={`${SEG_WRAP_FLOW} order-last min-w-0 md:order-none md:justify-self-start`}
         >
           <Link

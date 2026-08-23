@@ -28,6 +28,9 @@ const DICT = {
   "nav.lockHint": { zh: "登录后可用", en: "Sign-in required" },
   "nav.collapse": { zh: "收起导航", en: "Collapse" },
   "nav.expand": { zh: "展开导航", en: "Expand" },
+  /* One phrase per locale for SR names; the bilingual concatenation
+     made screen readers read both languages on every focus. */
+  "nav.collapseOrExpand": { zh: "收起或展开导航", en: "Collapse or expand navigation" },
   "nav.menu": { zh: "打开功能导航", en: "Open navigation" },
   "nav.closeMenu": { zh: "关闭功能导航", en: "Close navigation" },
   /* ---- Global search ---- */
@@ -103,6 +106,7 @@ const DICT = {
   "side.display": { zh: "界面", en: "DISPLAY" },
   "side.hide": { zh: "隐藏侧栏", en: "Hide sidebar" },
   "side.show": { zh: "显示侧栏", en: "Show sidebar" },
+  "side.hideOrShow": { zh: "隐藏或显示右侧栏", en: "Hide or show the sidebar" },
   "side.featured": { zh: "编辑精选", en: "EDITOR'S PICKS" },
   "side.lbPreview": { zh: "用量排行", en: "USAGE LEADERBOARD" },
   "side.lbPreviewNote": { zh: "近 30 天 · 自愿公开", en: "30D · opt-in" },
@@ -113,6 +117,11 @@ const DICT = {
   "feed.new": { zh: "最新", en: "New" },
   "feed.sub": { zh: "订阅", en: "Subscribed" },
   "feed.topicsAll": { zh: "全部", en: "All" },
+  /* Nav group names state the dimension, not the current selection:
+     aria-current already marks the active item, and naming the nav by
+     its selected value makes the two rows indistinguishable to SRs. */
+  "feed.sortNav": { zh: "排序", en: "Sort" },
+  "feed.topicNav": { zh: "话题", en: "Topic" },
   "feed.readMore": { zh: "阅读全文 →", en: "Read more →" },
   "feed.quickPost": {
     zh: "有什么新鲜事?(支持 Markdown)",
@@ -141,6 +150,7 @@ const DICT = {
      the section's position only (the old one parroted the title), and a
      three-verb lede sets the tone. */
   "community.eyebrow": { zh: "— 讨论与分享", en: "— Discuss & share" },
+  "community.pageTitle": { zh: "社区 — kimi.builders", en: "Community — kimi.builders" },
   "community.lede": {
     zh: "问问题、晒进度、聊踩坑。",
     en: "Ask, share progress, swap lessons.",
@@ -613,6 +623,7 @@ const DICT = {
   /* Motion preference: a manual reduced-motion switch — not everyone
      knows where the OS-level prefers-reduced-motion setting lives. */
   "set.motion": { zh: "动效", en: "Motion" },
+  "set.languageGroup": { zh: "界面语言", en: "Interface language" },
   "set.motionFollow": { zh: "跟随系统", en: "Follow system" },
   "set.motionReduce": { zh: "减少动效", en: "Reduce motion" },
   "set.motionNote": {
@@ -1235,6 +1246,7 @@ const DICT = {
     zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
     en: "Declared by the author, capped by their verifiable total — not precise metering",
   },
+  "works.featuredFallback": { zh: "精选作品", en: "Featured work" },
   "pager.loadMore": { zh: "加载更多", en: "Load more" },
   "pager.loading": { zh: "加载中…", en: "Loading…" },
   /* ---- Demo Night (own section to shrink merge conflicts) ---- */

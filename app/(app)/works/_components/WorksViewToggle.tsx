@@ -52,7 +52,9 @@ export default function WorksViewToggle({
           key={key}
           type="button"
           aria-pressed={view === key}
-          title={label}
+          aria-label={label}
+          data-tip={label}
+          data-tip-side="bottom"
           onClick={() => pick(key)}
           className={`${BTN} ${view === key ? "bg-blue/10 text-blue" : "text-grey hover:text-paper"}`}
         >

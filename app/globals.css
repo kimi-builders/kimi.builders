@@ -437,7 +437,10 @@ html[lang="en"] .only-zh {
   position: relative;
 }
 [data-tip]::after {
-  content: attr(data-tip);
+  /* The "/ ''" alt-text form keeps the pseudo content out of the
+     accessible-name computation; a bare attr(data-tip) made screen
+     readers announce every tipped control twice. */
+  content: attr(data-tip) / "";
   position: absolute;
   left: 50%;
   bottom: calc(100% + 6px);
@@ -733,6 +736,13 @@ html[data-motion="reduce"] ::after {
     color-mix(in srgb, var(--color-blue) 8%, transparent),
     transparent 70%
   );
+}
+/* Dark only: the hero's card wash sits 4.7% off the page ground, and
+   the 12% line border wasn't enough to hold the silhouette; 20% keeps
+   the same paper-based hairline family (bg-paper/[0.06] precedent)
+   without a new token. Light keeps the shared 13% line. */
+:root:not([data-theme="light"]) .usage-hero {
+  border-color: rgb(255 255 255 / 0.2);
 }
 /* Sync-status pulsing dot (the mint status token = a healthy sync link;
    the pulse stays uniform). */
