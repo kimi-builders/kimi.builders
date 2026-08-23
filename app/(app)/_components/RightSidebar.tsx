@@ -41,6 +41,8 @@ export default function RightSidebar({
           <ExploreRail locale={locale} />
         ) : decision.kind === "article" && decision.slug ? (
           <ArticleRail slug={decision.slug} locale={locale} />
+        ) : decision.kind === "about" ? (
+          <CommunityWidgets locale={locale} showAbout={false} />
         ) : (
           <CommunityWidgets locale={locale} />
         )}

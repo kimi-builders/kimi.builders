@@ -257,38 +257,43 @@ export default async function WorkPage({
         )}
       </div>
 
-      {/* Action bar (above media): try the work (primary external link, new
-          tab) / support (signed-in, optimistic update) / share / owner edit
-          and delete. Mobile: the CTA takes its own full-width row so the
-          primary action stands out; support/share drop to a second row. */}
+      {/* Action bar (above media): try and support share one equal-width,
+          equal-height track at every viewport; share and owner/moderation
+          actions remain the quieter trailing group. */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        {work.url && (
-          <a
-            href={work.url}
-            target="_blank"
-            rel="noopener noreferrer"
- className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue max-sm:w-full max-sm:justify-center"
-          >
-            <ExternalLink size={13} />
-            {t(locale, "works.tryIt")}
-          </a>
-        )}
-        {user ? (
-          <WorkVoteButton
-            workId={work.id}
-            voted={voted}
-            count={work.voteCount}
-            locale={locale}
-          />
-        ) : (
-          <span
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-4 font-mono text-sm text-grey"
-            title={t(locale, "works.loginToSupport")}
-          >
-            <Heart size={13} />
-            {t(locale, "works.support")} · {work.voteCount}
-          </span>
-        )}
+        <div
+          className={`grid w-full gap-3 ${
+            work.url ? "grid-cols-2 sm:w-[28rem]" : "grid-cols-1 sm:w-56"
+          }`}
+        >
+          {work.url && (
+            <a
+              href={work.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:gap-1.5 sm:px-3 sm:text-sm"
+            >
+              <ExternalLink size={13} />
+              {t(locale, "works.tryIt")}
+            </a>
+          )}
+          {user ? (
+            <WorkVoteButton
+              workId={work.id}
+              voted={voted}
+              count={work.voteCount}
+              locale={locale}
+            />
+          ) : (
+            <span
+              className="inline-flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-line px-2 font-mono text-xs whitespace-nowrap text-grey sm:gap-1.5 sm:px-3 sm:text-sm"
+              title={t(locale, "works.loginToSupport")}
+            >
+              <Heart size={13} />
+              {t(locale, "works.support")} · {work.voteCount}
+            </span>
+          )}
+        </div>
         <span className="ml-auto flex items-center gap-3">
           {user && work.userId === user.id && (
             <span className="flex items-center gap-3 font-mono text-sm text-grey">

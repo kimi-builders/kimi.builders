@@ -53,15 +53,14 @@ export default function WorkVoteButton({
 
   const label = t(locale, state.voted ? "works.supported" : "works.support");
   return (
-    /* Sized to match the action bar's primary button (44px tall,
-       rounded-lg, text-sm); the old py-1.5/text-xs square button looked
-       stubby and angular next to a 44px CTA. */
+    /* The parent gives try/support equal grid tracks; this control fills
+       its track at the same fixed 44px height as the primary CTA. */
     <button
       type="button"
       onClick={toggle}
       aria-label={label}
       title={label}
-      className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-4 font-mono text-sm transition-colors ${
+      className={`inline-flex h-11 w-full items-center justify-center gap-1 rounded-lg border px-2 font-mono text-xs whitespace-nowrap transition-colors sm:gap-1.5 sm:px-3 sm:text-sm ${
         state.voted
           ? "border-blue text-blue"
           : "border-line text-grey hover:border-ui-blue hover:text-ui-blue"

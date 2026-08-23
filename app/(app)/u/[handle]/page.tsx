@@ -303,7 +303,7 @@ export default async function ProfilePage({
     <div>
       {/* ===== Identity hero, channel-page style: name, social counts, bio, and actions gathered right of the avatar ===== */}
       <header className="usage-hero rounded-2xl border border-line p-5 sm:p-6">
-        <div className="relative z-[1] flex items-start gap-4 sm:gap-6">
+        <div className="relative z-[1] grid grid-cols-[72px_minmax(0,1fr)] items-start gap-x-4 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-x-6">
           <Avatar
             url={view.avatarUrl}
             handle={profile.handle}
@@ -334,43 +334,47 @@ export default async function ProfilePage({
                 {SITE_HOST}{profilePath}
               </span>
             </div>
-            {view.bio && (
-              <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-paper/90">
-                {view.bio}
-              </p>
-            )}
-            <div className="mt-3 flex flex-nowrap items-center gap-1.5 overflow-x-auto sm:flex-wrap sm:gap-2">
-              <ProfileShareButtons
-                path={profilePath}
-                label={t(locale, "prof.share")}
-                copiedLabel={t(locale, "post.copied")}
-              />
-              <TrackClick
-                payload={{
-                  event: "poster_download",
-                  target_kind: "surface",
-                  target_id: "profile",
-                  meta: { surface: "profile" },
-                }}
+          </div>
+          {view.bio && (
+            <p className="col-span-2 mt-4 whitespace-pre-wrap text-sm leading-relaxed text-paper/90 sm:col-span-1 sm:col-start-2 sm:mt-2.5">
+              {view.bio}
+            </p>
+          )}
+          <div
+            className={`col-span-2 mt-4 grid items-stretch gap-2 sm:col-span-1 sm:col-start-2 sm:mt-3 sm:flex sm:flex-wrap ${
+              self ? "grid-cols-3" : "grid-cols-2"
+            }`}
+          >
+            <ProfileShareButtons
+              path={profilePath}
+              label={t(locale, "prof.share")}
+              copiedLabel={t(locale, "post.copied")}
+            />
+            <TrackClick
+              payload={{
+                event: "poster_download",
+                target_kind: "surface",
+                target_id: "profile",
+                meta: { surface: "profile" },
+              }}
+            >
+              <a
+                href={`${posterHref}?download=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-1 rounded-lg border border-line px-2 text-xs whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto sm:gap-1.5 sm:px-3.5"
               >
-                <a
-                  href={`${posterHref}?download=1`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-2.5 text-xs whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-xs"
-                >
-                  {t(locale, "prof.poster")}
-                </a>
-              </TrackClick>
-              {self && (
-                <Link
-                  href="/settings"
- className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3.5 sm:text-xs"
-                >
-                  {t(locale, "prof.edit")}
-                </Link>
-              )}
-            </div>
+                {t(locale, "prof.poster")}
+              </a>
+            </TrackClick>
+            {self && (
+              <Link
+                href="/settings"
+                className="inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto sm:gap-1.5 sm:px-3.5"
+              >
+                {t(locale, "prof.edit")}
+              </Link>
+            )}
           </div>
         </div>
         {/* Stats band: opted-in public usage -> 5 usage cells; otherwise falls back to the 3 social cells */}

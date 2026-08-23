@@ -696,9 +696,10 @@ html[data-vibe="soft"] .vibe-label-soft {
 
 /* ---- Global motion opt-out: one outlet covering every CSS animation
    and transition for vestibular-sensitive users, replacing
-   per-component patching (previously only usage-pulse had one).
-   SMIL (the logo's twin-star orbit) is outside CSS's reach — a constant
-   slow orbital motion, kept. ---- */
+   per-component patching (previously only usage-pulse had one). The
+   native-SMIL twin-star logo intentionally remains outside this rule:
+   its endless shared orbit carries the brand meaning and is the site's
+   single reduced-motion exception. ---- */
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
@@ -723,7 +724,6 @@ html[data-motion="reduce"] ::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
-
 /* Keep compact horizontal filter rows touch-scrollable without a desktop gutter. */
 .scrollbar-none {
   scrollbar-width: none;

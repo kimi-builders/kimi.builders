@@ -14,13 +14,34 @@ const leaderboard = readFileSync(
   new URL("../app/(app)/usage/leaderboard/page.tsx", import.meta.url),
   "utf8",
 );
+const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const workDetail = readFileSync(
+  new URL("../app/(app)/works/[id]/page.tsx", import.meta.url),
+  "utf8",
+);
+const workVote = readFileSync(
+  new URL("../app/(app)/works/_components/WorkVoteButton.tsx", import.meta.url),
+  "utf8",
+);
 
-test("mobile profile actions stay in one compact, horizontally safe row", () => {
-  assert.match(profile, /flex-nowrap items-center.*overflow-x-auto sm:flex-wrap/);
-  /* Font sizes unified at text-xs (12px), above the 11px readability
-     floor; touch and truncation semantics unchanged. */
-  assert.match(profile, /min-h-8 shrink-0.*text-xs.*whitespace-nowrap/);
-  assert.match(share, /min-h-8 shrink-0.*text-xs.*whitespace-nowrap/);
+test("mobile profile bio and actions escape the avatar-side narrow column", () => {
+  assert.match(profile, /grid-cols-\[72px_minmax\(0,1fr\)\]/);
+  assert.match(profile, /col-span-2 mt-4 whitespace-pre-wrap/);
+  assert.match(profile, /col-span-2 mt-4 grid items-stretch gap-2/);
+  assert.match(profile, /self \? "grid-cols-3" : "grid-cols-2"/);
+  assert.doesNotMatch(profile, /overflow-x-auto sm:flex-wrap/);
+  assert.match(share, /min-h-9 w-full min-w-0/);
+});
+
+test("mobile home stats keep the three community counts together above usage", () => {
+  assert.match(home, /grid-cols-3 gap-y-8.*sm:grid-cols-4/);
+  assert.match(home, /col-span-3 border-t border-line pt-8 sm:col-span-1/);
+});
+
+test("work detail try and support actions share equal tracks and height", () => {
+  assert.match(workDetail, /work\.url \? "grid-cols-2 sm:w-\[28rem\]"/);
+  assert.match(workDetail, /inline-flex h-11 w-full items-center justify-center/);
+  assert.match(workVote, /inline-flex h-11 w-full items-center justify-center/);
 });
 
 test("profile post empty state renders one merged line instead of duplicate copy", () => {

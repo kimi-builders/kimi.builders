@@ -14,6 +14,7 @@ import { UPCOMING } from "@/src/lib/upcoming";
 
 export type RailKind =
   | "community"
+  | "about"
   | "post"
   | "work"
   | "works"
@@ -77,6 +78,9 @@ export function railFor(pathname: string): RailDecision {
   if (p === "/settings" || p.startsWith("/settings/")) {
     return decision("none", { wide: true });
   }
+  /* About keeps useful community proof in the rail but drops the
+     introductory card that repeats the page's opening copy. */
+  if (p === "/about") return decision("about");
 
   /* The notifications page shares the feed's community rail, but a
      visit marks everything read (markNotificationsRead runs during

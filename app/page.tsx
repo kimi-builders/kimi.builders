@@ -11,8 +11,10 @@
    the shell's TopBar in set/order/form (search -> notifications ->
    theme -> vibe -> language -> auth); keep iconBtn in sync on both
    sides. The hero uses the SMIL-animated logo (twin stars orbiting in
-   8s; SMIL inside <img> plays in modern browsers) with localized alt;
-   the top-right auth renders via AuthChip. Rendering strategy:
+   8s) with localized alt. The loop remains active under reduced motion
+   as the site's one brand-signature exception: companionship in motion
+   is the mark's meaning. The top-right auth renders via AuthChip.
+   Rendering strategy:
    AuthChip reads cookies + searchParams, so route-level ISR is
    impossible — DB queries go through data-layer ISR instead:
    getHomeData is an unstable_cache (revalidate 300) invalidated
@@ -252,11 +254,15 @@ export default async function Home({
       {/* ---- Stats strip: members / posts / comments / all-time tokens (live data) ---- */}
       {stats && (
         <section className="border-y border-line">
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-y-8 px-6 py-12 sm:grid-cols-4">
+          <div className="mx-auto grid max-w-4xl grid-cols-3 gap-y-8 px-4 py-10 sm:grid-cols-4 sm:px-6 sm:py-12">
             {stats.map((s, index) => (
               <div
                 key={s.l}
-                className={`text-center ${index === 3 ? "border-t border-line pt-8 sm:border-l sm:border-t-0 sm:pt-0" : ""}`}
+                className={`text-center ${
+                  index === 3
+                    ? "col-span-3 border-t border-line pt-8 sm:col-span-1 sm:border-l sm:border-t-0 sm:pt-0"
+                    : ""
+                }`}
               >
                 <div className={`font-mono text-3xl font-semibold tracking-wide ${index === 3 ? "text-ui-blue" : ""}`}>
                   <CountUpStat value={s.n} locale={locale} />

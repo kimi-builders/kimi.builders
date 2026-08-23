@@ -76,3 +76,16 @@ test("vibe surfaces: toggle in topbar/drawer, cards in settings, no-JS fallbacks
   const settingsActions = read("app/(app)/settings/actions.ts");
   assert.ok(settingsActions.includes("setVibeToAction"), "explicit pick fallback action");
 });
+
+test("reduced motion keeps the endless twin-star brand orbit as the single exception", () => {
+  const home = read("app/page.tsx");
+  const loading = read("components/BrandLoading.tsx");
+  const css = read("app/globals.css");
+  const logo = read("public/brand/logo-animated.svg");
+
+  assert.match(home, /src="\/brand\/logo-animated\.svg"/);
+  assert.match(loading, /src="\/brand\/logo-animated\.svg"/);
+  assert.match(css, /single reduced-motion exception/);
+  assert.doesNotMatch(css, /kb-brand-logo-static/);
+  assert.match(logo, /<animateMotion[^>]*repeatCount="indefinite"/);
+});

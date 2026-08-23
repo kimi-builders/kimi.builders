@@ -1,5 +1,6 @@
-/* Brand loading state: the home page's twin stars orbiting the moon
-   (SMIL animation, played natively by the browser). Every route's
+/* Brand loading state: the home page's twin stars orbiting the moon.
+   This remains the one reduced-motion exception: the endless shared
+   orbit is the brand meaning, not decorative transition. Every route's
    loading.tsx references this — no ad-hoc skeleton cards. */
 export default function BrandLoading() {
   return (

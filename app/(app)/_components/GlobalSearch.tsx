@@ -169,7 +169,7 @@ export default function GlobalSearch({
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
-        className="fixed left-1/2 top-[12vh] m-0 w-[min(92vw,36rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-line bg-card p-0 text-paper shadow-2xl backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
+        className="fixed left-1/2 top-[12vh] m-0 w-[min(92vw,36rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-line bg-card p-0 text-paper backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
       >
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <Search size={18} className="shrink-0 text-ui-blue" aria-hidden="true" />
@@ -188,8 +188,11 @@ export default function GlobalSearch({
           <button
             type="button"
             onClick={close}
+            data-tip={t(locale, "modal.close")}
+            data-tip-side="bottom"
+            data-tip-align="right"
             aria-label={t(locale, "modal.close")}
-            className="flex size-9 items-center justify-center rounded-lg text-grey transition-colors hover:bg-moon hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="flex size-11 items-center justify-center rounded-lg text-grey transition-colors hover:bg-moon hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <X size={17} aria-hidden="true" />
           </button>

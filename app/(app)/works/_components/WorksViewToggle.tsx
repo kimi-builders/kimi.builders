@@ -7,13 +7,18 @@
    /works and /awesome; one cookie, one preference across both. */
 import { useRouter } from "next/navigation";
 import { LayoutGrid, List } from "lucide-react";
+import {
+  SEG_ITEM_ACTIVE,
+  SEG_ITEM_IDLE,
+  SEG_WRAP,
+} from "@/components/seg-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { WORKS_VIEW_COOKIE, type WorksView } from "@/src/lib/works-view";
 
 /* 36px buttons + 8px container border/padding = 44px, level with sort
    and filters. */
 const BTN =
-  "inline-flex size-9 items-center justify-center rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+  "inline-flex size-9 items-center justify-center rounded-md border border-transparent transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
 
 /* The cookie write lives outside the component: assigning
    document.cookie inside the component scope trips
@@ -45,7 +50,7 @@ export default function WorksViewToggle({
     <div
       role="group"
       aria-label={t(locale, "works.viewToggle")}
-      className="ml-auto inline-flex h-11 items-center gap-0.5 self-center rounded-lg border border-line bg-card p-[3px]"
+      className={`${SEG_WRAP} ml-auto self-center`}
     >
       {items.map(({ key, label, Icon }) => (
         <button
@@ -56,7 +61,7 @@ export default function WorksViewToggle({
           data-tip={label}
           data-tip-side="bottom"
           onClick={() => pick(key)}
-          className={`${BTN} ${view === key ? "bg-blue/10 text-blue" : "text-grey hover:text-paper"}`}
+          className={`${BTN} ${view === key ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
         >
           <Icon size={14} aria-hidden="true" />
         </button>

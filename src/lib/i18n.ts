@@ -788,6 +788,10 @@ const DICT = {
     zh: "以 Kimi 为第一公民的多 Agent AI 编程用量中心。数据默认私有,只上传统计字段;榜单由成员自愿公开(opt-in)。",
     en: "A Kimi-first usage center for multi-agent AI coding. Data stays private by default — metrics only; the leaderboard is shared by members opt-in.",
   },
+  "usage.publicLogin": {
+    zh: "登录查看我的数据",
+    en: "Sign in to view my data",
+  },
   "usage.publicBoard": { zh: "近 30 天用量榜", en: "30-DAY LEADERBOARD" },
   /* Personal dashboard preview strip (live-rendered sample data). */
   "usage.previewTitle": { zh: "个人面板预览", en: "PERSONAL DASHBOARD PREVIEW" },

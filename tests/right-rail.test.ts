@@ -83,6 +83,8 @@ test("railFor: usage and profiles have no rail and a wide canvas", () => {
   assert.deepEqual(railFor("/u/aklman"), { kind: "none", id: null, wide: true });
   /* Settings joins the no-rail tier: a self-contained forms page. */
   assert.deepEqual(railFor("/settings"), { kind: "none", id: null, wide: true });
+  /* About keeps community proof but removes the duplicated intro card. */
+  assert.deepEqual(railFor("/about"), { kind: "about", id: null, wide: false });
 });
 
 test("rail decision key: same shell context survives pathname changes", () => {

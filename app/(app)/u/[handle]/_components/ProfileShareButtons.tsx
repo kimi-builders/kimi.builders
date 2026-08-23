@@ -29,7 +29,7 @@ export default function ProfileShareButtons({
              silent. */
         }
       }}
-      className={`inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 font-mono text-xs whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:min-h-9 sm:gap-1.5 sm:px-3 sm:text-xs ${
+      className={`inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-1 rounded-lg px-1.5 font-mono text-xs whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto sm:gap-1.5 sm:px-3 ${
         copied ? "text-ui-blue" : "text-grey hover:text-paper"
       }`}
     >

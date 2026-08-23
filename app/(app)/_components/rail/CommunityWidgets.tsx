@@ -35,8 +35,10 @@ function compact(value: number): string {
 
 export default async function CommunityWidgets({
   locale,
+  showAbout = true,
 }: {
   locale: Locale;
+  showAbout?: boolean;
 }) {
   const user = await getSessionUser();
   const [data, featured, demoNight, lbEntries] = await Promise.all([
@@ -52,25 +54,27 @@ export default async function CommunityWidgets({
       : null;
   return (
     <>
-      <Widget title={t(locale, "side.about")}>
-        <p className="text-xs leading-relaxed text-grey">
-          {t(locale, "side.aboutBody")}
-        </p>
-        <div className="mt-3 flex gap-4 text-xs">
-          <a
-            href="https://github.com/kimi-builders"
-            className="text-grey underline decoration-ui-blue/50 underline-offset-4 hover:text-ui-blue"
-          >
-            GitHub
-          </a>
-          <a
-            href="https://github.com/kimi-builders/awesome-kimi-builders"
-            className="text-grey underline decoration-ui-blue/50 underline-offset-4 hover:text-ui-blue"
-          >
-            Awesome
-          </a>
-        </div>
-      </Widget>
+      {showAbout && (
+        <Widget title={t(locale, "side.about")}>
+          <p className="text-xs leading-relaxed text-grey">
+            {t(locale, "side.aboutBody")}
+          </p>
+          <div className="mt-3 flex gap-4 text-xs">
+            <a
+              href="https://github.com/kimi-builders"
+              className="text-grey underline decoration-ui-blue/50 underline-offset-4 hover:text-ui-blue"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://github.com/kimi-builders/awesome-kimi-builders"
+              className="text-grey underline decoration-ui-blue/50 underline-offset-4 hover:text-ui-blue"
+            >
+              Awesome
+            </a>
+          </div>
+        </Widget>
+      )}
 
       {(lbTop.length > 0 || lbMe) && (
         <Widget

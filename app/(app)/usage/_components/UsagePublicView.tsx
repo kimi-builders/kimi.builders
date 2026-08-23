@@ -43,10 +43,18 @@ export default async function UsagePublicView({
       <p className="mt-4 max-w-2xl text-sm leading-relaxed text-grey">
         {t(locale, "usage.publicLede")}
       </p>
-      <p className="mt-2 flex items-center gap-1.5 font-mono text-xs text-grey">
-        <ShieldCheck size={13} className="text-status-ok-fg" aria-hidden="true" />
-        {zh ? "默认私有 · 榜单 opt-in" : "Private by default · opt-in leaderboard"}
-      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
+        <p className="flex items-center gap-1.5 text-grey">
+          <ShieldCheck size={13} className="text-status-ok-fg" aria-hidden="true" />
+          {zh ? "默认私有 · 榜单 opt-in" : "Private by default · opt-in leaderboard"}
+        </p>
+        <Link
+          href="/login?next=%2Fusage"
+          className="inline-flex min-h-11 items-center text-ui-blue underline decoration-ui-blue/50 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        >
+          {t(locale, "usage.publicLogin")} →
+        </Link>
+      </div>
 
       {/* Personal-panel preview (live-rendered sample data): show what you get first, the public board follows below */}
       <UsagePreviewStrip locale={locale} />
