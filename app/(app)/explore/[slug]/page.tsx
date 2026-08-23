@@ -206,17 +206,17 @@ function LetterDetail({
   });
   tabs.push({
     id: "decisions",
-    label: zh ? "编辑定夺" : "Decisions",
+    label: zh ? "定夺" : "Decisions",
     panel: (
       <div className="border-b border-line py-9">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="kb-eyebrow">{zh ? "编辑定夺 · DECISIONS" : "DECISIONS"}</p>
-          <SectionShare issue={issue} anchor="decisions" label={zh ? "编辑定夺" : "Decisions"} locale={locale} />
+          <p className="kb-eyebrow">{zh ? "定夺 · DECISIONS" : "DECISIONS"}</p>
+          <SectionShare issue={issue} anchor="decisions" label={zh ? "定夺" : "Decisions"} locale={locale} />
         </div>
         {issue.decisions.length === 0 ? (
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-grey">
             {zh
-              ? "本月编辑没有拍板新的精选——定夺栏留空也是记录。"
+              ? "本月没有新的精选——定夺栏留空也是记录。"
               : "No new picks this month — an empty decisions column is itself the record."}
           </p>
         ) : (
@@ -300,15 +300,30 @@ function LetterDetail({
     <article>
       {issueKeys}
       <header>
-        <p className="kb-eyebrow flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>— {zh ? "月刊评鉴" : "MONTHLY"} · ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month}</span>
+        {/* Breadcrumb: back to the explore shelf, same grammar as the
+            work detail's top row (back pill + truncated name). */}
+        <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
+          <Link
+            href="/explore"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
+          >
+            <ArrowLeft size={13} aria-hidden="true" />
+            {t(locale, "nav.explore")}
+          </Link>
+          <span className="truncate">{issue.title}</span>
+        </div>
+        <h1 className="kb-h1-human mt-4">{issue.title}</h1>
+        {/* Kind meta row, the work detail's grammar (mono grey under the
+            title): kind · issue · month · language. The old eyebrow
+            repeated the breadcrumb/title words. */}
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-sm leading-5 text-grey">
+          <span>{zh ? "月刊评鉴" : "MONTHLY"} · ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month}</span>
           {metas[idx]?.fallback && (
-            <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
+            <span className="rounded-md border border-line px-1.5 py-px text-paper">
               {t(locale, metas[idx].locale === "zh" ? "art.langZh" : "art.langEn")}
             </span>
           )}
         </p>
-        <h1 className="kb-h1-human mt-3">{issue.title}</h1>
         <p className="kb-lede-human mt-4 max-w-2xl">{issue.summary}</p>
       </header>
 
@@ -320,7 +335,7 @@ function LetterDetail({
       <footer className="border-t border-line pt-6 text-[11px] leading-relaxed text-grey/80">
         <p>
           {zh
-            ? "本刊各节均可独立引用(?tab=digest / facts / decisions)。中英双发,英文版是国际 builder 圈看中文 Kimi 生态的窗口。"
+            ? "本刊各节均可独立引用(?tab=digest / facts / decisions)。中英双发。"
             : "Every section is independently citable (?tab=digest / facts / decisions). Published in both languages."}
         </p>
         {disclosureRows.length > 0 && (
@@ -371,14 +386,9 @@ function LetterDetail({
         )}
       </nav>
 
-      <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-6 pb-2">
-        <Link
-          href="/explore"
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors hover:text-paper"
-        >
-          <ArrowLeft size={13} aria-hidden="true" />
-          {t(locale, "nav.explore")}
-        </Link>
+      {/* Back lives in the top breadcrumb (work-detail grammar); this row
+          keeps only the owner entry and share. */}
+      <div className="mt-6 flex items-center justify-end gap-4 border-t border-line pt-6 pb-2">
         <div className="flex items-center gap-4">
           {canEdit && (
             <Link
@@ -573,19 +583,33 @@ function GuideDetail({
   return (
     <article>
       <header>
-        <p className="kb-eyebrow flex flex-wrap items-center gap-x-3 gap-y-1">
+        {/* Breadcrumb: back to the explore shelf, same grammar as the
+            work detail's top row (back pill + truncated name). */}
+        <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
+          <Link
+            href="/explore"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
+          >
+            <ArrowLeft size={13} aria-hidden="true" />
+            {t(locale, "nav.explore")}
+          </Link>
+          <span className="truncate">{tutorial.title}</span>
+        </div>
+        <h1 className="kb-h1 mt-4">{tutorial.title}</h1>
+        {/* Kind meta row, the work detail's grammar (mono grey under the
+            title): kind · chapter · month · language. */}
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-sm leading-5 text-grey">
           <span>
-            — {zh ? "文章" : "ARTICLE"}
+            {zh ? "文章" : "ARTICLE"}
             {chapter ? ` · ${zh ? chapter.zh : chapter.en}` : ""}
             {` · ${monthLabel(tutorial.publishedAt)}`}
           </span>
           {tutorial.fallback && (
-            <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
+            <span className="rounded-md border border-line px-1.5 py-px text-paper">
               {tutorial.locale === "zh" ? "中文" : "EN"}
             </span>
           )}
         </p>
-        <h1 className="kb-h1 mt-3">{tutorial.title}</h1>
         {tutorial.summary && <p className="kb-lede mt-4 max-w-2xl">{tutorial.summary}</p>}
       </header>
 
@@ -606,14 +630,9 @@ function GuideDetail({
         </p>
       )}
 
-      <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-6 pb-2">
-        <Link
-          href="/explore"
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors hover:text-paper"
-        >
-          <ArrowLeft size={13} aria-hidden="true" />
-          {t(locale, "nav.explore")}
-        </Link>
+      {/* Back lives in the top breadcrumb (work-detail grammar); this row
+          keeps only the owner entry and share. */}
+      <div className="mt-6 flex items-center justify-end gap-4 border-t border-line pt-6 pb-2">
         <div className="flex items-center gap-4">
           {canEdit && (
             <Link
