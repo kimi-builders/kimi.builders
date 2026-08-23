@@ -11,7 +11,14 @@ export default async function SettingsModalPage() {
   const user = await getSessionUser();
   const locale = await getLocale(user);
   return (
-    <RouteModal title={t(locale, "set.title")} closeLabel={t(locale, "modal.close")}>
+    /* 50rem matches the shortcuts/search shells (KeyboardShortcuts):
+       wide enough that the widest picker label plus its "default"
+       badge (EN "Classic Default") stays on one line inside its tile. */
+    <RouteModal
+      title={t(locale, "set.title")}
+      closeLabel={t(locale, "modal.close")}
+      widthCls="w-[min(92vw,50rem)]"
+    >
       <SettingsContent showTitle={false} />
     </RouteModal>
   );

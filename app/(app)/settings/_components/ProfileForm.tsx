@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import {
   FORM_BTN_PRIMARY,
   INPUT_CLS,
-  LABEL_CLS,
 } from "@/components/form-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
@@ -18,9 +17,12 @@ import AvatarField from "./AvatarField";
 
 /* Control styles consolidated into the shared form-classes; aliases
    kept so call sites don't move. LABEL_CLS carries mb-1.5, so the old
-   mt-1.5 on inputs was removed (same gap, not doubled). */
+   mt-1.5 on inputs was removed (same gap, not doubled). The label
+   override: settings rows title their items in text-sm medium paper
+   (see the Preferences tab) — the profile form's field titles match
+   that grammar, with hints staying grey below. */
 const inputCls = INPUT_CLS;
-const labelCls = LABEL_CLS;
+const labelCls = "mb-1.5 block text-sm font-medium text-paper";
 
 export default function ProfileForm({
   initial,
@@ -47,8 +49,21 @@ export default function ProfileForm({
     // state is a fresh object per submit; feedback fires only on ok
   }, [state, locale, router]);
 
+  /* max-w-2xl: the settings page runs on the wide no-rail canvas; a
+     full-bleed ~1000px handle/bio input reads as a search bar. The cap
+     keeps fields near the old reading-column width. */
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="max-w-2xl space-y-4">
+      {/* Identity first: the avatar anchors the profile — name/handle/
+         bio read as its captions, not the other way round. */}
+      <AvatarField
+        locale={locale}
+        handle={initial.handle}
+        currentUrl={initial.avatarUrl}
+        hasCustom={hasCustomAvatar}
+        inputCls={inputCls}
+        labelCls={labelCls}
+      />
       <label className="block">
         <span className={labelCls}>
           {t(locale, "set.name")}
@@ -87,14 +102,6 @@ export default function ProfileForm({
           className={inputCls}
         />
       </label>
-      <AvatarField
-        locale={locale}
-        handle={initial.handle}
-        currentUrl={initial.avatarUrl}
-        hasCustom={hasCustomAvatar}
-        inputCls={inputCls}
-        labelCls={labelCls}
-      />
       {state?.error && (
         <p className="text-xs text-status-danger-fg">{state.error}</p>
       )}

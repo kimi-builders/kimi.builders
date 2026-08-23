@@ -5,7 +5,7 @@
    the x-kb-path request header written by the root proxy.ts, and
    (app)/layout.tsx reads the table on server-tree refetch. kind=none
    -> no rail; wide -> the main column's max-w relaxes to 1000 (analytics
-   canvases). Unlisted routes (/settings, /demo-night, /community
+   canvases). Unlisted routes (/demo-night, /community
    subpages, ...) fall back to community — same behavior as the
    pre-rework "one widget site-wide". Not-yet-ready sections' dedicated
    rails also fall back to community, so the "on its way" placeholder
@@ -68,6 +68,13 @@ export function railFor(pathname: string): RailDecision {
   if (p.startsWith("/u/")) return decision("none", { wide: true });
   /* Admin console: no rail, wide canvas. */
   if (p === "/admin" || p.startsWith("/admin/")) {
+    return decision("none", { wide: true });
+  }
+  /* Settings: no rail, wide canvas — a self-contained forms page (same
+     tier as the profile and admin); the community fallback put a
+     context rail beside a settings list and squeezed the three columns
+     at laptop widths. */
+  if (p === "/settings" || p.startsWith("/settings/")) {
     return decision("none", { wide: true });
   }
 

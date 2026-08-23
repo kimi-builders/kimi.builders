@@ -619,8 +619,10 @@ html[lang="en"] .seg-en {
   background: var(--color-paper);
   color: var(--color-bg);
 }
-/* Settings preference active state: beyond theme cards, vibe cards
-   follow the SSR <html> attributes the same way. */
+/* Settings picker tiles (theme/vibe): the tile is the button's visual
+   (pref-controls ThemeCards/VibeCards) — active border on the tile,
+   active label switches grey -> paper; both ride the SSR <html>
+   attributes, correct on first paint. */
 html[data-theme="dark"] .theme-card-dark,
 html[data-theme="light"] .theme-card-light {
   border-color: var(--color-blue);
@@ -628,6 +630,12 @@ html[data-theme="light"] .theme-card-light {
 html[data-vibe="poster"] .vibe-card-poster,
 html[data-vibe="soft"] .vibe-card-soft {
   border-color: var(--color-blue);
+}
+html[data-theme="dark"] .theme-label-dark,
+html[data-theme="light"] .theme-label-light,
+html[data-vibe="poster"] .vibe-label-poster,
+html[data-vibe="soft"] .vibe-label-soft {
+  color: var(--color-paper);
 }
 
 /* ---- toast: light action feedback (Toaster outlet, 2.6s self-dismiss) ---- */

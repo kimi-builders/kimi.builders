@@ -253,20 +253,27 @@ export function VibeToggle({
   );
 }
 
-/* Vibe cards (settings "preferences"): one angular, one classic;
-   active states ride globals.css's html[data-vibe] state classes;
-   preview chips use literal radii (rounded-[..] arbitrary values never
-   pass through --radius-* variables, so poster mode can't zero them —
-   the preview stays honest under both vibes). The "default" badge
-   follows DEFAULT_VIBE (configurable via src/lib/vibe.ts). */
+/* Theme picker tiles: flat — the tile IS the option's hit target, no
+   card wrapping a preview box (the old card-in-card). Each tile shows
+   its surface with theme tokens and a Moon/Sun glyph; the active tile
+   turns focus blue via globals.css's html[data-theme] rules (SSR from
+   the cookie — correct on first paint, same lever as the segs). */
+/* 6.5rem column: wide enough for the longest label + its "default"
+   badge on one line (EN "Classic Default" ~100px), with the tile
+   filling the column width. */
+const tileBtnCls =
+  "flex w-[6.5rem] flex-col items-center gap-1.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
+const tileCls =
+  "grid h-12 w-full place-items-center border border-line transition-colors hover:border-paper/40";
+const tileLabelCls =
+  "flex items-center gap-1.5 whitespace-nowrap font-mono text-xs text-grey";
+
 export function VibeCards({ locale }: { locale: Locale }) {
   const pick = (next: Vibe) => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     document.documentElement.dataset.vibe = next;
     writePrefCookie("kb_vibe", next);
   };
-  const card =
-    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   const defaultBadge = (
     <span className="rounded-[2px] border border-line px-1 text-xs text-grey">
       {t(locale, "set.vibeDefault")}
@@ -275,22 +282,30 @@ export function VibeCards({ locale }: { locale: Locale }) {
   return (
     <div className="flex flex-wrap gap-3">
       <form action={setVibeToAction} className="contents">
-        <button type="submit" name="vibe" value="poster" onClick={pick("poster")} className={`${card} vibe-card-poster`}>
-          <span className="flex h-16 items-center justify-center gap-1.5 rounded-[10px] border border-line bg-bg">
-            <span className="size-6 rounded-[1px] border border-blue bg-blue/10" />
-            <span className="size-6 rounded-[1px] border border-line bg-moon" />
+        <button type="submit" name="vibe" value="poster" onClick={pick("poster")} className={tileBtnCls}>
+          {/* The tile's own radius is the demo: poster = sharp corners.
+             Literal radii never pass through --radius-* (the global
+             poster vibe zeroes those), so the specimen stays honest in
+             both vibes. */}
+          <span className={`${tileCls} vibe-card-poster rounded-[2px]`}>
+            <span className="flex items-center gap-1.5">
+              <span className="size-5 rounded-[1px] border border-blue bg-blue/10" />
+              <span className="size-5 rounded-[1px] border border-line bg-moon" />
+            </span>
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
+          <span className={`${tileLabelCls} vibe-label-poster`}>
             {t(locale, "vibe.poster")}
             {DEFAULT_VIBE === "poster" && defaultBadge}
           </span>
         </button>
-        <button type="submit" name="vibe" value="soft" onClick={pick("soft")} className={`${card} vibe-card-soft`}>
-          <span className="flex h-16 items-center justify-center gap-1.5 rounded-[10px] border border-line bg-bg">
-            <span className="size-6 rounded-[8px] border border-blue bg-blue/10" />
-            <span className="size-6 rounded-[8px] border border-line bg-moon" />
+        <button type="submit" name="vibe" value="soft" onClick={pick("soft")} className={tileBtnCls}>
+          <span className={`${tileCls} vibe-card-soft rounded-[10px]`}>
+            <span className="flex items-center gap-1.5">
+              <span className="size-5 rounded-[7px] border border-blue bg-blue/10" />
+              <span className="size-5 rounded-[7px] border border-line bg-moon" />
+            </span>
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
+          <span className={`${tileLabelCls} vibe-label-soft`}>
             {t(locale, "vibe.soft")}
             {DEFAULT_VIBE === "soft" && defaultBadge}
           </span>
@@ -344,36 +359,35 @@ export function LocaleSeg({ locale }: { locale: Locale }) {
   );
 }
 
-/* Theme cards (settings "preferences"): dark/light mini previews,
-   active state riding globals.css's html[data-theme] classes; logic
-   same as ThemeToggle (pure client cookie, no network). */
+/* Theme picker (settings "preferences"): same flat-tile grammar as
+   VibeCards — tile IS the button, glyph carries the meaning, active
+   border via html[data-theme] rules; logic same as ThemeToggle (pure
+   client cookie, no network). */
 export function ThemeCards({ locale }: { locale: Locale }) {
   const pick = (next: "dark" | "light") => (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     document.documentElement.dataset.theme = next;
     writePrefCookie("kb_theme", next);
   };
-  const card =
-    "w-36 rounded-xl border border-line p-2.5 text-left transition-colors hover:border-ui-blue/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <div className="flex flex-wrap gap-3">
       <form action={setThemeToAction} className="contents">
-        <button type="submit" name="theme" value="dark" onClick={pick("dark")} className={`${card} theme-card-dark`}>
-          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-bg text-ui-blue">
-            <Moon size={22} aria-hidden="true" />
+        <button type="submit" name="theme" value="dark" onClick={pick("dark")} className={tileBtnCls}>
+          <span className={`${tileCls} theme-card-dark bg-bg rounded-lg`}>
+            <Moon size={16} className="text-ui-blue" aria-hidden="true" />
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
+          <span className={`${tileLabelCls} theme-label-dark`}>
             {t(locale, "set.themeDark")}
             <span className="rounded border border-line px-1 text-xs text-grey">
               {t(locale, "set.themeDefault")}
             </span>
           </span>
         </button>
-        <button type="submit" name="theme" value="light" onClick={pick("light")} className={`${card} theme-card-light`}>
-          <span className="flex h-16 items-center justify-center rounded-lg border border-line bg-moon text-ui-blue">
-            <Sun size={22} aria-hidden="true" />
+        <button type="submit" name="theme" value="light" onClick={pick("light")} className={tileBtnCls}>
+          <span className={`${tileCls} theme-card-light bg-moon rounded-lg`}>
+            <Sun size={16} className="text-ui-blue" aria-hidden="true" />
           </span>
-          <span className="mt-2 flex items-center gap-1.5 font-mono text-xs text-paper">
+          <span className={`${tileLabelCls} theme-label-light`}>
             {t(locale, "set.themeLight")}
           </span>
         </button>

@@ -13,9 +13,8 @@ import { awesomeSourceStatsQuery, relatedWorksQuery } from "../src/lib/works";
 
 test("railFor: community feed and unlisted routes fall back to community rail", () => {
   assert.deepEqual(railFor("/community"), { kind: "community", id: null, wide: false });
-  /* Unlisted routes (/settings, /demo-night, /community subpages) match
+  /* Unlisted routes (/demo-night, /community subpages) match
      the pre-rework behavior; /works has its own rail. */
-  assert.deepEqual(railFor("/settings"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/demo-night"), { kind: "community", id: null, wide: false });
   assert.deepEqual(railFor("/works"), { kind: "works", id: null, wide: false });
   assert.deepEqual(railFor("/community/new"), { kind: "community", id: null, wide: false });
@@ -82,12 +81,13 @@ test("railFor: usage and profiles have no rail and a wide canvas", () => {
   assert.deepEqual(railFor("/usage/device"), { kind: "none", id: null, wide: true });
   assert.deepEqual(railFor("/usage/leaderboard"), { kind: "none", id: null, wide: true });
   assert.deepEqual(railFor("/u/aklman"), { kind: "none", id: null, wide: true });
+  /* Settings joins the no-rail tier: a self-contained forms page. */
+  assert.deepEqual(railFor("/settings"), { kind: "none", id: null, wide: true });
 });
 
 test("rail decision key: same shell context survives pathname changes", () => {
   const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
-  assert.equal(keyFor("/community"), keyFor("/settings"));
-  assert.equal(keyFor("/settings"), keyFor("/demo-night"));
+  assert.equal(keyFor("/community"), keyFor("/demo-night"));
   assert.equal(keyFor("/usage/device"), keyFor("/usage/leaderboard"));
   assert.equal(keyFor("/usage"), keyFor("/u/another-handle"));
   assert.equal(keyFor("/blog/issue-a"), keyFor("/blog/issue-b"));

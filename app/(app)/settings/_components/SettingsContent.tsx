@@ -34,8 +34,13 @@ function Panel({
   note: string;
   children: React.ReactNode;
 }) {
+  /* Flat section, no wrapping card: settings surfaces inside the
+     route modal and on the page both already provide the frame — a
+     bordered panel card here stacked box-in-box. Sections are the
+     heading row plus hairline-separated rows below (the rows carry
+     their own border-t / divide-y). */
   return (
-    <section className="rounded-2xl border border-line bg-card p-4 sm:p-6">
+    <section>
       <div className="flex items-baseline justify-between gap-4">
         <h2 className="text-sm font-semibold text-paper">{title}</h2>
         <span className="font-mono text-xs text-grey">{note}</span>
@@ -73,8 +78,11 @@ export default async function SettingsContent({
   const locale = await getLocale(user);
 
   if (!user) {
+    /* No wrapper card: LoginGate carries its own card, and a second
+       frame around header + gate stacked boxes (same de-nesting as
+       Panel above). */
     return (
-      <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
+      <div>
         {showTitle && (
           <div>
             <p className="kb-eyebrow">{t(locale, "set.eyebrow")}</p>
@@ -161,32 +169,37 @@ export default async function SettingsContent({
               </div>
               <MotionSeg locale={locale} initial={prefs.motion} />
             </div>
-            <div className="border-t border-line pt-4">
-              <p className="text-sm font-medium text-paper">{t(locale, "set.theme")}</p>
-              <div className="mt-3">
-                <ThemeCards locale={locale} />
+            {/* Theme/vibe/layout: the same row grammar as locale/motion —
+                title + note left, picker right. The pickers are flat
+                preview tiles (pref-controls), so no card-in-card. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-line py-4">
+              <div>
+                <p className="text-sm font-medium text-paper">{t(locale, "set.theme")}</p>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-grey">{t(locale, "set.themeNote")}</p>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.themeNote")}</p>
+              <ThemeCards locale={locale} />
             </div>
-            <div className="border-t border-line pt-4">
-              <p className="text-sm font-medium text-paper">{t(locale, "set.vibe")}</p>
-              <div className="mt-3">
-                <VibeCards locale={locale} />
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-line py-4">
+              <div>
+                <p className="text-sm font-medium text-paper">{t(locale, "set.vibe")}</p>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-grey">{t(locale, "set.vibeNote")}</p>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.vibeNote")}</p>
+              <VibeCards locale={locale} />
             </div>
             {/* Layout: a second entry point for collapsing the left nav and
                 hiding the right rail, improving discoverability of the two
                 DISPLAY keys; the buttons reuse pref-controls' NavToggle /
                 SidebarToggle (optimistic cookie flip, same switch as the
                 left nav). */}
-            <div className="border-t border-line pt-4">
-              <p className="text-sm font-medium text-paper">{t(locale, "set.layout")}</p>
-              <div className="panel-pair mt-3 flex max-w-md gap-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-line py-4">
+              <div>
+                <p className="text-sm font-medium text-paper">{t(locale, "set.layout")}</p>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-grey">{t(locale, "set.layoutNote")}</p>
+              </div>
+              <div className="panel-pair flex max-w-md gap-1.5">
                 <NavToggle locale={locale} className={layoutPairBtnCls} />
                 <SidebarToggle locale={locale} className={layoutPairBtnCls} />
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-grey">{t(locale, "set.layoutNote")}</p>
             </div>
           </Panel>
 
