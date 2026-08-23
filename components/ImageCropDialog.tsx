@@ -131,7 +131,7 @@ export default function ImageCropDialog({
       aria-label={title}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
     >
- <div className="w-fit max-w-full rounded-2xl border border-line bg-bg p-5 text-paper shadow-2xl">
+      <div className="w-fit max-w-full rounded-2xl border border-line bg-bg p-5 text-paper shadow-2xl">
         <h3 className="font-mono text-sm font-semibold">{title}</h3>
         <p className="mt-1 text-xs leading-relaxed text-grey">{hint}</p>
         {/* Crop viewport: pointer-drag positioning (touch-none hands touch drags over to pointer events) */}
@@ -185,7 +185,7 @@ export default function ImageCropDialog({
           />
         </label>
         {failed && (
-          <p role="alert" className="mt-3 text-xs text-ui-blue">
+          <p role="alert" className="mt-3 text-xs text-status-danger-fg">
             {errorLabel}
           </p>
         )}
@@ -202,7 +202,7 @@ export default function ImageCropDialog({
             type="button"
             onClick={confirm}
             disabled={busy}
- className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-blue bg-blue px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40"
           >
             {busy ? (
               <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
