@@ -18,7 +18,7 @@ import { cookies } from "next/headers";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
-import { monthLabel } from "@/src/lib/format";
+import { compactNumber, monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
@@ -29,6 +29,7 @@ import {
   listLetterIssueMetas,
   type AssembledIssue,
   type LetterIssueMeta,
+  type MonthlyStatsSnapshot,
 } from "@/src/lib/monthly";
 import { getCachedMonthlyStatsSnapshot } from "@/src/lib/monthly-stats-cache";
 import {
@@ -88,12 +89,16 @@ function SectionShare({
 
 function LetterDetail({
   issue,
+  stats,
   metas,
   initialTab,
   locale,
   canEdit,
 }: {
   issue: AssembledIssue;
+  /* Raw numbers for the facts visualization; the assembled issue's
+     fact strings (posters, digests) come from the same snapshot. */
+  stats: MonthlyStatsSnapshot;
   metas: LetterIssueMeta[];
   initialTab?: string;
   locale: "zh" | "en";
@@ -112,6 +117,18 @@ function LetterDetail({
       ),
     });
   }
+  /* Facts visualization numbers: percent strings mirror buildFacts so
+     panel, poster and digest always tell the same story. */
+  const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+  const community = [
+    { key: "members", label: zh ? "成员" : "Members", value: stats.members },
+    { key: "posts", label: zh ? "帖子" : "Posts", value: stats.posts },
+    { key: "works", label: zh ? "作品" : "Works", value: stats.works },
+    { key: "comments", label: zh ? "评论" : "Comments", value: stats.comments },
+  ];
+  /* Bars scale within the community group only (one unit, one race);
+     a 4% floor keeps single-digit counts visible. */
+  const communityMax = Math.max(...community.map((c) => c.value), 1);
   tabs.push({
     id: "facts",
     label: zh ? "事实盘点" : "Facts",
@@ -126,13 +143,63 @@ function LetterDetail({
             ? "来自站内用量聚合的月度快照,口径可复算(usage CLI 开源);缺项显示「—」,不编数。"
             : "A monthly snapshot from on-site usage aggregation, reproducible via the open-source usage CLI; gaps show “—”, never invented."}
         </p>
-        <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
-          {issue.facts.map((f) => (
-            <div key={f.label} className="border-l-2 border-ui-blue/60 pl-3">
-              <p className="break-all font-mono text-2xl font-semibold leading-tight tracking-tight text-paper">{f.value}</p>
-              <p className="mt-2 text-[11px] leading-snug text-grey">{f.label}</p>
-            </div>
-          ))}
+
+        {/* KPI band: token total headlines; cache rate and top model are
+            the two 30-day lenses. Hairline cells (gap-px over bg-line). */}
+        <div className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
+          <div className="bg-card p-5">
+            <p className="font-mono text-[11px] tracking-[0.08em] text-grey">
+              {zh ? "全站同步 TOKEN · 累计" : "TOKENS SYNCED · ALL-TIME"}
+            </p>
+            <p className="mt-2.5 font-mono text-3xl font-semibold tracking-tight text-paper">
+              {compactNumber(stats.tokensTotal, locale)}
+            </p>
+          </div>
+          <div className="bg-card p-5">
+            <p className="font-mono text-[11px] tracking-[0.08em] text-grey">
+              {zh ? "缓存命中率 · 近 30 天" : "CACHE HIT RATE · 30D"}
+            </p>
+            <p className="mt-2.5 font-mono text-3xl font-semibold tracking-tight text-paper">
+              {stats.cacheHitRate === null ? "—" : pct(stats.cacheHitRate)}
+            </p>
+          </div>
+          <div className="bg-card p-5">
+            <p className="font-mono text-[11px] tracking-[0.08em] text-grey">
+              {zh ? "TOP 模型 · 近 30 天" : "TOP MODEL · 30D"}
+            </p>
+            <p className="mt-2.5 truncate font-mono text-2xl font-semibold tracking-tight text-paper" title={stats.topModel?.name}>
+              {stats.topModel ? `${stats.topModel.name} · ${pct(stats.topModel.share)}` : "—"}
+            </p>
+          </div>
+        </div>
+
+        {/* Community bars: the rail's bar recipe (h-1.5 track, blue
+            fill, mono value) at reading width. */}
+        <div className="mt-4 rounded-2xl border border-line p-5">
+          <p className="font-mono text-[11px] tracking-[0.08em] text-grey">
+            {zh ? "社区规模" : "COMMUNITY"}
+          </p>
+          <ul className="mt-4 space-y-3">
+            {community.map((c) => (
+              <li key={c.key} className="flex items-center gap-3">
+                <span className="w-16 shrink-0 text-xs text-grey">{c.label}</span>
+                <span className="h-1.5 min-w-0 flex-1 rounded-full bg-paper/[0.06]">
+                  <span
+                    className="block h-full rounded-full bg-blue"
+                    style={{ width: `${Math.max((c.value / communityMax) * 100, c.value > 0 ? 4 : 0)}%` }}
+                  />
+                </span>
+                <span className="w-14 shrink-0 text-right font-mono text-xs text-grey">
+                  {c.value.toLocaleString(locale === "zh" ? "zh-CN" : "en-US")}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 border-t border-line pt-3 font-mono text-[10px] leading-relaxed text-grey/70">
+            {zh
+              ? "来源:站内用量聚合 · usage CLI 可复算 · 缺项显示 —,不编数"
+              : "Source: on-site usage aggregation · reproducible via the usage CLI · gaps show —, never invented"}
+          </p>
         </div>
       </div>
     ),
@@ -394,11 +461,33 @@ function GuideDetail({
   }
   if (tutorial.payload.deck) {
     const deck = tutorial.payload.deck;
+    /* Deck embed: HTML decks (Kimi share links, exported pages, on-site
+       files) and PDFs render inline; hosts that refuse framing degrade
+       to the open card below — the link is always the escape hatch. */
+    const external = /^https?:\/\//i.test(deck);
+    /* PDFs stay unsandboxed (viewer plugins break under sandbox and a
+       PDF is inert); other cross-origin frames keep their own origin —
+       scripts, forms, popups and their own storage run so interactive
+       decks (e.g. Kimi share links) render fully, while the sandbox
+       still blocks top-navigation hijacking. On-site paths run
+       same-origin unsandboxed (our own static exports). */
+    const isPdf = /\.pdf(\?|#|$)/i.test(deck);
     tabs.push({
       id: "deck",
       label: zh ? "演示稿" : "Deck",
       panel: (
         <div className="border-b border-line py-9">
+          <iframe
+            src={deck}
+            title={tutorial.title}
+            loading="lazy"
+            sandbox={
+              external && !isPdf
+                ? "allow-scripts allow-popups allow-forms allow-same-origin"
+                : undefined
+            }
+            className="h-[560px] w-full rounded-2xl border border-line bg-card"
+          />
           <a
             href={deck}
             target="_blank"
@@ -407,7 +496,7 @@ function GuideDetail({
                semantics); cross-origin links can't download — internal
                links only. */
             download={deck.startsWith("/") ? true : undefined}
-            className="group flex items-center justify-between gap-4 rounded-2xl border border-line bg-card p-5 transition-colors hover:border-ui-blue/60"
+            className="group mt-4 flex items-center justify-between gap-4 rounded-2xl border border-line bg-card p-5 transition-colors hover:border-ui-blue/60"
           >
             <span>
               <span className="block text-sm font-semibold text-paper transition-colors group-hover:text-ui-blue">
@@ -562,13 +651,17 @@ export default async function ExploreDetailPage({
   }
   const canEdit = !!user && canModerate(user.role);
 
-  /* Letters first, guides as fallback. */
-  const letter = await getAssembledIssue(slug, locale, { stats: await getCachedMonthlyStatsSnapshot() });
+  /* Letters first, guides as fallback. The snapshot feeds both the
+     assembled facts (posters/digests) and the facts visualization, so
+     every surface shows identical numbers. */
+  const stats = await getCachedMonthlyStatsSnapshot();
+  const letter = await getAssembledIssue(slug, locale, { stats });
   if (letter) {
     const metas = await listLetterIssueMetas(locale);
     return (
       <LetterDetail
         issue={letter.issue}
+        stats={stats}
         metas={metas}
         initialTab={rawTab}
         locale={locale}

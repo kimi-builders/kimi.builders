@@ -554,6 +554,20 @@ html[data-sidebar="0"] .railgate {
     max-width: 1168px; /* 1000 + 10.5rem */
   }
 }
+/* The longform reading cap rides the same compensation ladder: with the
+   column widening while body text stays pinned at 40em, the sidebar
+   toggle looks dead on reading pages. The ladder stays inside the
+   comfortable CJK range (40-48 chars/line) and never opens to the full
+   column width. */
+html[data-nav="1"] .md-longform .md {
+  max-width: 44em;
+}
+html[data-sidebar="0"] .md-longform .md {
+  max-width: 46em;
+}
+html[data-nav="1"][data-sidebar="0"] .md-longform .md {
+  max-width: 48em;
+}
 /* The sidebar toggle's own icon/copy swaps by state. */
 html[data-sidebar="0"] .only-sidebar-full {
   display: none !important;
