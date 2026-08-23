@@ -4,7 +4,7 @@
    goes through i18n. */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarChart3, GalleryVerticalEnd, MessagesSquare, Star } from "lucide-react";
+import { BarChart3, MessagesSquare, Shell, Sprout } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -17,8 +17,8 @@ export default async function AboutPage() {
 
   const sections = [
     { href: "/community", icon: MessagesSquare, key: "about.whatCommunity" as const, name: t(locale, "nav.community") },
-    { href: "/works", icon: GalleryVerticalEnd, key: "about.whatWorks" as const, name: t(locale, "nav.works") },
-    { href: "/awesome", icon: Star, key: "about.whatAwesome" as const, name: t(locale, "nav.awesome") },
+    { href: "/works", icon: Shell, key: "about.whatWorks" as const, name: t(locale, "nav.works") },
+    { href: "/awesome", icon: Sprout, key: "about.whatAwesome" as const, name: t(locale, "nav.awesome") },
     { href: "/usage", icon: BarChart3, key: "about.whatUsage" as const, name: t(locale, "nav.usage") },
   ];
   const links = [

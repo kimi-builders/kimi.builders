@@ -14,6 +14,7 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Circle,
+  Languages,
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
@@ -128,7 +129,7 @@ export function LocaleToggle({
         }}
         className={`${className ?? ""}${pending ? " opacity-50" : ""}`}
       >
-        <span className="w-[15px] shrink-0 text-center text-xs">文</span>
+        <Languages size={15} className="shrink-0" aria-hidden="true" />
         {withLabel && (
           <>
             <span className="nav-label only-zh">English</span>

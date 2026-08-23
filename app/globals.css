@@ -305,6 +305,15 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Lucide retuned to the official Kimi weight: their web app draws an
+   in-house stroke set at 1.8 on the 24 grid (round caps, currentColor),
+   and lucide's default 2 reads a notch heavier beside it. The
+   attribute selector only matches the default weight, so explicit
+   strokeWidth props (charts at 1 / 1.2 / 1.6) keep their values. */
+svg.lucide[stroke-width="2"] {
+  stroke-width: 1.8;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-paper);

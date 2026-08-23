@@ -8,7 +8,7 @@
    main area gets pb-24 in (app)/layout so nothing hides behind it. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Compass, GalleryVerticalEnd, MessagesSquare, SquarePen, User } from "lucide-react";
+import { BarChart3, Compass, MessagesSquare, Shell, SquarePen, User } from "lucide-react";
 import { t, type I18nKey, type Locale } from "@/src/lib/i18n";
 
 export default function MobileTabBar({
@@ -52,7 +52,7 @@ export default function MobileTabBar({
     },
     {
       href: "/works",
-      icon: GalleryVerticalEnd,
+      icon: Shell,
       key: "nav.works" as const,
       active: pathname.startsWith("/works") && !pathname.startsWith("/works/new"),
     },

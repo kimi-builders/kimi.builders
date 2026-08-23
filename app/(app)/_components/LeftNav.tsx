@@ -19,15 +19,15 @@ import { useCallback, useSyncExternalStore } from "react";
 import {
   BarChart3,
   Compass,
-  GalleryVerticalEnd,
   Info,
   Lock,
   MessagesSquare,
   Presentation,
   Settings,
+  Shell,
   ShieldCheck,
+  Sprout,
   SquarePen,
-  Star,
   User,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
@@ -42,8 +42,8 @@ import { NavToggle, SidebarToggle } from "./pref-controls";
 export const SECTIONS = [
   { href: "/community", icon: MessagesSquare, key: "nav.community", soon: false, hidden: false },
   { href: "/explore", icon: Compass, key: "nav.explore", soon: UPCOMING.explore, hidden: UPCOMING.explore },
-  { href: "/works", icon: GalleryVerticalEnd, key: "nav.works", soon: false, hidden: false },
-  { href: "/awesome", icon: Star, key: "nav.awesome", soon: false, hidden: false },
+  { href: "/works", icon: Shell, key: "nav.works", soon: false, hidden: false },
+  { href: "/awesome", icon: Sprout, key: "nav.awesome", soon: false, hidden: false },
   { href: "/usage", icon: BarChart3, key: "nav.usage", soon: false, hidden: false },
   { href: "/demo-night", icon: Presentation, key: "nav.demoNight", soon: false, hidden: NAV_HIDDEN.demoNight },
 ] as const;

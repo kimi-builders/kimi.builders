@@ -2,11 +2,12 @@
 
 /* Up/down vote cluster: optimistic — the click flips fill/count
    immediately, the write lands in the background, failures roll back +
-   toast. The arrows space out (gap-2.5) with hover hints (title);
-   shared by posts and comments. Not rendered when signed out (callers
-   show a read-only score). */
+   toast. Thumbs (not arrows): the up/down-thumb metaphor reads as
+   like/dislike without learning anything, filled when active. Shared by
+   posts and comments. Not rendered when signed out (callers show a
+   read-only score). */
 import { useRef, useState } from "react";
-import { ArrowBigDown, ArrowBigUp } from "lucide-react";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { setCommentReactionAction, setPostReactionAction } from "../actions";
@@ -91,12 +92,12 @@ export default function VoteCluster({
         type="button"
         onClick={() => vote("up")}
         aria-label={upLabel}
-        title={upLabel}
+        data-tip={upLabel}
         className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
           state.up ? "text-ui-blue" : "text-grey hover:bg-paper/[0.05] hover:text-ui-blue"
         }`}
       >
-        <ArrowBigUp size={size} fill={state.up ? "currentColor" : "none"} />
+        <ThumbsUp size={size} fill={state.up ? "currentColor" : "none"} />
       </button>
       <span
         className={`min-w-4 text-center font-mono text-xs font-semibold ${
@@ -109,12 +110,12 @@ export default function VoteCluster({
         type="button"
         onClick={() => vote("down")}
         aria-label={downLabel}
-        title={downLabel}
+        data-tip={downLabel}
         className={`inline-flex items-center rounded-lg px-2 py-1.5 transition-[color,background-color,transform] active:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
           state.down ? "text-paper" : "text-grey hover:bg-paper/[0.05] hover:text-paper"
         }`}
       >
-        <ArrowBigDown size={size} fill={state.down ? "currentColor" : "none"} />
+        <ThumbsDown size={size} fill={state.down ? "currentColor" : "none"} />
       </button>
     </span>
   );

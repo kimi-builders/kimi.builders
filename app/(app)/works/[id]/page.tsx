@@ -13,7 +13,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { ArrowLeft, ExternalLink, GalleryVerticalEnd, Heart, MessageCircle } from "lucide-react";
+import { ArrowLeft, ExternalLink, Heart, MessageCircle, Shell } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AgentIcon from "@/components/AgentIcon";
 import LoadMore from "@/components/LoadMore";
@@ -72,7 +72,7 @@ function WorkGone({ locale, href, label }: { locale: Locale; href: string; label
   return (
     <div className="mt-12 rounded-2xl border border-line bg-card p-8 text-center">
       <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-line bg-moon text-ui-blue">
-        <GalleryVerticalEnd size={23} aria-hidden="true" />
+        <Shell size={23} aria-hidden="true" />
       </span>
       <p className="text-sm leading-relaxed text-grey">
         {t(locale, "works.notFound")}

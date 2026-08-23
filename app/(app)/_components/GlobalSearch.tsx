@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { searchSiteItems, type SiteSearchItem } from "@/src/lib/site-search";
@@ -79,6 +80,17 @@ export default function GlobalSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [query, setQuery] = useState("");
+  /* The dialog portals to <body> (client-only): the home page re-scopes
+     color tokens on its poster facade, and a dialog rendered inside that
+     subtree inherits the warm poster palette — portaling keeps the modal
+     on the app's standard tokens, identical everywhere. The
+     useSyncExternalStore triple is the lint-clean hydration check (false
+     on the server, true on the client, no subscription). */
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   /* Arrow-key selection: the first item preselected, Enter opens the
      selection; resets when the query changes; clamps into range when
      results shrink. */
@@ -149,9 +161,11 @@ export default function GlobalSearch({
       >
         <Search size={16} aria-hidden="true" />
       </button>
-      <dialog
-        ref={dialogRef}
-        aria-labelledby={`${mode}-search-title`}
+      {mounted &&
+        createPortal(
+          <dialog
+            ref={dialogRef}
+            aria-labelledby={`${mode}-search-title`}
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
@@ -217,7 +231,9 @@ export default function GlobalSearch({
         <p className="border-t border-line px-4 py-2 text-right font-mono text-xs text-grey/70">
           {t(locale, "search.shortcut")}
         </p>
-      </dialog>
+          </dialog>,
+          document.body,
+        )}
     </>
   );
 }
