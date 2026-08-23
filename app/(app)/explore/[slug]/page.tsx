@@ -22,7 +22,8 @@ import { compactNumber, monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
-import { listExploreItems } from "@/src/lib/explore";
+import { getArticleRailMeta, listExploreItems } from "@/src/lib/explore";
+import Avatar from "@/components/Avatar";
 import { findLearnSeries } from "@/src/lib/learn-series";
 import {
   getAssembledIssue,
@@ -312,18 +313,32 @@ function LetterDetail({
           </Link>
           <span className="truncate">{issue.title}</span>
         </div>
-        <h1 className="kb-h1-human mt-4">{issue.title}</h1>
-        {/* Kind meta row, the work detail's grammar (mono grey under the
-            title): kind · issue · month · language. The old eyebrow
-            repeated the breadcrumb/title words. */}
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-sm leading-5 text-grey">
-          <span>{zh ? "月刊评鉴" : "MONTHLY"} · ISSUE {String(issue.issue).padStart(2, "0")} · {issue.month}</span>
-          {metas[idx]?.fallback && (
-            <span className="rounded-md border border-line px-1.5 py-px text-paper">
-              {t(locale, metas[idx].locale === "zh" ? "art.langZh" : "art.langEn")}
-            </span>
-          )}
-        </p>
+        {/* Byline above the title (post/work-detail grammar); the meta
+            row that used to sit under the title duplicated the rail's
+            Type/Published/Language rows — the issue number is the one
+            fact the rail lacks, it rides beside the h1. */}
+        {metas[idx]?.editorHandle && (
+          <div className="mt-4 flex items-center gap-3 font-mono text-xs text-grey">
+            <Avatar
+              url=""
+              handle={metas[idx].editorHandle}
+              size={20}
+            />
+            <Link
+              href={`/u/${metas[idx].editorHandle}`}
+              className="text-paper transition-colors hover:text-ui-blue"
+            >
+              @{metas[idx].editorHandle}
+            </Link>
+            <span>{monthLabel(metas[idx].publishedAt)}</span>
+          </div>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3">
+          <h1 className="kb-h1-human">{issue.title}</h1>
+          <span className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
+            ISSUE {String(issue.issue).padStart(2, "0")}
+          </span>
+        </div>
         <p className="kb-lede-human mt-4 max-w-2xl">{issue.summary}</p>
       </header>
 
@@ -409,7 +424,7 @@ function LetterDetail({
    one card per piece, no forced linkage; series are a grouping, not
    shown for now; metadata lives in the ArticleRail) ---- */
 
-function GuideDetail({
+async function GuideDetail({
   tutorial,
   initialTab,
   locale,
@@ -421,6 +436,10 @@ function GuideDetail({
   canEdit: boolean;
 }) {
   const zh = locale === "zh";
+  /* Byline source: the rail-meta query is React-cached — the Article
+     rail's own call dedupes with this one (no extra SQL). */
+  const railMeta = await getArticleRailMeta(tutorial.slug, locale);
+  const editorHandle = railMeta?.editorHandle || null;
   /* Chapter: payload.chapter ?? the owning series' registry chapter
      (the series isn't displayed; the chapter still applies). */
   const seriesChapterSlug = tutorial.series
@@ -595,21 +614,34 @@ function GuideDetail({
           </Link>
           <span className="truncate">{tutorial.title}</span>
         </div>
-        <h1 className="kb-h1 mt-4">{tutorial.title}</h1>
-        {/* Kind meta row, the work detail's grammar (mono grey under the
-            title): kind · chapter · month · language. */}
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-sm leading-5 text-grey">
-          <span>
-            {zh ? "文章" : "ARTICLE"}
-            {chapter ? ` · ${zh ? chapter.zh : chapter.en}` : ""}
-            {` · ${monthLabel(tutorial.publishedAt)}`}
-          </span>
-          {tutorial.fallback && (
-            <span className="rounded-md border border-line px-1.5 py-px text-paper">
-              {tutorial.locale === "zh" ? "中文" : "EN"}
-            </span>
+        {/* Byline above the title, same grammar as the letter/post/work
+            details; the old meta row duplicated the rail's
+            type/date/language — the chapter chip stays beside the h1
+            (the rail is >=xl only; on smaller screens it was the last
+            place the chapter lived). */}
+        {editorHandle && (
+          <div className="mt-4 flex items-center gap-3 font-mono text-xs text-grey">
+            <Avatar url="" handle={editorHandle} size={20} />
+            <Link
+              href={`/u/${editorHandle}`}
+              className="text-paper transition-colors hover:text-ui-blue"
+            >
+              @{editorHandle}
+            </Link>
+            <span>{monthLabel(tutorial.publishedAt)}</span>
+          </div>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3">
+          <h1 className="kb-h1">{tutorial.title}</h1>
+          {chapter && (
+            <Link
+              href={`/explore?chapter=${chapter.id}`}
+              className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+            >
+              {zh ? chapter.zh : chapter.en}
+            </Link>
           )}
-        </p>
+        </div>
         {tutorial.summary && <p className="kb-lede mt-4 max-w-2xl">{tutorial.summary}</p>}
       </header>
 

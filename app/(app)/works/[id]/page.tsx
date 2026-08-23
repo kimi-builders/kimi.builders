@@ -48,6 +48,7 @@ import WorkOwnerActions from "../_components/WorkOwnerActions";
 import WorkScreenshot from "../_components/WorkScreenshot";
 import WorkVoteButton from "../_components/WorkVoteButton";
 import ModToolbar from "../../admin/_components/ModToolbar";
+import ModMenu from "../../community/_components/ModMenu";
 
 export async function generateMetadata({
   params,
@@ -161,26 +162,13 @@ export default async function WorkPage({
         <span className="truncate">{work.name}</span>
       </div>
 
-      {/* Title row: the H1 stays clean; badges all move down to the meta row */}
-      <div className="mt-4 flex items-start gap-3">
-        {work.logoKey && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={mediaUrl(work.logoKey)}
-            alt=""
-            className="mt-0.5 size-11 shrink-0 rounded-lg border border-line object-cover"
-          />
-        )}
-        <h1 className="kb-h1">
-          {work.name}
-        </h1>
-      </div>
-      {/* Meta on two levels: identity row = author / original author +
-          recommender · time (same-family information shares a row);
-          attribute chips = type/scope/status/declaration (blue) / *featured
-          (blue) — as badges, mobile wrapping aligns naturally instead of
-          squeezing into ragged dot-separated lines. */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-sm leading-5 text-grey">
+      {/* Byline above the title (post-detail grammar): the author anchors
+          the card, the title reads as their words; identity + state flags
+          share the row, attribute chips stay out of the header — the
+          right rail (>=xl) and the inline info bar (<xl) already carry
+          kind/scope/status/declaration, repeating them here tripled the
+          metadata. */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-xs leading-5 text-grey">
         {work.source === "awesome" && work.authorLabel ? (
           <>
             {/* The original author links to the GitHub profile when
@@ -240,46 +228,24 @@ export default async function WorkPage({
           </span>
         )}
       </div>
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 font-mono text-xs text-grey">
-          <WorkKindIcon id={work.kind} size={11} />
-          {workKindLabel(work.kind, locale === "zh")}
-        </span>
-        {work.scope && (
-          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-xs text-grey">
-            {t(
-              locale,
-              work.scope === "eco"
-                ? "awesome.scopeEco"
-                : work.scope === "part"
-                  ? "awesome.scopePart"
-                  : "awesome.scopeBase",
-            )}
-          </span>
+
+      {/* Title row: the H1 stays clean; the featured star is the one
+          badge the rail doesn't carry, it rides beside the title. */}
+      <div className="mt-2 flex items-start gap-3">
+        {work.logoKey && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={mediaUrl(work.logoKey)}
+            alt=""
+            className="mt-0.5 size-11 shrink-0 rounded-lg border border-line object-cover"
+          />
         )}
-        {work.status !== "released" && (
-          <span className="inline-flex items-center rounded-md border border-line px-2 py-1 font-mono text-xs text-grey">
-            {t(
-              locale,
-              work.status === "planning"
-                ? "works.statusPlanning"
-                : work.status === "building"
-                  ? "works.statusBuilding"
-                  : "works.statusArchived",
-            )}
-          </span>
-        )}
-        {claimBadge !== null && (
-          <span
-            className="inline-flex items-center rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-xs text-blue"
-            title={t(locale, "works.badgeTitle")}
-          >
-            {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
-          </span>
-        )}
+        <h1 className="kb-h1">
+          {work.name}
+        </h1>
         {work.featuredAt && (
           <span
-            className="inline-flex items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-2 py-1 font-mono text-xs text-blue"
+            className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-md border border-blue/50 bg-blue/10 px-1.5 py-px font-mono text-xs text-blue"
             title={`${work.featuredReason ?? ""}${
               work.editorHandle
                 ? ` ${t(locale, "featured.by", { handle: work.editorHandle })}`
@@ -333,16 +299,19 @@ export default async function WorkPage({
               />
             </span>
           )}
-          {/* Moderation bar: admin/mod (hide/unhide; hard delete is admin-only), re-authorized at the action layer */}
+          {/* Moderation behind the shared menu entry (post-detail
+              grammar); re-authorized at the action layer */}
           {user && canModerate(user.role) && (
-            <ModToolbar
-              targetType="work"
-              targetId={work.id}
-              hidden={!!work.hiddenAt}
-              isAdmin={user.role === "admin"}
-              locale={locale}
-              redirectAfter={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
-            />
+            <ModMenu locale={locale}>
+              <ModToolbar
+                targetType="work"
+                targetId={work.id}
+                hidden={!!work.hiddenAt}
+                isAdmin={user.role === "admin"}
+                locale={locale}
+                redirectAfter={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
+              />
+            </ModMenu>
           )}
           <ShareButton
             path={`/works/${work.id}`}
@@ -425,6 +394,36 @@ export default async function WorkPage({
                 <dt className="text-grey">{t(locale, "works.declared")}</dt>
                 <dd className="text-ui-blue" title={t(locale, "works.badgeTitle")}>
                   {t(locale, "works.badge", { n: compactNumber(claimBadge, locale) })}
+                </dd>
+              </div>
+            )}
+            {work.scope && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
+                <dt className="text-grey">{t(locale, "awesome.scope")}</dt>
+                <dd className="text-paper">
+                  {t(
+                    locale,
+                    work.scope === "eco"
+                      ? "awesome.scopeEco"
+                      : work.scope === "part"
+                        ? "awesome.scopePart"
+                        : "awesome.scopeBase",
+                  )}
+                </dd>
+              </div>
+            )}
+            {work.status !== "released" && (
+              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
+                <dt className="text-grey">{t(locale, "works.status")}</dt>
+                <dd className="text-paper">
+                  {t(
+                    locale,
+                    work.status === "planning"
+                      ? "works.statusPlanning"
+                      : work.status === "building"
+                        ? "works.statusBuilding"
+                        : "works.statusArchived",
+                  )}
                 </dd>
               </div>
             )}
