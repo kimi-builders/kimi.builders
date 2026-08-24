@@ -1,15 +1,15 @@
-/* Chapter registry: the explore section's primary browsing axis.
-   Mission statement: the optimal conversion from intelligence to
-   creativity (mirroring the official "Seeking the optimal conversion from
-   energy to intelligence"). The four chapters are four cuts along that
-   conversion chain and user-life entry points — learn (information ->
-   cognition), build (cognition -> artifact), measure (artifact -> value),
-   establish (value -> position and self). Chapters live in a code
-   registry (a permanent frame, capped at 3-5); series hang on chapters;
-   monthly letters never do — chapters are the language of "paths",
-   periodicals are orthogonal. Rendering counts published content;
-   zero-count chapters grey out in the segmented control (always
-   visible). */
+/* Chapter registry: an internal curation dimension of /explore. The
+   section collects reproducible, verifiable builder practices — methods
+   the sharer personally ran, shown with method, evidence, and sources;
+   it does not claim a universal optimal solution. The four chapters are
+   four perspectives onto those practices and user-life entry points —
+   learn (information -> cognition), build (cognition -> artifact),
+   measure (artifact -> value), establish (value -> position and self).
+   Chapters live in a code registry (a permanent frame, capped at 3-5);
+   series hang on chapters; monthly letters never do — chapters are the
+   language of "paths", periodicals are orthogonal. Rendering counts
+   published content; zero-count chapters grey out in the segmented
+   control (always visible). */
 import type { L10n } from "./learn-series";
 
 export type ChapterId = "learn" | "build" | "gain" | "become";

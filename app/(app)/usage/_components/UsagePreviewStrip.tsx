@@ -73,8 +73,18 @@ export default async function UsagePreviewStrip({
         {t(locale, "usage.previewNote")}
       </p>
 
-      {/* Same visual vocabulary as the signed-in dashboard (usage-dashboard scope + hero trio) */}
-      <div className="usage-dashboard mt-4">
+      {/* Same visual vocabulary as the signed-in dashboard (usage-dashboard scope + hero trio),
+          framed as a sample: dashed border + a rotated watermark so the
+          preview never reads as the visitor's real data. */}
+      <div className="usage-dashboard relative mt-4 rounded-2xl border border-dashed border-line p-3 sm:p-4">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden select-none"
+        >
+          <span className="-rotate-12 font-mono text-xl uppercase tracking-[0.3em] text-grey opacity-20 sm:text-2xl">
+            SAMPLE DATA · 示例数据
+          </span>
+        </div>
         <div className="grid gap-3 sm:grid-cols-3">
           {heroCard(
             zh ? "预估费用" : "Est. cost",

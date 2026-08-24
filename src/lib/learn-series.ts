@@ -80,52 +80,9 @@ export interface LearnSeries {
   discussionPostId?: number;
 }
 
-/* Registered series (a curated registry, few and heavy; first batch in
-   preparation). Note: the catalog renders only series with published
-   episodes — registered but empty = not shelved, no empty shells. */
-export const LEARN_SERIES: LearnSeries[] = [
-  /* Temporary walkthrough data (for a visual pass, paired with the
-     lens-* seed rows in kb_dev; delete this block and those rows once
-     the styling is reviewed). */
-  {
-    slug: "kimi-best-practice",
-    code: "SER-01",
-    chapter: "build",
-    title: { zh: "Kimi 最佳实战", en: "Kimi Best Practices" },
-    tagline: {
-      zh: "每一集都以「跟着做完」收口:产物可验证,路径可复走。",
-      en: "Every episode ends in a followable action: verifiable output, repeatable path.",
-    },
-    summary: {
-      zh: "从起项目到深度研究,Kimi 全家桶各产品各职业的最小可用工作流。编辑逐集验证,换代即重走。",
-      en: "Minimal workable workflows across the Kimi suite, per product and per role. Editor-verified, re-walked on every model generation.",
-    },
-    editorHandle: "aklmans",
-    verifiedModel: "kimi-latest",
-    verifiedAt: "2026-08-20",
-    reverifyLog: [
-      { at: "2026-07-30", model: "kimi-latest", note: { zh: "代际升级后全系列重走。", en: "Re-walked after the model generation bump." } },
-    ],
-  },
-  {
-    slug: "swarm-field-notes",
-    code: "SER-02",
-    chapter: "gain",
-    title: { zh: "Kimi Swarm 实战笔记", en: "Kimi Swarm Field Notes" },
-    tagline: {
-      zh: "多 Agent 不是演示,是排班。",
-      en: "Multi-agent is not a demo — it's a rota.",
-    },
-    summary: {
-      zh: "用 Swarm 编排真实任务的野地笔记:调研、巡检、交接。附编排提示词与失败记录。",
-      en: "Field notes on orchestrating real work with Swarm: research, patrols, handoffs. With prompts and failure logs.",
-    },
-    editorHandle: "aklmans",
-    verifiedModel: "kimi-prev-gen",
-    verifiedAt: "2026-05-12",
-    reverifyLog: [],
-  },
-];
+/* Registered series (a curated registry, few and heavy). 0-episode
+   series stay unlisted — register here when real content lands. */
+export const LEARN_SERIES: LearnSeries[] = [];
 
 export function findLearnSeries(slug: string): LearnSeries | undefined {
   return LEARN_SERIES.find((s) => s.slug === slug);

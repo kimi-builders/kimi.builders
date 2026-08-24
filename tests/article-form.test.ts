@@ -20,7 +20,7 @@ test("parseTagInput: split, dedupe, cap 5, drop empties/overlong", () => {
 
 test("assembleGuidePayload: full state roundtrips the strict validator", () => {
   const json = assembleGuidePayload({
-    seriesSel: "kimi-best-practice",
+    seriesSel: "",
     chapter: "learn",
     cover: "/covers/a.png",
     coverTone: "blue",
@@ -47,6 +47,19 @@ test("assembleGuidePayload: full state roundtrips the strict validator", () => {
     assert.deepEqual(parsed.payload.resources?.[1], { label: "本集提示词", url: "/p/1", kind: "prompt" });
     assert.equal(parsed.payload.durationMin, 15);
   }
+});
+
+/* The series value passes through assembly untouched; registry
+   validation lives in validateGuidePayload (covered in
+   learn-series.test.ts) and stays decoupled from the registry's
+   contents here. */
+test("assembleGuidePayload: series selection passes through", () => {
+  const json = assembleGuidePayload({
+    seriesSel: "some-series", chapter: "", cover: "", coverTone: "theme", products: [], roles: [],
+    videoProvider: "bilibili", videoId: "", deck: "", durationMin: "",
+    scenario: "", aiNote: "", tags: "", resources: [],
+  });
+  assert.equal((JSON.parse(json) as { series?: string }).series, "some-series");
 });
 
 test("assembleGuidePayload: empty state assembles to {}", () => {
