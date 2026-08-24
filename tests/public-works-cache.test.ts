@@ -117,11 +117,13 @@ test("cached work DTO drops non-public rows and contains JSON primitives only", 
      ISO strings, while a non-null hiddenAt makes the whole row ineligible. */
   assert.equal(dto.works[0].hiddenAt, null);
   assert.equal(dto.works[0].hiddenReason, null);
+  assert.equal(dto.works[0].alsoAwesome, false);
   assert.deepEqual(JSON.parse(JSON.stringify(dto)), dto);
 
   const hydrated = hydratePublicWorksPage(dto);
   assert.ok(hydrated.works[0].createdAt instanceof Date);
   assert.ok(hydrated.works[0].featuredAt instanceof Date);
+  assert.equal(hydrated.works[0].alsoAwesome, false);
   assert.equal(
     hydrated.works[0].featuredAt?.toISOString(),
     dto.works[0].featuredAt,

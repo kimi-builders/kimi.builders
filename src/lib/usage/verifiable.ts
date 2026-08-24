@@ -1,7 +1,7 @@
 /* System-internal verifiable token totals (work claims). Deliberately
    decoupled from the public social surface (social.ts): no
    show_on_leaderboard opt-in gate here. Privacy boundary: an author
-   claiming build effort for their own work is itself a public act; these
+   declaring tokens for their own work is itself a public act; these
    totals only back (a) the author's own claim allowance at write time and
    (b) the display invariant (per-author sum of claims <= totals) — the
    published number is always the author's own claim, never this module's

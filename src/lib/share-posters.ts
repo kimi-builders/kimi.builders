@@ -13,7 +13,7 @@
      (usage_settings.show_on_leaderboard=1), reusing getPublicTokenTotals
      from usage/social.ts (the gate is pinned inside the SQL JOIN); not
      opted in = null = the row never renders (no negative signaling);
-   - work build effort is claim-based: the number is this work's
+   - work token display is claim-based: the number is this work's
      claimed_tokens — declaring is itself a public act, no opt-in gate;
      when the display invariant (per-author sum of claims <= verifiable
      total, internal definition in usage/verifiable.ts) fails = null =
@@ -180,7 +180,7 @@ export interface WorkShareSnapshot {
   voteCount: number;
   commentCount: number;
   publishedAt: string;
-  /* Claimed build effort (this work's claimed_tokens, non-empty only
+  /* Builder-reported tokens (this work's claimed_tokens, non-empty only
      when the invariant holds); null = the hero never renders. */
   claimedTokens: number | null;
   path: string;

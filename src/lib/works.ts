@@ -53,8 +53,8 @@ export interface WorkRow {
      write paths. */
   voteCount: number;
   commentCount: number;
-  /* Claimed build effort in tokens, declared by the author; null = no
-     claim (no badge). */
+  /* Builder-reported tokens, capped by synced aggregate usage; null =
+     no claim. This is not precise per-project usage. */
   claimedTokens: number | null;
   /* Work metadata: status/models/platform/long description/awesome
      scope. */
@@ -64,8 +64,8 @@ export interface WorkRow {
      (app/miniapp/website/extension/cli/skill/prompt/slides/demo/content/other). */
   kind: string;
   descriptionMd: string;
-  /* Awesome scope: base/eco/part; awesome entries only, wall entries are
-     always "". */
+  /* Stored Awesome scope: base/eco/part for external entries. Member
+     work opted into Awesome derives the participation scope. */
   scope: string;
   /* Member works checked "also list on Awesome"; always-on for awesome
      entries, meaningless there. */
@@ -89,6 +89,20 @@ export interface WorkRow {
   /* Graduation attribution: the learn-series slug this work came from
      (written at publish, never edited); null = not path-sourced. */
   sourcePath: string | null;
+}
+
+/* Member work explicitly listed on Awesome qualifies through Kimi-agent
+   participation; external recommendations retain their stored scope.
+   Legacy external rows without a scope also fall back to participation:
+   their required agent list is the surviving evidence for inclusion. */
+export function awesomeScopeOf(
+  work: Pick<WorkRow, "source" | "scope" | "alsoAwesome">,
+): "base" | "eco" | "part" | null {
+  if (work.scope === "base" || work.scope === "eco" || work.scope === "part") {
+    return work.scope;
+  }
+  if (work.source === "awesome") return "part";
+  return work.alsoAwesome ? "part" : null;
 }
 
 function parseStrArray(raw: unknown): string[] {
@@ -274,7 +288,11 @@ export function worksPageQuery(opts: {
   }
   /* Awesome scope filter (base/eco/part). */
   if (opts.scope) {
-    where.push("w.scope = ?");
+    where.push(
+      opts.scope === "part"
+        ? "(w.scope = ? OR (w.source = 'site' AND w.also_awesome = 1) OR (w.source = 'awesome' AND (w.scope IS NULL OR w.scope NOT IN ('base','eco','part'))))"
+        : "w.scope = ?",
+    );
     args.push(opts.scope);
   }
   const sort: WorksSort = opts.sort === "hot" ? "hot" : "new";
@@ -976,19 +994,30 @@ export async function getAwesomeStats(): Promise<{
 }
 
 /* /awesome scope counts (base/eco/part; public context, public rows
-   only). */
+   only). Opted-in member work contributes to the participation scope. */
 export async function getAwesomeScopeStats(): Promise<{
   base: number;
   eco: number;
   part: number;
 }> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.scope, COUNT(*) AS n FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.scope`,
+    `SELECT CASE
+       WHEN w.source = 'site' AND w.also_awesome = 1 THEN 'part'
+       WHEN w.source = 'awesome' AND (w.scope IS NULL OR w.scope NOT IN ('base','eco','part')) THEN 'part'
+       ELSE w.scope
+     END AS effective_scope, COUNT(*) AS n
+     FROM works w
+     WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}
+     GROUP BY effective_scope`,
   );
   const out = { base: 0, eco: 0, part: 0 };
   for (const r of rows) {
-    if (r.scope === "base" || r.scope === "eco" || r.scope === "part") {
-      out[r.scope as "base" | "eco" | "part"] = Number(r.n);
+    if (
+      r.effective_scope === "base" ||
+      r.effective_scope === "eco" ||
+      r.effective_scope === "part"
+    ) {
+      out[r.effective_scope as "base" | "eco" | "part"] = Number(r.n);
     }
   }
   return out;

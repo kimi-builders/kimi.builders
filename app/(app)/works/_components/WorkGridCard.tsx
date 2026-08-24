@@ -3,8 +3,8 @@
    sm / three at lg. A sibling of the row WorkCard (not a variant
    branch): deliberately lower information density — tagline relaxes to
    two lines, meta compresses to one (kind/status/first two agents; the
-   featured star and claimed effort stay blue), scope is omitted by
-   convention (the detail page shows it), and the bottom row reuses
+   featured star and declared tokens stay blue), Awesome scope stays in
+   the compact meta row, and the bottom row reuses
    WorkCardFooter (compact: links reduced to icons). Hover language
    matches the row card: brighter border + slight cover zoom + blue
    title (group). The card-spanning link + z-10 interactive elements
@@ -15,11 +15,11 @@ import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
-import type { WorkRow } from "@/src/lib/works";
+import { awesomeScopeOf, type WorkRow } from "@/src/lib/works";
 import AgentIcon from "@/components/AgentIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkCardFooter from "./WorkCardFooter";
-import { statusLabelOf, WorkMetaChips } from "./WorkCard";
+import { scopeLabelOf, statusLabelOf, WorkMetaChips } from "./WorkCard";
 import WorkScreenshot from "./WorkScreenshot";
 
 export default function WorkGridCard({
@@ -39,6 +39,7 @@ export default function WorkGridCard({
 }) {
   const kindLabel = workKindLabel(w.kind, locale === "zh");
   const statusLabel = statusLabelOf(w.status, locale);
+  const listingScope = awesomeScopeOf(w);
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30">
       {/* Whole card links to the detail page; interactive elements below lift z-10 to keep their own navigation */}
@@ -95,6 +96,11 @@ export default function WorkGridCard({
                 <AgentIcon key={a} id={a} size={12} />
               ))}
               {w.agents.length > 3 && <span>+{w.agents.length - 3}</span>}
+            </span>
+          )}
+          {listingScope && (
+            <span className="shrink-0">
+              {t(locale, "works.metaScope")} · {scopeLabelOf(listingScope, locale)}
             </span>
           )}
           {claimBadge !== null && claimBadge > 0 && (

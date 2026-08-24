@@ -1,10 +1,9 @@
 /* Work share poster: shared identity band (author) -> work name hero ->
    tagline -> agent hairline chips -> (claimed and invariant holding)
-   claimed build-effort hero -> metric band (supports/comments/
-   published) -> the shared QR footer. The hero is claim-based: the
-   number is the author's declared effort for this work, the small-type
-   method line reads "declared by the author, capped by the system's
-   verifiable total"; unclaimed or over cap = never rendered. lobehub
+   declared-token hero -> metric band (supports/comments/published) ->
+   the shared QR footer. The number is Builder-reported and capped by
+   synced aggregate usage; it is not precise per-project usage.
+   Unclaimed or over-cap values are never rendered. lobehub
    icons can't be trusted under Satori, so agents are uniformly
    hairline mono chips (names suffice). */
 import type { WorkShareSnapshot } from "@/src/lib/share-posters";
@@ -39,7 +38,7 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
     >
       <PosterHeader
         section="WORKS"
-        eyebrow="BUILDER MADE"
+        eyebrow="MEMBER WORK"
         initials={s.author.initials}
         name={s.author.name}
         handle={s.author.handle}
@@ -70,7 +69,7 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
                 {compact(s.claimedTokens)}
               </div>
               <div style={{ display: "flex", marginTop: 16, color: palette.muted, fontSize: 22, fontWeight: 700, letterSpacing: 3 }}>
-                声明构建投入 TOKENS · 作者声明按可验证总量封顶
+                作者声明 TOKENS · 按已同步总用量封顶 · 非单作品精确用量
               </div>
             </div>
           </div>

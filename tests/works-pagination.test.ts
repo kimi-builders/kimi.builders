@@ -5,6 +5,7 @@ import { WORK_KINDS } from "../src/lib/work-kinds";
 import {
   AWESOME_PAGE_SIZE,
   WORKS_PAGE_SIZE,
+  awesomeScopeOf,
   decodeWorksCursor,
   encodeWorksCursor,
   worksPageQuery,
@@ -119,4 +120,30 @@ test("awesome scope filter narrows by inclusion scope", () => {
   const { sql, args } = worksPageQuery({ source: "awesome", scope: "eco" });
   assert.match(sql, /w\.scope = \?/);
   assert.deepEqual(args, ["eco"]);
+
+  const participation = worksPageQuery({ source: "awesome", scope: "part" });
+  assert.match(
+    participation.sql,
+    /w\.scope = \? OR \(w\.source = 'site' AND w\.also_awesome = 1\).*w\.source = 'awesome'/,
+  );
+  assert.deepEqual(participation.args, ["part"]);
+});
+
+test("Awesome scope derives participation for opted-in member work", () => {
+  assert.equal(
+    awesomeScopeOf({ source: "site", scope: "", alsoAwesome: true }),
+    "part",
+  );
+  assert.equal(
+    awesomeScopeOf({ source: "site", scope: "", alsoAwesome: false }),
+    null,
+  );
+  assert.equal(
+    awesomeScopeOf({ source: "awesome", scope: "eco", alsoAwesome: true }),
+    "eco",
+  );
+  assert.equal(
+    awesomeScopeOf({ source: "awesome", scope: "", alsoAwesome: true }),
+    "part",
+  );
 });

@@ -45,7 +45,7 @@ async function loadAnonymousFirstPageDto(
 
 const getCachedAnonymousFirstPageDto = unstable_cache(
   loadAnonymousFirstPageDto,
-  ["works-awesome-anonymous-first-page-v1"],
+  ["works-awesome-anonymous-first-page-v2"],
   {
     revalidate: PUBLIC_WORKS_REVALIDATE_SECONDS,
     tags: [PUBLIC_WORKS_CACHE_TAG, PUBLIC_USERS_CACHE_TAG],

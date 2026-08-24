@@ -25,6 +25,7 @@ import { canModerate, getPostFeatured } from "@/src/lib/featured";
 import { plainExcerpt, relTime } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { detailMetadata } from "@/src/lib/page-metadata";
 import {
   canViewPost,
   getPoll,
@@ -57,8 +58,15 @@ export async function generateMetadata({
     getPost(Number(id) || 0),
     getSessionUser(),
   ]);
-  if (!post) return { title: "kimi.builders" };
-  return { title: postMetadataTitle(post, user) };
+  if (!post || !canViewPost(post, user)) return { title: "kimi.builders" };
+  const locale = await getLocale(user);
+  return detailMetadata({
+    title: postMetadataTitle(post, user),
+    description: plainExcerpt(post.bodyMd, 160) || t(locale, "metaDesc.community"),
+    path: `/community/${id}`,
+    locale,
+    type: "article",
+  });
 }
 
 export default async function PostPage({

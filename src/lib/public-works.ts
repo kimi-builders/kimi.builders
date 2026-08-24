@@ -95,6 +95,9 @@ export interface PublicWorkDto {
   kind: string;
   descriptionMd: string;
   scope: string;
+  /* Needed to derive the participation scope for member work listed on
+     Awesome. Optional keeps older cached payloads readable. */
+  alsoAwesome?: boolean;
   logoKey: string;
   imageKeys: string[];
   /* Tone/fit/standalone cover fields the list rendering needs — the DTO
@@ -142,6 +145,7 @@ function publicWorkDto(work: WorkRow): PublicWorkDto | null {
     kind: work.kind,
     descriptionMd: work.descriptionMd,
     scope: work.scope,
+    alsoAwesome: work.alsoAwesome,
     logoKey: work.logoKey,
     imageKeys: work.imageKeys,
     coverTone: work.coverTone,
@@ -163,11 +167,9 @@ export function hydratePublicWorksPage(dto: PublicWorksPageDto): WorksPage {
   return {
     works: dto.works.map((work) => ({
       ...work,
-      /* The public list DTO carries no also-awesome/AI/graduation fields
-         (unused in display) — hydration backfills defaults; pre-20260908
-         cached payloads lack cover_tone/cover_fit and get the same
-         treatment. */
-      alsoAwesome: false,
+      /* Older cached payloads lack the Awesome opt-in and cover fields;
+         hydration applies conservative defaults. */
+      alsoAwesome: work.alsoAwesome === true,
       aiReply: true,
       sourcePath: null,
       coverTone: work.coverTone ?? "theme",

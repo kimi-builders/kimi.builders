@@ -20,7 +20,15 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
   const zh = locale === "zh";
   const items = await listExploreItems(locale);
   const chapterCounts = countByChapter(items);
-  const chapterMax = Math.max(1, ...chapterCounts.map((c) => c.count));
+  const activeChapters = KB_CHAPTERS.filter(
+    (chapter) => (chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0) > 0,
+  );
+  const chapterMax = Math.max(
+    1,
+    ...activeChapters.map(
+      (chapter) => chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0,
+    ),
+  );
   const products = isExploreFilterEnabled("product") ? countByProduct(items) : [];
   const tags = isExploreFilterEnabled("tag") ? countTags(items) : [];
   const latest = items.slice(0, 5);
@@ -30,33 +38,37 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
       {/* Section intro line (the left-blue-line grammar shared by section rails) */}
       <p className="border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-grey">
         {zh
-          ? "月刊与指南:每篇都交出方法、证据与出处。"
-          : "The Monthly and the guides — every piece ships method, evidence, and sources."}
+          ? "收录方法、证据与出处。"
+          : "Methods, evidence, and sources."}
       </p>
 
-      {/* Chapter distribution: bars (same style as WorksRail's active agents) */}
-      <Widget title={zh ? "章" : "CHAPTERS"} note={zh ? "主轴,按内容计数" : "Primary axis, by content"}>
-        <ul className="space-y-2.5">
-          {KB_CHAPTERS.map((c) => {
-            const count = chapterCounts.find((x) => x.value === c.id)?.count ?? 0;
-            return (
-              <li key={c.id} className="flex items-center gap-2.5">
-                <span className="flex w-28 shrink-0 items-baseline gap-1.5 text-xs text-grey">
-                  <span className="font-semibold text-paper">{zh ? c.zh : c.en}</span>
-                  <span className="truncate text-[10px]">{zh ? c.tagline.zh : c.tagline.en}</span>
-                </span>
-                <span className="h-1.5 min-w-0 flex-1 rounded-full bg-paper/[0.06]">
-                  <span
-                    className={`block h-full rounded-full ${count > 0 ? "bg-blue" : "bg-transparent"}`}
-                    style={{ width: `${Math.max((count / chapterMax) * 100, count > 0 ? 4 : 0)}%` }}
-                  />
-                </span>
-                <span className="shrink-0 font-mono text-xs text-grey">{count}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </Widget>
+      {/* A single populated chapter is not a meaningful distribution. */}
+      {activeChapters.length >= 2 && (
+        <Widget title={zh ? "章" : "CHAPTERS"} note={zh ? "按内容计数" : "By content"}>
+          <ul className="space-y-2.5">
+            {activeChapters.map((chapter) => {
+              const count = chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0;
+              return (
+                <li key={chapter.id} className="flex items-center gap-2.5">
+                  <span className="flex w-28 shrink-0 items-baseline gap-1.5 text-xs text-grey">
+                    <span className="font-semibold text-paper">{zh ? chapter.zh : chapter.en}</span>
+                    <span className="truncate text-[10px]">
+                      {zh ? chapter.tagline.zh : chapter.tagline.en}
+                    </span>
+                  </span>
+                  <span className="h-1.5 min-w-0 flex-1 rounded-full bg-paper/[0.06]">
+                    <span
+                      className="block h-full rounded-full bg-blue"
+                      style={{ width: `${Math.max((count / chapterMax) * 100, 4)}%` }}
+                    />
+                  </span>
+                  <span className="shrink-0 font-mono text-xs text-grey">{count}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </Widget>
+      )}
 
       {/* Product lens (shown when enabled and non-empty; icon + word + count, links back into the filters) */}
       {products.length > 0 && (
@@ -109,7 +121,9 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
       <Widget title={zh ? "最新" : "LATEST"}>
         {latest.length === 0 ? (
           <p className="text-xs text-grey">
-            {zh ? "第一篇内容在筹备。" : "The first piece is being prepared."}
+            {zh
+              ? "第一篇 Builder 实践正在筹备。"
+              : "The first Builder practice is being prepared."}
           </p>
         ) : (
           <ul className="space-y-2.5">

@@ -19,6 +19,7 @@ import { findKbChapter } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { findKbRole } from "@/src/lib/kb-roles";
 import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
+import { detailMetadata } from "@/src/lib/page-metadata";
 import { getSeriesTutorials, type Tutorial } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
 import PageHeader from "@/components/PageHeader";
@@ -31,15 +32,26 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  if (UPCOMING.explore) return { title: "探索 — kimi.builders" };
   const { slug } = await params;
   const locale = await getLocale();
+  if (UPCOMING.explore) {
+    return detailMetadata({
+      title: t(locale, "meta.explore"),
+      description: t(locale, "metaDesc.explore"),
+      path: `/explore/series/${slug}`,
+      locale,
+    });
+  }
   const series = findLearnSeries(slug);
-  return {
-    title: series
-      ? `${locale === "zh" ? series.title.zh : series.title.en} — kimi.builders`
-      : "kimi.builders",
-  };
+  if (!series) return { title: "kimi.builders" };
+  return detailMetadata({
+    title: `${locale === "zh" ? series.title.zh : series.title.en} — kimi.builders`,
+    description:
+      (locale === "zh" ? series.summary.zh : series.summary.en) || t(locale, "metaDesc.explore"),
+    path: `/explore/series/${slug}`,
+    locale,
+    type: "article",
+  });
 }
 
 function EpisodeRow({

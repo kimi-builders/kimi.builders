@@ -28,11 +28,12 @@ import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
 import { getPool } from "@/src/lib/db";
-import { relTime } from "@/src/lib/format";
+import { plainExcerpt, relTime } from "@/src/lib/format";
 import { formatApproxUsdMicros } from "@/src/lib/data-display";
 import { buildUsageInsights } from "@/src/lib/usage/insights";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
+import { detailMetadata } from "@/src/lib/page-metadata";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
 import { getProfileByHandle, getProfileStats, profileDisplay } from "@/src/lib/users";
 import { userWorksCountQuery } from "@/src/lib/share-posters";
@@ -96,12 +97,22 @@ export async function generateMetadata({
   const { handle } = await params;
   const p = await getProfileByHandle(handle);
   if (!p) return { title: "kimi.builders" };
-  /* When the display name is hidden from visitors, the tab title and
-     share previews also carry only @handle (the owner's own view is
-     unrestricted). */
-  const me = await getSessionUser();
-  const view = profileDisplay(p, me?.id === p.id);
-  return { title: `${view.displayName} (@${p.handle}) — kimi.builders` };
+  /* Metadata is always the public profile view, including for the owner,
+     so a copied preview cannot disclose a hidden name or bio. */
+  const view = profileDisplay(p, false);
+  const locale = await getLocale();
+  const identity =
+    view.displayName === `@${p.handle}`
+      ? view.displayName
+      : `${view.displayName} (@${p.handle})`;
+  return detailMetadata({
+    title: `${identity} — kimi.builders`,
+    description:
+      plainExcerpt(view.bio, 160) ||
+      (locale === "zh" ? `@${p.handle} 的公开成员主页。` : `Public member profile for @${p.handle}.`),
+    path: `/u/${p.handle}`,
+    locale,
+  });
 }
 
 /* Tab empty state: a dashed icon tile + title + description + CTA (the

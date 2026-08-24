@@ -1,12 +1,9 @@
-/* Explore · the chapter-axis flat list. Mission: exploring the optimal
-   conversion from intelligence to creativity (mirroring the official
-   "Seeking the optimal conversion from energy to intelligence").
-   Cold-start shape: one horizontal card per piece of content (cover
-   left, content right, the WorkCard row grammar) — no series/tutorial
-   scaffolding; the series mechanism stays in the data layer until
-   content grows into it. The chapter seg (learn/build/measure/
-   establish) is the spine; zero-count chapters grey out but stay
-   visible. Products/roles/tags/archive are single-select dropdowns —
+/* Explore collects reproducible, verifiable Builder practices with
+   methods, evidence, and sources. Cold-start shape: one horizontal card
+   per piece of content — no series/tutorial scaffolding until content
+   grows into it. The chapter control only shows content-bearing options
+   and disappears when fewer than two chapters can be compared.
+   Products/roles/tags/archive are single-select dropdowns —
    options appear only when content exists, and a dimension with no
    content doesn't even render its dropdown. Formats (article/video/
    deck) don't filter — every piece carries all three media, marked on
@@ -43,10 +40,10 @@ import ArticleGridCard from "./_components/ArticleGridCard";
 import ArticleRowCard from "./_components/ArticleRowCard";
 import { ChapterKeys } from "./_components/ExploreKeys";
 import {
-  SEG_ITEM,
+  SEG_ITEM_FLOW,
   SEG_ITEM_ACTIVE,
   SEG_ITEM_IDLE,
-  SEG_WRAP,
+  SEG_WRAP_FLOW,
 } from "@/components/seg-classes";
 
 /* Single-select filter toggling (click again to clear): every other
@@ -106,7 +103,7 @@ export default async function ExplorePage({
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
   /* Chapter/lens allowlist validation (invalid = unselected); legacy
      four-dimension and format params are ignored. */
-  const selChapter = (() => {
+  const requestedChapter = (() => {
     const v = first(sp.chapter);
     return v && isKbChapterId(v) ? v : undefined;
   })();
@@ -120,9 +117,19 @@ export default async function ExplorePage({
   })();
   const selTag = first(sp.tag) || undefined;
   const selYear = first(sp.year) || undefined;
-  const anyFilter = !!(selChapter || selProduct || selRole || selTag || selYear);
 
   const items = await listExploreItems(locale);
+  const chapterCounts = countByChapter(items);
+  const activeChapters = KB_CHAPTERS.filter(
+    (chapter) => (chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0) > 0,
+  );
+  const chapterFilterVisible = activeChapters.length >= 2;
+  const selChapter =
+    chapterFilterVisible && activeChapters.some((chapter) => chapter.id === requestedChapter)
+      ? requestedChapter
+      : undefined;
+  const anyFilter = !!(selChapter || selProduct || selRole || selTag || selYear);
+
   /* Rows/cover wall: the same cookie preference as the works wall
      (kb-works-view); mobile is always rows (converged inside
      getWorksView) and the toggle isn't rendered. */
@@ -136,10 +143,6 @@ export default async function ExplorePage({
     year: selYear,
   };
   const filtered = anyFilter ? filterExploreItems(items, sel) : items;
-
-  /* Chapter counts (for the seg; all four always show, zero-count grey
-     out). */
-  const chapterCounts = countByChapter(items);
 
   const productCounts = countByProduct(items);
   const roleCounts = countByRoles(items);
@@ -156,13 +159,12 @@ export default async function ExplorePage({
   /* The <- -> chapter cycle's target sequence: "all" + chapters with
      content (empty chapters are dead ends and stay out of the cycle);
      hrefs come from lensHref so lenses survive a chapter switch. */
-  const activeChapters = KB_CHAPTERS.filter(
-    (c) => (chapterCounts.find((x) => x.value === c.id)?.count ?? 0) > 0,
-  );
-  const chapterHrefs = [
-    lensHref("/explore", current, { chapter: undefined }),
-    ...activeChapters.map((c) => lensHref("/explore", current, { chapter: c.id })),
-  ];
+  const chapterHrefs = chapterFilterVisible
+    ? [
+        lensHref("/explore", current, { chapter: undefined }),
+        ...activeChapters.map((c) => lensHref("/explore", current, { chapter: c.id })),
+      ]
+    : [];
   const chapterIndex = selChapter
     ? activeChapters.findIndex((c) => c.id === selChapter) + 1
     : 0;
@@ -249,64 +251,40 @@ export default async function ExplorePage({
         actions={user && canModerate(user.role) ? composeLink : undefined}
       />
 
-      {/* ---- Tool row: chapter seg (the spine) + lens dropdowns (render only where content exists) ---- */}
+      {/* ---- Tool row: content-bearing chapter seg + populated lens dropdowns ---- */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <nav
-          aria-label={zh ? "章" : "Chapters"}
-          className={`${SEG_WRAP} max-sm:w-full max-sm:flex-wrap`}
-        >
-          {/* All = default state (no chapter filter); the four chapters are a permanent frame — always visible, greyed at count 0 */}
-          <Link
-            href={lensHref("/explore", current, { chapter: undefined })}
-            scroll={false}
-            aria-current={!selChapter ? "page" : undefined}
-            className={`${SEG_ITEM} ${!selChapter ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+        {chapterFilterVisible && (
+          <nav
+            aria-label={zh ? "章" : "Chapters"}
+            className={`${SEG_WRAP_FLOW} max-sm:w-full`}
           >
-            {/* Counts get explicit ml-1 spacing: SEG_ITEM is inline-flex,
-                and whitespace text nodes between JSX children are
-                swallowed by flex (label and number would fuse). */}
-            {zh ? "全部" : "All"} <span className="ml-1 opacity-60">{items.length}</span>
-          </Link>
-          {KB_CHAPTERS.map((c) => {
-            const count = chapterCounts.find((x) => x.value === c.id)?.count ?? 0;
-            const label = (
-              <>
-                {zh ? c.zh : c.en} <span className="ml-1 opacity-60">{count}</span>
-              </>
-            );
-            if (count === 0) {
-              /* Greyed, not hidden: the four chapters are a permanent
-                 frame and an empty chapter is a promise — hover shows the
-                 call for submissions (data-tip with a 250ms delay, never
-                 native title). */
+            <Link
+              href={lensHref("/explore", current, { chapter: undefined })}
+              scroll={false}
+              aria-current={!selChapter ? "page" : undefined}
+              className={`${SEG_ITEM_FLOW} ${!selChapter ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
+            >
+              {zh ? "全部" : "All"} <span className="ml-1 opacity-60">{items.length}</span>
+            </Link>
+            {activeChapters.map((chapter) => {
+              const count = chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0;
               return (
-                <span
-                  key={c.id}
-                  aria-disabled="true"
-                  data-tip={t(locale, "explore.chapterCall", {
-                    tagline: zh ? c.tagline.zh : c.tagline.en,
+                <Link
+                  key={chapter.id}
+                  href={lensHref("/explore", current, {
+                    chapter: selChapter === chapter.id ? undefined : chapter.id,
                   })}
-                  className={`${SEG_ITEM} cursor-default text-grey/40`}
+                  scroll={false}
+                  aria-current={selChapter === chapter.id ? "page" : undefined}
+                  className={`${SEG_ITEM_FLOW} ${selChapter === chapter.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
                 >
-                  {label}
-                </span>
+                  {zh ? chapter.zh : chapter.en}
+                  <span className="ml-1 opacity-60">{count}</span>
+                </Link>
               );
-            }
-            return (
-              <Link
-                key={c.id}
-                href={lensHref("/explore", current, {
-                  chapter: selChapter === c.id ? undefined : c.id,
-                })}
-                scroll={false}
-                aria-current={selChapter === c.id ? "page" : undefined}
-                className={`${SEG_ITEM} ${selChapter === c.id ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+            })}
+          </nav>
+        )}
         {filterSpecs.length > 0 && (
           <WorksFilterBar
             basePath="/explore"
@@ -348,12 +326,12 @@ export default async function ExplorePage({
       {/* ---- Content area: one card per piece, row list / cover wall ---- */}
       <div className="mt-6">
         {items.length === 0 ? (
-          /* An honest empty state for the cold start. */
+          /* The cold-start state describes the content contract. */
           <EmptyState
             message={
               zh
-                ? "这里的第一篇内容,以「做完你拥有什么」为标准在筹备。"
-                : "The first piece is being prepared — measured by what you walk away with."
+                ? "第一篇 Builder 实践正在筹备,发布时会附方法、证据与出处。"
+                : "The first Builder practice is being prepared with its method, evidence, and sources."
             }
             actions={user && canModerate(user.role) ? composeLink : undefined}
           />

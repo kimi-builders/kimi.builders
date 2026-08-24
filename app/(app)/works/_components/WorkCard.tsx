@@ -13,7 +13,7 @@
    the bottom (weekly featured v0). Usage badge (claim-based):
    non-null claimBadge (this work claimed and the author's sum of claims
    <= verifiable total, decided by the assembly layer's claimBadgeOf)
-   adds "claimed effort" to the meta row; null = nothing rendered
+   adds declared tokens to the meta row; null = nothing rendered
    (unclaimed / paused over cap — no negative signaling). claimPaused
    (true only for the author) shows a redistribution hint on their own
    cards. */
@@ -23,7 +23,7 @@ import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
-import type { WorkRow } from "@/src/lib/works";
+import { awesomeScopeOf, type WorkRow } from "@/src/lib/works";
 import AgentIcon from "@/components/AgentIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
@@ -87,7 +87,7 @@ export function WorkMetaChips({
   );
 }
 
-function scopeLabelOf(scope: string, locale: Locale): string {
+export function scopeLabelOf(scope: string, locale: Locale): string {
   return t(
     locale,
     scope === "eco"
@@ -115,6 +115,7 @@ export default function WorkCard({
 }) {
   const kindLabel = workKindLabel(w.kind, locale === "zh");
   const statusLabel = statusLabelOf(w.status, locale);
+  const listingScope = awesomeScopeOf(w);
   return (
     /* Row card: image on top for mobile, fixed left column at sm+;
        the title takes its own truncated line, kind/agents/claim/
@@ -184,12 +185,12 @@ export default function WorkCard({
               )}
             </span>
           )}
-          {(w.source === "awesome" && w.scope) || (claimBadge !== null && claimBadge > 0) || w.featuredAt ? (
+          {listingScope || (claimBadge !== null && claimBadge > 0) || w.featuredAt ? (
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              {w.source === "awesome" && w.scope && (
+              {listingScope && (
                 <>
                   <span className="shrink-0 text-grey/55">{t(locale, "works.metaScope")}</span>
-                  <span className="shrink-0">{scopeLabelOf(w.scope, locale)}</span>
+                  <span className="shrink-0">{scopeLabelOf(listingScope, locale)}</span>
                 </>
               )}
               {claimBadge !== null && claimBadge > 0 && (

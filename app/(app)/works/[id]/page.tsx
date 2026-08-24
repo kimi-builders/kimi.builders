@@ -1,5 +1,5 @@
 /* Work detail: breadcrumb + clean H1 + meta row (author/time/kind/
-   claimed effort/★featured; private/hidden warning pills) + action bar
+   declared tokens/★featured; private/hidden warning pills) + action bar
    (try/support/share/owner & moderation actions) + gallery + long
    description + a label/value hairline info panel (inline below xl;
    from xl the rail's Work Info card replaces it, see the rail registry
@@ -25,10 +25,11 @@ import { agentName } from "@/src/lib/agents";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
-import { compactNumber, relTime } from "@/src/lib/format";
+import { compactNumber, plainExcerpt, relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { modelFamilyName } from "@/src/lib/model-families";
+import { detailMetadata } from "@/src/lib/page-metadata";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
 import { getWorksSource } from "@/src/lib/works-view-server";
@@ -63,7 +64,14 @@ export async function generateMetadata({
      previews count). */
   const user = await getSessionUser();
   if (!canViewWork(work, user)) return { title: "kimi.builders" };
-  return { title: `${work.name} — kimi.builders` };
+  const locale = await getLocale(user);
+  return detailMetadata({
+    title: `${work.name} — kimi.builders`,
+    description:
+      work.tagline || plainExcerpt(work.descriptionMd, 160) || t(locale, "metaDesc.works"),
+    path: `/works/${id}`,
+    locale,
+  });
 }
 
 /* Missing/removed: friendly copy + back to the source list (the

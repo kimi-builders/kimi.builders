@@ -22,6 +22,7 @@ import { compactNumber, monthLabel } from "@/src/lib/format";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
+import { detailMetadata } from "@/src/lib/page-metadata";
 import { getArticleRailMeta, listExploreItems } from "@/src/lib/explore";
 import Avatar from "@/components/Avatar";
 import { findLearnSeries } from "@/src/lib/learn-series";
@@ -53,13 +54,35 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  if (UPCOMING.explore) return { title: "探索 — kimi.builders" };
   const { slug } = await params;
   const locale = await getLocale(await getSessionUser());
+  if (UPCOMING.explore) {
+    return detailMetadata({
+      title: t(locale, "meta.explore"),
+      description: t(locale, "metaDesc.explore"),
+      path: `/explore/${slug}`,
+      locale,
+    });
+  }
   const letter = await getAssembledIssue(slug, locale, { stats: await getCachedMonthlyStatsSnapshot() });
-  if (letter) return { title: `${letter.issue.title} — kimi.builders` };
+  if (letter) {
+    return detailMetadata({
+      title: `${letter.issue.title} — kimi.builders`,
+      description: letter.issue.summary || t(locale, "metaDesc.explore"),
+      path: `/explore/${slug}`,
+      locale,
+      type: "article",
+    });
+  }
   const guide = await getTutorialBySlug(slug, locale);
-  return { title: guide ? `${guide.tutorial.title} — kimi.builders` : "kimi.builders" };
+  if (!guide) return { title: "kimi.builders" };
+  return detailMetadata({
+    title: `${guide.tutorial.title} — kimi.builders`,
+    description: guide.tutorial.summary || t(locale, "metaDesc.explore"),
+    path: `/explore/${slug}`,
+    locale,
+    type: "article",
+  });
 }
 
 /* Section share buttons: copy the section permalink + download its

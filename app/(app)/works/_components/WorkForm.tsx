@@ -4,7 +4,7 @@
    one, at least one participating agent (server-validated).
    Recommending an external project (original author filled) = an
    awesome entry, which additionally requires a scope; wall entries may
-   declare build effort. Intent (my work / recommend) is fixed at
+   declare tokens. Intent (my work / recommend) is fixed at
    creation and unchangeable while editing (silent conversion is a
    misclick); the media area and awesome fields stay mounted, shown or
    hidden by intent — switching never loses filled or uploaded content.

@@ -35,16 +35,16 @@ const DICT = {
   "nav.closeMenu": { zh: "关闭功能导航", en: "Close navigation" },
   /* ---- Global search ---- */
   "search.open": { zh: "搜索站内内容", en: "Search the site" },
-  "search.placeholder": { zh: "搜索社区、作品、指南…", en: "Search community, works, guides…" },
+  "search.placeholder": { zh: "搜索社区、作品、实践…", en: "Search community, work, practices…" },
   "search.jumpTo": { zh: "快速前往", en: "Jump to" },
   "search.results": { zh: "搜索结果", en: "Results" },
   "search.empty": { zh: "没有匹配的页面", en: "No matching page" },
   "search.emptyHint": { zh: "试试「作品」「用量」或「demo」", en: "Try “works”, “usage”, or “demo”" },
   "search.shortcut": { zh: "按 / 或 ⌘K 随时打开", en: "Press / or ⌘K anytime" },
   "search.community": { zh: "讨论、投票与社区动态", en: "Discussions, polls, and community updates" },
-  "search.works": { zh: "社区成员构建的真实项目", en: "Real projects built by community members" },
-  "search.awesome": { zh: "站内与站外精选项目", en: "Selected member and external projects" },
-  "search.explore": { zh: "月刊评鉴与指南,沿分类/系列/标签/时间浏览", en: "Monthly reviews and guides — browse by category, series, tag, or time" },
+  "search.works": { zh: "Builder 发布的 Kimi 相关作品", en: "Kimi-related work published by Builders" },
+  "search.awesome": { zh: "成员推荐的站外 Kimi 生态项目", en: "External Kimi ecosystem projects recommended by members" },
+  "search.explore": { zh: "月刊评鉴与 Builder 实践,沿分类、标签和时间浏览", en: "The Monthly and Builder practices — browse by category, tag, or time" },
   "search.usage": { zh: "Token、成本与活跃度看板", en: "Token, cost, and activity dashboard" },
   "search.demoNightTitle": { zh: "Demo Night", en: "Demo Night" },
   "search.demoNight": { zh: "报名并查看社区展示活动", en: "Join and browse community showcase events" },
@@ -96,8 +96,8 @@ const DICT = {
   "side.subs": { zh: "我的订阅", en: "Subscribed" },
   "side.about": { zh: "关于 KIMI.BUILDERS", en: "ABOUT KIMI.BUILDERS" },
   "side.aboutBody": {
-    zh: "Kimi 用户自建的社区(非官方):讨论、作品、月刊与用量数据都在这里。",
-    en: "A user-run community of Kimi builders (unofficial): discussions, works, the Monthly, and usage data.",
+    zh: "Kimi 用户的作品、方法与讨论社区。用户自建，非官方。",
+    en: "Projects, methods, and discussion from Kimi users. User-run and unofficial.",
   },
   "side.hot": { zh: "7 日热门", en: "TRENDING (7D)" },
   "side.hotEmpty": {
@@ -168,10 +168,10 @@ const DICT = {
      detail page's "— monthly review · ISSUE 07". The explore title stays
      short; the lede is a functional one-liner naming the browse
      dimensions, and the rail top carries the section intro line. */
-  "explore.eyebrow": { zh: "— 月刊 × 指南", en: "— Monthly × guides" },
+  "explore.eyebrow": { zh: "— 月刊 × Builder 实践", en: "— The Monthly × Builder practices" },
   "explore.lede": {
-    zh: "月刊评鉴与实战指南,按章、产品、职业、标签、归档浏览。",
-    en: "Monthly reviews and field guides — browse by chapter, product, role, tag, or archive.",
+    zh: "月刊评鉴与 Builder 亲自跑通的实践，按章、产品、职业、标签和归档浏览。",
+    en: "The Monthly and practices run by Builders, browsable by chapter, product, role, tag, and archive.",
   },
   "explore.compose": { zh: "+ 发内容", en: "+ Publish" },
   "explore.lensRoles": { zh: "职业", en: "ROLES" },
@@ -209,7 +209,7 @@ const DICT = {
   /* @kimi summon result toast: the comment publishes either way; whether
      the summon took effect is a separate notice. */
   "post.aiSummoned": {
-    zh: "已召唤 Kimi 小筑,TA 稍后回复",
+    zh: "已召唤小筑，稍后回复",
     en: "Xiaozhu summoned — reply incoming",
   },
   "post.aiSummonDisabled": {
@@ -223,7 +223,7 @@ const DICT = {
   /* Summon waiting feedback: typing placeholder / arrived / failed /
      timed out. */
   "post.aiTyping": { zh: "正在输入…", en: "typing…" },
-  "post.aiReplied": { zh: "Kimi 小筑回复了", en: "Xiaozhu replied" },
+  "post.aiReplied": { zh: "小筑回复了", en: "Xiaozhu replied" },
   "post.aiReplyFailed": {
     zh: "小筑暂时没能回复,稍后再 @ 一次试试",
     en: "Xiaozhu couldn't reply — try @-ing again later",
@@ -330,7 +330,7 @@ const DICT = {
   "form.pollOpts": { zh: "投票选项(2–8 个)", en: "Options (2–8)" },
   "form.addOpt": { zh: "+ 添加选项", en: "+ Add option" },
   "form.aiReply": {
-    zh: "允许 Kimi 小筑(AI)回复本帖",
+    zh: "允许小筑（本站 AI 助手）回复本帖",
     en: "Allow Xiaozhu, the community AI, to reply",
   },
   "form.aiReplyHint": {
@@ -361,7 +361,7 @@ const DICT = {
   "editor.link": { zh: "链接", en: "Link" },
   "editor.image": { zh: "插入图片(或直接粘贴)", en: "Insert image (or paste)" },
   "editor.summonKimiHint": {
-    zh: "召唤 Kimi 小筑(Tab 补全)",
+    zh: "召唤小筑（Tab 补全）",
     en: "summon Xiaozhu (Tab to complete)",
   },
   "editor.boldPh": { zh: "粗体文本", en: "bold text" },
@@ -580,7 +580,7 @@ const DICT = {
   "set.prefs": { zh: "偏好", en: "Preferences" },
   "set.privacy": { zh: "隐私与公开", en: "Privacy" },
   "set.aiMine": {
-    zh: "允许 Kimi 小筑(AI)回复我的帖子和评论",
+    zh: "允许小筑（本站 AI 助手）回复我的帖子和评论",
     en: "Allow Xiaozhu, the community AI, to reply to my posts and comments",
   },
   "set.aiMineHint": {
@@ -592,7 +592,7 @@ const DICT = {
     en: "Show AI replies while browsing",
   },
   "set.aiShowHint": {
-    zh: "关闭后,所有「Kimi 小筑参与互动」的内容在你的时间线上折叠。",
+    zh: "关闭后，所有小筑的回复会在你的时间线上折叠。",
     en: "When off, Xiaozhu's replies collapse across your timelines.",
   },
   "set.locale": { zh: "界面语言", en: "Interface language" },
@@ -697,8 +697,8 @@ const DICT = {
   "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
   "soon.follow": { zh: "关注 GitHub 获取上线动态", en: "Follow GitHub for launch updates" },
   "soon.exploreExpect": {
-    zh: "探索区正在筹备:月刊评鉴与指南系列,沿分类/系列/标签/时间浏览。",
-    en: "Explore is in the works — monthly reviews and guide series, browsable by category, series, tag, and time.",
+    zh: "探索区正在筹备：月刊评鉴与 Builder 亲自跑通的实践。",
+    en: "Explore is in preparation: the Monthly and practices run by Builders.",
   },
   "soon.body": {
     zh: "这个板块还在准备中,内容好了就开门。先去社区逛逛,或把你想看的题材发帖告诉我们。",
@@ -830,8 +830,8 @@ const DICT = {
   "usage.lastSync": { zh: "最近同步:{t}", en: "Last synced {t}" },
   "works.submit": { zh: "发布作品", en: "Publish work" },
   "works.empty": {
-    zh: "还没有作品。来挂第一个 —— 你用 Kimi 做的东西值得被看到。",
-    en: "No works yet. Hang the first one — what you built with Kimi deserves to be seen.",
+    zh: "还没有已发布作品。",
+    en: "No work has been published yet.",
   },
   "works.visit": { zh: "访问", en: "Visit" },
   "works.repo": { zh: "源码", en: "Source" },
@@ -876,13 +876,13 @@ const DICT = {
     en: "Also list on Awesome",
   },
   "works.alsoAwesomeHint": {
-    zh: "默认只进你的作品墙;勾选后同时出现在 Awesome 清单(公开展示 Builder)。",
-    en: "By default your work only appears on your wall; tick to also list it on Awesome (publicly badges the Builder).",
+    zh: "默认只进入作品墙；勾选后也会进入 Awesome，并显示在你的公开作品中。",
+    en: "By default, your work appears only on the wall. Select this to also list it on Awesome and keep it in your public work.",
   },
   /* AI-in-comments switch: default on; off means @kimi in comments does
      nothing. */
   "works.aiReply": {
-    zh: "允许 Kimi 小筑参与评论区",
+    zh: "允许小筑（本站 AI 助手）参与评论区",
     en: "Let Xiaozhu join the comments",
   },
   "works.aiReplyHint": {
@@ -938,8 +938,8 @@ const DICT = {
   },
   /* ---- Awesome ---- */
   "awesome.intro": {
-    zh: "全世界用 Kimi 构建的项目。收录口径很宽:Kimi 参与了构建、为 Kimi 生态做的应用、以 Kimi 为基座的项目都算 —— 不要求 100% 由 Kimi 完成,参与的 Agent 会标在卡片上。",
-    en: "Projects built with Kimi around the world. The bar is deliberately low: Kimi took part, it's made for the Kimi ecosystem, or it's built on Kimi — it doesn't have to be 100% Kimi-made. Participating agents are badged on each card.",
+    zh: "成员推荐的站外 Kimi 生态项目。符合任一收录口径即可：以 Kimi 为基座、服务 Kimi 生态，或由 Kimi 系 Agent 参与开发；卡片会标明收录口径与参与 Agent。",
+    en: "External Kimi ecosystem projects recommended by members. An item qualifies if it is built on Kimi, supports the ecosystem, or was developed with a Kimi agent; each card shows the scope and agents involved.",
   },
   "awesome.recommend": { zh: "推荐项目", en: "Recommend" },
   "awesome.all": { zh: "全部", en: "All" },
@@ -968,16 +968,16 @@ const DICT = {
   /* Page-header eyebrow: states the section's position only — "—
      positioning line", same grammar as detail pages and other
      sections. */
-  "works.eyebrow": { zh: "— 成员作品", en: "— Member builds" },
-  "awesome.eyebrow": { zh: "— 生态精选", en: "— Ecosystem picks" },
+  "works.eyebrow": { zh: "— 成员作品", en: "— Member work" },
+  "awesome.eyebrow": { zh: "— 生态项目", en: "— Ecosystem projects" },
   "works.wallIntro": {
-    zh: "社区成员用 Kimi 构建的真实作品;「声明投入」徽章由作者自行申报,并按可验证用量封顶。",
-    en: "Real works built by members with Kimi · the build-investment badge is a declared token figure capped by verifiable usage",
+    zh: "Builder 用 Kimi 做出的作品；「声明投入」由 Builder 自报 Token，系统按已同步总用量封顶，不代表单个作品的精确用量。",
+    en: "Work made by Builders with Kimi. Declared tokens are Builder-reported and capped by synced aggregate usage; they are not exact per-project usage.",
   },
   "works.emptyTitle": { zh: "你的作品墙还是空的", en: "Your works wall is empty" },
   "works.emptyBody": {
-    zh: "你的项目早就在用量里烧着 Token 了,挑一个挂上来,声明你的构建投入。",
-    en: "Your projects are already burning tokens in your usage — list one and declare your build effort.",
+    zh: "发布一个你用 Kimi 做出的作品；Token 声明可以稍后补充。",
+    en: "Publish something you made with Kimi; declared tokens can be added later.",
   },
   "works.emptyCta": { zh: "上架第一件作品 →", en: "List your first work →" },
   "works.filteredEmptyTitle": { zh: "当前筛选下没有作品", en: "No works match these filters" },
@@ -987,7 +987,7 @@ const DICT = {
   },
   "works.emptyQuota": { zh: "可声明额度 {n}", en: "Claimable {n}" },
   "works.statWorks": { zh: "上架作品", en: "works" },
-  "works.statAuthors": { zh: "Builder", en: "builders" },
+  "works.statAuthors": { zh: "Builder", en: "Builders" },
   "works.clearFilters": { zh: "清除筛选", en: "Clear filters" },
   "works.removeFilter": { zh: "移除筛选 {name}", en: "Remove filter {name}" },
   "works.statClaimed": { zh: "声明投入 (tokens)", en: "claimed (tokens)" },
@@ -999,8 +999,8 @@ const DICT = {
   "works.kindDist": { zh: "类型分布", en: "BY TYPE" },
   "works.topWeekly": { zh: "本周最受欢迎", en: "TOP THIS WEEK" },
   "works.claimNote": {
-    zh: "声明投入 = 作者自报 Token,系统按可验证用量总量封顶。找站外用 Kimi 构建的项目?",
-    en: "Claimed = author-reported tokens capped by verifiable usage. Looking for external Kimi-built projects?",
+    zh: "声明投入 = Builder 自报 Token，系统按已同步总用量封顶，不代表单个作品的精确用量。找站外 Kimi 项目？",
+    en: "Declared tokens are Builder-reported and capped by synced aggregate usage; they are not exact per-project usage. Looking for external Kimi projects?",
   },
   "works.goAwesome": { zh: "→ Awesome", en: "→ Awesome" },
   "awesome.scopeAll": { zh: "全部口径", en: "All scopes" },
@@ -1012,7 +1012,7 @@ const DICT = {
   "awesome.scopeEcoHint": { zh: "扩展、SDK、集成、周边工具", en: "Extensions, SDKs, integrations, tools" },
   "awesome.scopePartHint": { zh: "Kimi 系 Agent 参与开发,不要求 100%", en: "Kimi agents took part; 100% not required" },
   "awesome.statsTitle": { zh: "收录统计", en: "AWESOME STATS" },
-  "awesome.statsNote": { zh: "全球范围 · 成员推荐", en: "worldwide · recommended" },
+  "awesome.statsNote": { zh: "站外项目 · 成员推荐", en: "external · member-recommended" },
   "awesome.statItems": { zh: "收录项目", en: "items" },
   "awesome.statAgents": { zh: "参与 Agent", en: "agents" },
   "awesome.statWeeklyNew": { zh: "本周新增", en: "new this week" },
@@ -1021,7 +1021,7 @@ const DICT = {
   "awesome.scopeNote": { zh: "满足任一即可", en: "any one qualifies" },
   "awesome.rulesTitle": { zh: "推荐规则", en: "RULES" },
   "awesome.rulesBody": {
-    zh: "推荐站外项目时必须填写原作者/团队(可点跳到其 GitHub 主页);Awesome 项目不进你的作品墙,也不显示构建投入徽章。社区成员自己做的项目请去作品墙创建发布。",
+    zh: "推荐站外项目时必须填写原作者/团队(可点跳到其 GitHub 主页);Awesome 项目不进你的作品墙,也不显示 Token 声明。社区成员自己做的项目请去作品墙创建发布。",
     en: "External recommendations must name the original author/team (linked to their GitHub profile). Awesome entries never appear on your works wall and carry no claim badge. Built it yourself? Create and publish it on the works wall.",
   },
   "awesome.agentDist": { zh: "Agent 分布", en: "AGENT BREAKDOWN" },
@@ -1075,10 +1075,10 @@ const DICT = {
   },
   "home.joinDiscCta": { zh: "访问组织首页", en: "Visit the org" },
   "home.joinAwesome": {
-    zh: "全网 Kimi 生态项目精选,你的作品也值得上榜。",
-    en: "A curated selection of projects across the Kimi ecosystem — yours belongs on it too.",
+    zh: "符合收录口径的项目,可由成员推荐。",
+    en: "Members can recommend projects that fit the collection criteria.",
   },
-  "home.joinAwesomeCta": { zh: "浏览精选", en: "Browse the picks" },
+  "home.joinAwesomeCta": { zh: "浏览项目", en: "Browse projects" },
   "home.joinMail": {
     zh: "合作、反馈、投稿,或者只是想聊聊,都欢迎写信。",
     en: "Collaboration, feedback, submissions — or just say hi.",
@@ -1088,9 +1088,9 @@ const DICT = {
      jargon-y entries; the leaderboard entry yielded to explore (entry
      cards order by content section). */
   "home.subCommunity": { zh: "讨论 · 晒作品", en: "Discuss & share" },
-  "home.subExplore": { zh: "月刊 × 指南", en: "Monthly × guides" },
-  "home.subWorks": { zh: "成员作品墙", en: "Member builds" },
-  "home.subAwesome": { zh: "生态项目精选", en: "Curated picks" },
+  "home.subExplore": { zh: "月刊 × Builder 实践", en: "Monthly × Builder practices" },
+  "home.subWorks": { zh: "成员作品墙", en: "Member work" },
+  "home.subAwesome": { zh: "生态项目", en: "Ecosystem projects" },
   /* ---- About page (/about) ---- */
   "about.title": { zh: "关于", en: "About" },
   /* About header: the "— positioning line" eyebrow shared with other
@@ -1098,12 +1098,12 @@ const DICT = {
      important fact on this page. */
   "about.eyebrow": { zh: "— 社区自建 · 非官方", en: "— Member-built · unofficial" },
   "about.who": {
-    zh: "kimi.builders 是 Kimi 用户自建的非商业 Builder 社区(非官方)。这里聚着用 Kimi 做出实际东西的人 —— 写 Agent 的、跑自动化工作流的、磨提示词的;也聚着他们真实跑出来的作品,每一个都标着 Builder 声明的 token 投入。",
-    en: "kimi.builders is a non-commercial, user-built community of builders using Kimi (unofficial). It gathers people who make real things with Kimi — agent writers, workflow automators, prompt crafters — and the works they ship, each carrying the Builder's declared token investment.",
+    zh: "kimi.builders 是 Kimi 用户自建自运营的非商业 Builder 社区(非官方)。这里收录 Builder 做出的作品、亲自跑通的方法、具体讨论,以及自愿公开的用量数据。作品可附链接、源码和声明 Token;这些信息提供核验线索,不构成官方认证。",
+    en: "kimi.builders is a non-commercial, user-run community for Builders using Kimi (unofficial). It collects work they made, practices they ran themselves, specific discussions, and usage data they chose to share. Links, source code, and declared tokens provide verification clues; they are not official certification.",
   },
   "about.whoMore": {
-    zh: "这里没有空话和营销稿:跑通的工作流、踩过的坑、能复用的提示词,都值得留下;你卡住的地方,多半有人刚蹚过。",
-    en: "No fluff, no marketing: workflows that actually run, pitfalls already mapped, prompts worth reusing. Whatever you're stuck on, someone here just got through it.",
+    zh: "探索区收录可复现、可验证的 Builder 实践:分享者亲自跑通的方法,以及相应的证据与出处。",
+    en: "Explore collects reproducible, verifiable Builder practices: methods the contributor ran themselves, with the corresponding evidence and sources.",
   },
   "about.whatTitle": { zh: "这里有什么", en: "What's here" },
   "about.whatCommunity": {
@@ -1111,12 +1111,12 @@ const DICT = {
     en: "Community — Q&A, discussions, pitfalls and lessons.",
   },
   "about.whatWorks": {
-    zh: "作品墙 —— 成员用 AI 构建的真实作品,带 Builder 声明投入的徽章。",
-    en: "Works — real things members built with AI, carrying the Builder's declared-effort badge.",
+    zh: "作品墙 —— Builder 发布的 Kimi 相关作品;可附链接、源码和声明 Token。",
+    en: "Works — Kimi-related work published by Builders, with optional links, source code, and declared tokens.",
   },
   "about.whatAwesome": {
-    zh: "Awesome —— 全世界用 Kimi 构建的项目清单。",
-    en: "Awesome — projects built with Kimi around the world.",
+    zh: "Awesome —— 成员推荐的站外 Kimi 生态项目。",
+    en: "Awesome — external Kimi ecosystem projects recommended by members.",
   },
   "about.whatUsage": {
     zh: "用量中心 —— Collector 同步 token 与活跃数据;默认私密,榜单自愿公开。",
@@ -1126,13 +1126,13 @@ const DICT = {
   /* Closing note: the about page is the last page the hesitant read —
      end with an invitation, not a disclaimer. */
   "about.ctaLine": {
-    zh: "轮到你了——把你用 Kimi 做的东西挂上来。",
-    en: "Your turn — put what you made with Kimi on the wall.",
+    zh: "把你用 Kimi 做出的作品发布到作品墙。",
+    en: "Publish what you made with Kimi on the works wall.",
   },
   "about.ctaGithub": { zh: "先去 GitHub 逛逛", en: "Browse GitHub first" },
   "about.disclaimer": {
     zh: "kimi.builders 由 Kimi 用户自建自运营,现阶段为非商业社区。本站与 Moonshot AI(月之暗面)无隶属、赞助、背书或授权关系;「Kimi」「Moonshot AI」等名称与商标归其权利人所有,本站仅作事实性指称。站内 AI 助手「小筑」由社区部署、通过公开接口调用模型,其回复不代表 Moonshot AI 官方立场。",
-    en: "kimi.builders is built and run by Kimi users and operates as a non-commercial community at this stage. It is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). \"Kimi\", \"Moonshot AI\" and related marks belong to their respective owners and are referenced here only factually. The on-site AI assistant 小筑 is operated by the community over public APIs; its replies do not represent Moonshot AI.",
+    en: "kimi.builders is built and run by Kimi users and operates as a non-commercial community at this stage. It is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). \"Kimi\", \"Moonshot AI\" and related marks belong to their respective owners and are referenced here only factually. The on-site AI assistant Xiaozhu is operated by the community over public APIs; its replies do not represent Moonshot AI.",
   },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
@@ -1245,8 +1245,8 @@ const DICT = {
   "works.galleryPrev": { zh: "上一张", en: "Previous" },
   "works.galleryNext": { zh: "下一张", en: "Next" },
   "works.badgeTitle": {
-    zh: "由作者声明,系统按可验证总量封顶校验,非精确计量",
-    en: "Declared by the author, capped by their verifiable total — not precise metering",
+    zh: "Builder 自报;系统按已同步总用量封顶,不代表单个作品的精确用量",
+    en: "Builder-reported; capped by synced aggregate usage; not exact per-project usage",
   },
   "works.featuredFallback": { zh: "精选作品", en: "Featured work" },
   "pager.loadMore": { zh: "加载更多", en: "Load more" },
@@ -1431,8 +1431,8 @@ const DICT = {
     en: "Chat with the Builder about this work",
   },
   "works.noComments": {
-    zh: "还没有评论。说点什么吧——第一个开口的,Builder 记得最牢。",
-    en: "No comments yet — say something; the builder remembers the first voice.",
+    zh: "还没有评论。可以向 Builder 提问或留下具体反馈。",
+    en: "No comments yet. Ask the Builder a question or leave specific feedback.",
   },
   "works.authorChip": { zh: "作者", en: "AUTHOR" },
   "works.notFound": {
@@ -1461,13 +1461,13 @@ const DICT = {
   /* ---- Work usage claims (own section to shrink merge conflicts)
      ---- */
   "works.claim": {
-    zh: "构建投入(可选)",
-    en: "Build effort (optional)",
+    zh: "声明 Token(可选)",
+    en: "Declared tokens (optional)",
   },
   "works.claimPh": { zh: "如 612M、1.2B", en: "e.g. 612M, 1.2B" },
   "works.claimHint": {
-    zh: "由你声明,系统按你的可验证用量总量封顶;留空 = 不展示徽章。仅自己的作品可声明(推荐站外项目不适用)。",
-    en: "Declared by you and capped by your verifiable usage total; leave empty for no badge. Only your own works can carry a claim (not external recommendations).",
+    zh: "由你自报,系统按已同步总用量封顶,不代表这个作品的精确用量;留空则不展示。仅自己的作品可声明(推荐站外项目不适用)。",
+    en: "Builder-reported and capped by synced aggregate usage; this is not exact per-project usage. Leave empty to show no claim. External recommendations cannot carry one.",
   },
   "works.claimRemaining": {
     zh: "剩余可声明额度 {n} tokens",
@@ -1478,13 +1478,13 @@ const DICT = {
     en: "Suggested from your project “{label}”: {n}",
   },
   "works.claimNoUsage": {
-    zh: "想戴徽章,先接数据 —— 同步用量后才能声明构建投入。",
-    en: "To wear a badge, connect your data first — sync usage before declaring build effort.",
+    zh: "先同步用量,才能声明 Token;系统只按已同步总用量封顶。",
+    en: "Sync usage before declaring tokens; the system only caps them by synced aggregate usage.",
   },
   "works.claimNoUsageCta": { zh: "去用量中心同步", en: "Go to Usage sync" },
   "works.claimPaused": {
-    zh: "声明总额超出可验证总量,徽章已暂停展示,请重新分配。",
-    en: "Your claimed total exceeds the verifiable total — badges are paused; please reallocate.",
+    zh: "声明总额超出已同步总用量,展示已暂停,请重新分配。",
+    en: "Your claimed total exceeds synced aggregate usage, so claims are hidden until you reallocate them.",
   },
   "err.workClaimInvalid": {
     zh: "声明数字无法识别(支持如 612M 的紧凑写法)",
@@ -1615,8 +1615,8 @@ const DICT = {
   "rail.workMeta": { zh: "作品信息", en: "WORK INFO" },
   "rail.worksAbout": { zh: "作品墙", en: "THE GALLERY" },
   "rail.worksAboutBody": {
-    zh: "社区成员用 Kimi 构建的真实作品。构建投入徽章为作者声明制:作者自报、系统按可验证总量封顶。",
-    en: "Real projects members built with Kimi. Token badges are author-claimed, capped by verifiable totals.",
+    zh: "Builder 用 Kimi 做出的作品;“声明投入”由 Builder 自报 Token,系统按已同步总用量封顶,不代表单个作品的精确用量。",
+    en: "Work made by Builders with Kimi. Declared tokens are Builder-reported and capped by synced aggregate usage; they are not exact per-project usage.",
   },
   "rail.worksSubmit": { zh: "发布作品", en: "Publish your work" },
   "rail.worksTop": { zh: "热门作品", en: "TOP WORKS" },
@@ -1626,10 +1626,10 @@ const DICT = {
     zh: "还没有同作者或同 Agent 的其他作品。",
     en: "No other works by this author or agent yet.",
   },
-  "rail.aiSummon": { zh: "召唤 Kimi 分析", en: "SUMMON KIMI" },
+  "rail.aiSummon": { zh: "召唤小筑分析", en: "ASK XIAOZHU" },
   "rail.aiSummonHint": {
-    zh: "让 Kimi 读一遍这个帖子,给出结构化分析。",
-    en: "Ask Kimi to read this thread and give a structured analysis.",
+    zh: "让小筑(本站 AI 助手)读一遍这个帖子,给出结构化分析。",
+    en: "Ask Xiaozhu, the community AI assistant, to read this thread and give a structured analysis.",
   },
   "rail.awesomeAbout": { zh: "收录说明", en: "ABOUT THE LIST" },
   "rail.awesomeStats": { zh: "来源统计", en: "SOURCES" },
@@ -1803,7 +1803,7 @@ const DICT = {
   },
   /* ---- Localized route titles + site meta (brand language pass) ---- */
   "site.metaTitle": { zh: "kimi.builders — Build with Kimi. Show your work.", en: "kimi.builders — Build with Kimi. Show your work." },
-  "site.metaDescription": { zh: "Kimi 用户自建的社区(非官方):真实作品、讨论、月刊评鉴与自愿公开的用量数据。", en: "A user-run community of Kimi builders (unofficial): real works, discussions, a monthly review, and opt-in usage data." },
+  "site.metaDescription": { zh: "Kimi 用户自建的社区(非官方):作品、讨论、月刊评鉴与自愿公开的用量数据。", en: "A user-run community for Builders using Kimi (unofficial): work, discussions, the Monthly, and opt-in usage data." },
   "meta.explore": { zh: "探索 — kimi.builders", en: "Explore — kimi.builders" },
   "meta.works": { zh: "作品库 — kimi.builders", en: "Works — kimi.builders" },
   "meta.awesome": { zh: "Awesome — kimi.builders", en: "Awesome — kimi.builders" },
@@ -1824,12 +1824,12 @@ const DICT = {
   /* Section meta descriptions (search/share snippets): functional
      one-liners, same discipline as the page ledes. */
   "metaDesc.community": { zh: "问问题、晒进度、聊踩坑——Kimi 用户的公开讨论区。", en: "Ask, share progress, swap lessons — public threads by Kimi users." },
-  "metaDesc.explore": { zh: "月刊评鉴与实战指南,按章、产品、职业、标签、归档浏览。", en: "Monthly reviews and field guides — browse by chapter, product, role, tag, or archive." },
-  "metaDesc.works": { zh: "成员用 Kimi 做出的真实作品,徽章按可验证用量封顶。", en: "Real works members made with Kimi — badges capped by verifiable usage." },
-  "metaDesc.awesome": { zh: "全世界用 Kimi 构建的项目:Kimi 参与、为生态做、以 Kimi 为基座都算。", en: "Projects built with Kimi around the world — Kimi-assisted, ecosystem-made, or built on Kimi." },
+  "metaDesc.explore": { zh: "月刊评鉴与 Builder 亲自跑通的实践,附方法、证据与出处。", en: "The Monthly and practices Builders ran themselves, with methods, evidence, and sources." },
+  "metaDesc.works": { zh: "Builder 用 Kimi 做出的作品;声明 Token 按已同步总用量封顶,不代表单个作品的精确用量。", en: "Work made by Builders with Kimi; declared tokens are capped by synced aggregate usage, not exact per-project usage." },
+  "metaDesc.awesome": { zh: "成员推荐的站外 Kimi 生态项目,卡片标明收录口径与参与 Agent。", en: "External Kimi ecosystem projects recommended by members, with criteria and participating agents shown on each card." },
   "metaDesc.usage": { zh: "以 Kimi 为主的多 Agent 编程用量中心。默认私有,榜单自愿公开。", en: "Kimi-first usage analytics across AI coding agents. Private by default; the leaderboard is opt-in." },
   "metaDesc.leaderboard": { zh: "自愿公开成员的周期聚合用量:自报数据,仅供参考。", en: "Period aggregates from opted-in members — self-reported, reference only." },
-  "metaDesc.about": { zh: "kimi.builders 是 Kimi 用户自建的非商业社区(非官方)。", en: "kimi.builders is a user-built, non-commercial community of Kimi builders (unofficial)." },
+  "metaDesc.about": { zh: "kimi.builders 是 Kimi 用户自建的非商业 Builder 社区(非官方)。", en: "kimi.builders is a user-run, non-commercial community for Builders using Kimi (unofficial)." },
   "metaDesc.demoNight": { zh: "Builder 的线上分享夜:演示、见证、公开署名的到场名单。", en: "An online show-and-tell for Builders — demos, witnesses, and a public attendee list." },
 } as const;
 

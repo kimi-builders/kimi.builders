@@ -2,9 +2,9 @@
 
 English · [中文](./README.md)
 
-[kimi.builders](https://kimi.builders) — the online home of a community-run, non-profit
-builder community for Kimi users (unofficial): discussions, works, usage stats,
-knowledge — and an AI that actually lives in the community.
+[kimi.builders](https://kimi.builders) is a non-commercial, user-run community for
+Builders using Kimi (unofficial): work, practices they ran themselves, specific
+discussions, opt-in usage data, and the community AI assistant Xiaozhu.
 
 ![Home](docs/images/home-dark.png)
 
@@ -13,12 +13,13 @@ knowledge — and an AI that actually lives in the community.
 - **Community discussions**: posts (text / link / poll), threaded comments, voting,
   subscriptions & notifications, private posts, moderation with an audit trail.
 - **AI-native interaction** (see [Summon @kimi](#summon-kimi)): new posts can get an
-  automatic reply from the Kimi bot; `@kimi` in any post, work, or Awesome comment
+  automatic reply from Xiaozhu, the community AI assistant; `@kimi` in any post, work, or Awesome comment
   summons it to answer — two-level switches (global + per-content), dedicated rate
   limit, pending feedback, and replies land in your notification center.
-- **Works wall**: members showcase what they built with Kimi — screenshot galleries,
-  cover tones, and verified build investment (token usage).
-- **Awesome list**: projects built with Kimi around the world, curated by the community.
+- **Works wall**: Builders publish work made with Kimi, with optional screenshots,
+  links, source code, and self-reported tokens capped by synced aggregate usage. These are not exact per-project usage.
+- **Awesome list**: external Kimi ecosystem projects recommended by members, with
+  collection criteria and participating agents shown on each card.
 - **Usage center**: a local CLI collects token usage from Kimi Code and other agents and
   syncs it to your private dashboard — model breakdown, cost estimates, trends, and
   shareable posters. Private by default. CLI:
@@ -35,11 +36,10 @@ knowledge — and an AI that actually lives in the community.
 - **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** —
   the community brand asset pack (moon + orbit + twin-star logo), vendored into
   `public/brand/`.
-- **Explore** (`/explore`): monthly letters and tutorials share one article shelf,
-  organized along four chapters — learn / build / measure / establish. Products,
-  roles, tags and archive are dropdown lenses that only appear when they have
-  content; tutorials form curated series (`/explore/series/<slug>`). The old
-  `/blog` and `/learn` addresses 301 into Explore. Demo Night event pages too.
+- **Explore** (`/explore`): the Monthly and practices Builders ran themselves, with
+  methods, evidence, and sources. Category, product, role, tag, and archive filters
+  appear only when they have content; series support remains available at
+  `/explore/series/<slug>`. The old `/blog` and `/learn` addresses redirect with 308.
 - **i18n & theming**: Chinese/English toggle; dark/light themes plus two visual vibes
   (poster / soft).
 
@@ -69,10 +69,10 @@ silently replaced under an existing revision.
 
 ## Summon @kimi
 
-A first-class citizen of the community is the "Kimi bot". Three ways to interact:
+The community AI assistant is called Xiaozhu. There are three ways to interact:
 
-1. **Auto reply**: tick "allow the Kimi bot to reply" when publishing (on by default)
-   and the bot replies to your post;
+1. **Auto reply**: tick "allow Xiaozhu to reply" when publishing (on by default)
+   and Xiaozhu replies to your post;
 2. **@kimi summon**: type `@kimi` in any post / work / Awesome comment or in the post
    body (the editor autocompletes after `@`) and the bot answers in context; a summon
    at publish time merges with the auto reply into a single comment;

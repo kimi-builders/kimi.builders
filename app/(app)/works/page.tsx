@@ -6,7 +6,7 @@
    _components/WorkCard with /awesome, and the first page and "load
    more" share _components/works-page (keyset paging: new = id, hot =
    the votes|id composite). When the author opted into public usage,
-   cards carry the "verified build effort" badge (see works-page). */
+   cards may carry a Builder-reported token claim (see works-page). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";

@@ -1,5 +1,5 @@
-/* Awesome Kimi: projects built with Kimi worldwide (both sources: member
-   works + recommended external projects). Header copy + a sort seg +
+/* Awesome: member-recommended external Kimi ecosystem projects. Header
+   copy + a sort seg +
    filter dropdowns (agent / kind / scope); cards share WorkCard with
    /works (awesome entries carry a scope chip + recommender), and the
    first page and "load more" share ../works/_components/works-page
