@@ -210,10 +210,7 @@ export default async function Home({
         <h1 className="mt-10 font-mono text-4xl font-semibold tracking-wide">
           kimi<span className="text-ui-blue">.</span>builders
         </h1>
-        <p className="mt-5 font-mono text-sm tracking-[0.08em] text-paper">
-          BUILD REAL THINGS WITH KIMI<span className="text-ui-blue">.</span>
-        </p>
-        <p className="mt-3 text-lg font-medium">{t(locale, "home.tagline")}</p>
+        <p className="mt-5 text-lg font-medium">{t(locale, "home.tagline")}</p>
         <p className="mt-2 text-sm text-grey">{t(locale, "home.heroSub")}</p>
         <Link
           href="/community"

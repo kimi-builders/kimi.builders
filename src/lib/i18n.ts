@@ -80,7 +80,10 @@ const DICT = {
   "state.backHome": { zh: "返回首页", en: "Back home" },
   "state.errorEyebrow": { zh: "加载异常", en: "LOAD ERROR" },
   "state.errorTitle": { zh: "这一页暂时没有响应", en: "This page stopped responding" },
-  "state.errorBody": { zh: "你的数据没有丢失。可以重新尝试,或先返回首页。", en: "Your data is safe. Try the request again, or return home for now." },
+  "state.errorBody": {
+    zh: "页面暂时无法加载，请重试。如果刚提交过内容，请先不要重复操作。",
+    en: "This page could not be loaded. Try again. If you just submitted something, avoid repeating the action until its status is clear.",
+  },
   "state.retry": { zh: "重新尝试", en: "Try again" },
   /* ---- Loading states (self-help hints on slow loads) ---- */
   "load.slow": { zh: "这一页加载得比平时久,可以再等一下或重试。", en: "This page is taking longer than usual. Wait a moment or retry." },
@@ -201,13 +204,13 @@ const DICT = {
   /* ---- Post detail ---- */
   "post.comments": { zh: "{n} 条评论", en: "{n} comments" },  "post.commentPh": {
     zh: "写下你的评论(支持 Markdown;@kimi 可召唤小筑回答)…",
-    en: "Write a comment (Markdown; @kimi to summon the bot)…",
+    en: "Write a comment (Markdown; @kimi to summon Xiaozhu)…",
   },
   /* @kimi summon result toast: the comment publishes either way; whether
      the summon took effect is a separate notice. */
   "post.aiSummoned": {
     zh: "已召唤 Kimi 小筑,TA 稍后回复",
-    en: "Kimi bot summoned — reply incoming",
+    en: "Xiaozhu summoned — reply incoming",
   },
   "post.aiSummonDisabled": {
     zh: "帖主已关闭 AI 参与,召唤未生效",
@@ -220,14 +223,14 @@ const DICT = {
   /* Summon waiting feedback: typing placeholder / arrived / failed /
      timed out. */
   "post.aiTyping": { zh: "正在输入…", en: "typing…" },
-  "post.aiReplied": { zh: "Kimi 小筑回复了", en: "Kimi bot replied" },
+  "post.aiReplied": { zh: "Kimi 小筑回复了", en: "Xiaozhu replied" },
   "post.aiReplyFailed": {
     zh: "小筑暂时没能回复,稍后再 @ 一次试试",
-    en: "The bot couldn't reply — try @-ing again later",
+    en: "Xiaozhu couldn't reply — try @-ing again later",
   },
   "post.aiReplySlow": {
     zh: "小筑回复较慢,稍后可到通知中心查看",
-    en: "The bot is slow — check notifications later",
+    en: "Xiaozhu is taking longer than usual — check notifications later",
   },
   "post.comment": { zh: "评论", en: "Comment" },
   "post.solved": { zh: "已解决", en: "Solved" },
@@ -318,7 +321,7 @@ const DICT = {
   "form.title": { zh: "标题(可选)", en: "Title (optional)" },
   "form.bodyText": {
     zh: "正文(支持 Markdown;@kimi 可召唤小筑回答)",
-    en: "Body (Markdown; @kimi to summon the bot)",
+    en: "Body (Markdown; @kimi to summon Xiaozhu)",
   },
   "form.bodyOpt": {
     zh: "补充说明(可选,支持 Markdown)",
@@ -328,11 +331,11 @@ const DICT = {
   "form.addOpt": { zh: "+ 添加选项", en: "+ Add option" },
   "form.aiReply": {
     zh: "允许 Kimi 小筑(AI)回复本帖",
-    en: "Allow Kimi bot (AI) to reply",
+    en: "Allow Xiaozhu, the community AI, to reply",
   },
   "form.aiReplyHint": {
     zh: "小筑会自动回帖暖场、补充相关信息,可随时在帖内关闭",
-    en: "The bot warms up threads and adds context; you can turn it off per post",
+    en: "Xiaozhu opens the thread and adds context; you can turn it off per post",
   },
   "form.private": {
     zh: "私密发布(仅自己可见)",
@@ -359,7 +362,7 @@ const DICT = {
   "editor.image": { zh: "插入图片(或直接粘贴)", en: "Insert image (or paste)" },
   "editor.summonKimiHint": {
     zh: "召唤 Kimi 小筑(Tab 补全)",
-    en: "summon Kimi bot (Tab to complete)",
+    en: "summon Xiaozhu (Tab to complete)",
   },
   "editor.boldPh": { zh: "粗体文本", en: "bold text" },
   "editor.codePh": { zh: "代码", en: "code" },
@@ -377,7 +380,7 @@ const DICT = {
   "form.clearDraft": { zh: "清空草稿", en: "Clear draft" },
   "form.draftSaved": { zh: "草稿已自动保存到此设备", en: "Draft saved on this device" },
   "post.official": { zh: "站务账号", en: "Site team" },
-  "post.aiJoin": { zh: "小筑参与互动", en: "Kimi bot joins" },
+  "post.aiJoin": { zh: "小筑参与互动", en: "Xiaozhu joins" },
   "edit.pageTitle": { zh: "编辑帖子", en: "Edit post" },
   "err.notOwner": { zh: "只能编辑自己的帖子", en: "You can only edit your own posts" },
   "form.submit": { zh: "发布", en: "Post" },
@@ -578,11 +581,11 @@ const DICT = {
   "set.privacy": { zh: "隐私与公开", en: "Privacy" },
   "set.aiMine": {
     zh: "允许 Kimi 小筑(AI)回复我的帖子和评论",
-    en: "Allow Kimi bot (AI) to reply to my posts and comments",
+    en: "Allow Xiaozhu, the community AI, to reply to my posts and comments",
   },
   "set.aiMineHint": {
     zh: "开启后,小筑会在你的帖子下提供构建建议与数据解读,卡片上带 AI 标识。",
-    en: "When on, the Kimi bot replies under your posts with build suggestions and data readings, badged as AI.",
+    en: "When on, Xiaozhu replies under your posts with build suggestions and data readings, badged as AI.",
   },
   "set.aiShow": {
     zh: "浏览时显示 AI 回复",
@@ -590,7 +593,7 @@ const DICT = {
   },
   "set.aiShowHint": {
     zh: "关闭后,所有「Kimi 小筑参与互动」的内容在你的时间线上折叠。",
-    en: "When off, Kimi bot interactions collapse across your timelines.",
+    en: "When off, Xiaozhu's replies collapse across your timelines.",
   },
   "set.locale": { zh: "界面语言", en: "Interface language" },
   "set.theme": { zh: "主题", en: "Theme" },
@@ -702,7 +705,7 @@ const DICT = {
     en: "This section is still being prepared. Meanwhile, browse the community — or post what you'd like to see here.",
   },
   "soon.back": { zh: "去社区看看", en: "Browse the community" },
-  "home.tagline": { zh: "用 Kimi,把东西做出来。", en: "Build real things with Kimi." },
+  "home.tagline": { zh: "Build with Kimi. Show your work.", en: "Build with Kimi. Show your work." },
   "home.footerLine1": {
     zh: "kimi.builders 是用户自建的非商业社区。",
     en: "kimi.builders is a user-built, non-commercial community.",
@@ -762,8 +765,8 @@ const DICT = {
      <html lang>, same read as the root error page). */
   "usageErr.title": { zh: "用量中心暂时无法加载", en: "Usage center unavailable" },
   "usageErr.body": {
-    zh: "请求没有修改你的数据。请重试;如果问题持续出现,可将下方错误编号发给维护者。",
-    en: "The request didn't modify your data. Retry — if it keeps failing, send the error reference below to the maintainers.",
+    zh: "请重试。如果刚提交过内容，请先不要重复操作。问题持续出现时，可将下方错误编号发给维护者。",
+    en: "Try again. If you just submitted something, avoid repeating the action until its status is clear. If the problem continues, send the error reference below to the maintainers.",
   },
   "usageErr.retry": { zh: "重新加载", en: "Retry" },
   /* Privacy switches: shared by the usage settings and the settings
@@ -880,11 +883,11 @@ const DICT = {
      nothing. */
   "works.aiReply": {
     zh: "允许 Kimi 小筑参与评论区",
-    en: "Let Kimi bot join the comments",
+    en: "Let Xiaozhu join the comments",
   },
   "works.aiReplyHint": {
     zh: "评论里 @kimi 可召唤小筑点评 / 答疑;关闭后召唤不生效",
-    en: "@kimi in a comment summons the bot for feedback or answers; off = summons ignored",
+    en: "@kimi in a comment summons Xiaozhu for feedback or answers; off = summons ignored",
   },
   "err.workName": { zh: "作品名称必填", en: "Name is required" },
   "err.workNameLong": {
@@ -1055,10 +1058,10 @@ const DICT = {
     en: "kimi.builders — a paper crescent on the dark side of the moon, with two companion stars in orbit",
   },
   "home.heroSub": {
-    zh: "成员真实跑出来的作品、方法与用量数据。",
-    en: "Real works, methods, and usage data from the community.",
+    zh: "看 Builder 做出的作品、亲自跑通的方法，以及自愿公开的用量。",
+    en: "See what Builders made, how they did it, and the usage they chose to share.",
   },
-  "home.cta": { zh: "进入社区", en: "Enter the community" },
+  "home.cta": { zh: "浏览社区", en: "Browse the community" },
   "home.tokens": { zh: "累计 tokens", en: "total tokens" },
   "home.featured": { zh: "本周精选", en: "PICKS OF THE WEEK" },
   "home.featuredSub": {
@@ -1799,7 +1802,7 @@ const DICT = {
     en: "You are permanently muted; posting, commenting, and publishing works are disabled.",
   },
   /* ---- Localized route titles + site meta (brand language pass) ---- */
-  "site.metaTitle": { zh: "kimi.builders — 用 Kimi,把东西做出来。", en: "kimi.builders — Build real things with Kimi." },
+  "site.metaTitle": { zh: "kimi.builders — Build with Kimi. Show your work.", en: "kimi.builders — Build with Kimi. Show your work." },
   "site.metaDescription": { zh: "Kimi 用户自建的社区(非官方):真实作品、讨论、月刊评鉴与自愿公开的用量数据。", en: "A user-run community of Kimi builders (unofficial): real works, discussions, a monthly review, and opt-in usage data." },
   "meta.explore": { zh: "探索 — kimi.builders", en: "Explore — kimi.builders" },
   "meta.works": { zh: "作品库 — kimi.builders", en: "Works — kimi.builders" },

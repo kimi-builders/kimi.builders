@@ -350,8 +350,8 @@ function LetterDetail({
       <footer className="border-t border-line pt-6 text-[11px] leading-relaxed text-grey/80">
         <p>
           {zh
-            ? "本刊各节均可独立引用(?tab=digest / facts / decisions)。中英双发。"
-            : "Every section is independently citable (?tab=digest / facts / decisions). Published in both languages."}
+            ? "本刊各节均有独立链接（?tab=digest / facts / decisions）。"
+            : "Each section has its own shareable link (?tab=digest / facts / decisions)."}
         </p>
         {disclosureRows.length > 0 && (
           <p className="mt-2">
