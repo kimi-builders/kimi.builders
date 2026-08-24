@@ -95,6 +95,7 @@ async function main() {
     const t2 = await issuePasswordResetToken(userId);
     const t3 = await issuePasswordResetToken(userId);
     // Voided by t3's issue.
+    assert.equal(await consumePasswordResetToken(t2), null);
     assert.equal(await consumePasswordResetToken(t3), userId);
 
     /* ---- Expiry rejected ---- */

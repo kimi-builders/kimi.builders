@@ -9,12 +9,12 @@ const queries = {
              FROM information_schema.TABLES
             WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
             ORDER BY TABLE_NAME`,
-  columns: `SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT,
+  columns: `SELECT TABLE_NAME, COLUMN_NAME, COLUMN_DEFAULT,
                    IS_NULLABLE, COLUMN_TYPE, CHARACTER_SET_NAME, COLLATION_NAME,
                    EXTRA, GENERATION_EXPRESSION
               FROM information_schema.COLUMNS
              WHERE TABLE_SCHEMA = ?
-             ORDER BY TABLE_NAME, ORDINAL_POSITION`,
+             ORDER BY TABLE_NAME, COLUMN_NAME`,
   indexes: `SELECT TABLE_NAME, INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX,
                    COLUMN_NAME, COLLATION, SUB_PART, INDEX_TYPE
               FROM information_schema.STATISTICS

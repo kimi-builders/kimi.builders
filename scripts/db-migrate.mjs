@@ -2,7 +2,7 @@
 /* db-migrate — kimi.builders migration runner (zero deps, Node >=20).
  *
  * Commands:
- *   migrate (default)  apply pending db/migrations/*.sql in filename order
+ *   migrate (default)  apply pending files in db/migration-order.txt order
  *   status             show applied / pending / checksum drift
  *   init-ledger        mark ALL migration files as applied WITHOUT running them
  *                      — only for databases already up to date (backfills the
@@ -33,6 +33,7 @@ const mysql = require('mysql2/promise');
 
 const ROOT = new URL('../', import.meta.url).pathname;
 const MIGRATIONS_DIR = `${ROOT}db/migrations`;
+const MIGRATION_ORDER_FILE = `${ROOT}db/migration-order.txt`;
 
 const FRESH_SCHEMA_DATA_MIGRATIONS = [
   '20260809_usage_phase2.sql',
@@ -105,13 +106,29 @@ export async function applyMigrationFile(connection, file, sql) {
 }
 
 function migrationFiles() {
-  return readdirSync(MIGRATIONS_DIR)
+  const directoryFiles = readdirSync(MIGRATIONS_DIR)
     .filter((file) => file.endsWith('.sql'))
     .sort();
+  const orderedFiles = readFileSync(MIGRATION_ORDER_FILE, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const orderedSet = new Set(orderedFiles);
+  if (orderedSet.size !== orderedFiles.length) {
+    throw new Error('db/migration-order.txt contains duplicate entries');
+  }
+  const missing = directoryFiles.filter((file) => !orderedSet.has(file));
+  const unknown = orderedFiles.filter((file) => !directoryFiles.includes(file));
+  if (missing.length > 0 || unknown.length > 0) {
+    throw new Error(
+      `db/migration-order.txt mismatch (missing: ${missing.join(', ') || 'none'}; unknown: ${unknown.join(', ') || 'none'})`,
+    );
+  }
+  return orderedFiles;
 }
 
 export function classifyMigrationState(current, applied) {
-  const pending = [...current.keys()].filter((file) => !applied.has(file)).sort();
+  const pending = [...current.keys()].filter((file) => !applied.has(file));
   const drift = [...current.entries()]
     .filter(([file, checksum]) => {
       const recorded = applied.get(file);

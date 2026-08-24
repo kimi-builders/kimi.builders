@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import {
   applyMigrationFile,
   classifyMigrationState,
   splitStatements,
 } from "../scripts/db-migrate.mjs";
-import { changedAppliedMigrations } from "../scripts/check-migration-immutability.mjs";
+import {
+  changedAppliedMigrations,
+  verifyAppendOnlyOrder,
+} from "../scripts/check-migration-immutability.mjs";
 
 interface FakeStep {
   step_index: number;
@@ -118,6 +121,17 @@ test("migration state reports drift, pending, and missing applied files", () => 
   assert.deepEqual(state.missing, ["removed.sql"]);
 });
 
+test("pending migrations preserve the explicit dependency order", () => {
+  const state = classifyMigrationState(
+    new Map([
+      ["later-name.sql", "one"],
+      ["earlier-name.sql", "two"],
+    ]),
+    new Map(),
+  );
+  assert.deepEqual(state.pending, ["later-name.sql", "earlier-name.sql"]);
+});
+
 test("migration immutability permits additions and rejects edits, deletes, or renames", () => {
   const changes = [
     "A\tdb/migrations/004.sql",
@@ -132,6 +146,26 @@ test("migration immutability permits additions and rejects edits, deletes, or re
     "db/migrations/003.sql",
     "db/migrations/renamed.sql",
   ]);
+});
+
+test("migration order is complete, dependency-safe, and append-only", () => {
+  const order = readFileSync(
+    new URL("../db/migration-order.txt", import.meta.url),
+    "utf8",
+  ).trim().split("\n");
+  const migrationNames = readdirSync(
+    new URL("../db/migrations", import.meta.url),
+  ).filter((name) => name.endsWith(".sql")).sort();
+  assert.deepEqual([...order].sort(), migrationNames);
+  assert.ok(
+    order.indexOf("20260816_work_ai_summon.sql") >
+      order.indexOf("20260821_work_interactions.sql"),
+  );
+  assert.doesNotThrow(() => verifyAppendOnlyOrder(order, [...order, "next.sql"]));
+  assert.throws(
+    () => verifyAppendOnlyOrder(order, [order[1], order[0], ...order.slice(2)]),
+    /append-only/,
+  );
 });
 
 test("comments governance index matches hidden-state filter plus id cursor order", () => {

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 export function changedAppliedMigrations(nameStatus) {
@@ -12,6 +13,17 @@ export function changedAppliedMigrations(nameStatus) {
       if (status === 'A') return [];
       return paths.filter((path) => path.startsWith('db/migrations/'));
     });
+}
+
+export function verifyAppendOnlyOrder(previous, current) {
+  if (current.length < previous.length) {
+    throw new Error('db/migration-order.txt cannot remove applied migrations');
+  }
+  for (let index = 0; index < previous.length; index += 1) {
+    if (previous[index] !== current[index]) {
+      throw new Error('db/migration-order.txt is append-only');
+    }
+  }
 }
 
 function main() {
@@ -34,6 +46,17 @@ function main() {
     console.error('Applied migration files are immutable. Add a corrective migration instead:');
     for (const path of changed) console.error(`  ${path}`);
     process.exit(1);
+  }
+
+  const previousOrder = spawnSync('git', ['show', `${baseRef}:db/migration-order.txt`], {
+    encoding: 'utf8',
+  });
+  if (previousOrder.status === 0) {
+    const lines = (text) => text.split('\n').map((line) => line.trim()).filter(Boolean);
+    verifyAppendOnlyOrder(
+      lines(previousOrder.stdout),
+      lines(readFileSync('db/migration-order.txt', 'utf8')),
+    );
   }
   console.log('migration immutability: ok');
 }

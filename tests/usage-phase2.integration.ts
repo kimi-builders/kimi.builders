@@ -630,7 +630,7 @@ async function main() {
     );
     assert.equal(weekly.trend.length > 0, true);
     for (const row of weekly.trend) {
-      // Monday.
+      assert.equal(new Date(`${row.day}T00:00:00Z`).getUTCDay(), 1);
     }
     assert.equal(weekly.totals.totalTokens, expected.total);
     // Period-over-period: the previous window (Mar-Apr, no data) is

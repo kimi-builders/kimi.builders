@@ -10,7 +10,7 @@
       `tests/comment-baseline.json` is included; converted files are `locked`)
 - [ ] User-facing copy added to the i18n dictionary as zh/en pairs
 - [ ] No new dependencies; no changes to applied `db/migrations/`
-      (`db/schema.sql` updated if needed)
+      (new migrations appended to `db/migration-order.txt`; `db/schema.sql` updated)
 - [ ] DB changes pass `test:usage-db`, `test:analytics-db`, `test:auth-db`,
       `test:works-db`, and `test:moderation-db`
 - [ ] New routes added to the `proxy.ts` matcher
