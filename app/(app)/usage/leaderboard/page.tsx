@@ -52,7 +52,7 @@ const LEADERBOARD_SEG_ACTIVE =
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { title: t(locale, "meta.leaderboard") };
+  return { title: t(locale, "meta.leaderboard"), description: t(locale, "metaDesc.leaderboard") };
 }
 
 /* Compact numbers matching the /usage dashboard: 1.2k / 3.4M / 5.6B;

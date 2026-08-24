@@ -84,6 +84,9 @@ const DICT = {
   "state.retry": { zh: "重新尝试", en: "Try again" },
   /* ---- Loading states (self-help hints on slow loads) ---- */
   "load.slow": { zh: "这一页加载得比平时久,可以再等一下或重试。", en: "This page is taking longer than usual. Wait a moment or retry." },
+  /* Brand loading poster's aria-label (single-locale; the visible text
+     stays LOADING.). */
+  "load.aria": { zh: "页面加载中", en: "Loading page" },
   /* ---- Right rail ---- */
   "side.browse": { zh: "浏览社区", en: "BROWSE" },
   "side.all": { zh: "全部讨论", en: "All threads" },
@@ -1815,6 +1818,16 @@ const DICT = {
   "meta.admin": { zh: "管理 — kimi.builders", en: "Moderation — kimi.builders" },
   "meta.newArticle": { zh: "新建文章 — kimi.builders", en: "New article — kimi.builders" },
   "meta.editArticle": { zh: "编辑文章 — kimi.builders", en: "Edit article — kimi.builders" },
+  /* Section meta descriptions (search/share snippets): functional
+     one-liners, same discipline as the page ledes. */
+  "metaDesc.community": { zh: "问问题、晒进度、聊踩坑——Kimi 用户的公开讨论区。", en: "Ask, share progress, swap lessons — public threads by Kimi users." },
+  "metaDesc.explore": { zh: "月刊评鉴与实战指南,按章、产品、职业、标签、归档浏览。", en: "Monthly reviews and field guides — browse by chapter, product, role, tag, or archive." },
+  "metaDesc.works": { zh: "成员用 Kimi 做出的真实作品,徽章按可验证用量封顶。", en: "Real works members made with Kimi — badges capped by verifiable usage." },
+  "metaDesc.awesome": { zh: "全世界用 Kimi 构建的项目:Kimi 参与、为生态做、以 Kimi 为基座都算。", en: "Projects built with Kimi around the world — Kimi-assisted, ecosystem-made, or built on Kimi." },
+  "metaDesc.usage": { zh: "以 Kimi 为主的多 Agent 编程用量中心。默认私有,榜单自愿公开。", en: "Kimi-first usage analytics across AI coding agents. Private by default; the leaderboard is opt-in." },
+  "metaDesc.leaderboard": { zh: "自愿公开成员的周期聚合用量:自报数据,仅供参考。", en: "Period aggregates from opted-in members — self-reported, reference only." },
+  "metaDesc.about": { zh: "kimi.builders 是 Kimi 用户自建的非商业社区(非官方)。", en: "kimi.builders is a user-built, non-commercial community of Kimi builders (unofficial)." },
+  "metaDesc.demoNight": { zh: "Builder 的线上分享夜:演示、见证、公开署名的到场名单。", en: "An online show-and-tell for Builders — demos, witnesses, and a public attendee list." },
 } as const;
 
 export type I18nKey = keyof typeof DICT;

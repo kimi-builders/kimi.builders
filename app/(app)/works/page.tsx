@@ -38,7 +38,7 @@ import WorksViewToggle from "./_components/WorksViewToggle";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { title: t(locale, "meta.works") };
+  return { title: t(locale, "meta.works"), description: t(locale, "metaDesc.works") };
 }
 
 export default async function WorksPage({

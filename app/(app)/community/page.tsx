@@ -35,7 +35,7 @@ import { loadFeedCards } from "./_components/feed-page";
    tab/history/SEO fell back to the site-default title. */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { title: t(locale, "community.pageTitle") };
+  return { title: t(locale, "community.pageTitle"), description: t(locale, "metaDesc.community") };
 }
 
 export default async function CommunityPage({

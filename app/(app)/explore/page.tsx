@@ -80,6 +80,7 @@ export async function generateMetadata({
     first(sp.chapter) || first(sp.product) || first(sp.role) || first(sp.tag) || first(sp.year);
   return {
     title: t(locale, "meta.explore"),
+    description: t(locale, "metaDesc.explore"),
     ...(filtered ? { robots: { index: false, follow: true } } : {}),
   };
 }

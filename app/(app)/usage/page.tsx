@@ -79,7 +79,7 @@ import {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { title: t(locale, "meta.usage") };
+  return { title: t(locale, "meta.usage"), description: t(locale, "metaDesc.usage") };
 }
 
 function compact(value: number, zh: boolean): string {

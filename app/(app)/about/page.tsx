@@ -11,7 +11,7 @@ import { getLocale } from "@/src/lib/i18n-server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { title: t(locale, "meta.about") };
+  return { title: t(locale, "meta.about"), description: t(locale, "metaDesc.about") };
 }
 
 export default async function AboutPage() {

@@ -137,7 +137,7 @@ export default function UsageShareDialog({
               {!loaded && !error && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-black text-xs text-grey">
                   <LoaderCircle size={18} className="mr-2 animate-spin" aria-hidden="true" />
-                  {zh ? "正在生成真实数据海报…" : "Generating your poster…"}
+                  {zh ? "正在生成海报…" : "Generating your poster…"}
                 </div>
               )}
               {error ? (

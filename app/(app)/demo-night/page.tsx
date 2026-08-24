@@ -28,7 +28,12 @@ import { UPCOMING } from "@/src/lib/upcoming";
 import SoonPanel from "../_components/SoonPanel";
 import RsvpButton from "./_components/RsvpButton";
 
-export const metadata: Metadata = { title: "Demo Night — kimi.builders" };
+/* The title is bilingual-identical ("Demo Night" is a name); only the
+   description localizes. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { title: "Demo Night — kimi.builders", description: t(locale, "metaDesc.demoNight") };
+}
 
 /* The current event's attendance: avatars + handles in a row, first
    to arrive first credited (already sorted by signup time
