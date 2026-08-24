@@ -2,176 +2,208 @@
 
 English · [中文](./README.md)
 
-[kimi.builders](https://kimi.builders) is a non-commercial, user-run community for
-Builders using Kimi (unofficial): work, practices they ran themselves, specific
-discussions, opt-in usage data, and the community AI assistant Xiaozhu.
+> **Build with Kimi. Show your work.**
 
-![Home](docs/images/home-dark.png)
+[kimi.builders](https://kimi.builders) is a user-run, non-commercial community
+for Builders using Kimi (unofficial). It brings together specific discussions,
+practices Builders ran themselves, work they made, and aggregate usage members
+chose to share.
 
-## Features
+[Visit the community](https://kimi.builders) ·
+[GitHub organization](https://github.com/kimi-builders) ·
+[Usage CLI](https://github.com/kimi-builders/usage) ·
+[Awesome list](https://github.com/kimi-builders/awesome-kimi-builders)
 
-- **Community discussions**: posts (text / link / poll), threaded comments, voting,
-  subscriptions & notifications, private posts, moderation with an audit trail.
-- **AI-native interaction** (see [Summon @kimi](#summon-kimi)): new posts can get an
-  automatic reply from Xiaozhu, the community AI assistant; `@kimi` in any post, work, or Awesome comment
-  summons it to answer — two-level switches (global + per-content), dedicated rate
-  limit, pending feedback, and replies land in your notification center.
-- **Works wall**: Builders publish work made with Kimi, with optional screenshots,
-  links, source code, and self-reported tokens capped by synced aggregate usage. These are not exact per-project usage.
-- **Awesome list**: external Kimi ecosystem projects recommended by members, with
-  collection criteria and participating agents shown on each card.
-- **Usage center**: a local CLI collects token usage from Kimi Code and other agents and
-  syncs it to your private dashboard — model breakdown, cost estimates, trends, and
-  shareable posters. Private by default. CLI:
-  [kimi-builders/usage](https://github.com/kimi-builders/usage).
+![kimi.builders home in English](docs/images/readme-en-home.jpg)
+
+## What lives here
+
+### Community
+
+Posts, comments, polls, subscriptions, and notifications form the public discussion
+space. Posts can contain text, links, or polls and may be kept private. Moderation
+states, editorial reasons, and editor attribution stay close to the object they affect.
+
+### Explore
+
+Explore is home to the Monthly and practices Builders have run themselves. It favors
+methods, evidence, and sources over an ever-growing tutorial or news archive. Category,
+product, role, tag, and archive lenses appear only when content exists for them.
+
+### Works and Awesome
+
+- **Works** is the wall for work members made with Kimi, with optional links, source,
+  media, and declared tokens;
+- **Awesome** contains external Kimi-related projects recommended by members, keeping
+  the original author, source, and collection scope visible;
+- both use the same project detail and discussion system, without presenting external
+  projects as member work.
+
+Declared tokens are Builder-reported and only capped by synced aggregate usage. They
+are not exact per-project consumption, a skill credential, or an official endorsement.
+
+### Usage center
+
+[kimi-builders/usage](https://github.com/kimi-builders/usage) reads logs already stored
+locally by Kimi Code, Claude Code, Codex, OpenCode, and other agents, then aggregates
+tokens, standard-API cost estimates, active time, model usage, and project breakdowns.
+The CLI is local-first and works without an account. Syncing sanitized aggregates to
+the community is optional; personal data is private by default, and the leaderboard is
+strictly opt-in.
+
+### Xiaozhu and `@kimi`
+
+Xiaozhu is the community-operated AI assistant. Authors can allow an automatic reply
+when posting, or members can write `@kimi` in discussions under posts, works, and
+Awesome entries. Content owners can turn AI participation off, and readers can hide AI
+replies. Xiaozhu's responses do not represent Moonshot AI.
+
+## Production UI
+
+The screenshots below come directly from the production site at
+[kimi.builders](https://kimi.builders). The English README uses English-interface
+screenshots only.
+
+| Works | Public usage preview |
+|---|---|
+| ![Works in English](docs/images/readme-en-works.jpg) | ![Usage center in English](docs/images/readme-en-usage.jpg) |
+
+## Verification boundaries
+
+kimi.builders does not treat confident language as evidence. Wherever possible, the
+site keeps these clues next to the content they support:
+
+- project links, source code, media, and original authors;
+- methods, evidence, and sources for Builder practices;
+- editorial reasons and the editor who made the call;
+- aggregate usage a member chose to make public;
+- the provenance and limits of declared tokens.
+
+These clues help readers make their own judgment. They are not a guarantee from Kimi,
+Moonshot AI, or the community that a project will perform as described.
 
 ## Related projects
 
-- **[kimi-builders/usage](https://github.com/kimi-builders/usage)** — the usage
-  collector CLI (npm `@kimi.builders/usage`): reads the logs that Kimi Code,
-  Claude Code, Codex, OpenCode and other agents already keep on your machine, and
-  aggregates tokens, standard-API cost estimates, active time, and model/project
-  breakdowns. The local dashboard needs no account and works offline; syncing to this
-  site's usage center is opt-in (sanitized aggregates only).
+- **[kimi-builders/usage](https://github.com/kimi-builders/usage)** — the local-first,
+  multi-agent usage collector published as `@kimi.builders/usage` on npm;
+- **[awesome-kimi-builders](https://github.com/kimi-builders/awesome-kimi-builders)** —
+  the community-maintained source list for external projects;
 - **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** —
-  the community brand asset pack (moon + orbit + twin-star logo), vendored into
-  `public/brand/`.
-- **Explore** (`/explore`): the Monthly and practices Builders ran themselves, with
-  methods, evidence, and sources. Category, product, role, tag, and archive filters
-  appear only when they have content; series support remains available at
-  `/explore/series/<slug>`. The old `/blog` and `/learn` addresses redirect with 308.
-- **i18n & theming**: Chinese/English toggle; dark/light themes plus two visual vibes
-  (poster / soft).
+  the moon, orbit, and twin-star brand assets, vendored into `public/brand/`.
 
-## Public pricing catalog API
+## Architecture
 
-The site and `@kimi.builders/usage` share one versioned standard-API USD pricing
-catalog at `GET /api/public/usage-pricing/v1/catalog`. It is unauthenticated and
-supports `ETag` / `If-None-Match`; it returns only model match rules, prices,
-effective windows, and provenance—never user usage. The CLI validates the schema,
-revision, and SHA-256 integrity, then falls back to its last-known-good cache or
-bundled snapshot when an update fails. Revisions are append-only: content cannot be
-silently replaced under an existing revision.
+- **Web**: Next.js 16 App Router with Turbopack, React 19, strict TypeScript;
+- **Styling**: Tailwind CSS v4 with semantic tokens in `app/globals.css`, dark/light
+  themes, and poster/soft visual vibes;
+- **Data**: MySQL 8 through raw `mysql2` SQL, with no ORM;
+- **Authentication**: GitHub and Google OAuth plus email/password;
+- **Storage and mail**: Cloudflare R2 and Resend;
+- **AI**: Moonshot API behind a rate-limited job queue with retries;
+- **Runtime**: self-hosted behind Caddy and PM2, with migrations, atomic release
+  switching, health checks, and rollback.
 
-## Screenshots
-
-| Community | Works | Awesome |
-|---|---|---|
-| ![Community](docs/images/community.png) | ![Works](docs/images/works.png) | ![Awesome](docs/images/awesome.png) |
-
-| @kimi summon | Usage center |
-|---|---|
-| ![Summon](docs/images/post-summon.png) | ![Usage](docs/images/usage.png) |
-
-| Community (light theme) | Mobile home |
-|---|---|
-| ![Community, light](docs/images/community-light.png) | <img src="docs/images/mobile-home.png" width="260" alt="Mobile home"> |
-
-## Summon @kimi
-
-The community AI assistant is called Xiaozhu. There are three ways to interact:
-
-1. **Auto reply**: tick "allow Xiaozhu to reply" when publishing (on by default)
-   and Xiaozhu replies to your post;
-2. **@kimi summon**: type `@kimi` in any post / work / Awesome comment or in the post
-   body (the editor autocompletes after `@`) and the bot answers in context; a summon
-   at publish time merges with the auto reply into a single comment;
-3. **Follow-ups**: reply to the bot's comment and it keeps the conversation going with
-   the thread as context (per-chain depth cap).
-
-Content owners stay in control: when an author disables AI on their content, summons
-there are refused; users can disable AI interactions globally, or just hide AI replies
-while browsing. Summons are rate-limited (20/hour), and the bot never answers itself.
-
-## Tech stack
-
-- **Framework**: Next.js 16 (App Router · Turbopack) + React 19 + strict TypeScript
-- **Styling**: Tailwind CSS v4; brand tokens in `app/globals.css`, logo assets in `public/brand/`
-- **Database**: MySQL 8 (`mysql2` pool, `src/lib/db.ts`); schema in `db/schema.sql`,
-  evolved via `db/migrations/` (`npm run db:migrate` — ledgered runner with resume)
-- **Storage & mail**: Cloudflare R2 (image uploads); Resend for transactional email;
-  GitHub/Google OAuth + email/password (scrypt)
-- **AI**: Moonshot (Kimi) API with a job queue and exponential-backoff retry
-  (`src/lib/ai-reply.ts`)
-- **Package manager**: npm (single `package-lock.json`; CI uses `npm ci`)
-
-## Directory layout
-
-```
-app/              # App Router pages, API routes, global styles
-components/       # Shared components
-src/lib/          # Server modules (db, auth, posts, works, usage, ai-reply…)
-db/schema.sql     # Full MySQL schema
-db/migrations/    # Incremental migrations (YYYYMMDD_topic.sql)
-tests/            # Unit tests (source assertions + pure fns) and *.integration.ts (isolated DB)
-docs/             # Open docs & images (versioned)
-ops/              # Deployment scripts (deploy-release.sh, PM2 config)
-scripts/          # Tooling such as db-migrate
+```text
+app/              App Router pages, Server Actions, and API routes
+components/       Components shared across sections
+src/lib/          Data, auth, community, works, Explore, usage, and AI modules
+db/schema.sql     Final schema for a fresh database
+db/migrations/    Historical migrations appended through migration-order.txt
+tests/            Unit tests and isolated real-MySQL integration tests
+docs/             Versioned documentation and README images
+ops/              PM2, self-hosted deployment, and operations scripts
 ```
 
-## Local development
+## Run locally
 
-Requires Node 22 (see `.nvmrc`) and MySQL 8.
+You need Node.js 22 (see `.nvmrc`) and MySQL 8.
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in per the table below
-mysql -uroot kimi_builders < db/schema.sql   # create the database first
-npm run db:migrate           # apply incremental migrations
-npm run dev                  # http://localhost:3000
+cp .env.example .env.local
+
+mysql -uroot -e 'CREATE DATABASE kimi_builders CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+mysql -uroot kimi_builders < db/schema.sql
+npm run db:migrate
+
+npm run dev
 ```
 
-Key `.env.local` variables (full comments in `.env.example`):
+Open <http://localhost:3000>. See [`.env.example`](./.env.example) for the complete,
+commented configuration. A useful environment may include:
 
-| Variable | Purpose | When missing |
-|---|---|---|
-| `DATABASE_URL` | MySQL connection | Site unusable |
-| `AUTH_SECRET` | Session signing (`openssl rand -base64 32`) | Sign-in unusable |
-| `AUTH_GITHUB_ID/SECRET`, `AUTH_GOOGLE_ID/SECRET` | OAuth sign-in | Those entries disabled |
-| `KIMI_API_KEY` (optional `KIMI_MODEL`) | AI replies / summons | AI jobs skip; everything else works |
-| `RESEND_API_KEY` | Transactional email (password reset) | Sending soft-fails |
-| `R2_*` | Image uploads | Upload endpoint returns 503 |
-| `USAGE_KEY_PEPPER`, `CRON_SECRET` | Usage credential HMAC / cron auth | Those features disabled |
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | MySQL connection |
+| `AUTH_SECRET` | Session signing |
+| `AUTH_GITHUB_ID/SECRET`, `AUTH_GOOGLE_ID/SECRET` | Optional OAuth providers |
+| `KIMI_API_KEY`, `KIMI_MODEL` | Xiaozhu auto-replies and `@kimi` summons |
+| `R2_*` | Logo, cover, image, and avatar uploads |
+| `RESEND_API_KEY`, `MAIL_FROM` | Password reset and other transactional mail |
+| `USAGE_KEY_PEPPER`, `CRON_SECRET` | Usage credentials and cron authentication |
 
-## Tests & gates
+When an optional service is not configured, its feature should fail soft without
+taking unrelated pages down.
 
-Run all of these before submitting:
+## Tests and gates
+
+Run the complete gate before submitting a change:
 
 ```bash
-npm test            # unit tests (pure functions + route/action source assertions)
-npm run lint
-npx tsc --noEmit
-npm run build
+npx tsc --noEmit && npm run lint && npm test && npm run build
 ```
 
-Integration tests require an isolated database (never your dev/prod one):
+Database integration tests only run against an isolated database whose name contains
+`kbu-mysql`:
 
 ```bash
 export DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql'
-npm run test:auth-db && npm run test:works-db && npm run test:moderation-db && npm run test:usage-db
+npm run test:usage-db
+npm run test:analytics-db
+npm run test:auth-db
+npm run test:works-db
+npm run test:moderation-db
 ```
+
+Schema changes require a new migration appended to `db/migration-order.txt` and the
+same terminal state in `db/schema.sql`. Existing migrations and their order are
+immutable.
+
+## Public pricing catalog API
+
+The site and usage CLI share one versioned standard-API USD pricing catalog:
+
+```text
+GET https://kimi.builders/api/public/usage-pricing/v1/catalog
+```
+
+The endpoint is public and supports `ETag` / `If-None-Match`. It returns model matching
+rules, prices, effective windows, and provenance—never user usage. The CLI validates
+the schema, revision, and SHA-256, then falls back to a last-known-good cache or bundled
+snapshot when an update fails. Content cannot be silently replaced under an existing
+revision.
 
 ## Deployment
 
-Self-hosted: GitHub Actions (`deploy.yml`) builds a standalone bundle, rsyncs it to the
-server, runs database migrations, then restarts PM2 atomically (`ops/deploy-release.sh`)
-and verifies the release via `/api/health`. Cron jobs live in the server crontab and call
-`/api/cron/*` with a `CRON_SECRET` bearer token.
-
-To self-host a fork: configure the variables from `.env.example` and the corresponding
-Actions secrets — there is no platform lock-in.
+Production does not use Vercel. GitHub Actions builds a Next.js standalone artifact
+and uploads it to the server. `ops/deploy-release.sh` runs database migrations before
+switching releases, starts the new release atomically through PM2, verifies its version
+through `/api/health`, and restores the previous release on failure. Caddy terminates
+HTTPS and reverse-proxies the app.
 
 ## Contributing
 
-Issues and PRs are welcome. Make sure the gates above are green before submitting;
-for schema changes, add a migration under `db/migrations/` and keep `db/schema.sql`
-in sync (migrations are plain DDL — idempotency is handled by the runner's ledger).
+Issues and pull requests are welcome. Read the repository-level `AGENTS.md` and the
+relevant internal specifications before adding routes, data structures, or product
+copy; every PR should at least pass the gates above. Never place secrets, private usage,
+or exploitable vulnerability details in a public issue.
 
-## Security
+Report security issues to **we@kimi.builders**. See [SECURITY.md](./SECURITY.md).
 
-Report vulnerabilities to **we@kimi.builders** — please don't open public issues.
-See [SECURITY.md](./SECURITY.md).
+## Relationship and license
 
-## License
+kimi.builders is built and run by Kimi users and currently operates as a non-commercial
+community. It is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI
+(月之暗面). Related names and marks belong to their respective owners.
 
-[MIT](./LICENSE)
+The code is available under the [MIT License](./LICENSE).

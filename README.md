@@ -2,155 +2,186 @@
 
 [English](./README_EN.md) · 中文
 
-[kimi.builders](https://kimi.builders) —— Kimi 用户自建自运营的非商业 Builder 社区(非官方):
-作品、亲自跑通的方法、具体讨论、自愿公开的用量,以及社区 AI 助手小筑。
+> **Build with Kimi. Show your work.**
 
-![首页](docs/images/home-dark.png)
+[kimi.builders](https://kimi.builders) 是 Kimi 用户自建自运营的非商业 Builder
+社区（非官方）。这里连接具体讨论、Builder 亲自跑通的实践、已经做出的作品，
+以及成员自愿公开的聚合用量。
 
-## 功能特性
+[访问社区](https://kimi.builders) ·
+[GitHub 组织](https://github.com/kimi-builders) ·
+[用量 CLI](https://github.com/kimi-builders/usage) ·
+[Awesome 清单](https://github.com/kimi-builders/awesome-kimi-builders)
 
-- **社区讨论**:发帖(文字/链接/投票)、楼中楼评论、顶踩、订阅与消息通知、私密帖、治理与审计。
-- **AI 原生互动**([@kimi 召唤](#ai-召唤)):新帖可自动获得小筑(社区 AI 助手)的回复;在任何帖子、
-  作品、Awesome 条目的评论区 `@kimi` 即可召唤它回答问题——两级开关(全局 + 内容级)、
-  独立限流、召唤等待反馈、回复进通知中心。
-- **作品墙**:Builder 发布用 Kimi 做出的作品,可附截图、链接、源码与自报 Token;系统按已同步总用量封顶,不代表单个作品的精确用量。
-- **Awesome 清单**:成员推荐的站外 Kimi 生态项目,卡片标明收录口径与参与 Agent。
-- **用量中心**:本地 CLI 采集 Kimi Code 等 Agent 的 token 用量,同步到个人看板——
-  模型分布、费用估算、趋势图、分享海报;数据默认私有。CLI 见
-  [kimi-builders/usage](https://github.com/kimi-builders/usage)。
+![kimi.builders 中文首页](docs/images/readme-zh-home.jpg)
+
+## 社区里有什么
+
+### 社区
+
+发帖、评论、投票、订阅和通知组成公开讨论区。帖子支持文字、链接与投票，可设为
+私密内容；治理状态、精选理由和编辑署名尽量靠近对应对象展示。
+
+### 探索
+
+探索区承载月刊评鉴和 Builder 亲自跑通的实践。内容强调方法、证据与出处，而不是
+无限扩张的教程或资讯仓库；分类、产品、职业、标签和归档只在有内容时出现。
+
+### 作品与 Awesome
+
+- **作品墙**收录成员用 Kimi 做出的作品，可附链接、源码、媒体和声明 Token；
+- **Awesome**是成员推荐的站外 Kimi 相关项目，保留原作者、来源和收录口径；
+- 两者共享作品详情与讨论能力，但不会把站外项目写成本站成员作品。
+
+声明 Token 由 Builder 自报，系统只按已同步的聚合总用量封顶；它不是单个作品的
+精确消耗，也不构成能力认证或官方背书。
+
+### 用量中心
+
+[kimi-builders/usage](https://github.com/kimi-builders/usage) 从 Kimi Code、
+Claude Code、Codex、OpenCode 等 Agent 已保存在本机的日志中汇总 Token、标准 API
+费用估算、活跃时间、模型和项目分布。CLI 本地优先、无需账号即可查看；同步到
+社区是可选能力，只上传脱敏聚合字段。个人数据默认私有，公开榜必须由成员主动加入。
+
+### 小筑与 `@kimi`
+
+小筑是社区运营的 AI 助手。发帖时可以允许它自动回复，也可以在帖子、作品或
+Awesome 的讨论中写 `@kimi` 召唤。内容所有者能关闭 AI 参与，浏览者也能隐藏
+AI 回复；小筑的回复不代表 Moonshot AI 官方立场。
+
+## 生产界面
+
+以下截图直接来自 [kimi.builders](https://kimi.builders) 线上环境，中文 README
+只使用中文界面截图。
+
+| 作品墙 | 用量中心公开预览 |
+|---|---|
+| ![中文作品墙](docs/images/readme-zh-works.jpg) | ![中文用量中心](docs/images/readme-zh-usage.jpg) |
+
+## 核验边界
+
+kimi.builders 不把语气当证据。站内尽量把以下线索放在内容旁边：
+
+- 作品链接、源码、媒体与原作者；
+- Builder 实践中的方法、证据和出处；
+- 精选理由与执行编辑；
+- 成员选择公开的聚合用量；
+- 声明 Token 的来源和限制。
+
+这些信息帮助读者自行判断，不等于 Kimi、Moonshot AI 或社区对作品效果作担保。
 
 ## 相关项目
 
-- **[kimi-builders/usage](https://github.com/kimi-builders/usage)** — 用量采集 CLI
-  (npm `@kimi.builders/usage`):读取 Kimi Code、Claude Code、Codex、OpenCode 等 Agent
-  已保存在本机的日志,汇总 Token、标准 API 费用估算、活跃时长、模型与项目分布;
-  本地看板无需账号、默认不联网,同步到本站用量中心是可选能力(仅脱敏聚合数据)。
-- **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)** ——
-  社区品牌资产包(月球 + 轨道 + 双星 Logo),已内置于 `public/brand/`。
-- **探索区**(`/explore`):月刊评鉴与 Builder 亲自跑通的实践,站内出示方法、证据与出处;
-  分类 / 产品 / 职业 / 标签 / 归档只在有内容时出现,系列机制在内容长出来后再上架
-  (`/explore/series/<slug>`)。旧 `/blog`、`/learn` 地址 308 进探索区。
-  另有 Demo Night 活动页。
-- **双语与双主题**:中文/English 一键切换;深色/浅色主题 + poster/soft 两种视觉气质。
+- **[kimi-builders/usage](https://github.com/kimi-builders/usage)**：本地优先的
+  多 Agent 用量采集 CLI，npm 包为 `@kimi.builders/usage`；
+- **[awesome-kimi-builders](https://github.com/kimi-builders/awesome-kimi-builders)**：
+  社区维护的站外项目来源清单；
+- **[kimi-builders-brand-kit](https://github.com/kimi-builders/kimi-builders-brand-kit)**：
+  月球、轨道与双星组成的社区品牌资产包，站点版本位于 `public/brand/`。
 
-## 公开价格目录 API
+## 技术架构
 
-本站与 `@kimi.builders/usage` 共用同一份版本化标准 API 美元价格目录：
-`GET /api/public/usage-pricing/v1/catalog`。端点无需登录，支持 `ETag` / `If-None-Match`，
-只返回模型匹配规则、价格、生效窗口与来源，不接收或返回任何用户用量。CLI 会严格校验
-schema、revision 和 SHA-256 完整性；更新失败时继续使用本机 last-known-good 或随包内置快照。
-目录 revision 只增不改，同一 revision 不允许静默替换内容。
+- **Web**：Next.js 16 App Router（Turbopack）、React 19、TypeScript strict；
+- **样式**：Tailwind CSS v4，通过 `app/globals.css` 的语义令牌支持深色/浅色主题与
+  poster/soft 两种视觉气质；
+- **数据**：MySQL 8 + `mysql2` 裸 SQL，无 ORM；
+- **认证**：GitHub、Google OAuth，以及邮箱密码登录；
+- **存储与邮件**：Cloudflare R2、Resend；
+- **AI**：Moonshot API，任务队列负责重试与限流；
+- **运行环境**：Caddy + PM2 自托管，发布脚本执行迁移、原子切换、健康检查和失败回滚。
 
-## 截图
-
-| 社区讨论 | 作品墙 | Awesome |
-|---|---|---|
-| ![社区](docs/images/community.png) | ![作品墙](docs/images/works.png) | ![Awesome](docs/images/awesome.png) |
-
-| @kimi 召唤 | 用量中心 |
-|---|---|
-| ![召唤](docs/images/post-summon.png) | ![用量](docs/images/usage.png) |
-
-| 社区(浅色主题) | 移动端首页 |
-|---|---|
-| ![社区·浅色](docs/images/community-light.png) | <img src="docs/images/mobile-home.png" width="260" alt="移动端首页"> |
-
-## AI 召唤
-
-社区 AI 助手叫「小筑」。三种互动方式:
-
-1. **自动回帖**:发帖时勾选「允许小筑回复本帖」(默认开),小筑会针对帖子内容回一条;
-2. **@kimi 召唤**:帖子/作品/Awesome 的评论或发帖正文里写 `@kimi`(编辑器输 `@` 有自动补全),
-   小筑会结合上下文回答你的问题;发帖时 @ 与自动回帖合并为一条,不会刷屏;
-3. **接话**:回复小筑的评论,它会带着对话链继续聊(单链有深度上限,防无限接龙)。
-
-尊重内容所有者:帖主/作者关闭「AI 参与」后,其内容下不可召唤;用户可在设置里全局关闭 AI 互动、
-或仅在浏览时隐藏 AI 回复。召唤有独立限流(20 次/小时),AI 不响应 AI。
-
-## 技术栈
-
-- **框架**:Next.js 16(App Router · Turbopack)+ React 19 + TypeScript strict
-- **样式**:Tailwind CSS v4,品牌令牌见 `app/globals.css`;Logo 资产内置 `public/brand/`
-- **数据库**:MySQL 8(`mysql2` 连接池,`src/lib/db.ts`);表结构 `db/schema.sql`,
-  演进走 `db/migrations/`(`npm run db:migrate`,runner 带账本与断点续跑)
-- **存储**:Cloudflare R2(图片上传);邮件 Resend;OAuth GitHub/Google + 邮箱密码(scrypt)
-- **AI**:Moonshot(Kimi)API,`src/lib/ai-reply.ts` 任务队列 + 指数退避重试
-- **包管理**:npm(唯一锁文件 `package-lock.json`,CI 用 `npm ci`)
-
-## 目录结构
-
-```
-app/              # App Router 页面、API 路由、全局样式
-components/       # 共享组件
-src/lib/          # 服务端模块(db、auth、posts、works、usage、ai-reply…)
-db/schema.sql     # MySQL 表结构(全量)
-db/migrations/    # 增量迁移(YYYYMMDD_topic.sql)
-tests/            # 单测(源码断言 + 纯函数)与 *.integration.ts(需隔离库)
-docs/             # 开源文档与图片(版本化管理)
-ops/              # 部署脚本(deploy-release.sh、PM2 配置)
-scripts/          # db-migrate 等工具脚本
+```text
+app/              App Router 页面、Server Actions 与 API 路由
+components/       跨分区共享组件
+src/lib/          数据层、认证、社区、作品、探索、用量与 AI 模块
+db/schema.sql     新装数据库的终态结构
+db/migrations/    按 migration-order.txt 追加执行的历史迁移
+tests/            单测与真实 MySQL 集成测试
+docs/             入库文档和 README 图片
+ops/              PM2、自托管部署与运行维护脚本
 ```
 
-## 本地开发
+## 本地运行
 
-要求:Node 22(见 `.nvmrc`)、MySQL 8。
+要求 Node.js 22（见 `.nvmrc`）和 MySQL 8。
 
 ```bash
 npm install
-cp .env.example .env.local   # 按下方说明填写
-mysql -uroot kimi_builders < db/schema.sql   # 建库后初始化表结构
-npm run db:migrate           # 应用增量迁移
-npm run dev                  # http://localhost:3000
+cp .env.example .env.local
+
+mysql -uroot -e 'CREATE DATABASE kimi_builders CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+mysql -uroot kimi_builders < db/schema.sql
+npm run db:migrate
+
+npm run dev
 ```
 
-`.env.local` 关键变量(完整注释见 `.env.example`):
+打开 <http://localhost:3000>。完整环境变量说明见 [`.env.example`](./.env.example)，
+最小可用环境至少需要：
 
-| 变量 | 用途 | 缺失时 |
-|---|---|---|
-| `DATABASE_URL` | MySQL 连接 | 站点不可用 |
-| `AUTH_SECRET` | 会话签名(`openssl rand -base64 32`) | 登录不可用 |
-| `AUTH_GITHUB_ID/SECRET`、`AUTH_GOOGLE_ID/SECRET` | OAuth 登录 | 对应入口失效 |
-| `KIMI_API_KEY`(可选 `KIMI_MODEL`) | AI 回帖/召唤 | AI 任务标记 skipped,其余正常 |
-| `RESEND_API_KEY` | 找回密码等事务邮件 | 发信软失败 |
-| `R2_*` | 图片上传 | 上传接口 503 |
-| `USAGE_KEY_PEPPER`、`CRON_SECRET` | 用量凭证 HMAC / cron 鉴权 | 对应功能不可用 |
+| 变量 | 用途 |
+|---|---|
+| `DATABASE_URL` | MySQL 连接 |
+| `AUTH_SECRET` | 会话签名 |
+| `AUTH_GITHUB_ID/SECRET`、`AUTH_GOOGLE_ID/SECRET` | OAuth 登录，可按需配置 |
+| `KIMI_API_KEY`、`KIMI_MODEL` | 小筑自动回复与 `@kimi` |
+| `R2_*` | Logo、封面、配图和头像上传 |
+| `RESEND_API_KEY`、`MAIL_FROM` | 找回密码等事务邮件 |
+| `USAGE_KEY_PEPPER`、`CRON_SECRET` | 用量凭证与定时任务鉴权 |
 
-## 测试与门禁
+缺少可选服务密钥时，对应能力应软失败，不应拖垮其他页面。
 
-提交前请跑全:
+## 测试与提交门禁
+
+提交前运行完整门禁：
 
 ```bash
-npm test            # 单测(纯函数 + 路由/动作源码断言)
-npm run lint
-npx tsc --noEmit
-npm run build
+npx tsc --noEmit && npm run lint && npm test && npm run build
 ```
 
-集成测试需要独立隔离库(绝不用开发/生产库):
+数据库集成测试只允许使用名称包含 `kbu-mysql` 的隔离库：
 
 ```bash
 export DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql'
-npm run test:auth-db && npm run test:works-db && npm run test:moderation-db && npm run test:usage-db
+npm run test:usage-db
+npm run test:analytics-db
+npm run test:auth-db
+npm run test:works-db
+npm run test:moderation-db
 ```
+
+数据库变更必须新增 migration、追加到 `db/migration-order.txt` 末尾，并同步
+`db/schema.sql` 的终态。已有 migration 和既有执行顺序不可修改。
+
+## 公开价格目录 API
+
+本站与用量 CLI 共用版本化标准 API 美元价格目录：
+
+```text
+GET https://kimi.builders/api/public/usage-pricing/v1/catalog
+```
+
+端点无需登录，支持 `ETag` / `If-None-Match`，只返回模型匹配规则、价格、生效窗口
+与来源，不接收或返回用户用量。CLI 会校验 schema、revision 和 SHA-256，失败时
+继续使用本机 last-known-good 或随包快照；同一 revision 不允许静默替换内容。
 
 ## 部署
 
-自托管:GitHub Actions(`deploy.yml`)构建 standalone 产物 → rsync 到服务器 →
-先跑数据库迁移再 PM2 原子重启(`ops/deploy-release.sh`)→ 按 `/api/health` 版本号校验上线。
-定时任务在服务器 crontab,携带 `CRON_SECRET` 调用 `/api/cron/*`。
+生产环境不使用 Vercel。GitHub Actions 构建 Next.js standalone 产物并上传服务器，
+`ops/deploy-release.sh` 在切换版本前执行数据库迁移，然后由 PM2 原子启动新 release，
+通过 `/api/health` 核对版本；失败时恢复上一 release。Caddy 负责 HTTPS 与反向代理。
 
-fork 自行部署:在自己的环境中配置 `.env.example` 所列变量与对应 Actions Secrets 即可,
-没有平台锁定。
+## 参与维护
 
-## 贡献
+欢迎提交 Issue 和 PR。新增页面、数据结构或产品文案前，请先阅读仓库根目录的
+`AGENTS.md` 及相关内部规范；PR 至少应通过上方门禁。不要在公开 Issue 中提交密钥、
+私密用量或可利用的漏洞细节。
 
-欢迎 Issue 与 PR。PR 合并前请确保上方「测试与门禁」全绿;涉及表结构变更请新增
-`db/migrations/` 迁移文件并同步 `db/schema.sql`(迁移写裸 DDL,幂等由 runner 账本保证)。
+安全问题请发送至 **we@kimi.builders**，详见 [SECURITY.md](./SECURITY.md)。
 
-## 安全
+## 关系说明与许可
 
-发现安全漏洞请邮件 **we@kimi.builders**,不要开公开 Issue。详见 [SECURITY.md](./SECURITY.md)。
+kimi.builders 由 Kimi 用户自建自运营，现阶段为非商业社区。本站与 Moonshot AI
+（月之暗面）无隶属、赞助、背书或授权关系；相关名称与商标归其权利人所有。
 
-## License
-
-[MIT](./LICENSE)
+代码采用 [MIT License](./LICENSE)。
