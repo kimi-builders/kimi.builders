@@ -160,12 +160,12 @@ const DICT = {
   /* Section header grammar: eyebrow = "— positioning line", never
      parroting the title (it sits right below); same construction as the
      detail page's "— monthly review · ISSUE 07". The explore title stays
-     short — the mission line lives at the top of the rail, not repeated
-     in the header. */
+     short; the lede is a functional one-liner naming the browse
+     dimensions, and the rail top carries the section intro line. */
   "explore.eyebrow": { zh: "— 月刊 × 指南", en: "— Monthly × guides" },
   "explore.lede": {
-    zh: "学,把智能变成认知;做,把认知变成东西;得,把东西变成价值;立,把价值变成位置与自我。",
-    en: "Learn turns intelligence into judgment; Build turns judgment into things; Gain turns things into value; Become turns value into who you are.",
+    zh: "月刊评鉴与实战指南,按章、产品、职业、标签、归档浏览。",
+    en: "Monthly reviews and field guides — browse by chapter, product, role, tag, or archive.",
   },
   "explore.compose": { zh: "+ 发内容", en: "+ Publish" },
   "explore.lensRoles": { zh: "职业", en: "ROLES" },
@@ -785,8 +785,8 @@ const DICT = {
   /* Logged-out public overview (UsagePublicView): leaderboard showcase
      + login prompt. */
   "usage.publicLede": {
-    zh: "以 Kimi 为第一公民的多 Agent AI 编程用量中心。数据默认私有,只上传统计字段;榜单由成员自愿公开(opt-in)。",
-    en: "A Kimi-first usage center for multi-agent AI coding. Data stays private by default — metrics only; the leaderboard is shared by members opt-in.",
+    zh: "以 Kimi 为主,汇总多种 AI 编程 Agent 的用量数据。默认私有,只上传统计字段;榜单自愿公开。",
+    en: "Kimi-first usage analytics across AI coding agents. Private by default, metrics only; the leaderboard is opt-in.",
   },
   "usage.publicLogin": {
     zh: "登录查看我的数据",
@@ -806,8 +806,8 @@ const DICT = {
     en: "No one has opted in yet. Connect a device and opt in to be the first.",
   },
   "usage.publicGate": {
-    zh: "登录并连接设备,解锁你的个人用量面板(模型分布 / 项目归因 / 时段热图)。",
-    en: "Sign in and connect a device to unlock your personal dashboard (models / projects / heatmap).",
+    zh: "登录并连接设备,查看你的个人用量面板(模型分布 / 项目归因 / 时段热图)。",
+    en: "Sign in and connect a device to see your own dashboard (models / projects / heatmap).",
   },
   "usage.publicDays": { zh: "{n} 天活跃", en: "{n} active days" },
   "usage.last30": { zh: "最近 30 天", en: "LAST 30 DAYS" },
@@ -879,8 +879,8 @@ const DICT = {
     en: "Also list on Awesome",
   },
   "works.alsoAwesomeHint": {
-    zh: "默认只进你的作品墙;勾选后同时出现在 Awesome 清单(公开展示构建者)。",
-    en: "By default your work only appears on your wall; tick to also list it on Awesome (shown publicly).",
+    zh: "默认只进你的作品墙;勾选后同时出现在 Awesome 清单(公开展示 Builder)。",
+    en: "By default your work only appears on your wall; tick to also list it on Awesome (publicly badges the Builder).",
   },
   /* AI-in-comments switch: default on; off means @kimi in comments does
      nothing. */
@@ -971,7 +971,7 @@ const DICT = {
   /* Page-header eyebrow: states the section's position only — "—
      positioning line", same grammar as detail pages and other
      sections. */
-  "works.eyebrow": { zh: "— 社区构建", en: "— Member builds" },
+  "works.eyebrow": { zh: "— 成员作品", en: "— Member builds" },
   "awesome.eyebrow": { zh: "— 生态精选", en: "— Ecosystem picks" },
   "works.wallIntro": {
     zh: "社区成员用 Kimi 构建的真实作品;「声明投入」徽章由作者自行申报,并按可验证用量封顶。",
@@ -979,8 +979,8 @@ const DICT = {
   },
   "works.emptyTitle": { zh: "你的作品墙还是空的", en: "Your works wall is empty" },
   "works.emptyBody": {
-    zh: "你的项目早就在用量里烧着 Token 了,挑一个挂上来,领取构建投入徽章。",
-    en: "Your projects are already burning tokens in your usage — list one and claim the badge.",
+    zh: "你的项目早就在用量里烧着 Token 了,挑一个挂上来,声明你的构建投入。",
+    en: "Your projects are already burning tokens in your usage — list one and declare your build effort.",
   },
   "works.emptyCta": { zh: "上架第一件作品 →", en: "List your first work →" },
   "works.filteredEmptyTitle": { zh: "当前筛选下没有作品", en: "No works match these filters" },
@@ -990,7 +990,7 @@ const DICT = {
   },
   "works.emptyQuota": { zh: "可声明额度 {n}", en: "Claimable {n}" },
   "works.statWorks": { zh: "上架作品", en: "works" },
-  "works.statAuthors": { zh: "构建者", en: "builders" },
+  "works.statAuthors": { zh: "Builder", en: "builders" },
   "works.clearFilters": { zh: "清除筛选", en: "Clear filters" },
   "works.removeFilter": { zh: "移除筛选 {name}", en: "Remove filter {name}" },
   "works.statClaimed": { zh: "声明投入 (tokens)", en: "claimed (tokens)" },
@@ -1107,10 +1107,6 @@ const DICT = {
   "about.whoMore": {
     zh: "这里没有空话和营销稿:跑通的工作流、踩过的坑、能复用的提示词,都值得留下;你卡住的地方,多半有人刚蹚过。",
     en: "No fluff, no marketing: workflows that actually run, pitfalls already mapped, prompts worth reusing. Whatever you're stuck on, someone here just got through it.",
-  },
-  "about.quote": {
-    zh: "一次好的构建,既是一件作品的终点,也是更多好作品的指路牌。",
-    en: "A good build is the end of one work, and a signpost to many more.",
   },
   "about.whatTitle": { zh: "这里有什么", en: "What's here" },
   "about.whatCommunity": {
@@ -1261,8 +1257,8 @@ const DICT = {
   /* ---- Demo Night (own section to shrink merge conflicts) ---- */
   "dn.title": { zh: "Demo Night", en: "Demo Night" },
   "dn.intro": {
-    zh: "builder 的线上分享夜:有人演示正在做的东西,有人到场见证。身体一次只能在一个地方 —— 到场本身就是稀缺背书,这不是一场划过就算的直播。报名即公开:你的 handle 会署进本页的到场名单,先到场先署名。",
-    en: "An online show-and-tell for builders: someone demos what they're building, others show up to witness it. A body can only be in one place at a time — showing up is itself a scarce endorsement; this is not a stream you scroll past. RSVP is public: your handle joins the attendee list on this page, first come, first signed.",
+    zh: "Builder 的线上分享夜:有人演示正在做的东西,有人到场见证。报名即公开——你的 handle 会署进本页的到场名单,先报先签。",
+    en: "An online show-and-tell for Builders: some demo what they're making, others show up to witness. RSVP is public — your handle goes on this page's attendee list, first come, first signed.",
   },
   "dn.upcoming": { zh: "当前场", en: "UPCOMING" },
   "dn.nextPreparing": {
@@ -1434,11 +1430,11 @@ const DICT = {
     en: "Log in to support this work",
   },
   "works.discuss": {
-    zh: "与构建者聊聊这个作品",
-    en: "Chat with the builder about this work",
+    zh: "与 Builder 聊聊这个作品",
+    en: "Chat with the Builder about this work",
   },
   "works.noComments": {
-    zh: "还没有评论。说点什么吧——第一个开口的,构建者记得最牢。",
+    zh: "还没有评论。说点什么吧——第一个开口的,Builder 记得最牢。",
     en: "No comments yet — say something; the builder remembers the first voice.",
   },
   "works.authorChip": { zh: "作者", en: "AUTHOR" },
@@ -1455,7 +1451,7 @@ const DICT = {
   "gate.work": { zh: "登录后提交作品", en: "Sign in to submit a work" },
   "gate.notif": { zh: "登录后查看通知", en: "Sign in to view notifications" },
   "gate.settings": { zh: "登录后管理账号设置", en: "Sign in to manage account settings" },
-  "works.sideAuthor": { zh: "构建者", en: "BUILDER" },
+  "works.sideAuthor": { zh: "Builder", en: "BUILDER" },
   "works.sideOriginalAuthor": { zh: "原作者", en: "AUTHOR" },
   "works.metaKind": { zh: "类型", en: "TYPE" },
   "works.metaAgents": { zh: "参与构建", en: "BUILT WITH" },

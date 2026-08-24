@@ -125,9 +125,7 @@ export default async function UsagePreviewStrip({
             {zh ? "活跃热力图" : "Activity heatmap"}
           </h3>
           <p className="mt-1 text-xs text-grey">
-            {zh
-              ? "按星期 × 小时 · 你最清楚的,是自己什么时候在构建"
-              : "By weekday × hour · you know best when you build"}
+            {zh ? "按星期 × 小时分布" : "Weekday × hour"}
           </p>
           <div className="mt-4">
             <UsageHeatmapGrid

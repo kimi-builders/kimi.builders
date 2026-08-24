@@ -107,7 +107,7 @@ function DecisionsBody({ snapshot }: { snapshot: LetterShareSnapshot }) {
   if (snapshot.decisions.length === 0) {
     return (
       <div style={{ display: "flex", marginTop: 46, color: palette.muted, fontSize: 24, lineHeight: 1.7 }}>
-        本月定夺栏留空——留空也是记录。
+        本月没有新的精选——定夺栏留空也是记录。
       </div>
     );
   }

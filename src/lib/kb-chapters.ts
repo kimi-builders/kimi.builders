@@ -39,13 +39,13 @@ export const KB_CHAPTERS: KbChapter[] = [
     id: "gain",
     zh: "得",
     en: "GAIN",
-    tagline: { zh: "把东西变成价值(收入、成绩、位置)", en: "Turn what you made into value — income, results, standing" },
+    tagline: { zh: "把东西变成收入与成绩", en: "Turn what you made into income and results" },
   },
   {
     id: "become",
     zh: "立",
     en: "BECOME",
-    tagline: { zh: "把价值变成位置与自我(影响力、自由、更像自己)", en: "Turn value into who you are — influence, freedom, self" },
+    tagline: { zh: "把成绩变成位置与自我", en: "Turn results into standing and self" },
   },
 ];
 

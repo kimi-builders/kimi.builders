@@ -27,7 +27,7 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* Section intro line (same left-blue-line grammar as WorksRail's about.quote) */}
+      {/* Section intro line (the left-blue-line grammar shared by section rails) */}
       <p className="border-l-2 border-blue pl-3 font-mono text-xs leading-relaxed text-grey">
         {zh
           ? "月刊与指南:每篇都交出方法、证据与出处。"

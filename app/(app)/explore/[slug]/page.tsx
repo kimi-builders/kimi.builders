@@ -211,7 +211,7 @@ function LetterDetail({
     panel: (
       <div className="border-b border-line py-9">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="kb-eyebrow">{zh ? "定夺 · DECISIONS" : "DECISIONS"}</p>
+          <p className="kb-eyebrow">{zh ? "编辑定夺 · DECISIONS" : "DECISIONS"}</p>
           <SectionShare issue={issue} anchor="decisions" label={zh ? "定夺" : "Decisions"} locale={locale} />
         </div>
         {issue.decisions.length === 0 ? (

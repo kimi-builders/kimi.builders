@@ -235,4 +235,4 @@ export function letterShareText(s: LetterShareSnapshot): string {
    or punctuation in static sentences falls back. */
 export const LETTER_POSTER_STATIC_TEXT =
   "事实盘点编辑定夺精选构建讨论治理公示本月最佳被低估" +
-  "扫码看本期留空也是记录栏还有条定夺站内查看全部参与披露到人,。:—";
+  "扫码看本期留空也是记录栏还有条定夺站内查看全部参与披露到人没新的,。:—";

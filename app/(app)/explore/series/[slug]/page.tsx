@@ -33,8 +33,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   if (UPCOMING.explore) return { title: "探索 — kimi.builders" };
   const { slug } = await params;
+  const locale = await getLocale();
   const series = findLearnSeries(slug);
-  return { title: series ? `${series.title.zh} — kimi.builders` : "kimi.builders" };
+  return {
+    title: series
+      ? `${locale === "zh" ? series.title.zh : series.title.en} — kimi.builders`
+      : "kimi.builders",
+  };
 }
 
 function EpisodeRow({
@@ -171,7 +176,7 @@ export default async function ExploreSeriesPage({
             </span>
             {stale && (
               <span className="rounded-md border border-status-warn/40 px-1.5 py-px normal-case tracking-normal text-status-warn-fg">
-                {zh ? "待重验:地面已动,编辑尚未重走" : "re-verify pending: ground shifted"}
+                {zh ? "待重验:模型已换代,编辑尚未重走" : "re-verify pending: model generation moved on"}
               </span>
             )}
           </p>
