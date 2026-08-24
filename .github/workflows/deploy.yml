@@ -55,12 +55,22 @@ jobs:
           DEPLOYMENT_VERSION: ${{ github.sha }}
         run: npm run build
 
-  deploy:
-    name: Deploy production
+  db-validation:
+    name: Production database gate
     if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/db-validate.yml
+    with:
+      base_ref: ${{ github.event_name == 'push' && github.event.before || github.sha }}
+
+  deploy:
+    name: Deploy production
+    needs: db-validation
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     environment:
       name: production
@@ -156,6 +166,7 @@ jobs:
           }
           install -m 644 ops/ecosystem.config.cjs .release/ecosystem.config.cjs
           install -m 755 ops/deploy-release.sh .release/ops/deploy-release.sh
+          install -m 644 ops/verify-deploy-state.mjs .release/ops/verify-deploy-state.mjs
           printf '%s\n' "$GITHUB_SHA" > .release/RELEASE
           (
             cd .release
@@ -231,6 +242,24 @@ jobs:
             .release/ \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/incoming/$GITHUB_SHA/"
 
+      - name: Capture rollback release
+        id: previous
+        run: |
+          set -Eeuo pipefail
+          previous="$(ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "if test -L '$DEPLOY_PATH/current'; then basename \"\$(readlink -f '$DEPLOY_PATH/current')\"; fi")"
+          if [[ -n "$previous" && ! "$previous" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Current release is not a full git SHA."
+            exit 1
+          fi
+          echo "sha=$previous" >> "$GITHUB_OUTPUT"
+
       - name: Sync runtime configuration
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -250,6 +279,7 @@ jobs:
           R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          USAGE_OBSERVABILITY_VERBOSE: ${{ vars.USAGE_OBSERVABILITY_VERBOSE }}
         run: |
           set -Eeuo pipefail
 
@@ -282,20 +312,18 @@ jobs:
             exit 1
           }
 
-          # Remote MySQL (Aliyun RDS): the runner can't be whitelisted
-          # reliably, so preflight FROM the deploy host — it is the network
-          # the app will actually use. URL parts are base64-encoded on the
-          # runner (immune to shell-special characters in the password)
-          # and decoded on the box; MYSQL_PWD keeps the password out of
-          # the process list.
+          # Preflight MySQL from the deploy host, which is the same network
+          # boundary and runtime topology used by the application. URL parts
+          # are base64-encoded on the runner so shell-special characters never
+          # alter the remote command.
           node --input-type=module -e '
             const u = new URL(process.env.DATABASE_URL);
             const b64 = (s) => Buffer.from(s).toString("base64");
-            console.log(`RDS_HOST_B64=${b64(u.hostname)}`);
-            console.log(`RDS_PORT_B64=${b64(u.port || "3306")}`);
-            console.log(`RDS_USER_B64=${b64(decodeURIComponent(u.username))}`);
-            console.log(`RDS_PASS_B64=${b64(decodeURIComponent(u.password))}`);
-            console.log(`RDS_DB_B64=${b64(u.pathname.replace(/^\//, ""))}`);
+            console.log(`DB_HOST_B64=${b64(u.hostname)}`);
+            console.log(`DB_PORT_B64=${b64(u.port || "3306")}`);
+            console.log(`DB_USER_B64=${b64(decodeURIComponent(u.username))}`);
+            console.log(`DB_PASS_B64=${b64(decodeURIComponent(u.password))}`);
+            console.log(`DB_NAME_B64=${b64(u.pathname.replace(/^\//, ""))}`);
           ' | ssh \
             -i "$HOME/.ssh/deploy_key" \
             -p "$DEPLOY_SSH_PORT" \
@@ -305,13 +333,13 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "set -Eeuo pipefail; \
              eval \"\$(cat)\"; \
-             RDS_HOST=\"\$(printf %s \"\$RDS_HOST_B64\" | base64 -d)\"; \
-             RDS_PORT=\"\$(printf %s \"\$RDS_PORT_B64\" | base64 -d)\"; \
-             RDS_USER=\"\$(printf %s \"\$RDS_USER_B64\" | base64 -d)\"; \
-             RDS_PASS=\"\$(printf %s \"\$RDS_PASS_B64\" | base64 -d)\"; \
-             RDS_DB=\"\$(printf %s \"\$RDS_DB_B64\" | base64 -d)\"; \
-             MYSQL_PWD=\"\$RDS_PASS\" mysql -h \"\$RDS_HOST\" -P \"\$RDS_PORT\" \
-               -u \"\$RDS_USER\" \"\$RDS_DB\" -e 'SELECT 1'"
+             DB_HOST=\"\$(printf %s \"\$DB_HOST_B64\" | base64 -d)\"; \
+             DB_PORT=\"\$(printf %s \"\$DB_PORT_B64\" | base64 -d)\"; \
+             DB_USER=\"\$(printf %s \"\$DB_USER_B64\" | base64 -d)\"; \
+             DB_PASS=\"\$(printf %s \"\$DB_PASS_B64\" | base64 -d)\"; \
+             DB_NAME=\"\$(printf %s \"\$DB_NAME_B64\" | base64 -d)\"; \
+             MYSQL_PWD=\"\$DB_PASS\" mysql -h \"\$DB_HOST\" -P \"\$DB_PORT\" \
+               -u \"\$DB_USER\" \"\$DB_NAME\" -e 'SELECT 1'"
           echo "MySQL credential preflight passed (from deploy host)."
 
           {
@@ -353,6 +381,9 @@ jobs:
             if [[ -n "$MAIL_FROM" ]]; then
               printf 'MAIL_FROM=%q\n' "$MAIL_FROM"
             fi
+            if [[ "$USAGE_OBSERVABILITY_VERBOSE" == "1" ]]; then
+              printf 'USAGE_OBSERVABILITY_VERBOSE=1\n'
+            fi
           } | ssh \
             -i "$HOME/.ssh/deploy_key" \
             -p "$DEPLOY_SSH_PORT" \
@@ -361,17 +392,27 @@ jobs:
             -o StrictHostKeyChecking=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "set -Eeuo pipefail; \
-             shared_dir='$DEPLOY_PATH/shared'; \
-             mkdir -p \"\$shared_dir\"; \
-             chmod 700 \"\$shared_dir\"; \
-             temp_file=\"\$shared_dir/.env.production.\$\$\"; \
+             env_dir='$DEPLOY_PATH/shared/env'; \
+             mkdir -p \"\$env_dir\"; \
+             chmod 700 '$DEPLOY_PATH/shared' \"\$env_dir\"; \
+             temp_file=\"\$env_dir/.$GITHUB_SHA.\$\$\"; \
              trap 'rm -f -- \"\$temp_file\"' EXIT; \
              cat > \"\$temp_file\"; \
              chmod 600 \"\$temp_file\"; \
-             mv -f -- \"\$temp_file\" \"\$shared_dir/.env.production\"; \
+             target_file=\"\$env_dir/$GITHUB_SHA.env\"; \
+             if test -e \"\$target_file\"; then \
+               cmp -s \"\$temp_file\" \"\$target_file\" || { \
+                 echo 'release environment already exists with different content' >&2; \
+                 exit 1; \
+               }; \
+               rm -f -- \"\$temp_file\"; \
+             else \
+               mv -- \"\$temp_file\" \"\$target_file\"; \
+             fi; \
              trap - EXIT"
 
       - name: Activate release
+        id: activate
         run: |
           set -Eeuo pipefail
           # deploy-release.sh verifies SHA + checksums, runs
@@ -389,6 +430,7 @@ jobs:
             < ops/deploy-release.sh
 
       - name: Verify public URL
+        id: public_verify
         run: |
           set -Eeuo pipefail
           site_url="${NEXT_PUBLIC_SITE_URL%/}"
@@ -398,13 +440,8 @@ jobs:
             body="$(curl --fail --silent --show-error \
               --connect-timeout 5 --max-time 15 \
               "$site_url/api/health" 2>/dev/null || true)"
-            if HEALTH_BODY="$body" EXPECTED_SHA="$GITHUB_SHA" node -e '
-              const health = JSON.parse(process.env.HEALTH_BODY);
-              const expected = process.env.EXPECTED_SHA;
-              if (!(health.ok === true && health.version === expected)) {
-                process.exit(1);
-              }
-            ' 2>/dev/null; then
+            if printf '%s' "$body" | \
+              node ops/verify-deploy-state.mjs health "$GITHUB_SHA" 2>/dev/null; then
               echo "Public health check passed: $site_url"
               public_health_ok=1
               break
@@ -435,6 +472,27 @@ jobs:
           fi
 
           echo "Public health matches $GITHUB_SHA and the homepage answers 200."
+
+      - name: Rollback public verification failure
+        if: >-
+          failure() &&
+          steps.activate.outcome == 'success' &&
+          steps.public_verify.outcome == 'failure' &&
+          steps.previous.outputs.sha != ''
+        env:
+          PREVIOUS_RELEASE: ${{ steps.previous.outputs.sha }}
+        run: |
+          set -Eeuo pipefail
+          echo "Public verification failed; rolling back to $PREVIOUS_RELEASE."
+          ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$DEPLOY_PATH' '$PREVIOUS_RELEASE' '$PM2_APP_NAME' '$APP_PORT' '/api/health' '$KEEP_RELEASES' rollback" \
+            < ops/deploy-release.sh
 
       - name: Remove SSH material
         if: always()

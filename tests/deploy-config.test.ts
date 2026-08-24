@@ -40,8 +40,9 @@ test("ops/deploy-release.sh exists and carries the release pipeline", () => {
   ]) {
     assert.ok(script.includes(name), `deploy-release.sh must validate ${name}`);
   }
-  // The health probe matches the release SHA.
-  assert.match(script, /\\"version\\":\\"\$\{expected\}\\"/);
+  // The health probe delegates exact JSON/version matching to the tested verifier.
+  assert.match(script, /verify-deploy-state\.mjs/);
+  assert.match(script, /health "\$expected"/);
 });
 
 test("ops/ecosystem.config.cjs exists with kimi-builders defaults", () => {
@@ -95,6 +96,7 @@ test("deploy.yml wires secrets, packaging and migration", () => {
   assert.match(workflow, /cp -a scripts \.release\/scripts/);
   assert.match(workflow, /cp -a db \.release\/db/);
   assert.match(workflow, /\.release\/node_modules\/mysql2/);
+  assert.match(workflow, /ops\/verify-deploy-state\.mjs \.release\/ops\/verify-deploy-state\.mjs/);
   // The build injects the version; the health check accepts by it.
   assert.match(workflow, /DEPLOYMENT_VERSION: \$\{\{ github\.sha \}\}/);
 });

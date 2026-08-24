@@ -1,8 +1,4 @@
-name: db-migrate-prod
-
-# 生产迁移:手动触发 + production 环境保护(必需审批)。
-# 在仓库 Settings → Environments → production 中配置 required reviewers 后启用。
-# 前置:Secrets 里配置 PROD_DATABASE_URL(mysql://user:pass@host:3306/dbname)。
+name: Production database migration
 
 on:
   workflow_dispatch:
@@ -12,22 +8,58 @@ permissions:
 
 jobs:
   migrate:
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     environment: production
+    concurrency:
+      group: kimi-builders-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Apply pending migrations
-        run: |
-          node scripts/db-migrate.mjs status
-          node scripts/db-migrate.mjs migrate
-          node scripts/db-migrate.mjs status
+      - name: Configure SSH
         env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          for name in DEPLOY_PATH DEPLOY_HOST DEPLOY_USER DEPLOY_KNOWN_HOSTS DEPLOY_SSH_PRIVATE_KEY; do
+            [[ -n "${!name:-}" ]] || {
+              echo "::error::$name is not configured."
+              exit 1
+            }
+          done
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ && "$DEPLOY_PATH" != "/" ]] || exit 1
+          [[ "$DEPLOY_SSH_PORT" =~ ^[0-9]{1,5}$ ]] || exit 1
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+
+      - name: Apply pending migrations on the deploy host
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$DEPLOY_SSH_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -Eeuo pipefail; \
+             release_dir=\"\$(readlink -f '$DEPLOY_PATH/current')\"; \
+             test -n \"\$release_dir\"; \
+             cd \"\$release_dir\"; \
+             set -a; source .env.production; set +a; \
+             node scripts/db-migrate.mjs status --strict --allow-pending; \
+             node scripts/db-migrate.mjs migrate --strict; \
+             node scripts/db-migrate.mjs status --strict --require-clean"
+
+      - name: Remove SSH material
+        if: always()
+        run: rm -f "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"

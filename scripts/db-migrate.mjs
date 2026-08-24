@@ -7,6 +7,9 @@
  *   init-ledger        mark ALL migration files as applied WITHOUT running them
  *                      — only for databases already up to date (backfills the
  *                      ledger with checksum='legacy'; drift checks skip those)
+ *   init-ledger --fresh-schema
+ *                      seed canonical data after loading db/schema.sql, then
+ *                      initialize the complete legacy ledger
  *   init-ledger --files-from <path>
  *                      mark only the files listed in <path> (one per line,
  *                      basenames or db/migrations/ paths) — CI upgrade-path use
@@ -16,10 +19,9 @@
  * Design notes:
  * - File completion lives in _migrations; every statement is additionally
  *   checkpointed in _migration_steps because MySQL DDL auto-commits.
- * - Editing an already-applied migration is flagged as checksum drift
- *   (warning only) — write a corrective migration instead.
- * - A failed file resumes after its last completed statement. Recognized
- *   duplicate-DDL errors from an old partially-applied run are adopted once.
+ * - Editing or removing an already-applied migration fails closed.
+ * - A failed file resumes after its last completed statement. A duplicate DDL
+ *   error is never adopted without operator verification.
  */
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -31,6 +33,19 @@ const mysql = require('mysql2/promise');
 
 const ROOT = new URL('../', import.meta.url).pathname;
 const MIGRATIONS_DIR = `${ROOT}db/migrations`;
+
+const FRESH_SCHEMA_DATA_MIGRATIONS = [
+  '20260809_usage_phase2.sql',
+  '20260809_usage_prices_v2.sql',
+  '20260810_usage_prices_v3.sql',
+  '20260811_usage_prices_v4.sql',
+  '20260813_usage_cost_facts.sql',
+  '20260915_usage_price_kimi_for_coding.sql',
+  '20260917_kimi_for_coding_price_source.sql',
+  '20260919_usage_prices_v5.sql',
+  '20260919_usage_prices_v5_repair.sql',
+  '20260919_usage_prices_v6.sql',
+];
 
 const command = process.argv[2] ?? 'migrate';
 
@@ -51,20 +66,10 @@ export function splitStatements(sql) {
     .filter(Boolean);
 }
 
-function isAlreadyAppliedDdlError(error) {
-  return new Set([
-    'ER_DUP_FIELDNAME',
-    'ER_DUP_KEYNAME',
-    'ER_FK_DUP_NAME',
-    'ER_TABLE_EXISTS_ERROR',
-  ]).has(error?.code);
-}
-
-/* MySQL DDL cannot commit atomically with the ledger INSERT; per-
-   statement checkpoints shrink the failure window to a single
-   statement. For the state legacy runners left behind ("statement
-   applied but the file unrecorded"), only unambiguous duplicate DDL
-   is adopted. */
+/* MySQL DDL cannot commit atomically with the ledger INSERT. Per-statement
+   checkpoints shrink the failure window to one statement. If DDL succeeds but
+   its checkpoint does not, the retry fails closed so an operator can verify the
+   exact database shape before recording recovery state. */
 export async function applyMigrationFile(connection, file, sql) {
   const statements = splitStatements(sql);
   const [rows] = await connection.query(
@@ -85,11 +90,7 @@ export async function applyMigrationFile(connection, file, sql) {
       skipped += 1;
       continue;
     }
-    try {
-      await connection.query(statement);
-    } catch (error) {
-      if (!isAlreadyAppliedDdlError(error)) throw error;
-    }
+    await connection.query(statement);
     await connection.query(
       'INSERT INTO _migration_steps (migration_name, step_index, checksum) VALUES (?, ?, ?)',
       [file, index, checksum],
@@ -107,6 +108,46 @@ function migrationFiles() {
   return readdirSync(MIGRATIONS_DIR)
     .filter((file) => file.endsWith('.sql'))
     .sort();
+}
+
+export function classifyMigrationState(current, applied) {
+  const pending = [...current.keys()].filter((file) => !applied.has(file)).sort();
+  const drift = [...current.entries()]
+    .filter(([file, checksum]) => {
+      const recorded = applied.get(file);
+      return recorded !== undefined && recorded !== 'legacy' && recorded !== checksum;
+    })
+    .map(([file]) => file)
+    .sort();
+  const missing = [...applied.keys()].filter((file) => !current.has(file)).sort();
+  return { pending, drift, missing };
+}
+
+export function freshSchemaDataStatements(
+  allowedFiles = new Set(FRESH_SCHEMA_DATA_MIGRATIONS),
+) {
+  return FRESH_SCHEMA_DATA_MIGRATIONS
+    .filter((name) => allowedFiles.has(name))
+    .flatMap((file) => {
+      const sql = readFileSync(`${MIGRATIONS_DIR}/${file}`, 'utf8');
+      return splitStatements(sql).filter((statement) =>
+        /^(?:INSERT|UPDATE|DELETE|REPLACE)\b/i.test(statement),
+      );
+    });
+}
+
+async function seedFreshSchema(connection, allowedFiles) {
+  for (const statement of freshSchemaDataStatements(allowedFiles)) {
+    await connection.query(statement);
+  }
+  const [rows] = await connection.query(
+    `SELECT COUNT(*) AS count
+       FROM usage_model_prices
+      WHERE pricing_source_url <> '' AND verified_at IS NOT NULL`,
+  );
+  if (Number(rows[0]?.count ?? 0) === 0) {
+    throw new Error('fresh schema seed verification failed: no verified usage prices');
+  }
 }
 
 function maskUrl(raw) {
@@ -141,6 +182,9 @@ async function main() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
     const files = migrationFiles();
+    const current = new Map(
+      files.map((file) => [file, sha256(readFileSync(`${MIGRATIONS_DIR}/${file}`, 'utf8'))]),
+    );
     const [rows] = await connection.query('SELECT name, checksum FROM _migrations');
     const applied = new Map(rows.map((row) => [row.name, row.checksum]));
 
@@ -154,6 +198,13 @@ async function main() {
           .filter((line) => line.endsWith('.sql'));
         names = listed;
       }
+      if (process.argv.includes('--fresh-schema')) {
+        if (applied.size !== 0) {
+          throw new Error('init-ledger --fresh-schema requires an empty migration ledger');
+        }
+        await seedFreshSchema(connection, new Set(names));
+        console.log('fresh-schema: canonical data seeded and verified');
+      }
       let marked = 0;
       for (const name of names) {
         const [result] = await connection.query(
@@ -166,28 +217,33 @@ async function main() {
       return;
     }
 
-    const drift = files.filter(
-      (file) =>
-        applied.has(file) &&
-        applied.get(file) !== 'legacy' &&
-        applied.get(file) !== sha256(readFileSync(`${MIGRATIONS_DIR}/${file}`, 'utf8')),
-    );
+    const { pending, drift, missing } = classifyMigrationState(current, applied);
     for (const file of drift) {
-      console.warn(`⚠ checksum drift: ${file} was applied but its content changed — do not edit applied migrations; write a corrective one`);
+      console.error(`checksum drift: ${file} was applied but its content changed; write a corrective migration`);
+    }
+    for (const file of missing) {
+      console.error(`missing migration: ${file} is recorded in the database but absent from this release`);
     }
 
-    const pending = files.filter((file) => !applied.has(file));
-
     if (command === 'status') {
-      console.log(`applied: ${applied.size}  pending: ${pending.length}  drift: ${drift.length}`);
+      console.log(`applied: ${applied.size}  pending: ${pending.length}  drift: ${drift.length}  missing: ${missing.length}`);
       for (const file of pending) console.log(`  pending  ${file}`);
       for (const file of drift) console.log(`  drift    ${file}`);
+      for (const file of missing) console.log(`  missing  ${file}`);
+      const allowPending = process.argv.includes('--allow-pending');
+      if (drift.length > 0 || missing.length > 0 || (!allowPending && pending.length > 0)) {
+        process.exitCode = 1;
+      }
       return;
     }
 
     if (command !== 'migrate') {
       console.error(`unknown command: ${command}`);
       process.exit(2);
+    }
+
+    if (drift.length > 0 || missing.length > 0) {
+      throw new Error('migration integrity check failed; no pending migration was applied');
     }
 
     if (pending.length === 0) {

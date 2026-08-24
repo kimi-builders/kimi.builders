@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   handle VARCHAR(32) NOT NULL UNIQUE COMMENT '@handle,登录后首次生成,可改',
   name VARCHAR(64) NOT NULL DEFAULT '',
   email VARCHAR(190) UNIQUE,
+  password_hash VARCHAR(190) NULL COMMENT 'scrypt$N$r$p$salt$hash;NULL=未设密码(OAuth 用户)',
+  email_verified_at DATETIME NULL COMMENT '邮箱验证时间;NULL=未验证(v0 预留)',
   avatar_url VARCHAR(500) NOT NULL DEFAULT '',
   bio VARCHAR(300) NOT NULL DEFAULT '',
   -- profile_show_* 由 20260829_profile_privacy.sql 引入,已有库执行该迁移

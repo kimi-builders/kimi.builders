@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { applyMigrationFile, splitStatements } from "../scripts/db-migrate.mjs";
+import {
+  applyMigrationFile,
+  classifyMigrationState,
+  splitStatements,
+} from "../scripts/db-migrate.mjs";
+import { changedAppliedMigrations } from "../scripts/check-migration-immutability.mjs";
 
 interface FakeStep {
   step_index: number;
@@ -69,7 +74,7 @@ test("a recorded statement checksum drift fails closed before executing it", asy
   assert.deepEqual(db.executed, ["ALTER ORIGINAL"]);
 });
 
-test("old partial DDL is adopted when MySQL reports an unambiguous duplicate", async () => {
+test("duplicate DDL fails closed instead of recording an unverified step", async () => {
   const steps: FakeStep[] = [];
   const db = {
     async query(sql: string, args: unknown[] = []) {
@@ -83,13 +88,50 @@ test("old partial DDL is adopted when MySQL reports an unambiguous duplicate", a
       return [{}];
     },
   };
-  const result = await applyMigrationFile(
-    db,
-    "legacy-partial.sql",
-    "ALTER TABLE users ADD COLUMN already_there INT;",
+  await assert.rejects(
+    () => applyMigrationFile(
+      db,
+      "legacy-partial.sql",
+      "ALTER TABLE users ADD COLUMN already_there INT;",
+    ),
+    /Duplicate column/,
   );
-  assert.equal(result.executed, 1);
-  assert.deepEqual(steps.map((step) => step.step_index), [0]);
+  assert.deepEqual(steps, []);
+});
+
+test("migration state reports drift, pending, and missing applied files", () => {
+  const state = classifyMigrationState(
+    new Map([
+      ["001.sql", "current-001"],
+      ["002.sql", "current-002"],
+      ["003.sql", "current-003"],
+    ]),
+    new Map([
+      ["001.sql", "current-001"],
+      ["002.sql", "old-002"],
+      ["removed.sql", "old-removed"],
+    ]),
+  );
+
+  assert.deepEqual(state.pending, ["003.sql"]);
+  assert.deepEqual(state.drift, ["002.sql"]);
+  assert.deepEqual(state.missing, ["removed.sql"]);
+});
+
+test("migration immutability permits additions and rejects edits, deletes, or renames", () => {
+  const changes = [
+    "A\tdb/migrations/004.sql",
+    "M\tdb/migrations/001.sql",
+    "D\tdb/migrations/002.sql",
+    "R100\tdb/migrations/003.sql\tdb/migrations/renamed.sql",
+    "M\tdb/schema.sql",
+  ].join("\n");
+  assert.deepEqual(changedAppliedMigrations(changes), [
+    "db/migrations/001.sql",
+    "db/migrations/002.sql",
+    "db/migrations/003.sql",
+    "db/migrations/renamed.sql",
+  ]);
 });
 
 test("comments governance index matches hidden-state filter plus id cursor order", () => {

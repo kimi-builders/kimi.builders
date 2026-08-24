@@ -6,6 +6,7 @@
    Phase 1 compatibility. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { freshSchemaDataStatements } from "../scripts/db-migrate.mjs";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "../src/lib/db";
 import { authenticateUsageRequest } from "../src/lib/usage/auth";
@@ -97,23 +98,6 @@ async function main() {
   const pool = getPool();
 
   // Migration idempotency: run twice, price rows must not double.
-  const priceMigration = [
-    "../db/migrations/20260809_usage_phase2.sql",
-    "../db/migrations/20260809_usage_prices_v2.sql",
-    "../db/migrations/20260810_usage_prices_v3.sql",
-    "../db/migrations/20260811_usage_prices_v4.sql",
-    /* The 20260915/20260917 entries must stay listed: every price row in
-       the fresh-install path (schema.sql + init-ledger) comes from this
-       replay list; a missing entry under-counts the pinned number (CI
-       once hung on 47 != 48 because of it). */
-    "../db/migrations/20260915_usage_price_kimi_for_coding.sql",
-    "../db/migrations/20260917_kimi_for_coding_price_source.sql",
-    "../db/migrations/20260919_usage_prices_v5.sql",
-    "../db/migrations/20260919_usage_prices_v5_repair.sql",
-    "../db/migrations/20260919_usage_prices_v6.sql",
-  ]
-    .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
-    .join("\n;\n");
   const statementsOf = (sql: string) => sql
     .split(/;\s*(?:\n|$)/)
     .map((statement) =>
@@ -145,23 +129,10 @@ async function main() {
      GROUP BY INDEX_NAME`,
   );
   assert.equal(queryIndexes.length, 3);
-  const statements = statementsOf(priceMigration);
+  const statements = freshSchemaDataStatements();
   assert.ok(statements.length >= 2);
   for (let round = 0; round < 2; round += 1) {
     for (const statement of statements) await pool.query(statement);
-  }
-  // Fresh integration schemas already include the v5 columns. Execute the
-  // migration's idempotent price-data section twice to verify provenance and
-  // long-context seed stability without re-running ALTER TABLE.
-  const costFactsMigration = readFileSync(
-    new URL("../db/migrations/20260813_usage_cost_facts.sql", import.meta.url),
-    "utf8",
-  );
-  const priceDataStart = costFactsMigration.indexOf("UPDATE usage_model_prices");
-  assert.ok(priceDataStart > 0);
-  const costFactStatements = statementsOf(costFactsMigration.slice(priceDataStart));
-  for (let round = 0; round < 2; round += 1) {
-    for (const statement of costFactStatements) await pool.query(statement);
   }
   const [priceCount] = await pool.query<RowDataPacket[]>(
     `SELECT COUNT(*) AS count,

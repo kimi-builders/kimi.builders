@@ -1,30 +1,67 @@
-name: db-validate
-
-# 数据库迁移验证:schema.sql 新装链路 + PR 增量迁移链路 + 全部测试。
-# 任何 migration 语法错误、幂等缺陷或与测试期望冲突,合并前拦截。
+name: Database validation
 
 on:
+  workflow_call:
+    inputs:
+      base_ref:
+        description: Commit that represents the pre-deploy database shape
+        required: true
+        type: string
   pull_request:
-    paths:
-      - "db/**"
-      - "scripts/db-migrate.mjs"
-      - "tests/**"
-  push:
-    branches: [main]
-    paths:
-      - "db/**"
-      - "scripts/db-migrate.mjs"
-      - "tests/**"
+    branches:
+      - main
 
 permissions:
   contents: read
 
+concurrency:
+  group: kimi-builders-db-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DATABASE_URL: mysql://root@127.0.0.1:3306/kbu-mysql
+  USAGE_KEY_PEPPER: ci-only-usage-pepper-at-least-32-characters
+
 jobs:
+  migration-integrity:
+    name: Migration immutability
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve base revision
+        id: base
+        env:
+          INPUT_BASE_REF: ${{ inputs.base_ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -Eeuo pipefail
+          base_ref="${INPUT_BASE_REF:-${PR_BASE_SHA:-}}"
+          if [[ "$base_ref" =~ ^0{40}$ ]]; then
+            base_ref="$(git rev-parse HEAD^)"
+          fi
+          [[ "$base_ref" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::A full base commit SHA is required."
+            exit 1
+          }
+          git cat-file -e "$base_ref^{commit}"
+          echo "ref=$base_ref" >> "$GITHUB_OUTPUT"
+
+      - name: Reject edits to applied migrations
+        run: node scripts/check-migration-immutability.mjs "${{ steps.base.outputs.ref }}"
+
   fresh-install:
-    runs-on: ubuntu-latest
+    name: Fresh schema and DB suites
+    needs: migration-integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
     services:
       mysql:
-        image: mysql:9
+        image: mysql:8.0.43
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: "1"
           MYSQL_DATABASE: kbu-mysql
@@ -36,37 +73,45 @@ jobs:
           --health-timeout 2s
           --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Fresh install — schema.sql + ledger init
+      - name: Bootstrap terminal schema
         run: |
+          set -Eeuo pipefail
           mysql -h127.0.0.1 -uroot kbu-mysql < db/schema.sql
-          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql' \
-            node scripts/db-migrate.mjs init-ledger
-          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql' \
-            node scripts/db-migrate.mjs status
+          node scripts/db-migrate.mjs init-ledger --fresh-schema
+          node scripts/db-migrate.mjs status --strict --require-clean
 
-      - name: Tests
+      - name: Unit tests
+        run: npm test
+
+      - name: Database integration suites
         run: |
-          npm test
+          set -Eeuo pipefail
           npm run test:usage-db
-        env:
-          DATABASE_URL: mysql://root@127.0.0.1:3306/kbu-mysql
-          USAGE_KEY_PEPPER: ci-only-usage-pepper-at-least-32-characters
+          npm run test:analytics-db
+          npm run test:auth-db
+          npm run test:works-db
+          npm run test:moderation-db
 
   upgrade-path:
-    # 在「上一版 schema」上应用本 PR/本次 push 新增的迁移文件,验证升级链路。
-    runs-on: ubuntu-latest
+    name: Upgrade and schema parity
+    needs: migration-integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     services:
       mysql:
-        image: mysql:9
+        image: mysql:8.0.43
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: "1"
           MYSQL_DATABASE: kbu-mysql-upgrade
@@ -78,37 +123,44 @@ jobs:
           --health-timeout 2s
           --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Resolve base ref
-        id: base
+      - name: Build migration baseline and terminal databases
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "ref=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "ref=HEAD~1" >> "$GITHUB_OUTPUT"
-          fi
+          set -Eeuo pipefail
+          first_migration_commit="$(git log --diff-filter=A --format='%H' -- db/migrations | tail -1)"
+          [[ "$first_migration_commit" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git show "$first_migration_commit^:db/schema.sql" > /tmp/migration-baseline.sql
 
-      - name: Build previous-shape database
-        run: |
-          git show "${{ steps.base.outputs.ref }}:db/schema.sql" > /tmp/base-schema.sql
-          git ls-tree -r --name-only "${{ steps.base.outputs.ref }}" db/migrations > /tmp/base-files.txt
-          mysql -h127.0.0.1 -uroot kbu-mysql-upgrade < /tmp/base-schema.sql
-          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-upgrade' \
-            node scripts/db-migrate.mjs init-ledger --files-from /tmp/base-files.txt
+          mysql -h127.0.0.1 -uroot kbu-mysql-upgrade < /tmp/migration-baseline.sql
 
-      - name: Apply pending migrations from this change
+          mysql -h127.0.0.1 -uroot -e 'CREATE DATABASE `kbu-mysql-fresh` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+          mysql -h127.0.0.1 -uroot kbu-mysql-fresh < db/schema.sql
+          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-fresh' \
+            node scripts/db-migrate.mjs init-ledger --fresh-schema
+
+      - name: Replay every migration from the historical baseline
+        env:
+          DATABASE_URL: mysql://root@127.0.0.1:3306/kbu-mysql-upgrade
         run: |
-          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-upgrade' \
-            node scripts/db-migrate.mjs migrate
-          DATABASE_URL='mysql://root@127.0.0.1:3306/kbu-mysql-upgrade' \
-            node scripts/db-migrate.mjs status
+          set -Eeuo pipefail
+          node scripts/db-migrate.mjs migrate --strict
+          node scripts/db-migrate.mjs status --strict --require-clean
+
+      - name: Compare upgraded and terminal schemas
+        env:
+          FRESH_DATABASE_URL: mysql://root@127.0.0.1:3306/kbu-mysql-fresh
+          UPGRADE_DATABASE_URL: mysql://root@127.0.0.1:3306/kbu-mysql-upgrade
+        run: node scripts/db-compare-schemas.mjs

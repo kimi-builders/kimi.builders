@@ -11,6 +11,6 @@
 - [ ] User-facing copy added to the i18n dictionary as zh/en pairs
 - [ ] No new dependencies; no changes to applied `db/migrations/`
       (`db/schema.sql` updated if needed)
+- [ ] DB changes pass `test:usage-db`, `test:analytics-db`, `test:auth-db`,
+      `test:works-db`, and `test:moderation-db`
 - [ ] New routes added to the `proxy.ts` matcher
-
-<!-- Integration suites (`test:*-db`) if this PR touches DB code. -->
