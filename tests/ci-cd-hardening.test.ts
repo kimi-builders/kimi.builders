@@ -19,6 +19,10 @@ test("database validation is reusable, pinned to MySQL 8, and runs every DB suit
   assert.doesNotMatch(workflow, /uses:\s*actions\/(?:checkout|setup-node)@v[0-9]+/);
   assert.match(workflow, /init-ledger --fresh-schema/);
   assert.match(workflow, /--strict --require-clean/);
+  assert.match(
+    workflow,
+    /ALTER DATABASE `kbu-mysql-upgrade` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci/,
+  );
   for (const suite of [
     "test:usage-db",
     "test:analytics-db",

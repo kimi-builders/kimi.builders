@@ -149,6 +149,8 @@ jobs:
           [[ "$first_migration_commit" =~ ^[0-9a-f]{40}$ ]] || exit 1
           git show "$first_migration_commit^:db/schema.sql" > /tmp/migration-baseline.sql
 
+          mysql -h127.0.0.1 -uroot -e \
+            'ALTER DATABASE `kbu-mysql-upgrade` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
           mysql -h127.0.0.1 -uroot kbu-mysql-upgrade < /tmp/migration-baseline.sql
 
           mysql -h127.0.0.1 -uroot -e 'CREATE DATABASE `kbu-mysql-fresh` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
