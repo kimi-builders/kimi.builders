@@ -7,6 +7,7 @@
    icons can't be trusted under Satori, so agents are uniformly
    hairline mono chips (names suffice). */
 import type { WorkShareSnapshot } from "@/src/lib/share-posters";
+import type { Locale } from "@/src/lib/i18n";
 import {
   MetricBand,
   OutlineChip,
@@ -18,8 +19,15 @@ import {
   palette,
 } from "../../poster-kit";
 
-export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
+export function WorkSharePoster({
+  snapshot,
+  locale,
+}: {
+  snapshot: WorkShareSnapshot;
+  locale: Locale;
+}) {
   const s = snapshot;
+  const zh = locale === "zh";
   /* The work name is the hero: scale up by shorter length tiers (short
      names get full visual weight, like the usage poster's big numbers). */
   const nameSize = s.name.length <= 12 ? 88 : s.name.length <= 24 ? 72 : 58;
@@ -69,7 +77,9 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
                 {compact(s.claimedTokens)}
               </div>
               <div style={{ display: "flex", marginTop: 16, color: palette.muted, fontSize: 22, fontWeight: 700, letterSpacing: 3 }}>
-                作者声明 TOKENS · 按已同步总用量封顶 · 非单作品精确用量
+                {zh
+                  ? "作者声明 TOKEN · 按已同步总用量封顶 · 非单作品精确用量"
+                  : "AUTHOR-DECLARED TOKENS · CAPPED BY SYNCED TOTAL · NOT EXACT PROJECT USAGE"}
               </div>
             </div>
           </div>
@@ -77,9 +87,9 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
         <MetricBand
           style={{ marginTop: 40 }}
           items={[
-            { label: "支持", value: compact(s.voteCount), color: palette.blue },
-            { label: "评论", value: compact(s.commentCount), color: palette.green },
-            { label: "发布", value: s.publishedAt, color: palette.paper },
+            { label: zh ? "支持" : "SUPPORT", value: compact(s.voteCount), color: palette.blue },
+            { label: zh ? "评论" : "COMMENTS", value: compact(s.commentCount), color: palette.green },
+            { label: zh ? "发布" : "PUBLISHED", value: s.publishedAt, color: palette.paper },
           ]}
         />
       </main>
@@ -87,8 +97,8 @@ export function WorkSharePoster({ snapshot }: { snapshot: WorkShareSnapshot }) {
       <PosterFooter
         url={s.url}
         headline={s.author.handle ? `@${s.author.handle} · ${s.publishedAt}` : s.publishedAt}
-        scanHint="扫码查看作品"
-        notes={["公开作品快照", "指标为渲染时数值"]}
+        scanHint={zh ? "扫码查看作品" : "Scan to open the project"}
+        notes={zh ? ["公开作品快照", "指标为渲染时数值"] : ["PUBLIC PROJECT SNAPSHOT", "METRICS AT RENDER TIME"]}
       />
     </div>
   );

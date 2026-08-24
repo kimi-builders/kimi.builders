@@ -13,6 +13,7 @@ import { getPosterFonts } from "@/app/api/share/poster-fonts";
 import { posterRateLimited } from "@/app/api/share/poster-guard";
 import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
 import { profilePosterSize } from "@/app/api/share/poster-sizes";
+import { normalizePosterLocale } from "@/src/lib/poster-locale";
 import { ProfileSharePoster } from "./ProfileSharePoster";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export async function GET(
     return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
   const { handle } = await params;
+  const locale = normalizePosterLocale(request.nextUrl.searchParams.get("locale"));
   const preview =
     process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("preview") === "1";
   const snapshot = preview
@@ -38,7 +40,7 @@ export async function GET(
 
   const download = request.nextUrl.searchParams.get("download") === "1";
   const fonts = await getPosterFonts(profileShareText(snapshot) + POSTER_STATIC_TEXT);
-  return new ImageResponse(<ProfileSharePoster snapshot={snapshot} />, {
+  return new ImageResponse(<ProfileSharePoster snapshot={snapshot} locale={locale} />, {
     ...profilePosterSize(snapshot),
     ...(fonts.length ? { fonts } : {}),
     headers: {

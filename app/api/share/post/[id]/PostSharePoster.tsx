@@ -10,6 +10,7 @@
    blue-square hairline — to fill the visual field in the hard-edge
    hairline language. */
 import type { PostShareSnapshot } from "@/src/lib/share-posters";
+import type { Locale } from "@/src/lib/i18n";
 import {
   MetricBand,
   OutlineChip,
@@ -21,9 +22,16 @@ import {
   palette,
 } from "../../poster-kit";
 
-function PollBlock({ snapshot }: { snapshot: PostShareSnapshot }) {
+function PollBlock({
+  snapshot,
+  locale,
+}: {
+  snapshot: PostShareSnapshot;
+  locale: Locale;
+}) {
   const poll = snapshot.poll;
   if (!poll) return null;
+  const zh = locale === "zh";
   const max = Math.max(1, ...poll.options.map((o) => o.votes));
   return (
     <div style={{ display: "flex", marginTop: 30, flexDirection: "column", border: `1px solid ${palette.line}`, padding: "22px 26px" }}>
@@ -34,7 +42,7 @@ function PollBlock({ snapshot }: { snapshot: PostShareSnapshot }) {
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
               <div style={{ display: "flex", fontSize: 24, color: palette.paper }}>{o.label}</div>
               <div style={{ display: "flex", marginLeft: 20, fontSize: 20, color: palette.muted, whiteSpace: "nowrap" }}>
-                {o.votes} 票 · {pct}%
+                {zh ? `${o.votes} 票` : `${o.votes} votes`} · {pct}%
               </div>
             </div>
             <div style={{ display: "flex", marginTop: 9, height: 8, background: palette.surface }}>
@@ -44,14 +52,23 @@ function PollBlock({ snapshot }: { snapshot: PostShareSnapshot }) {
         );
       })}
       <div style={{ display: "flex", fontSize: 19, color: palette.muted, letterSpacing: 2 }}>
-        共 {compact(poll.totalVotes)} 票{poll.more > 0 ? ` · 还有 ${poll.more} 个选项` : ""}
+        {zh
+          ? `共 ${compact(poll.totalVotes)} 票${poll.more > 0 ? ` · 还有 ${poll.more} 个选项` : ""}`
+          : `${compact(poll.totalVotes)} votes${poll.more > 0 ? ` · ${poll.more} more options` : ""}`}
       </div>
     </div>
   );
 }
 
-export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
+export function PostSharePoster({
+  snapshot,
+  locale,
+}: {
+  snapshot: PostShareSnapshot;
+  locale: Locale;
+}) {
   const s = snapshot;
+  const zh = locale === "zh";
   /* Sparse = a short text post with only a title. */
   const sparse = !s.excerpt && !s.poll && !s.linkDomain;
   const titleSize = !sparse
@@ -111,14 +128,14 @@ export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
             <OutlineChip text={s.linkDomain} color={palette.blue} />
           </div>
         )}
-        <PollBlock snapshot={s} />
+        <PollBlock snapshot={s} locale={locale} />
 
         <MetricBand
           style={{ marginTop: 40 }}
           items={[
-            { label: "顶", value: compact(s.score), color: palette.blue },
-            { label: "评论", value: compact(s.commentCount), color: palette.green },
-            { label: "发布", value: s.publishedAt, color: palette.paper },
+            { label: zh ? "顶" : "UPVOTES", value: compact(s.score), color: palette.blue },
+            { label: zh ? "评论" : "COMMENTS", value: compact(s.commentCount), color: palette.green },
+            { label: zh ? "发布" : "PUBLISHED", value: s.publishedAt, color: palette.paper },
           ]}
         />
       </main>
@@ -126,8 +143,8 @@ export function PostSharePoster({ snapshot }: { snapshot: PostShareSnapshot }) {
       <PosterFooter
         url={s.url}
         headline={`@${s.author.handle} · ${s.publishedAt}`}
-        scanHint="扫码阅读全文"
-        notes={["公开帖子快照", "数据为渲染时口径"]}
+        scanHint={zh ? "扫码阅读全文" : "Scan to read the thread"}
+        notes={zh ? ["公开帖子快照", "数据为渲染时口径"] : ["PUBLIC THREAD SNAPSHOT", "METRICS AT RENDER TIME"]}
       />
     </div>
   );

@@ -112,9 +112,10 @@ test("facts 快照:超长值截取(TOP 模型原始 id 不溢出固定画幅)", 
 });
 
 test("decisions 快照:chip 文案与生产页同口径,超出上限进 decisionsMore", () => {
-  assert.equal(decisionKindLabel("work"), "精选构建");
+  assert.equal(decisionKindLabel("work"), "精选作品");
   assert.equal(decisionKindLabel("post"), "精选讨论");
   assert.equal(decisionKindLabel("governance"), "治理公示");
+  assert.equal(decisionKindLabel("work", "en"), "SELECTED WORK");
   const issue = issueFixture({
     featured: [featuredOf(0), featuredOf(1), featuredOf(2), featuredOf(3), featuredOf(4)],
   });
@@ -124,7 +125,7 @@ test("decisions 快照:chip 文案与生产页同口径,超出上限进 decision
   assert.equal(s.decisions.length, LETTER_POSTER_DECISIONS_MAX);
   assert.equal(s.decisionsMore, 3);
   assert.equal(s.decisions[0].kind, "work");
-  assert.equal(s.decisions[0].kindLabel, "精选构建");
+  assert.equal(s.decisions[0].kindLabel, "精选作品");
   assert.equal(s.decisions[0].editorHandle, "aklman");
   assert.equal(s.url, "https://kimi.builders/explore/letter-2026-08#decisions");
   assert.equal(s.aiNote, null); // disclosure only for facts

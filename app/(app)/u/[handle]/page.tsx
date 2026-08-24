@@ -279,7 +279,7 @@ export default async function ProfilePage({
     : null;
   const busiestSlot = busiest && busiest.value > 0 ? busiest : null;
   const profilePath = `/u/${profile.handle}`;
-  const posterHref = `/api/share/u/${profile.handle}`;
+  const posterHref = `/api/share/u/${profile.handle}?locale=${locale}`;
   const usageStatsReady = usageVisible && snapshotAll !== null && fsum !== null;
 
   const tabs = [
@@ -365,7 +365,7 @@ export default async function ProfilePage({
               }}
             >
               <a
-                href={`${posterHref}?download=1`}
+                href={`${posterHref}&download=1`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-1 rounded-lg border border-line px-2 text-xs whitespace-nowrap text-paper transition-colors hover:border-paper/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:w-auto sm:gap-1.5 sm:px-3.5"
@@ -466,9 +466,9 @@ export default async function ProfilePage({
         </div>
       </header>
 
-      {/* ===== Main area: build footprint (full-width) + activity tab card ===== */}
+      {/* ===== Main area: usage history (full-width) + activity tab card ===== */}
       <div className="mt-4 flex flex-col gap-4">
-          {/* Build footprint (same gate as usage: self only, or the owner opted in) */}
+          {/* Usage history (same gate as usage: self only, or the owner opted in) */}
           {footprint && fsum && (
             <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -798,7 +798,7 @@ export default async function ProfilePage({
                 </ul>
               ))}
 
-            {/* Build preferences (rows without data are omitted automatically; no negative labels) */}
+            {/* Usage breakdown (rows without data are omitted automatically; no negative labels) */}
             {activeTab === "prefs" && usageVisible && snapshotAll && (
               <dl className="divide-y divide-line px-4 sm:px-5">
                 {busiestSlot && (

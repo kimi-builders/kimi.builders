@@ -19,10 +19,10 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
 import { compactNumber, monthLabel } from "@/src/lib/format";
-import { t } from "@/src/lib/i18n";
+import { articleLanguageLabel, t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
-import { detailMetadata } from "@/src/lib/page-metadata";
+import { detailMetadata, languageTaggedTitle } from "@/src/lib/page-metadata";
 import { getArticleRailMeta, listExploreItems } from "@/src/lib/explore";
 import Avatar from "@/components/Avatar";
 import { findLearnSeries } from "@/src/lib/learn-series";
@@ -66,8 +66,15 @@ export async function generateMetadata({
   }
   const letter = await getAssembledIssue(slug, locale, { stats: await getCachedMonthlyStatsSnapshot() });
   if (letter) {
+    const meta = letter.metas.find((item) => item.slug === slug);
+    const title = languageTaggedTitle(
+      letter.issue.title,
+      locale,
+      meta?.locale ?? locale,
+      meta?.fallback ?? false,
+    );
     return detailMetadata({
-      title: `${letter.issue.title} — kimi.builders`,
+      title: `${title} — kimi.builders`,
       description: letter.issue.summary || t(locale, "metaDesc.explore"),
       path: `/explore/${slug}`,
       locale,
@@ -76,8 +83,14 @@ export async function generateMetadata({
   }
   const guide = await getTutorialBySlug(slug, locale);
   if (!guide) return { title: "kimi.builders" };
+  const title = languageTaggedTitle(
+    guide.tutorial.title,
+    locale,
+    guide.tutorial.locale,
+    guide.tutorial.fallback,
+  );
   return detailMetadata({
-    title: `${guide.tutorial.title} — kimi.builders`,
+    title: `${title} — kimi.builders`,
     description: guide.tutorial.summary || t(locale, "metaDesc.explore"),
     path: `/explore/${slug}`,
     locale,
@@ -103,7 +116,7 @@ function SectionShare({
       path={`/explore/${issue.slug}?tab=${anchor}`}
       title={`${issue.title} · ${label}`}
       locale={locale}
-      posterHref={`/api/share/letter/${issue.slug}?section=${anchor}`}
+      posterHref={`/api/share/letter/${issue.slug}?section=${anchor}&locale=${locale}`}
       posterSurface="letter"
     />
   );
@@ -304,6 +317,7 @@ function LetterDetail({
 
   /* Prev/next issue navigation. */
   const idx = metas.findIndex((m) => m.slug === issue.slug);
+  const currentMeta = metas[idx];
   const prev = metas[idx + 1];
   const next = idx > 0 ? metas[idx - 1] : undefined;
   /* <- -> shortcut keys and the footer's issue navigation share one
@@ -361,6 +375,11 @@ function LetterDetail({
           <span className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
             ISSUE {String(issue.issue).padStart(2, "0")}
           </span>
+          {currentMeta?.fallback && (
+            <span className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
+              {articleLanguageLabel(locale, currentMeta.locale, true)}
+            </span>
+          )}
         </div>
         <p className="kb-lede-human mt-4 max-w-2xl">{issue.summary}</p>
       </header>
@@ -475,7 +494,7 @@ async function GuideDetail({
   if (tutorial.bodyMd) {
     tabs.push({
       id: "read",
-      label: zh ? "文稿" : "Read",
+      label: zh ? "文稿" : "Article",
       panel: (
         <div className="md-longform border-b border-line py-9">
           <Markdown source={tutorial.bodyMd} />
@@ -526,7 +545,7 @@ async function GuideDetail({
     const isPdf = /\.pdf(\?|#|$)/i.test(deck);
     tabs.push({
       id: "deck",
-      label: zh ? "演示稿" : "Deck",
+      label: zh ? "演示稿" : "Slides",
       panel: (
         <div className="border-b border-line py-9">
           <iframe
@@ -552,7 +571,7 @@ async function GuideDetail({
           >
             <span>
               <span className="block text-sm font-semibold text-paper transition-colors group-hover:text-ui-blue">
-                {zh ? "打开演示稿" : "Open the deck"}
+                {zh ? "打开演示稿" : "Open slides"}
               </span>
               <span className="mt-1 block font-mono text-[11px] text-grey">{deck}</span>
             </span>
@@ -663,6 +682,11 @@ async function GuideDetail({
             >
               {zh ? chapter.zh : chapter.en}
             </Link>
+          )}
+          {tutorial.fallback && (
+            <span className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
+              {articleLanguageLabel(locale, tutorial.locale, true)}
+            </span>
           )}
         </div>
         {tutorial.summary && <p className="kb-lede mt-4 max-w-2xl">{tutorial.summary}</p>}

@@ -9,6 +9,22 @@ interface DetailMetadataInput {
   type?: "article" | "website";
 }
 
+/* A fallback article keeps its original-language title. The language
+   tag makes that fact visible in search and social previews, where the
+   in-page fallback badge is unavailable. */
+export function languageTaggedTitle(
+  title: string,
+  uiLocale: Locale,
+  contentLocale: Locale,
+  fallback: boolean,
+): string {
+  if (!fallback) return title;
+  const language = uiLocale === "zh"
+    ? contentLocale === "zh" ? "中文" : "英文"
+    : contentLocale === "zh" ? "Chinese" : "English";
+  return `[${language}] ${title}`;
+}
+
 /* Detail routes must replace the root social fields as one unit. Next
    merges metadata shallowly, so omitting any field can leave a generic
    home-page preview attached to a detail URL. */

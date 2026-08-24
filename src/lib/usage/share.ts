@@ -467,14 +467,14 @@ export async function getUsageShareSnapshot(input: {
   const main: UsageShareSnapshot["main"] = isHours
     ? {
         kind: "hours",
-        eyebrow: zh ? "构建脉冲" : "BUILD PULSE",
+        eyebrow: zh ? "用量脉冲" : "USAGE PULSE",
         headline: zh
           ? input.range === "today"
-            ? "今日构建脉冲"
-            : "24 小时构建脉冲"
+            ? "今日用量脉冲"
+            : "24 小时用量脉冲"
           : input.range === "today"
-            ? "TODAY'S BUILD PULSE"
-            : "24H BUILD PULSE",
+            ? "TODAY'S USAGE PULSE"
+            : "24H USAGE PULSE",
         subline: zh
           ? `${compactNumber(overview.totals.requests, "zh")} 次请求 · 峰值按小时`
           : `${overview.totals.requests.toLocaleString("en-US")} REQUESTS · HOURLY PEAK`,
@@ -487,7 +487,7 @@ export async function getUsageShareSnapshot(input: {
           kind: "weekheat",
           eyebrow: zh ? "7 天活跃时段" : "7-DAY ACTIVE SLOTS",
           headline: zh
-            ? `${dayRun.current || dayRun.longest} 天连续构建`
+            ? `${dayRun.current || dayRun.longest} 天连续活跃`
             : `${dayRun.current || dayRun.longest}-DAY STREAK`,
           subline:
             heatPeakText ?? (zh ? "近 7 天 · 星期 × 小时" : "LAST 7 DAYS · WEEKDAY × HOUR"),
@@ -503,7 +503,7 @@ export async function getUsageShareSnapshot(input: {
             headline:
               usageCacheHitRate(overview.totals) === null
                 ? zh
-                  ? `${daily.filter((item) => item.tokens > 0).length} 天有构建`
+                  ? `${daily.filter((item) => item.tokens > 0).length} 天有用量`
                   : `${daily.filter((item) => item.tokens > 0).length} ACTIVE DAYS`
                 : zh
                   ? `缓存命中 ${((usageCacheHitRate(overview.totals) ?? 0) * 100).toFixed(1)}%`
@@ -519,13 +519,13 @@ export async function getUsageShareSnapshot(input: {
             kind: "calendar",
             eyebrow: zh
               ? input.range === "90d"
-                ? "90 天构建足迹"
-                : "半年构建足迹"
+                ? "90 天用量记录"
+                : "半年用量记录"
               : input.range === "90d"
-                ? "90-DAY FOOTPRINT"
-                : "6-MONTH FOOTPRINT",
+                ? "90-DAY USAGE"
+                : "6-MONTH USAGE",
             headline: zh
-              ? `${weekRun.current || weekRun.longest} 周连续构建`
+              ? `${weekRun.current || weekRun.longest} 周连续活跃`
               : `${weekRun.current || weekRun.longest}-WEEK STREAK`,
             subline: zh
               ? `最长连续 ${weekRun.longest} 周 · 每格代表一天`
@@ -677,14 +677,14 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
   const main: UsageShareSnapshot["main"] = isHours
     ? {
         kind: "hours",
-        eyebrow: zh ? "构建脉冲" : "BUILD PULSE",
+        eyebrow: zh ? "用量脉冲" : "USAGE PULSE",
         headline: zh
           ? range === "today"
-            ? "今日构建脉冲"
-            : "24 小时构建脉冲"
+            ? "今日用量脉冲"
+            : "24 小时用量脉冲"
           : range === "today"
-            ? "TODAY'S BUILD PULSE"
-            : "24H BUILD PULSE",
+            ? "TODAY'S USAGE PULSE"
+            : "24H USAGE PULSE",
         subline: zh ? "12,481 次请求 · 峰值按小时" : "12,481 REQUESTS · HOURLY PEAK",
         columns: 24,
         rows: 1,
@@ -694,7 +694,7 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
       ? {
           kind: "weekheat",
           eyebrow: zh ? "7 天活跃时段" : "7-DAY ACTIVE SLOTS",
-          headline: zh ? `${dayStreak.current} 天连续构建` : `${dayStreak.current}-DAY STREAK`,
+          headline: zh ? `${dayStreak.current} 天连续活跃` : `${dayStreak.current}-DAY STREAK`,
           subline: zh ? "峰值时段 周三 14–15 时" : "PEAK WED 14:00",
           columns: 24,
           rows: 7,
@@ -717,12 +717,12 @@ export function mockUsageShareSnapshot(range: UsageShareRange, zh = true): Usage
             kind: "calendar",
             eyebrow: zh
               ? range === "90d"
-                ? "90 天构建足迹"
-                : "半年构建足迹"
+                ? "90 天用量记录"
+                : "半年用量记录"
               : range === "90d"
-                ? "90-DAY FOOTPRINT"
-                : "6-MONTH FOOTPRINT",
-            headline: zh ? `${weekStreak.current} 周连续构建` : `${weekStreak.current}-WEEK STREAK`,
+                ? "90-DAY USAGE"
+                : "6-MONTH USAGE",
+            headline: zh ? `${weekStreak.current} 周连续活跃` : `${weekStreak.current}-WEEK STREAK`,
             subline: zh
               ? `最长连续 ${weekStreak.longest} 周 · 每格代表一天`
               : `LONGEST ${weekStreak.longest} WEEKS · 1 CELL/DAY`,

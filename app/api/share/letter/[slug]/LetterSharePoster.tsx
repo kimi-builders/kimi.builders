@@ -16,6 +16,7 @@ import type {
   LetterShareSnapshot,
 } from "@/src/lib/share-letter";
 import type { IssueDecisionKind, IssueFact } from "@/src/lib/monthly";
+import type { Locale } from "@/src/lib/i18n";
 import {
   POSTER_FONT_FAMILY,
   POSTER_PADDING,
@@ -26,10 +27,24 @@ import {
 
 const SECTION_META: Record<
   LetterSection,
-  { no: string; zh: string; en: string; color: string; scanHint: string }
+  { no: string; zh: string; en: string; color: string; scanHintZh: string; scanHintEn: string }
 > = {
-  facts: { no: "02", zh: "事实盘点", en: "FACTS", color: palette.green, scanHint: "扫码看本期事实盘点" },
-  decisions: { no: "03", zh: "编辑定夺", en: "DECISIONS", color: palette.amber, scanHint: "扫码看本期编辑定夺" },
+  facts: {
+    no: "02",
+    zh: "事实盘点",
+    en: "FACTS",
+    color: palette.green,
+    scanHintZh: "扫码看本期事实盘点",
+    scanHintEn: "Scan to open this issue's facts",
+  },
+  decisions: {
+    no: "03",
+    zh: "编辑定夺",
+    en: "DECISIONS",
+    color: palette.amber,
+    scanHintZh: "扫码看本期编辑定夺",
+    scanHintEn: "Scan to open this issue's decisions",
+  },
 };
 
 /* Decision chip colors match the blog detail page's decisionChip
@@ -40,14 +55,21 @@ const DECISION_CHIP_COLORS: Record<IssueDecisionKind, string> = {
   governance: palette.muted,
 };
 
-function SectionTitle({ meta }: { meta: (typeof SECTION_META)[LetterSection] }) {
+function SectionTitle({
+  meta,
+  locale,
+}: {
+  meta: (typeof SECTION_META)[LetterSection];
+  locale: Locale;
+}) {
+  const zh = locale === "zh";
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", color: meta.color, fontSize: 24, letterSpacing: 6 }}>
         {meta.no} · {meta.en}
       </div>
       <div style={{ display: "flex", marginTop: 16, fontSize: 64, fontWeight: 800, lineHeight: 1.1 }}>
-        {meta.zh}
+        {zh ? meta.zh : meta.en === "FACTS" ? "Facts" : "Decisions"}
       </div>
     </div>
   );
@@ -103,11 +125,20 @@ function FactsBody({ facts }: { facts: IssueFact[] }) {
 
 /* 03: decision cards; an empty field is still a record (same line as
    the blog detail page). */
-function DecisionsBody({ snapshot }: { snapshot: LetterShareSnapshot }) {
+function DecisionsBody({
+  snapshot,
+  locale,
+}: {
+  snapshot: LetterShareSnapshot;
+  locale: Locale;
+}) {
+  const zh = locale === "zh";
   if (snapshot.decisions.length === 0) {
     return (
       <div style={{ display: "flex", marginTop: 46, color: palette.muted, fontSize: 24, lineHeight: 1.7 }}>
-        本月没有新的精选——定夺栏留空也是记录。
+        {zh
+          ? "本月没有新的精选——定夺栏留空也是记录。"
+          : "No new selections this month. An empty decisions section is still part of the record."}
       </div>
     );
   }
@@ -152,27 +183,36 @@ function DecisionsBody({ snapshot }: { snapshot: LetterShareSnapshot }) {
           </div>
           {d.editorHandle ? (
             <div style={{ display: "flex", marginTop: 12, color: palette.green, fontSize: 17 }}>
-              — @{d.editorHandle} 精选
+              {zh ? `— @${d.editorHandle} 精选` : `— selected by @${d.editorHandle}`}
             </div>
           ) : null}
         </div>
       ))}
       {snapshot.decisionsMore > 0 ? (
         <div style={{ display: "flex", marginTop: 24, color: palette.muted, fontSize: 18 }}>
-          还有 {snapshot.decisionsMore} 条定夺,站内查看全部
+          {zh
+            ? `还有 ${snapshot.decisionsMore} 条定夺，站内查看全部`
+            : `${snapshot.decisionsMore} more decisions · view all on site`}
         </div>
       ) : null}
     </div>
   );
 }
 
-export function LetterSharePoster({ snapshot }: { snapshot: LetterShareSnapshot }) {
+export function LetterSharePoster({
+  snapshot,
+  locale,
+}: {
+  snapshot: LetterShareSnapshot;
+  locale: Locale;
+}) {
   const s = snapshot;
+  const zh = locale === "zh";
   const meta = SECTION_META[s.section];
   const notes = [`kimi.builders/explore/${s.slug}`];
   if (s.section === "facts") notes.push("COMMUNITY RECORD · REPRODUCIBLE VIA THE USAGE CLI");
-  if (s.section === "decisions") notes.push("EDITORIAL RECORD · 定夺到人");
-  if (s.aiNote) notes.push(`AI 参与披露:${s.aiNote}`);
+  if (s.section === "decisions") notes.push(zh ? "EDITORIAL RECORD · 定夺到人" : "EDITORIAL RECORD · ATTRIBUTED TO EDITORS");
+  if (s.aiNote) notes.push(zh ? `AI 参与披露：${s.aiNote}` : `AI INVOLVEMENT: ${s.aiNote}`);
   return (
     <div
       style={{
@@ -206,15 +246,15 @@ export function LetterSharePoster({ snapshot }: { snapshot: LetterShareSnapshot 
           padding: "34px 0 30px",
         }}
       >
-        <SectionTitle meta={meta} />
+        <SectionTitle meta={meta} locale={locale} />
         {s.section === "facts" ? <FactsBody facts={s.facts} /> : null}
-        {s.section === "decisions" ? <DecisionsBody snapshot={s} /> : null}
+        {s.section === "decisions" ? <DecisionsBody snapshot={s} locale={locale} /> : null}
       </main>
 
       <PosterFooter
         url={s.url}
         headline={`@${s.editorHandle} · ${s.month}`}
-        scanHint={meta.scanHint}
+        scanHint={zh ? meta.scanHintZh : meta.scanHintEn}
         notes={notes}
       />
     </div>

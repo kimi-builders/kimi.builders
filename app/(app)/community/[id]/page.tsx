@@ -308,7 +308,7 @@ export default async function PostPage({
             locale={locale}
             /* The private-post poster route 404s — the button isn't
                offered either. */
-            posterHref={post.visibility === "public" ? `/api/share/post/${post.id}` : undefined}
+            posterHref={post.visibility === "public" ? `/api/share/post/${post.id}?locale=${locale}` : undefined}
             posterSurface={post.visibility === "public" ? "post" : undefined}
           />
         </span>

@@ -44,13 +44,13 @@ const DICT = {
   "search.community": { zh: "讨论、投票与社区动态", en: "Discussions, polls, and community updates" },
   "search.works": { zh: "Builder 发布的 Kimi 相关作品", en: "Kimi-related work published by Builders" },
   "search.awesome": { zh: "成员推荐的站外 Kimi 生态项目", en: "External Kimi ecosystem projects recommended by members" },
-  "search.explore": { zh: "月刊评鉴与 Builder 实践,沿分类、标签和时间浏览", en: "The Monthly and Builder practices — browse by category, tag, or time" },
+  "search.explore": { zh: "月刊评鉴与 Builder 实践，沿分类、标签和时间浏览", en: "The Monthly and Builder practices — browse by category, tag, or time" },
   "search.usage": { zh: "Token、成本与活跃度看板", en: "Token, cost, and activity dashboard" },
   "search.demoNightTitle": { zh: "Demo Night", en: "Demo Night" },
   "search.demoNight": { zh: "报名并查看社区展示活动", en: "Join and browse community showcase events" },
   "search.settings": { zh: "账号、隐私与界面偏好", en: "Account, privacy, and interface preferences" },
   /* ---- Keyboard shortcuts: panel copy + top-bar trigger ---- */
-  "topbar.shortcuts": { zh: "快捷键 (?)", en: "Shortcuts (?)" },
+  "topbar.shortcuts": { zh: "快捷键（?）", en: "Shortcuts (?)" },
   "kbd.title": { zh: "快捷键", en: "Shortcuts" },
   "kbd.sectionGlobal": { zh: "全局", en: "GLOBAL" },
   "kbd.sectionSearch": { zh: "搜索框内", en: "IN SEARCH" },
@@ -66,16 +66,16 @@ const DICT = {
   "kbd.navCollapse": { zh: "收起 / 展开左栏", en: "Collapse or expand nav" },
   "kbd.sidebar": { zh: "隐藏 / 显示右栏", en: "Hide or show sidebar" },
   "kbd.fullscreen": { zh: "全屏 / 退出全屏", en: "Toggle fullscreen" },
-  "kbd.newPost": { zh: "发帖 / 推荐作品(按当前分区)", en: "New post or work (by section)" },
-  "kbd.focus": { zh: "专注模式(收左栏 + 藏右栏)", en: "Focus mode (hide nav + sidebar)" },
+  "kbd.newPost": { zh: "发帖 / 推荐作品（按当前分区）", en: "New post or work (by section)" },
+  "kbd.focus": { zh: "专注模式（收左栏 + 藏右栏）", en: "Focus mode (hide nav + sidebar)" },
   "kbd.arrows": {
-    zh: "列表:切换章 · 详情:上下篇",
+    zh: "列表：切换章 · 详情：上下篇",
     en: "List: chapters · prev / next",
   },
   "kbd.hint": { zh: "按 ? 随时呼出 · Esc 关闭", en: "Press ? anytime · Esc to close" },
   /* ---- Global status pages ---- */
   "state.notFoundTitle": { zh: "这里没有你要找的页面", en: "That page is not here" },
-  "state.notFoundBody": { zh: "链接可能已经移动或失效。回到社区继续浏览,也可以用顶部搜索快速前往其他分区。", en: "The link may have moved or expired. Return to the community, or use site search to jump somewhere else." },
+  "state.notFoundBody": { zh: "链接可能已经移动或失效。回到社区继续浏览，也可以用顶部搜索快速前往其他分区。", en: "The link may have moved or expired. Return to the community, or use site search to jump somewhere else." },
   "state.backCommunity": { zh: "返回社区", en: "Back to community" },
   "state.backHome": { zh: "返回首页", en: "Back home" },
   "state.errorEyebrow": { zh: "加载异常", en: "LOAD ERROR" },
@@ -86,7 +86,7 @@ const DICT = {
   },
   "state.retry": { zh: "重新尝试", en: "Try again" },
   /* ---- Loading states (self-help hints on slow loads) ---- */
-  "load.slow": { zh: "这一页加载得比平时久,可以再等一下或重试。", en: "This page is taking longer than usual. Wait a moment or retry." },
+  "load.slow": { zh: "这一页加载得比平时久，可以再等一下或重试。", en: "This page is taking longer than usual. Wait a moment or retry." },
   /* Brand loading poster's aria-label (single-locale; the visible text
      stays LOADING.). */
   "load.aria": { zh: "页面加载中", en: "Loading page" },
@@ -117,7 +117,7 @@ const DICT = {
   "side.lbPreview": { zh: "用量排行", en: "USAGE LEADERBOARD" },
   "side.lbPreviewNote": { zh: "近 30 天 · 自愿公开", en: "30D · opt-in" },
   "side.lbFull": { zh: "完整榜 →", en: "Full board →" },
-  "side.lbYou": { zh: "(你)", en: "(you)" },
+  "side.lbYou": { zh: "（你）", en: "(you)" },
   /* ---- Feed ---- */
   "feed.hot": { zh: "热门", en: "Hot" },
   "feed.new": { zh: "最新", en: "New" },
@@ -130,22 +130,22 @@ const DICT = {
   "feed.topicNav": { zh: "话题", en: "Topic" },
   "feed.readMore": { zh: "阅读全文 →", en: "Read more →" },
   "feed.quickPost": {
-    zh: "有什么新鲜事?(支持 Markdown)",
+    zh: "有什么新鲜事？（支持 Markdown）",
     en: "What's happening? (Markdown supported)",
   },
   "feed.empty": {
-    zh: "还没有帖子。来发第一帖 —— 咱们自己的社区,第一条内容就等你了。",
+    zh: "还没有帖子。来发第一帖 —— 咱们自己的社区，第一条内容就等你了。",
     en: "No posts yet. Start the first thread — this community runs on its members.",
   },
   "feed.emptySub": {
-    zh: "还没有订阅任何帖子 —— 在帖子页点「订阅」,重点讨论就会聚到这里。",
+    zh: "还没有订阅任何帖子 —— 在帖子页点「订阅」，重点讨论就会聚到这里。",
     en: "Nothing subscribed yet — hit Subscribe on a thread and it will gather here.",
   },
   /* Empty-community call to action: one line of content guidance plus an
      explicit CTA — that earns the first post better than cheerleading
      alone. */
   "feed.emptyHint": {
-    zh: "晒出你做的东西、抛出卡住的坑、或聊聊用法心得——分类齐全,哪格都行。",
+    zh: "晒出你做的东西、抛出卡住的坑、或聊聊用法心得——分类齐全，哪格都行。",
     en: "Show what you made, ask about a blocker, or share how you work — every category counts.",
   },
   "feed.emptyCta": {
@@ -187,7 +187,7 @@ const DICT = {
     en: "{n}/{m} episodes matched",
   },
   "explore.emptyFilter": {
-    zh: "这个组合下还没有内容——放宽一档筛选,或从最近的内容进。",
+    zh: "这个组合下还没有内容——放宽一档筛选，或从最近的内容进。",
     en: "Nothing under this combination yet — relax a filter, or start from the latest.",
   },
   "explore.latest": { zh: "最近的内容", en: "LATEST" },
@@ -203,7 +203,7 @@ const DICT = {
   "explore.filterAria": { zh: "探索筛选", en: "Explore filters" },
   /* ---- Post detail ---- */
   "post.comments": { zh: "{n} 条评论", en: "{n} comments" },  "post.commentPh": {
-    zh: "写下你的评论(支持 Markdown;@kimi 可召唤小筑回答)…",
+    zh: "写下你的评论（支持 Markdown；@kimi 可召唤小筑回答）…",
     en: "Write a comment (Markdown; @kimi to summon Xiaozhu)…",
   },
   /* @kimi summon result toast: the comment publishes either way; whether
@@ -213,11 +213,11 @@ const DICT = {
     en: "Xiaozhu summoned — reply incoming",
   },
   "post.aiSummonDisabled": {
-    zh: "帖主已关闭 AI 参与,召唤未生效",
+    zh: "帖主已关闭 AI 参与，召唤未生效",
     en: "The author has disabled AI here — summon ignored",
   },
   "post.aiSummonRate": {
-    zh: "召唤太频繁了,稍后再试",
+    zh: "召唤太频繁了，稍后再试",
     en: "Summoning too often — try again later",
   },
   /* Summon waiting feedback: typing placeholder / arrived / failed /
@@ -225,11 +225,11 @@ const DICT = {
   "post.aiTyping": { zh: "正在输入…", en: "typing…" },
   "post.aiReplied": { zh: "小筑回复了", en: "Xiaozhu replied" },
   "post.aiReplyFailed": {
-    zh: "小筑暂时没能回复,稍后再 @ 一次试试",
+    zh: "小筑暂时没能回复，稍后再 @ 一次试试",
     en: "Xiaozhu couldn't reply — try @-ing again later",
   },
   "post.aiReplySlow": {
-    zh: "小筑回复较慢,稍后可到通知中心查看",
+    zh: "小筑回复较慢，稍后可到通知中心查看",
     en: "Xiaozhu is taking longer than usual — check notifications later",
   },
   "post.comment": { zh: "评论", en: "Comment" },
@@ -239,7 +239,7 @@ const DICT = {
   "post.solvedToast": { zh: "已标记为已解决", en: "Marked as solved" },
   "post.unsolvedToast": { zh: "已取消已解决标记", en: "Solved mark removed" },
   "feed.solvedOnly": { zh: "已解决", en: "Solved" },  "post.loginToComment": {
-    zh: "登录后参与评论:",
+    zh: "登录后参与评论：",
     en: "Log in to join the discussion:",
   },
   "post.up": { zh: "点赞", en: "Upvote" },
@@ -250,7 +250,7 @@ const DICT = {
   "post.unsubscribe": { zh: "取消订阅", en: "Unsubscribe" },
   "post.share": { zh: "分享", en: "Share" },
   "post.copied": { zh: "已复制", en: "Copied" },
-  "post.shareAria": { zh: "分享(复制链接)", en: "Share (copy link)" },
+  "post.shareAria": { zh: "分享（复制链接）", en: "Share (copy link)" },
   "post.poster": { zh: "海报", en: "Poster" },
   "post.posterAria": { zh: "下载分享海报图片", en: "Download share poster image" },
   "post.vote": { zh: "投票", en: "Vote" },
@@ -264,11 +264,11 @@ const DICT = {
   "post.edit": { zh: "编辑", en: "Edit" },
   "post.delete": { zh: "删除", en: "Delete" },
   "post.deleteConfirm": {
-    zh: "确定删除这篇帖子?删除后不可恢复。",
+    zh: "确定删除这篇帖子？删除后不可恢复。",
     en: "Delete this post? This cannot be undone.",
   },
   "post.commentDeleteConfirm": {
-    zh: "删除这条评论?",
+    zh: "删除这条评论？",
     en: "Delete this comment?",
   },
   "post.save": { zh: "保存", en: "Save" },
@@ -281,14 +281,14 @@ const DICT = {
     zh: "私密帖子仅自己可见",
     en: "Only you can see this post",
   },
-  "post.down": { zh: "点踩(减少看到此帖)", en: "Downvote (see less of this)" },
+  "post.down": { zh: "点踩（减少看到此帖）", en: "Downvote (see less of this)" },
   "post.undown": { zh: "取消点踩", en: "Remove downvote" },
   "post.dimmed": {
-    zh: "被较多人点踩,已淡化显示",
+    zh: "被较多人点踩，已淡化显示",
     en: "Heavily downvoted, dimmed",
   },
   "post.loadMore": {
-    zh: "加载更多评论(还有 {n} 条)",
+    zh: "加载更多评论（还有 {n} 条）",
     en: "Load more comments ({n} more)",
   },
   "post.showReplies": { zh: "展开另外 {n} 条回复", en: "Show {n} more replies" },
@@ -296,7 +296,7 @@ const DICT = {
   /* ---- Notifications ---- */
   "notif.title": { zh: "消息", en: "Notifications" },
   "notif.empty": {
-    zh: "还没有消息。有人评论你关注的帖子、或回复你的评论时,会出现在这里。",
+    zh: "还没有消息。有人评论你关注的帖子、或回复你的评论时，会出现在这里。",
     en: "Nothing yet. Replies to your comments and new discussion on posts you follow will show up here.",
   },
   "notif.comment": { zh: "评论了你关注的帖子", en: "commented on a post you follow" },
@@ -308,7 +308,7 @@ const DICT = {
     zh: "回复了你在《{name}》的召唤",
     en: "answered your summon on “{name}”",
   },
-  "notif.loginRequired": { zh: "登录后查看消息:", en: "Log in to see notifications:" },
+  "notif.loginRequired": { zh: "登录后查看消息：", en: "Log in to see notifications:" },
   /* ---- New post ---- */
   "form.pageTitle": { zh: "发帖", en: "New post" },
   /* Form-page eyebrow: task pages share the section landing pages'
@@ -318,27 +318,27 @@ const DICT = {
   "form.text": { zh: "文字", en: "Text" },
   "form.link": { zh: "链接", en: "Link" },
   "form.poll": { zh: "投票", en: "Poll" },
-  "form.title": { zh: "标题(可选)", en: "Title (optional)" },
+  "form.title": { zh: "标题（可选）", en: "Title (optional)" },
   "form.bodyText": {
-    zh: "正文(支持 Markdown;@kimi 可召唤小筑回答)",
+    zh: "正文（支持 Markdown；@kimi 可召唤小筑回答）",
     en: "Body (Markdown; @kimi to summon Xiaozhu)",
   },
   "form.bodyOpt": {
-    zh: "补充说明(可选,支持 Markdown)",
+    zh: "补充说明（可选，支持 Markdown）",
     en: "Details (optional, Markdown supported)",
   },
-  "form.pollOpts": { zh: "投票选项(2–8 个)", en: "Options (2–8)" },
+  "form.pollOpts": { zh: "投票选项（2–8 个）", en: "Options (2–8)" },
   "form.addOpt": { zh: "+ 添加选项", en: "+ Add option" },
   "form.aiReply": {
     zh: "允许小筑（本站 AI 助手）回复本帖",
     en: "Allow Xiaozhu, the community AI, to reply",
   },
   "form.aiReplyHint": {
-    zh: "小筑会自动回帖暖场、补充相关信息,可随时在帖内关闭",
+    zh: "小筑会自动回帖暖场、补充相关信息，可随时在帖内关闭",
     en: "Xiaozhu opens the thread and adds context; you can turn it off per post",
   },
   "form.private": {
-    zh: "私密发布(仅自己可见)",
+    zh: "私密发布（仅自己可见）",
     en: "Post privately (only visible to me)",
   },
   "form.privateHint": {
@@ -347,7 +347,7 @@ const DICT = {
   },
   "form.topic": { zh: "话题", en: "Topic" },
   "form.titleLabel": { zh: "标题", en: "Title" },
-  "form.optional": { zh: "(可选)", en: "(optional)" },
+  "form.optional": { zh: "（可选）", en: "(optional)" },
   "form.bodyLabel": { zh: "正文", en: "Body" },
   "form.mdSupport": { zh: "支持 Markdown", en: "Markdown supported" },
   "form.mdHint": {
@@ -359,7 +359,7 @@ const DICT = {
   "editor.heading": { zh: "标题", en: "Heading" },
   "editor.list": { zh: "列表", en: "List" },
   "editor.link": { zh: "链接", en: "Link" },
-  "editor.image": { zh: "插入图片(或直接粘贴)", en: "Insert image (or paste)" },
+  "editor.image": { zh: "插入图片（或直接粘贴）", en: "Insert image (or paste)" },
   "editor.summonKimiHint": {
     zh: "召唤小筑（Tab 补全）",
     en: "summon Xiaozhu (Tab to complete)",
@@ -370,11 +370,11 @@ const DICT = {
   "editor.listPh": { zh: "列表项", en: "List item" },
   "editor.linkPh": { zh: "链接文字", en: "link text" },
   "form.footerHint": {
-    zh: "发布后进入「全部讨论」,可随时编辑或删除",
+    zh: "发布后进入「全部讨论」，可随时编辑或删除",
     en: "Posted to \"All discussions\"; edit or delete anytime",
   },
   "form.draftRestored": {
-    zh: "已恢复上次未发布的草稿,内容会继续自动保存在此设备。",
+    zh: "已恢复上次未发布的草稿，内容会继续自动保存在此设备。",
     en: "Your unpublished draft was restored and will keep saving on this device.",
   },
   "form.clearDraft": { zh: "清空草稿", en: "Clear draft" },
@@ -385,7 +385,7 @@ const DICT = {
   "err.notOwner": { zh: "只能编辑自己的帖子", en: "You can only edit your own posts" },
   "form.submit": { zh: "发布", en: "Post" },
   "form.posting": { zh: "发布中…", en: "Posting…" },
-  "form.loginRequired": { zh: "发帖需要登录:", en: "Log in to post:" },
+  "form.loginRequired": { zh: "发帖需要登录：", en: "Log in to post:" },
   /* ---- Auth chip ---- */
   "auth.login": { zh: "登录", en: "Log in" },
   "auth.logout": { zh: "退出", en: "Log out" },
@@ -395,40 +395,40 @@ const DICT = {
   "login.titleRegister": { zh: "注册 kimi.builders", en: "Create your kimi.builders account" },
   "login.titleForgot": { zh: "找回密码", en: "Reset password" },
   "login.titleReset": { zh: "设置新密码", en: "Set a new password" },
-  "login.subtitle": { zh: "账号用于发帖、提交作品与用量同步,浏览无需登录。", en: "An account is for posting, works and usage sync — browsing needs none." },
+  "login.subtitle": { zh: "账号用于发帖、提交作品与用量同步，浏览无需登录。", en: "An account is for posting, works and usage sync — browsing needs none." },
   "login.registerSubtitle": { zh: "注册后即可发帖、提交作品、同步用量。", en: "Register to post, submit works and sync usage." },
   "login.emailDivider": { zh: "或用邮箱", en: "or with email" },
   "login.signIn": { zh: "登录", en: "Sign in" },
   "login.register": { zh: "注册", en: "Register" },
   "login.password": { zh: "密码", en: "Password" },
-  "login.forgot": { zh: "忘记密码?", en: "Forgot password?" },
-  "login.displayName": { zh: "昵称(可选)", en: "Display name (optional)" },
-  "login.password8": { zh: "密码(至少 8 位)", en: "Password (8+ chars)" },
+  "login.forgot": { zh: "忘记密码？", en: "Forgot password?" },
+  "login.displayName": { zh: "昵称（可选）", en: "Display name (optional)" },
+  "login.password8": { zh: "密码（至少 8 位）", en: "Password (8+ chars)" },
   "login.confirmPassword": { zh: "确认密码", en: "Confirm password" },
   "login.registerSubmit": { zh: "注册并登录", en: "Register & sign in" },
-  "login.forgotSent": { zh: "如果该邮箱已注册,重置邮件已在路上(链接 1 小时内有效)。没收到请检查垃圾邮件,或稍后重新发送。", en: "If that email is registered, a reset link is on its way (valid for 1 hour). Check spam if it doesn't show up, or resend later." },
+  "login.forgotSent": { zh: "如果该邮箱已注册，重置邮件已在路上（链接 1 小时内有效）。没收到请检查垃圾邮件，或稍后重新发送。", en: "If that email is registered, a reset link is on its way (valid for 1 hour). Check spam if it doesn't show up, or resend later." },
   "login.resend": { zh: "重新发送 / 换个邮箱", en: "Resend / use another email" },
-  "login.forgotIntro": { zh: "输入注册邮箱,我们会发一封带重置链接的邮件。", en: "Enter your account email and we'll send you a reset link." },
+  "login.forgotIntro": { zh: "输入注册邮箱，我们会发一封带重置链接的邮件。", en: "Enter your account email and we'll send you a reset link." },
   "login.sendReset": { zh: "发送重置邮件", en: "Send reset email" },
-  "login.newPassword8": { zh: "新密码(至少 8 位)", en: "New password (8+ chars)" },
+  "login.newPassword8": { zh: "新密码（至少 8 位）", en: "New password (8+ chars)" },
   "login.confirmNewPassword": { zh: "确认新密码", en: "Confirm new password" },
   "login.resetSubmit": { zh: "重置密码并登录", en: "Reset & sign in" },
   "login.requestNew": { zh: "重新发起重置", en: "Request a new link" },
   "login.backSignIn": { zh: "返回登录", en: "Back to sign in" },
-  "login.resetRule": { zh: "链接 1 小时内有效,仅可使用一次。", en: "Links expire in 1 hour and work once." },
-  "login.resetContact": { zh: "收不到邮件?请联系管理员。", en: "No email arrived? Contact an admin." },
-  "login.errOrigin": { zh: "请求来源无效,请重试", en: "Invalid request origin. Try again." },
-  "login.errRate": { zh: "尝试太频繁,请稍后再试", en: "Too many attempts. Try again later." },
+  "login.resetRule": { zh: "链接 1 小时内有效，仅可使用一次。", en: "Links expire in 1 hour and work once." },
+  "login.resetContact": { zh: "收不到邮件？请联系管理员。", en: "No email arrived? Contact an admin." },
+  "login.errOrigin": { zh: "请求来源无效，请重试", en: "Invalid request origin. Try again." },
+  "login.errRate": { zh: "尝试太频繁，请稍后再试", en: "Too many attempts. Try again later." },
   "login.errEmail": { zh: "邮箱格式不正确", en: "Invalid email address." },
   "login.errShort": { zh: "密码至少 8 位", en: "Password needs at least 8 characters." },
   "login.errLong": { zh: "密码最长 72 位", en: "Password is limited to 72 characters." },
   "login.errMismatch": { zh: "两次输入的密码不一致", en: "Passwords do not match." },
-  "login.errTaken": { zh: "该邮箱已注册,直接登录即可", en: "Email already registered — just sign in." },
+  "login.errTaken": { zh: "该邮箱已注册，直接登录即可", en: "Email already registered — just sign in." },
   "login.errCredentials": { zh: "邮箱或密码不正确", en: "Incorrect email or password." },
-  "login.errToken": { zh: "重置链接无效或已过期,请重新发起", en: "This reset link is invalid or expired — request a new one." },
+  "login.errToken": { zh: "重置链接无效或已过期，请重新发起", en: "This reset link is invalid or expired — request a new one." },
   "modal.close": { zh: "关闭", en: "Close" },
   "modal.dirtyTitle": {
-    zh: "放弃已填写的内容?",
+    zh: "放弃已填写的内容？",
     en: "Discard what you've written?",
   },
   "modal.keepEditing": { zh: "继续填写", en: "Keep editing" },
@@ -442,12 +442,12 @@ const DICT = {
     en: "Add a title or some body text",
   },
   "err.titleLong": {
-    zh: "标题太长了(200 字以内)",
+    zh: "标题太长了（200 字以内）",
     en: "Title too long (200 chars max)",
   },
   /* Body cap: same value as the lib's POST_BODY_MAX. */
   "err.bodyLong": {
-    zh: "正文太长了(10 万字符以内)",
+    zh: "正文太长了（10 万字符以内）",
     en: "Body too long (100,000 chars max)",
   },
   "err.linkInvalid": {
@@ -463,26 +463,26 @@ const DICT = {
     en: "Comment cannot be empty",
   },
   "err.generic": {
-    zh: "操作失败,请重试",
+    zh: "操作失败，请重试",
     en: "Something went wrong — please try again",
   },
   /* ---- Community write rate limits: {s} = seconds to window reset
      ---- */
   "err.ratePost": {
-    zh: "发帖太频繁了,请 {s} 秒后再试",
+    zh: "发帖太频繁了，请 {s} 秒后再试",
     en: "Posting too fast — try again in {s}s",
   },
   /* Work creation rate limit: 10/hour, same tier as posts. */
   "err.rateWork": {
-    zh: "提交作品太频繁了,请 {s} 秒后再试",
+    zh: "提交作品太频繁了，请 {s} 秒后再试",
     en: "Submitting works too fast — try again in {s}s",
   },
   "err.rateComment": {
-    zh: "评论太频繁了,请 {s} 秒后再试",
+    zh: "评论太频繁了，请 {s} 秒后再试",
     en: "Commenting too fast — try again in {s}s",
   },
   "err.rateVote": {
-    zh: "投票太频繁了,请 {s} 秒后再试",
+    zh: "投票太频繁了，请 {s} 秒后再试",
     en: "Voting too fast — try again in {s}s",
   },
   /* ---- Action feedback (toasts) ---- */
@@ -490,18 +490,18 @@ const DICT = {
   "toast.saved": { zh: "已保存", en: "Saved" },
   "toast.deleted": { zh: "已删除", en: "Deleted" },
   "toast.privateOn": {
-    zh: "已设为私密,仅自己可见",
+    zh: "已设为私密，仅自己可见",
     en: "Now private — only you can see it",
   },
   "toast.privateOff": { zh: "已恢复公开", en: "Back to public" },
   "toast.subscribed": {
-    zh: "已订阅,有新讨论会通知你",
+    zh: "已订阅，有新讨论会通知你",
     en: "Subscribed — you'll be notified of new activity",
   },
   "toast.unsubscribed": { zh: "已取消订阅", en: "Unsubscribed" },
   "toast.voted": { zh: "投票成功", en: "Vote recorded" },
   "toast.failed": {
-    zh: "操作失败,请重试",
+    zh: "操作失败，请重试",
     en: "Action failed — please try again",
   },
   "post.submitting": { zh: "提交中…", en: "Sending…" },
@@ -530,22 +530,22 @@ const DICT = {
   "set.privacyNote": { zh: "资料展示与用量数据", en: "Profile display & usage data" },
   "set.pdTitle": { zh: "资料展示", en: "Profile display" },
   "set.pdHint": {
-    zh: "仅影响个人主页的展示;帖子与评论区的头像、昵称是公开发言的必要标识,保持显示。",
+    zh: "仅影响个人主页的展示；帖子与评论区的头像、昵称是公开发言的必要标识，保持显示。",
     en: "Only affects your profile page. Your avatar and name stay on your posts and comments as public attribution.",
   },
   "set.pdAvatar": { zh: "头像", en: "Avatar" },
   "set.pdAvatarHint": {
-    zh: "关闭后,个人主页的头像显示为 @handle 首字符兜底。",
+    zh: "关闭后，个人主页的头像显示为 @handle 首字符兜底。",
     en: "When off, your profile shows a handle-initial fallback instead of your avatar.",
   },
   "set.pdName": { zh: "显示名", en: "Display name" },
   "set.pdNameHint": {
-    zh: "关闭后,个人主页只显示 @handle。",
+    zh: "关闭后，个人主页只显示 @handle。",
     en: "When off, your profile shows only your @handle.",
   },
   "set.pdBio": { zh: "简介", en: "Bio" },
   "set.pdBioHint": {
-    zh: "关闭后,个人主页不再展示简介。",
+    zh: "关闭后，个人主页不再展示简介。",
     en: "When off, your bio is hidden from your profile.",
   },
   "set.usageDataTitle": { zh: "用量数据", en: "Usage data" },
@@ -555,23 +555,23 @@ const DICT = {
   "set.avatar": { zh: "头像", en: "Avatar" },
   "set.avatarUrl": { zh: "头像 URL", en: "Avatar URL" },
   "set.avatarHint": {
-    zh: "留空则不修改;头像默认来自登录平台。",
+    zh: "留空则不修改；头像默认来自登录平台。",
     en: "Leave empty to keep current. Your avatar comes from the login provider by default.",
   },
   "set.avatarChange": { zh: "更换头像", en: "Change avatar" },
   "set.avatarReset": { zh: "恢复默认", en: "Reset" },
   "set.avatarResetNote": {
-    zh: "保存后将清空自定义头像,下次登录时恢复为登录平台头像。",
+    zh: "保存后将清空自定义头像，下次登录时恢复为登录平台头像。",
     en: "After saving, your custom avatar is cleared and the login provider's avatar is restored on next sign-in.",
   },
   "set.avatarUndo": { zh: "撤销", en: "Undo" },
   "set.avatarCropTitle": { zh: "调整头像", en: "Adjust avatar" },
   "set.avatarCropHint": {
-    zh: "拖动定位,滑杆缩放;导出为正方形头像。",
+    zh: "拖动定位，滑杆缩放；导出为正方形头像。",
     en: "Drag to position, slider to zoom; exported as a square avatar.",
   },
   "set.handleHint": {
-    zh: "小写字母、数字、下划线;改了之后旧的主页链接会失效。",
+    zh: "小写字母、数字、下划线；改了之后旧的主页链接会失效。",
     en: "Lowercase letters, digits, underscores. Changing it breaks old profile links.",
   },
   "set.save": { zh: "保存", en: "Save" },
@@ -584,7 +584,7 @@ const DICT = {
     en: "Allow Xiaozhu, the community AI, to reply to my posts and comments",
   },
   "set.aiMineHint": {
-    zh: "开启后,小筑会在你的帖子下提供构建建议与数据解读,卡片上带 AI 标识。",
+    zh: "开启后，小筑会在你的帖子下提供构建建议与数据解读，卡片上带 AI 标识。",
     en: "When on, Xiaozhu replies under your posts with build suggestions and data readings, badged as AI.",
   },
   "set.aiShow": {
@@ -601,7 +601,7 @@ const DICT = {
   "set.themeLight": { zh: "浅色", en: "Light" },
   "set.themeDefault": { zh: "默认", en: "Default" },
   "set.themeNote": {
-    zh: "主题即时切换并保存在本机,全站页面通用。",
+    zh: "主题即时切换并保存在本机，全站页面通用。",
     en: "Applies instantly, stored locally, used site-wide.",
   },
   /* ---- Visual vibe (angular poster default / rounded classic
@@ -609,20 +609,20 @@ const DICT = {
   "set.vibe": { zh: "视觉气质", en: "Visual style" },
   "set.vibeDefault": { zh: "默认", en: "Default" },
   "set.vibeNote": {
-    zh: "工程棱角 = 直角、细线分隔、无投影的海报语言;圆润经典 = 圆角卡片与柔和投影。即时切换并保存在本机。",
+    zh: "工程棱角 = 直角、细线分隔、无投影的海报语言；圆润经典 = 圆角卡片与柔和投影。即时切换并保存在本机。",
     en: "Sharp: square corners, hairline borders, no shadows. Classic: rounded cards with soft shadows. Applies instantly, stored locally.",
   },
   "vibe.poster": { zh: "工程棱角", en: "Sharp" },
   "vibe.soft": { zh: "圆润经典", en: "Classic" },
   /* Vibe-switch confirmation: the change is site-wide radii/shadows —
      gradual and subtle, so one toast confirms it took effect. */
-  "pref.vibeToast": { zh: "已切换:{name}", en: "Switched to {name}" },
+  "pref.vibeToast": { zh: "已切换：{name}", en: "Switched to {name}" },
   /* Interface layout: settings entries for collapsing the left rail /
      hiding the right rail — making the two display switches
      discoverable. */
   "set.layout": { zh: "界面布局", en: "Layout" },
   "set.layoutNote": {
-    zh: "收起左栏或隐藏右栏,主列立即变宽;同一组开关也在左栏底部「界面」组。",
+    zh: "收起左栏或隐藏右栏，主列立即变宽；同一组开关也在左栏底部「界面」组。",
     en: "Collapse the left nav or hide the right rail for a wider canvas; the same switches live at the bottom of the left nav.",
   },
   /* Motion preference: a manual reduced-motion switch — not everyone
@@ -632,7 +632,7 @@ const DICT = {
   "set.motionFollow": { zh: "跟随系统", en: "Follow system" },
   "set.motionReduce": { zh: "减少动效", en: "Reduce motion" },
   "set.motionNote": {
-    zh: "减少动效会关闭全站的入场/悬停/脉冲动画;也可在系统辅助功能里设置。",
+    zh: "减少动效会关闭全站的入场/悬停/脉冲动画；也可在系统辅助功能里设置。",
     en: "Reduce motion disables entrances, hovers, and pulses site-wide; your OS accessibility setting works too.",
   },
   "set.account": { zh: "账号", en: "Account" },
@@ -645,7 +645,7 @@ const DICT = {
     en: "Every linked method signs into the same account.",
   },
   "set.linkedOk": {
-    zh: "{p} 绑定成功,现在可以用它登录本账号。",
+    zh: "{p} 绑定成功，现在可以用它登录本账号。",
     en: "{p} linked — you can now sign in with it.",
   },
   "set.linkTaken": {
@@ -653,32 +653,32 @@ const DICT = {
     en: "This {p} account is already linked to another user.",
   },
   "set.linkNoSession": {
-    zh: "登录状态已失效,请重新登录后再绑定。",
+    zh: "登录状态已失效，请重新登录后再绑定。",
     en: "Session expired — sign in again, then retry linking.",
   },
   "set.linkFailed": {
-    zh: "{p} 绑定失败,请稍后重试。",
+    zh: "{p} 绑定失败，请稍后重试。",
     en: "Failed to link {p} — please try again.",
   },
   "set.linkedSince": { zh: "绑定于 {d}", en: "linked {d}" },
   "set.email": { zh: "邮箱", en: "Email" },
   "set.unlink": { zh: "解绑", en: "Unlink" },
   "set.unlinkConfirm": {
-    zh: "解绑后不能再用 {p} 登录。确定解绑?",
+    zh: "解绑后不能再用 {p} 登录。确定解绑？",
     en: "You won't be able to sign in with {p} anymore. Unlink?",
   },
   "set.unlinkedOk": { zh: "已解绑 {p}", en: "{p} unlinked" },
   "err.lastMethod": {
-    zh: "这是唯一的登录方式:先设置密码或绑定其他账号,再解绑。",
+    zh: "这是唯一的登录方式：先设置密码或绑定其他账号，再解绑。",
     en: "This is your only sign-in method. Set a password or link another account first.",
   },
   "set.pwTitle": { zh: "密码", en: "Password" },
   "set.pwHint": {
-    zh: "改密不影响其他已登录设备;忘记当前密码可从登录页走邮箱重置。",
+    zh: "改密不影响其他已登录设备；忘记当前密码可从登录页走邮箱重置。",
     en: "Other signed-in devices stay signed in. Forgot the current one? Reset by email from the sign-in page.",
   },
   "set.pwSetHint": {
-    zh: "当前账号还没设密码;设置后邮箱 + 密码也能登录。",
+    zh: "当前账号还没设密码；设置后邮箱 + 密码也能登录。",
     en: "No password yet — set one to also sign in with email + password.",
   },
   "set.pwCurrent": { zh: "当前密码", en: "Current password" },
@@ -691,7 +691,7 @@ const DICT = {
     en: "New password must differ from the current one",
   },
   "err.rateLimited": {
-    zh: "操作太频繁,请稍后再试",
+    zh: "操作太频繁，请稍后再试",
     en: "Too many attempts — try again later",
   },
   "soon.kicker": { zh: "正在路上", en: "ON THE WAY" },
@@ -701,7 +701,7 @@ const DICT = {
     en: "Explore is in preparation: the Monthly and practices run by Builders.",
   },
   "soon.body": {
-    zh: "这个板块还在准备中,内容好了就开门。先去社区逛逛,或把你想看的题材发帖告诉我们。",
+    zh: "这个板块还在准备中，内容好了就开门。先去社区逛逛，或把你想看的题材发帖告诉我们。",
     en: "This section is still being prepared. Meanwhile, browse the community — or post what you'd like to see here.",
   },
   "soon.back": { zh: "去社区看看", en: "Browse the community" },
@@ -711,25 +711,25 @@ const DICT = {
     en: "kimi.builders is a user-built, non-commercial community.",
   },
   "home.footerLine2": {
-    zh: "与 Moonshot AI(月之暗面)无隶属、赞助或背书关系。",
+    zh: "与 Moonshot AI（月之暗面）无隶属、赞助或背书关系。",
     en: "Not affiliated with, sponsored, or endorsed by Moonshot AI (月之暗面).",
   },
   "home.errState": {
-    zh: "登录状态校验失败,请重试。",
+    zh: "登录状态校验失败，请重试。",
     en: "Sign-in state check failed — please try again.",
   },
   "home.errOauth": {
-    zh: "OAuth 授权失败,请重试或换另一种登录方式。",
+    zh: "OAuth 授权失败，请重试或换另一种登录方式。",
     en: "OAuth authorization failed — try again or use another sign-in method.",
   },
   "home.errGeneric": {
-    zh: "登录失败,请重试。",
+    zh: "登录失败，请重试。",
     en: "Sign-in failed — please try again.",
   },
-  "set.loginRequired": { zh: "登录后才能修改设置:", en: "Log in to change settings:" },
+  "set.loginRequired": { zh: "登录后才能修改设置：", en: "Log in to change settings:" },
   "err.handleTaken": { zh: "这个 handle 已被占用", en: "That handle is taken" },
   "err.handleInvalid": {
-    zh: "handle 只能用小写字母、数字、下划线(28 字以内)",
+    zh: "handle 只能用小写字母、数字、下划线（28 字以内）",
     en: "Lowercase letters, digits and underscores only (28 max)",
   },
   "err.avatarInvalid": {
@@ -741,11 +741,11 @@ const DICT = {
     en: "Use an uploaded image or a supported sign-in provider avatar",
   },
   "err.nameLong": {
-    zh: "显示名太长了(64 字以内)",
+    zh: "显示名太长了（64 字以内）",
     en: "Name too long (64 chars max)",
   },
   "err.bioLong": {
-    zh: "简介太长了(300 字以内)",
+    zh: "简介太长了（300 字以内）",
     en: "Bio too long (300 chars max)",
   },
   /* ---- Placeholder pages (sections not built yet) ---- */
@@ -754,11 +754,11 @@ const DICT = {
   "soon.cta": { zh: "先去社区逛逛", en: "Browse the community" },
   /* ---- Usage dashboard ---- */
   "usage.intro": {
-    zh: "以 Kimi 为主,汇总多种 AI 编程 Agent 的 token 与活跃数据。Collector 只上传统计字段,不上传对话内容、完整文件路径或供应商凭据。",
+    zh: "以 Kimi 为主，汇总多种 AI 编程 Agent 的 Token 与活跃数据。Collector 只上传统计字段，不上传对话内容、完整文件路径或供应商凭据。",
     en: "Kimi-first usage analytics across multiple AI coding agents. The collector uploads metrics only — never conversation content, full file paths, or provider credentials.",
   },
   "usage.loginRequired": {
-    zh: "登录后查看你的用量看板:",
+    zh: "登录后查看你的用量看板：",
     en: "Log in to see your usage dashboard:",
   },
   /* Usage route error boundary (usage/error.tsx; client-side locale via
@@ -776,13 +776,13 @@ const DICT = {
     en: "Upload device labels",
   },
   "usage.deviceLabelHint": {
-    zh: "默认关闭。关闭时服务端会丢弃 payload 里的终端与系统指纹,设备行保留旧值。",
+    zh: "默认关闭。关闭时服务端会丢弃 payload 里的终端与系统指纹，设备行保留旧值。",
     en: "Off by default. When off, the server drops terminal and OS fingerprints from payloads; devices keep their existing labels.",
   },
   /* Logged-out public overview (UsagePublicView): leaderboard showcase
      + login prompt. */
   "usage.publicLede": {
-    zh: "以 Kimi 为主,汇总多种 AI 编程 Agent 的用量数据。默认私有,只上传统计字段;榜单自愿公开。",
+    zh: "以 Kimi 为主，汇总多种 AI 编程 Agent 的用量数据。默认私有，只上传统计字段；榜单自愿公开。",
     en: "Kimi-first usage analytics across AI coding agents. Private by default, metrics only; the leaderboard is opt-in.",
   },
   "usage.publicLogin": {
@@ -794,16 +794,16 @@ const DICT = {
   "usage.previewTitle": { zh: "个人面板预览", en: "PERSONAL DASHBOARD PREVIEW" },
   "usage.previewBadge": { zh: "示例数据", en: "SAMPLE DATA" },
   "usage.previewNote": {
-    zh: "登录并连接设备后,这些图表就是你自己的真实数据——默认私有,上不上榜由你决定。",
+    zh: "登录并连接设备后，这些图表就是你自己的真实数据——默认私有，上不上榜由你决定。",
     en: "Sign in and connect a device, and these charts become your real data — private by default, opt-in to the leaderboard.",
   },
   "usage.publicFull": { zh: "查看完整榜单 →", en: "Full leaderboard →" },
   "usage.publicEmpty": {
-    zh: "还没有人公开用量数据。连接设备并选择上榜,成为第一个。",
+    zh: "还没有人公开用量数据。连接设备并选择上榜，成为第一个。",
     en: "No one has opted in yet. Connect a device and opt in to be the first.",
   },
   "usage.publicGate": {
-    zh: "登录并连接设备,查看你的个人用量面板(模型分布 / 项目归因 / 时段热图)。",
+    zh: "登录并连接设备，查看你的个人用量面板（模型分布 / 项目归因 / 时段热图）。",
     en: "Sign in and connect a device to see your own dashboard (models / projects / heatmap).",
   },
   "usage.publicDays": { zh: "{n} 天活跃", en: "{n} active days" },
@@ -813,21 +813,21 @@ const DICT = {
   "usage.cached": { zh: "缓存命中", en: "cached" },
   "usage.calls": { zh: "次调用", en: "calls" },
   "usage.active": { zh: "活跃时长", en: "active" },
-  "usage.tokensUnit": { zh: "tokens", en: "tokens" },
+  "usage.tokensUnit": { zh: "Token", en: "tokens" },
   "usage.syncStatus": { zh: "数据同步", en: "DATA SYNC" },
   "usage.noData": {
     zh: "还没有用量数据。新的设备授权同步正在接入中。",
     en: "No usage data yet. Device-authorized sync is being prepared.",
   },
   "usage.migrationNotice": {
-    zh: "为保护账号,旧的全站共享密钥同步已停用。已有数据会继续保留。",
+    zh: "为保护账号，旧的全站共享密钥同步已停用。已有数据会继续保留。",
     en: "The legacy site-wide shared-secret sync has been retired to protect accounts. Existing data remains available.",
   },
   "usage.migrationDetail": {
-    zh: "新的每用户、每设备授权正在接入;上线后你可以在这里连接、查看或撤销设备。",
+    zh: "新的每用户、每设备授权正在接入；上线后你可以在这里连接、查看或撤销设备。",
     en: "Per-user, per-device authorization is coming next; you will be able to connect, inspect, and revoke devices here.",
   },
-  "usage.lastSync": { zh: "最近同步:{t}", en: "Last synced {t}" },
+  "usage.lastSync": { zh: "最近同步：{t}", en: "Last synced {t}" },
   "works.submit": { zh: "发布作品", en: "Publish work" },
   "works.empty": {
     zh: "还没有已发布作品。",
@@ -836,7 +836,7 @@ const DICT = {
   "works.visit": { zh: "访问", en: "Visit" },
   "works.repo": { zh: "源码", en: "Source" },
   "works.deleteConfirm": {
-    zh: "确定删除这个作品?",
+    zh: "确定删除这个作品？",
     en: "Delete this work?",
   },
   "works.newTitle": { zh: "发布作品", en: "Publish work" },
@@ -852,23 +852,23 @@ const DICT = {
   "works.repoUrl": { zh: "开源仓库", en: "Repository" },
   "works.tags": { zh: "标签", en: "Tags" },
   "works.tagsHint": {
-    zh: "逗号分隔,最多 5 个",
+    zh: "逗号分隔，最多 5 个",
     en: "Comma separated, max 5",
   },
   /* Short labels for info rows (form labels carry guidance and run
      long). */
   "works.tagsShort": { zh: "标签", en: "Tags" },
   "works.hint": {
-    zh: "链接和仓库至少填一个;提交后展示在作品墙,可随时编辑或撤下。",
+    zh: "链接和仓库至少填一个；提交后展示在作品墙，可随时编辑或撤下。",
     en: "Add at least a URL or a repo link. It lands on the wall right away and you can edit or take it down anytime.",
   },
   "works.private": { zh: "私密", en: "Private" },
   "works.formPrivate": {
-    zh: "私密(仅自己可见)",
+    zh: "私密（仅自己可见）",
     en: "Private (only visible to me)",
   },
   "works.formPrivateHint": {
-    zh: "不进作品墙、Awesome 与右栏统计,详情页和分享海报仅自己可开",
+    zh: "不进作品墙、Awesome 与右栏统计，详情页和分享海报仅自己可开",
     en: "Hidden from the wall, Awesome, and rail stats; only you can open its page or poster",
   },
   "works.alsoAwesome": {
@@ -886,16 +886,16 @@ const DICT = {
     en: "Let Xiaozhu join the comments",
   },
   "works.aiReplyHint": {
-    zh: "评论里 @kimi 可召唤小筑点评 / 答疑;关闭后召唤不生效",
+    zh: "评论里 @kimi 可召唤小筑点评 / 答疑；关闭后召唤不生效",
     en: "@kimi in a comment summons Xiaozhu for feedback or answers; off = summons ignored",
   },
   "err.workName": { zh: "作品名称必填", en: "Name is required" },
   "err.workNameLong": {
-    zh: "名称太长了(120 字以内)",
+    zh: "名称太长了（120 字以内）",
     en: "Name too long (120 chars max)",
   },
   "err.workTaglineLong": {
-    zh: "介绍太长了(300 字以内)",
+    zh: "介绍太长了（300 字以内）",
     en: "Tagline too long (300 chars max)",
   },
   "err.workNoLink": {
@@ -917,11 +917,11 @@ const DICT = {
     en: "Author or team name when recommending someone else's project",
   },
   "works.authorLabelHint": {
-    zh: "填了就是推荐站外项目:进 Awesome 列表、不进你的作品墙。",
+    zh: "填了就是推荐站外项目：进 Awesome 列表、不进你的作品墙。",
     en: "Filled = recommending an external project: it goes to Awesome, not your works wall.",
   },
   "err.workAuthorLong": {
-    zh: "原作者名太长了(120 字以内)",
+    zh: "原作者名太长了（120 字以内）",
     en: "Author name too long (120 chars max)",
   },
   "err.workNoAgent": {
@@ -956,14 +956,14 @@ const DICT = {
   "works.statusBuilding": { zh: "打磨中", en: "Building" },
   "works.statusReleased": { zh: "已上线", en: "Live" },
   "works.statusArchived": { zh: "不再维护", en: "Sunset" },
-  "works.models": { zh: "模型(可多选)", en: "Models (multi-select)" },
+  "works.models": { zh: "模型（可多选）", en: "Models (multi-select)" },
   "works.modelsHint": {
-    zh: "这次开发用到的模型,没列出的可自行添加",
+    zh: "这次开发用到的模型，没列出的可自行添加",
     en: "Models used; add your own if unlisted",
   },
-  "works.modelsPh": { zh: "输入名称,回车添加", en: "Type a name, Enter to add" },
+  "works.modelsPh": { zh: "输入名称，回车添加", en: "Type a name, Enter to add" },
   "works.kind": { zh: "作品类型", en: "Type" },
-  "works.desc": { zh: "详细说说(支持 Markdown)", en: "Tell the story (Markdown)" },
+  "works.desc": { zh: "详细说说（支持 Markdown）", en: "Tell the story (Markdown)" },
   "works.wallTitle": { zh: "作品墙", en: "Works" },
   /* Page-header eyebrow: states the section's position only — "—
      positioning line", same grammar as detail pages and other
@@ -982,7 +982,7 @@ const DICT = {
   "works.emptyCta": { zh: "上架第一件作品 →", en: "List your first work →" },
   "works.filteredEmptyTitle": { zh: "当前筛选下没有作品", en: "No works match these filters" },
   "works.filteredEmptyBody": {
-    zh: "换一个 Agent 或类型,或清除筛选查看全部作品。",
+    zh: "换一个 Agent 或类型，或清除筛选查看全部作品。",
     en: "Try another agent or type, or clear the filters to see every work.",
   },
   "works.emptyQuota": { zh: "可声明额度 {n}", en: "Claimable {n}" },
@@ -990,7 +990,7 @@ const DICT = {
   "works.statAuthors": { zh: "Builder", en: "Builders" },
   "works.clearFilters": { zh: "清除筛选", en: "Clear filters" },
   "works.removeFilter": { zh: "移除筛选 {name}", en: "Remove filter {name}" },
-  "works.statClaimed": { zh: "声明投入 (tokens)", en: "claimed (tokens)" },
+  "works.statClaimed": { zh: "声明投入（Token）", en: "claimed (tokens)" },
   "works.statWeeklyNew": { zh: "本周新上架", en: "new this week" },
   "works.statsTitle": { zh: "作品统计", en: "WORKS STATS" },
   "works.statsNote": { zh: "全社区 · 实时", en: "all-time · live" },
@@ -1010,7 +1010,7 @@ const DICT = {
   "awesome.scopePart": { zh: "Kimi 参与构建", en: "Kimi helped build" },
   "awesome.scopeBaseHint": { zh: "项目核心跑在 Kimi 模型 / API 上", en: "Core runs on Kimi models / API" },
   "awesome.scopeEcoHint": { zh: "扩展、SDK、集成、周边工具", en: "Extensions, SDKs, integrations, tools" },
-  "awesome.scopePartHint": { zh: "Kimi 系 Agent 参与开发,不要求 100%", en: "Kimi agents took part; 100% not required" },
+  "awesome.scopePartHint": { zh: "Kimi 系 Agent 参与开发，不要求 100%", en: "Kimi agents took part; 100% not required" },
   "awesome.statsTitle": { zh: "收录统计", en: "AWESOME STATS" },
   "awesome.statsNote": { zh: "站外项目 · 成员推荐", en: "external · member-recommended" },
   "awesome.statItems": { zh: "收录项目", en: "items" },
@@ -1021,7 +1021,7 @@ const DICT = {
   "awesome.scopeNote": { zh: "满足任一即可", en: "any one qualifies" },
   "awesome.rulesTitle": { zh: "推荐规则", en: "RULES" },
   "awesome.rulesBody": {
-    zh: "推荐站外项目时必须填写原作者/团队(可点跳到其 GitHub 主页);Awesome 项目不进你的作品墙,也不显示 Token 声明。社区成员自己做的项目请去作品墙创建发布。",
+    zh: "推荐站外项目时必须填写原作者/团队（可点跳到其 GitHub 主页）；Awesome 项目不进你的作品墙，也不显示 Token 声明。社区成员自己做的项目请去作品墙创建发布。",
     en: "External recommendations must name the original author/team (linked to their GitHub profile). Awesome entries never appear on your works wall and carry no claim badge. Built it yourself? Create and publish it on the works wall.",
   },
   "awesome.agentDist": { zh: "Agent 分布", en: "AGENT BREAKDOWN" },
@@ -1035,7 +1035,7 @@ const DICT = {
   "featured.set": { zh: "设为精选", en: "Feature" },
   "featured.unset": { zh: "取消精选", en: "Unfeature" },
   "featured.reasonPh": {
-    zh: "精选理由(必填,280 字以内)",
+    zh: "精选理由（必填，280 字以内）",
     en: "Reason (required, 280 chars max)",
   },
   "toast.featured": { zh: "已设为精选", en: "Featured" },
@@ -1049,12 +1049,12 @@ const DICT = {
     en: "Add a reason for featuring",
   },
   "err.reasonLong": {
-    zh: "理由太长了(280 字以内)",
+    zh: "理由太长了（280 字以内）",
     en: "Reason too long (280 chars max)",
   },
   /* ---- Home ---- */
   "home.logoAlt": {
-    zh: "kimi.builders 标志 —— 月球暗面的一轮纸月,两颗伴星环绕运行",
+    zh: "kimi.builders 标志 —— 月球暗面的一轮纸月，两颗伴星环绕运行",
     en: "kimi.builders — a paper crescent on the dark side of the moon, with two companion stars in orbit",
   },
   "home.heroSub": {
@@ -1062,25 +1062,25 @@ const DICT = {
     en: "See what Builders made, how they did it, and the usage they chose to share.",
   },
   "home.cta": { zh: "浏览社区", en: "Browse the community" },
-  "home.tokens": { zh: "累计 tokens", en: "total tokens" },
+  "home.tokens": { zh: "累计 Token", en: "total tokens" },
   "home.featured": { zh: "本周精选", en: "PICKS OF THE WEEK" },
   "home.featuredSub": {
-    zh: "编辑署名的人为定夺,不是算法。",
+    zh: "编辑署名的人为定夺，不是算法。",
     en: "Signed by human editors — judgment, not algorithm.",
   },
   "home.join": { zh: "参与 / 订阅", en: "JOIN & FOLLOW" },
   "home.joinDisc": {
-    zh: "社区的源码、知识库与路线图都在 GitHub 组织,欢迎来逛。",
+    zh: "社区的源码、知识库与路线图都在 GitHub 组织，欢迎来逛。",
     en: "Our code, knowledge base and roadmap live in the GitHub org — come by anytime.",
   },
   "home.joinDiscCta": { zh: "访问组织首页", en: "Visit the org" },
   "home.joinAwesome": {
-    zh: "符合收录口径的项目,可由成员推荐。",
+    zh: "符合收录口径的项目，可由成员推荐。",
     en: "Members can recommend projects that fit the collection criteria.",
   },
   "home.joinAwesomeCta": { zh: "浏览项目", en: "Browse projects" },
   "home.joinMail": {
-    zh: "合作、反馈、投稿,或者只是想聊聊,都欢迎写信。",
+    zh: "合作、反馈、投稿，或者只是想聊聊，都欢迎写信。",
     en: "Collaboration, feedback, submissions — or just say hi.",
   },
   "home.joinMailCta": { zh: "写信给我们", en: "Write to us" },
@@ -1098,11 +1098,11 @@ const DICT = {
      important fact on this page. */
   "about.eyebrow": { zh: "— 社区自建 · 非官方", en: "— Member-built · unofficial" },
   "about.who": {
-    zh: "kimi.builders 是 Kimi 用户自建自运营的非商业 Builder 社区(非官方)。这里收录 Builder 做出的作品、亲自跑通的方法、具体讨论,以及自愿公开的用量数据。作品可附链接、源码和声明 Token;这些信息提供核验线索,不构成官方认证。",
+    zh: "kimi.builders 是 Kimi 用户自建自运营的非商业 Builder 社区（非官方）。这里收录 Builder 做出的作品、亲自跑通的方法、具体讨论，以及自愿公开的用量数据。作品可附链接、源码和声明 Token；这些信息提供核验线索，不构成官方认证。",
     en: "kimi.builders is a non-commercial, user-run community for Builders using Kimi (unofficial). It collects work they made, practices they ran themselves, specific discussions, and usage data they chose to share. Links, source code, and declared tokens provide verification clues; they are not official certification.",
   },
   "about.whoMore": {
-    zh: "探索区收录可复现、可验证的 Builder 实践:分享者亲自跑通的方法,以及相应的证据与出处。",
+    zh: "探索区收录可复现、可验证的 Builder 实践：分享者亲自跑通的方法，以及相应的证据与出处。",
     en: "Explore collects reproducible, verifiable Builder practices: methods the contributor ran themselves, with the corresponding evidence and sources.",
   },
   "about.whatTitle": { zh: "这里有什么", en: "What's here" },
@@ -1111,7 +1111,7 @@ const DICT = {
     en: "Community — Q&A, discussions, pitfalls and lessons.",
   },
   "about.whatWorks": {
-    zh: "作品墙 —— Builder 发布的 Kimi 相关作品;可附链接、源码和声明 Token。",
+    zh: "作品墙 —— Builder 发布的 Kimi 相关作品；可附链接、源码和声明 Token。",
     en: "Works — Kimi-related work published by Builders, with optional links, source code, and declared tokens.",
   },
   "about.whatAwesome": {
@@ -1119,7 +1119,7 @@ const DICT = {
     en: "Awesome — external Kimi ecosystem projects recommended by members.",
   },
   "about.whatUsage": {
-    zh: "用量中心 —— Collector 同步 token 与活跃数据;默认私密,榜单自愿公开。",
+    zh: "用量中心 —— Collector 同步 Token 与活跃数据；默认私密，榜单自愿公开。",
     en: "Usage — token and activity stats synced by the Collector; private by default, leaderboards opt-in.",
   },
   "about.linksTitle": { zh: "联系与链接", en: "Links" },
@@ -1131,7 +1131,7 @@ const DICT = {
   },
   "about.ctaGithub": { zh: "先去 GitHub 逛逛", en: "Browse GitHub first" },
   "about.disclaimer": {
-    zh: "kimi.builders 由 Kimi 用户自建自运营,现阶段为非商业社区。本站与 Moonshot AI(月之暗面)无隶属、赞助、背书或授权关系;「Kimi」「Moonshot AI」等名称与商标归其权利人所有,本站仅作事实性指称。站内 AI 助手「小筑」由社区部署、通过公开接口调用模型,其回复不代表 Moonshot AI 官方立场。",
+    zh: "kimi.builders 由 Kimi 用户自建自运营，现阶段为非商业社区。本站与 Moonshot AI（月之暗面）无隶属、赞助、背书或授权关系；「Kimi」「Moonshot AI」等名称与商标归其权利人所有，本站仅作事实性指称。站内 AI 助手「小筑」由社区部署、通过公开接口调用模型，其回复不代表 Moonshot AI 官方立场。",
     en: "kimi.builders is built and run by Kimi users and operates as a non-commercial community at this stage. It is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). \"Kimi\", \"Moonshot AI\" and related marks belong to their respective owners and are referenced here only factually. The on-site AI assistant Xiaozhu is operated by the community over public APIs; its replies do not represent Moonshot AI.",
   },
   /* ---- aria ---- */
@@ -1142,13 +1142,13 @@ const DICT = {
      conflicts) ---- */
   "lb.title": { zh: "社区用量榜", en: "Community leaderboard" },
   "lb.intro": {
-    zh: "打开了「参与社区榜」开关的成员,其周期聚合用量会出现在这里。",
+    zh: "打开了「参与社区榜」开关的成员，其周期聚合用量会出现在这里。",
     en: "Members who turned on leaderboard sharing have their period aggregates listed here.",
   },
   /* Logged-out hint: the board is public, personal dashboards need
      login — turn the difference into a login conversion entry. */
   "lb.signinHint": {
-    zh: "榜单人人可看;登录并连接设备后,这里还会出现你的个人用量与排名。",
+    zh: "榜单人人可看；登录并连接设备后，这里还会出现你的个人用量与排名。",
     en: "The board is public — sign in and connect a device to see your own usage and rank here.",
   },
   "lb.period7": { zh: "近 7 天", en: "7D" },
@@ -1159,7 +1159,7 @@ const DICT = {
   "lb.colDays": { zh: "活跃天数", en: "ACTIVE DAYS" },
   "lb.days": { zh: "{n} 天", en: "{n}d" },
   "lb.trust": {
-    zh: "数据来自成员自愿同步的自报日志,可能不完整;仅含周期聚合数字,作为社区参考,不是可验证的计量凭证。",
+    zh: "数据来自成员自愿同步的自报日志，可能不完整；仅含周期聚合数字，作为社区参考，不是可验证的计量凭证。",
     en: "Self-reported logs synced voluntarily by members and may be incomplete; period aggregates only, as a community reference — not verified metering.",
   },
   /* Definitions collapsed: keep one core line above the fold and fold
@@ -1171,12 +1171,12 @@ const DICT = {
   },
   "lb.method": { zh: "数据口径", en: "Methodology" },
   "lb.scope": {
-    zh: "口径:仅主动 opt-in 的成员 · 只公开聚合 token 与活跃天数 · 不含项目名、设备或时段明细 · 活跃天数按 UTC 自然日计。",
+    zh: "口径：仅主动 opt-in 的成员 · 只公开聚合 Token 与活跃天数 · 不含项目名、设备或时段明细 · 活跃天数按 UTC 自然日计。",
     en: "Scope: opt-in members only · aggregate tokens and active days only · no project names, devices, or time-of-day detail · active days counted in UTC.",
   },
   "lb.empty": { zh: "还没有成员公开用量。", en: "No members are sharing usage yet." },
   "lb.emptyHint": {
-    zh: "榜单完全自愿:在用量中心的隐私设置里打开「参与社区榜」,你的周期聚合就会出现在这里。",
+    zh: "榜单完全自愿：在用量中心的隐私设置里打开「参与社区榜」，你的周期聚合就会出现在这里。",
     en: "The board is fully opt-in: turn on leaderboard sharing in your usage privacy settings and your period aggregates will appear here.",
   },
   "lb.emptyCta": {
@@ -1184,17 +1184,17 @@ const DICT = {
     en: "Turn on leaderboard sharing",
   },
   "lb.loadError": {
-    zh: "榜单加载失败,请稍后重试。",
+    zh: "榜单加载失败，请稍后重试。",
     en: "Failed to load the leaderboard. Please try again later.",
   },
   "lb.optin": { zh: "参与社区榜", en: "Join the community leaderboard" },
   "lb.optinHint": {
-    zh: "开启后公开你的周期聚合 token 与活跃天数(社区榜、个人主页热力图共用此开关),不含项目名、设备或时间明细。作品徽章为声明制,不受此开关影响。",
+    zh: "开启后公开你的周期聚合 Token 与活跃天数（社区榜、个人主页热力图共用此开关），不含项目名、设备或时间明细。作品徽章为声明制，不受此开关影响。",
     en: "Publishes your period aggregate tokens and active days — one switch shared by the leaderboard and profile heatmap. Never includes project names, devices, or time detail. Work badges are claim-based and not affected by this switch.",
   },
   "lb.entry": { zh: "社区用量榜", en: "Community leaderboard" },
   "lb.entryHint": {
-    zh: "自愿公开成员的周期聚合排名:24 小时 / 7 天 / 30 天,含总榜与分 Agent、分模型榜。",
+    zh: "自愿公开成员的周期聚合排名：24 小时 / 7 天 / 30 天，含总榜与分 Agent、分模型榜。",
     en: "Period aggregates from opted-in members: 24H / 7D / 30D — overall plus per-agent and per-model boards.",
   },
   /* ---- Leaderboard enhancements (24H window / per-agent and per-model
@@ -1206,16 +1206,16 @@ const DICT = {
   "lb.mineDays": { zh: "活跃天数", en: "ACTIVE DAYS" },
   "lb.mineCost": { zh: "预估费用", en: "EST. COST" },
   "lb.mineNoData": {
-    zh: "本周期暂无同步数据,下个周期再来。",
+    zh: "本周期暂无同步数据，下个周期再来。",
     en: "No synced data in this period yet.",
   },
   "lb.mineOptin": {
-    zh: "你还没有开启「参与社区榜」公开开关,开启后即可参与各榜排名。",
+    zh: "你还没有开启「参与社区榜」公开开关，开启后即可参与各榜排名。",
     en: "Leaderboard sharing is off — turn it on to join the rankings.",
   },
   "lb.mineOptinCta": { zh: "去开启公开开关", en: "Turn it on" },
   "lb.mineCostNote": {
-    zh: "名次按周期计,超出 TOP 50 显示 50+;费用名次在总榜 TOP 50 成员内按估费排序。",
+    zh: "名次按周期计，超出 TOP 50 显示 50+；费用名次在总榜 TOP 50 成员内按估费排序。",
     en: "Ranks are per period; beyond TOP 50 shows 50+. Cost rank is sorted by estimate within the top-50 board.",
   },
   "lb.boardAll": { zh: "总榜", en: "OVERALL" },
@@ -1227,7 +1227,7 @@ const DICT = {
     en: "No public data for this dimension in this period.",
   },
   "lb.costScope": {
-    zh: "估费口径:服务端版本化价格表的 API 等价估算(USD),不代表订阅账单;未定价部分照常统计但不计费。",
+    zh: "估费口径：服务端版本化价格表的 API 等价估算（USD），不代表订阅账单；未定价部分照常统计但不计费。",
     en: "Costs are API-equivalent estimates (USD) from the server versioned pricing table, not subscription bills; unpriced usage is counted but never billed.",
   },
   /* ---- Profile tabs / work badges / list paging (own section to
@@ -1237,7 +1237,7 @@ const DICT = {
   "prof.usage": { zh: "用量", en: "Usage" },
   "prof.noWorks": { zh: "还没有作品。", en: "No works yet." },
   "works.badge": {
-    zh: "声明投入 {n} tokens",
+    zh: "声明投入 {n} Token",
     en: "Declared {n} tokens",
   },
   "works.declared": { zh: "声明投入", en: "Declared" },
@@ -1245,7 +1245,7 @@ const DICT = {
   "works.galleryPrev": { zh: "上一张", en: "Previous" },
   "works.galleryNext": { zh: "下一张", en: "Next" },
   "works.badgeTitle": {
-    zh: "Builder 自报;系统按已同步总用量封顶,不代表单个作品的精确用量",
+    zh: "Builder 自报；系统按已同步总用量封顶，不代表单个作品的精确用量",
     en: "Builder-reported; capped by synced aggregate usage; not exact per-project usage",
   },
   "works.featuredFallback": { zh: "精选作品", en: "Featured work" },
@@ -1254,12 +1254,12 @@ const DICT = {
   /* ---- Demo Night (own section to shrink merge conflicts) ---- */
   "dn.title": { zh: "Demo Night", en: "Demo Night" },
   "dn.intro": {
-    zh: "Builder 的线上分享夜:有人演示正在做的东西,有人到场见证。报名即公开——你的 handle 会署进本页的到场名单,先报先签。",
+    zh: "Builder 的线上分享夜：有人演示正在做的东西，有人到场见证。报名即公开——你的 handle 会署进本页的到场名单，先报先签。",
     en: "An online show-and-tell for Builders: some demo what they're making, others show up to witness. RSVP is public — your handle goes on this page's attendee list, first come, first signed.",
   },
   "dn.upcoming": { zh: "当前场", en: "UPCOMING" },
   "dn.nextPreparing": {
-    zh: "下一期筹备中 —— 想上台分享?去社区发帖打个招呼。",
+    zh: "下一期筹备中 —— 想上台分享？去社区发帖打个招呼。",
     en: "The next night is in the works — want to present? Say hi in the community.",
   },
   "dn.archive": { zh: "往期归档", en: "ARCHIVE" },
@@ -1271,10 +1271,10 @@ const DICT = {
   "dn.rsvped": { zh: "已报名", en: "You're in" },
   "dn.cancelRsvp": { zh: "取消报名", en: "Cancel RSVP" },
   "dn.rsvpNotice": {
-    zh: "报名即公开:你的 handle 会出现在到场名单中。",
+    zh: "报名即公开：你的 handle 会出现在到场名单中。",
     en: "RSVP is public: your handle appears on the attendee list.",
   },
-  "dn.loginToRsvp": { zh: "登录后报名到场:", en: "Log in to RSVP:" },
+  "dn.loginToRsvp": { zh: "登录后报名到场：", en: "Log in to RSVP:" },
   "dn.roster": { zh: "到场名单", en: "ATTENDEES" },
   "dn.rosterEmpty": {
     zh: "还没有人报名 —— 第一个署名的位置还空着。",
@@ -1282,7 +1282,7 @@ const DICT = {
   },
   "dn.rosterCount": { zh: "{n} 人已报名", en: "{n} in" },
   "dn.archiveCount": { zh: "{n} 人到场", en: "{n} attended" },
-  "dn.rosterToggle": { zh: "到场名单({n})", en: "Attendees ({n})" },
+  "dn.rosterToggle": { zh: "到场名单（{n}）", en: "Attendees ({n})" },
   "dn.watchReplay": { zh: "观看回放", en: "Watch replay" },
   "dn.widgetTitle": { zh: "DEMO NIGHT", en: "DEMO NIGHT" },
   "dn.widgetRsvped": { zh: "已报名", en: "RSVP'd" },
@@ -1294,44 +1294,45 @@ const DICT = {
   "toast.rsvpCancelled": { zh: "已取消报名", en: "RSVP cancelled" },
   /* ---- Article engine (/blog monthly + /learn curated paths; own
      section to shrink merge conflicts) ---- */
-  "art.langZh": { zh: "中文", en: "中文" },
-  "art.langEn": { zh: "EN", en: "EN" },
+  "art.langZh": { zh: "中文", en: "Chinese" },
+  "art.langEn": { zh: "英文", en: "English" },
+  "art.langFallback": { zh: "{language}（回退）", en: "{language} (fallback)" },
   "art.draft": { zh: "草稿", en: "DRAFT" },
   "artf.newTitle": { zh: "新建文章", en: "New article" },
   /* Edit console page-header eyebrow (layout alignment pass). */
   "artf.eyebrow": { zh: "— 月刊 · 编辑台", en: "— MONTHLY · DESK" },
   "artf.editTitle": { zh: "编辑文章", en: "Edit article" },
   "artf.slug": {
-    zh: "Slug(小写字母/数字/连字符)",
+    zh: "Slug（小写字母/数字/连字符）",
     en: "Slug (lowercase letters, digits, hyphens)",
   },
   "artf.kind": { zh: "类型", en: "Kind" },
-  "artf.kindLetter": { zh: "月刊(letter)", en: "Letter (monthly)" },
-  "artf.kindGuide": { zh: "指南(guide)", en: "Guide" },
+  "artf.kindLetter": { zh: "月刊（letter）", en: "Letter (monthly)" },
+  "artf.kindGuide": { zh: "指南（guide）", en: "Guide" },
   "artf.locale": { zh: "语言", en: "Language" },
-  "artf.title": { zh: "标题(200 字以内)", en: "Title (200 chars max)" },
+  "artf.title": { zh: "标题（200 字以内）", en: "Title (200 chars max)" },
   "artf.summary": {
-    zh: "摘要(列表展示,500 字以内)",
+    zh: "摘要（列表展示，500 字以内）",
     en: "Summary (shown in lists, 500 chars max)",
   },
   "artf.sortOrder": {
-    zh: "路径顺序(仅 guide,小的在前)",
+    zh: "路径顺序（仅 guide，小的在前）",
     en: "Order (guides only, smaller first)",
   },
   "artf.publish": {
-    zh: "发布(不勾 = 存草稿,前台不显示)",
+    zh: "发布（不勾 = 存草稿，前台不显示）",
     en: "Publish (unchecked = draft, hidden from lists)",
   },
   "artf.draftSaved": {
-    zh: "草稿已保存,可继续编辑",
+    zh: "草稿已保存，可继续编辑",
     en: "Draft saved — keep editing",
   },
   "artf.deleteConfirm": {
-    zh: "确定删除这篇文章?删除后不可恢复。",
+    zh: "确定删除这篇文章？删除后不可恢复。",
     en: "Delete this article? This cannot be undone.",
   },
   "err.artSlug": {
-    zh: "slug 只能用小写字母、数字、连字符(160 字以内)",
+    zh: "slug 只能用小写字母、数字、连字符（160 字以内）",
     en: "Slug: lowercase letters, digits and hyphens only (160 max)",
   },
   "err.artSlugTaken": {
@@ -1339,22 +1340,22 @@ const DICT = {
     en: "That slug is taken for this language",
   },
   "err.artTitle": {
-    zh: "标题必填(200 字以内)",
+    zh: "标题必填（200 字以内）",
     en: "Title required (200 chars max)",
   },
   "err.artSummaryLong": {
-    zh: "摘要太长了(500 字以内)",
+    zh: "摘要太长了（500 字以内）",
     en: "Summary too long (500 chars max)",
   },
   "err.artBody": { zh: "正文不能为空", en: "Body cannot be empty" },
   "err.artMeta": { zh: "类型或语言不合法", en: "Invalid kind or language" },
-  /* ---- Profile yearly build footprint (own section to shrink merge
+  /* ---- Profile yearly usage history (own section to shrink merge
      conflicts) ---- */
-  "prof.footprint": { zh: "构建足迹", en: "BUILD FOOTPRINT" },
+  "prof.footprint": { zh: "用量记录", en: "USAGE HISTORY" },
   "prof.privacy": { zh: "隐私与公开", en: "PRIVACY & VISIBILITY" },
-  "prof.privacySelf": { zh: "仅自己可见;保存后全站生效", en: "Only you see this; applies site-wide" },
+  "prof.privacySelf": { zh: "仅自己可见；保存后全站生效", en: "Only you see this; applies site-wide" },
   "prof.footprintHint": {
-    zh: "最近 12 个月 · 每日 token 总量",
+    zh: "最近 12 个月 · 每日 Token 总量",
     en: "Last 12 months · daily token totals",
   },
   /* ---- Profile redesign (hero stats band / footprint summary / empty
@@ -1366,7 +1367,7 @@ const DICT = {
   "prof.statTotalSub": { zh: "API 等价估算 {v}", en: "API-equivalent est. {v}" },
   "prof.statActiveDays": { zh: "活跃天数", en: "ACTIVE DAYS" },
   "prof.statActiveDaysSub": { zh: "近 12 个月", en: "last 12 months" },
-  "prof.statStreak": { zh: "连续构建", en: "DAY STREAK" },
+  "prof.statStreak": { zh: "连续活跃", en: "ACTIVITY STREAK" },
   "prof.statStreakSub": { zh: "周连续 {n} 周", en: "{n}-week streak" },
   "prof.statHitRate": { zh: "缓存命中率", en: "CACHE HIT" },
   "prof.statHitRateSub": { zh: "全部历史 · 缓存读 {v}", en: "all-time · cache read {v}" },
@@ -1384,7 +1385,7 @@ const DICT = {
   "prof.emptyPostsCta": { zh: "发第一帖", en: "New post" },
   "prof.emptyCommentsTitle": { zh: "还没有评论", en: "No comments yet" },
   "prof.emptyCommentsText": {
-    zh: "去社区逛逛,给同好的帖子留个言——好的讨论从第一条回复开始。",
+    zh: "去社区逛逛，给同好的帖子留个言——好的讨论从第一条回复开始。",
     en: "Browse the community and leave a reply — good threads start with the first comment.",
   },
   "prof.emptyCommentsCta": { zh: "浏览社区", en: "Browse community" },
@@ -1405,20 +1406,21 @@ const DICT = {
   "prof.usageGo": { zh: "打开用量中心 →", en: "Open usage center →" },
   "prof.makerTokens": { zh: "累计 TOKENS", en: "LIFETIME TOKENS" },
   "prof.qrHint": {
-    zh: "公开身份快照 · 扫码访问;不含项目名、设备与对话内容",
+    zh: "公开身份快照 · 扫码访问；不含项目名、设备与对话内容",
     en: "Public profile snapshot · scan to visit; no projects, devices, or conversations",
   },
   "prof.makerCta": { zh: "生成分享海报", en: "Create share poster" },
   "prof.tools": { zh: "常用 Agent", en: "Top agents" },
   "prof.toolsNote": { zh: "全部历史 · 按 Token", en: "all-time · by tokens" },
   "prof.toolsEmpty": { zh: "还没有用量数据。", en: "No usage data yet." },
-  "prof.prefs": { zh: "构建偏好", en: "Build preferences" },
+  "prof.prefs": { zh: "使用分布", en: "Usage breakdown" },
   "prof.prefPeak": { zh: "最活跃时段", en: "Busiest slot" },
   "prof.prefModel": { zh: "主力模型", en: "Top model" },
   "prof.prefDevice": { zh: "主设备", en: "Main device" },
   "prof.prefProject": { zh: "最常用项目", en: "Top project" },
   /* ---- Work detail + interactions (supports/comments; own section to
      shrink merge conflicts) ---- */
+  "works.openProject": { zh: "打开作品", en: "Open project" },
   "works.tryIt": { zh: "体验作品", en: "Try it" },
   "works.support": { zh: "支持", en: "Support" },
   "works.supported": { zh: "已支持", en: "Supported" },
@@ -1436,7 +1438,7 @@ const DICT = {
   },
   "works.authorChip": { zh: "作者", en: "AUTHOR" },
   "works.notFound": {
-    zh: "这个作品不存在,或已被作者撤下。",
+    zh: "这个作品不存在，或已被作者撤下。",
     en: "This work doesn't exist, or the author took it down.",
   },
   "works.backToWorks": { zh: "返回作品墙", en: "Back to works" },
@@ -1461,62 +1463,62 @@ const DICT = {
   /* ---- Work usage claims (own section to shrink merge conflicts)
      ---- */
   "works.claim": {
-    zh: "声明 Token(可选)",
+    zh: "声明 Token（可选）",
     en: "Declared tokens (optional)",
   },
   "works.claimPh": { zh: "如 612M、1.2B", en: "e.g. 612M, 1.2B" },
   "works.claimHint": {
-    zh: "由你自报,系统按已同步总用量封顶,不代表这个作品的精确用量;留空则不展示。仅自己的作品可声明(推荐站外项目不适用)。",
+    zh: "由你自报，系统按已同步总用量封顶，不代表这个作品的精确用量；留空则不展示。仅自己的作品可声明（推荐站外项目不适用）。",
     en: "Builder-reported and capped by synced aggregate usage; this is not exact per-project usage. Leave empty to show no claim. External recommendations cannot carry one.",
   },
   "works.claimRemaining": {
-    zh: "剩余可声明额度 {n} tokens",
+    zh: "剩余可声明额度 {n} Token",
     en: "Remaining claimable: {n} tokens",
   },
   "works.claimSuggest": {
-    zh: "按项目「{label}」的用量数据,建议 {n}",
+    zh: "按项目「{label}」的用量数据，建议 {n}",
     en: "Suggested from your project “{label}”: {n}",
   },
   "works.claimNoUsage": {
-    zh: "先同步用量,才能声明 Token;系统只按已同步总用量封顶。",
+    zh: "先同步用量，才能声明 Token；系统只按已同步总用量封顶。",
     en: "Sync usage before declaring tokens; the system only caps them by synced aggregate usage.",
   },
   "works.claimNoUsageCta": { zh: "去用量中心同步", en: "Go to Usage sync" },
   "works.claimPaused": {
-    zh: "声明总额超出已同步总用量,展示已暂停,请重新分配。",
+    zh: "声明总额超出已同步总用量，展示已暂停，请重新分配。",
     en: "Your claimed total exceeds synced aggregate usage, so claims are hidden until you reallocate them.",
   },
   "err.workClaimInvalid": {
-    zh: "声明数字无法识别(支持如 612M 的紧凑写法)",
+    zh: "声明数字无法识别（支持如 612M 的紧凑写法）",
     en: "Unrecognized claim number (compact forms like 612M are fine)",
   },
   "err.workClaimExceeds": {
-    zh: "超出剩余可声明额度(剩余 {n} tokens)",
+    zh: "超出剩余可声明额度（剩余 {n} Token）",
     en: "Exceeds your remaining claimable allowance ({n} tokens left)",
   },
   /* ---- Work media: logo + multi-image upload (own section to shrink
      merge conflicts) ---- */
-  "works.logo": { zh: "作品 Logo(可选)", en: "Work logo (optional)" },
+  "works.logo": { zh: "作品 Logo（可选）", en: "Work logo (optional)" },
   "works.logoUpload": { zh: "上传 Logo", en: "Upload logo" },
   "works.logoChange": { zh: "更换", en: "Change" },
   "works.logoRemove": { zh: "移除", en: "Remove" },
   "works.logoCropTitle": { zh: "调整 Logo", en: "Adjust logo" },
   "works.logoCropHint": {
-    zh: "拖动定位,滑杆缩放;导出为 512×512 正方形。",
+    zh: "拖动定位，滑杆缩放；导出为 512×512 正方形。",
     en: "Drag to position, slider to zoom; exported as a 512×512 square.",
   },
   "works.logoZoom": { zh: "缩放", en: "Zoom" },
   "works.cropApply": { zh: "裁剪并上传", en: "Crop & upload" },
   "works.images": {
-    zh: "配图(最多 9 张,展示在详情页图集)",
+    zh: "配图（最多 9 张，展示在详情页图集）",
     en: "Images (up to 9, shown in the detail gallery)",
   },
   "works.imagesAdd": { zh: "点击选择配图", en: "Click to add images" },
   "works.imagesHint": {
-    zh: "也可以直接拖入或粘贴图片;拖动缩略图调整顺序。",
+    zh: "也可以直接拖入或粘贴图片；拖动缩略图调整顺序。",
     en: "You can also drop or paste images; drag thumbnails to reorder.",
   },
-  "works.cover": { zh: "封面(可选)", en: "Cover (optional)" },
+  "works.cover": { zh: "封面（可选）", en: "Cover (optional)" },
   "works.coverUpload": { zh: "上传封面", en: "Upload cover" },
   /* Cover source tabs: upload an image / pick a style (name-brick color
      card). */
@@ -1526,26 +1528,26 @@ const DICT = {
      follow the active theme. */
   "works.tilePreview": { zh: "名称砖", en: "Tile" },
   "works.coverHint": {
-    zh: "列表卡片的封面;不上传则显示下方色卡的名称砖。",
+    zh: "列表卡片的封面；不上传则显示下方色卡的名称砖。",
     en: "The list cover; without one, the wall shows the tone tile below.",
   },
   "works.coverFit": { zh: "封面适配", en: "Cover fit" },
   "works.coverFitCover": { zh: "裁切填满", en: "Crop to fill" },
   "works.coverFitContain": { zh: "补边完整", en: "Pad to fit" },
   "works.coverFitHint": {
-    zh: "竖屏截图建议补边——完整显示,不被拦腰裁。",
+    zh: "竖屏截图建议补边——完整显示，不被拦腰裁。",
     en: "Pad tall screenshots so nothing gets cropped.",
   },
-  "works.coverTone": { zh: "封面风格(未上传封面时生效)", en: "Cover style (when no cover uploaded)" },
+  "works.coverTone": { zh: "封面风格（未上传封面时生效）", en: "Cover style (when no cover uploaded)" },
   "works.viewToggle": { zh: "列表视图", en: "List view" },
   "works.viewList": { zh: "行式列表", en: "Row list" },
   "works.viewGrid": { zh: "封面墙", en: "Cover grid" },
-  "works.preview": { zh: "卡片预览(随下方字段实时更新)", en: "Card preview (live)" },
+  "works.preview": { zh: "卡片预览（随下方字段实时更新）", en: "Card preview (live)" },
   /* Minimal-path hint: with required fields concentrated and optional
      ones collapsed, one line says what the bare minimum is — defusing
      the long-form intimidation. */
   "works.minPath": {
-    zh: "最少只需:名称、类型、一个链接,并勾选参与构建的 Agent;其余都可以后补。",
+    zh: "最少只需：名称、类型、一个链接，并勾选参与构建的 Agent；其余都可以后补。",
     en: "Bare minimum: name, type, one link, plus one agent — everything else can come later.",
   },
   "works.optional": { zh: "可选", en: "Optional" },
@@ -1559,24 +1561,24 @@ const DICT = {
   "works.formNav": { zh: "表单结构", en: "Form sections" },
   "works.navModels": { zh: "模型", en: "Models" },
   "works.mediaSummary": { zh: "封面 / Logo / 图集 / 色档", en: "Cover / logo / gallery / tile tone" },
-  "works.modelsSummary": { zh: "用到的模型,可自填型号", en: "Models used; custom entries" },
+  "works.modelsSummary": { zh: "用到的模型，可自填型号", en: "Models used; custom entries" },
   "works.publishSummary": {
     zh: "状态 / 声明投入徽章 / 私密与 AI 评论",
     en: "Status / claimed-investment badge / privacy & AI replies",
   },
-  "works.coverCropTitle": { zh: "封面构图(16:9)", en: "Cover crop (16:9)" },
+  "works.coverCropTitle": { zh: "封面构图（16:9）", en: "Cover crop (16:9)" },
   "works.coverCropHint": {
-    zh: "拖动定位、滑杆缩放;列表封面统一按 16:9 展示。",
+    zh: "拖动定位、滑杆缩放；列表封面统一按 16:9 展示。",
     en: "Drag to reposition, slider to zoom; list covers render at 16:9.",
   },
-  "works.tagsOver": { zh: "标签最多 5 个(当前 {n} 个,超出部分不保存)", en: "At most 5 tags (now {n}; extras won't be saved)" },
+  "works.tagsOver": { zh: "标签最多 5 个（当前 {n} 个，超出部分不保存）", en: "At most 5 tags (now {n}; extras won't be saved)" },
   "works.coverToneHint": {
-    zh: "没传配图时,列表封面是一块统一风格的名称砖;固定色随主题切换明暗。",
+    zh: "没传配图时，列表封面是一块统一风格的名称砖；固定色随主题切换明暗。",
     en: "Without images, the wall cover is a generated name tile. Fixed colors adapt to light/dark.",
   },
   "works.coverToneAwesome": { zh: "封面风格", en: "Cover style" },
   "works.coverToneAwesomeHint": {
-    zh: "Awesome 条目无配图,列表封面用所选色调的名称砖;不选则跟随主题(深空/站点白)。",
+    zh: "Awesome 条目无配图，列表封面用所选色调的名称砖；不选则跟随主题（深空/站点白）。",
     en: "Awesome entries without images use a name tile in the picked tone; unset follows the site theme.",
   },
   "works.imageRemove": { zh: "删除这张图", en: "Remove this image" },
@@ -1584,15 +1586,15 @@ const DICT = {
   "works.uploadFailed": { zh: "上传失败", en: "Upload failed" },
   "works.retry": { zh: "重试", en: "Retry" },
   "err.uploadFailed": {
-    zh: "图片上传失败,请重试",
+    zh: "图片上传失败，请重试",
     en: "Image upload failed — please retry",
   },
   "err.workLogoKey": {
-    zh: "Logo 数据无效,请重新上传",
+    zh: "Logo 数据无效，请重新上传",
     en: "Invalid logo data — please re-upload",
   },
   "err.workImageKeys": {
-    zh: "配图数据无效(最多 9 张),请重新上传",
+    zh: "配图数据无效（最多 9 张），请重新上传",
     en: "Invalid image data (max 9) — please re-upload",
   },
   /* ---- Shell rework: fixed top bar + contextual right rail (own
@@ -1603,7 +1605,7 @@ const DICT = {
   "topbar.theme": { zh: "切换主题", en: "Toggle theme" },
   /* Vibe toggle tooltip: "switch visual vibe" conveys no difference —
      name both vibes so users know what to expect before clicking. */
-  "topbar.vibe": { zh: "视觉气质:工程棱角 ⇄ 圆润经典", en: "Visual style: Sharp ⇄ Classic" },
+  "topbar.vibe": { zh: "视觉气质：工程棱角 ⇄ 圆润经典", en: "Visual style: Sharp ⇄ Classic" },
   "topbar.lang": { zh: "切换语言", en: "Switch language" },
   "rail.postMeta": { zh: "帖子信息", en: "POST INFO" },
   "rail.board": { zh: "板块", en: "Board" },
@@ -1615,12 +1617,12 @@ const DICT = {
   "rail.workMeta": { zh: "作品信息", en: "WORK INFO" },
   "rail.worksAbout": { zh: "作品墙", en: "THE GALLERY" },
   "rail.worksAboutBody": {
-    zh: "Builder 用 Kimi 做出的作品;“声明投入”由 Builder 自报 Token,系统按已同步总用量封顶,不代表单个作品的精确用量。",
+    zh: "Builder 用 Kimi 做出的作品；“声明投入”由 Builder 自报 Token，系统按已同步总用量封顶，不代表单个作品的精确用量。",
     en: "Work made by Builders with Kimi. Declared tokens are Builder-reported and capped by synced aggregate usage; they are not exact per-project usage.",
   },
   "rail.worksSubmit": { zh: "发布作品", en: "Publish your work" },
   "rail.worksTop": { zh: "热门作品", en: "TOP WORKS" },
-  "rail.worksTopEmpty": { zh: "还没有作品,来提交第一个。", en: "No works yet — submit the first." },
+  "rail.worksTopEmpty": { zh: "还没有作品，来提交第一个。", en: "No works yet — submit the first." },
   "rail.relatedWorks": { zh: "相关作品", en: "RELATED WORKS" },
   "rail.relatedWorksEmpty": {
     zh: "还没有同作者或同 Agent 的其他作品。",
@@ -1628,7 +1630,7 @@ const DICT = {
   },
   "rail.aiSummon": { zh: "召唤小筑分析", en: "ASK XIAOZHU" },
   "rail.aiSummonHint": {
-    zh: "让小筑(本站 AI 助手)读一遍这个帖子,给出结构化分析。",
+    zh: "让小筑（本站 AI 助手）读一遍这个帖子，给出结构化分析。",
     en: "Ask Xiaozhu, the community AI assistant, to read this thread and give a structured analysis.",
   },
   "rail.awesomeAbout": { zh: "收录说明", en: "ABOUT THE LIST" },
@@ -1639,7 +1641,7 @@ const DICT = {
   "nav.admin": { zh: "管理", en: "Admin" },
   "admin.title": { zh: "管理台", en: "Moderation" },
   "admin.subtitle": {
-    zh: "内容治理(屏蔽/删除)、用户治理(禁言/资料重置/角色)与审计日志。",
+    zh: "内容治理（屏蔽/删除）、用户治理（禁言/资料重置/角色）与审计日志。",
     en: "Content moderation (hide/delete), user actions (mute/profile reset/roles), and the audit log.",
   },
   "admin.tabContent": { zh: "内容", en: "Content" },
@@ -1667,18 +1669,18 @@ const DICT = {
   "admin.mute30d": { zh: "30 天", en: "30 days" },
   "admin.muteForever": { zh: "永久", en: "Forever" },
   "admin.mutePrompt": {
-    zh: "禁言原因(记入审计):",
+    zh: "禁言原因（记入审计）：",
     en: "Reason for the mute (goes to the audit log):",
   },
   "admin.resetProfile": { zh: "资料重置", en: "Reset profile" },
   "admin.resetConfirm": {
-    zh: "将清空该用户的自定义头像、显示名与简介,回到默认态。继续?",
+    zh: "将清空该用户的自定义头像、显示名与简介，回到默认态。继续？",
     en: "This clears the user's custom avatar, display name, and bio. Continue?",
   },
   "admin.grantMod": { zh: "提为 mod", en: "Make mod" },
   "admin.revokeMod": { zh: "降为 member", en: "Demote to member" },
-  "admin.grantConfirm": { zh: "确认把该用户提为 mod?", en: "Promote this user to mod?" },
-  "admin.revokeConfirm": { zh: "确认把该 mod 降回 member?", en: "Demote this mod back to member?" },
+  "admin.grantConfirm": { zh: "确认把该用户提为 mod？", en: "Promote this user to mod?" },
+  "admin.revokeConfirm": { zh: "确认把该 mod 降回 member？", en: "Demote this mod back to member?" },
   "admin.toastMuted": { zh: "已禁言", en: "Muted" },
   "admin.toastUnmuted": { zh: "已解除禁言", en: "Unmuted" },
   "admin.toastReset": { zh: "资料已重置", en: "Profile reset" },
@@ -1695,18 +1697,18 @@ const DICT = {
   /* ---- Admin console / position-value insights (analytics v1) ---- */
   "analytics.overviewTitle": { zh: "事件概览", en: "Event overview" },
   "analytics.overviewNote": {
-    zh: "白名单事件的计数级汇总,用于判断哪些页面与位置真正被使用。",
+    zh: "白名单事件的计数级汇总，用于判断哪些页面与位置真正被使用。",
     en: "Count-level summaries of allowlisted events, showing which pages and placements are actually used.",
   },
   "analytics.periodLabel": { zh: "统计周期", en: "Analytics period" },
   "analytics.period7": { zh: "近 7 天", en: "7D" },
   "analytics.period30": { zh: "近 30 天", en: "30D" },
   "analytics.privacyNote": {
-    zh: "只统计白名单事件、位置与日匿名访客次;不记录账号、完整 URL、referrer、原始 IP 或 User-Agent 原文。",
+    zh: "只统计白名单事件、位置与日匿名访客次；不记录账号、完整 URL、referrer、原始 IP 或 User-Agent 原文。",
     en: "Counts only allowlisted events, placements, and anonymous visitor-days; never accounts, full URLs, referrers, raw IP addresses, or raw User-Agent strings.",
   },
   "analytics.visitorDaysNote": {
-    zh: "访客标识每日轮换;同一访客跨天会再次计数,因此这里是日匿名访客次,不是跨周期独立人数。",
+    zh: "访客标识每日轮换；同一访客跨天会再次计数，因此这里是日匿名访客次，不是跨周期独立人数。",
     en: "Viewer identifiers rotate daily, so the same visitor is counted again on a new day. These are anonymous visitor-days, not unique people across the period.",
   },
   "analytics.eventTotal": { zh: "事件总量", en: "TOTAL EVENTS" },
@@ -1716,7 +1718,7 @@ const DICT = {
   },
   "analytics.featuredTitle": { zh: "精选位置点击", en: "Featured placement clicks" },
   "analytics.featuredNote": {
-    zh: "按首页精选位 / 右栏精选位,再按帖子或作品目标分组。",
+    zh: "按首页精选位 / 右栏精选位，再按帖子或作品目标分组。",
     en: "Grouped by home or rail placement, then by the post or work target.",
   },
   "analytics.posterTitle": { zh: "海报下载", en: "Poster downloads" },
@@ -1766,7 +1768,7 @@ const DICT = {
   "analytics.eventJoinClick": { zh: "加入入口点击", en: "Join clicks" },
   "mod.hiddenBadge": { zh: "已被管理员屏蔽", en: "Hidden by moderators" },
   "mod.hiddenBanner": {
-    zh: "该内容已被管理员屏蔽,公开页面不再展示,仅你与管理员可见。",
+    zh: "该内容已被管理员屏蔽，公开页面不再展示，仅你与管理员可见。",
     en: "Hidden by moderators — no longer public; only you and moderators can see it.",
   },
   "mod.menu": { zh: "管理", en: "Moderate" },
@@ -1774,36 +1776,36 @@ const DICT = {
   "mod.hide": { zh: "屏蔽", en: "Hide" },
   "mod.unhide": { zh: "解除屏蔽", en: "Unhide" },
   "mod.hidePrompt": {
-    zh: "屏蔽原因(展示给作者并记入审计):",
+    zh: "屏蔽原因（展示给作者并记入审计）：",
     en: "Reason (shown to the author and logged):",
   },
   "mod.softDelete": { zh: "删除", en: "Delete" },
   "mod.softConfirm": {
-    zh: "删除该内容(软删,作者视角按删除语义)?",
+    zh: "删除该内容（软删，作者视角按删除语义）？",
     en: "Delete this content (soft delete)?",
   },
   "mod.hardDelete": { zh: "彻底删除", en: "Delete permanently" },
   "mod.hardConfirm1": {
-    zh: "彻底删除将物理移除该内容(评论一并删除),不可恢复。继续?",
+    zh: "彻底删除将物理移除该内容（评论一并删除），不可恢复。继续？",
     en: "This permanently removes the content (including its comments) and cannot be undone. Continue?",
   },
   "mod.hardConfirm2": {
-    zh: "再次确认:此操作不可恢复,确定彻底删除?",
+    zh: "再次确认：此操作不可恢复，确定彻底删除？",
     en: "Confirm again: this cannot be undone. Delete permanently?",
   },
   "mod.toastHidden": { zh: "已屏蔽", en: "Hidden" },
   "mod.toastUnhidden": { zh: "已解除屏蔽", en: "Unhidden" },
   "err.muted": {
-    zh: "你已被禁言,{d} 解除;期间不能发帖、评论或发布作品。",
+    zh: "你已被禁言，{d} 解除；期间不能发帖、评论或发布作品。",
     en: "You are muted until {d}; posting, commenting, and publishing works are disabled.",
   },
   "err.mutedForever": {
-    zh: "你已被永久禁言;期间不能发帖、评论或发布作品。",
+    zh: "你已被永久禁言；期间不能发帖、评论或发布作品。",
     en: "You are permanently muted; posting, commenting, and publishing works are disabled.",
   },
   /* ---- Localized route titles + site meta (brand language pass) ---- */
   "site.metaTitle": { zh: "kimi.builders — Build with Kimi. Show your work.", en: "kimi.builders — Build with Kimi. Show your work." },
-  "site.metaDescription": { zh: "Kimi 用户自建的社区(非官方):作品、讨论、月刊评鉴与自愿公开的用量数据。", en: "A user-run community for Builders using Kimi (unofficial): work, discussions, the Monthly, and opt-in usage data." },
+  "site.metaDescription": { zh: "Kimi 用户自建的社区（非官方）：作品、讨论、月刊评鉴与自愿公开的用量数据。", en: "A user-run community for Builders using Kimi (unofficial): work, discussions, the Monthly, and opt-in usage data." },
   "meta.explore": { zh: "探索 — kimi.builders", en: "Explore — kimi.builders" },
   "meta.works": { zh: "作品库 — kimi.builders", en: "Works — kimi.builders" },
   "meta.awesome": { zh: "Awesome — kimi.builders", en: "Awesome — kimi.builders" },
@@ -1824,13 +1826,13 @@ const DICT = {
   /* Section meta descriptions (search/share snippets): functional
      one-liners, same discipline as the page ledes. */
   "metaDesc.community": { zh: "问问题、晒进度、聊踩坑——Kimi 用户的公开讨论区。", en: "Ask, share progress, swap lessons — public threads by Kimi users." },
-  "metaDesc.explore": { zh: "月刊评鉴与 Builder 亲自跑通的实践,附方法、证据与出处。", en: "The Monthly and practices Builders ran themselves, with methods, evidence, and sources." },
-  "metaDesc.works": { zh: "Builder 用 Kimi 做出的作品;声明 Token 按已同步总用量封顶,不代表单个作品的精确用量。", en: "Work made by Builders with Kimi; declared tokens are capped by synced aggregate usage, not exact per-project usage." },
-  "metaDesc.awesome": { zh: "成员推荐的站外 Kimi 生态项目,卡片标明收录口径与参与 Agent。", en: "External Kimi ecosystem projects recommended by members, with criteria and participating agents shown on each card." },
-  "metaDesc.usage": { zh: "以 Kimi 为主的多 Agent 编程用量中心。默认私有,榜单自愿公开。", en: "Kimi-first usage analytics across AI coding agents. Private by default; the leaderboard is opt-in." },
-  "metaDesc.leaderboard": { zh: "自愿公开成员的周期聚合用量:自报数据,仅供参考。", en: "Period aggregates from opted-in members — self-reported, reference only." },
-  "metaDesc.about": { zh: "kimi.builders 是 Kimi 用户自建的非商业 Builder 社区(非官方)。", en: "kimi.builders is a user-run, non-commercial community for Builders using Kimi (unofficial)." },
-  "metaDesc.demoNight": { zh: "Builder 的线上分享夜:演示、见证、公开署名的到场名单。", en: "An online show-and-tell for Builders — demos, witnesses, and a public attendee list." },
+  "metaDesc.explore": { zh: "月刊评鉴与 Builder 亲自跑通的实践，附方法、证据与出处。", en: "The Monthly and practices Builders ran themselves, with methods, evidence, and sources." },
+  "metaDesc.works": { zh: "Builder 用 Kimi 做出的作品；声明 Token 按已同步总用量封顶，不代表单个作品的精确用量。", en: "Work made by Builders with Kimi; declared tokens are capped by synced aggregate usage, not exact per-project usage." },
+  "metaDesc.awesome": { zh: "成员推荐的站外 Kimi 生态项目，卡片标明收录口径与参与 Agent。", en: "External Kimi ecosystem projects recommended by members, with criteria and participating agents shown on each card." },
+  "metaDesc.usage": { zh: "以 Kimi 为主的多 Agent 编程用量中心。默认私有，榜单自愿公开。", en: "Kimi-first usage analytics across AI coding agents. Private by default; the leaderboard is opt-in." },
+  "metaDesc.leaderboard": { zh: "自愿公开成员的周期聚合用量：自报数据，仅供参考。", en: "Period aggregates from opted-in members — self-reported, reference only." },
+  "metaDesc.about": { zh: "kimi.builders 是 Kimi 用户自建的非商业 Builder 社区（非官方）。", en: "kimi.builders is a user-run, non-commercial community for Builders using Kimi (unofficial)." },
+  "metaDesc.demoNight": { zh: "Builder 的线上分享夜：演示、见证、公开署名的到场名单。", en: "An online show-and-tell for Builders — demos, witnesses, and a public attendee list." },
 } as const;
 
 export type I18nKey = keyof typeof DICT;
@@ -1845,4 +1847,13 @@ export function t(
     for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
   }
   return s;
+}
+
+export function articleLanguageLabel(
+  uiLocale: Locale,
+  contentLocale: Locale,
+  fallback = false,
+): string {
+  const language = t(uiLocale, contentLocale === "zh" ? "art.langZh" : "art.langEn");
+  return fallback ? t(uiLocale, "art.langFallback", { language }) : language;
 }

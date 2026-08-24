@@ -765,7 +765,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
   const streak = snapshot.streakWeeks.current > 0 ? snapshot.streakWeeks.current : snapshot.streakWeeks.longest;
   const streakWord = zh
     ? snapshot.streakWeeks.current > 0
-      ? "周连续构建"
+      ? "周连续活跃"
       : "周最长连续"
     : "WEEKS";
   const streakSub = zh

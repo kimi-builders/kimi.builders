@@ -282,7 +282,7 @@ export default async function WorkPage({
               className="inline-flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-blue bg-blue px-2 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:gap-1.5 sm:px-3 sm:text-sm"
             >
               <ExternalLink size={13} />
-              {t(locale, "works.tryIt")}
+              {t(locale, work.kind === "demo" ? "works.tryIt" : "works.openProject")}
             </a>
           )}
           {user ? (
@@ -334,7 +334,7 @@ export default async function WorkPage({
                offers no poster entry, same as private posts. */
             posterHref={
               work.visibility === "public"
-                ? `/api/share/work/${work.id}`
+                ? `/api/share/work/${work.id}?locale=${locale}`
                 : undefined
             }
             posterSurface={work.visibility === "public" ? "work" : undefined}

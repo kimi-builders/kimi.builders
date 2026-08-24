@@ -13,7 +13,7 @@ import { getArticleRailMeta } from "@/src/lib/explore";
 import { findKbChapter } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { KB_ROLES } from "@/src/lib/kb-roles";
-import type { Locale } from "@/src/lib/i18n";
+import { articleLanguageLabel, type Locale } from "@/src/lib/i18n";
 import Widget from "./Widget";
 
 /* META row: label left, paper-colored value right; values may be
@@ -78,11 +78,7 @@ export default async function ArticleRail({
           )}
           <MetaRow
             label={zh ? "语言" : "Language"}
-            value={
-              item.fallback
-                ? (item.locale === "zh" ? "中文(回退)" : "EN (fallback)")
-                : item.locale === "zh" ? "中文" : "EN"
-            }
+            value={articleLanguageLabel(locale, item.locale, item.fallback)}
           />
         </ul>
       </Widget>

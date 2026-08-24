@@ -13,6 +13,7 @@ import { getPosterFonts } from "@/app/api/share/poster-fonts";
 import { posterRateLimited } from "@/app/api/share/poster-guard";
 import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
 import { postPosterSize } from "@/app/api/share/poster-sizes";
+import { normalizePosterLocale } from "@/src/lib/poster-locale";
 import { PostSharePoster } from "./PostSharePoster";
 
 export const dynamic = "force-dynamic";
@@ -27,13 +28,14 @@ export async function GET(
     return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
   const { id } = await params;
+  const locale = normalizePosterLocale(request.nextUrl.searchParams.get("locale"));
   const preview =
     process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("preview") === "1";
   const postId = Number(id);
   const snapshot = preview
-    ? mockPostShareSnapshot()
+    ? mockPostShareSnapshot(locale)
     : Number.isInteger(postId) && postId > 0
-      ? await getPostShareSnapshot(postId)
+      ? await getPostShareSnapshot(postId, locale)
       : null;
   if (!snapshot) {
     return Response.json({ ok: false, error: "Not found" }, { status: 404 });
@@ -41,7 +43,7 @@ export async function GET(
 
   const download = request.nextUrl.searchParams.get("download") === "1";
   const fonts = await getPosterFonts(postShareText(snapshot) + POSTER_STATIC_TEXT);
-  return new ImageResponse(<PostSharePoster snapshot={snapshot} />, {
+  return new ImageResponse(<PostSharePoster snapshot={snapshot} locale={locale} />, {
     ...postPosterSize(snapshot),
     /* Satori treats an empty array as zero fonts (all tofu) — fall back
        to the default fonts. */

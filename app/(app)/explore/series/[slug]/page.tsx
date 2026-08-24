@@ -13,7 +13,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock3, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { t } from "@/src/lib/i18n";
+import { articleLanguageLabel, t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
@@ -71,7 +71,7 @@ function EpisodeRow({
         </span>
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
-            <span>{ep.payload.video ? (zh ? "视频" : "VIDEO") : zh ? "文稿" : "READ"}</span>
+            <span>{ep.payload.video ? (zh ? "视频" : "VIDEO") : zh ? "文稿" : "ARTICLE"}</span>
             {ep.payload.durationMin && (
               <span className="flex items-center gap-1 normal-case tracking-normal">
                 <Clock3 size={12} aria-hidden="true" />
@@ -81,7 +81,7 @@ function EpisodeRow({
             {ep.payload.scenario && <span>· {ep.payload.scenario}</span>}
             {ep.fallback && (
               <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
-                {ep.locale === "zh" ? "中文" : "EN"}
+                {articleLanguageLabel(zh ? "zh" : "en", ep.locale, true)}
               </span>
             )}
           </p>

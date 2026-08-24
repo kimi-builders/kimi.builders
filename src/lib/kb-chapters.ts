@@ -27,25 +27,25 @@ export const KB_CHAPTERS: KbChapter[] = [
     id: "learn",
     zh: "学",
     en: "LEARN",
-    tagline: { zh: "把智能变成你的认知", en: "Turn intelligence into your own judgment" },
+    tagline: { zh: "把智能变成你的认知", en: "Make sense of what AI gives you" },
   },
   {
     id: "build",
     zh: "做",
     en: "BUILD",
-    tagline: { zh: "把认知变成做出来的东西", en: "Turn judgment into things you made" },
+    tagline: { zh: "把认知变成做出来的东西", en: "Turn what you know into something concrete" },
   },
   {
     id: "gain",
     zh: "得",
     en: "GAIN",
-    tagline: { zh: "把东西变成收入与成绩", en: "Turn what you made into income and results" },
+    tagline: { zh: "把东西变成收入与成绩", en: "Turn what you made into results and income" },
   },
   {
     id: "become",
     zh: "立",
     en: "BECOME",
-    tagline: { zh: "把成绩变成位置与自我", en: "Turn results into standing and self" },
+    tagline: { zh: "把成绩变成位置与自我", en: "Use those results to find your place and direction" },
   },
 ];
 

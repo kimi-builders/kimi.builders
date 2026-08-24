@@ -114,7 +114,7 @@ export async function getSocialUsageHeatmap(
   return heatmapGridFromRows(rows);
 }
 
-/* ---- Profile yearly build footprint: daily token totals for the last
+/* ---- Profile yearly usage history: daily token totals for the last
    371 days (53 weeks). Day grain = the user's local calendar day (DATE
    shifted by the tz offset, same clamped-inline convention as the heatmap);
    window = local today minus 370 days inclusive, SUM of tokens only. */
@@ -207,7 +207,7 @@ export async function getPublicTokenTotals(
   return map;
 }
 
-/* ---- Profile "build preferences": the device and project with the most
+/* ---- Profile usage breakdown: the device and project with the most
    all-time tokens. Visibility gate on the page side (owner or opt-in);
    projects have data only if the user enabled uploading project directory
    names; null means the caller omits the row (no negative signaling). */

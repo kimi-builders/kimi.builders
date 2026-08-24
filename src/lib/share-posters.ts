@@ -23,6 +23,7 @@ import { agentName } from "./agents";
 import { categoryLabel } from "./categories";
 import { getPool } from "./db";
 import { plainExcerpt } from "./format";
+import type { Locale } from "./i18n";
 import { getPoll, getPost, type PollData, type PostDetail } from "./posts";
 import { getPublicTokenTotals, getSocialDailyActivity } from "./usage/social";
 import { getVerifiableTokenTotals } from "./usage/verifiable";
@@ -134,6 +135,7 @@ export function pollForPoster(poll: PollData | null, max = POSTER_POLL_OPTIONS_M
 export function buildPostShareSnapshot(
   post: PostDetail,
   poll: PollData | null,
+  locale: Locale = "zh",
 ): PostShareSnapshot | null {
   if (post.visibility !== "public" || post.hiddenAt) return null;
   const hasTitle = post.title.trim().length > 0;
@@ -142,7 +144,7 @@ export function buildPostShareSnapshot(
   return {
     id: post.id,
     type: post.type,
-    categoryLabel: categoryLabel("zh", post.category),
+    categoryLabel: categoryLabel(locale, post.category),
     title,
     excerpt: hasTitle && rawExcerpt !== title ? rawExcerpt : "",
     linkDomain: post.type === "link" && post.linkUrl ? linkDomainOf(post.linkUrl) : null,
@@ -160,11 +162,14 @@ export function buildPostShareSnapshot(
   };
 }
 
-export async function getPostShareSnapshot(id: number): Promise<PostShareSnapshot | null> {
+export async function getPostShareSnapshot(
+  id: number,
+  locale: Locale = "zh",
+): Promise<PostShareSnapshot | null> {
   const post = await getPost(id);
   if (!post) return null;
   const poll = post.type === "poll" ? await getPoll(id, null) : null;
-  return buildPostShareSnapshot(post, poll);
+  return buildPostShareSnapshot(post, poll, locale);
 }
 
 /* ---- Work poster ---- */
@@ -341,11 +346,11 @@ export async function getProfileShareSnapshot(handle: string): Promise<ProfileSh
 
 /* ---- Dev preview mocks (?preview=1, no DB) ---- */
 
-export function mockPostShareSnapshot(): PostShareSnapshot {
+export function mockPostShareSnapshot(locale: Locale = "zh"): PostShareSnapshot {
   return {
     id: 128,
     type: "poll",
-    categoryLabel: "经验分享",
+    categoryLabel: categoryLabel(locale, "showcase"),
     title: "用 Kimi 一周搓出全栈记账应用,分享我的提示词工程心得",
     excerpt:
       "从零到上线只用了七天:需求拆解、数据建模、接口联调全部交给 Kimi 完成。这篇文章记录完整的协作流程,以及踩过的三个坑和对应的提示词模板,适合想上手 AI 协作开发的同学参考。",

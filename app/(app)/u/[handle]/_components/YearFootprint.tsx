@@ -1,6 +1,6 @@
 "use client";
 
-/* Profile yearly build footprint: a GitHub-style 53x7 daily token
+/* Profile yearly usage history: a GitHub-style 53x7 daily token
    contribution graph. The grid and month labels are assembled
    server-side by year-grid.ts; this component only renders:
    - desktop: all 53 columns (max 860px, GitHub density);

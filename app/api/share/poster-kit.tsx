@@ -31,8 +31,8 @@ export const POSTER_FONT_FAMILY = "'JetBrains Mono', geist, monospace";
    four: usage (flow/pulse/mix/footprint/arsenal/notes) + post/work/
    profile (votes/claims etc.). */
 export const POSTER_STATIC_TEXT =
-  "顶评论发布支持获赞帖子作品票共还有个选项已验证构建投入累计活跃天数加入声明者按可总量封近周" +
-  "输入含缓存写输出推理读流向对数带宽上下文脉冲今日小时峰期值段命中每柱堆叠长连每格代表一单数据起止等价费用会话主力模型用量扫码看实时板标准计价估算本地私密同步不对话内容杠杆新鲜乘除未记录足迹半年九三二一四五六日构成公开快照身份阅读全文访问主页指标为渲染时数值查看";
+  "顶评论发布支持获赞帖子作品票共还有个选项累计活跃天数加入作者声明按已同步总量封顶非单精确近周" +
+  "输入含缓存写输出推理读流向对数带宽上下文脉冲今日小时峰期值段命中每柱堆叠长连每格代表一单数据起止等价费用会话主力模型用量扫码看实时板标准计价估算本地私密不同对话内容杠杆新鲜乘除未记录半年九三二一四五六日构成公开快照身份阅读全文访问主页指标为渲染时数值查看";
 
 /* Compact big numbers (same as the usage poster): K/M/B; below a
    thousand stays as-is. */

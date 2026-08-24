@@ -18,6 +18,7 @@ import { getPosterFonts } from "@/app/api/share/poster-fonts";
 import { posterRateLimited } from "@/app/api/share/poster-guard";
 import { POSTER_STATIC_TEXT } from "@/app/api/share/poster-kit";
 import { LETTER_POSTER_SIZE } from "@/app/api/share/poster-sizes";
+import { normalizePosterLocale } from "@/src/lib/poster-locale";
 import { LetterSharePoster } from "./LetterSharePoster";
 
 export const dynamic = "force-dynamic";
@@ -32,14 +33,15 @@ export async function GET(
     return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
   const { slug } = await params;
+  const locale = normalizePosterLocale(request.nextUrl.searchParams.get("locale"));
   const preview =
     process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("preview") === "1";
   const section = normalizeLetterSection(request.nextUrl.searchParams.get("section"));
   /* The dev preview's mock fixture imports dynamically so it never
      enters the production render bundle. */
   const snapshot = preview
-    ? letterSnapshotFromMock((await import("@/tests/fixtures/monthly-mock")).BLOG_ISSUES[0], section)
-    : await getLetterShareSnapshot(slug, section);
+    ? letterSnapshotFromMock((await import("@/tests/fixtures/monthly-mock")).BLOG_ISSUES[0], section, locale)
+    : await getLetterShareSnapshot(slug, section, locale);
   if (!snapshot) {
     return Response.json({ ok: false, error: "Not found" }, { status: 404 });
   }
@@ -48,7 +50,7 @@ export async function GET(
   const fonts = await getPosterFonts(
     letterShareText(snapshot) + POSTER_STATIC_TEXT + LETTER_POSTER_STATIC_TEXT,
   );
-  return new ImageResponse(<LetterSharePoster snapshot={snapshot} />, {
+  return new ImageResponse(<LetterSharePoster snapshot={snapshot} locale={locale} />, {
     ...LETTER_POSTER_SIZE,
     /* Satori treats an empty array as zero fonts (all tofu) — fall back
        to the default fonts. */

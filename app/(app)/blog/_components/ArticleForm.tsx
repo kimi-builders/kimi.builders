@@ -553,7 +553,7 @@ export default function ArticleForm({
             </p>
           </Section>
 
-          <Section step={5} id="af-media" title={zh ? "形态(视频 / 演示稿)" : "Media (video / deck)"}>
+          <Section step={5} id="af-media" title={zh ? "形态（视频 / 演示稿）" : "Media (video / slides)"}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className={LABEL_CLS}>{zh ? "视频(可选)" : "Video (optional)"}</label>
@@ -587,7 +587,7 @@ export default function ArticleForm({
                 </p>
               </div>
               <div>
-                <label className={LABEL_CLS}>{zh ? "演示稿(可选)" : "Deck (optional)"}</label>
+                <label className={LABEL_CLS}>{zh ? "演示稿（可选）" : "Slides (optional)"}</label>
                 <input
                   value={guide.deck}
                   onChange={(e) => setG({ deck: e.target.value })}
