@@ -89,8 +89,17 @@ async function tryQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+function emptySitemapData(): SitemapData {
+  return { postIds: [], workIds: [], articleSlugs: [], seriesSlugs: [] };
+}
+
 export async function getSitemapData(): Promise<SitemapData> {
-  const pool = getPool();
+  let pool: ReturnType<typeof getPool>;
+  try {
+    pool = getPool();
+  } catch {
+    return emptySitemapData();
+  }
   const [postIds, workIds, articleSlugs, episodeSeries] = await Promise.all([
     tryQuery(async () => {
       const [rows] = await pool.query<RowDataPacket[]>(sitemapPostsQuery());
