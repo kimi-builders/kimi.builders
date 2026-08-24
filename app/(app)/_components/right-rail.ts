@@ -106,7 +106,7 @@ export function railFor(pathname: string): RailDecision {
      (metadata in the rail, slug in the decision key for shell
      re-evaluation). While the section isn't ready (UPCOMING.explore)
      everything falls back to community; the legacy /blog and /learn
-     routes are 301s with no rail branches. */
+     routes are 308s with no rail branches. */
   if (!UPCOMING.explore && (p === "/explore" || p.startsWith("/explore/"))) {
     if (p.startsWith("/explore/series/")) return decision("explore");
     if (p !== "/explore") {

@@ -97,7 +97,7 @@ test("facts 快照:七项全带、首项 hero 语义不变、URL 带 #facts、�
   assert.equal(s.facts.length, 7);
   assert.equal(s.facts[0].label, "全站同步 Token(累计)");
   assert.equal(s.facts[0].value, "38亿");
-  assert.equal(s.url, "https://kimi.builders/blog/letter-2026-08#facts");
+  assert.equal(s.url, "https://kimi.builders/explore/letter-2026-08#facts");
   assert.equal(s.aiNote, "数据聚合脚本生成");
 });
 
@@ -126,7 +126,7 @@ test("decisions 快照:chip 文案与生产页同口径,超出上限进 decision
   assert.equal(s.decisions[0].kind, "work");
   assert.equal(s.decisions[0].kindLabel, "精选构建");
   assert.equal(s.decisions[0].editorHandle, "aklman");
-  assert.equal(s.url, "https://kimi.builders/blog/letter-2026-08#decisions");
+  assert.equal(s.url, "https://kimi.builders/explore/letter-2026-08#decisions");
   assert.equal(s.aiNote, null); // disclosure only for facts
 });
 
@@ -173,7 +173,7 @@ test("fixture 映射 facts:第一期四项大数字,zh 标签", () => {
     ],
   );
   assert.equal(s.aiNote, null);
-  assert.equal(s.url, "https://kimi.builders/blog/letter-2026-08#facts");
+  assert.equal(s.url, "https://kimi.builders/explore/letter-2026-08#facts");
 });
 
 test("fixture 映射 decisions:best/underrated 保留夹具语气,配色归生产 kinds", () => {

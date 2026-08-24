@@ -10,6 +10,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
+import { notFound } from "next/navigation";
 import {
   ArrowBigUp,
   CalendarDays,
@@ -155,13 +156,7 @@ export default async function ProfilePage({
   const zh = locale === "zh";
   const profile = await getProfileByHandle(handle);
 
-  if (!profile) {
-    return (
-      <p className="mt-16 text-center text-sm text-grey">
-        {t(locale, "prof.notFound")}
-      </p>
-    );
-  }
+  if (!profile) notFound();
 
   const self = me?.id === profile.id;
   /* Per-field profile privacy: the visitor-facing display rules for

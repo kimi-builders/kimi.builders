@@ -129,7 +129,7 @@ const DICT = {
   },
   "feed.empty": {
     zh: "还没有帖子。来发第一帖 —— 咱们自己的社区,第一条内容就等你了。",
-    en: "No posts yet. Start the first thread — this is our community, and the first word is waiting on you.",
+    en: "No posts yet. Start the first thread — this community runs on its members.",
   },
   "feed.emptySub": {
     zh: "还没有订阅任何帖子 —— 在帖子页点「订阅」,重点讨论就会聚到这里。",
@@ -139,8 +139,8 @@ const DICT = {
      explicit CTA — that earns the first post better than cheerleading
      alone. */
   "feed.emptyHint": {
-    zh: "展示你的 build、抛出卡住的坑、或聊聊用法心得 —— 分类齐全,哪格都行。",
-    en: "Show off a build, ask about a blocker, or share how you work — every category counts.",
+    zh: "晒出你做的东西、抛出卡住的坑、或聊聊用法心得——分类齐全,哪格都行。",
+    en: "Show what you made, ask about a blocker, or share how you work — every category counts.",
   },
   "feed.emptyCta": {
     zh: "发布第一帖",
@@ -386,7 +386,7 @@ const DICT = {
   "auth.email": { zh: "邮箱", en: "Email" },
   /* ---- Login / signup / password reset ---- */
   "login.title": { zh: "登录 kimi.builders", en: "Sign in to kimi.builders" },
-  "login.titleRegister": { zh: "注册 kimi.builders", en: "Register — kimi.builders" },
+  "login.titleRegister": { zh: "注册 kimi.builders", en: "Create your kimi.builders account" },
   "login.titleForgot": { zh: "找回密码", en: "Reset password" },
   "login.titleReset": { zh: "设置新密码", en: "Set a new password" },
   "login.subtitle": { zh: "账号用于发帖、提交作品与用量同步,浏览无需登录。", en: "An account is for posting, works and usage sync — browsing needs none." },
@@ -510,7 +510,6 @@ const DICT = {
   "prof.noPosts": { zh: "还没有帖子。", en: "No posts yet." },
   "prof.noComments": { zh: "还没有评论。", en: "No comments yet." },
   "prof.commentedOn": { zh: "评论了", en: "commented on" },
-  "prof.notFound": { zh: "没有这个用户。", en: "No such user." },
   /* ---- Settings ---- */
   "set.title": { zh: "设置", en: "Settings" },
   /* Settings page header eyebrow (layout alignment pass). */
@@ -747,22 +746,6 @@ const DICT = {
   "soon.headline": { zh: "这块还在建", en: "Under construction" },
   "soon.planned": { zh: "规划里有什么", en: "WHAT'S PLANNED" },
   "soon.cta": { zh: "先去社区逛逛", en: "Browse the community" },
-  "soon.learn.desc": {
-    zh: "知识库:新手指南、实战教程、提示词库、Skills 库、活动归档与运营月报。内容放在 GitHub 公开仓库里维护,飞书做国内镜像。",
-    en: "The knowledge base: beginner guides, hands-on tutorials, prompt library, Skills library, event archive and monthly ops reports. Content lives in a public GitHub repo, mirrored to Feishu for CN readers.",
-  },
-  "soon.learn.items": {
-    zh: "新手指南\n实战教程\n提示词与 Skills 库\n活动归档与运营月报",
-    en: "Beginner guides\nHands-on tutorials\nPrompt & Skills library\nEvent archive & monthly reports",
-  },
-  "soon.works.desc": {
-    zh: "作品库:社区成员用 Kimi 构建的真实作品墙,带截图和链接;发帖「晒作品」板块的优秀内容会收录到这里。",
-    en: "The works gallery: real projects community members built with Kimi, with screenshots and links. The best of the Showcase board gets collected here.",
-  },
-  "soon.works.items": {
-    zh: "成员作品墙\n投稿与收录\n与 Awesome 列表联动",
-    en: "Member gallery\nSubmission & curation\nLinked with the Awesome list",
-  },
   /* ---- Usage dashboard ---- */
   "usage.intro": {
     zh: "以 Kimi 为主,汇总多种 AI 编程 Agent 的 token 与活跃数据。Collector 只上传统计字段,不上传对话内容、完整文件路径或供应商凭据。",
@@ -772,6 +755,14 @@ const DICT = {
     zh: "登录后查看你的用量看板:",
     en: "Log in to see your usage dashboard:",
   },
+  /* Usage route error boundary (usage/error.tsx; client-side locale via
+     <html lang>, same read as the root error page). */
+  "usageErr.title": { zh: "用量中心暂时无法加载", en: "Usage center unavailable" },
+  "usageErr.body": {
+    zh: "请求没有修改你的数据。请重试;如果问题持续出现,可将下方错误编号发给维护者。",
+    en: "The request didn't modify your data. Retry — if it keeps failing, send the error reference below to the maintainers.",
+  },
+  "usageErr.retry": { zh: "重新加载", en: "Retry" },
   /* Privacy switches: shared by the usage settings and the settings
      data section. */
   "usage.deviceLabel": {

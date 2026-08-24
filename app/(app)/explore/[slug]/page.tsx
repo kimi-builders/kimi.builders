@@ -10,7 +10,7 @@
      list) — a missing format yields no tab.
    Permalink discipline: ?tab=facts lands directly; section poster
    buttons enter the matching panel. Legacy /blog/<slug> and
-   /learn/<s>/<e> 301 here. */
+   /learn/<s>/<e> 308 here. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

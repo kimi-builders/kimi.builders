@@ -21,10 +21,20 @@ const jetbrains = localFont({
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
+  const title = t(locale, "site.metaTitle");
+  const description = t(locale, "site.metaDescription");
   return {
-    title: t(locale, "site.metaTitle"),
-    description: t(locale, "site.metaDescription"),
+    title,
+    description,
     metadataBase: new URL("https://kimi.builders"),
+    openGraph: {
+      title,
+      description,
+      siteName: "kimi.builders",
+      type: "website",
+      url: "https://kimi.builders",
+    },
+    twitter: { card: "summary", title, description },
   };
 }
 

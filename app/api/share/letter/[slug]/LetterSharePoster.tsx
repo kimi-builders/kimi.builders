@@ -169,8 +169,8 @@ function DecisionsBody({ snapshot }: { snapshot: LetterShareSnapshot }) {
 export function LetterSharePoster({ snapshot }: { snapshot: LetterShareSnapshot }) {
   const s = snapshot;
   const meta = SECTION_META[s.section];
-  const notes = [`kimi.builders/blog/${s.slug}`];
-  if (s.section === "facts") notes.push("VERIFIED COMMUNITY RECORD");
+  const notes = [`kimi.builders/explore/${s.slug}`];
+  if (s.section === "facts") notes.push("COMMUNITY RECORD · REPRODUCIBLE VIA THE USAGE CLI");
   if (s.section === "decisions") notes.push("EDITORIAL RECORD · 定夺到人");
   if (s.aiNote) notes.push(`AI 参与披露:${s.aiNote}`);
   return (
@@ -193,7 +193,7 @@ export function LetterSharePoster({ snapshot }: { snapshot: LetterShareSnapshot 
         initials={s.initials}
         name={s.title}
         handle={s.editorHandle}
-        linkLabel={`kimi.builders/blog/${s.slug}`}
+        linkLabel={`kimi.builders/explore/${s.slug}`}
       />
 
       <main

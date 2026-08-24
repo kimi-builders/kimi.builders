@@ -1,6 +1,6 @@
 /* The monthly detail merged into explore: /blog/<slug> ->
-   /explore/<slug> (?tab= passed through). */
-import { redirect } from "next/navigation";
+   /explore/<slug> (308, ?tab= passed through). */
+import { permanentRedirect } from "next/navigation";
 
 export default async function LetterRedirectPage({
   params,
@@ -13,5 +13,5 @@ export default async function LetterRedirectPage({
   const sp = await searchParams;
   const rawTab = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
   const tab = rawTab ? `?tab=${encodeURIComponent(rawTab)}` : "";
-  redirect(`/explore/${slug}${tab}`);
+  permanentRedirect(`/explore/${slug}${tab}`);
 }

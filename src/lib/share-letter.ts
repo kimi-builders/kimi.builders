@@ -85,7 +85,7 @@ export function decisionKindLabel(kind: IssueDecisionKind): string {
 }
 
 function sectionUrl(slug: string, section: LetterSection): string {
-  return `${POSTER_SITE_ORIGIN}/blog/${slug}#${section}`;
+  return `${POSTER_SITE_ORIGIN}/explore/${slug}#${section}`;
 }
 
 function aiNoteOf(issue: AssembledIssue, section: LetterSection): string | null {
