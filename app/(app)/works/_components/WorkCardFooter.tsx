@@ -98,7 +98,12 @@ export default function WorkCardFooter({
           </a>
         )}
         {meId !== null && w.userId === meId && (
-          <WorkOwnerActions workId={w.id} locale={locale} compact={compact} />
+          <WorkOwnerActions
+            workId={w.id}
+            locale={locale}
+            compact={compact}
+            openUp
+          />
         )}
       </span>
     </div>

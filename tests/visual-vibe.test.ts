@@ -89,3 +89,13 @@ test("reduced motion keeps the endless twin-star brand orbit as the single excep
   assert.doesNotMatch(css, /kb-brand-logo-static/);
   assert.match(logo, /<animateMotion[^>]*repeatCount="indefinite"/);
 });
+
+test("home entries fit Chinese subcopy and work-card owner menus open inside clipped cards", () => {
+  const home = read("app/page.tsx");
+  const ownerActions = read("app/(app)/works/_components/WorkOwnerActions.tsx");
+  const cardFooter = read("app/(app)/works/_components/WorkCardFooter.tsx");
+
+  assert.match(home, /className="kb-navlink flex w-\[9\.75rem\] /);
+  assert.match(ownerActions, /openUp \? "bottom-10 origin-bottom-right" : "top-10 origin-top-right"/);
+  assert.match(cardFooter, /<WorkOwnerActions[\s\S]*?openUp/);
+});

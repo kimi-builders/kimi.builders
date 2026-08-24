@@ -18,6 +18,7 @@ export default function WorkOwnerActions({
   locale,
   redirectTo,
   compact = false,
+  openUp = false,
 }: {
   workId: number;
   locale: Locale;
@@ -25,6 +26,10 @@ export default function WorkOwnerActions({
      the removed page); card contexts refresh by default. */
   redirectTo?: string;
   compact?: boolean;
+  /* List cards clip their media to the card radius, so the footer menu
+     opens upward and stays inside that clipping boundary. Detail-page
+     actions keep the default downward direction. */
+  openUp?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -65,25 +70,29 @@ export default function WorkOwnerActions({
       {/* The popover surface is opaque bg-moon (same source as
           FilterDropdown; bg-card is a 5% wash that lets text below bleed
           through); menu-item hover inverts to a light bg-card step. */}
-      <div className="absolute right-0 top-10 z-30 w-36 rounded-xl border border-line bg-moon p-1.5 shadow-xl">
-      <Link
-        href={`/works/${workId}/edit`}
-        aria-label={t(locale, "post.edit")}
-        className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-card hover:text-ui-blue"
+      <div
+        className={`absolute right-0 z-30 w-36 rounded-xl border border-line bg-moon p-1.5 shadow-xl ${
+          openUp ? "bottom-10 origin-bottom-right" : "top-10 origin-top-right"
+        }`}
       >
-        <SquarePen size={14} aria-hidden="true" />
-        <span>{t(locale, "post.edit")}</span>
-      </Link>
-      <button
-        type="button"
-        onClick={remove}
-        disabled={busy}
-        aria-label={t(locale, "post.delete")}
-        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-card hover:text-status-danger-fg disabled:opacity-40"
-      >
-        <Trash2 size={14} aria-hidden="true" />
-        <span>{t(locale, "post.delete")}</span>
-      </button>
+        <Link
+          href={`/works/${workId}/edit`}
+          aria-label={t(locale, "post.edit")}
+          className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-paper transition-colors hover:bg-card hover:text-ui-blue"
+        >
+          <SquarePen size={14} aria-hidden="true" />
+          <span>{t(locale, "post.edit")}</span>
+        </Link>
+        <button
+          type="button"
+          onClick={remove}
+          disabled={busy}
+          aria-label={t(locale, "post.delete")}
+          className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-grey transition-colors hover:bg-card hover:text-status-danger-fg disabled:opacity-40"
+        >
+          <Trash2 size={14} aria-hidden="true" />
+          <span>{t(locale, "post.delete")}</span>
+        </button>
       </div>
     </details>
   );
