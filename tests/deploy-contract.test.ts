@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  verifyDeepHealthBody,
   verifyHealthBody,
   verifyPm2Stability,
   verifyPm2Target,
@@ -58,5 +59,16 @@ test("health verification requires ok=true and the exact release", () => {
   assert.throws(
     () => verifyHealthBody(JSON.stringify({ ok: true, version: "old" }), version),
     /does not match/,
+  );
+});
+
+test("deep health verification additionally requires the database probe", () => {
+  assert.doesNotThrow(() => verifyDeepHealthBody(
+    JSON.stringify({ ok: true, db: true, version }),
+    version,
+  ));
+  assert.throws(
+    () => verifyDeepHealthBody(JSON.stringify({ ok: true, db: false, version }), version),
+    /deep health response does not match/,
   );
 });

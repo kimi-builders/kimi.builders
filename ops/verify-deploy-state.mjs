@@ -48,6 +48,17 @@ export function verifyHealthBody(body, expectedVersion) {
   }
 }
 
+export function verifyDeepHealthBody(body, expectedVersion) {
+  const health = JSON.parse(body);
+  if (
+    health?.ok !== true ||
+    health?.db !== true ||
+    health?.version !== expectedVersion
+  ) {
+    throw new Error(`deep health response does not match release ${expectedVersion}`);
+  }
+}
+
 async function readStdin() {
   let input = '';
   for await (const chunk of process.stdin) input += chunk;
@@ -70,6 +81,10 @@ async function main() {
   }
   if (command === 'health') {
     verifyHealthBody(await readStdin(), first);
+    return;
+  }
+  if (command === 'deep-health') {
+    verifyDeepHealthBody(await readStdin(), first);
     return;
   }
   throw new Error('unknown deploy verification command');

@@ -18,8 +18,8 @@
  *   --strict           accepted on migrate/status; states explicitly that
  *                      integrity problems fail closed — the runner has no
  *                      other mode
- *   --require-clean    status: pending migrations fail the run (gates and
- *                      post-migrate verification)
+ *   --require-clean    status: explicitly require the default clean state
+ *                      (useful for self-documenting gates)
  *   --allow-pending    status: pending migrations are tolerated (pre-migrate
  *                      status); contradictory with --require-clean
  *   unknown flags are rejected, never silently ignored
@@ -233,16 +233,12 @@ export function parseFlags(argv) {
 
 /* status exit contract:
    - drift/missing always fail (integrity problems are never tolerable);
-   - pending fails the run only when the caller pinned a contract:
-     --require-clean (gates, post-migrate verification) or, inverted,
-     --allow-pending (pre-migrate status) tolerates it;
-   - bare `status` stays informational for humans: it prints pending and
-     exits 0 unless integrity is broken. */
+   - pending fails by default and with --require-clean;
+   - only the explicit --allow-pending pre-migrate mode tolerates pending. */
 export function statusExitCode(state, flags) {
   if (state.drift.length > 0 || state.missing.length > 0) return 1;
   if (state.pending.length === 0) return 0;
-  if (flags.requireClean || flags.allowPending) return flags.requireClean ? 1 : 0;
-  return 0;
+  return flags.allowPending ? 0 : 1;
 }
 
 async function main() {

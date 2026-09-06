@@ -123,12 +123,12 @@ test("migration state reports drift, pending, and missing applied files", () => 
   assert.deepEqual(state.missing, ["removed.sql"]);
 });
 
-test("status exit contract: gates fail on pending, pre-migrate tolerates it", () => {
+test("status exit contract: pending fails closed unless explicitly allowed", () => {
   const dirty = { pending: ["004.sql"], drift: [], missing: [] };
   const broken = { pending: [], drift: ["002.sql"], missing: [] };
   const hole = { pending: [], drift: [], missing: ["gone.sql"] };
 
-  /* Deploy gates must pin their contract explicitly. */
+  /* Explicit deploy gates fail on pending. */
   assert.equal(statusExitCode(dirty, parseFlags(["--strict", "--require-clean"])), 1);
   /* Pre-migrate status tolerates pending but never drift/missing. */
   assert.equal(statusExitCode(dirty, parseFlags(["--strict", "--allow-pending"])), 0);
@@ -138,8 +138,8 @@ test("status exit contract: gates fail on pending, pre-migrate tolerates it", ()
   const clean = { pending: [], drift: [], missing: [] };
   assert.equal(statusExitCode(clean, parseFlags(["--strict", "--require-clean"])), 0);
   assert.equal(statusExitCode(clean, parseFlags([])), 0);
-  /* Bare `status` is the human informational mode: pending prints, exit 0. */
-  assert.equal(statusExitCode(dirty, parseFlags([])), 0);
+  /* Bare `status` is also a clean-state gate, matching the documented npm command. */
+  assert.equal(statusExitCode(dirty, parseFlags([])), 1);
 });
 
 test("runner flags: unknown or contradictory flags fail loudly instead of being ignored", () => {

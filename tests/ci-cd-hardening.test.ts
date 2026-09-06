@@ -45,6 +45,8 @@ test("production deploy waits for database validation and can roll back public f
   assert.match(workflow, /USAGE_OBSERVABILITY_VERBOSE/);
   assert.match(workflow, /Capture rollback release/);
   assert.match(workflow, /Rollback public verification failure/);
+  assert.match(workflow, /ops\/deep-health-check\.sh/);
+  assert.match(workflow, /HEALTH_ALERT_WEBHOOK_URL/);
 });
 
 test("manual production migration uses the deploy host and the production lock", () => {
@@ -68,4 +70,29 @@ test("release activation pins runtime config and verifies process stability", ()
   assert.match(script, /stable_release/);
   assert.match(script, /target_env="\$target\/\.env\.production"/);
   assert.match(script, /source "\$target_env"/);
+  assert.match(script, /install_deep_health_monitor/);
+  assert.match(script, /crontab "\$cron_dir\/next"/);
+  assert.match(script, /! install_deep_health_monitor "\$release_dir"; then/);
+  assert.match(script, /deploy-health\.lock/);
+  assert.match(script, /flock 9 \|\| die/);
+  const switched = script.indexOf('switch_current "$release_dir"');
+  const monitorGate = script.indexOf('! install_deep_health_monitor "$release_dir"; then');
+  const rollback = script.indexOf('switch_current "$previous_release"', monitorGate);
+  assert.ok(switched >= 0 && monitorGate > switched && rollback > monitorGate);
+  assert.match(script, /mv -f -- "\$monitor_backup" "\$monitor_script" \|\| true/);
+});
+
+test("deep health monitor authenticates locally and alerts only on transitions", () => {
+  const script = source("ops/deep-health-check.sh");
+  assert.match(script, /127\.0\.0\.1:\$\{app_port\}\/api\/health\/deep/);
+  assert.match(script, /Authorization: Bearer \$cron_secret/);
+  assert.match(script, /--connect-timeout 2 --max-time 5/);
+  assert.match(script, /verify-deploy-state\.mjs/);
+  assert.match(script, /deep-health "\$expected_version"/);
+  assert.match(script, /previous_state.*!= "failed"/);
+  assert.match(script, /HEALTH_ALERT_WEBHOOK_URL/);
+  assert.match(script, /notify_transition "recovered"/);
+  assert.match(script, /flock --nonblock 9 \|\| exit 0/);
+  assert.match(script, /runtime_env="\$current_release\/\.env\.production"/);
+  assert.doesNotMatch(script, /runtime_env="\$shared_dir\/\.env\.production"/);
 });

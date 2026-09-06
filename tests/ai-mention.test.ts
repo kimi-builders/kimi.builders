@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import type { Pool } from "mysql2/promise";
 
 const aiReply = readFileSync(
   new URL("../src/lib/ai-reply.ts", import.meta.url),
@@ -186,14 +187,53 @@ test("aiWorkReplySwitchesAllow 行为:开关矩阵(纯函数)", async () => {
 
 /* ---- Summon status / unread-count polling endpoints ---- */
 
-test("status 路由:登录门禁 + 只查 mention 任务 + no-store", () => {
+test("status 路由:登录门禁 + 召唤者约束 + 只查 mention 任务 + no-store", () => {
   const src = readFileSync(
     new URL("../app/api/ai-reply/status/route.ts", import.meta.url),
     "utf8",
   );
   assertOrder(src, "getSessionUser()", "getPool()", "会话先于查询");
+  assert.match(src, /c\.user_id = \?/);
+  assert.match(src, /\[userId, target\.id\]/);
   assert.match(src, /kind = 'mention'/);
   assert.match(src, /Cache-Control/);
+});
+
+test("status 路由:帖子与作品均只向召唤者返回任务状态", async () => {
+  const { findMentionJobState } = await import("../app/api/ai-reply/status/route");
+  const fixtures = {
+    comments: { id: 41, ownerId: 7, status: "done" },
+    work_comments: { id: 52, ownerId: 9, status: "pending" },
+  } as const;
+  const db = {
+    async query(sql: string, values: unknown[]) {
+      assert.match(sql, /c\.user_id = \?/);
+      const table = sql.includes("JOIN work_comments") ? "work_comments" : "comments";
+      const fixture = fixtures[table];
+      const [userId, id] = values.map(Number);
+      const rows = userId === fixture.ownerId && id === fixture.id
+        ? [{ status: fixture.status }]
+        : [];
+      return [rows, []];
+    },
+  } as unknown as Pick<Pool, "query">;
+
+  assert.equal(
+    await findMentionJobState(db, 7, { kind: "post", id: 41 }),
+    "done",
+  );
+  assert.equal(
+    await findMentionJobState(db, 8, { kind: "post", id: 41 }),
+    "none",
+  );
+  assert.equal(
+    await findMentionJobState(db, 9, { kind: "work", id: 52 }),
+    "pending",
+  );
+  assert.equal(
+    await findMentionJobState(db, 10, { kind: "work", id: 52 }),
+    "none",
+  );
 });
 
 test("unread 路由:登录门禁 + 未读计数来源", () => {

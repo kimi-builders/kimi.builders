@@ -47,6 +47,14 @@ shared_verifier="$shared_dir/verify-deploy-state.mjs"
 mkdir -p "$releases_dir" "$incoming_dir" "$shared_dir" "$env_dir"
 chmod 700 "$shared_dir" "$env_dir"
 
+# Serialize the release switch with the deep-health reader. The monitor uses a
+# non-blocking lock and skips this minute while deployment owns the window.
+command -v flock >/dev/null 2>&1 || die "flock is not installed or not on PATH"
+deploy_health_lock="$shared_dir/deploy-health.lock"
+exec 9>"$deploy_health_lock"
+chmod 600 "$deploy_health_lock"
+flock 9 || die "cannot acquire the deploy-health lock"
+
 previous_release=""
 if [[ -L "$current_link" ]]; then
   previous_release="$(readlink -f "$current_link" || true)"
@@ -60,6 +68,7 @@ managed_env_names=(
   DATABASE_URL AUTH_SECRET AUTH_GITHUB_ID AUTH_GITHUB_SECRET
   AUTH_GOOGLE_ID AUTH_GOOGLE_SECRET KIMI_API_KEY KIMI_MODEL
   USAGE_KEY_PEPPER USAGE_OBSERVABILITY_VERBOSE CRON_SECRET
+  HEALTH_ALERT_WEBHOOK_URL
   R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET
   R2_PUBLIC_BASE_URL RESEND_API_KEY MAIL_FROM
 )
@@ -97,7 +106,7 @@ validate_runtime_env() {
 }
 
 # The deploy user must expose all runtime binaries through its login PATH.
-for command in cmp curl node pm2 sha256sum; do
+for command in cmp crontab curl node pm2 sha256sum; do
   command -v "$command" >/dev/null 2>&1 || die "$command is not installed or not on PATH"
 done
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
@@ -294,10 +303,74 @@ stable_release() {
     node "$verifier" stable "$app_name" "$expected"
 }
 
+install_deep_health_monitor() {
+  local target="$1"
+  local source_script="$target/ops/deep-health-check.sh"
+  local monitor_script="$shared_dir/deep-health-check.sh"
+  local monitor_next="$shared_dir/.deep-health-check.$$"
+  local monitor_backup="$shared_dir/.deep-health-check.backup.$$"
+  local start_marker="# BEGIN $app_name managed deep health"
+  local end_marker="# END $app_name managed deep health"
+  local replaced_monitor=0
+  local had_monitor=0
+  if [[ -f "$source_script" ]]; then
+    if [[ -f "$monitor_script" ]]; then
+      cp -p -- "$monitor_script" "$monitor_backup" || return 1
+      had_monitor=1
+    fi
+    if ! install -m 700 "$source_script" "$monitor_next"; then
+      rm -f -- "$monitor_backup" "$monitor_next"
+      return 1
+    fi
+    if ! mv -f -- "$monitor_next" "$monitor_script"; then
+      rm -f -- "$monitor_backup" "$monitor_next"
+      return 1
+    fi
+    replaced_monitor=1
+  elif [[ ! -f "$monitor_script" ]]; then
+    echo "deploy: $source_script is missing and no shared monitor is available" >&2
+    return 1
+  else
+    echo "deploy: retaining shared deep-health monitor for legacy rollback $release" >&2
+  fi
+
+  (
+    set -Eeuo pipefail
+    local cron_dir
+    cron_dir="$(mktemp -d)"
+    trap 'rm -rf -- "$cron_dir"' EXIT
+    crontab -l > "$cron_dir/current" 2>/dev/null || true
+    awk -v start="$start_marker" -v end="$end_marker" '
+      $0 == start { managed = 1; next }
+      $0 == end { managed = 0; next }
+      !managed { print }
+    ' "$cron_dir/current" > "$cron_dir/next"
+    {
+      printf '%s\n' "$start_marker"
+      printf '* * * * * %q %q %q >> %q 2>&1\n' \
+        "$monitor_script" "$deploy_root" "$app_port" "$shared_dir/deep-health.log"
+      printf '%s\n' "$end_marker"
+    } >> "$cron_dir/next"
+    crontab "$cron_dir/next"
+  ) || {
+    if (( replaced_monitor == 1 )); then
+      if (( had_monitor == 1 )); then
+        mv -f -- "$monitor_backup" "$monitor_script" || true
+      else
+        rm -f -- "$monitor_script"
+      fi
+    fi
+    echo "deploy: failed to install deep-health crontab" >&2
+    return 1
+  }
+  rm -f -- "$monitor_backup"
+}
+
 switch_current "$release_dir"
 if ! start_release "$release_dir" ||
    ! healthy_release "$release" "$release_dir" ||
-   ! stable_release "$release" "$release_dir"; then
+   ! stable_release "$release" "$release_dir" ||
+   ! install_deep_health_monitor "$release_dir"; then
   echo "deploy: activation check failed for $release; rolling back" >&2
   pm2 logs "$app_name" --lines 80 --nostream || true
 
