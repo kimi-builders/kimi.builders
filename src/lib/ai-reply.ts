@@ -539,6 +539,10 @@ async function callKimi(
       : `${catLabel}:${post.category}\n${noun}标题:${post.title || "(无标题)"}\n${noun}正文(节选):\n${post.body}\n\n对话链(从旧到新,最后一条是最新回复,你要接这条):\n${convoGuard(post.convo)}`;
   const res = await fetch("https://api.moonshot.cn/v1/chat/completions", {
     method: "POST",
+    // Hangs must not pin the fire-and-forget job runner: the cron retry
+    // path owns recovery, so an upstream stall aborts instead of waiting
+    // on the socket's own (absent) timeout.
+    signal: AbortSignal.timeout(45_000),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
@@ -547,6 +551,10 @@ async function callKimi(
       model,
       // No temperature: k2.6/k2.7 only accept temperature=1; any other
       // explicit value 400s.
+      // Community replies are capped at 220-300 visible characters. Keep
+      // headroom for model reasoning without paying for an 8K-token runaway
+      // response that would be discarded by the storage limit anyway.
+      max_tokens: 4096,
       messages: [
         { role: "system", content: systemPrompt.replace("{LANG_RULE}", langRule) },
         { role: "user", content: userContent },

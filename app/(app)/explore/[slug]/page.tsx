@@ -45,6 +45,7 @@ import DetailTabs, { type DetailTab } from "@/components/DetailTabs";
 import Markdown from "@/components/Markdown";
 import ShareButton from "@/components/ShareButton";
 import VideoEmbed from "@/components/VideoEmbed";
+import DeckEmbed from "../_components/DeckEmbed";
 import SoonPanel from "../../_components/SoonPanel";
 import { ArticleKeys } from "../_components/ExploreKeys";
 import { decisionChip } from "../../blog/_components/chips";
@@ -532,33 +533,15 @@ async function GuideDetail({
   }
   if (tutorial.payload.deck) {
     const deck = tutorial.payload.deck;
-    /* Deck embed: HTML decks (Kimi share links, exported pages, on-site
-       files) and PDFs render inline; hosts that refuse framing degrade
-       to the open card below — the link is always the escape hatch. */
-    const external = /^https?:\/\//i.test(deck);
-    /* PDFs stay unsandboxed (viewer plugins break under sandbox and a
-       PDF is inert); other cross-origin frames keep their own origin —
-       scripts, forms, popups and their own storage run so interactive
-       decks (e.g. Kimi share links) render fully, while the sandbox
-       still blocks top-navigation hijacking. On-site paths run
-       same-origin unsandboxed (our own static exports). */
-    const isPdf = /\.pdf(\?|#|$)/i.test(deck);
+    /* Deck embed: click-to-load via DeckEmbed (sandbox split lives
+       there); hosts that refuse framing degrade to the open card below —
+       the link is always the escape hatch. */
     tabs.push({
       id: "deck",
       label: zh ? "演示稿" : "Slides",
       panel: (
         <div className="border-b border-line py-9">
-          <iframe
-            src={deck}
-            title={tutorial.title}
-            loading="lazy"
-            sandbox={
-              external && !isPdf
-                ? "allow-scripts allow-popups allow-forms allow-same-origin"
-                : undefined
-            }
-            className="h-[560px] w-full rounded-2xl border border-line bg-card"
-          />
+          <DeckEmbed deck={deck} title={tutorial.title} locale={locale} />
           <a
             href={deck}
             target="_blank"

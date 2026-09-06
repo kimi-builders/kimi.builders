@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import UnreadBadge from "@/components/UnreadBadge";
+import HoverPrefetchLink from "@/components/HoverPrefetchLink";
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { t, type Locale } from "@/src/lib/i18n";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
@@ -46,7 +47,7 @@ export default function TopBar({
         <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
         <ShortcutsButton locale={locale} className={iconBtn} />
         {loggedIn && (
-          <Link
+          <HoverPrefetchLink
             href="/community/notifications"
             data-tip={t(locale, "topbar.notif")}
             data-tip-side="bottom"
@@ -60,7 +61,7 @@ export default function TopBar({
               locale={locale}
               className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg"
             />
-          </Link>
+          </HoverPrefetchLink>
         )}
         <ThemeToggle locale={locale} className={iconBtn} />
         <VibeToggle locale={locale} className={iconBtn} />

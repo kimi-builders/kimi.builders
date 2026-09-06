@@ -26,6 +26,7 @@ import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import CountUpStat from "@/components/CountUpStat";
 import { DataMeta } from "@/components/data-display";
+import HoverPrefetchLink from "@/components/HoverPrefetchLink";
 import UnreadBadge from "@/components/UnreadBadge";
 import { ShortcutsButton } from "@/components/KeyboardShortcuts";
 import { TrackClick } from "@/app/(app)/_components/track";
@@ -158,7 +159,7 @@ export default async function Home({
           {/* Shortcuts button is desktop-only (>=lg): touch devices have no keyboard */}
           <ShortcutsButton locale={locale} className={`${iconBtn} max-lg:hidden`} />
           {user && (
-            <Link
+            <HoverPrefetchLink
               href="/community/notifications"
               data-tip={t(locale, "topbar.notif")}
               data-tip-side="bottom"
@@ -172,7 +173,7 @@ export default async function Home({
                 locale={locale}
                 className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-bg"
               />
-            </Link>
+            </HoverPrefetchLink>
           )}
           <ThemeToggle locale={locale} className={iconBtn} />
           <VibeToggle locale={locale} className={iconBtn} />

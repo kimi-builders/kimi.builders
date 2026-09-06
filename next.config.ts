@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   // .next/static 拷到 standalone 产物旁边再上传(参照 kimi-cookbook)。
   output: "standalone",
 
+  // Next sends X-Powered-By by default; it only aids fingerprinting.
+  poweredByHeader: false,
+
   // 部署工作流注入 git SHA;发布校验(release identity)用它确认
   // immutable release 与构建产物属于同一 commit。
   deploymentId: process.env.DEPLOYMENT_VERSION,

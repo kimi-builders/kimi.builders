@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
+import HoverPrefetchLink from "@/components/HoverPrefetchLink";
 import { t, type Locale } from "@/src/lib/i18n";
 import MobileNavDrawer from "./MobileNavDrawer";
 import GlobalSearch from "./GlobalSearch";
@@ -47,7 +48,7 @@ export default function MobileTopBar({
       </Link>
       <div className="ml-auto flex shrink-0 items-center gap-1">
         {loggedIn && (
-          <Link
+          <HoverPrefetchLink
             href="/community/notifications"
             title={t(locale, "topbar.notif")}
             aria-label={t(locale, "topbar.notif")}
@@ -59,7 +60,7 @@ export default function MobileTopBar({
                 {unread > 99 ? "99+" : unread}
               </span>
             )}
-          </Link>
+          </HoverPrefetchLink>
         )}
         <GlobalSearch
           locale={locale}

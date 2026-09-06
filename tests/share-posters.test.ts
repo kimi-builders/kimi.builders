@@ -413,6 +413,23 @@ test("四条海报路由共享 IP 限流(120/h),先于快照查询与渲染", ()
   assert.match(guard, /windowSeconds: 3600/);
 });
 
+test("用量海报先鉴权,再消耗独立的用户限流桶", () => {
+  const route = readFileSync(
+    new URL("../app/api/usage/share/route.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.ok(
+    route.indexOf("await getSessionUser()") <
+      route.indexOf("await usagePosterRateLimited(user.id)"),
+  );
+  const guard = readFileSync(
+    new URL("../app/api/share/poster-guard.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(guard, /scope: "usage-share-poster"/);
+  assert.match(guard, /identity: `user:\$\{userId\}`/);
+});
+
 test("poster-fonts 外拉带 5s 超时(两处 fetch),挂起不再拖住路由", () => {
   const src = readFileSync(new URL("../app/api/share/poster-fonts.ts", import.meta.url), "utf8");
   assert.equal(src.match(/AbortSignal\.timeout\(5_000\)/g)?.length ?? 0, 2);

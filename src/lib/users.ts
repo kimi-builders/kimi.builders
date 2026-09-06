@@ -2,6 +2,7 @@
    Session lookups live in ./auth/session; signup upserts in
    ./auth/users. */
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import { cache } from "react";
 import { isAllowedAvatarUrl } from "./avatar-urls";
 import { getPool } from "./db";
 
@@ -21,7 +22,10 @@ export interface UserProfile {
   createdAt: Date;
 }
 
-export async function getProfileByHandle(
+/* React cache(): the profile page's generateMetadata and page body both
+   resolve the same handle — one DB query per request, not two. Request
+   scoped, so results never leak across requests. */
+export const getProfileByHandle = cache(async function getProfileByHandle(
   handle: string,
 ): Promise<UserProfile | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -44,7 +48,7 @@ export async function getProfileByHandle(
     role: r.role,
     createdAt: r.created_at,
   };
-}
+});
 
 /* Profile display rules (pure; the owner's own view is unrestricted):
    hidden avatar -> empty string (callers fall back to the handle's

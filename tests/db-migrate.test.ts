@@ -4,7 +4,9 @@ import test from "node:test";
 import {
   applyMigrationFile,
   classifyMigrationState,
+  parseFlags,
   splitStatements,
+  statusExitCode,
 } from "../scripts/db-migrate.mjs";
 import {
   changedAppliedMigrations,
@@ -119,6 +121,42 @@ test("migration state reports drift, pending, and missing applied files", () => 
   assert.deepEqual(state.pending, ["003.sql"]);
   assert.deepEqual(state.drift, ["002.sql"]);
   assert.deepEqual(state.missing, ["removed.sql"]);
+});
+
+test("status exit contract: gates fail on pending, pre-migrate tolerates it", () => {
+  const dirty = { pending: ["004.sql"], drift: [], missing: [] };
+  const broken = { pending: [], drift: ["002.sql"], missing: [] };
+  const hole = { pending: [], drift: [], missing: ["gone.sql"] };
+
+  /* Deploy gates must pin their contract explicitly. */
+  assert.equal(statusExitCode(dirty, parseFlags(["--strict", "--require-clean"])), 1);
+  /* Pre-migrate status tolerates pending but never drift/missing. */
+  assert.equal(statusExitCode(dirty, parseFlags(["--strict", "--allow-pending"])), 0);
+  assert.equal(statusExitCode(broken, parseFlags(["--strict", "--allow-pending"])), 1);
+  assert.equal(statusExitCode(hole, parseFlags(["--strict", "--allow-pending"])), 1);
+  /* Clean state passes under every flag combination. */
+  const clean = { pending: [], drift: [], missing: [] };
+  assert.equal(statusExitCode(clean, parseFlags(["--strict", "--require-clean"])), 0);
+  assert.equal(statusExitCode(clean, parseFlags([])), 0);
+  /* Bare `status` is the human informational mode: pending prints, exit 0. */
+  assert.equal(statusExitCode(dirty, parseFlags([])), 0);
+});
+
+test("runner flags: unknown or contradictory flags fail loudly instead of being ignored", () => {
+  assert.deepEqual(parseFlags(["--strict"]), {
+    strict: true,
+    requireClean: false,
+    allowPending: false,
+    freshSchema: false,
+    filesFrom: null,
+  });
+  assert.equal(parseFlags(["--files-from", "list.txt"]).filesFrom, "list.txt");
+  assert.throws(() => parseFlags(["--strick"]), /unknown flag/);
+  assert.throws(
+    () => parseFlags(["--require-clean", "--allow-pending"]),
+    /contradictory/,
+  );
+  assert.throws(() => parseFlags(["--files-from"]), /--files-from requires/);
 });
 
 test("pending migrations preserve the explicit dependency order", () => {

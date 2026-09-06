@@ -270,6 +270,17 @@ export function userWorksCountQuery(
   };
 }
 
+/* Executor for the builder above, so callers (profile page) never touch
+   the pool directly — DB I/O stays in the data layer. */
+export async function getUserWorksCount(
+  userId: number,
+  self = false,
+): Promise<number> {
+  const q = userWorksCountQuery(userId, self);
+  const [rows] = await getPool().query<RowDataPacket[]>(q.sql, q.args);
+  return Number((rows as { n?: number }[])[0]?.n ?? 0);
+}
+
 export function buildProfileShareSnapshot(input: {
   profile: UserProfile;
   stats: ProfileStats;

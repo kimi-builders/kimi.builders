@@ -14,6 +14,16 @@
  *                      mark only the files listed in <path> (one per line,
  *                      basenames or db/migrations/ paths) — CI upgrade-path use
  *
+ * Flags:
+ *   --strict           accepted on migrate/status; states explicitly that
+ *                      integrity problems fail closed — the runner has no
+ *                      other mode
+ *   --require-clean    status: pending migrations fail the run (gates and
+ *                      post-migrate verification)
+ *   --allow-pending    status: pending migrations are tolerated (pre-migrate
+ *                      status); contradictory with --require-clean
+ *   unknown flags are rejected, never silently ignored
+ *
  * Env: DATABASE_URL=mysql://user:pass@host:3306/dbname (required).
  *
  * Design notes:
@@ -176,7 +186,67 @@ function maskUrl(raw) {
   }
 }
 
+/* CLI flags. Fail-closed integrity (drift/missing abort everything) is
+   the only mode the runner has; --strict exists so CI/deploy scripts can
+   state that contract explicitly. Unknown flags are rejected — a typo
+   must never silently downgrade a gate. */
+const KNOWN_FLAGS = new Set([
+  '--strict',
+  '--require-clean',
+  '--allow-pending',
+  '--fresh-schema',
+  '--files-from',
+]);
+
+export function parseFlags(argv) {
+  const flags = {
+    strict: false,
+    requireClean: false,
+    allowPending: false,
+    freshSchema: false,
+    filesFrom: null,
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--files-from') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('--')) {
+        throw new Error('--files-from requires a path argument');
+      }
+      flags.filesFrom = value;
+      i += 1;
+      continue;
+    }
+    if (!KNOWN_FLAGS.has(arg)) {
+      throw new Error(`unknown flag: ${arg}`);
+    }
+    if (arg === '--strict') flags.strict = true;
+    else if (arg === '--require-clean') flags.requireClean = true;
+    else if (arg === '--allow-pending') flags.allowPending = true;
+    else if (arg === '--fresh-schema') flags.freshSchema = true;
+  }
+  if (flags.requireClean && flags.allowPending) {
+    throw new Error('--require-clean and --allow-pending are contradictory');
+  }
+  return flags;
+}
+
+/* status exit contract:
+   - drift/missing always fail (integrity problems are never tolerable);
+   - pending fails the run only when the caller pinned a contract:
+     --require-clean (gates, post-migrate verification) or, inverted,
+     --allow-pending (pre-migrate status) tolerates it;
+   - bare `status` stays informational for humans: it prints pending and
+     exits 0 unless integrity is broken. */
+export function statusExitCode(state, flags) {
+  if (state.drift.length > 0 || state.missing.length > 0) return 1;
+  if (state.pending.length === 0) return 0;
+  if (flags.requireClean || flags.allowPending) return flags.requireClean ? 1 : 0;
+  return 0;
+}
+
 async function main() {
+  const flags = parseFlags(process.argv.slice(3));
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     console.error('DATABASE_URL is not set');
@@ -207,15 +277,14 @@ async function main() {
 
     if (command === 'init-ledger') {
       let names = files;
-      const marker = process.argv.indexOf('--files-from');
-      if (marker !== -1) {
-        const listed = readFileSync(process.argv[marker + 1], 'utf8')
+      if (flags.filesFrom) {
+        const listed = readFileSync(flags.filesFrom, 'utf8')
           .split('\n')
           .map((line) => line.trim().replace(/^db\/migrations\//, ''))
           .filter((line) => line.endsWith('.sql'));
         names = listed;
       }
-      if (process.argv.includes('--fresh-schema')) {
+      if (flags.freshSchema) {
         if (applied.size !== 0) {
           throw new Error('init-ledger --fresh-schema requires an empty migration ledger');
         }
@@ -247,10 +316,7 @@ async function main() {
       for (const file of pending) console.log(`  pending  ${file}`);
       for (const file of drift) console.log(`  drift    ${file}`);
       for (const file of missing) console.log(`  missing  ${file}`);
-      const allowPending = process.argv.includes('--allow-pending');
-      if (drift.length > 0 || missing.length > 0 || (!allowPending && pending.length > 0)) {
-        process.exitCode = 1;
-      }
+      process.exitCode = statusExitCode({ pending, drift, missing }, flags);
       return;
     }
 

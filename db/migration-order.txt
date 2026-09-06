@@ -43,3 +43,4 @@
 20260920_article_payload.sql
 20260921_works_source_path.sql
 20260922_comment_retry_duplicate_cleanup.sql
+20260906_analytics_events_collation.sql

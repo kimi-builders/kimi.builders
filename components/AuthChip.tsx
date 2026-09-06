@@ -3,10 +3,10 @@
    right) and the shell's mobile mini bar; compact hides @handle (saves
    width on narrow screens). Copy follows the UI language. */
 import { getSessionUser } from "@/src/lib/auth/session";
-import Link from "next/link";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import Avatar from "@/components/Avatar";
+import HoverPrefetchLink from "@/components/HoverPrefetchLink";
 
 export default async function AuthChip({ compact = false }: { compact?: boolean }) {
   const user = await getSessionUser();
@@ -14,7 +14,7 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
   if (user) {
     return (
       <>
-        <Link
+        <HoverPrefetchLink
           href={`/u/${user.handle}`}
           title={`@${user.handle}`}
           className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
@@ -25,14 +25,14 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
             size={28}
             className="transition-opacity hover:opacity-80"
           />
-        </Link>
+        </HoverPrefetchLink>
         {!compact && (
-          <Link
+          <HoverPrefetchLink
             href={`/u/${user.handle}`}
             className="text-paper transition-colors hover:text-ui-blue"
           >
             @{user.handle}
-          </Link>
+          </HoverPrefetchLink>
         )}
         {/* Sign-out is a form: logout is POST-only, never a GET link that
             prefetch or a cross-site img tag could trigger. */}
@@ -53,11 +53,11 @@ export default async function AuthChip({ compact = false }: { compact?: boolean 
        browsing context only piles noise onto the top bar; all three
        live inside the modal. Link soft-navigates -> the in-app /login
        intercepts into a modal, home context included. */
-    <Link
+    <HoverPrefetchLink
       href="/login"
       className="text-paper underline decoration-ui-blue/60 underline-offset-4 transition-colors hover:text-ui-blue"
     >
       {t(locale, "auth.login")}
-    </Link>
+    </HoverPrefetchLink>
   );
 }

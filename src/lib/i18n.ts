@@ -1773,6 +1773,7 @@ const DICT = {
   },
   "mod.menu": { zh: "管理", en: "Moderate" },
   "video.play": { zh: "播放视频", en: "Play video" },
+  "explore.loadDeck": { zh: "加载演示稿", en: "Load slides" },
   "mod.hide": { zh: "屏蔽", en: "Hide" },
   "mod.unhide": { zh: "解除屏蔽", en: "Unhide" },
   "mod.hidePrompt": {

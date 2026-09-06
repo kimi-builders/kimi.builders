@@ -21,6 +21,12 @@ function assertOrder(a: string, b: string, label: string) {
 
 test("ingest POST: 设备鉴权先于请求体解析与写库", () => {
   assertOrder("authenticateUsageRequest(", "readUsageJson(", "鉴权先于解析");
+  /* Authenticated devices are rate-limited per key id before any body
+     parsing or write — a leaked key is bounded, not merely authenticated. */
+  assertOrder("authenticateUsageRequest(", "consumeUsageRateLimitResult(", "鉴权先于限流");
+  assertOrder("consumeUsageRateLimitResult(", "ingestUsage(", "限流先于写库");
+  assert.match(src, /scope: "usage-ingest"/);
+  assert.match(src, /"Retry-After": String\(rate\.retryAfterSeconds\)/);
   /* validateUsageIngest(await readUsageJson(...)) is a nested call — text
      order opposes execution order, so we assert textually only the
      orderings that hold in execution: parse-before-write and

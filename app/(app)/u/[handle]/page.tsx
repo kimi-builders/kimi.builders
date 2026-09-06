@@ -27,7 +27,6 @@ import { TrackClick } from "@/app/(app)/_components/track";
 import { trackEvent } from "@/src/lib/analytics";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
-import { getPool } from "@/src/lib/db";
 import { plainExcerpt, relTime } from "@/src/lib/format";
 import { formatApproxUsdMicros } from "@/src/lib/data-display";
 import { buildUsageInsights } from "@/src/lib/usage/insights";
@@ -36,7 +35,7 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { detailMetadata } from "@/src/lib/page-metadata";
 import { getUserComments, getUserPosts } from "@/src/lib/posts";
 import { getProfileByHandle, getProfileStats, profileDisplay } from "@/src/lib/users";
-import { userWorksCountQuery } from "@/src/lib/share-posters";
+import { getUserWorksCount } from "@/src/lib/share-posters";
 import { USAGE_WEEKDAYS_EN, USAGE_WEEKDAYS_ZH } from "@/src/lib/usage/heatmap";
 import { USAGE_DISPLAY_CURRENCIES } from "@/src/lib/usage/pricing";
 import type { UsageTrendDay } from "@/src/lib/usage/query";
@@ -204,8 +203,7 @@ export default async function ProfilePage({
   const tz = Number.isFinite(parsedTz) ? parsedTz : 0;
 
   const ownerSettings = usageVisible ? await getUsageSettings(profile.id) : null;
-  const worksCountQ = userWorksCountQuery(profile.id, self);
-  const [stats, posts, comments, works, heatmap, daily, topDims, snapshotAll, worksCountRows] =
+  const [stats, posts, comments, works, heatmap, daily, topDims, snapshotAll, worksCount] =
     await Promise.all([
       getProfileStats(profile.id, self),
       activeTab === "posts" ? getUserPosts(profile.id, self) : Promise.resolve([]),
@@ -231,7 +229,7 @@ export default async function ProfilePage({
             zh,
           })
         : Promise.resolve(null),
-      getPool().query(worksCountQ.sql, worksCountQ.args).then(([rows]) => rows),
+      getUserWorksCount(profile.id, self),
     ]);
   /* The usage tab's "last 30 days" mini panel fetches only when
      active. */
@@ -268,9 +266,6 @@ export default async function ProfilePage({
         costMicros: 0,
       }))
     : [];
-  const worksCount = Number(
-    (worksCountRows as { n?: number }[])[0]?.n ?? 0,
-  );
   const weekdayNames = zh ? USAGE_WEEKDAYS_ZH : USAGE_WEEKDAYS_EN;
   const busiest = heatmap
     ? (heatmap
