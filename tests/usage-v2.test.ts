@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { observedTokenTotal } from "../src/lib/usage-contract";
+import { isUsageSourceId, observedTokenTotal } from "../src/lib/usage-contract";
 import { constantTimeHashEqual, usageHmac } from "../src/lib/usage/crypto";
+import { usageSourceLabel } from "../src/lib/usage/labels";
 import { validateUsageIngest, UsageRequestError } from "../src/lib/usage/validation";
+import { TOOL_GLYPHS } from "../app/api/usage/share/tool-glyphs";
 
 process.env.USAGE_KEY_PEPPER = "test-only-usage-pepper-that-is-long-enough";
 
@@ -76,6 +78,30 @@ test("v2 contract accepts local Dashboard initiated syncs", () => {
   const value = payload();
   value.client.surface = "local-dashboard";
   assert.equal(validateUsageIngest(value, settings).client.surface, "local-dashboard");
+});
+
+test("v2 contract and presentation cover the Usage 0.6.0 Agent additions", () => {
+  const sources = ["grok", "trae-cli", "mcode"] as const;
+  assert.deepEqual(sources.map(isUsageSourceId), [true, true, true]);
+  assert.deepEqual(
+    sources.map(usageSourceLabel),
+    ["Grok CLI", "Trae CLI", "MiniMax Code"],
+  );
+  for (const source of sources) {
+    assert.ok(TOOL_GLYPHS[source]);
+    const value = payload();
+    value.buckets[0].source = source;
+    value.sessions[0].source = source;
+    const parsed = validateUsageIngest(value, settings);
+    assert.equal(parsed.buckets[0].source, source);
+    assert.equal(parsed.sessions[0].source, source);
+  }
+});
+
+test("Kiro keeps its existing source identity and gains a community label", () => {
+  assert.equal(isUsageSourceId("kiro"), true);
+  assert.equal(usageSourceLabel("kiro"), "Kiro");
+  assert.ok(TOOL_GLYPHS.kiro);
 });
 
 test("v2 contract preserves factual device, model, effort, and Agent version metadata", () => {

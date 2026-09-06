@@ -21,6 +21,17 @@ test("public pricing catalog exposes a cacheable versioned contract", async () =
   assert.equal(body.entries.length, USAGE_PRICE_CATALOG.entries.length);
 });
 
+test("canonical catalog is synchronized with the Usage 0.6.0 release", () => {
+  assert.equal(USAGE_PRICE_CATALOG.revision, 4);
+  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-09-06");
+  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-09-06T00:00:00.000Z");
+  assert.equal(USAGE_PRICE_CATALOG.entries.length, 114);
+  assert.equal(
+    USAGE_PRICE_CATALOG.integrity.digest,
+    "92c6e778b1678c1d2a2bce4df2dd083024237e48fcf2d625148f94716b27371b",
+  );
+});
+
 test("public pricing catalog honors If-None-Match", async () => {
   const response = await GET(new NextRequest(
     "https://kimi.builders/api/public/usage-pricing/v1/catalog",
@@ -67,4 +78,72 @@ test("canonical catalog keeps Codex auto-review priced after the revision bounda
     matchModelPrice(prices, "codex-auto-review", at, "claude-code"),
     null,
   );
+});
+
+test("canonical catalog covers the 2026-09-06 provider additions and windows", async () => {
+  const prices = await loadModelPrices();
+  const current = new Date("2026-09-05T12:00:00.000Z");
+
+  const astra = matchModelPrice(prices, "gpt-6-astra", current, "codex");
+  assert.deepEqual(
+    [astra?.inputPerMtok, astra?.cacheReadPerMtok, astra?.cacheWritePerMtok, astra?.outputPerMtok],
+    [10, 1, 12.5, 50],
+  );
+  const astraLong = matchModelPrice(prices, "gpt-6-astra", current, "codex", "long");
+  assert.deepEqual(
+    [astraLong?.inputPerMtok, astraLong?.cacheReadPerMtok, astraLong?.outputPerMtok],
+    [20, 2, 75],
+  );
+  const sol = matchModelPrice(prices, "gpt-5.6-sol", current, "codex", "short");
+  assert.deepEqual(
+    [sol?.inputPerMtok, sol?.cacheReadPerMtok, sol?.cacheWritePerMtok, sol?.outputPerMtok],
+    [4, 0.4, 5, 20],
+  );
+  const fable = matchModelPrice(prices, "claude-fable-5-1", current, "claude-code");
+  assert.deepEqual(
+    [fable?.inputPerMtok, fable?.cacheReadPerMtok, fable?.cacheWritePerMtok, fable?.outputPerMtok],
+    [10, 0.25, 12.5, 50],
+  );
+  const grokLong = matchModelPrice(prices, "grok-4.5", current, "grok", "long");
+  assert.deepEqual(
+    [grokLong?.inputPerMtok, grokLong?.cacheReadPerMtok, grokLong?.outputPerMtok],
+    [4, 0.6, 12],
+  );
+
+  const geminiPromotion = matchModelPrice(
+    prices,
+    "gemini-3.8-flash",
+    new Date("2026-09-03T12:00:00.000Z"),
+    "antigravity",
+  );
+  assert.deepEqual(
+    [geminiPromotion?.inputPerMtok, geminiPromotion?.cacheReadPerMtok, geminiPromotion?.outputPerMtok],
+    [0.75, 0.075, 3.75],
+  );
+  const geminiStandard = matchModelPrice(
+    prices,
+    "gemini-3.8-flash",
+    new Date("2027-01-01T00:00:00.000Z"),
+    "antigravity",
+  );
+  assert.deepEqual(
+    [geminiStandard?.inputPerMtok, geminiStandard?.cacheReadPerMtok, geminiStandard?.outputPerMtok],
+    [1.5, 0.15, 7.5],
+  );
+});
+
+test("OpenCode-only prices do not leak into other Agent sources", async () => {
+  const prices = await loadModelPrices();
+  const at = new Date("2026-09-05T12:00:00.000Z");
+  for (const [model, expectedInput] of [
+    ["muse-spark-1.3", 1.25],
+    ["deepseek-v4-flash-vision-exp", 0.14],
+    ["glm-5.3-flash", 0.15],
+  ] as const) {
+    const matched = matchModelPrice(prices, model, at, "opencode");
+    assert.equal(matched?.modelPattern, model);
+    assert.equal(matched?.inputPerMtok, expectedInput);
+    assert.equal(matched?.source, "opencode");
+    assert.equal(matchModelPrice(prices, model, at, "codex"), null);
+  }
 });

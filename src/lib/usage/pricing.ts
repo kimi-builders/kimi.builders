@@ -4,6 +4,8 @@
    Matching: exact beats prefix; longest prefix wins; at equal length a
    source-scoped row beats a generic one; the [effective_from, effective_to)
    window prices by bucket time — never today's price for history.
+   Pattern specificity is resolved before source eligibility, so a
+   channel-only alias never falls through to a broader generic price.
    Fallback chain: cacheWrite NULL -> input price (Moonshot/OpenAI bill no
    separate cache write); reasoning NULL -> output price (OpenAI/Moonshot
    count reasoning into output); cacheRead NULL -> category unpriced, tokens
@@ -92,7 +94,9 @@ export async function loadModelPrices(
 }
 
 /* Pick the best row effective at "at": exact > longest prefix >
-   source-scoped > latest effective_from. Normalization: match as-is first,
+   source-scoped > latest effective_from. Source eligibility applies only
+   within the winning pattern to prevent channel-only alias fallthrough.
+   Normalization: match as-is first,
    then retry the segment after the last slash (openrouter/moonshotai/kimi-k3
    -> kimi-k3; aggregator prefixes are the common source of that shape). */
 export function matchModelPrice(
@@ -156,36 +160,37 @@ function matchExactOrPrefix(
     if (price.contextTier === "short") return 1;
     return price.contextTier === "" ? 0 : -1;
   };
-  const exact = prices
-    .filter(
-      (price) =>
-        price.matchKind === "exact" &&
-        price.modelPattern === name &&
+  const candidates = prices
+    .filter((price) => {
+      const patternMatches = price.matchKind === "exact"
+        ? price.modelPattern === name
+        : name.startsWith(price.modelPattern);
+      return patternMatches &&
         inWindow(price) &&
         contextRank(price) >= 0 &&
-        price.processingTier === processingTier &&
-        (price.source === null || price.source === source),
-    )
-    .sort((a, b) => contextRank(b) - contextRank(a) || sourceRank(b) - sourceRank(a));
-  if (exact.length > 0) return exact[0];
-  const prefixed = prices
+        price.processingTier === processingTier;
+    })
+    .sort((a, b) => {
+      if (a.matchKind !== b.matchKind) return a.matchKind === "exact" ? -1 : 1;
+      return b.modelPattern.length - a.modelPattern.length ||
+        contextRank(b) - contextRank(a) ||
+        b.effectiveFrom.getTime() - a.effectiveFrom.getTime();
+    });
+  const mostSpecific = candidates[0];
+  if (!mostSpecific) return null;
+  return candidates
     .filter(
       (price) =>
-        price.matchKind === "prefix" &&
-        name.startsWith(price.modelPattern) &&
-        inWindow(price) &&
-        contextRank(price) >= 0 &&
-        price.processingTier === processingTier &&
-        (price.source === null || price.source === source),
+        price.matchKind === mostSpecific.matchKind &&
+        price.modelPattern === mostSpecific.modelPattern,
     )
+    .filter((price) => price.source === null || price.source === source)
     .sort(
       (a, b) =>
-        b.modelPattern.length - a.modelPattern.length ||
         contextRank(b) - contextRank(a) ||
         sourceRank(b) - sourceRank(a) ||
         b.effectiveFrom.getTime() - a.effectiveFrom.getTime(),
-    );
-  return prefixed[0] ?? null;
+    )[0] ?? null;
 }
 
 /* Display-layer FX rates (static, hand-maintained; display only — USD

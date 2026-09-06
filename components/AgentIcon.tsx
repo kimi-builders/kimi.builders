@@ -20,6 +20,9 @@ import QoderColor from "@lobehub/icons/es/Qoder/components/Color";
 import ZaiMono from "@lobehub/icons/es/ZAI/components/Mono";
 import CodeBuddyColor from "@lobehub/icons/es/CodeBuddy/components/Color";
 import PiMono from "@lobehub/icons/es/Pi/components/Mono";
+import MinimaxColor from "@lobehub/icons/es/Minimax/components/Color";
+import GrokMono from "@lobehub/icons/es/Grok/components/Mono";
+import KiroColor from "@lobehub/icons/es/Kiro/components/Color";
 
 const ICONS = {
   kimi: KimiMono,
@@ -35,11 +38,15 @@ const ICONS = {
   "gemini-cli": GeminiCliColor,
   opencode: OpenCodeMono,
   antigravity: AntigravityColor,
+  grok: GrokMono,
+  kiro: KiroColor,
   // Works-library agent ids.
   cursor: CursorMono,
   copilot: CopilotColor,
   windsurf: WindsurfMono,
   trae: TraeColor,
+  "trae-cli": TraeColor,
+  mcode: MinimaxColor,
   cline: ClineMono,
   gemini: GeminiColor,
   qoder: QoderColor,

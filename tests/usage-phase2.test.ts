@@ -68,6 +68,26 @@ test("pricing: longest prefix wins, exact beats prefix", () => {
   );
 });
 
+test("pricing: a source-scoped specific pattern blocks a broader generic fallback", () => {
+  const prices = [
+    price({ modelPattern: "glm-5.3", inputPerMtok: 1.4 }),
+    price({
+      modelPattern: "glm-5.3-flash",
+      source: "opencode",
+      inputPerMtok: 0.15,
+    }),
+  ];
+  assert.equal(
+    matchModelPrice(prices, "glm-5.3-flash", day("2026-09-05"), "opencode")
+      ?.inputPerMtok,
+    0.15,
+  );
+  assert.equal(
+    matchModelPrice(prices, "glm-5.3-flash", day("2026-09-05"), "codex"),
+    null,
+  );
+});
+
 test("pricing: effective window is respected (历史价格不回算)", () => {
   const prices = [
     price({

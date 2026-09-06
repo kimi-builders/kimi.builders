@@ -28,6 +28,7 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "hermes", tier: "beta" },
   { id: "kiro", tier: "beta" },
   { id: "mimocode", tier: "beta" },
+  { id: "mcode", tier: "beta" },
   { id: "cline", tier: "beta" },
   { id: "roo-code", tier: "stable" },
   { id: "zcode", tier: "stable" },
