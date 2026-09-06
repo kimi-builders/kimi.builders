@@ -80,6 +80,18 @@ test("release activation pins runtime config and verifies process stability", ()
   const rollback = script.indexOf('switch_current "$previous_release"', monitorGate);
   assert.ok(switched >= 0 && monitorGate > switched && rollback > monitorGate);
   assert.match(script, /mv -f -- "\$monitor_backup" "\$monitor_script" \|\| true/);
+  const monitorInstaller = script.slice(
+    script.indexOf("install_deep_health_monitor()"),
+    switched,
+  );
+  assert.match(monitorInstaller, /source_verifier="\$target\/ops\/verify-deploy-state\.mjs"/);
+  assert.match(
+    monitorInstaller,
+    /retaining shared deep-health monitor and verifier for legacy rollback/,
+  );
+  assert.match(monitorInstaller, /install -m 644 "\$source_verifier" "\$verifier_next"/);
+  assert.match(monitorInstaller, /mv -f -- "\$verifier_backup" "\$shared_verifier" \|\| true/);
+  assert.doesNotMatch(script.slice(0, script.indexOf("install_deep_health_monitor()")), /verifier_temp/);
 });
 
 test("deep health monitor authenticates locally and alerts only on transitions", () => {

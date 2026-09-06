@@ -184,12 +184,6 @@ else
   fi
 fi
 
-if [[ -f "$release_dir/ops/verify-deploy-state.mjs" ]]; then
-  verifier_temp="$shared_dir/.verify-deploy-state.$$"
-  install -m 644 "$release_dir/ops/verify-deploy-state.mjs" "$verifier_temp"
-  mv -f -- "$verifier_temp" "$shared_verifier"
-fi
-
 link_release_env() {
   local target="$1"
   local target_env="$2"
@@ -306,32 +300,62 @@ stable_release() {
 install_deep_health_monitor() {
   local target="$1"
   local source_script="$target/ops/deep-health-check.sh"
+  local source_verifier="$target/ops/verify-deploy-state.mjs"
   local monitor_script="$shared_dir/deep-health-check.sh"
   local monitor_next="$shared_dir/.deep-health-check.$$"
   local monitor_backup="$shared_dir/.deep-health-check.backup.$$"
+  local verifier_next="$shared_dir/.verify-deploy-state.$$"
+  local verifier_backup="$shared_dir/.verify-deploy-state.backup.$$"
   local start_marker="# BEGIN $app_name managed deep health"
   local end_marker="# END $app_name managed deep health"
   local replaced_monitor=0
+  local replaced_verifier=0
   local had_monitor=0
+  local had_verifier=0
   if [[ -f "$source_script" ]]; then
+    if [[ ! -f "$source_verifier" ]]; then
+      echo "deploy: $source_script requires its paired verifier" >&2
+      return 1
+    fi
     if [[ -f "$monitor_script" ]]; then
       cp -p -- "$monitor_script" "$monitor_backup" || return 1
       had_monitor=1
     fi
-    if ! install -m 700 "$source_script" "$monitor_next"; then
-      rm -f -- "$monitor_backup" "$monitor_next"
+    if [[ -f "$shared_verifier" ]]; then
+      cp -p -- "$shared_verifier" "$verifier_backup" || {
+        rm -f -- "$monitor_backup"
+        return 1
+      }
+      had_verifier=1
+    fi
+    if ! install -m 700 "$source_script" "$monitor_next" ||
+       ! install -m 644 "$source_verifier" "$verifier_next"; then
+      rm -f -- "$monitor_backup" "$verifier_backup" "$monitor_next" "$verifier_next"
       return 1
     fi
     if ! mv -f -- "$monitor_next" "$monitor_script"; then
-      rm -f -- "$monitor_backup" "$monitor_next"
+      rm -f -- "$monitor_backup" "$verifier_backup" "$monitor_next" "$verifier_next"
       return 1
     fi
     replaced_monitor=1
-  elif [[ ! -f "$monitor_script" ]]; then
-    echo "deploy: $source_script is missing and no shared monitor is available" >&2
-    return 1
+    if ! mv -f -- "$verifier_next" "$shared_verifier"; then
+      if (( had_monitor == 1 )); then
+        mv -f -- "$monitor_backup" "$monitor_script" || true
+      else
+        rm -f -- "$monitor_script"
+      fi
+      rm -f -- "$verifier_backup" "$verifier_next"
+      return 1
+    fi
+    replaced_verifier=1
+  elif [[ -f "$monitor_script" && -f "$shared_verifier" ]]; then
+    echo "deploy: retaining shared deep-health monitor and verifier for legacy rollback $release" >&2
+  elif [[ "$mode" == "rollback" && ! -e "$monitor_script" && ! -e "$shared_verifier" ]]; then
+    echo "deploy: legacy rollback has no managed deep-health assets to retain" >&2
+    return 0
   else
-    echo "deploy: retaining shared deep-health monitor for legacy rollback $release" >&2
+    echo "deploy: shared deep-health monitor and verifier are not a compatible pair" >&2
+    return 1
   fi
 
   (
@@ -360,10 +384,17 @@ install_deep_health_monitor() {
         rm -f -- "$monitor_script"
       fi
     fi
+    if (( replaced_verifier == 1 )); then
+      if (( had_verifier == 1 )); then
+        mv -f -- "$verifier_backup" "$shared_verifier" || true
+      else
+        rm -f -- "$shared_verifier"
+      fi
+    fi
     echo "deploy: failed to install deep-health crontab" >&2
     return 1
   }
-  rm -f -- "$monitor_backup"
+  rm -f -- "$monitor_backup" "$verifier_backup"
 }
 
 switch_current "$release_dir"

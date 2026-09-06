@@ -17,7 +17,7 @@ import test from "node:test";
 const monitor = new URL("../ops/deep-health-check.sh", import.meta.url).pathname;
 const verifier = new URL("../ops/verify-deploy-state.mjs", import.meta.url).pathname;
 
-test("deep health monitor records failure and recovery around a verified release", () => {
+test("legacy rollback keeps the compatible shared verifier for deep health", () => {
   const root = mkdtempSync(join(tmpdir(), "kb-deep-health-"));
   const release = "a".repeat(40);
   const shared = join(root, "shared");
@@ -29,9 +29,14 @@ test("deep health monitor records failure and recovery around a verified release
   try {
     mkdirSync(shared, { recursive: true });
     mkdirSync(releaseDir, { recursive: true });
+    mkdirSync(join(releaseDir, "ops"), { recursive: true });
     mkdirSync(bin, { recursive: true });
     symlinkSync(releaseDir, join(root, "current"));
     copyFileSync(verifier, join(shared, "verify-deploy-state.mjs"));
+    writeFileSync(
+      join(releaseDir, "ops/verify-deploy-state.mjs"),
+      "#!/usr/bin/env node\nprocess.exit(99);\n",
+    );
     writeFileSync(
       join(releaseDir, ".env.production"),
       `CRON_SECRET='${currentSecret}'\n`,
