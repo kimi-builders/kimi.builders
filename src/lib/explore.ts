@@ -297,7 +297,10 @@ function pickLocaleVersions(
   return out;
 }
 
-export async function listExploreItems(
+/* React cache: the explore page, ExploreRail, and ArticleRail all need
+   the same published list within one request (rails derive lens
+   availability from it); dedupe keeps it one query. */
+export const listExploreItems = cache(async function listExploreItems(
   uiLocale: ArticleLocale,
 ): Promise<ExploreItem[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -310,7 +313,7 @@ export async function listExploreItems(
      ORDER BY a.published_at DESC, a.id DESC`,
   );
   return pickLocaleVersions(rows.map(mapExploreRow), uiLocale);
-}
+});
 
 /* Article detail rail (ArticleRail) metadata: single lookup by slug,
    React cache dedupes repeat calls within a request; unpublished/missing

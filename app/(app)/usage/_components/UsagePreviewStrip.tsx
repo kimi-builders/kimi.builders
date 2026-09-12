@@ -114,9 +114,7 @@ export default async function UsagePreviewStrip({
             {zh ? "近 30 天趋势" : "30-day trend"}
           </h3>
           <p className="mt-1 text-xs text-grey">
-            {zh
-              ? "输入(含缓存写)/ 缓存读 / 输出 / 推理 四段堆叠 · 7 日均值"
-              : "Input (incl. cache write) / cache read / output / reasoning stacked · 7-slot avg"}
+            {t(locale, "usage.previewTrendCaption")}
           </p>
           <div className="mt-4">
             <UsageTrendChart

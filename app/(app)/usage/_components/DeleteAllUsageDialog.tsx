@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, X } from "lucide-react";
+import { t } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { deleteAllUsageAction } from "../actions";
 
@@ -102,11 +103,7 @@ export default function DeleteAllUsageDialog({
         </div>
         <form action={submit} aria-busy={pending} className="px-5 py-4">
           <div className="border border-status-warn/30 bg-status-warn/5 p-3 text-xs leading-relaxed text-grey">
-            <p className="text-status-warn-fg">
-              {zh
-                ? "这项操作无法在站点内撤销。所有 Collector 的本地 checkpoint 都不会自动回退。"
-                : "This cannot be undone on the site. Local checkpoints on every Collector will remain unchanged."}
-            </p>
+            <p className="text-status-warn-fg">{t(zh ? "zh" : "en", "usage.deleteAllWarn")}</p>
             <p className="mt-2">
               {zh
                 ? "若要恢复某台设备仍保存在本机的历史，需要在该设备执行 reset --local 后重新同步。"

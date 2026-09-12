@@ -20,6 +20,8 @@ import { findKbProduct } from "@/src/lib/kb-products";
 import { findKbRole } from "@/src/lib/kb-roles";
 import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
 import { detailMetadata } from "@/src/lib/page-metadata";
+import { availableExploreFilters } from "@/src/lib/explore-filters";
+import { countByChapter, countByProduct, countByRoles, countTags, groupByArchive, listExploreItems } from "@/src/lib/explore";
 import { getSeriesTutorials, type Tutorial } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
 import PageHeader from "@/components/PageHeader";
@@ -136,12 +138,28 @@ export default async function ExploreSeriesPage({
   const first = episodes[0];
   /* Cross-links: "covers products / fits roles" derived jointly from
      episode payloads, clickable back into the /explore lenses — the
-     spine and the lenses close each other's loop. */
+     spine and the lenses close each other's loop. Chips honor the one
+     availability judgment: a lens without a control on /explore renders
+     as plain text here, never as a link to an ignored param. */
   const coveredProducts = [...new Set(episodes.flatMap((e) => e.payload.products ?? []))];
   const fitRoles = [...new Set(episodes.flatMap((e) => e.payload.roles ?? []))];
+  const allItems = await listExploreItems(locale);
+  const available = availableExploreFilters({
+    product: countByProduct(allItems).length,
+    role: countByRoles(allItems).length,
+    tag: countTags(allItems).length,
+    year: groupByArchive(allItems).length,
+  });
   /* Chapter mark: paths hang on chapters; the meta row's leading chip
-     links back to the chapter view. */
+     links back to the chapter view (only when the seg renders there:
+     >=2 content-bearing chapters, this one included). */
+  const chapterCounts = countByChapter(allItems);
+  const activeChapterCount = chapterCounts.filter((c) => c.count > 0).length;
   const seriesChapter = series.chapter ? findKbChapter(series.chapter) : undefined;
+  const chapterBrowsable =
+    !!seriesChapter &&
+    activeChapterCount >= 2 &&
+    chapterCounts.some((c) => c.value === series.chapter && c.count > 0);
 
   return (
     <div>
@@ -157,15 +175,26 @@ export default async function ExploreSeriesPage({
         meta={
           <p className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
             {seriesChapter && (
-              <Link
-                href={`/explore?chapter=${seriesChapter.id}`}
-                className="flex items-center gap-1.5 rounded-md border border-line px-2 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
-                title={zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
-              >
-                {zh ? seriesChapter.zh : seriesChapter.en}
-                <span aria-hidden="true">·</span>
-                {zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
-              </Link>
+              chapterBrowsable ? (
+                <Link
+                  href={`/explore?chapter=${seriesChapter.id}`}
+                  className="flex items-center gap-1.5 rounded-md border border-line px-2 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+                  title={zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
+                >
+                  {zh ? seriesChapter.zh : seriesChapter.en}
+                  <span aria-hidden="true">·</span>
+                  {zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
+                </Link>
+              ) : (
+                <span
+                  className="flex items-center gap-1.5 rounded-md border border-line px-2 py-px normal-case tracking-normal text-paper/80"
+                  title={zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
+                >
+                  {zh ? seriesChapter.zh : seriesChapter.en}
+                  <span aria-hidden="true">·</span>
+                  {zh ? seriesChapter.tagline.zh : seriesChapter.tagline.en}
+                </span>
+              )
             )}
             <span>{episodes.length} {zh ? "集" : "episodes"}</span>
             {mins > 0 && (
@@ -217,7 +246,7 @@ export default async function ExploreSeriesPage({
             const p = findKbProduct(id);
             if (!p) return null;
             const Icon = p.icon;
-            return (
+            return available.includes("product") ? (
               <Link
                 key={`p-${id}`}
                 href={`/explore?product=${id}`}
@@ -226,6 +255,14 @@ export default async function ExploreSeriesPage({
                 <Icon size={13} aria-hidden="true" />
                 {zh ? p.zh : p.en}
               </Link>
+            ) : (
+              <span
+                key={`p-${id}`}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 font-mono text-xs text-grey"
+              >
+                <Icon size={13} aria-hidden="true" />
+                {zh ? p.zh : p.en}
+              </span>
             );
           })}
           {coveredProducts.length > 0 && fitRoles.length > 0 && (
@@ -234,7 +271,7 @@ export default async function ExploreSeriesPage({
           {fitRoles.map((id) => {
             const r = findKbRole(id);
             if (!r) return null;
-            return (
+            return available.includes("role") ? (
               <Link
                 key={`r-${id}`}
                 href={`/explore?role=${id}`}
@@ -242,6 +279,13 @@ export default async function ExploreSeriesPage({
               >
                 {zh ? r.zh : r.en}
               </Link>
+            ) : (
+              <span
+                key={`r-${id}`}
+                className="inline-flex min-h-9 items-center rounded-lg border border-line px-2.5 font-mono text-xs text-grey"
+              >
+                {zh ? r.zh : r.en}
+              </span>
             );
           })}
         </div>

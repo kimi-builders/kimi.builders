@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Settings2, X } from "lucide-react";
+import { t } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
 import { manageUsageDeviceAction } from "../actions";
 
@@ -183,11 +184,7 @@ export default function DeviceManagementDialog({
 
           {deletesData && (
             <div className="mt-4 border border-status-warn/30 bg-status-warn/5 p-3 text-xs leading-relaxed text-grey">
-              <p className="text-status-warn-fg">
-                {zh
-                  ? "删除不能在站点内撤销，而且 Collector 的本地 checkpoint 不会自动回退。"
-                  : "Deletion cannot be undone on the site, and the Collector checkpoint will not rewind automatically."}
-              </p>
+              <p className="text-status-warn-fg">{t(zh ? "zh" : "en", "usage.deleteDeviceWarn")}</p>
               <p className="mt-2">
                 {zh ? "如需从本机历史恢复，删除后在该设备执行：" : "To restore locally available history later, run:"}
               </p>

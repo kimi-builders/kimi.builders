@@ -39,7 +39,10 @@ const DICT = {
   "search.jumpTo": { zh: "快速前往", en: "Jump to" },
   "search.results": { zh: "搜索结果", en: "Results" },
   "search.empty": { zh: "没有匹配的页面", en: "No matching page" },
-  "search.emptyHint": { zh: "试试「作品」「用量」或「demo」", en: "Try “works”, “usage”, or “demo”" },
+  /* Empty-state suggestion words must stay inside the search catalog:
+     a suggestion that matches nothing (e.g. a nav-hidden section)
+     teaches the user to fail. */
+  "search.emptyHint": { zh: "试试「作品」「用量」或「探索」", en: "Try “works”, “usage”, or “explore”" },
   "search.shortcut": { zh: "按 / 或 ⌘K 随时打开", en: "Press / or ⌘K anytime" },
   "search.community": { zh: "讨论、投票与社区动态", en: "Discussions, polls, and community updates" },
   "search.works": { zh: "Builder 发布的 Kimi 相关作品", en: "Kimi-related work published by Builders" },
@@ -152,6 +155,19 @@ const DICT = {
     zh: "发布第一帖",
     en: "Start the first thread",
   },
+  /* Filtered empty state (topic/solved filter with no results): state
+     the filtered truth and hand back the way out — never claim the
+     community itself is empty while the rail shows live counts, and no
+     content-guidance slogans here (the global empty state keeps
+     them). */
+  "feed.emptyFiltered": {
+    zh: "当前筛选下暂无帖子。",
+    en: "No posts under the current filters.",
+  },
+  "feed.emptyFilteredCta": {
+    zh: "清除筛选，看全部帖子",
+    en: "Clear filters and see all posts",
+  },
   /* Community page header: on the shared PageHeader, the eyebrow states
      the section's position only (the old one parroted the title), and a
      three-verb lede sets the tone. */
@@ -169,10 +185,24 @@ const DICT = {
      short; the lede is a functional one-liner naming the browse
      dimensions, and the rail top carries the section intro line. */
   "explore.eyebrow": { zh: "— 月刊 × Builder 实践", en: "— The Monthly × Builder practices" },
-  "explore.lede": {
-    zh: "月刊评鉴与 Builder 亲自跑通的实践，按章、产品、职业、标签和归档浏览。",
-    en: "The Monthly and practices run by Builders, browsable by chapter, product, role, tag, and archive.",
+  /* Lede names the browse lenses that actually render this request
+     (assembled from {lenses}; the lens words below are the same
+     vocabulary the toolbar/rails gate on). Naming a lens the toolbar
+     can't show is a broken promise, so the list is generated, never
+     hand-written. */
+  "explore.ledeLenses": {
+    zh: "月刊评鉴与 Builder 亲自跑通的实践，按{lenses}浏览。",
+    en: "The Monthly and practices run by Builders, browsable by {lenses}.",
   },
+  "explore.ledeBase": {
+    zh: "月刊评鉴与 Builder 亲自跑通的实践。",
+    en: "The Monthly and practices run by Builders.",
+  },
+  "explore.lensWord.chapter": { zh: "章", en: "chapter" },
+  "explore.lensWord.product": { zh: "产品", en: "product" },
+  "explore.lensWord.role": { zh: "职业", en: "role" },
+  "explore.lensWord.tag": { zh: "标签", en: "tag" },
+  "explore.lensWord.year": { zh: "归档", en: "archive" },
   "explore.compose": { zh: "+ 发内容", en: "+ Publish" },
   "explore.lensRoles": { zh: "职业", en: "ROLES" },
   "explore.format": { zh: "形态", en: "FORMAT" },
@@ -754,8 +784,8 @@ const DICT = {
   "soon.cta": { zh: "先去社区逛逛", en: "Browse the community" },
   /* ---- Usage dashboard ---- */
   "usage.intro": {
-    zh: "以 Kimi 为主，汇总多种 AI 编程 Agent 的 Token 与活跃数据。Collector 只上传统计字段，不上传对话内容、完整文件路径或供应商凭据。",
-    en: "Kimi-first usage analytics across multiple AI coding agents. The collector uploads metrics only — never conversation content, full file paths, or provider credentials.",
+    zh: "以 Kimi 为主，汇总多种 AI 编程 Agent 的 Token 与活跃数据。同步工具只上传统计字段，不上传对话内容、完整文件路径或供应商凭据。",
+    en: "Kimi-first usage analytics across multiple AI coding agents. The sync tool uploads metrics only — never conversation content, full file paths, or provider credentials.",
   },
   "usage.loginRequired": {
     zh: "登录后查看你的用量看板：",
@@ -776,8 +806,59 @@ const DICT = {
     en: "Upload device labels",
   },
   "usage.deviceLabelHint": {
-    zh: "默认关闭。关闭时服务端会丢弃 payload 里的终端与系统指纹，设备行保留旧值。",
-    en: "Off by default. When off, the server drops terminal and OS fingerprints from payloads; devices keep their existing labels.",
+    zh: "默认关闭。关闭后，上传数据不含终端与系统信息；已同步的设备行保留旧值。",
+    en: "Off by default. When off, uploads carry no terminal or OS details; synced device rows keep their existing labels.",
+  },
+  /* Privacy copy speaks the uploader's view (what gets uploaded), never
+     implementation words (collector / payload / basename / field
+     names). */
+  "usage.uploadProjectHint": {
+    zh: "开启时只上传目录名本身，不含完整路径；关闭后，上传数据不包含项目目录名。",
+    en: "When on, only the folder name itself is sent — never a full path. When off, uploads don't include project names.",
+  },
+  "usage.deviceUploadProjectHint": {
+    zh: "默认关闭。开启时只上传目录名本身，不含完整路径；可随时在看板关闭。",
+    en: "Off by default. When on, only the folder name itself is sent, never a full path; disable it anytime.",
+  },
+  "usage.connectSyncTool": {
+    zh: "连接本地同步工具",
+    en: "Connect your local sync tool",
+  },
+  "usage.firstRunBody": {
+    zh: "同步工具只在本机读取各 Agent 的统计日志。上传前会展示字段预览；对话内容、完整路径和供应商凭据不会离开设备。",
+    en: "The sync tool reads statistical logs from your agents locally. You preview the fields before upload; conversations, full paths, and provider credentials never leave the device.",
+  },
+  "usage.daemonNote": {
+    zh: "以当前用户身份运行，不需要管理员权限；设备休眠或离线时不工作。升级同步工具后执行一次「重启」。",
+    en: "Runs as your user, no admin needed; pauses when the device sleeps or is offline. Restart once after upgrading the sync tool.",
+  },
+  "usage.deleteAllWarn": {
+    zh: "这项操作无法在站点内撤销。各设备上的同步工具也不会自动重新上传已删除的历史。",
+    en: "This cannot be undone on the site. Sync tools on your devices won't re-upload the deleted history automatically.",
+  },
+  "usage.deleteDeviceWarn": {
+    zh: "删除不能在站点内撤销，而且该设备的同步工具不会自动重新上传已删除的历史。",
+    en: "Deletion cannot be undone on the site, and the device's sync tool won't re-upload the deleted history automatically.",
+  },
+  "usage.deviceCodeHelp": {
+    zh: "输入本地看板或同步工具显示的 8 位验证码。",
+    en: "Enter the 8-character code shown by the local dashboard or sync tool.",
+  },
+  "usage.methodModelsBody": {
+    zh: "原始模型名始终保留日志中的精确 ID；规范模型名仅用于统一展示、跨 Agent 比较和价格匹配，不会覆盖原始事实。推理强度与请求时 Agent 版本只在日志明确提供时记录，缺失显示「—」，不会用默认值或当前版本推断历史请求。设备页展示的是最近同步时检测到的终端、系统、同步工具与已安装 Agent 版本。",
+    en: "The raw model keeps the exact log ID. A separate canonical model is used only for display, cross-agent comparison, and pricing; it never overwrites the raw fact. Reasoning effort and request-time Agent version are recorded only when the log explicitly provides them; missing values show “—” and are never inferred from defaults or today's version. The device panel shows terminal, OS, sync tool, and installed Agent versions detected at the latest sync.",
+  },
+  "usage.methodEngagedBody": {
+    zh: "会话内相邻事件跨度之和，包含思考、阅读和查看代码；每段空闲间隔最多计 30 分钟，不包含会话之间的间隔。同步工具 v0.4 起按 UTC 小时存储完整切片，跨日或跨筛选边界时只计范围内切片；旧数据会明确使用兼容降级口径。",
+    en: "Sum of adjacent event spans inside a session, including thinking, reading, and code review. Each idle gap is capped at 30 minutes; gaps between sessions are excluded. Sync tool v0.4 stores complete UTC-hour slices so cross-day/range sessions count only in-range slices; older data uses an explicit compatibility fallback.",
+  },
+  /* Trend caption states what is drawn (total bars + the dashed
+     7-slot average) and where the token breakdown lives (hover or
+     keyboard focus) — it must match the chart, which draws totals, not
+     a stacked breakdown. */
+  "usage.previewTrendCaption": {
+    zh: "总量柱 · 虚线为 7 日均值 · 悬停或键盘聚焦查看分项",
+    en: "Total bars · dashed line = 7-slot average · hover or focus for the breakdown",
   },
   /* Logged-out public overview (UsagePublicView): leaderboard showcase
      + login prompt. */
@@ -1119,8 +1200,8 @@ const DICT = {
     en: "Awesome — external Kimi ecosystem projects recommended by members.",
   },
   "about.whatUsage": {
-    zh: "用量中心 —— Collector 同步 Token 与活跃数据；默认私密，榜单自愿公开。",
-    en: "Usage — token and activity stats synced by the Collector; private by default, leaderboards opt-in.",
+    zh: "用量中心 —— 连接设备同步 Token 与活跃数据；默认私密，榜单自愿公开。",
+    en: "Usage — token and activity stats synced from your connected devices; private by default, leaderboards opt-in.",
   },
   "about.linksTitle": { zh: "联系与链接", en: "Links" },
   /* Closing note: the about page is the last page the hesitant read —
@@ -1182,6 +1263,17 @@ const DICT = {
   "lb.emptyCta": {
     zh: "去开启「参与社区榜」",
     en: "Turn on leaderboard sharing",
+  },
+  /* Signed-out variant: the privacy switch lives behind login, so the
+     CTA must lead with the login step instead of pointing at a control
+     the reader can't reach yet. */
+  "lb.emptyHintLogin": {
+    zh: "榜单完全自愿：登录并在用量中心的隐私设置里打开「参与社区榜」，你的周期聚合就会出现在这里。",
+    en: "The board is fully opt-in: log in and turn on leaderboard sharing in your usage privacy settings, and your period aggregates will appear here.",
+  },
+  "lb.emptyCtaLogin": {
+    zh: "登录后开启「参与社区榜」",
+    en: "Log in to turn on leaderboard sharing",
   },
   "lb.loadError": {
     zh: "榜单加载失败，请稍后重试。",

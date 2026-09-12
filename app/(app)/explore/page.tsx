@@ -27,7 +27,11 @@ import {
 import { KB_CHAPTERS, findKbChapter, isKbChapterId } from "@/src/lib/kb-chapters";
 import { findKbProduct, isKbProductId } from "@/src/lib/kb-products";
 import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
-import { isExploreFilterEnabled } from "@/src/lib/explore-filters";
+import {
+  availableExploreFilters,
+  joinLensWords,
+  type ExploreFilterKey,
+} from "@/src/lib/explore-filters";
 import { canModerate } from "@/src/lib/featured";
 import { UPCOMING } from "@/src/lib/upcoming";
 import { getWorksView, isMobileRequest } from "@/src/lib/works-view-server";
@@ -101,22 +105,6 @@ export default async function ExplorePage({
   const zh = locale === "zh";
   const sp = await searchParams;
   const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
-  /* Chapter/lens allowlist validation (invalid = unselected); legacy
-     four-dimension and format params are ignored. */
-  const requestedChapter = (() => {
-    const v = first(sp.chapter);
-    return v && isKbChapterId(v) ? v : undefined;
-  })();
-  const selProduct = (() => {
-    const v = first(sp.product);
-    return v && isKbProductId(v) ? v : undefined;
-  })();
-  const selRole = (() => {
-    const v = first(sp.role);
-    return v && isKbRoleId(v) ? v : undefined;
-  })();
-  const selTag = first(sp.tag) || undefined;
-  const selYear = first(sp.year) || undefined;
 
   const items = await listExploreItems(locale);
   const chapterCounts = countByChapter(items);
@@ -124,6 +112,42 @@ export default async function ExplorePage({
     (chapter) => (chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0) > 0,
   );
   const chapterFilterVisible = activeChapters.length >= 2;
+  const productCounts = countByProduct(items);
+  const roleCounts = countByRoles(items);
+  const tagCounts = countTags(items);
+  const archiveGroups = groupByArchive(items);
+
+  /* The one availability judgment (explore-filters.ts): toolbar
+     dropdowns, rail links, and the URL channel below all honor the same
+     set — a param for a lens without content is ignored, never
+     filtered on silently. */
+  const available = availableExploreFilters({
+    product: productCounts.length,
+    role: roleCounts.length,
+    tag: tagCounts.length,
+    year: archiveGroups.length,
+  });
+  const lensAvailable = (key: ExploreFilterKey) => available.includes(key);
+
+  /* Chapter/lens allowlist validation (invalid = unselected); legacy
+     four-dimension and format params are ignored. A lens param counts
+     only when the lens is available — availability, not the raw URL,
+     decides what filters. */
+  const requestedChapter = (() => {
+    const v = first(sp.chapter);
+    return v && isKbChapterId(v) ? v : undefined;
+  })();
+  const selProduct = (() => {
+    const v = first(sp.product);
+    return lensAvailable("product") && v && isKbProductId(v) ? v : undefined;
+  })();
+  const selRole = (() => {
+    const v = first(sp.role);
+    return lensAvailable("role") && v && isKbRoleId(v) ? v : undefined;
+  })();
+  const selTag = lensAvailable("tag") ? first(sp.tag) || undefined : undefined;
+  const selYear = lensAvailable("year") ? first(sp.year) || undefined : undefined;
+
   const selChapter =
     chapterFilterVisible && activeChapters.some((chapter) => chapter.id === requestedChapter)
       ? requestedChapter
@@ -143,11 +167,6 @@ export default async function ExplorePage({
     year: selYear,
   };
   const filtered = anyFilter ? filterExploreItems(items, sel) : items;
-
-  const productCounts = countByProduct(items);
-  const roleCounts = countByRoles(items);
-  const tagCounts = countTags(items);
-  const archiveGroups = groupByArchive(items);
 
   const current: Record<string, string | undefined> = {
     chapter: selChapter,
@@ -174,13 +193,11 @@ export default async function ExplorePage({
     return params.toString();
   })();
 
-  /* Filters appear per config and content: only dimensions enabled in
-     explore-filters.ts and holding options get a dropdown — an empty
-     dimension takes no slot; disabled dimensions (roles/archive) keep
-     their vocabularies and counting logic, ready the moment the config
-     flips. */
+  /* Filters appear per the one availability judgment: a lens with
+     content gets its dropdown, an empty one takes no slot — identical
+     to what the URL channel honors and the rails link into. */
   const filterSpecs = [
-    ...(isExploreFilterEnabled("product") && productCounts.length
+    ...(lensAvailable("product")
       ? [{
           key: "product",
           label: zh ? "产品" : "Product",
@@ -196,7 +213,7 @@ export default async function ExplorePage({
           single: true,
         }]
       : []),
-    ...(isExploreFilterEnabled("role") && roleCounts.length
+    ...(lensAvailable("role")
       ? [{
           key: "role",
           label: zh ? "职业" : "Role",
@@ -207,7 +224,7 @@ export default async function ExplorePage({
           single: true,
         }]
       : []),
-    ...(isExploreFilterEnabled("tag") && tagCounts.length
+    ...(lensAvailable("tag")
       ? [{
           key: "tag",
           label: zh ? "标签" : "Tag",
@@ -215,7 +232,7 @@ export default async function ExplorePage({
           single: true,
         }]
       : []),
-    ...(isExploreFilterEnabled("year") && archiveGroups.length
+    ...(lensAvailable("year")
       ? [{
           key: "year",
           label: zh ? "归档" : "Year",
@@ -240,14 +257,30 @@ export default async function ExplorePage({
     </Link>
   );
 
+  /* Lede names the browsable lenses in a fixed order: the chapter seg
+     (only when comparable) plus the available dropdowns. */
+  const ledeLensWords = joinLensWords(
+    [
+      ...(chapterFilterVisible ? [t(locale, "explore.lensWord.chapter")] : []),
+      ...available.map((key) => t(locale, `explore.lensWord.${key}`)),
+    ],
+    zh,
+  );
+  const lede = ledeLensWords
+    ? t(locale, "explore.ledeLenses", { lenses: ledeLensWords })
+    : t(locale, "explore.ledeBase");
+
   return (
     <div>
       {/* <-/-> chapter cycling (keyboard shortcuts; the component no-ops internally when hrefs < 2) */}
       <ChapterKeys hrefs={chapterHrefs} index={chapterIndex} />
+      {/* Lede lens list = exactly what renders below (chapter seg when
+         comparable + the available lens dropdowns), so the promise and
+         the toolbar can't drift apart. */}
       <PageHeader
         eyebrow={t(locale, "explore.eyebrow")}
         title={t(locale, "nav.explore")}
-        lede={t(locale, "explore.lede")}
+        lede={lede}
         actions={user && canModerate(user.role) ? composeLink : undefined}
       />
 

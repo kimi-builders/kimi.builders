@@ -23,7 +23,7 @@ import { articleLanguageLabel, t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
 import { detailMetadata, languageTaggedTitle } from "@/src/lib/page-metadata";
-import { getArticleRailMeta, listExploreItems } from "@/src/lib/explore";
+import { getArticleRailMeta, countByChapter, listExploreItems } from "@/src/lib/explore";
 import Avatar from "@/components/Avatar";
 import { findLearnSeries } from "@/src/lib/learn-series";
 import {
@@ -411,38 +411,38 @@ function LetterDetail({
         )}
       </footer>
 
-      {/* Prev/next issue navigation */}
-      <nav
-        aria-label={zh ? "期次导航" : "Issue navigation"}
-        className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"
-      >
-        {prev ? (
-          <Link href={`/explore/${prev.slug}`} className="kb-navlink group min-w-0">
-            <span className="flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
-              <ArrowLeft size={13} aria-hidden="true" />
-              {zh ? "上一期" : "OLDER"}
-            </span>
-            <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
-              ISSUE {String(prev.issue).padStart(2, "0")} · {prev.month}
-            </span>
-          </Link>
-        ) : (
-          <span />
-        )}
-        {next ? (
-          <Link href={`/explore/${next.slug}`} className="kb-navlink group min-w-0 text-right">
-            <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
-              {zh ? "下一期" : "NEWER"}
-              <ArrowRight size={13} aria-hidden="true" />
-            </span>
-            <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
-              ISSUE {String(next.issue).padStart(2, "0")} · {next.month}
-            </span>
-          </Link>
-        ) : (
-          <span />
-        )}
-      </nav>
+      {/* Prev/next issue navigation: rendered only when a neighbor
+         exists — an empty nav landmark is noise for screen readers
+         (single-issue and oldest/newest-edge cases). */}
+      {(prev || next) && (
+        <nav
+          aria-label={zh ? "期次导航" : "Issue navigation"}
+          className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"
+        >
+          {prev && (
+            <Link href={`/explore/${prev.slug}`} className="kb-navlink group min-w-0">
+              <span className="flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
+                <ArrowLeft size={13} aria-hidden="true" />
+                {zh ? "上一期" : "OLDER"}
+              </span>
+              <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
+                ISSUE {String(prev.issue).padStart(2, "0")} · {prev.month}
+              </span>
+            </Link>
+          )}
+          {next && (
+            <Link href={`/explore/${next.slug}`} className="kb-navlink group ml-auto min-w-0 text-right">
+              <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
+                {zh ? "下一期" : "NEWER"}
+                <ArrowRight size={13} aria-hidden="true" />
+              </span>
+              <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
+                ISSUE {String(next.issue).padStart(2, "0")} · {next.month}
+              </span>
+            </Link>
+          )}
+        </nav>
+      )}
 
       {/* Back lives in the top breadcrumb (work-detail grammar); this row
           keeps only the owner entry and share. */}
@@ -472,11 +472,16 @@ async function GuideDetail({
   initialTab,
   locale,
   canEdit,
+  chapterBrowsable,
 }: {
   tutorial: TutorialDetail;
   initialTab?: string;
   locale: "zh" | "en";
   canEdit: boolean;
+  /* The chapter chip links into /explore's chapter seg; the seg renders
+     (and honors ?chapter=) only when >=2 chapters hold content — the
+     chip links only then, same availability as the rail and the page. */
+  chapterBrowsable: boolean;
 }) {
   const zh = locale === "zh";
   /* Byline source: the rail-meta query is React-cached — the Article
@@ -658,13 +663,18 @@ async function GuideDetail({
         )}
         <div className="mt-2 flex flex-wrap items-center gap-x-3">
           <h1 className="kb-h1">{tutorial.title}</h1>
-          {chapter && (
+          {chapter && chapterBrowsable && (
             <Link
               href={`/explore?chapter=${chapter.id}`}
               className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
             >
               {zh ? chapter.zh : chapter.en}
             </Link>
+          )}
+          {chapter && !chapterBrowsable && (
+            <span className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
+              {zh ? chapter.zh : chapter.en}
+            </span>
           )}
           {tutorial.fallback && (
             <span className="mt-1 inline-flex shrink-0 items-center rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
@@ -754,11 +764,16 @@ export default async function ExploreDetailPage({
   if (!guide) notFound();
   /* Guides have no issues: <- -> walk the full list (new -> old) for
      neighbors, same direction as letters (<- older / -> newer); the
-     single query goes through React cache, deduped per request. */
+     single query goes through React cache, deduped per request (the
+     ArticleRail's lens availability reads the same list). */
   const guideList = await listExploreItems(locale);
   const guideIdx = guideList.findIndex((i) => i.slug === slug);
   const guidePrev = guideIdx >= 0 ? guideList[guideIdx + 1] : undefined;
   const guideNext = guideIdx > 0 ? guideList[guideIdx - 1] : undefined;
+  /* Chapter chip linkability: the /explore chapter seg renders (and
+     honors ?chapter=) only with >=2 content-bearing chapters. */
+  const chapterBrowsable =
+    countByChapter(guideList).filter((c) => c.count > 0).length >= 2;
   /* Format preference fallback order: an explicit ?tab= wins -> the
      kb_fmt cookie (only when this piece has that format) -> the first
      tab; the cookie is written by DetailTabs' remember. */
@@ -786,6 +801,7 @@ export default async function ExploreDetailPage({
         initialTab={guideTab}
         locale={locale}
         canEdit={canEdit}
+        chapterBrowsable={chapterBrowsable}
       />
     </>
   );

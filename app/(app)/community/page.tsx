@@ -189,27 +189,47 @@ export default async function CommunityPage({
       {feed.nodes.length === 0 ? (
         /* Empty community = an explicit CTA, not cheerleading alone;
            the subscribed empty state (subOnly) is a filter with no
-           results — content guidance, but no post button. */
-        <EmptyState
-          className="mt-4"
-          message={subOnly ? t(locale, "feed.emptySub") : t(locale, "feed.empty")}
-          hint={!subOnly ? t(locale, "feed.emptyHint") : undefined}
-          actions={
-            !subOnly ? (
+           results — content guidance, but no post button. A topic/
+           solved filter with no results states the filtered truth and
+           hands back the way out: it must not claim the community
+           itself is empty (the rail shows live counts) and carries no
+           content-guidance slogans. */
+        cat || solvedOnly ? (
+          <EmptyState
+            className="mt-4"
+            message={t(locale, "feed.emptyFiltered")}
+            actions={
               <Link
-                href={
-                  user
-                    ? "/community/new"
-                    : `/login?next=${encodeURIComponent("/community/new")}`
-                }
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                href={feedHref({ cat: null, sub: null, solved: null })}
+                scroll={false}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line px-5 font-mono text-xs text-paper transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
               >
-                <SquarePen size={14} aria-hidden="true" />
-                {t(locale, "feed.emptyCta")}
+                {t(locale, "feed.emptyFilteredCta")}
               </Link>
-            ) : undefined
-          }
-        />
+            }
+          />
+        ) : (
+          <EmptyState
+            className="mt-4"
+            message={subOnly ? t(locale, "feed.emptySub") : t(locale, "feed.empty")}
+            hint={!subOnly ? t(locale, "feed.emptyHint") : undefined}
+            actions={
+              !subOnly ? (
+                <Link
+                  href={
+                    user
+                      ? "/community/new"
+                      : `/login?next=${encodeURIComponent("/community/new")}`
+                  }
+                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-blue bg-blue px-5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+                >
+                  <SquarePen size={14} aria-hidden="true" />
+                  {t(locale, "feed.emptyCta")}
+                </Link>
+              ) : undefined
+            }
+          />
+        )
       ) : (
         <div className={`${defaultFeedView ? "stagger-in " : ""}mt-4 space-y-3`}>
           {feed.nodes}

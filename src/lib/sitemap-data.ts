@@ -15,6 +15,11 @@ const ORIGIN = "https://kimi.builders";
 /* Per-class cap keeps the map small; newest first. */
 export const SITEMAP_DYNAMIC_CAP = 500;
 
+/* Static routes only: sections that render (NAV_HIDDEN sections like
+   /demo-night expose nothing but a placeholder — pushing them to
+   search engines would contradict the nav/search hiding). When a
+   nav-hidden section relaunches (flip its UPCOMING/NAV_HIDDEN flag),
+   re-add its path here. */
 export const SITEMAP_STATIC_PATHS = [
   "/",
   "/community",
@@ -24,7 +29,6 @@ export const SITEMAP_STATIC_PATHS = [
   "/usage",
   "/usage/leaderboard",
   "/about",
-  "/demo-night",
 ] as const;
 
 export interface SitemapData {

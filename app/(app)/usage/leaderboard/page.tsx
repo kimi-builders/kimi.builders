@@ -543,12 +543,17 @@ export default async function UsageLeaderboardPage({
       ) : data.all.length === 0 ? (
         <section className="mt-4 rounded-2xl border border-line bg-card p-5">
           <p className="text-sm text-paper">{t(locale, "lb.empty")}</p>
-          <p className="mt-2 text-xs leading-relaxed text-grey">{t(locale, "lb.emptyHint")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-grey">
+            {t(locale, user ? "lb.emptyHint" : "lb.emptyHintLogin")}
+          </p>
+          {/* The privacy switch lives on the logged-in dashboard: signed
+              out, the CTA leads with the login step — never at an anchor
+              the reader can't reach yet. */}
           <Link
-            href="/usage#usage-management"
+            href={user ? "/usage#usage-management" : "/login?next=%2Fusage"}
             className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-line px-4 font-mono text-xs text-paper transition-colors hover:border-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            {t(locale, "lb.emptyCta")}
+            {t(locale, user ? "lb.emptyCta" : "lb.emptyCtaLogin")}
           </Link>
         </section>
       ) : (

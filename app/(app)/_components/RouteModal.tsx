@@ -10,7 +10,11 @@
    it enables the "you have input" guard — once the form has input, X /
    backdrop / ESC no longer close directly; a bottom confirm bar offers
    keep editing / discard and close; a submit in flight (onSubmit) is
-   never intercepted and navigates normally. */
+   never intercepted and navigates normally. The confirm bar is a real
+   flex row of the dialog (never an overlay on the body), so the form
+   footer's primary button can't share pixels with it while the bar is
+   up — an overlaid sliver of the primary submit reads as a second
+   primary and invites mis-publishing. */
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X } from "lucide-react";
@@ -93,7 +97,7 @@ export default function RouteModal({
       onClick={(event) => {
         if (event.target === event.currentTarget) requestClose();
       }}
-      className={`fixed inset-0 m-auto max-h-[86vh] ${widthCls} overflow-clip rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75`}
+      className={`fixed inset-0 m-auto flex max-h-[86vh] flex-col ${widthCls} overflow-clip rounded-2xl border border-line bg-bg p-0 text-paper shadow-2xl backdrop:bg-black/75`}
     >
       <div className="flex items-center justify-between border-b border-line bg-card px-6 py-4">
         <h2 className="font-mono text-sm font-semibold tracking-[0.06em]">{title}</h2>
@@ -107,7 +111,7 @@ export default function RouteModal({
         </button>
       </div>
       <div
-        className="max-h-[calc(86vh-64px)] overscroll-contain overflow-y-auto px-6 py-6 [scrollbar-gutter:stable]"
+        className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-6 py-6 [scrollbar-gutter:stable]"
         onInput={() => {
           if (dirtyGuard && !dirty) setDirty(true);
         }}
@@ -121,7 +125,7 @@ export default function RouteModal({
         {children}
       </div>
       {confirming && dirtyGuard && (
-        <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-6 py-3">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-6 py-3">
           <span className="text-xs text-paper">{dirtyGuard.title}</span>
           <span className="ml-auto flex items-center gap-2">
             <button

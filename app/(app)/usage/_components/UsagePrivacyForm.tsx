@@ -106,11 +106,7 @@ export default function UsagePrivacyForm({
       <label className={rowCls}>
         <span>
           <span className={rowTitle}>{zh ? "上传项目目录名" : "Upload project names"}</span>
-          <span className={rowHint}>
-            {zh
-              ? "仅 basename；关闭后 Collector 的 payload 中不会出现 project 字段。"
-              : "Basename only; when off, project is absent from collector payloads."}
-          </span>
+          <span className={rowHint}>{t(locale, "usage.uploadProjectHint")}</span>
         </span>
         <Switch
           name="upload_project"

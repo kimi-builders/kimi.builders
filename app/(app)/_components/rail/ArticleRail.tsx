@@ -2,18 +2,23 @@
    chapter · date + title + summary" — all metadata moved here: this
    article's META (kind/chapter/date/author/duration/language) +
    products + roles + tags, all clickable back into the explore
-   lenses. Series info stays unshown for now. Data:
-   getArticleRailMeta (React cache dedupes per-request calls); a miss
+   lenses. Lens links honor the one availability judgment
+   (explore-filters.ts): a link is issued only when the lens renders a
+   control on /explore and its URL param takes effect there — no
+   invisible or no-op filters. Series info stays unshown for now.
+   Data: getArticleRailMeta + listExploreItems (both React-cached, the
+   guide detail page reuses the list for neighbors); a rail-meta miss
    -> the whole rail never renders (the page already 404s; the rail
    doesn't prop up an empty shell). */
 import Link from "next/link";
 import { Clock3 } from "lucide-react";
 import { monthLabel } from "@/src/lib/format";
-import { getArticleRailMeta } from "@/src/lib/explore";
-import { findKbChapter } from "@/src/lib/kb-chapters";
+import { countByChapter, countByProduct, countByRoles, countTags, getArticleRailMeta, groupByArchive, listExploreItems } from "@/src/lib/explore";
+import { availableExploreFilters } from "@/src/lib/explore-filters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { KB_ROLES } from "@/src/lib/kb-roles";
 import { articleLanguageLabel, type Locale } from "@/src/lib/i18n";
+import { findKbChapter } from "@/src/lib/kb-chapters";
 import Widget from "./Widget";
 
 /* META row: label left, paper-colored value right; values may be
@@ -38,6 +43,25 @@ export default async function ArticleRail({
   const item = await getArticleRailMeta(slug, locale);
   if (!item) return null;
 
+  /* The one availability judgment (same cached list the /explore page
+     reads): a lens is linkable only when it renders a control there and
+     its param takes effect; chapters follow the page's ">=2 comparable"
+     rule. A non-browsable chapter still shows as plain text — facts
+     stay, dead links don't. */
+  const allItems = await listExploreItems(locale);
+  const available = availableExploreFilters({
+    product: countByProduct(allItems).length,
+    role: countByRoles(allItems).length,
+    tag: countTags(allItems).length,
+    year: groupByArchive(allItems).length,
+  });
+  const chapterCounts = countByChapter(allItems);
+  const activeChapterCount = chapterCounts.filter((c) => c.count > 0).length;
+  const chapterBrowsable =
+    !!item.chapter &&
+    activeChapterCount >= 2 &&
+    (chapterCounts.find((c) => c.value === item.chapter)?.count ?? 0) > 0;
+
   const chapter = item.chapter ? findKbChapter(item.chapter) : undefined;
 
   return (
@@ -52,12 +76,16 @@ export default async function ArticleRail({
             <MetaRow
               label={zh ? "章" : "Chapter"}
               value={
-                <Link
-                  href={`/explore?chapter=${chapter.id}`}
-                  className="transition-colors hover:text-ui-blue"
-                >
-                  {zh ? `${chapter.zh} · ${chapter.tagline.zh}` : `${chapter.en} · ${chapter.tagline.en}`}
-                </Link>
+                chapterBrowsable ? (
+                  <Link
+                    href={`/explore?chapter=${chapter.id}`}
+                    className="transition-colors hover:text-ui-blue"
+                  >
+                    {zh ? `${chapter.zh} · ${chapter.tagline.zh}` : `${chapter.en} · ${chapter.tagline.en}`}
+                  </Link>
+                ) : (
+                  zh ? `${chapter.zh} · ${chapter.tagline.zh}` : `${chapter.en} · ${chapter.tagline.en}`
+                )
               }
             />
           )}
@@ -83,7 +111,7 @@ export default async function ArticleRail({
         </ul>
       </Widget>
 
-      {item.products.length > 0 && (
+      {item.products.length > 0 && available.includes("product") && (
         <Widget title={zh ? "涉及产品" : "PRODUCTS"}>
           <ul className="space-y-2">
             {item.products.map((id) => {
@@ -106,7 +134,7 @@ export default async function ArticleRail({
         </Widget>
       )}
 
-      {item.roles.length > 0 && (
+      {item.roles.length > 0 && available.includes("role") && (
         <Widget title={zh ? "适合职业" : "FOR ROLES"}>
           <div className="flex flex-wrap gap-1.5">
             {item.roles.map((id) => {
@@ -126,7 +154,7 @@ export default async function ArticleRail({
         </Widget>
       )}
 
-      {item.tags.length > 0 && (
+      {item.tags.length > 0 && available.includes("tag") && (
         <Widget title={zh ? "标签" : "TAGS"}>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">
             {item.tags.map((tag) => (

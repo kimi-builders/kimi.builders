@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import CheckboxControl from "@/components/CheckboxControl";
-import type { Locale } from "@/src/lib/i18n";
+import { t, type Locale } from "@/src/lib/i18n";
 import {
   decideUsageDeviceAction,
   type DeviceDecisionState,
@@ -78,9 +78,7 @@ export default function DeviceApprovalForm({
             {zh ? "上传项目目录名" : "Upload project directory names"}
           </span>
           <span className="mt-1 block text-xs leading-relaxed text-grey">
-            {zh
-              ? "默认关闭。只上传 basename，不上传完整路径；可随时在看板关闭。"
-              : "Off by default. Only the basename is sent, never a full path; disable it anytime."}
+            {t(locale, "usage.deviceUploadProjectHint")}
           </span>
         </span>
       </label>

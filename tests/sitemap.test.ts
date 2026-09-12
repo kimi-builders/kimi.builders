@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { NAV_HIDDEN } from "../src/lib/upcoming";
 import {
   SITEMAP_DYNAMIC_CAP,
   SITEMAP_STATIC_PATHS,
@@ -69,4 +70,11 @@ test("sitemap 查询:可见性谓词与公共面同口径,条数封顶", () => {
   assert.match(sitemapWorksQuery(), /visibility = 'public' AND hidden_at IS NULL/);
   assert.match(sitemapArticlesQuery(), /published_at IS NOT NULL AND deleted_at IS NULL/);
   assert.match(sitemapPostsQuery(), new RegExp(`LIMIT ${SITEMAP_DYNAMIC_CAP}`));
+});
+
+test("sitemap 不向搜索引擎推送导航隐藏分区(与 NAV_HIDDEN 同步)", () => {
+  assert.equal(
+    (SITEMAP_STATIC_PATHS as readonly string[]).includes("/demo-night"),
+    !NAV_HIDDEN.demoNight,
+  );
 });

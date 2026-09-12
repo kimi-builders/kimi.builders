@@ -1,19 +1,21 @@
 /* /explore rail: a section intro line + chapter distribution (bars) +
-   enabled lens data (only dimensions explore-filters.ts enables and
-   content fills — currently products and tags; roles/archive ready
-   via config) + latest content. Series are a grouping and stay
-   unshown for now. */
+   available lens data (products/tags — the same availability judgment
+   as the toolbar and the URL channel, so every link here lands on a
+   visible, clearable filter) + latest content. Series are a grouping
+   and stay unshown for now. */
 import Link from "next/link";
 import type { Locale } from "@/src/lib/i18n";
 import {
   countByChapter,
   countByProduct,
+  countByRoles,
   countTags,
+  groupByArchive,
   listExploreItems,
 } from "@/src/lib/explore";
 import { KB_CHAPTERS } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
-import { isExploreFilterEnabled } from "@/src/lib/explore-filters";
+import { availableExploreFilters } from "@/src/lib/explore-filters";
 import Widget from "./Widget";
 
 export default async function ExploreRail({ locale }: { locale: Locale }) {
@@ -26,11 +28,18 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
   const chapterMax = Math.max(
     1,
     ...activeChapters.map(
-      (chapter) => chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0,
+      (chapter) => (chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0),
     ),
   );
-  const products = isExploreFilterEnabled("product") ? countByProduct(items) : [];
-  const tags = isExploreFilterEnabled("tag") ? countTags(items) : [];
+  const productCounts = countByProduct(items);
+  const available = availableExploreFilters({
+    product: productCounts.length,
+    role: countByRoles(items).length,
+    tag: countTags(items).length,
+    year: groupByArchive(items).length,
+  });
+  const products = available.includes("product") ? productCounts : [];
+  const tags = available.includes("tag") ? countTags(items) : [];
   const latest = items.slice(0, 5);
 
   return (

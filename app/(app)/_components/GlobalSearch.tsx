@@ -78,6 +78,7 @@ export default function GlobalSearch({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const [query, setQuery] = useState("");
   /* The dialog portals to <body> (client-only): the home page re-scopes
@@ -105,8 +106,15 @@ export default function GlobalSearch({
   };
   const close = () => {
     dialogRef.current?.close();
+  };
+  /* Every close path (X, backdrop, ESC's native cancel, programmatic)
+     funnels into the dialog's close event: reset the query and hand
+     focus back to the trigger, so a keyboard user isn't dropped at the
+     document top (same focus contract as the route modals). */
+  const onDialogClose = () => {
     setQuery("");
     setActive(0);
+    triggerRef.current?.focus();
   };
   const go = (href: string) => {
     close();
@@ -151,6 +159,7 @@ export default function GlobalSearch({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={open}
         data-tip={t(locale, "search.open")}
@@ -166,6 +175,7 @@ export default function GlobalSearch({
           <dialog
             ref={dialogRef}
             aria-labelledby={`${mode}-search-title`}
+            onClose={onDialogClose}
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}

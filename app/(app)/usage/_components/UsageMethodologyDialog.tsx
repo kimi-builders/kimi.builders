@@ -2,6 +2,7 @@
 
 import { useId, useRef } from "react";
 import { CircleHelp, Info, X } from "lucide-react";
+import { t } from "@/src/lib/i18n";
 import type { UsagePricingMatch } from "@/src/lib/usage/query";
 import { formatUsageLocalDateTime } from "@/src/lib/usage/presentation";
 
@@ -160,9 +161,7 @@ export default function UsageMethodologyDialog({
                     {zh ? "模型、推理强度与版本" : "MODEL, EFFORT & VERSION"}
                   </div>
                   <p className="mt-1.5">
-                    {zh
-                      ? "原始模型名始终保留日志中的精确 ID；规范模型名仅用于统一展示、跨 Agent 比较和价格匹配，不会覆盖原始事实。推理强度与请求时 Agent 版本只在日志明确提供时记录，缺失显示「—」，不会用默认值或当前版本推断历史请求。设备页展示的是最近同步时检测到的终端、系统、Collector 与已安装 Agent 版本。"
-                      : "The raw model keeps the exact log ID. A separate canonical model is used only for display, cross-agent comparison, and pricing; it never overwrites the raw fact. Reasoning effort and request-time Agent version are recorded only when the log explicitly provides them; missing values show “—” and are never inferred from defaults or today's version. The device panel shows terminal, OS, Collector, and installed Agent versions detected at the latest sync."}
+                    {t(zh ? "zh" : "en", "usage.methodModelsBody")}
                   </p>
                 </div>
               </div>
@@ -293,9 +292,7 @@ export default function UsageMethodologyDialog({
                 <div className="border-l-2 border-paper/50 pl-3">
                   <div className="font-mono text-xs text-paper">{zh ? "投入时长" : "ENGAGED TIME"}</div>
                   <p className="mt-1.5">
-                    {zh
-                      ? "会话内相邻事件跨度之和，包含思考、阅读和查看代码；每段空闲间隔最多计 30 分钟，不包含会话之间的间隔。Collector v0.4 起按 UTC 小时存储完整切片，跨日或跨筛选边界时只计范围内切片；旧数据会明确使用兼容降级口径。"
-                      : "Sum of adjacent event spans inside a session, including thinking, reading, and code review. Each idle gap is capped at 30 minutes; gaps between sessions are excluded. Collector v0.4 stores complete UTC-hour slices so cross-day/range sessions count only in-range slices; older data uses an explicit compatibility fallback."}
+                    {t(zh ? "zh" : "en", "usage.methodEngagedBody")}
                   </p>
                 </div>
               </div>

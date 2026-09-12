@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarRange, KeyRound, SearchX, ShieldCheck } from "lucide-react";
+import { t, type Locale } from "@/src/lib/i18n";
 import {
   USAGE_DASHBOARD_COMMAND,
   USAGE_INIT_COMMAND,
@@ -23,6 +24,7 @@ export function UsageFirstRun({
   tzOffsetMinutes: number;
   zh: boolean;
 }) {
+  const locale: Locale = zh ? "zh" : "en";
   const command = hasAuthorizedDevice ? USAGE_SYNC_COMMAND : USAGE_INIT_COMMAND;
   /* Matches the usage-cli README's "supported local sources": 11
      auto-scanned + Cursor with explicit opt-in. */
@@ -42,12 +44,10 @@ export function UsageFirstRun({
           <h2 id="usage-first-run-title" className="mt-1 font-mono text-base font-semibold text-paper">
             {hasAuthorizedDevice
               ? zh ? "同步第一份用量报告" : "Sync your first usage report"
-              : zh ? "连接本地 Collector" : "Connect your local Collector"}
+              : t(locale, "usage.connectSyncTool")}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-grey">
-            {zh
-              ? "Collector 只在本机读取各 Agent 的统计日志。上传前会展示字段预览;对话内容、完整路径和供应商凭据不会离开设备。"
-              : "The Collector reads statistical logs from your agents locally. You preview the fields before upload; conversations, full paths, and provider credentials never leave the device."}
+            {t(locale, "usage.firstRunBody")}
           </p>
           <div className="mt-3 flex max-w-3xl flex-wrap gap-1.5">
             {sources.map((s) => (

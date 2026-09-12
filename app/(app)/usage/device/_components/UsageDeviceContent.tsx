@@ -4,6 +4,7 @@
    link above stays. */
 import { Database, MonitorCheck, ShieldCheck } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
+import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getDeviceAuthorizationPreview } from "@/src/lib/usage/device";
 import {
@@ -47,7 +48,7 @@ function DeviceCodeForm({
         {zh ? "连接验证码" : "CONNECTION CODE"}
       </label>
       <p id="usage-device-code-help" className="mt-1 text-xs leading-relaxed text-grey">
-        {zh ? "输入本地看板或 Collector 显示的 8 位验证码。" : "Enter the 8-character code shown by the local dashboard or Collector."}
+        {t(zh ? "zh" : "en", "usage.deviceCodeHelp")}
       </p>
       <div className="mt-2 flex gap-2">
         <input

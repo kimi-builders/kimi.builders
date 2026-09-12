@@ -9,6 +9,7 @@
    CopyUsageCommandButton. */
 import { useRef } from "react";
 import { RefreshCw, X } from "lucide-react";
+import { t, type Locale } from "@/src/lib/i18n";
 import {
   USAGE_DASHBOARD_COMMAND,
   USAGE_INIT_COMMAND,
@@ -43,6 +44,7 @@ function CommandRow({
 
 export default function UsageSyncDialog({ zh }: { zh: boolean }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const locale: Locale = zh ? "zh" : "en";
 
   return (
     <>
@@ -95,9 +97,7 @@ export default function UsageSyncDialog({ zh }: { zh: boolean }) {
               {zh ? "持续同步(后台服务)" : "CONTINUOUS (BACKGROUND DAEMON)"}
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-grey">
-              {zh
-                ? "以当前用户身份运行,不需要管理员权限;设备休眠或离线时不工作。升级 Collector 后执行一次「重启」。"
-                : "Runs as your user, no admin needed; pauses when the device sleeps or is offline. Restart once after upgrading the Collector."}
+              {t(locale, "usage.daemonNote")}
             </p>
             <div className="mt-2 space-y-2">
               <CommandRow label={zh ? "安装" : "Install"} command={`${PKG} daemon install`} zh={zh} />
