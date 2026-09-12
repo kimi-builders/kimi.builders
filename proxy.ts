@@ -9,6 +9,8 @@
    appear on /awesome). Written only on the list pages themselves
    (details/publish/edit never overwrite). */
 import { NextResponse, type NextRequest } from "next/server";
+import { findLearnSeries } from "./src/lib/learn-series";
+import { UPCOMING } from "./src/lib/upcoming";
 
 /* Legacy /blog and /learn paths merged into /explore (20260821). The
    real 308 must leave here, before render: page-level redirects land
@@ -41,8 +43,22 @@ export function proxy(request: NextRequest) {
   if (legacy) return legacy;
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-kb-path", request.nextUrl.pathname);
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
   const pathname = request.nextUrl.pathname;
+  const segments = pathname.split("/").filter(Boolean);
+  let seriesSlug = segments[2];
+  try {
+    seriesSlug = decodeURIComponent(seriesSlug ?? "");
+  } catch {
+    // Malformed encoding cannot name a registered series.
+  }
+  const missingSeries = !UPCOMING.explore && segments.length === 3 &&
+    segments[0] === "explore" && segments[1] === "series" &&
+    !findLearnSeries(seriesSlug);
+  // The page still calls notFound(); its loading boundary must not commit a 200 first.
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+    status: missingSeries ? 404 : 200,
+  });
   const src = pathname === "/awesome" ? "awesome" : pathname === "/works" ? "works" : null;
   if (src) {
     /* Session cookie (no maxAge): "back" is the current visit's

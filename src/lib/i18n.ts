@@ -429,6 +429,8 @@ const DICT = {
   "login.registerSubtitle": { zh: "注册后即可发帖、提交作品、同步用量。", en: "Register to post, submit works and sync usage." },
   "login.emailDivider": { zh: "或用邮箱", en: "or with email" },
   "login.signIn": { zh: "登录", en: "Sign in" },
+  "login.signingIn": { zh: "登录中…", en: "Signing in…" },
+  "login.errNetwork": { zh: "暂时无法确认登录结果，请重试", en: "Unable to confirm sign-in. Please try again." },
   "login.register": { zh: "注册", en: "Register" },
   "login.password": { zh: "密码", en: "Password" },
   "login.forgot": { zh: "忘记密码？", en: "Forgot password?" },

@@ -9,6 +9,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { proxy, config } from "../proxy";
+import { LEARN_SERIES, type LearnSeries } from "../src/lib/learn-series";
 
 const ORIGIN = "https://kimi.builders.test";
 
@@ -42,6 +43,33 @@ test("legacy /blog and /learn paths 308 into /explore before render", () => {
 test("the edit console under /blog/admin is never redirected", () => {
   const res = proxy(fakeRequest("/blog/admin/new"));
   assert.notEqual(res.status, 308);
+});
+
+test("unknown series commit a 404 before loading can stream, preserving the original render path", () => {
+  for (const path of ["/explore/series/missing", "/explore/series/%6dissing", "/explore/series/missing/", "/explore/series/%ZZ"]) {
+    const response = proxy(fakeRequest(path));
+    assert.equal(response.status, 404, path);
+    assert.equal(response.headers.get("x-middleware-request-x-kb-path"), path);
+    assert.equal(response.headers.get("location"), null);
+    assert.equal(response.headers.get("x-middleware-rewrite"), null);
+  }
+  for (const path of ["/explore", "/explore/an-article", "/community", "/explore/series/a/b"]) {
+    assert.equal(proxy(fakeRequest(path)).status, 200, path);
+  }
+});
+
+test("registered series retain normal rendering and legacy routes still redirect first", () => {
+  const series = { slug: "registered-series" } as LearnSeries;
+  LEARN_SERIES.push(series);
+  try {
+    assert.equal(proxy(fakeRequest("/explore/series/registered-series")).status, 200);
+    assert.equal(proxy(fakeRequest("/explore/series/%72egistered-series")).status, 200);
+    const legacy = proxy(fakeRequest("/learn/missing"));
+    assert.equal(legacy.status, 308);
+    assert.equal(legacy.headers.get("location"), `${ORIGIN}/explore/series/missing`);
+  } finally {
+    LEARN_SERIES.splice(LEARN_SERIES.indexOf(series), 1);
+  }
 });
 
 test("the works-source cookie rides only on the two list pages", () => {

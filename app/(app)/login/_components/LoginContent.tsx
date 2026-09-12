@@ -1,8 +1,8 @@
 /* Login/signup body: shared by the full page (/login) and the modal
    (@modal/(.)login). showTitle=false collapses the h1 (the modal has
    its own title bar, retitled per mode — see loginModeOf). Three
-   entries: GitHub / Google / email; the email part is a native form
-   that works without JS (the 303 redirect carries error/next).
+   entries: GitHub / Google / email; sign-in errors stay in the shared
+   client form, with native POST/redirect/GET as the no-JS fallback.
    Signed-in visits redirect straight to next — effective inside
    intercepted routes too. Layout: explanatory copy appears per mode —
    the OAuth area/divider/login-signup tabs render only for
@@ -19,6 +19,7 @@ import { t, type I18nKey } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { redirect } from "next/navigation";
 import OAuthButtons from "@/components/OAuthButtons";
+import LoginForm from "./LoginForm";
 import {
   SEG_ITEM,
   SEG_ITEM_ACTIVE,
@@ -143,41 +144,21 @@ export default async function LoginContent({
         </div>
       )}
 
-      {errorKey && (
+      {errorKey && mode !== "login" && (
         <p className="mt-4 rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">
           {t(locale, errorKey)}
         </p>
       )}
 
       {mode === "login" && (
-        /* next rides the action URL query: routes validate/rate-limit
-           before parsing forms (safe ordering) and read the redirect
-           target from the query only. */
-        <form method="POST" action={`/api/auth/email/login${nextQuery ? `?next=${encodeURIComponent(next)}` : ""}`} className="mt-4 space-y-3">
-          <div>
-            <label className="mb-1 block font-mono text-xs text-grey" htmlFor="email">
-              {t(locale, "auth.email")}
-            </label>
-            <input id="email" name="email" type="email" required autoComplete="email" className={inputCls} />
-          </div>
-          <div>
-            <div className="mb-1 flex items-baseline justify-between">
-              <label className="block font-mono text-xs text-grey" htmlFor="password">
-                {t(locale, "login.password")}
-              </label>
-              <Link
-                href={`/login?mode=forgot${nextQuery}`}
-                className="font-mono text-xs text-grey transition-colors hover:text-paper"
-              >
-                {t(locale, "login.forgot")}
-              </Link>
-            </div>
-            <input id="password" name="password" type="password" required autoComplete="current-password" className={inputCls} />
-          </div>
-          <button type="submit" className={submitCls}>
-            <Mail size={12} className="mr-1 inline" /> {t(locale, "login.signIn")}
-          </button>
-        </form>
+        <LoginForm
+          locale={locale}
+          next={next}
+          initialEmail={(Array.isArray(sp.email) ? sp.email[0] : sp.email) ?? ""}
+          initialError={errorKey}
+          inputCls={inputCls}
+          submitCls={submitCls}
+        />
       )}
 
       {mode === "register" && (
