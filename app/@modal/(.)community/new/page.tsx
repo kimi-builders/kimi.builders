@@ -14,10 +14,15 @@ export default async function NewPostModalPage() {
     <RouteModal
       title={t(locale, "form.pageTitle")}
       closeLabel={t(locale, "modal.close")}
+      /* The post form auto-saves a local draft (community-draft.ts), so
+         closing never discards: the confirm says the draft stays and
+         the close button keeps neutral styling (nothing is lost).
+         destructive:false — this is not a discard action. */
       dirtyGuard={{
-        title: t(locale, "modal.dirtyTitle"),
+        title: t(locale, "modal.draftCloseTitle"),
         keep: t(locale, "modal.keepEditing"),
-        discard: t(locale, "modal.discardClose"),
+        discard: t(locale, "modal.draftCloseKeep"),
+        destructive: false,
       }}
     >
       <NewPostContent showTitle={false} />

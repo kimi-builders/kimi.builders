@@ -44,7 +44,13 @@ export interface UsageFilters {
 }
 
 export const USAGE_RANGE_PRESETS = [7, 30, 90] as const;
-export const USAGE_DEFAULT_RANGE: UsageRangeLabel = "today";
+/* No-param default. "today" left returning visitors (sync gaps are
+   normal) staring at an empty first screen; 30d shows the recent
+   window and stays shareable. Explicit deep links (?range=today etc.)
+   keep working; the anonymous preview, the public leaderboard, and
+   the share posters have their own range contracts and don't read
+   this. */
+export const USAGE_DEFAULT_RANGE: UsageRangeLabel = "30d";
 export const USAGE_MAX_RANGE_DAYS = 366;
 export const USAGE_MAX_PAGE_SIZE = 100;
 export const USAGE_DEFAULT_PAGE_SIZE = 25;
@@ -97,8 +103,13 @@ export function parseUsageFilters(
   const tzOffsetMinutes = clampTzOffset(options.tzOffsetMinutes);
 
   // Preset ranges win; days=7|30|90 kept for old links; from/to reserved
-  // for custom ranges.
-  let days = 1;
+  // for custom ranges. The no-param default seeds `days` from
+  // USAGE_DEFAULT_RANGE so the window matches the label (a "30d" label
+  // with a 1-day window would misstate the range everywhere).
+  const defaultPresetDays = USAGE_DEFAULT_RANGE.endsWith("d")
+    ? Number(USAGE_DEFAULT_RANGE.slice(0, -1))
+    : 1;
+  let days = defaultPresetDays;
   let rangeLabel: UsageRangeLabel = USAGE_DEFAULT_RANGE;
   let from: Date;
   let to: Date = now;

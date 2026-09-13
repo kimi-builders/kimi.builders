@@ -19,6 +19,20 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
+/* The dirty flag lives here (this component owns the close flow). A
+   form that drops its unsaved state in place — the post form's
+   "clear draft" — must tell the modal, or the confirm bar would keep
+   claiming a draft will survive a close that actually discards
+   nothing. The event bubbles from any element inside the modal body
+   to the body container's listener below. */
+export const MODAL_DIRTY_RESET_EVENT = "kb:modal-dirty-reset";
+
+export function notifyModalDirtyReset(source: HTMLElement | null) {
+  source?.dispatchEvent(
+    new CustomEvent(MODAL_DIRTY_RESET_EVENT, { bubbles: true }),
+  );
+}
+
 export default function RouteModal({
   title,
   closeLabel,
@@ -28,7 +42,16 @@ export default function RouteModal({
 }: {
   title: string;
   closeLabel: string;
-  dirtyGuard?: { title: string; keep: string; discard: string };
+  /* dirtyGuard.destructive: closing really discards (default true —
+     danger styling on the close button). Guards whose form auto-saves
+     a local draft pass false: closing keeps the draft, so the button
+     is a plain neutral action, not a danger one. */
+  dirtyGuard?: {
+    title: string;
+    keep: string;
+    discard: string;
+    destructive?: boolean;
+  };
   /* Modal width: 46rem by default; wide forms (work publish/edit) pass
      56rem. */
   widthCls?: string;
@@ -37,6 +60,7 @@ export default function RouteModal({
   const router = useRouter();
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [dirty, setDirty] = useState(false);
   const [confirming, setConfirming] = useState(false);
   /* The URL at mount (modal open = the URL sits on the intercepted
@@ -48,6 +72,20 @@ export default function RouteModal({
   useEffect(() => {
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+
+  /* Unsaved state dropped in place (notifyModalDirtyReset): the guard
+     reason is gone — close directly again and take a standing confirm
+     bar down with it. */
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const reset = () => {
+      setDirty(false);
+      setConfirming(false);
+    };
+    body.addEventListener(MODAL_DIRTY_RESET_EVENT, reset);
+    return () => body.removeEventListener(MODAL_DIRTY_RESET_EVENT, reset);
   }, []);
 
   /* Close backstop: a server action's redirect() moves only the
@@ -111,6 +149,7 @@ export default function RouteModal({
         </button>
       </div>
       <div
+        ref={bodyRef}
         className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-6 py-6 [scrollbar-gutter:stable]"
         onInput={() => {
           if (dirtyGuard && !dirty) setDirty(true);
@@ -139,7 +178,11 @@ export default function RouteModal({
             <button
               type="button"
               onClick={() => dialogRef.current?.close()}
-              className="inline-flex min-h-9 items-center rounded-lg border border-status-danger/50 px-3 font-mono text-xs text-status-danger-fg transition-colors hover:bg-status-danger/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-status-danger"
+              className={`inline-flex min-h-9 items-center rounded-lg border px-3 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                dirtyGuard.destructive === false
+                  ? "border-line text-paper hover:border-paper/30"
+                  : "border-status-danger/50 text-status-danger-fg hover:bg-status-danger/10 focus-visible:outline-status-danger"
+              }`}
             >
               {dirtyGuard.discard}
             </button>

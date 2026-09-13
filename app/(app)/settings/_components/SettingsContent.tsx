@@ -137,7 +137,11 @@ export default async function SettingsContent({
       )}
 
       <div className={showTitle ? "mt-6" : ""}>
-        <SettingsTabs tabs={tabs} initialKey={linked || linkError ? "account" : undefined}>
+        <SettingsTabs
+          tabs={tabs}
+          initialKey={linked || linkError ? "account" : undefined}
+          ariaLabel={t(locale, "set.tabsLabel")}
+        >
           <Panel title={t(locale, "set.profile")} note={t(locale, "set.profileNote")}>
             <ProfileForm
               initial={{

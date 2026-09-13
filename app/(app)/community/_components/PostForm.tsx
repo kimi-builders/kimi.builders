@@ -30,6 +30,7 @@ import {
   type CommunityDraft,
 } from "@/src/lib/community-draft";
 import { t, type Locale } from "@/src/lib/i18n";
+import { notifyModalDirtyReset } from "../../_components/RouteModal";
 import { createPostAction, type PostFormState } from "../actions";
 import MarkdownEditor from "../../_components/MarkdownEditor";
 
@@ -85,6 +86,7 @@ export default function PostForm({
   const [draftSaved, setDraftSaved] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const submittingRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<
     PostFormState | null,
     FormData
@@ -172,10 +174,15 @@ export default function PostForm({
     setOptions(["", ""]);
     setDraftRestored(false);
     setDraftSaved(false);
+    /* Inside the RouteModal: with the draft gone there is nothing the
+       close-confirm could promise ("your draft will stay"), so tell
+       the modal its dirty flag is stale — X closes directly again. */
+    notifyModalDirtyReset(formRef.current);
   };
 
   return (
     <form
+      ref={formRef}
       action={formAction}
       onSubmitCapture={() => {
         submittingRef.current = true;

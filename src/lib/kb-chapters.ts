@@ -61,3 +61,35 @@ export function kbChapterLabel(id: string, zh: boolean): string | null {
   const c = findKbChapter(id);
   return c ? (zh ? c.zh : c.en) : null;
 }
+
+/* Explore text-cover copy (the automatic brick when a payload has no
+   cover image): zh keeps the compact kind label + single chapter
+   glyph; en spells the word out — a bare "L"/"M" glyph is unreadable
+   out of context. en with no chapter: the big word IS the kind, so no
+   eyebrow (it would repeat the same word twice on one cover). Lives
+   in this client-safe registry (not explore.ts, which pulls the db). */
+export function exploreCoverText(
+  kind: "letter" | "guide",
+  chapter: { zh: string; en: string } | undefined,
+  zh: boolean,
+): { eyebrow: string | null; word: string; latin: boolean } {
+  if (zh) {
+    return {
+      eyebrow: kind === "letter" ? "月刊评鉴" : "文章",
+      word: chapter ? chapter.zh : "刊",
+      latin: false,
+    };
+  }
+  if (chapter) {
+    return {
+      eyebrow: kind === "letter" ? "MONTHLY" : "ARTICLE",
+      word: chapter.en,
+      latin: true,
+    };
+  }
+  return {
+    eyebrow: null,
+    word: kind === "letter" ? "MONTHLY" : "ARTICLE",
+    latin: true,
+  };
+}

@@ -5,7 +5,15 @@
    settings, and preferences live in MobileTopBar's drawer. The desktop
    three-column shell (LeftNav/RightSidebar) yields entirely on mobile.
    Fixed positioning + safe-area padding (the iPhone home bar); the
-   main area gets pb-24 in (app)/layout so nothing hides behind it. */
+   main area gets pb-24 in (app)/layout so nothing hides behind it.
+
+   One active/inactive grammar for every item (the compose entry is not
+   a standing primary): all items share the same icon container size,
+   inactive = grey, and only the current route's item gets the blue
+   block + ui-blue label — including compose, which lights up only on
+   /community/new or /works/new. A permanently-lit compose button
+   outranked the actual current-page state and made "where am I" the
+   weaker signal. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Compass, MessagesSquare, Shell, Sprout, SquarePen, User } from "lucide-react";
@@ -37,11 +45,14 @@ export default function MobileTabBar({
      the redirect). */
   const gate = (path: string) =>
     loggedIn ? path : `/login?next=${encodeURIComponent(path)}`;
+  /* The compose entry mirrors the context lens (awesome -> recommend a
+     project; works -> publish work; else post). Mobile labels use the
+     short-tag keys: "Publish work" wraps at 390px, "Publish" doesn't. */
   const contextualCreate: { href: string; key: I18nKey } =
     pathname.startsWith("/awesome")
       ? { href: "/works/new", key: "awesome.recommend" }
       : pathname.startsWith("/works")
-        ? { href: "/works/new", key: "works.submit" }
+        ? { href: "/works/new", key: "works.submitShort" }
         : { href: "/community/new", key: "nav.post" };
   const tabs = [
     {
@@ -75,7 +86,6 @@ export default function MobileTabBar({
       active:
         pathname.startsWith("/community/new") ||
         pathname.startsWith("/works/new"),
-      primary: true,
     },
     {
       href: "/usage",
@@ -104,15 +114,17 @@ export default function MobileTabBar({
                  glyphs and mixed-fallback Chinese misaligns the baseline;
                  tab copy is bilingual, sans is stable for both. */
               className={`flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 px-1 text-xs transition-colors ${
-                tab.primary
-                  ? "text-ui-blue"
-                  : tab.active
-                    ? "text-ui-blue"
-                    : "text-grey hover:text-paper"
+                tab.active ? "text-ui-blue" : "text-grey hover:text-paper"
               }`}
             >
- <span className={`flex items-center justify-center ${tab.primary ? "size-10 rounded-lg bg-blue text-white" : "size-7"}`}>
-                <Icon size={tab.primary ? 18 : 19} />
+              {/* Equal-size container for every item; the blue block
+                  rides active state alone (no standing primary). */}
+              <span
+                className={`flex size-10 items-center justify-center rounded-lg transition-colors ${
+                  tab.active ? "bg-blue text-white" : ""
+                }`}
+              >
+                <Icon size={19} />
               </span>
               {t(locale, tab.key)}
             </Link>

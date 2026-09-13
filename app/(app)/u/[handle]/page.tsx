@@ -414,9 +414,10 @@ export default async function ProfilePage({
                   {fsum.streak.current} <span className="text-xs font-medium text-grey">{zh ? "天" : "days"}</span>
                 </div>
                 <div className="mt-1 font-mono text-xs text-grey/70">
-                  {t(locale, "prof.statStreakSub", {
-                    n: snapshotAll.streakWeeks.current || snapshotAll.streakWeeks.longest,
-                  })}
+                  {/* Same time scale as the main value: the longest
+                      daily streak, not the weekly streak (the weekly
+                      fallback read as "0 days yet 21 weeks"). */}
+                  {t(locale, "prof.statStreakSub", { n: fsum.streak.longest })}
                 </div>
               </div>
               <div className={STRIP_CELL}>

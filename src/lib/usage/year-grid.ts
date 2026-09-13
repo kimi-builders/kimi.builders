@@ -97,6 +97,43 @@ export function buildYearGrid(
   return { weeks, monthLabels };
 }
 
+/* ---- Month label copy + placement (render helpers, pure). ---- */
+
+const MONTH_SHORT_EN = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/* Compact month label above the grid: zh is the month digit plus the
+   CJK month glyph, en is the three-letter short form ("Sep", "Dec").
+   Every label is at most 4 glyphs — the placement budget below relies
+   on that. */
+export function footprintMonthText(month: number, zh: boolean): string {
+  return zh ? `${month}月` : MONTH_SHORT_EN[month - 1] ?? "";
+}
+
+/* Labels anchor at their column's left edge by percentage. Within the
+   final two columns the space to the right is narrower than any month
+   label, so the absolutely-positioned span would wrap its two glyphs
+   onto two lines or overflow the grid — those labels right-align
+   instead (translateX(-100%)): the text ends at the anchor and stays
+   inside the grid. Same rule for the desktop 53-week grid and each
+   mobile half-year page (placement always sees the page's own week
+   count). */
+export const MONTH_LABEL_EDGE_WEEKS = 2;
+
+export function monthLabelRightAligns(
+  weekIndex: number,
+  totalWeeks: number,
+): boolean {
+  return (
+    Number.isFinite(weekIndex) &&
+    Number.isFinite(totalWeeks) &&
+    totalWeeks > 0 &&
+    weekIndex >= totalWeeks - MONTH_LABEL_EDGE_WEEKS
+  );
+}
+
 /* ---- Footprint summary: last-year total / active days / daily peak /
    streaks. Streak definition matches share.ts dailyStreak: if the latest
    active day is older than yesterday, current is 0 — producing nothing

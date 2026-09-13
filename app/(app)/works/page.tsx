@@ -104,6 +104,13 @@ export default async function WorksPage({
         title={t(locale, "works.wallTitle")}
         lede={t(locale, "works.wallIntro")}
       />
+      {/* Sub-xl only: below xl the right rail (with the full claim
+          note) is hidden, so the "not exact per-project usage" boundary
+          needs this one visible landing point; xl+ readers get it in
+          the rail and never see this line twice on one screen. */}
+      <p className="mt-3 text-xs leading-relaxed text-grey xl:hidden">
+        {t(locale, "works.claimMobileNote")}
+      </p>
 
       {/* items-start: the sort seg and filter dropdowns stay aligned at the
           top of the standing row while grouped filter results grow downward

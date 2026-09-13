@@ -4,7 +4,9 @@ import {
   buildYearGrid,
   FOOTPRINT_DAYS,
   FOOTPRINT_WEEKS,
+  footprintMonthText,
   localTodayYmd,
+  monthLabelRightAligns,
 } from "../src/lib/usage/year-grid";
 
 /* 2026-08-09 is a Sunday: grid end = today, the first column's Monday
@@ -95,4 +97,75 @@ test("localTodayYmd converts now into the user's local calendar day", () => {
   /* Clamping and invalid values follow social.ts's convention. */
   assert.equal(localTodayYmd(100000, now), "2026-08-09"); // clamped to +840 -> next day 10:00
   assert.equal(localTodayYmd(Number.NaN, now), "2026-08-08");
+});
+
+/* ---- Month label copy + edge placement: labels in the final two
+   columns right-align (translateX(-100%)) so the text can neither wrap
+   onto two lines nor overflow the grid; every other label anchors
+   left. Applies to the 53-week desktop grid and each mobile half-year
+   page alike. ---- */
+
+test("footprintMonthText renders compact labels within the 4-glyph budget", () => {
+  // zh: digit + glyph; en: three-letter short form.
+  assert.equal(footprintMonthText(9, true), "9\u6708");
+  assert.equal(footprintMonthText(12, true), "12\u6708");
+  assert.equal(footprintMonthText(9, false), "Sep");
+  assert.equal(footprintMonthText(12, false), "Dec");
+  assert.equal(footprintMonthText(1, false), "Jan");
+  for (let month = 1; month <= 12; month++) {
+    assert.ok(footprintMonthText(month, true).length <= 4, `zh label ${month}`);
+    assert.ok(footprintMonthText(month, false).length <= 3, `en label ${month}`);
+  }
+});
+
+test("monthLabelRightAligns dodges the final two columns only", () => {
+  const total = 53;
+  assert.equal(monthLabelRightAligns(0, total), false);
+  assert.equal(monthLabelRightAligns(50, total), false);
+  // The last two columns: a left-anchored label has no room and would
+  // wrap or overflow.
+  assert.equal(monthLabelRightAligns(51, total), true);
+  assert.equal(monthLabelRightAligns(52, total), true);
+  // Mobile half-year pages see their own week count (27 / 26).
+  assert.equal(monthLabelRightAligns(24, 27), false);
+  assert.equal(monthLabelRightAligns(25, 27), true);
+  assert.equal(monthLabelRightAligns(26, 27), true);
+  assert.equal(monthLabelRightAligns(23, 26), false);
+  assert.equal(monthLabelRightAligns(24, 26), true);
+  assert.equal(monthLabelRightAligns(25, 26), true);
+  // Degenerate inputs stay left-anchored.
+  assert.equal(monthLabelRightAligns(0, 0), false);
+});
+
+test("the audit's edge case: a label entering at the last column right-aligns", () => {
+  // 2026-08-09 ends the grid; August's Monday enters at column 52 —
+  // the exact label that wrapped/overflowed before the fix. zh and en
+  // render it within budget either way.
+  const grid = buildYearGrid({}, "2026-08-09");
+  const last = grid.monthLabels.at(-1);
+  assert.deepEqual(last, { weekIndex: 52, month: 8 });
+  assert.equal(monthLabelRightAligns(last.weekIndex, 53), true);
+  assert.ok(footprintMonthText(last.month, true).length <= 4);
+  assert.equal(footprintMonthText(last.month, false), "Aug");
+  // The label before it sits far enough from the edge to anchor left.
+  const prev = grid.monthLabels.at(-2);
+  assert.deepEqual(prev, { weekIndex: 48, month: 7 });
+  assert.equal(monthLabelRightAligns(prev.weekIndex, 53), false);
+});
+
+test("a cross-year window keeps every label inside the grid edge rule", () => {
+  // 2026-12-27 ends the grid; the window spans the previous December,
+  // so labels cross the year boundary (Jan of the new year appears).
+  const grid = buildYearGrid({}, "2026-12-27");
+  const months = grid.monthLabels.map((m) => m.month);
+  assert.ok(months.includes(1) && months.includes(12), months.join(","));
+  for (const label of grid.monthLabels) {
+    // Whatever the month, the placement rule depends only on the
+    // column: edge columns right-align, the rest anchor left.
+    assert.equal(
+      monthLabelRightAligns(label.weekIndex, 53),
+      label.weekIndex >= 51,
+      `week ${label.weekIndex}`,
+    );
+  }
 });

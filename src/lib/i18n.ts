@@ -465,6 +465,16 @@ const DICT = {
   },
   "modal.keepEditing": { zh: "继续填写", en: "Keep editing" },
   "modal.discardClose": { zh: "放弃并关闭", en: "Discard & close" },
+  /* New-post modal only: the form auto-saves a local draft, so closing
+     never discards — the confirm says so and the close button names
+     the real outcome ("keep draft"), instead of "discard" while the
+     draft silently survives. Forms without a local draft keep the
+     discard copy above. */
+  "modal.draftCloseTitle": {
+    zh: "关闭发帖窗口？草稿仍会保存在本设备。",
+    en: "Close this form? Your draft will stay on this device.",
+  },
+  "modal.draftCloseKeep": { zh: "保留草稿并关闭", en: "Close & keep draft" },
   /* ---- Form errors ---- */
   "err.login": { zh: "请先登录", en: "Please log in first" },
   "err.unknownType": { zh: "未知帖子类型", en: "Unknown post type" },
@@ -557,6 +567,9 @@ const DICT = {
     en: "Interface preferences, data privacy, and account.",
   },
   "set.profile": { zh: "资料", en: "Profile" },
+  /* Accessible name of the settings tablist (the tab labels arrive
+     pre-localized; the list name takes the same path). */
+  "set.tabsLabel": { zh: "设置分区", en: "Settings sections" },
   "set.profileNote": { zh: "公开资料", en: "Public profile" },
   "set.prefsNote": { zh: "界面与 AI 互动", en: "Interface & AI" },
   "set.privacyNote": { zh: "资料展示与用量数据", en: "Profile display & usage data" },
@@ -912,6 +925,9 @@ const DICT = {
   },
   "usage.lastSync": { zh: "最近同步：{t}", en: "Last synced {t}" },
   "works.submit": { zh: "发布作品", en: "Publish work" },
+  /* Mobile tab bar short tag: "Publish work" wraps to two lines in the
+     390px bottom bar; the desktop/modal surfaces keep "Publish work". */
+  "works.submitShort": { zh: "发布作品", en: "Publish" },
   "works.empty": {
     zh: "还没有已发布作品。",
     en: "No work has been published yet.",
@@ -1053,9 +1069,20 @@ const DICT = {
      sections. */
   "works.eyebrow": { zh: "— 成员作品", en: "— Member work" },
   "awesome.eyebrow": { zh: "— 生态项目", en: "— Ecosystem projects" },
+  /* One-line positioning lede: the full claim semantics (cap, not
+     per-project exact) live once per surface — the works rail's
+     claimNote (and the sub-xl note below), never repeated verbatim in
+     the same viewport. */
   "works.wallIntro": {
-    zh: "Builder 用 Kimi 做出的作品；「声明投入」由 Builder 自报 Token，系统按已同步总用量封顶，不代表单个作品的精确用量。",
-    en: "Work made by Builders with Kimi. Declared tokens are Builder-reported and capped by synced aggregate usage; they are not exact per-project usage.",
+    zh: "Builder 用 Kimi 做出的作品；声明投入由 Builder 自报。",
+    en: "Work made by Builders with Kimi; declared tokens are self-reported.",
+  },
+  /* Sub-xl only (the rail carrying the full claimNote is hidden below
+     xl): the one visible place mobile/tablet readers learn declared
+     tokens are not exact per-project usage. */
+  "works.claimMobileNote": {
+    zh: "声明投入由 Builder 自报、按已同步总用量封顶，不是单件作品的精确用量。",
+    en: "Declared tokens are Builder-reported and capped by synced aggregate usage — not exact per-project usage.",
   },
   "works.emptyTitle": { zh: "你的作品墙还是空的", en: "Your works wall is empty" },
   "works.emptyBody": {
@@ -1461,8 +1488,11 @@ const DICT = {
   "prof.statTotalSub": { zh: "API 等价估算 {v}", en: "API-equivalent est. {v}" },
   "prof.statActiveDays": { zh: "活跃天数", en: "ACTIVE DAYS" },
   "prof.statActiveDaysSub": { zh: "近 12 个月", en: "last 12 months" },
-  "prof.statStreak": { zh: "连续活跃", en: "ACTIVITY STREAK" },
-  "prof.statStreakSub": { zh: "周连续 {n} 周", en: "{n}-week streak" },
+  /* Streak stat: one time scale per card — main value = current daily
+     streak, sub = the longest daily streak (never the weekly streak:
+     "0 days current / 21 weeks" read as a negative signal). */
+  "prof.statStreak": { zh: "当前连续", en: "CURRENT STREAK" },
+  "prof.statStreakSub": { zh: "最长连续 {n} 天", en: "longest: {n} days" },
   "prof.statHitRate": { zh: "缓存命中率", en: "CACHE HIT" },
   "prof.statHitRateSub": { zh: "全部历史 · 缓存读 {v}", en: "all-time · cache read {v}" },
   "prof.statRequests": { zh: "累计请求", en: "REQUESTS" },

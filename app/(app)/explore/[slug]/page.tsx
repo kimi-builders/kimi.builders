@@ -18,7 +18,11 @@ import { cookies } from "next/headers";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { canModerate } from "@/src/lib/featured";
-import { compactNumber, monthLabel } from "@/src/lib/format";
+import {
+  compactNumber,
+  monthLabel,
+  stripDuplicateLeadingHeading,
+} from "@/src/lib/format";
 import { articleLanguageLabel, t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
@@ -503,7 +507,12 @@ async function GuideDetail({
       label: zh ? "文稿" : "Article",
       panel: (
         <div className="md-longform border-b border-line py-9">
-          <Markdown source={tutorial.bodyMd} />
+          {/* Render-boundary only: an opening H1 that duplicates the
+              page title is stripped here — storage keeps the original
+              body. */}
+          <Markdown
+            source={stripDuplicateLeadingHeading(tutorial.bodyMd, tutorial.title)}
+          />
         </div>
       ),
     });

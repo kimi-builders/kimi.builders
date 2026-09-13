@@ -124,3 +124,61 @@ test("monthly issue navigation renders only when a neighbor exists", () => {
     /href=\{`\/explore\/\$\{next\.slug\}`\} className="kb-navlink group ml-auto min-w-0 text-right"/,
   );
 });
+
+test("the new-post confirm says the draft survives; it never claims a discard", () => {
+  /* The post form auto-saves a local draft, so closing cannot discard:
+     the confirm copy names the real outcome and the close button reads
+     "keep draft" with neutral styling (destructive:false). Forms
+     without a local draft (works publish, admin) keep the discard
+     copy. */
+  const modal = read("app/@modal/(.)community/new/page.tsx");
+  assert.match(modal, /modal\.draftCloseTitle/);
+  assert.match(modal, /modal\.draftCloseKeep/);
+  assert.match(modal, /destructive: false/);
+  assert.doesNotMatch(modal, /modal\.dirtyTitle/);
+  assert.doesNotMatch(modal, /modal\.discardClose/);
+  assert.equal(t("zh", "modal.draftCloseTitle"), "关闭发帖窗口？草稿仍会保存在本设备。");
+  assert.equal(t("en", "modal.draftCloseTitle"), "Close this form? Your draft will stay on this device.");
+  assert.equal(t("zh", "modal.draftCloseKeep"), "保留草稿并关闭");
+  assert.equal(t("en", "modal.draftCloseKeep"), "Close & keep draft");
+});
+
+test("modals without a local draft keep the discard-and-close contract", () => {
+  const workModal = read("app/@modal/(.)works/new/page.tsx");
+  assert.match(workModal, /modal\.dirtyTitle/);
+  assert.match(workModal, /modal\.discardClose/);
+  // The discard copy itself stays honest: it really discards.
+  assert.equal(t("zh", "modal.discardClose"), "放弃并关闭");
+  assert.equal(t("en", "modal.discardClose"), "Discard & close");
+});
+
+test("clearing the draft un-arms the close confirm (no copy left to lie)", () => {
+  /* After "clear draft" there is no draft to keep — the confirm bar
+     would promise "your draft will stay on this device" for a close
+     that discards nothing. The form notifies the modal (bubbling
+     custom event), which drops its dirty flag and takes a standing
+     confirm bar down; X then closes directly. */
+  const form = read("app/(app)/community/_components/PostForm.tsx");
+  assert.match(form, /notifyModalDirtyReset\(formRef\.current\)/);
+  const modal = read("app/(app)/_components/RouteModal.tsx");
+  assert.match(modal, /MODAL_DIRTY_RESET_EVENT/);
+  assert.match(modal, /body\.addEventListener\(MODAL_DIRTY_RESET_EVENT, reset\)/);
+  /* The reset clears both the flag and a standing confirm bar. */
+  assert.match(modal, /const reset = \(\) => \{\s*\n\s*setDirty\(false\);\s*\n\s*setConfirming\(false\);/);
+});
+
+test("confirm-bar close styling follows the guard's destructiveness", () => {
+  const modal = read("app/(app)/_components/RouteModal.tsx");
+  /* destructive:false (draft kept) = neutral border; default (real
+     discard) = danger border + danger focus ring. */
+  assert.match(modal, /dirtyGuard\.destructive === false/);
+  assert.match(modal, /border-status-danger\/50 text-status-danger-fg/);
+});
+
+test("the post form still restores the local draft and clears it only on submit", () => {
+  const form = read("app/(app)/community/_components/PostForm.tsx");
+  /* Close-and-reopen restores the draft (the confirm copy relies on
+     it); a successful submit is the only path that clears it. */
+  assert.match(form, /readCommunityDraft\(window\.localStorage\.getItem\(COMMUNITY_DRAFT_KEY\)\)/);
+  assert.match(form, /submittingRef\.current\) window\.localStorage\.removeItem\(COMMUNITY_DRAFT_KEY\)/);
+});

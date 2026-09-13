@@ -54,6 +54,12 @@ local-dev-docs/       本地开发文档(gitignore,不入库)
   `SEG_WRAP_FLOW`)+ 项 `SEG_ITEM` + 选中 `SEG_ITEM_ACTIVE`(反色实块,与
   usage-cli dashboard 同一语法,双边都别退回描边态);筛选下拉复用
   `works/_components/FilterDropdown` / `WorksFilterBar`(单选 `single`)。
+- **两套 Tab 语法分工,不强行统一**(20260912 评审拍板):同一对象内的模式/
+  筛选/内容形态切换用实块分段控件(`components/DetailTabs.tsx`,
+  `role="tablist"` + ARIA tab/tabpanel);页面内部长期分区用下划线页签
+  (`settings/_components/SettingsTabs.tsx`、Profile 分区——面板保持挂载、
+  未保存状态不丢,链接形态用 `aria-current` 不混用 `role="tab"`)。新页面
+  按此二选一,别靠猜(约束钉在 `tests/tab-semantics.test.ts`)。
 - **视觉只走令牌**:`bg/card/moon/line/paper/grey/blue/ui-blue/status-*`;
   圆角走 `--radius-*`(poster 气质归零);状态色用 `status-ok/warn/danger-fg`;
   别引入新色值。页头用共享 `components/PageHeader.tsx`(eyebrow/title/lede/

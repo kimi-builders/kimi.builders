@@ -17,16 +17,13 @@ import { useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { compactNumber } from "@/src/lib/format";
 import { tooltipPos } from "../../../usage/_components/UsageVisualizations";
-import type {
-  FootprintCell,
-  FootprintGrid,
-  FootprintSummary,
+import {
+  footprintMonthText,
+  monthLabelRightAligns,
+  type FootprintCell,
+  type FootprintGrid,
+  type FootprintSummary,
 } from "@/src/lib/usage/year-grid";
-
-const MONTH_SHORT_EN = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
 
 /* The same 6-step thresholds as the usage center's
    UsageHeatmapGrid. */
@@ -69,8 +66,7 @@ export default function YearFootprint({
     0,
     ...grid.weeks.flat().map((c) => (c.inWindow ? c.tokens : 0)),
   );
-  const monthText = (month: number) =>
-    zh ? `${month}月` : MONTH_SHORT_EN[month - 1];
+  const monthText = (month: number) => footprintMonthText(month, zh);
   const [hovered, setHovered] = useState<{
     cell: FootprintCell;
     left: number;
@@ -112,17 +108,25 @@ export default function YearFootprint({
       .map((m) => ({ ...m, weekIndex: m.weekIndex - weekOffset }));
     return (
       <div>
-        {/* Month labels: absolutely positioned by column percentage, same width as the grid (the weekday label column stays clear on the left) */}
+        {/* Month labels: absolutely positioned by column percentage, same width as the grid (the weekday label column stays clear on the left).
+            Labels in the final two columns right-align (translateX(-100%)) — the space left before the grid edge is narrower than the text,
+            which would wrap a two-glyph label onto two lines; nowrap keeps every label on one line. */}
         <div className="relative ml-[22px] h-4">
-          {monthLabels.map((m) => (
-            <span
-              key={`${m.weekIndex + weekOffset}-${m.month}`}
-              className="absolute top-0 font-mono text-xs text-grey"
-              style={{ left: `${(m.weekIndex / weeks.length) * 100}%` }}
-            >
-              {monthText(m.month)}
-            </span>
-          ))}
+          {monthLabels.map((m) => {
+            const rightAligns = monthLabelRightAligns(m.weekIndex, weeks.length);
+            return (
+              <span
+                key={`${m.weekIndex + weekOffset}-${m.month}`}
+                className={`absolute top-0 whitespace-nowrap font-mono text-xs text-grey${rightAligns ? " ml-1" : ""}`}
+                style={{
+                  left: `${(m.weekIndex / weeks.length) * 100}%`,
+                  transform: rightAligns ? "translateX(-100%)" : undefined,
+                }}
+              >
+                {monthText(m.month)}
+              </span>
+            );
+          })}
         </div>
         <div className="mt-1 flex gap-1.5">
           <div className="grid w-4 shrink-0 grid-rows-7 gap-[3px] text-xs text-grey">

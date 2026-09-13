@@ -167,11 +167,13 @@ export default function MobileNavDrawer({
               >
                 <span className="relative shrink-0">
                   <Bell size={17} aria-hidden="true" />
-                  <UnreadBadge
-                    initial={unread}
-                    locale={locale}
-                    className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
-                  />
+                  {loggedIn && (
+                    <UnreadBadge
+                      initial={unread}
+                      locale={locale}
+                      className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue px-1 text-[8px] font-semibold text-white"
+                    />
+                  )}
                 </span>
                 {t(locale, "notif.title")}
               </Link>

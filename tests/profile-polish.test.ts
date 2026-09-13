@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { t } from "../src/lib/i18n";
 
 const profile = readFileSync(
   new URL("../app/(app)/u/[handle]/page.tsx", import.meta.url),
@@ -52,4 +53,25 @@ test("profile post empty state renders one merged line instead of duplicate copy
 test("leaderboard selected segments use a light token-derived state", () => {
   assert.match(leaderboard, /bg-blue\/10 text-blue ring-1 ring-inset ring-blue\/20/);
   assert.doesNotMatch(leaderboard, /SEG_ITEM_ACTIVE/);
+});
+
+/* ---- Streak stat semantics (20260912 review): one time scale per
+   card — main value = the current daily streak, sub = the longest
+   daily streak. Mixing in the weekly streak produced "0 days current
+   / 21 weeks", which reads as a negative signal when it only means
+   "nothing used today yet". ---- */
+
+test("profile streak card pairs current daily streak with the longest daily streak", () => {
+  assert.match(profile, /prof\.statStreak"\)/);
+  assert.match(profile, /\{fsum\.streak\.current\}/);
+  /* The sub line reads the longest DAILY streak from the same summary
+     object — never the weekly streak, and no current||longest
+     fallback that would pass history off as the present. */
+  assert.match(profile, /prof\.statStreakSub", \{ n: fsum\.streak\.longest \}\)/);
+  assert.doesNotMatch(profile, /streakWeeks\.current \|\| streakWeeks\.longest/);
+  /* Copy stays on that time scale, zh/en paired. */
+  assert.match(t("zh", "prof.statStreak"), /当前连续/);
+  assert.equal(t("en", "prof.statStreak"), "CURRENT STREAK");
+  assert.equal(t("zh", "prof.statStreakSub", { n: 21 }), "最长连续 21 天");
+  assert.equal(t("en", "prof.statStreakSub", { n: 21 }), "longest: 21 days");
 });

@@ -1,7 +1,10 @@
 /* Display formatting helpers. */
 
 /* Relative time: "just now" under a minute, then minutes/hours/days,
-   YYYY-MM-DD beyond 30 days. */
+   YYYY-MM-DD from 7 days on. The 7-day cutoff keeps one list from
+   mixing "27 days ago" with absolute dates; every surface reusing
+   relTime (community lists, details, comments, notifications) shares
+   the rule. */
 export function relTime(
   d: Date | string,
   locale: "zh" | "en" = "zh",
@@ -17,12 +20,36 @@ export function relTime(
     const n = Math.floor(s / 3600);
     return locale === "en" ? `${n}h ago` : `${n} 小时前`;
   }
-  if (s < 30 * 86400) {
+  if (s < 7 * 86400) {
     const n = Math.floor(s / 86400);
     return locale === "en" ? `${n}d ago` : `${n} 天前`;
   }
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
+}
+
+/* Render-boundary guard for curated bodies: a guide whose markdown
+   opens with an ATX H1 identical to the page title would show the
+   heading twice (page H1 + body H1). Strip only that first H1 —
+   matched after whitespace normalization; anything else (H2, quotes,
+   code blocks, non-matching titles) stays untouched. Storage, editor,
+   and exports keep the original body. */
+export function stripDuplicateLeadingHeading(
+  body: string,
+  title: string,
+): string {
+  const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+  const target = normalize(title);
+  if (!target) return body;
+  /* Leading blank lines, then the heading at 0-3 spaces of indent
+     (CommonMark); exactly one # (two+ is a subheading, kept). */
+  const match = /^(?:[ \t]*\r?\n)* {0,3}# (.*)/.exec(body);
+  if (!match) return body;
+  /* CommonMark drops an optional closing sequence ("# Title ##"); the
+     rendered text is compared, so strip it the same way. */
+  const text = match[1].replace(/[ \t]+#+$/, "");
+  if (normalize(text) !== target) return body;
+  return body.slice(match[0].length).replace(/^(?:\r?\n)+/, "");
 }
 
 /* Markdown -> plain-text excerpt (feed cards): strips code blocks/

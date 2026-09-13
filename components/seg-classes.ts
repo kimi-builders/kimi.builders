@@ -3,7 +3,15 @@
    link min-height so the container isn't double-stretched. Selected
    grammar (unified with the usage-cli dashboard): an inverted solid
    block (paper fill + bg text), no longer outline + brightened text —
-   the selected state must read at a glance. */
+   the selected state must read at a glance.
+
+   Tab-grammar boundary (do not unify the two): these solid-block segs
+   are for mode/filter/format switches within one object (DetailTabs,
+   sort+filter bars). Long-lived in-page sections that keep panels
+   mounted with unsaved state (Settings, Profile) use underline tabs —
+   see settings/_components/SettingsTabs.tsx; nav links carry
+   aria-current instead of role="tab". Pinned by
+   tests/tab-semantics.test.ts. */
 export const SEG_WRAP =
   "kb-control-group inline-flex h-11 items-center gap-0.5 rounded-lg border border-line bg-card p-[3px]";
 export const SEG_ITEM =

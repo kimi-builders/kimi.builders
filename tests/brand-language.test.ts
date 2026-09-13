@@ -117,10 +117,17 @@ test("about and Awesome state scope without unverifiable promotion", () => {
 });
 
 test("work token claims disclose aggregate caps and per-project limits", () => {
-  assert.match(t("zh", "works.wallIntro"), /已同步总用量封顶/);
-  assert.match(t("zh", "works.wallIntro"), /不代表单个作品的精确用量/);
-  assert.match(t("en", "works.wallIntro"), /capped by synced aggregate usage/);
-  assert.match(t("en", "works.wallIntro"), /not exact per-project usage/);
+  /* The works lede is a one-line positioning sentence; the full
+     boundary lives once per viewport — the rail's claimNote (xl+) and
+     the sub-xl note line where the rail is hidden. Every works
+     surface keeps a reachable statement of the cap and the
+     not-exact-per-project limit. */
+  for (const key of ["works.claimNote", "works.claimMobileNote"] as const) {
+    assert.match(t("zh", key), /已同步总用量封顶/);
+    assert.match(t("zh", key), /精确用量/);
+    assert.match(t("en", key), /capped by synced aggregate usage/);
+    assert.match(t("en", key), /not exact per-project usage/);
+  }
   assert.equal(t("en", "works.claim"), "Declared tokens (optional)");
   assert.doesNotMatch(t("en", "works.claimHint"), /verified|verifiable|build effort/i);
   assert.match(workPoster, /按已同步总用量封顶 · 非单作品精确用量/);
@@ -161,8 +168,13 @@ test("usage language describes observable usage rather than inferred building", 
   const generatedCopy = [i18n, usageShare, usagePoster].join("\n");
   assert.equal(t("zh", "prof.footprint"), "用量记录");
   assert.equal(t("en", "prof.footprint"), "USAGE HISTORY");
-  assert.equal(t("zh", "prof.statStreak"), "连续活跃");
-  assert.equal(t("en", "prof.statStreak"), "ACTIVITY STREAK");
+  /* The profile streak stat stays on one time scale: current daily
+     streak as the title, the longest daily streak as the sub — no
+     weekly streak, no inferred building. */
+  assert.equal(t("zh", "prof.statStreak"), "当前连续");
+  assert.equal(t("en", "prof.statStreak"), "CURRENT STREAK");
+  assert.equal(t("zh", "prof.statStreakSub", { n: 21 }), "最长连续 21 天");
+  assert.equal(t("en", "prof.statStreakSub", { n: 21 }), "longest: 21 days");
   assert.equal(t("zh", "prof.prefs"), "使用分布");
   assert.equal(t("en", "prof.prefs"), "Usage breakdown");
   assert.doesNotMatch(

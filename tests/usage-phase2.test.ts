@@ -327,13 +327,31 @@ function zeroTokens() {
 test("filters: 预设/兼容 days/自定义范围/跨度上限", () => {
   const now = new Date("2026-08-08T12:00:00.000Z");
   const opts = { uploadProject: false, tzOffsetMinutes: 480, now };
+  // No-param default = 30d: returning visitors with a sync gap see
+  // data on the first screen instead of an empty "today".
   const defaults = parseUsageFilters({}, opts);
-  assert.equal(defaults.rangeLabel, "today");
-  assert.equal(defaults.days, 1);
-  assert.equal(defaults.from.toISOString(), "2026-08-07T16:00:00.000Z");
+  assert.equal(defaults.rangeLabel, "30d");
+  assert.equal(defaults.days, 30);
+  // Local 2026-07-10 00:00 (30 local days ending today) in UTC.
+  assert.equal(defaults.from.toISOString(), "2026-07-09T16:00:00.000Z");
   assert.equal(parseUsageFilters({ range: "90d" }, opts).days, 90);
   assert.equal(parseUsageFilters({ days: "7" }, opts).days, 7);
-  assert.equal(parseUsageFilters({ range: "bogus" }, opts).rangeLabel, "today");
+  // An unparsable range falls back to the default, not "today".
+  assert.equal(parseUsageFilters({ range: "bogus" }, opts).rangeLabel, "30d");
+  // Explicit deep links keep their original meaning.
+  const explicitToday = parseUsageFilters({ range: "today" }, opts);
+  assert.equal(explicitToday.rangeLabel, "today");
+  assert.equal(explicitToday.days, 1);
+  assert.equal(explicitToday.from.toISOString(), "2026-08-07T16:00:00.000Z");
+  assert.equal(parseUsageFilters({ range: "24h" }, opts).rangeLabel, "24h");
+  // URL round trip: serializing the default state restores the same
+  // window (shareable / refreshable).
+  const roundTrip = parseUsageFilters(
+    Object.fromEntries(new URLSearchParams(usageFiltersToSearch(defaults))),
+    opts,
+  );
+  assert.equal(roundTrip.rangeLabel, "30d");
+  assert.equal(roundTrip.from.toISOString(), defaults.from.toISOString());
 
   const custom = parseUsageFilters({ from: "2026-07-01", to: "2026-07-15" }, opts);
   assert.equal(custom.rangeLabel, "custom");
@@ -342,7 +360,7 @@ test("filters: 预设/兼容 days/自定义范围/跨度上限", () => {
   assert.equal(custom.from.toISOString(), "2026-06-30T16:00:00.000Z");
 
   const tooWide = parseUsageFilters({ from: "2024-01-01", to: "2026-01-01" }, opts);
-  assert.equal(tooWide.rangeLabel, "today");
+  assert.equal(tooWide.rangeLabel, "30d");
   assert.ok(USAGE_MAX_RANGE_DAYS >= 366);
 });
 
