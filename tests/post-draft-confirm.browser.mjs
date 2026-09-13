@@ -53,6 +53,7 @@ test("post draft confirm: closing keeps the draft, clearing it un-arms the confi
 
     const title = dialog.locator('[name="title"]');
     const confirmTitle = page.getByText("关闭发帖窗口？草稿仍会保存在本设备。");
+    const keepEditing = dialog.getByRole("button", { name: "继续填写" });
     const keepDraftClose = dialog.getByRole("button", { name: "保留草稿并关闭" });
     const clearDraft = dialog.getByRole("button", { name: "清空草稿" });
     const closeButton = dialog.getByRole("button", { name: "关闭", exact: true });
@@ -64,8 +65,24 @@ test("post draft confirm: closing keeps the draft, clearing it un-arms the confi
     await page.waitForTimeout(300);
     await closeButton.click();
     await confirmTitle.waitFor({ state: "visible" });
+    await assertSubmitSuppressed(page);
+
+    // Continuing restores the normal footer; test the narrow layout
+    // before taking the close path that keeps the draft.
+    await keepEditing.click();
+    assert.equal(
+      await dialog.locator("[data-modal-submit-row]").evaluate((row) =>
+        getComputedStyle(row).display,
+      ),
+      "flex",
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await closeButton.click();
+    await confirmTitle.waitFor({ state: "visible" });
+    await assertSubmitSuppressed(page);
     await keepDraftClose.click();
     await dialog.waitFor({ state: "hidden" });
+    await page.setViewportSize({ width: 1280, height: 900 });
 
     // Reopen: the draft restores, copy and behavior agree.
     await compose.click();
@@ -91,3 +108,32 @@ test("post draft confirm: closing keeps the draft, clearing it un-arms the confi
     await browser.close();
   }
 });
+
+async function assertSubmitSuppressed(page) {
+  const state = await page.evaluate(() => {
+    const body = document.querySelector("dialog[open] [data-modal-body]");
+    const confirm = document.querySelector("dialog[open] [data-modal-confirm]");
+    const row = document.querySelector("dialog[open] [data-modal-submit-row]");
+    const submit = row?.querySelector('button[type="submit"]');
+    if (!body || !confirm || !row || !submit) return null;
+
+    const bodyRect = body.getBoundingClientRect();
+    const confirmRect = confirm.getBoundingClientRect();
+    const submitRect = submit.getBoundingClientRect();
+    const probeY = Math.min(bodyRect.bottom - 1, submitRect.top + 1);
+    const hit = document.elementFromPoint(
+      submitRect.left + submitRect.width / 2,
+      probeY,
+    );
+    return {
+      bodyMeetsConfirm: Math.abs(bodyRect.bottom - confirmRect.top) < 1,
+      rowDisplay: getComputedStyle(row).display,
+      hitSubmit: hit === submit || submit.contains(hit),
+    };
+  });
+
+  assert.ok(state, "modal geometry is available");
+  assert.equal(state.bodyMeetsConfirm, true);
+  assert.equal(state.rowDisplay, "none");
+  assert.equal(state.hitSubmit, false);
+}

@@ -14,16 +14,18 @@ import { t } from "../src/lib/i18n";
 const read = (path: string) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("route modal's confirm bar is a layout row, never an overlay on the form footer", () => {
+test("route modal's confirm bar replaces marked submit rows without an overlay", () => {
   const modal = read("app/(app)/_components/RouteModal.tsx");
+  const postForm = read("app/(app)/community/_components/PostForm.tsx");
   /* The dialog is a flex column: header / scrollable body / confirm bar
-     as siblings — while the bar is up it takes its own layout row, so
-     the form footer's primary button can never share pixels with it
-     (an overlaid sliver of the primary submit reads as a second
-     primary). */
+     as siblings. When the new row shrinks the scrollport, a marked
+     submit row is removed instead of leaving a clipped, clickable
+     primary sliver at the seam. */
   assert.match(modal, /flex max-h-\[86vh\] flex-col/);
   assert.match(modal, /min-h-0 flex-1 overscroll-contain overflow-y-auto/);
-  assert.match(modal, /"flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-6 py-3"/);
+  assert.match(modal, /confirming \? "\[&_\[data-modal-submit-row\]\]:hidden"/);
+  assert.match(modal, /data-modal-confirm/);
+  assert.match(postForm, /data-modal-submit-row/);
   assert.doesNotMatch(modal, /absolute inset-x-0 bottom-0/);
 });
 

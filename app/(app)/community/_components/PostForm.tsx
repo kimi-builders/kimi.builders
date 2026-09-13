@@ -375,7 +375,10 @@ export default function PostForm({
         </p>
       )}
 
-      <div className="flex items-center gap-3 border-t border-line pt-4">
+      <div
+        data-modal-submit-row
+        className="flex items-center gap-3 border-t border-line pt-4"
+      >
         <span className="text-sm leading-5 text-grey/80">
           {draftSaved ? t(locale, "form.draftSaved") : t(locale, "form.footerHint")}
         </span>

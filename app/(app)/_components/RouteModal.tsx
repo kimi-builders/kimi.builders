@@ -150,7 +150,10 @@ export default function RouteModal({
       </div>
       <div
         ref={bodyRef}
-        className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-6 py-6 [scrollbar-gutter:stable]"
+        data-modal-body
+        className={`min-h-0 flex-1 overscroll-contain overflow-y-auto px-6 py-6 [scrollbar-gutter:stable] ${
+          confirming ? "[&_[data-modal-submit-row]]:hidden" : ""
+        }`}
         onInput={() => {
           if (dirtyGuard && !dirty) setDirty(true);
         }}
@@ -164,7 +167,10 @@ export default function RouteModal({
         {children}
       </div>
       {confirming && dirtyGuard && (
-        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-6 py-3">
+        <div
+          data-modal-confirm
+          className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-card px-6 py-3"
+        >
           <span className="text-xs text-paper">{dirtyGuard.title}</span>
           <span className="ml-auto flex items-center gap-2">
             <button
