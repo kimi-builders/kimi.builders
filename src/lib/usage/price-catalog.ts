@@ -25,6 +25,8 @@ export interface UsagePriceCatalogEntry {
   verifiedAt: string;
   version: string;
   basis: "standard-api";
+  provisional?: boolean;
+  note?: { zh: string; en: string };
 }
 
 export interface UsagePriceCatalog {
@@ -70,6 +72,12 @@ function validateCatalog(value: unknown): UsagePriceCatalog {
       if (rate !== null && (!/^\d+(?:\.\d+)?$/.test(rate) || Number(rate) < 0)) {
         throw new Error(`Invalid ${field} rate for ${entry.pattern}`);
       }
+    }
+    if (entry.provisional !== undefined && typeof entry.provisional !== "boolean") {
+      throw new Error(`Invalid provisional marker for ${entry.pattern}`);
+    }
+    if (entry.provisional && (!entry.note?.zh || !entry.note?.en)) {
+      throw new Error(`Missing bilingual provisional note for ${entry.pattern}`);
     }
   }
   const { integrity, ...unsigned } = catalog;

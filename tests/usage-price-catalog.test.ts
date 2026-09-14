@@ -7,7 +7,11 @@ import {
   USAGE_PRICE_CATALOG,
   USAGE_PRICE_CATALOG_ETAG,
 } from "../src/lib/usage/price-catalog";
-import { loadModelPrices, matchModelPrice } from "../src/lib/usage/pricing";
+import {
+  estimateCostMicros,
+  loadModelPrices,
+  matchModelPrice,
+} from "../src/lib/usage/pricing";
 
 test("public pricing catalog exposes a cacheable versioned contract", async () => {
   const response = await GET(new NextRequest("https://kimi.builders/api/public/usage-pricing/v1/catalog"));
@@ -21,14 +25,14 @@ test("public pricing catalog exposes a cacheable versioned contract", async () =
   assert.equal(body.entries.length, USAGE_PRICE_CATALOG.entries.length);
 });
 
-test("canonical catalog is synchronized with the Usage 0.6.0 release", () => {
-  assert.equal(USAGE_PRICE_CATALOG.revision, 4);
-  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-09-06");
-  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-09-06T00:00:00.000Z");
-  assert.equal(USAGE_PRICE_CATALOG.entries.length, 114);
+test("canonical catalog is synchronized with the current Usage release", () => {
+  assert.equal(USAGE_PRICE_CATALOG.revision, 5);
+  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-09-14");
+  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-09-14T00:00:00.000Z");
+  assert.equal(USAGE_PRICE_CATALOG.entries.length, 115);
   assert.equal(
     USAGE_PRICE_CATALOG.integrity.digest,
-    "92c6e778b1678c1d2a2bce4df2dd083024237e48fcf2d625148f94716b27371b",
+    "c9f864827d769beba80d5a7b668b1f777680d258e2dee54d118fbc6939038b6d",
   );
 });
 
@@ -78,6 +82,29 @@ test("canonical catalog keeps Codex auto-review priced after the revision bounda
     matchModelPrice(prices, "codex-auto-review", at, "claude-code"),
     null,
   );
+});
+
+test("canonical catalog exposes the provisional Kimi K2.8 Preview estimate", async () => {
+  const prices = await loadModelPrices();
+  const matched = matchModelPrice(
+    prices,
+    "kimi-k2.8-preview",
+    new Date("2026-09-12T12:00:00.000Z"),
+    "kimi-code",
+  );
+  assert.deepEqual(
+    [matched?.inputPerMtok, matched?.cacheReadPerMtok, matched?.cacheWritePerMtok, matched?.outputPerMtok],
+    [1.9, 0.38, null, 8],
+  );
+  assert.equal(matched?.provisional, true);
+  const estimate = estimateCostMicros({
+    inputTokens: 0,
+    cacheWriteInputTokens: 1_000_000,
+    cacheReadInputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+  }, matched);
+  assert.equal(estimate.micros, 1_900_000);
 });
 
 test("canonical catalog covers the 2026-09-06 provider additions and windows", async () => {

@@ -263,6 +263,8 @@ export default function UsageMethodologyDialog({
                                     ? (zh ? "假设短上下文" : "short-context assumed")
                                     : assumption === "cache-write-ttl"
                                       ? (zh ? "缓存 TTL 未知" : "cache TTL unknown")
+                                      : assumption === "provisional-price"
+                                        ? (zh ? "官方价格未公布 · 当前为临时价" : "official price unpublished · provisional rate")
                                       : assumption,
                                 ).join(" · ")}
                               </span>

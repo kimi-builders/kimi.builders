@@ -11,6 +11,31 @@ test("Kimi raw aliases retain detail and resolve to precise canonical IDs", () =
   assert.equal(canonicalUsageModel(identity), "kimi-k2.7-code-highspeed");
   assert.equal(usageModelDisplayName(identity), "Kimi K2.7 Code Highspeed");
   assert.match(usageModelDetail(identity), /kimi-code\/kimi-for-coding-highspeed/);
+  assert.equal(
+    canonicalUsageModel({ source: "kimi-code", model: "kimi-code/kimi-for-coding" }),
+    "kimi-k2.8-preview",
+  );
+  assert.equal(
+    canonicalUsageModel({
+      source: "kimi-code",
+      model: "kimi-code/kimi-for-coding",
+      bucketStart: "2026-09-10T23:59:59.999Z",
+    }),
+    "kimi-k2.7-code",
+  );
+  assert.equal(
+    canonicalUsageModel({
+      source: "kimi-code",
+      model: "kimi-code/kimi-for-coding",
+      modelCanonical: "kimi-k2.7-code",
+      bucketStart: "2026-09-11T00:00:00.000Z",
+    }),
+    "kimi-k2.8-preview",
+  );
+  assert.equal(
+    usageModelDisplayName({ source: "kimi-code", model: "kimi-code/kimi-for-coding" }),
+    "Kimi K2.8 Preview",
+  );
 });
 
 test("K3 context-window variants remain separate", () => {

@@ -32,6 +32,7 @@ export interface UsageModelPrice {
   pricingSourceUrl: string;
   verifiedAt: string | null;
   pricingBasis: string;
+  provisional?: boolean;
 }
 
 export interface UsageTokenBreakdown {
@@ -90,6 +91,7 @@ export async function loadModelPrices(
     pricingSourceUrl: entry.sourceUrl,
     verifiedAt: entry.verifiedAt || null,
     pricingBasis: entry.basis,
+    provisional: entry.provisional === true,
   }));
 }
 
@@ -257,6 +259,7 @@ export function estimateCostMicros(
     assumptions.push("short-context");
     assumedTokens += totalTokens;
   }
+  if (price.provisional) assumptions.push("provisional-price");
   if (
     unclassifiedCacheWrite > 0 &&
     price.cacheWrite5mPerMtok !== null &&
