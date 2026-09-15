@@ -142,11 +142,12 @@ export function LocaleToggle({
 }
 
 /* Nav collapse/expand: pure client (cookie-only); visibility rules
-   live in globals.css's html[data-nav] block, the icon swaps by state
-   via only-nav-*. Icon-only: it lives in the rail's brand row (the
-   muscle-memory spot in ChatGPT/GitHub/Reddit sidebars) and stays
-   icon-only in both states — collapsed, globals.css centers it alone
-   in the icon track (the logo link folds away). */
+   live in globals.css's html[data-nav] block. The control borrows the
+   brand spot (the ChatGPT sidebar-header grammar): the logo tile shows
+   at rest, the panel icon surfaces on hover/focus-visible — icon
+   direction follows the state via only-nav-*. The radius class comes
+   from the caller and rides --radius-*, so the button and its hover
+   background read square in poster and rounded in soft. */
 export function NavToggle({
   locale,
   className,
@@ -165,10 +166,23 @@ export function NavToggle({
           e.preventDefault();
           flipNav();
         }}
-        className={className}
+        className={`group relative ${className ?? ""}`}
       >
-        <PanelLeftClose size={15} className="shrink-0 only-nav-full" />
-        <PanelLeftOpen size={15} className="shrink-0 only-nav-collapsed" />
+        {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/logo-tile.svg"
+          alt=""
+          className="absolute inset-0 m-auto h-7 w-7 rounded-md transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0"
+        />
+        <PanelLeftClose
+          size={15}
+          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 only-nav-full"
+        />
+        <PanelLeftOpen
+          size={15}
+          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 only-nav-collapsed"
+        />
       </button>
     </form>
   );

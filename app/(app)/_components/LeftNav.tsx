@@ -136,24 +136,23 @@ export default function LeftNav({
           viewport. Sticky inside the rail's own scroll so it stays put
           when the nav overflows on short viewports; the negative-margin
           escape (globals.css .brand-row) spans the hairline full-width.
-          Collapsed, the logo link folds away and the toggle centers
+          The collapse toggle owns the logo spot (logo at rest, panel
+          icon on hover); the wordmark stays a plain home link.
+          Collapsed, the wordmark folds away and the toggle centers
           alone in the icon track. */}
       <div className="brand-row sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-line bg-bg">
+        <NavToggle
+          locale={locale}
+          className="flex size-10 shrink-0 items-center justify-center rounded-md text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        />
         <Link prefetch={false}
           href="/"
-          className="brand-link flex min-w-0 flex-1 items-center gap-2 font-mono text-sm font-semibold tracking-wide"
+          className="brand-link ml-1 flex min-w-0 flex-1 items-center font-mono text-sm font-semibold tracking-wide"
         >
-          {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
           <span className="truncate">
             kimi<span className="text-ui-blue">.</span>builders
           </span>
         </Link>
-        <NavToggle
-          locale={locale}
-          className="flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-        />
       </div>
 
       {/* Every tipped link also carries an explicit aria-label: collapsed

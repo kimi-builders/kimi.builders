@@ -87,7 +87,7 @@ export default async function AppLayout({
         <div className="min-w-0 flex-1 lg:pt-14">
           <div className="mx-auto flex w-full max-w-[1200px] items-start gap-4 px-4 lg:px-6">
             <main
-              className={`maincol w-full min-w-0 flex-1 py-6 pb-24 lg:border-r lg:border-line lg:py-8 ${
+              className={`maincol w-full min-w-0 flex-1 py-6 pb-24 lg:border-r lg:border-line lg:pr-6 lg:py-8 ${
                 rail.wide ? "lg:max-w-[1152px]" : "maincol-rail lg:max-w-[848px]"
               }`}
             >
