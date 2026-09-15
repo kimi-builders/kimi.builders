@@ -81,6 +81,10 @@ const DICT = {
   "state.notFoundBody": { zh: "链接可能已经移动或失效。回到社区继续浏览，也可以用顶部搜索快速前往其他分区。", en: "The link may have moved or expired. Return to the community, or use site search to jump somewhere else." },
   "state.backCommunity": { zh: "返回社区", en: "Back to community" },
   "state.backHome": { zh: "返回首页", en: "Back home" },
+  /* Screen-reader-only suffix appended to target="_blank" links, so the
+     window switch is announced instead of silently happening. Visible
+     text stays untouched. */
+  "a11y.newTab": { zh: "（新窗口打开）", en: " (opens in a new tab)" },
   "state.errorEyebrow": { zh: "加载异常", en: "LOAD ERROR" },
   "state.errorTitle": { zh: "这一页暂时没有响应", en: "This page stopped responding" },
   "state.errorBody": {
@@ -231,6 +235,14 @@ const DICT = {
     en: "Open for submissions · {tagline}",
   },
   "explore.filterAria": { zh: "探索筛选", en: "Explore filters" },
+  /* Article-detail rail vocabulary (ArticleRail): the rail carries
+     structural attributes only — author/publish date live in the page
+     byline, so they have no keys here. */
+  "explore.kindLetter": { zh: "月刊评鉴", en: "Monthly" },
+  "explore.kindGuide": { zh: "文章", en: "Article" },
+  "explore.duration": { zh: "约 {n} 分钟", en: "~{n} min" },
+  "explore.videoIncluded": { zh: "含视频形态", en: "Includes video" },
+  "explore.backToExplore": { zh: "返回探索", en: "Back to Explore" },
   /* ---- Post detail ---- */
   "post.comments": { zh: "{n} 条评论", en: "{n} comments" },  "post.commentPh": {
     zh: "写下你的评论（支持 Markdown；@kimi 可召唤小筑回答）…",
@@ -932,7 +944,6 @@ const DICT = {
     zh: "还没有已发布作品。",
     en: "No work has been published yet.",
   },
-  "works.visit": { zh: "访问", en: "Visit" },
   "works.repo": { zh: "源码", en: "Source" },
   "works.deleteConfirm": {
     zh: "确定删除这个作品？",
@@ -1573,9 +1584,7 @@ const DICT = {
   "works.metaKind": { zh: "类型", en: "TYPE" },
   "works.metaAgents": { zh: "参与构建", en: "BUILT WITH" },
   "works.metaScope": { zh: "收录", en: "SCOPE" },
-  "works.sideInfo": { zh: "信息", en: "INFO" },
   "works.sideModels": { zh: "开发模型", en: "MODELS" },
-  "works.sidePlatforms": { zh: "应用平台", en: "PLATFORMS" },
   /* ---- Work usage claims (own section to shrink merge conflicts)
      ---- */
   "works.claim": {
@@ -1731,6 +1740,16 @@ const DICT = {
     en: "Nothing else in this board yet.",
   },
   "rail.workMeta": { zh: "作品信息", en: "WORK INFO" },
+  /* Article-detail rail rows (ArticleRail): labels for the meta card
+     and the lens widgets below it. */
+  "rail.articleMeta": { zh: "本文", en: "THIS PIECE" },
+  "rail.articleKind": { zh: "类型", en: "TYPE" },
+  "rail.articleChapter": { zh: "章", en: "CHAPTER" },
+  "rail.articleLength": { zh: "时长", en: "LENGTH" },
+  "rail.articleLanguage": { zh: "语言", en: "LANGUAGE" },
+  "rail.articleProducts": { zh: "涉及产品", en: "PRODUCTS" },
+  "rail.articleRoles": { zh: "适合职业", en: "FOR ROLES" },
+  "rail.articleTags": { zh: "标签", en: "TAGS" },
   "rail.worksAbout": { zh: "作品墙", en: "THE GALLERY" },
   "rail.worksAboutBody": {
     zh: "Builder 用 Kimi 做出的作品；“声明投入”由 Builder 自报 Token，系统按已同步总用量封顶，不代表单个作品的精确用量。",

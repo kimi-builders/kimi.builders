@@ -1,17 +1,19 @@
 /* Post detail rail (/community/[id]): the post metadata card
-   (author/published time/category/ups & comments) + recent related
-   posts in the category + the reserved AI summon slot (not rendered by
-   default, see AiSummonSlot). Post data reuses the detail page's
-   getPost (deduped per request by React cache — no second query set).
-   Private posts: the detail page 404s for non-authors and the rail
-   follows (the layout shell still renders through notFound — the rail
-   must never leak a private post's metadata). */
+   (author/category/ups) + recent related posts in the category + the
+   reserved AI summon slot (not rendered by default, see AiSummonSlot).
+   The author card carries identity only — publish time lives in the
+   page byline and the comment count in the section heading (same
+   one-fact-one-place rule as the work/article rails). Post data reuses
+   the detail page's getPost (deduped per request by React cache — no
+   second query set). Private posts: the detail page 404s for
+   non-authors and the rail follows (the layout shell still renders
+   through notFound — the rail must never leak a private post's
+   metadata). */
 import Link from "next/link";
 import { ArrowBigUp, MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { categoryLabel } from "@/src/lib/categories";
-import { relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getPost, getRelatedPosts } from "@/src/lib/posts";
 import AiSummonSlot from "./AiSummonSlot";
@@ -49,9 +51,6 @@ export default async function PostRail({
             <span className="block truncate text-xs text-paper">
               @{post.handle}
             </span>
-            <span className="block truncate font-mono text-xs text-grey">
-              {relTime(post.createdAt, locale)}
-            </span>
           </span>
         </Link>
         <div className="mt-3 space-y-1.5 border-t border-line pt-3 font-mono text-xs text-grey">
@@ -68,10 +67,6 @@ export default async function PostRail({
             <span className="inline-flex items-center gap-1">
               <ArrowBigUp size={12} />
               {post.score}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <MessageCircle size={11} />
-              {post.commentCount}
             </span>
           </div>
         </div>

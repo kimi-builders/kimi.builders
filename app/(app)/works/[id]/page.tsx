@@ -168,6 +168,10 @@ export default async function WorkPage({
       <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
         <Link
           href={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
+          aria-label={t(
+            locale,
+            (fromList ?? work.source) === "awesome" ? "works.backToAwesome" : "works.backToWorks",
+          )}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
         >
           <ArrowLeft size={13} aria-hidden="true" />
@@ -295,6 +299,7 @@ export default async function WorkPage({
             >
               <ExternalLink size={13} />
               {t(locale, work.kind === "demo" ? "works.tryIt" : "works.openProject")}
+              <span className="sr-only">{t(locale, "a11y.newTab")}</span>
             </a>
           )}
           {user ? (
@@ -328,6 +333,7 @@ export default async function WorkPage({
             >
               <ExternalLink size={14} aria-hidden="true" />
               <span>{t(locale, "works.repo")}</span>
+              <span className="sr-only">{t(locale, "a11y.newTab")}</span>
             </a>
           )}
           {user && work.userId === user.id && (

@@ -112,7 +112,7 @@ export default async function PostPage({
           badges. Solved is a state, not a path segment — it rides next
           to the title below (untitled posts keep it here). */}
       <div className="flex flex-wrap items-center gap-2 font-mono text-xs tracking-wider text-grey">
-        <Link href="/community" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
+        <Link href="/community" aria-label={t(locale, "state.backCommunity")} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper">
           <ArrowLeft size={13} aria-hidden="true" />
           {t(locale, "nav.community")}
         </Link>

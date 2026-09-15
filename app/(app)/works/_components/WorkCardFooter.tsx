@@ -1,8 +1,11 @@
 /* Work card bottom row (shared by row/grid cards): author (awesome
    entries link the GitHub original author externally; member works link
    @handle internally) + support/visit/source + owner actions.
-   compact = grid card: visit/source keep icons only (title tooltips) to
-   save vertical space. Interactive elements carry relative z-10 above
+   compact = grid card: visit/source keep icons only — the shared
+   data-tip convention explains icon-only links (native title never
+   shows on touch and lags on hover). Visit/source labels follow the
+   detail page's CTA copy (works.openProject / works.repo), one verb
+   pair site-wide. Interactive elements carry relative z-10 above
    the card's overlay link. */
 import Link from "next/link";
 import { Code, ExternalLink, Heart } from "lucide-react";
@@ -77,11 +80,12 @@ export default function WorkCardFooter({
             href={w.url}
             target="_blank"
             rel="noopener noreferrer"
-            title={t(locale, "works.visit")}
+            aria-label={compact ? t(locale, "works.openProject") : undefined}
+            {...(compact ? { "data-tip": t(locale, "works.openProject") } : {})}
             className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
           >
             <ExternalLink size={12} />
-            {!compact && t(locale, "works.visit")}
+            {!compact && t(locale, "works.openProject")}
           </a>
         )}
         {w.repoUrl && (
@@ -89,7 +93,8 @@ export default function WorkCardFooter({
             href={w.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            title={t(locale, "works.repo")}
+            aria-label={compact ? t(locale, "works.repo") : undefined}
+            {...(compact ? { "data-tip": t(locale, "works.repo") } : {})}
             className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
           >
             {/* Compact grid-card mode: the repo link uses a GitBranch icon to stand apart from the "visit" external link */}

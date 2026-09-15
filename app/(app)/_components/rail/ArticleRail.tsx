@@ -1,8 +1,10 @@
 /* Article detail rail (detail slimmed): the hero keeps only "kind ·
-   chapter · date + title + summary" — all metadata moved here: this
-   article's META (kind/chapter/date/author/duration/language) +
-   products + roles + tags, all clickable back into the explore
-   lenses. Lens links honor the one availability judgment
+   chapter · date + title + summary" — structural metadata lives here:
+   this article's META (kind/chapter/duration/language) + products +
+   roles + tags, all clickable back into the explore lenses. Author and
+   publish date never repeat here — the page byline (editor handle +
+   month) is their single home, same dedupe rule as the work detail.
+   Lens links honor the one availability judgment
    (explore-filters.ts): a link is issued only when the lens renders a
    control on /explore and its URL param takes effect there — no
    invisible or no-op filters. Series info stays unshown for now.
@@ -12,12 +14,11 @@
    doesn't prop up an empty shell). */
 import Link from "next/link";
 import { Clock3 } from "lucide-react";
-import { monthLabel } from "@/src/lib/format";
 import { countByChapter, countByProduct, countByRoles, countTags, getArticleRailMeta, groupByArchive, listExploreItems } from "@/src/lib/explore";
 import { availableExploreFilters } from "@/src/lib/explore-filters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { KB_ROLES } from "@/src/lib/kb-roles";
-import { articleLanguageLabel, type Locale } from "@/src/lib/i18n";
+import { articleLanguageLabel, t, type Locale } from "@/src/lib/i18n";
 import { findKbChapter } from "@/src/lib/kb-chapters";
 import Widget from "./Widget";
 
@@ -66,15 +67,15 @@ export default async function ArticleRail({
 
   return (
     <>
-      <Widget title={zh ? "本文" : "THIS PIECE"}>
+      <Widget title={t(locale, "rail.articleMeta")}>
         <ul className="space-y-2 font-mono text-[11px] text-grey">
           <MetaRow
-            label={zh ? "类型" : "Type"}
-            value={item.kind === "letter" ? (zh ? "月刊评鉴" : "Monthly") : zh ? "文章" : "Article"}
+            label={t(locale, "rail.articleKind")}
+            value={t(locale, item.kind === "letter" ? "explore.kindLetter" : "explore.kindGuide")}
           />
           {chapter && (
             <MetaRow
-              label={zh ? "章" : "Chapter"}
+              label={t(locale, "rail.articleChapter")}
               value={
                 chapterBrowsable ? (
                   <Link
@@ -89,30 +90,21 @@ export default async function ArticleRail({
               }
             />
           )}
-          <MetaRow label={zh ? "发布" : "Published"} value={monthLabel(item.publishedAt)} />
-          <MetaRow
-            label={zh ? "作者" : "Author"}
-            value={
-              <Link href={`/u/${item.editorHandle}`} className="transition-colors hover:text-ui-blue">
-                @{item.editorHandle}
-              </Link>
-            }
-          />
           {item.durationMin !== undefined && (
             <MetaRow
-              label={zh ? "时长" : "Length"}
-              value={zh ? `约 ${item.durationMin} 分钟` : `~${item.durationMin} min`}
+              label={t(locale, "rail.articleLength")}
+              value={t(locale, "explore.duration", { n: item.durationMin })}
             />
           )}
           <MetaRow
-            label={zh ? "语言" : "Language"}
+            label={t(locale, "rail.articleLanguage")}
             value={articleLanguageLabel(locale, item.locale, item.fallback)}
           />
         </ul>
       </Widget>
 
       {item.products.length > 0 && available.includes("product") && (
-        <Widget title={zh ? "涉及产品" : "PRODUCTS"}>
+        <Widget title={t(locale, "rail.articleProducts")}>
           <ul className="space-y-2">
             {item.products.map((id) => {
               const p = findKbProduct(id);
@@ -135,7 +127,7 @@ export default async function ArticleRail({
       )}
 
       {item.roles.length > 0 && available.includes("role") && (
-        <Widget title={zh ? "适合职业" : "FOR ROLES"}>
+        <Widget title={t(locale, "rail.articleRoles")}>
           <div className="flex flex-wrap gap-1.5">
             {item.roles.map((id) => {
               const r = KB_ROLES.find((x) => x.id === id);
@@ -155,7 +147,7 @@ export default async function ArticleRail({
       )}
 
       {item.tags.length > 0 && available.includes("tag") && (
-        <Widget title={zh ? "标签" : "TAGS"}>
+        <Widget title={t(locale, "rail.articleTags")}>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">
             {item.tags.map((tag) => (
               <Link
@@ -174,7 +166,7 @@ export default async function ArticleRail({
       {item.durationMin === undefined && item.formats.includes("video") && (
         <p className="flex items-center gap-1.5 font-mono text-[11px] text-grey/70">
           <Clock3 size={12} aria-hidden="true" />
-          {zh ? "含视频形态" : "Includes video"}
+          {t(locale, "explore.videoIncluded")}
         </p>
       )}
     </>

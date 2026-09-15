@@ -350,6 +350,7 @@ function LetterDetail({
         <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
           <Link
             href="/explore"
+            aria-label={t(locale, "explore.backToExplore")}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
           >
             <ArrowLeft size={13} aria-hidden="true" />
@@ -647,6 +648,7 @@ async function GuideDetail({
         <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
           <Link
             href="/explore"
+            aria-label={t(locale, "explore.backToExplore")}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
           >
             <ArrowLeft size={13} aria-hidden="true" />
