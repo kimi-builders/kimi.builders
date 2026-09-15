@@ -1,18 +1,17 @@
 "use client";
 
-/* Site-wide left rail (the function menu): a post CTA + section
-   navigation + bottom tools (settings/GitHub/about) + the "interface"
-   pair (collapse nav / hide sidebar; the sidebar toggle moved here from
-   the rail's thin track, sitting beside the nav toggle: PanelLeft* =
-   nav, PanelRight* = sidebar — icon direction is semantics, no
-   ambiguity). The brand block and notifications/theme/language moved
-   to the desktop TopBar; section-level navigation lives in the rail's
-   "browse community". Flush to the viewport's left edge: the shell no
-   longer centers with blank margins (layout's flex first column, no
-   container padding). Client component: usePathname drives the active
-   state (blue rail). The collapsed state is pure CSS (html[data-nav] +
-   .nav-label, see globals.css) — toggling costs no network; the
-   structure renders for both states. */
+/* Site-wide left rail (the function menu): a brand row (logo-tile +
+   wordmark + the nav collapse toggle, the muscle-memory spot in
+   ChatGPT/GitHub/Reddit sidebars) + a post CTA + section navigation +
+   bottom tools (settings/GitHub/about) + the sidebar hide toggle.
+   Flush to the viewport's left edge and full height (sticky top-0,
+   h-screen), separated from the content region by its own right
+   hairline — the desktop TopBar starts right of the rail (fixed,
+   lg:left-[var(--nav-w)]). Section-level navigation lives in the
+   rail's "browse community". Client component: usePathname drives the
+   active state (blue rail). The collapsed state is pure CSS
+   (html[data-nav] + .nav-label, see globals.css) — toggling costs no
+   network; the structure renders for both states. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -131,7 +130,32 @@ export default function LeftNav({
     "flex min-h-10 w-full items-center justify-start gap-1.5 whitespace-nowrap rounded-lg border border-line px-3 py-2 text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue";
 
   return (
-    <aside className="leftnav sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-y-auto py-8 lg:flex">
+    <aside className="leftnav sticky top-0 hidden h-screen shrink-0 flex-col overflow-y-auto border-r border-line pb-8 lg:flex">
+      {/* Brand row: h-14 matches the content top bar, so the row's
+          bottom hairline continues the top bar's seam across the
+          viewport. Sticky inside the rail's own scroll so it stays put
+          when the nav overflows on short viewports; the negative-margin
+          escape (globals.css .brand-row) spans the hairline full-width.
+          Collapsed, the logo link folds away and the toggle centers
+          alone in the icon track. */}
+      <div className="brand-row sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-line bg-bg">
+        <Link prefetch={false}
+          href="/"
+          className="brand-link flex min-w-0 flex-1 items-center gap-2 font-mono text-sm font-semibold tracking-wide"
+        >
+          {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
+          <span className="truncate">
+            kimi<span className="text-ui-blue">.</span>builders
+          </span>
+        </Link>
+        <NavToggle
+          locale={locale}
+          className="flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        />
+      </div>
+
       {/* Every tipped link also carries an explicit aria-label: collapsed
           mode hides .nav-label via display:none, and the tooltip's
           alt-discarded ::after no longer contributes a name. */}
@@ -140,7 +164,7 @@ export default function LeftNav({
         data-tip={createAction.label}
         data-tip-side="right"
         aria-label={createAction.label}
- className="nav-item rail-tip flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        className="nav-item rail-tip mt-5 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
       >
         <SquarePen size={16} className="shrink-0" />
         <span className="nav-label">{createAction.label}</span>
@@ -269,16 +293,15 @@ export default function LeftNav({
           <Info size={15} className="shrink-0" />
           <span className="nav-label">{t(locale, "nav.about")}</span>
         </Link>
-        {/* The interface key pair: top = collapse the nav (PanelLeft*),
-            bottom = hide the sidebar (PanelRight*); stacked vertically in
-            one row, converging to icon keys when collapsed (.panel-pair
-            rule in globals.css). */}
+        {/* The interface group: the nav collapse toggle moved up to the
+            brand row; this group keeps the sidebar hide/reopen key
+            (PanelRight*), full row expanded, icon key when the rail is
+            collapsed (.panel-pair rule in globals.css). */}
         <div className="pt-3">
           <p className="nav-label px-3 pb-1.5 font-mono text-xs tracking-[0.08em] text-grey">
             {t(locale, "side.display")}
           </p>
           <div className="panel-pair flex flex-col gap-1.5">
-            <NavToggle locale={locale} className={pairBtnCls} />
             <SidebarToggle locale={locale} className={pairBtnCls} />
           </div>
         </div>

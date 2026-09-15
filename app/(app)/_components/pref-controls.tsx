@@ -142,9 +142,11 @@ export function LocaleToggle({
 }
 
 /* Nav collapse/expand: pure client (cookie-only); visibility rules
-   live in globals.css's html[data-nav] block, icons and copy switch by
-   state via only-nav-*. Sits beside the sidebar toggle as the left
-   rail's "interface" pair (className passed by LeftNav). */
+   live in globals.css's html[data-nav] block, the icon swaps by state
+   via only-nav-*. Icon-only: it lives in the rail's brand row (the
+   muscle-memory spot in ChatGPT/GitHub/Reddit sidebars) and stays
+   icon-only in both states — collapsed, globals.css centers it alone
+   in the icon track (the logo link folds away). */
 export function NavToggle({
   locale,
   className,
@@ -156,19 +158,17 @@ export function NavToggle({
     <form action={toggleNavAction}>
       <button
         type="submit"
-        data-tip={`${t(locale, "nav.collapse")} / ${t(locale, "nav.expand")}`}
-        data-tip-side="right"
+        data-tip={t(locale, "nav.collapseOrExpand")}
+        data-tip-side="bottom"
         aria-label={t(locale, "nav.collapseOrExpand")}
         onClick={(e) => {
           e.preventDefault();
           flipNav();
         }}
-        className={`${className} rail-tip`}
+        className={className}
       >
-        <PanelLeftClose size={13} className="shrink-0 only-nav-full" />
-        <PanelLeftOpen size={13} className="shrink-0 only-nav-collapsed" />
-        <span className="nav-label only-nav-full">{t(locale, "nav.collapse")}</span>
-        <span className="nav-label only-nav-collapsed">{t(locale, "nav.expand")}</span>
+        <PanelLeftClose size={15} className="shrink-0 only-nav-full" />
+        <PanelLeftOpen size={15} className="shrink-0 only-nav-collapsed" />
       </button>
     </form>
   );

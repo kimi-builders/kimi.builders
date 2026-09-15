@@ -1,12 +1,15 @@
-/* Desktop top bar (>=lg, fixed): left = the brand block (logo-tile +
-   mono wordmark, blue on hover, links to /); right = notifications
-   (bell + unread badge, signed-in only), theme toggle, language
-   toggle, AuthChip. Hairline bottom edge + bg/blur, matching
-   MobileTopBar; not rendered below lg, where MobileTopBar/bottom
-   tabs/drawer take over untouched. Theme/language reuse
-   pref-controls' optimistic widgets (icon-only form); the unread count
-   comes SSR from (app)/layout (the same source as the old rail bell). */
-import Link from "next/link";
+/* Desktop top bar (>=lg, fixed): spans only the content region right
+   of the left rail (lg:left-[var(--nav-w)]; the rail's brand row owns
+   the top-left corner, the ChatGPT/GitHub/Reddit sidebar grammar).
+   Right cluster: notifications (bell + unread badge, signed-in only),
+   theme/vibe/language toggles, AuthChip. Hairline bottom edge +
+   bg/blur, matching MobileTopBar; not rendered below lg, where
+   MobileTopBar/bottom tabs/drawer take over untouched. The inner
+   container mirrors the content zone (same 1200px cap + padding, both
+   centered in the same region), keeping the right-most control flush
+   with the right rail's edge. Theme/language reuse pref-controls'
+   optimistic widgets (icon-only form); the unread count comes SSR
+   from (app)/layout (the same source as the old rail bell). */
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import UnreadBadge from "@/components/UnreadBadge";
@@ -28,21 +31,8 @@ export default function TopBar({
   const iconBtn =
     "flex h-10 w-10 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue";
   return (
-    <header className="fixed inset-x-0 top-0 z-20 hidden h-14 border-b border-line bg-bg/95 backdrop-blur lg:block">
-      {/* Shares the 1320px centered container with the three columns below: the brand aligns with the left column's left edge, the auth chip with the right column's right edge */}
-      <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-[5vw]">
-      <Link
-        href="/"
-        className="flex items-center gap-2 font-mono text-sm font-semibold tracking-wide"
-      >
-        {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-tile.svg" alt="" className="h-7 w-7 shrink-0 rounded-md" />
-        <span>
-          kimi<span className="text-ui-blue">.</span>builders
-        </span>
-      </Link>
-
+    <header className="fixed top-0 right-0 z-20 hidden h-14 border-b border-line bg-bg/95 backdrop-blur lg:block lg:left-[var(--nav-w)]">
+      <div className="mx-auto flex h-full w-full max-w-[1200px] items-center px-4 lg:px-6">
       <div className="ml-auto flex items-center gap-1.5 text-xs">
         <GlobalSearch locale={locale} mode="desktop" className={iconBtn} />
         <ShortcutsButton locale={locale} className={iconBtn} />

@@ -508,13 +508,19 @@ html[data-nav="1"] .leftnav {
 }
 
 /* Left-rail collapse: structure always rendered, pure CSS retraction —
-   toggling never waits on the network.
-   Unlayered, so it beats the Tailwind utilities layer. */
-.leftnav {
-  width: 14rem; /* w-56,与三栏居中容器的栏宽数学一致 */
+   toggling never waits on the network. Unlayered, so it beats the
+   Tailwind utilities layer.
+   --nav-w is the single width source: the rail's own width and the
+   fixed desktop top bar's left offset both read it, so collapsing
+   retracts the rail and slides the top bar in the same frame. */
+:root {
+  --nav-w: 15rem;
 }
-html[data-nav="1"] .leftnav {
-  width: 3.5rem; /* w-14 */
+html[data-nav="1"] {
+  --nav-w: 3.5rem;
+}
+.leftnav {
+  width: var(--nav-w);
 }
 html[data-nav="1"] .leftnav .nav-label {
   display: none;
@@ -540,55 +546,59 @@ html:not([data-nav="1"]) .only-nav-collapsed {
   display: none !important;
 }
 
+/* Brand row (rail top): the row's negative margin escapes the rail's
+   side padding so its bottom hairline spans the full rail width and
+   continues the content top bar's seam across the viewport.
+   Collapsed, the logo link folds away and the expand toggle centers
+   alone in the icon track (the collapsed-sidebar grammar of
+   ChatGPT/GitHub/Reddit). */
+.brand-row {
+  margin-inline: -0.75rem;
+  padding-inline: 0.75rem;
+}
+html[data-nav="1"] .leftnav .brand-row {
+  /* -0.75rem keeps canceling the rail's side padding (the row must
+     span the full track so the hairline runs edge to edge); only the
+     row's own padding drops so the toggle centers in the 56px track. */
+  padding-inline: 0;
+  justify-content: center;
+}
+html[data-nav="1"] .leftnav .brand-link {
+  display: none;
+}
+
 /* Right-rail hiding: structure always rendered, pure CSS retraction,
    zero network on toggle. The switch lives in the left rail's
    "interface" group (pref-controls' SidebarToggle); hidden leaves no
    thin-track reopen button.
    Which routes get a rail, and how wide the main column is, comes from
    the right-rail registry (railFor in app/(app)/_components/right-rail.ts;
-   usage/profile have no rail and widen to 1000) — the old
-   :has(> .usage-dashboard) widening hack was folded into the registry,
-   so the layout shell no longer sniffs content.
-   Hidden, the whole column (gap-6 and lg:ml-2 included) leaves the flex
-   layout; the main column relaxes to 1000, matching the usage/profile
-   wide canvas.
-   Width compensation, unified rule: collapsing the nav and hiding the
-   sidebar mean the same thing — freed width feeds the main column's cap
-   instead of the group shifting left and leaving a hole; both states
-   together add the nav's freed 10.5rem on top of 1000. The reading
-   measure is independently guarded by .md-longform .md's em cap, so a
-   wider column only benefits cards/grids/headers.
-   Unlayered, beating the utilities layer; effective only at >=lg/xl
+   usage/profile have no rail and widen to the zone's full inner width)
+   — the old :has(> .usage-dashboard) widening hack was folded into the
+   registry, so the layout shell no longer sniffs content.
+   Hidden, the whole column leaves the flex layout and the main column
+   relaxes to the zone's inner width (1152px), matching the usage/
+   profile wide canvas — one cap for both states.
+   Nav collapse needs no compensation rung anymore: the content zone
+   centers inside the freed region, so the extra width reaches the
+   column only when the viewport actually crosses the zone cap (the
+   zone grammar replaced the old freed-width-to-cap ladder; the reading
+   measure stays guarded by .md-longform .md's em cap, so a wider
+   column only benefits cards/grids/headers).
+   Unlayered, beating the utilities layer; effective only at >=lg
    (the columns are desktop-only anyway). */
 html[data-sidebar="0"] .railgate {
   display: none;
 }
-@media (min-width: 1280px) {
-  html[data-sidebar="0"] .maincol-rail {
-    max-width: 1000px;
-  }
-}
-/* Nav collapsed: 14rem rail - 3.5rem icon track = 10.5rem to the main
-   column. */
 @media (min-width: 1024px) {
-  html[data-nav="1"] .maincol-rail {
-    max-width: 968px; /* 800 + 10.5rem */
+  html[data-sidebar="0"] .maincol-rail {
+    max-width: 1152px;
   }
 }
-/* Both (nav collapsed + sidebar hidden): the two compensations stack. */
-@media (min-width: 1280px) {
-  html[data-nav="1"][data-sidebar="0"] .maincol-rail {
-    max-width: 1168px; /* 1000 + 10.5rem */
-  }
-}
-/* The longform reading cap rides the same compensation ladder: with the
-   column widening while body text stays pinned at 40em, the sidebar
-   toggle looks dead on reading pages. The ladder stays inside the
-   comfortable CJK range (40-48 chars/line) and never opens to the full
-   column width. */
-html[data-nav="1"] .md-longform .md {
-  max-width: 44em;
-}
+/* The longform reading cap rides the same idea: body text stays pinned
+   around 40em whatever the column does, so widening only adds air.
+   The rungs stay inside the comfortable CJK range (40-48 chars/line)
+   and never open to the full column width. */
 html[data-sidebar="0"] .md-longform .md {
   max-width: 46em;
 }
@@ -1150,7 +1160,6 @@ main article p {
 
 .leftnav {
   box-sizing: border-box;
-  width: 14rem;
   padding-inline: 0.75rem;
   overflow-x: hidden;
 }
