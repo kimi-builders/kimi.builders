@@ -3,7 +3,10 @@ import test from "node:test";
 import type { PoolConnection } from "mysql2/promise";
 import type { UsageBucketV2 } from "../src/lib/usage-contract";
 import { projectLabelHash } from "../src/lib/usage/crypto";
-import { prepareBucketMetadataTransition } from "../src/lib/usage/ingest";
+import {
+  canonicalBucketModel,
+  prepareBucketMetadataTransition,
+} from "../src/lib/usage/ingest";
 
 const principal = {
   keyId: 3,
@@ -62,6 +65,28 @@ function connection(rows: ReturnType<typeof existing>[]) {
     } as unknown as PoolConnection,
   };
 }
+
+test("server canonicalization owns the dated kimi-for-coding rollout", () => {
+  const identity = {
+    source: "kimi-code",
+    model: "kimi-code/kimi-for-coding",
+    modelCanonical: "kimi-k2.7-code",
+  } satisfies Partial<UsageBucketV2>;
+  assert.equal(
+    canonicalBucketModel(bucket(100, {
+      ...identity,
+      bucketStart: "2026-09-10T23:59:59.999Z",
+    })),
+    "kimi-k2.7-code",
+  );
+  assert.equal(
+    canonicalBucketModel(bucket(100, {
+      ...identity,
+      bucketStart: "2026-09-11T00:00:00.000Z",
+    })),
+    "kimi-k2.8-preview",
+  );
+});
 
 test("metadata upgrade replaces an old unsplit bucket only at equal-or-larger total", async () => {
   const db = connection([existing(100)]);

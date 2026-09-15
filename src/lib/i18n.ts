@@ -1552,10 +1552,6 @@ const DICT = {
     zh: "登录后支持这个作品",
     en: "Log in to support this work",
   },
-  "works.discuss": {
-    zh: "与 Builder 聊聊这个作品",
-    en: "Chat with the Builder about this work",
-  },
   "works.noComments": {
     zh: "还没有评论。可以向 Builder 提问或留下具体反馈。",
     en: "No comments yet. Ask the Builder a question or leave specific feedback.",
@@ -1574,16 +1570,12 @@ const DICT = {
   "gate.work": { zh: "登录后提交作品", en: "Sign in to submit a work" },
   "gate.notif": { zh: "登录后查看通知", en: "Sign in to view notifications" },
   "gate.settings": { zh: "登录后管理账号设置", en: "Sign in to manage account settings" },
-  "works.sideAuthor": { zh: "Builder", en: "BUILDER" },
-  "works.sideOriginalAuthor": { zh: "原作者", en: "AUTHOR" },
   "works.metaKind": { zh: "类型", en: "TYPE" },
   "works.metaAgents": { zh: "参与构建", en: "BUILT WITH" },
   "works.metaScope": { zh: "收录", en: "SCOPE" },
-  "works.sideLinks": { zh: "链接", en: "LINKS" },
   "works.sideInfo": { zh: "信息", en: "INFO" },
   "works.sideModels": { zh: "开发模型", en: "MODELS" },
   "works.sidePlatforms": { zh: "应用平台", en: "PLATFORMS" },
-  "works.published": { zh: "发布时间", en: "Published" },
   /* ---- Work usage claims (own section to shrink merge conflicts)
      ---- */
   "works.claim": {

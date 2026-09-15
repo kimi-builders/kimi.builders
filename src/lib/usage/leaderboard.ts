@@ -263,6 +263,7 @@ export function aggregateUsageLeaderboardCosts(
               model: row.model,
               modelCanonical: row.model_canonical,
               modelProvider: row.model_provider,
+              timestamp: row.day,
             }),
             row.day instanceof Date ? row.day : new Date(String(row.day)),
             String(row.source),

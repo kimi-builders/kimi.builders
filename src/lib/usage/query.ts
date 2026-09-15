@@ -112,6 +112,7 @@ function canonicalModelOf(row: RowDataPacket): string {
     model: row.model,
     modelCanonical: row.model_canonical,
     modelProvider: row.model_provider,
+    timestamp: row.sample_at ?? row.bucket_start ?? row.day,
   });
 }
 
@@ -267,7 +268,7 @@ function mapRecordRows(
         modelDisplayName: usageModelDisplayName({
           source: row.source,
           model: row.model,
-          modelCanonical: row.model_canonical,
+          modelCanonical: canonical,
           modelProvider: row.model_provider,
         }),
         modelProvider: String(row.model_provider ?? ""),

@@ -24,6 +24,12 @@ interface ExistingBucketRow extends RowDataPacket {
   reasoning_output_tokens: number | string;
 }
 
+export function canonicalBucketModel(
+  bucket: UsageIngestRequestV2["buckets"][number],
+): string {
+  return canonicalUsageModel(bucket);
+}
+
 function incomingBucketKey(
   bucket: UsageIngestRequestV2["buckets"][number],
   projectHash = projectLabelHash(bucket.project),
@@ -289,7 +295,7 @@ export async function ingestUsage(
         principal.deviceId,
         bucket.source,
         bucket.model,
-        bucket.modelCanonical ?? canonicalUsageModel(bucket),
+        canonicalBucketModel(bucket),
         bucket.modelProvider ?? "",
         bucket.reasoningEffort ?? "",
         bucket.agentVersion ?? "",

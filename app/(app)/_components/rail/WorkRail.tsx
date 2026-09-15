@@ -1,23 +1,24 @@
 /* Work detail rail (/works/[id]): the work metadata card
-   (author/agents/links/claim badge/support & comment counts) + related
-   works (same author or shared agent, 5 rows). From xl it replaces
-   the detail page's inline panel (xl:hidden there). Work and badge
-   data reuse the detail queries (getWorkDetail / getAuthorClaimContext
-   both ride React cache, deduped per request); a missing work gets
-   friendly page copy and no rail. Private works: the detail page
-   treats them as missing for non-authors and the rail follows (the
-   layout shell still mounts — the rail must never leak a private
-   work's metadata; same rule as PostRail). */
+   (declaration/agents/kind/models/tags — structural attributes only;
+   author/time live in the page byline, support in the action bar,
+   links in the action row, so none repeat here) + related works (same
+   author or shared agent, 5 rows). From xl it replaces the detail
+   page's inline panel (xl:hidden there). Work and badge data reuse the
+   detail queries (getWorkDetail / getAuthorClaimContext both ride
+   React cache, deduped per request); a missing work gets friendly page
+   copy and no rail. Private works: the detail page treats them as
+   missing for non-authors and the rail follows (the layout shell still
+   mounts — the rail must never leak a private work's metadata; same
+   rule as PostRail). */
 import Link from "next/link";
-import { ExternalLink, Heart, MessageCircle } from "lucide-react";
-import Avatar from "@/components/Avatar";
+import { Heart } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
 import ModelIcon from "@/components/ModelIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkScopeIcon from "@/components/WorkScopeIcon";
 import { agentName } from "@/src/lib/agents";
 import { getSessionUser } from "@/src/lib/auth/session";
-import { compactNumber, relTime } from "@/src/lib/format";
+import { compactNumber } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { modelFamilyName } from "@/src/lib/model-families";
 import { workKindLabel } from "@/src/lib/work-kinds";
@@ -65,30 +66,10 @@ export default async function WorkRail({
   return (
     <>
       <Widget title={t(locale, "rail.workMeta")}>
-        {/* Label/value hairline rows: author / declaration / scope / stage /
-            agents / type / models / tags / links / published / supports /
-            comments */}
-        <dl className="font-mono text-xs">
-          <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
-            <dt className="text-grey">
-              {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
-            </dt>
-            <dd className="min-w-0 text-paper">
-              {work.source === "awesome" && work.authorLabel ? (
-                <span className="truncate">{work.authorLabel}</span>
-              ) : work.handle ? (
-                <Link
-                  href={`/u/${work.handle}`}
-                  className="flex items-center gap-1.5 transition-colors hover:text-ui-blue"
-                >
-                  <Avatar url={work.avatarUrl} handle={work.handle} size={18} className="shrink-0" />
-                  <span className="truncate">@{work.handle}</span>
-                </Link>
-              ) : (
-                <span className="truncate">{work.authorLabel}</span>
-              )}
-            </dd>
-          </div>
+        {/* Label/value hairline rows: declaration / scope / stage / agents
+            / type / models / tags — identity, time, engagement, and links
+            render once on the page itself and never here */}
+        <dl className="font-mono text-xs [&>div:last-child]:border-b-0">
           {claimBadge !== null && (
             <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
               <dt className="text-grey">{t(locale, "works.declared")}</dt>
@@ -169,52 +150,6 @@ export default async function WorkRail({
               </dd>
             </div>
           )}
-          {(work.url || work.repoUrl) && (
-            <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
-              <dt className="text-grey">{t(locale, "works.sideLinks")}</dt>
-              <dd className="inline-flex items-center gap-3">
-                {work.url && (
-                  <a
-                    href={work.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-ui-blue underline-offset-4 hover:underline"
-                  >
-                    <ExternalLink size={11} />
-                    {t(locale, "works.visit")}
-                  </a>
-                )}
-                {work.repoUrl && (
-                  <a
-                    href={work.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-grey transition-colors hover:text-ui-blue"
-                  >
-                    <ExternalLink size={11} />
-                    {t(locale, "works.repo")}
-                  </a>
-                )}
-              </dd>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-3 border-b border-line py-2.5">
-            <dt className="text-grey">{t(locale, "works.published")}</dt>
-            <dd className="text-paper">{relTime(work.createdAt, locale)}</dd>
-          </div>
-          <div className="flex items-center justify-between gap-3 py-2.5">
-            <dt className="text-grey">{t(locale, "works.support")}</dt>
-            <dd className="inline-flex items-center gap-2.5 text-paper">
-              <span className="inline-flex items-center gap-1">
-                <Heart size={11} />
-                {work.voteCount}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <MessageCircle size={11} />
-                {work.commentCount}
-              </span>
-            </dd>
-          </div>
         </dl>
       </Widget>
 

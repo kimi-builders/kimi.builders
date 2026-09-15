@@ -343,8 +343,10 @@ function LetterDetail({
     <article>
       {issueKeys}
       <header>
-        {/* Breadcrumb: back to the explore shelf, same grammar as the
-            work detail's top row (back pill + truncated name). */}
+        {/* Breadcrumb: back-only, same grammar as the post/work detail
+            top rows — the issue title lives in the h1 alone (repeating
+            it here put the same words twice within ~100px and truncated
+            long titles). */}
         <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
           <Link
             href="/explore"
@@ -353,7 +355,6 @@ function LetterDetail({
             <ArrowLeft size={13} aria-hidden="true" />
             {t(locale, "nav.explore")}
           </Link>
-          <span className="truncate">{issue.title}</span>
         </div>
         {/* Byline above the title (post/work-detail grammar); the meta
             row that used to sit under the title duplicated the rail's

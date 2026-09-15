@@ -237,6 +237,40 @@ test("cost aggregation follows the dashboard: stored facts + versioned price est
   assert.equal(micros.get(8), 1_000_000);
 });
 
+test("cost aggregation repairs stale kimi-for-coding canonicals at the rollout boundary", () => {
+  const prices: UsageModelPrice[] = [
+    {
+      ...PRICE,
+      modelPattern: "kimi-k2.7-code",
+      effectiveFrom: new Date("2026-06-01T00:00:00.000Z"),
+      inputPerMtok: 0.95,
+      version: "k2.7",
+    },
+    {
+      ...PRICE,
+      modelPattern: "kimi-k2.8-preview",
+      effectiveFrom: new Date("2026-09-11T00:00:00.000Z"),
+      inputPerMtok: 1.9,
+      version: "k2.8-preview",
+    },
+  ];
+  const rows = [
+    costRow({
+      model: "kimi-code/kimi-for-coding",
+      model_canonical: "kimi-k2.7-code",
+      day: "2026-09-10",
+      input_tokens: 1_000_000,
+    }),
+    costRow({
+      model: "kimi-code/kimi-for-coding",
+      model_canonical: "kimi-k2.7-code",
+      day: "2026-09-11",
+      input_tokens: 1_000_000,
+    }),
+  ];
+  assert.equal(aggregateUsageLeaderboardCosts(rows, prices).get(7), 2_850_000);
+});
+
 test("rank uses a deterministic total order: metric desc, tiebreaks, handle asc", () => {
   const entries = [
     { userId: 1, handle: "ada", totalTokens: 1000, activeDays: 3 },

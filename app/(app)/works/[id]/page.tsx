@@ -1,9 +1,12 @@
-/* Work detail: breadcrumb + clean H1 + meta row (author/time/kind/
-   declared tokens/★featured; private/hidden warning pills) + action bar
-   (try/support/share/owner & moderation actions) + gallery + long
-   description + a label/value hairline info panel (inline below xl;
-   from xl the rail's Work Info card replaces it, see the rail registry
-   work kind) + the single-level comment section at the bottom.
+/* Work detail: back-only breadcrumb + clean H1 (+ ★featured) + tagline
+   lede + byline (author/time; private/hidden warning pills) + action
+   bar (try/support/repo/share/owner & moderation actions) + gallery +
+   long description + a label/value hairline info panel carrying
+   structural attributes only (inline below xl; from xl the rail's Work
+   Info card replaces it, see the rail registry work kind) + the
+   single-level comment section at the bottom. Each fact renders once:
+   identity/time in the byline, engagement in the action bar and the
+   comment heading, links in the action row.
    Browsing needs no login; support/comments do (comment/vote quota
    limits). An @kimi in a comment summons the bot (the work's ai_reply
    switch + the ai_summon quota). Missing/deleted works get friendly
@@ -155,10 +158,13 @@ export default async function WorkPage({
           {work.hiddenReason ? ` — ${work.hiddenReason}` : ""}
         </p>
       )}
-      {/* Breadcrumb: the remembered source list wins (member works also
-          appear on /awesome, so guessing from work.source would send an
-          Awesome visitor back to the work wall); without memory, fall back
-          to work.source. */}
+      {/* Breadcrumb: back-only (post-detail grammar) — the remembered
+          source list wins (member works also appear on /awesome, so
+          guessing from work.source would send an Awesome visitor back
+          to the work wall); without memory, fall back to work.source.
+          The object name lives in the h1 alone: repeating it here made
+          the title appear twice within ~100px and forced a truncate
+          that long names don't survive. */}
       <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
         <Link
           href={(fromList ?? work.source) === "awesome" ? "/awesome" : "/works"}
@@ -167,7 +173,6 @@ export default async function WorkPage({
           <ArrowLeft size={13} aria-hidden="true" />
           {t(locale, (fromList ?? work.source) === "awesome" ? "nav.awesome" : "nav.works")}
         </Link>
-        <span className="truncate">{work.name}</span>
       </div>
 
       {/* Byline above the title (post-detail grammar): the author anchors
@@ -265,6 +270,13 @@ export default async function WorkPage({
         )}
       </div>
 
+      {/* Tagline as the page lede (PageHeader's title→lede grammar): the
+          one-line pitch under the name. The body below renders only the
+          long description — the old descriptionMd||tagline fallback meant
+          works with a body never showed their tagline anywhere on the
+          detail page. */}
+      {work.tagline && <p className="kb-lede mt-3 max-w-2xl">{work.tagline}</p>}
+
       {/* Action bar (above media): try and support share one equal-width,
           equal-height track at every viewport; share and owner/moderation
           actions remain the quieter trailing group. */}
@@ -303,6 +315,21 @@ export default async function WorkPage({
           )}
         </div>
         <span className="ml-auto flex items-center gap-3">
+          {/* Repo link (first-class action): the info bar/rail no longer
+              carry a links row — hiding source code in a metadata list
+              undersells it in a Builder community. Ghost grammar, same
+              as the share/poster pair. */}
+          {work.repoUrl && (
+            <a
+              href={work.repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-mono text-xs text-grey transition-colors hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            >
+              <ExternalLink size={14} aria-hidden="true" />
+              <span>{t(locale, "works.repo")}</span>
+            </a>
+          )}
           {user && work.userId === user.id && (
             <span className="flex items-center gap-3 font-mono text-sm text-grey">
               <WorkOwnerActions
@@ -373,35 +400,17 @@ export default async function WorkPage({
           metadata card replaces it (work kind in the rail registry). */}
       <div className="mt-8 space-y-8">
         <div>
-          {/* Long description first (description_md), falling back to tagline */}
-          {(work.descriptionMd || work.tagline) && (
-            <Markdown source={work.descriptionMd || work.tagline} />
-          )}
+          {/* Long description only — the tagline renders as the header
+              lede above, never again here */}
+          {work.descriptionMd && <Markdown source={work.descriptionMd} />}
         </div>
 
-        {/* Inline info bar (<xl): same label/value hairline rows as the right rail, two columns from sm */}
+        {/* Inline info bar (<xl): same label/value hairline rows as the right rail, two columns from sm.
+            Structural attributes only (declaration/scope/status/agents/kind/models/tags):
+            author/time live in the byline, support in the action bar, repo
+            in the action row — repeating them here tripled the metadata. */}
         <aside className="border-t border-line pt-6 xl:hidden">
-          <dl className="grid gap-x-8 font-mono text-sm sm:grid-cols-2">
-            <div className="flex items-center justify-between gap-3 border-b border-line py-3">
-              <dt className="text-grey">
-                {t(locale, work.source === "awesome" && work.authorLabel ? "works.sideOriginalAuthor" : "works.sideAuthor")}
-              </dt>
-              <dd className="min-w-0 text-paper">
-                {work.source === "awesome" && work.authorLabel ? (
-                  <span className="truncate">{work.authorLabel}</span>
-                ) : work.handle ? (
-                  <Link
-                    href={`/u/${work.handle}`}
-                    className="flex items-center gap-1.5 transition-colors hover:text-ui-blue"
-                  >
-                    <Avatar url={work.avatarUrl} handle={work.handle} size={18} className="shrink-0" />
-                    <span className="truncate">@{work.handle}</span>
-                  </Link>
-                ) : (
-                  <span className="truncate">{work.authorLabel}</span>
-                )}
-              </dd>
-            </div>
+          <dl className="grid gap-x-8 font-mono text-sm sm:grid-cols-2 [&>div:last-child]:border-b-0">
             {claimBadge !== null && (
               <div className="flex items-center justify-between gap-3 border-b border-line py-3">
                 <dt className="text-grey">{t(locale, "works.declared")}</dt>
@@ -481,36 +490,6 @@ export default async function WorkPage({
                 </dd>
               </div>
             )}
-            {(work.url || work.repoUrl) && (
-              <div className="flex items-center justify-between gap-3 border-b border-line py-3">
-                <dt className="text-grey">{t(locale, "works.sideLinks")}</dt>
-                <dd className="inline-flex items-center gap-3">
-                  {work.url && (
-                    <a href={work.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-ui-blue underline-offset-4 hover:underline">
-                      <ExternalLink size={11} />
-                      {t(locale, "works.visit")}
-                    </a>
-                  )}
-                  {work.repoUrl && (
-                    <a href={work.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-grey transition-colors hover:text-ui-blue">
-                      <ExternalLink size={11} />
-                      {t(locale, "works.repo")}
-                    </a>
-                  )}
-                </dd>
-              </div>
-            )}
-            <div className="flex items-center justify-between gap-3 border-b border-line py-3">
-              <dt className="text-grey">{t(locale, "works.published")}</dt>
-              <dd className="text-paper">{relTime(work.createdAt, locale)}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 py-3">
-              <dt className="text-grey">{t(locale, "works.support")}</dt>
-              <dd className="inline-flex items-center gap-1 text-paper">
-                <Heart size={11} />
-                {work.voteCount}
-              </dd>
-            </div>
           </dl>
         </aside>
       </div>
@@ -521,7 +500,6 @@ export default async function WorkPage({
               delete; AI comments (summoned) are moderated separately) */}
       <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-6">
         <h2 id="comments" className="kb-h2">
-          {t(locale, "works.discuss")} ·{" "}
           {t(locale, "post.comments", { n: comments.total })}
         </h2>
         {comments.nodes.length === 0 ? (
