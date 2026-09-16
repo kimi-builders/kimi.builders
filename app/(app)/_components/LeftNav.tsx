@@ -143,7 +143,7 @@ export default function LeftNav({
       <div className="brand-row sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-line bg-bg">
         <NavToggle
           locale={locale}
-          className="flex size-10 shrink-0 items-center justify-center rounded-md text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         />
         <Link prefetch={false}
           href="/"
