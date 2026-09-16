@@ -14,12 +14,12 @@ task="${3:-deep-health}"
 [[ "$deploy_root" =~ ^[A-Za-z0-9._/-]+$ ]] ||
   die "DEPLOY_PATH contains unsupported characters"
 deploy_root="$(cd "$deploy_root" && pwd -P)" || die "DEPLOY_PATH is unavailable"
-[[ "$task" == "deep-health" || "$task" == "error-digest" ]] ||
-  die "task must be deep-health or error-digest"
+[[ "$task" == "deep-health" || "$task" == "error-digest" || "$task" == "backup-health" ]] ||
+  die "task must be deep-health, error-digest, or backup-health"
 
 shared_dir="$deploy_root/shared"
 state_dir="$shared_dir/health"
-state_file="$state_dir/deep-health.state"
+state_file="$state_dir/$task.state"
 verifier="$shared_dir/verify-deploy-state.mjs"
 lock_file="$shared_dir/deploy-health.lock"
 
@@ -69,8 +69,6 @@ if [[ "$task" == "error-digest" ]]; then
   exit 1
 fi
 
-[[ -f "$verifier" ]] || die "$verifier is missing"
-
 mkdir -p "$state_dir"
 chmod 700 "$state_dir"
 previous_state=""
@@ -88,17 +86,17 @@ write_state() {
 
 notify_transition() {
   local status="$1"
-  local message="kimi.builders deep health $status on $(hostname) (release $expected_version)"
+  local message="kimi.builders ${task//-/ } $status on $(hostname) (release $expected_version)"
   if command -v logger >/dev/null 2>&1; then
-    logger -t kimi-builders-deep-health -- "$message" || true
+    logger -t "kimi-builders-$task" -- "$message" || true
   fi
-  echo "deep-health: $message" >&2
+  echo "$task: $message" >&2
   [[ -n "$alert_webhook" ]] || return 0
   local payload
-  payload="$(HEALTH_MESSAGE="$message" HEALTH_STATUS="$status" node -e '
+  payload="$(HEALTH_CHECK="$task" HEALTH_MESSAGE="$message" HEALTH_STATUS="$status" node -e '
     process.stdout.write(JSON.stringify({
       service: "kimi.builders",
-      check: "deep-health",
+      check: process.env.HEALTH_CHECK,
       status: process.env.HEALTH_STATUS,
       text: process.env.HEALTH_MESSAGE,
     }));
@@ -110,12 +108,7 @@ notify_transition() {
     "$alert_webhook" >/dev/null
 }
 
-body=""
-if body="$(curl --fail --silent --show-error \
-  --connect-timeout 2 --max-time 5 \
-  -H "Authorization: Bearer $cron_secret" \
-  "http://127.0.0.1:${app_port}/api/health/deep")" &&
-  printf '%s' "$body" | node "$verifier" deep-health "$expected_version"; then
+mark_healthy() {
   if [[ -n "$previous_state" && "$previous_state" != "healthy" ]]; then
     if notify_transition "recovered"; then
       write_state "healthy"
@@ -125,14 +118,48 @@ if body="$(curl --fail --silent --show-error \
   else
     write_state "healthy"
   fi
+}
+
+mark_failed() {
+  local next_state="failed"
+  if [[ "$previous_state" != "failed" ]]; then
+    if ! notify_transition "failed"; then
+      next_state="failure-alert-pending"
+    fi
+  fi
+  write_state "$next_state"
+}
+
+if [[ "$task" == "backup-health" ]]; then
+  success_file="$shared_dir/backup-last-success"
+  now_epoch="$(date -u +%s)"
+  last_epoch=""
+  if [[ -f "$success_file" ]]; then
+    read -r last_epoch _ < "$success_file" || true
+  fi
+  if [[ "$last_epoch" =~ ^[0-9]+$ ]]; then
+    age_seconds="$(( now_epoch - last_epoch ))"
+    if (( age_seconds >= -300 && age_seconds <= 30 * 60 * 60 )); then
+      mark_healthy
+      exit 0
+    fi
+  fi
+  echo "backup-health: no successful backup within 30 hours" >&2
+  mark_failed
+  exit 1
+fi
+
+[[ -f "$verifier" ]] || die "$verifier is missing"
+
+body=""
+if body="$(curl --fail --silent --show-error \
+  --connect-timeout 2 --max-time 5 \
+  -H "Authorization: Bearer $cron_secret" \
+  "http://127.0.0.1:${app_port}/api/health/deep")" &&
+  printf '%s' "$body" | node "$verifier" deep-health "$expected_version"; then
+  mark_healthy
   exit 0
 fi
 
-next_state="failed"
-if [[ "$previous_state" != "failed" ]]; then
-  if ! notify_transition "failed"; then
-    next_state="failure-alert-pending"
-  fi
-fi
-write_state "$next_state"
+mark_failed
 exit 1

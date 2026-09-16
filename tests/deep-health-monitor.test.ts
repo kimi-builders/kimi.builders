@@ -146,3 +146,41 @@ test("error digest mode uses the live release secret and is rollback-safe", () =
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("backup health tracks freshness transitions without touching the database", () => {
+  const root = mkdtempSync(join(tmpdir(), "kb-backup-health-"));
+  const release = "c".repeat(40);
+  const shared = join(root, "shared");
+  const releaseDir = join(root, "releases", release);
+  const bin = join(root, "bin");
+  try {
+    mkdirSync(shared, { recursive: true });
+    mkdirSync(releaseDir, { recursive: true });
+    mkdirSync(bin, { recursive: true });
+    symlinkSync(releaseDir, join(root, "current"));
+    writeFileSync(join(releaseDir, ".env.production"), `CRON_SECRET='${"h".repeat(32)}'\n`);
+    writeFileSync(join(bin, "flock"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    writeFileSync(join(bin, "logger"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+
+    const run = () =>
+      spawnSync("bash", [monitor, root, "3210", "backup-health"], {
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+      });
+
+    assert.equal(run().status, 1);
+    assert.equal(readFileSync(join(shared, "health/backup-health.state"), "utf8").trim(), "failed");
+
+    writeFileSync(
+      join(shared, "backup-last-success"),
+      `${Math.floor(Date.now() / 1000)} backup.sql.gz ${release}\n`,
+    );
+    assert.equal(run().status, 0);
+    assert.equal(readFileSync(join(shared, "health/backup-health.state"), "utf8").trim(), "healthy");
+
+    writeFileSync(join(shared, "backup-last-success"), "1 stale.sql.gz stale\n");
+    assert.equal(run().status, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

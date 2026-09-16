@@ -301,20 +301,30 @@ install_deep_health_monitor() {
   local target="$1"
   local source_script="$target/ops/deep-health-check.sh"
   local source_verifier="$target/ops/verify-deploy-state.mjs"
+  local source_backup="$target/ops/db-backup.sh"
   local monitor_script="$shared_dir/deep-health-check.sh"
   local monitor_next="$shared_dir/.deep-health-check.$$"
   local monitor_backup="$shared_dir/.deep-health-check.backup.$$"
   local verifier_next="$shared_dir/.verify-deploy-state.$$"
   local verifier_backup="$shared_dir/.verify-deploy-state.backup.$$"
+  local backup_script="$shared_dir/db-backup.sh"
+  local backup_next="$shared_dir/.db-backup.$$"
+  local backup_backup="$shared_dir/.db-backup.backup.$$"
   local start_marker="# BEGIN $app_name managed deep health"
   local end_marker="# END $app_name managed deep health"
   local replaced_monitor=0
   local replaced_verifier=0
   local had_monitor=0
   local had_verifier=0
-  if [[ -f "$source_script" ]]; then
-    if [[ ! -f "$source_verifier" ]]; then
-      echo "deploy: $source_script requires its paired verifier" >&2
+  local replaced_backup=0
+  local had_backup=0
+  if [[ "$mode" == "rollback" &&
+        ( ! -f "$source_script" || ! -f "$source_verifier" || ! -f "$source_backup" ) &&
+        -f "$monitor_script" && -f "$shared_verifier" && -f "$backup_script" ]]; then
+    echo "deploy: retaining shared deep-health monitor and verifier for legacy rollback $release; backup asset retained" >&2
+  elif [[ -f "$source_script" || -f "$source_verifier" || -f "$source_backup" ]]; then
+    if [[ ! -f "$source_script" || ! -f "$source_verifier" || ! -f "$source_backup" ]]; then
+      echo "deploy: monitoring, verifier, and backup assets must be packaged together" >&2
       return 1
     fi
     if [[ -f "$monitor_script" ]]; then
@@ -328,13 +338,22 @@ install_deep_health_monitor() {
       }
       had_verifier=1
     fi
+    if [[ -f "$backup_script" ]]; then
+      cp -p -- "$backup_script" "$backup_backup" || {
+        rm -f -- "$monitor_backup" "$verifier_backup"
+        return 1
+      }
+      had_backup=1
+    fi
     if ! install -m 700 "$source_script" "$monitor_next" ||
        ! install -m 644 "$source_verifier" "$verifier_next"; then
-      rm -f -- "$monitor_backup" "$verifier_backup" "$monitor_next" "$verifier_next"
+      rm -f -- "$monitor_backup" "$verifier_backup" "$backup_backup" \
+        "$monitor_next" "$verifier_next"
       return 1
     fi
     if ! mv -f -- "$monitor_next" "$monitor_script"; then
-      rm -f -- "$monitor_backup" "$verifier_backup" "$monitor_next" "$verifier_next"
+      rm -f -- "$monitor_backup" "$verifier_backup" "$backup_backup" \
+        "$monitor_next" "$verifier_next"
       return 1
     fi
     replaced_monitor=1
@@ -344,17 +363,32 @@ install_deep_health_monitor() {
       else
         rm -f -- "$monitor_script"
       fi
-      rm -f -- "$verifier_backup" "$verifier_next"
+      rm -f -- "$verifier_backup" "$verifier_next" "$backup_backup"
       return 1
     fi
     replaced_verifier=1
-  elif [[ -f "$monitor_script" && -f "$shared_verifier" ]]; then
-    echo "deploy: retaining shared deep-health monitor and verifier for legacy rollback $release" >&2
-  elif [[ "$mode" == "rollback" && ! -e "$monitor_script" && ! -e "$shared_verifier" ]]; then
-    echo "deploy: legacy rollback has no managed deep-health assets to retain" >&2
+    if ! install -m 700 "$source_backup" "$backup_next" ||
+       ! mv -f -- "$backup_next" "$backup_script"; then
+      if (( had_monitor == 1 )); then
+        mv -f -- "$monitor_backup" "$monitor_script" || true
+      else
+        rm -f -- "$monitor_script"
+      fi
+      if (( had_verifier == 1 )); then
+        mv -f -- "$verifier_backup" "$shared_verifier" || true
+      else
+        rm -f -- "$shared_verifier"
+      fi
+      rm -f -- "$backup_backup" "$backup_next"
+      return 1
+    fi
+    replaced_backup=1
+  elif [[ "$mode" == "rollback" && ! -e "$monitor_script" &&
+          ! -e "$shared_verifier" && ! -e "$backup_script" ]]; then
+    echo "deploy: legacy rollback has no managed monitoring or backup assets to retain" >&2
     return 0
   else
-    echo "deploy: shared deep-health monitor and verifier are not a compatible pair" >&2
+    echo "deploy: shared monitoring, verifier, and backup assets are not a compatible set" >&2
     return 1
   fi
 
@@ -364,18 +398,25 @@ install_deep_health_monitor() {
     cron_dir="$(mktemp -d)"
     trap 'rm -rf -- "$cron_dir"' EXIT
     crontab -l > "$cron_dir/current" 2>/dev/null || true
-    awk -v start="$start_marker" -v end="$end_marker" '
+    awk -v start="$start_marker" -v end="$end_marker" -v backup="$backup_script" '
       $0 == start { managed = 1; next }
       $0 == end { managed = 0; next }
+      !managed && index($0, backup) > 0 { next }
       !managed { print }
     ' "$cron_dir/current" > "$cron_dir/next"
     {
       printf '%s\n' "$start_marker"
+      printf '%s\n' 'CRON_TZ=UTC'
       printf '* * * * * %q %q %q >> %q 2>&1\n' \
         "$monitor_script" "$deploy_root" "$app_port" "$shared_dir/deep-health.log"
-      printf '17 9,10,11 * * * %q %q %q %q >> %q 2>&1\n' \
+      printf '17 1,2,3 * * * %q %q %q %q >> %q 2>&1\n' \
         "$monitor_script" "$deploy_root" "$app_port" "error-digest" \
         "$shared_dir/error-digest.log"
+      printf '23 * * * * %q %q %q %q >> %q 2>&1\n' \
+        "$monitor_script" "$deploy_root" "$app_port" "backup-health" \
+        "$shared_dir/backup-health.log"
+      printf '41 18 * * * %q %q >> %q 2>&1\n' \
+        "$backup_script" "$deploy_root" "$shared_dir/backup.log"
       printf '%s\n' "$end_marker"
     } >> "$cron_dir/next"
     crontab "$cron_dir/next"
@@ -394,10 +435,17 @@ install_deep_health_monitor() {
         rm -f -- "$shared_verifier"
       fi
     fi
+    if (( replaced_backup == 1 )); then
+      if (( had_backup == 1 )); then
+        mv -f -- "$backup_backup" "$backup_script" || true
+      else
+        rm -f -- "$backup_script"
+      fi
+    fi
     echo "deploy: failed to install deep-health crontab" >&2
     return 1
   }
-  rm -f -- "$monitor_backup" "$verifier_backup"
+  rm -f -- "$monitor_backup" "$verifier_backup" "$backup_backup"
 }
 
 switch_current "$release_dir"

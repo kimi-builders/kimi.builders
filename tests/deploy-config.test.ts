@@ -43,9 +43,14 @@ test("ops/deploy-release.sh exists and carries the release pipeline", () => {
   // The health probe delegates exact JSON/version matching to the tested verifier.
   assert.match(script, /verify-deploy-state\.mjs/);
   assert.match(script, /health "\$expected"/);
-  assert.match(script, /17 9,10,11 \* \* \*/);
+  assert.match(script, /CRON_TZ=UTC/);
+  assert.match(script, /17 1,2,3 \* \* \*/);
   assert.match(script, /"error-digest"/);
   assert.match(script, /error-digest\.log/);
+  assert.match(script, /"backup-health"/);
+  assert.match(script, /41 18 \* \* \*/);
+  assert.match(script, /db-backup\.sh/);
+  assert.match(script, /legacy rollback \$release; backup asset retained/);
 });
 
 test("ops/ecosystem.config.cjs exists with kimi-builders defaults", () => {
@@ -100,6 +105,7 @@ test("deploy.yml wires secrets, packaging and migration", () => {
   assert.match(workflow, /cp -a db \.release\/db/);
   assert.match(workflow, /\.release\/node_modules\/mysql2/);
   assert.match(workflow, /ops\/verify-deploy-state\.mjs \.release\/ops\/verify-deploy-state\.mjs/);
+  assert.match(workflow, /ops\/db-backup\.sh \.release\/ops\/db-backup\.sh/);
   // The build injects the version; the health check accepts by it.
   assert.match(workflow, /DEPLOYMENT_VERSION: \$\{\{ github\.sha \}\}/);
   assert.match(workflow, /\.release\/ERROR_DIGEST_ENABLED/);

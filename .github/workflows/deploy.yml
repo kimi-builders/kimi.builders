@@ -167,6 +167,7 @@ jobs:
           install -m 644 ops/ecosystem.config.cjs .release/ecosystem.config.cjs
           install -m 755 ops/deploy-release.sh .release/ops/deploy-release.sh
           install -m 755 ops/deep-health-check.sh .release/ops/deep-health-check.sh
+          install -m 755 ops/db-backup.sh .release/ops/db-backup.sh
           install -m 644 ops/verify-deploy-state.mjs .release/ops/verify-deploy-state.mjs
           printf '%s\n' "$GITHUB_SHA" > .release/RELEASE
           printf '%s\n' enabled > .release/ERROR_DIGEST_ENABLED
