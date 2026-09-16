@@ -405,8 +405,8 @@ const DICT = {
   "form.pageTitle": { zh: "发帖", en: "New post" },
   /* Form-page eyebrow: task pages share the section landing pages'
      grammar. */
-  "form.eyebrow": { zh: "— 社区 · 新帖子", en: "— COMMUNITY · NEW POST" },
-  "edit.eyebrow": { zh: "— 社区 · 编辑帖子", en: "— COMMUNITY · EDIT POST" },
+  "form.eyebrow": { zh: "— 社区 · 新帖子", en: "— Community · new post" },
+  "edit.eyebrow": { zh: "— 社区 · 编辑帖子", en: "— Community · edit post" },
   "form.text": { zh: "文字", en: "Text" },
   "form.link": { zh: "链接", en: "Link" },
   "form.poll": { zh: "投票", en: "Poll" },
@@ -636,7 +636,7 @@ const DICT = {
   /* ---- Settings ---- */
   "set.title": { zh: "设置", en: "Settings" },
   /* Settings page header eyebrow (layout alignment pass). */
-  "set.eyebrow": { zh: "— 设置 · 账号与偏好", en: "— SETTINGS · ACCOUNT & PREFS" },
+  "set.eyebrow": { zh: "— 设置 · 账号与偏好", en: "— Settings · account & prefs" },
   "set.subtitle": {
     zh: "界面偏好、数据隐私与账号管理。",
     en: "Interface preferences, data privacy, and account.",
@@ -1077,8 +1077,8 @@ const DICT = {
   /* Form-page eyebrow; the create form's segmented control switches to
      "recommend an external project", so the eyebrow covers both
      intents. */
-  "works.newEyebrow": { zh: "— 作品 · 上架 / 推荐", en: "— WORKS · SUBMIT OR RECOMMEND" },
-  "works.editEyebrow": { zh: "— 作品 · 编辑", en: "— WORKS · EDIT" },
+  "works.newEyebrow": { zh: "— 作品 · 上架 / 推荐", en: "— Works · submit or recommend" },
+  "works.editEyebrow": { zh: "— 作品 · 编辑", en: "— Works · edit" },
   "works.name": { zh: "作品名称", en: "Name" },
   "works.tagline": { zh: "一句话亮点", en: "One-line pitch" },
   "works.url": { zh: "体验地址", en: "Live URL" },
@@ -1559,7 +1559,7 @@ const DICT = {
   "art.draft": { zh: "草稿", en: "DRAFT" },
   "artf.newTitle": { zh: "新建文章", en: "New article" },
   /* Edit console page-header eyebrow (layout alignment pass). */
-  "artf.eyebrow": { zh: "— 月刊 · 编辑台", en: "— MONTHLY · DESK" },
+  "artf.eyebrow": { zh: "— 月刊 · 编辑台", en: "— Monthly · desk" },
   "artf.editTitle": { zh: "编辑文章", en: "Edit article" },
   "artf.slug": {
     zh: "Slug（小写字母/数字/连字符）",

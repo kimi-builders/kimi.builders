@@ -210,7 +210,7 @@ export default function YearFootprint({
            as the usage center (kb-data-tooltip + viz-surface + arrow). */
         <div
           role="tooltip"
-          className="kb-data-tooltip pointer-events-none absolute z-20 w-[176px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+          className="kb-data-tooltip pointer-events-none absolute z-20 w-[176px] rounded-lg border border-line bg-viz-surface p-3 shadow-xl"
           style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
           <div className="font-mono text-xs font-semibold text-paper">{hovered.cell.date}</div>

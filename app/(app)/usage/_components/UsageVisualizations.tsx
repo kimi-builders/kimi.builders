@@ -384,7 +384,7 @@ function TrendCore({
       {active && hovered && (
         <div
           role="tooltip"
-          className="kb-data-tooltip pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+          className="kb-data-tooltip pointer-events-none absolute z-20 w-[244px] rounded-lg border border-line bg-viz-surface p-3 shadow-xl"
           style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
           <div className="font-mono text-xs font-semibold text-paper">
@@ -634,7 +634,7 @@ export function UsageHeatmapGrid({
            its own data card. */
         <div
           role="tooltip"
-          className="kb-data-tooltip pointer-events-none absolute z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-2xl"
+          className="kb-data-tooltip pointer-events-none absolute z-20 w-[252px] rounded-lg border border-line bg-viz-surface p-3 shadow-xl"
           style={{ left: hovered.left, top: hovered.top, "--tooltip-arrow-left": `${hovered.arrowX}px` } as CSSProperties}
         >
           <div className="font-mono text-xs font-semibold text-paper">

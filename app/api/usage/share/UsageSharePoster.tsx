@@ -784,7 +784,7 @@ export function UsageSharePoster({ snapshot }: { snapshot: UsageShareSnapshot })
         width: "100%",
         height: "100%",
         flexDirection: "column",
-        background: `radial-gradient(680px 320px at 86% 0%, ${POSTER_ALPHA.focusGlow10}, ${POSTER_ALPHA.ink0} 72%), ${palette.background}`,
+        background: palette.background,
         color: palette.paper,
         padding: POSTER_PADDING,
         fontFamily: POSTER_FONT_FAMILY,

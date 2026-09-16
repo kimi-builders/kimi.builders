@@ -65,7 +65,7 @@ export const BLOG_ISSUES: BlogIssue[] = [
         authorHandle: "moonwalker",
         note: {
           zh: "构建过程消耗 4.2M token(已验证)。选它不只因为完成度:这是本月唯一一件把「失败三次」写进发布说明的作品。",
-          en: "4.2M tokens of verified build effort. Chosen not just for polish — it's the only work this month that put “failed three times” in its release notes.",
+          en: "4.2M tokens of verified build effort — the only work this month that put “failed three times” in its release notes.",
         },
       },
       {

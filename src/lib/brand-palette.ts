@@ -63,13 +63,10 @@ export const POSTER_PALETTE = {
 /** Alpha derivatives of official colors (Satori has no color-mix,
     spelled out; base colors are all BRAND originals). */
 export const POSTER_ALPHA = {
-  focusGlow10: "rgba(0,124,255,0.10)", // radial glow, top-right of the
-                                         // poster base
   focusBorder25: "rgba(0,124,255,0.25)", // heat data-cell stroke
   paper72: "rgba(255,255,255,0.72)", // stacked bar — output segment
   paper50: "rgba(255,255,255,0.5)", // 7-day average dashed line
   ink40: "rgba(18,18,18,0.4)", // dot pattern on mint fills
-  ink0: "rgba(18,18,18,0)", // gradient fade-out end
 } as const;
 
 /** Heat 5 levels: level 0 (no data) uses the neutral surface (near-
