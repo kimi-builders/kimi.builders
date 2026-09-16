@@ -9,6 +9,11 @@ import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
 import { hashPassword, verifyPassword } from "../src/lib/auth/password";
 import {
+  getSessionUserForToken,
+  hashSessionToken,
+  SESSION_TTL_SECONDS,
+} from "../src/lib/auth/session";
+import {
   createEmailUser,
   getUserPasswordHash,
   linkProviderAccount,
@@ -21,6 +26,7 @@ if (!process.env.DATABASE_URL?.includes("kbu-mysql")) {
     "Refusing to run settings account integration outside an isolated kbu-mysql database",
   );
 }
+process.env.AUTH_SECRET ||= "integration-only-auth-secret-at-least-32-chars";
 
 const profile = (id: string) => ({
   providerAccountId: id,
@@ -52,6 +58,26 @@ async function main() {
     assert.ok(secondHash !== null && secondHash !== firstHash);
     assert.equal(await verifyPassword("new-secret-2", secondHash), true);
     assert.equal(await verifyPassword("old-secret-1", secondHash), false);
+
+    /* Database sessions enforce idle expiry at lookup time; cleanup at
+       a future login is only storage maintenance, never the auth gate. */
+    const freshToken = "a".repeat(64);
+    const expiredToken = "b".repeat(64);
+    await pool.query(
+      `INSERT INTO user_sessions (user_id, token_hash, ua, last_seen_at)
+       VALUES (?, ?, 'Fresh test', UTC_TIMESTAMP()),
+              (?, ?, 'Expired test', TIMESTAMPADD(SECOND, ?, UTC_TIMESTAMP()))`,
+      [
+        pwUser,
+        hashSessionToken(freshToken),
+        pwUser,
+        hashSessionToken(expiredToken),
+        -SESSION_TTL_SECONDS - 1,
+      ],
+    );
+    assert.equal((await getSessionUserForToken(freshToken))?.id, pwUser);
+    assert.equal(await getSessionUserForToken(expiredToken), null);
+    assert.equal(await getSessionUserForToken("not-a-session-token"), null);
 
     /* Unlink guard: no password + single binding = the only login
        method. */

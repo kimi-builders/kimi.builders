@@ -27,18 +27,17 @@ import {
   hardDeletePost,
   hardDeleteWork,
   hideContent,
-  logModeration,
   muteUntilFor,
   muteUser,
   requireAdmin,
   requireModerator,
   resetUserProfile,
+  resolveFeedback,
   setUserRole,
   unhideContent,
   unmuteUser,
   type ModTargetType,
 } from "@/src/lib/moderation";
-import { resolveFeedback } from "@/src/lib/feedback";
 
 export interface ModResult {
   ok: boolean;
@@ -281,9 +280,8 @@ export async function resolveFeedbackAction(
   if (!user) return;
   const feedbackId = Number(formData.get("feedback_id"));
   if (!Number.isSafeInteger(feedbackId) || feedbackId <= 0) return;
-  const ok = await resolveFeedback(feedbackId, user.id);
+  const ok = await resolveFeedback(user.id, feedbackId);
   if (ok) {
-    await logModeration(user.id, "resolve_feedback", "feedback", feedbackId, "member feedback resolved");
     revalidatePath("/admin");
   }
 }

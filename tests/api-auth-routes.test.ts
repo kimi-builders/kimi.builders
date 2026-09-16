@@ -119,16 +119,19 @@ test("reset: 密码策略先于消费 token(不合规不烧有效 token)", () =>
   assertOrder(src, "isSameOrigin(req)", "consumePasswordResetToken(", "同源校验先于消费 token");
   assertOrder(src, "passwordPolicyError(", "consumePasswordResetToken(", "密码策略先于消费 token");
   assertOrder(src, "password !== password2", "consumePasswordResetToken(", "二次确认先于消费 token");
+  assertOrder(src, "setUserPassword(", "destroyAllSessions(", "换散列先于撤销旧会话");
+  assertOrder(src, "destroyAllSessions(", "setSessionCookie(", "撤销旧会话先于种新会话");
   assertOrder(src, "setUserPassword(", "setSessionCookie(", "换散列先于种会话");
 });
 
 /* ---- Logout /api/auth/logout ---- */
 
-test("logout: POST-only + 同源校验,删会话 cookie 并回 canonical 首页", () => {
+test("logout: POST-only + 同源校验,撤销服务端会话并删 cookie", () => {
   const src = sourceOf("auth/logout");
   assert.match(src, /export async function POST/);
   assert.doesNotMatch(src, /export function GET|export async function GET/);
   assert.match(src, /isSameOrigin\(req\)/);
+  assertOrder(src, "destroySessionToken(", 'res.cookies.delete("kb_session")', "先撤销服务端会话再删 cookie");
   assert.match(src, /cookies\.delete\("kb_session"\)/);
   assert.match(src, /canonicalOrigin\(req\)/);
 });

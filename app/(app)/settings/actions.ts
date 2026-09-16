@@ -217,10 +217,8 @@ export async function unlinkProviderAction(
 
 /* Self-service account deletion (B3): soft delete + anonymize. The
    typed-handle confirmation is enforced server-side too (a stray click
-   or a crafted form must not delete an account); after the row flips,
-   the stale session cookie turns inert (getSessionUser filters
-   deleted_at). The client clears its cookie and lands on the home
-   facade. */
+   or a crafted form must not delete an account). Every session row and
+   the current cookie are removed after the account becomes inert. */
 export async function deleteAccountAction(
   _prev: { error?: string; ok?: boolean } | null,
   formData: FormData,
@@ -232,6 +230,7 @@ export async function deleteAccountAction(
   if (typed !== user.handle) return { error: t(locale, "set.deleteMismatch") };
   const ok = await deleteOwnAccount(user.id);
   if (!ok) return { error: t(locale, "err.generic") };
+  await destroyAllSessions(user.id);
   updateTag(PUBLIC_USERS_CACHE_TAG);
   return { ok: true };
 }

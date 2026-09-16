@@ -12,7 +12,8 @@
      two can stack.
    - Hard delete: admin only, physical DELETE (dependent rows converge via
      existing ON DELETE CASCADE; reactions are polymorphic with no FK and
-     are cleaned by hand); the target must exist and not be deleted.
+     are cleaned by hand); the target must exist. Soft-deleted posts and
+     comments remain eligible so the admin console can finish the removal.
    - Private content (visibility=private) is visible and actionable for
      admins in /admin (moderation outranks visibility) but never leaks to
      any public surface.
@@ -103,6 +104,32 @@ export async function logModeration(
     "INSERT INTO moderation_actions (actor_id, action, target_type, target_id, reason) VALUES (?, ?, ?, ?, ?)",
     [actorId, action, targetType, targetId, reason.slice(0, 280)],
   );
+}
+
+/* Resolving feedback and writing its audit record is one moderation
+   transaction. A logging failure must leave the flag open. */
+export async function resolveFeedback(
+  actorId: number,
+  feedbackId: number,
+): Promise<boolean> {
+  return withModerationTransaction(async (conn) => {
+    const [res] = await conn.query<ResultSetHeader>(
+      `UPDATE feedback
+       SET status = 'resolved', resolved_at = UTC_TIMESTAMP(), resolver_id = ?
+       WHERE id = ? AND status = 'open'`,
+      [actorId, feedbackId],
+    );
+    if (res.affectedRows !== 1) return false;
+    await logModeration(
+      actorId,
+      "resolve_feedback",
+      "feedback",
+      feedbackId,
+      "member feedback resolved",
+      conn,
+    );
+    return true;
+  });
 }
 
 export interface ModLogRow {
@@ -311,8 +338,7 @@ export async function adminDeleteComment(
   });
 }
 
-/* ---- Hard delete (admin only; target must exist and be undeleted)
-   ---- */
+/* ---- Hard delete (admin only; target must exist) ---- */
 
 async function deleteReactions(
   targetType: "post" | "comment",
@@ -369,7 +395,7 @@ export async function hardDeleteComment(
       [commentId],
     );
     const root = rootRows[0];
-    if (!root || root.deleted_at !== null) return false;
+    if (!root) return false;
     /* Lock the parent post so all moderation counter changes and new
        guarded comment writes serialize per post. */
     await conn.query("SELECT id FROM posts WHERE id = ? LIMIT 1 FOR UPDATE", [root.post_id]);

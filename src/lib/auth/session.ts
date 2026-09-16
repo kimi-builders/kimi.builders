@@ -16,7 +16,8 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "../db";
 
 const COOKIE = "kb_session";
-const TTL_MS = 30 * 24 * 3600 * 1000;
+export const SESSION_TTL_SECONDS = 30 * 24 * 3600;
+const TTL_MS = SESSION_TTL_SECONDS * 1000;
 /* last_seen write throttle: below this staleness the read carries no
    UPDATE (a hot tab refreshing every few seconds stays read-only). */
 const LAST_SEEN_WRITE_MS = 10 * 60 * 1000;
@@ -45,6 +46,10 @@ export function hashSessionToken(token: string): string {
   return createHmac("sha256", secret())
     .update(`session\0${token}`, "utf8")
     .digest("hex");
+}
+
+export function isSessionTokenFormat(token: string): boolean {
+  return /^[0-9a-f]{64}$/.test(token);
 }
 
 /* Device label for the settings session list: neutral English
@@ -102,7 +107,7 @@ export async function setSessionCookie(uid: number): Promise<void> {
   const pool = getPool();
   await pool.query(
     "DELETE FROM user_sessions WHERE last_seen_at < TIMESTAMPADD(SECOND, ?, UTC_TIMESTAMP())",
-    [-Math.floor(TTL_MS / 1000) - 3600],
+    [-SESSION_TTL_SECONDS - 3600],
   );
   const token = randomBytes(32).toString("hex");
   const h = await headers();
@@ -113,11 +118,14 @@ export async function setSessionCookie(uid: number): Promise<void> {
   await setCookie(token);
 }
 
-export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
-  const token = await readCookieToken();
-  if (!token) return null;
-  const hash = hashSessionToken(token);
+/* Token lookup is separate from request-cookie access so the database
+   session contract can be integration-tested directly. Expiry is
+   enforced here, not only by browser cookie eviction or opportunistic
+   login-time garbage collection. */
+export async function getSessionUserForToken(token: string): Promise<SessionUser | null> {
+  if (!isSessionTokenFormat(token)) return null;
   try {
+    const hash = hashSessionToken(token);
     const pool = getPool();
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT u.id, u.handle, u.name, u.avatar_url, u.locale, u.role,
@@ -125,8 +133,10 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
               s.last_seen_at,
               TIMESTAMPDIFF(SECOND, s.last_seen_at, UTC_TIMESTAMP()) AS idle_seconds
        FROM user_sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.token_hash = ? AND u.deleted_at IS NULL LIMIT 1`,
-      [hash],
+       WHERE s.token_hash = ? AND u.deleted_at IS NULL
+         AND s.last_seen_at > TIMESTAMPADD(SECOND, ?, UTC_TIMESTAMP())
+       LIMIT 1`,
+      [hash, -SESSION_TTL_SECONDS],
     );
     const r = rows[0];
     if (!r) return null;
@@ -147,9 +157,14 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       showAiReplies: !!r.show_ai_replies,
     };
   } catch (e) {
-    console.error("getSessionUser: db lookup failed", e);
+    console.error("getSessionUserForToken: db lookup failed", e);
     return null;
   }
+}
+
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
+  const token = await readCookieToken();
+  return token ? getSessionUserForToken(token) : null;
 });
 
 export interface SessionRow {
@@ -166,8 +181,12 @@ export async function listSessions(userId: number): Promise<SessionRow[]> {
   const token = await readCookieToken();
   const currentHash = token ? hashSessionToken(token) : "";
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT id, ua, created_at, last_seen_at, token_hash FROM user_sessions WHERE user_id = ? ORDER BY last_seen_at DESC LIMIT 50",
-    [userId],
+    `SELECT id, ua, created_at, last_seen_at, token_hash
+     FROM user_sessions
+     WHERE user_id = ?
+       AND last_seen_at > TIMESTAMPADD(SECOND, ?, UTC_TIMESTAMP())
+     ORDER BY last_seen_at DESC LIMIT 50`,
+    [userId, -SESSION_TTL_SECONDS],
   );
   return rows.map((r) => ({
     id: Number(r.id),
@@ -181,12 +200,19 @@ export async function listSessions(userId: number): Promise<SessionRow[]> {
 /* Logout: kill this session's row + cookie. */
 export async function destroyCurrentSession(): Promise<void> {
   const token = await readCookieToken();
-  if (token) {
-    await getPool().query("DELETE FROM user_sessions WHERE token_hash = ?", [
-      hashSessionToken(token),
-    ]);
-  }
+  if (token) await destroySessionToken(token);
   await clearCookie();
+}
+
+/* Route handlers that construct their own response can revoke the row
+   from the request cookie, then delete the cookie on that response. */
+export async function destroySessionToken(token: string): Promise<boolean> {
+  if (!isSessionTokenFormat(token)) return false;
+  const [res] = await getPool().query<ResultSetHeader>(
+    "DELETE FROM user_sessions WHERE token_hash = ?",
+    [hashSessionToken(token)],
+  );
+  return res.affectedRows > 0;
 }
 
 /* "Log out everywhere": all devices including the current one (the

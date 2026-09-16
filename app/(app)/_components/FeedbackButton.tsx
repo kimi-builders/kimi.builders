@@ -39,7 +39,7 @@ export default function FeedbackButton({
   const [reason, setReason] = useState<string>("spam");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<null | "done" | "duplicate">(null);
+  const [done, setDone] = useState<null | "done" | "duplicate" | "error">(null);
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -65,9 +65,9 @@ export default function FeedbackButton({
         ok: boolean;
         code?: string;
       };
-      setDone(data.ok ? "done" : "duplicate");
+      setDone(data.ok ? "done" : data.code === "duplicate" ? "duplicate" : "error");
     } catch {
-      setDone("done");
+      setDone("error");
     } finally {
       setBusy(false);
     }
@@ -124,7 +124,9 @@ export default function FeedbackButton({
                 <p className="mt-3 text-sm text-paper">
                   {done === "duplicate"
                     ? t(locale, "feedback.dup")
-                    : t(locale, "feedback.done")}
+                    : done === "error"
+                      ? t(locale, "feedback.error")
+                      : t(locale, "feedback.done")}
                 </p>
                 <button
                   type="button"

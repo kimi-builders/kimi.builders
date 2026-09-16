@@ -363,6 +363,7 @@ const DICT = {
   "feedback.submitting": { zh: "提交中…", en: "Sending…" },
   "feedback.done": { zh: "已收到反馈，谢谢你帮社区保持清爽。", en: "Feedback received — thanks for keeping the community clean." },
   "feedback.dup": { zh: "你已反馈过这条内容，处理中。", en: "You already sent feedback about this; it's being handled." },
+  "feedback.error": { zh: "提交失败，请稍后再试。", en: "Could not send feedback. Please try again later." },
   "feedback.cancel": { zh: "取消", en: "Cancel" },
   /* Admin console row labels (target families share the member copy). */
   "feedback.target.post": { zh: "帖子", en: "Post" },

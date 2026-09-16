@@ -65,8 +65,10 @@ async function main() {
   assert.ok(principal);
   const now = new Date();
   now.setUTCMinutes(now.getUTCMinutes() < 30 ? 0 : 30, 0, 0);
-  const first = new Date(now.getTime() + 60_000);
-  const last = new Date(now.getTime() + 120_000);
+  /* Keep session timestamps behind wall-clock now. Using +1/+2 minutes
+     made the dashboard assertion depend on which minute CI started. */
+  const first = new Date(now.getTime() - 120_000);
+  const last = new Date(now.getTime() - 60_000);
   const payload = validateUsageIngest(
     {
       protocolVersion: 2,

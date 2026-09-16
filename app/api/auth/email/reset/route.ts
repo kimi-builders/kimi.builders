@@ -9,7 +9,7 @@ import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { hashPassword, passwordPolicyError } from "@/src/lib/auth/password";
 import { consumePasswordResetToken } from "@/src/lib/auth/password-reset";
 import { safeReturnTo } from "@/src/lib/auth/return-to";
-import { setSessionCookie } from "@/src/lib/auth/session";
+import { destroyAllSessions, setSessionCookie } from "@/src/lib/auth/session";
 import { setUserPassword } from "@/src/lib/auth/users";
 import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
@@ -54,6 +54,9 @@ export async function POST(req: NextRequest) {
   if (!userId) return back(req, "invalid_token", token, next);
 
   await setUserPassword(userId, await hashPassword(password));
+  /* A recovery credential must evict every possibly compromised device
+     before minting the replacement session for this request. */
+  await destroyAllSessions(userId);
   await setSessionCookie(userId);
   return NextResponse.redirect(new URL(next === "/" ? "/community" : next, canonicalOrigin(req)), 303);
 }

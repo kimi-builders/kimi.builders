@@ -4,7 +4,7 @@
    (unit-testable), DB at the bottom. Deliberately no workflow: one row
    per flag; moderators see open ones in the admin console and mark
    them resolved after acting through the existing moderation tools. */
-import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { RowDataPacket } from "mysql2";
 import { getPool } from "./db";
 
 export const FEEDBACK_TARGET_TYPES = ["post", "comment", "work", "work_comment"] as const;
@@ -37,24 +37,45 @@ export type FeedbackCreateResult =
 
 export async function sendFeedback(input: FeedbackInput): Promise<FeedbackCreateResult> {
   const pool = getPool();
-  /* One open flag per reporter+target: re-flagging the same thing must
-     not stack rows in the console; acting on a resolved flag's target
-     can always open a fresh one. */
-  const [dup] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM feedback WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'open' LIMIT 1",
-    [input.reporterId, input.targetType, input.targetId],
-  );
-  if (dup[0]) return { ok: false, code: "duplicate" };
-  await pool.query(
-    "INSERT INTO feedback (reporter_id, target_type, target_id, reason, note) VALUES (?, ?, ?, ?, ?)",
-    [
-      input.reporterId,
-      input.targetType,
-      input.targetId,
-      input.reason,
-      input.note ? input.note.slice(0, FEEDBACK_NOTE_MAX) : null,
-    ],
-  );
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    /* Locking the reporter serializes their submissions before the
+       duplicate check. This closes the SELECT/INSERT race without
+       restricting how many resolved history rows a target may keep. */
+    const [reporters] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM users WHERE id = ? LIMIT 1 FOR UPDATE",
+      [input.reporterId],
+    );
+    if (!reporters[0]) {
+      await conn.rollback();
+      return { ok: false, code: "duplicate" };
+    }
+    const [dup] = await conn.query<RowDataPacket[]>(
+      "SELECT id FROM feedback WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'open' LIMIT 1",
+      [input.reporterId, input.targetType, input.targetId],
+    );
+    if (dup[0]) {
+      await conn.rollback();
+      return { ok: false, code: "duplicate" };
+    }
+    await conn.query(
+      "INSERT INTO feedback (reporter_id, target_type, target_id, reason, note) VALUES (?, ?, ?, ?, ?)",
+      [
+        input.reporterId,
+        input.targetType,
+        input.targetId,
+        input.reason,
+        input.note ? input.note.slice(0, FEEDBACK_NOTE_MAX) : null,
+      ],
+    );
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
   return { ok: true };
 }
 
@@ -101,16 +122,4 @@ export async function listOpenFeedback(limit = 50): Promise<FeedbackRow[]> {
     createdAt: new Date(r.created_at),
     targetHref: r.target_href === null ? null : String(r.target_href),
   }));
-}
-
-export async function resolveFeedback(
-  feedbackId: number,
-  resolverId: number,
-): Promise<boolean> {
-  const pool = getPool();
-  const res = (await pool.query(
-    "UPDATE feedback SET status = 'resolved', resolved_at = NOW(), resolver_id = ? WHERE id = ? AND status = 'open'",
-    [resolverId, feedbackId],
-  )) as unknown as [ResultSetHeader];
-  return res[0].affectedRows > 0;
 }

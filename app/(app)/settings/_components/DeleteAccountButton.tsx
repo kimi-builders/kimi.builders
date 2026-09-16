@@ -31,9 +31,7 @@ export default function DeleteAccountButton({
 
   useEffect(() => {
     if (!state?.ok) return;
-    /* The row is soft-deleted; the signed cookie is inert. Clear it and
-       leave the (now anonymous) session on the facade. */
-    document.cookie = "kb_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    /* The server has removed the session row and HttpOnly cookie. */
     router.push("/");
     router.refresh();
   }, [state, router]);

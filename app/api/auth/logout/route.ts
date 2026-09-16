@@ -6,12 +6,15 @@
    POST. */
 import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
+import { destroySessionToken } from "@/src/lib/auth/session";
 import { isSameOrigin } from "@/src/lib/usage/http";
 
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) {
     return Response.json({ ok: false, error: "bad_origin" }, { status: 403 });
   }
+  const token = req.cookies.get("kb_session")?.value;
+  if (token) await destroySessionToken(token);
   const res = NextResponse.redirect(canonicalOrigin(req) + "/", 303);
   res.cookies.delete("kb_session");
   return res;

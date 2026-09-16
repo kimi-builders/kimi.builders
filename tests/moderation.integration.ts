@@ -4,14 +4,15 @@
    unhide restores; repeats reject idempotently); poster snapshots
    (hidden -> null, route 404s; hidden can't be featured); management
    soft delete (deleted_at + counters); hard delete (admin semantics,
-   target must exist and be undeleted; comment hard delete removes the
-   subtree and decrements by live rows; post hard delete cascades
-   comments); mutes (effective, auto-expiring, unmute, admin targets
+   target must exist, including soft-deleted posts/comments; comment hard
+   delete removes the subtree and decrements by live rows; post hard
+   delete cascades comments); mutes (effective, auto-expiring, unmute, admin targets
    rejected); profile reset (avatar/name/bio cleared, admin targets
    rejected); roles (setUserRole round trip, admin targets rejected);
    audit (every action writes a moderation_actions row). */
 import assert from "node:assert/strict";
 import { getPool } from "../src/lib/db";
+import { sendFeedback } from "../src/lib/feedback";
 import { getPostFeatured, setPostFeatured } from "../src/lib/featured";
 import {
   adminDeleteComment,
@@ -24,6 +25,7 @@ import {
   muteUntilFor,
   muteUser,
   resetUserProfile,
+  resolveFeedback,
   setUserRole,
   unhideContent,
   unmuteUser,
@@ -176,19 +178,21 @@ async function main() {
     /* ---- Management soft delete + hard delete ---- */
     assert.equal(await adminDeleteComment(mod, commentId, "清理"), true);
     audit += 1;
-    assert.equal(await hardDeleteComment(admin, commentId, "x"), false); /* 已软删不可硬删 */
-    const replyIdRow = await pool.query(
-      "SELECT id FROM comments WHERE post_id = ? AND deleted_at IS NULL", [postId],
-    );
-    const replyId = Number((replyIdRow[0] as { id: number }[])[0].id);
-    assert.equal(await hardDeleteComment(admin, replyId, "硬删回复"), true);
+    /* Hard delete is the terminal cleanup for soft-deleted rows. The
+       root's live reply is removed with the subtree and is the only row
+       still represented in the public counter. */
+    assert.equal(await hardDeleteComment(admin, commentId, "硬删评论树"), true);
     audit += 1;
     const [cnt] = await pool.query("SELECT comment_count AS n FROM posts WHERE id = ?", [postId]);
     assert.equal(Number((cnt as { n: number }[])[0]?.n), 0); /* 两条评论都已清掉 */
+    const [commentRows] = await pool.query("SELECT COUNT(*) AS n FROM comments WHERE post_id = ?", [postId]);
+    assert.equal(Number((commentRows as { n: number }[])[0]?.n), 0);
 
     assert.equal(await adminDeletePost(mod, postId, "违规"), true);
     audit += 1;
-    assert.equal(await hardDeletePost(admin, postId, "x"), false); /* 已删目标拒硬删 */
+    assert.equal(await hardDeletePost(admin, postId, "硬删已软删帖子"), true);
+    audit += 1;
+    assert.equal(await hardDeletePost(admin, postId, "再来"), false); /* 不存在 */
     const post2 = await createPost({
       userId: member, type: "text", category: "chat", title: "硬删测试帖",
       bodyMd: "b", linkUrl: "", lang: "zh", aiReply: false, visibility: "public", options: [],
@@ -239,6 +243,46 @@ async function main() {
     assert.equal(await setUserRole(admin, member, "member"), true);
     audit += 1;
     assert.equal(await setUserRole(admin, admin, "member"), false); /* admin 不可被降 */
+
+    /* ---- Feedback resolution: state change + audit are one
+       transaction; an invalid actor leaves the flag open. ---- */
+    const feedbackResults = await Promise.all([
+      sendFeedback({
+        reporterId: member,
+        targetType: "work",
+        targetId: workId,
+        reason: "other",
+        note: "integration one",
+      }),
+      sendFeedback({
+        reporterId: member,
+        targetType: "work",
+        targetId: workId,
+        reason: "spam",
+        note: "integration two",
+      }),
+    ]);
+    assert.equal(feedbackResults.filter((r) => r.ok).length, 1);
+    assert.equal(
+      feedbackResults.filter((r) => !r.ok && r.code === "duplicate").length,
+      1,
+    );
+    const [feedbackRows] = await pool.query(
+      `SELECT id FROM feedback
+       WHERE reporter_id = ? AND target_type = 'work' AND target_id = ? AND status = 'open'`,
+      [member, workId],
+    );
+    assert.equal((feedbackRows as { id: number }[]).length, 1);
+    const feedbackId = Number((feedbackRows as { id: number }[])[0]?.id);
+    await assert.rejects(() => resolveFeedback(2_147_483_647, feedbackId));
+    const [openFeedback] = await pool.query(
+      "SELECT status FROM feedback WHERE id = ?",
+      [feedbackId],
+    );
+    assert.equal((openFeedback as { status: string }[])[0]?.status, "open");
+    assert.equal(await resolveFeedback(mod, feedbackId), true);
+    audit += 1;
+    assert.equal(await resolveFeedback(mod, feedbackId), false);
 
     /* ---- Audit: action counts match expectations one by one ---- */
     assert.equal(await auditCount(), audit);
