@@ -52,15 +52,21 @@ export async function POST(req: NextRequest) {
        someone else, and a reset link would hand them the account — so
        the first email they get is the verification one. The response
        stays the same opaque "sent" (no account-state leak). */
+    /* Mail language: the account's stored preference, bilingual when
+       unknown. */
+    const mailLocale =
+      account.locale === "zh" || account.locale === "en" ? account.locale : null;
     const mail = account.verified
       ? renderPasswordResetMail({
           resetUrl: `${siteUrl}/login/reset?token=${await issuePasswordResetToken(account.id)}${next === "/" ? "" : `&next=${encodeURIComponent(next)}`}`,
           siteUrl,
+          locale: mailLocale,
         })
       : renderEmailVerifyMail({
           verifyUrl: `${siteUrl}/api/auth/email/verify?token=${await issueEmailToken(account.id, "verify")}`,
           email,
           siteUrl,
+          locale: mailLocale,
         });
     const sent = await sendMail({ to: email, ...mail });
     if (!sent.ok) console.error(`forgot password: mail to user ${account.id} failed: ${sent.error}`);

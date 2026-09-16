@@ -61,10 +61,15 @@ export async function POST(req: NextRequest) {
   try {
     const token = await issueEmailToken(uid, "verify");
     const siteUrl = canonicalOrigin(req);
+    /* Fresh account has no stored locale yet; the signup visit's locale
+       cookie is the best signal, bilingual when absent. */
+    const cookieLocale = req.cookies.get("kb_locale")?.value;
+    const mailLocale = cookieLocale === "zh" || cookieLocale === "en" ? cookieLocale : null;
     const mail = renderEmailVerifyMail({
       verifyUrl: `${siteUrl}/api/auth/email/verify?token=${token}`,
       email,
       siteUrl,
+      locale: mailLocale,
     });
     const sent = await sendMail({ to: email, ...mail });
     if (!sent.ok) console.error(`signup verify mail to user ${uid} failed: ${sent.error}`);

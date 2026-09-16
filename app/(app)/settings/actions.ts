@@ -257,6 +257,7 @@ export async function resendVerifyEmailAction(): Promise<{
       verifyUrl: `${origin}/api/auth/email/verify?token=${token}`,
       email: own.email,
       siteUrl: origin,
+      locale,
     });
     const sent = await sendMail({ to: own.email, ...mail });
     if (!sent.ok) console.error(`resend verify mail user ${user.id}: ${sent.error}`);
@@ -299,6 +300,7 @@ export async function changeEmailAction(
       confirmUrl: `${origin}/api/auth/email/verify?token=${token}`,
       newEmail,
       siteUrl: origin,
+      locale,
     });
     const sent = await sendMail({ to: newEmail, ...mail });
     if (!sent.ok) {

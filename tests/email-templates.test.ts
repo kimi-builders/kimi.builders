@@ -22,7 +22,7 @@ test("template: CTA href 同时出现在按钮与明文兜底链接", () => {
   const occurrences = html.split(SAMPLE.cta.href).length - 1;
   assert.ok(occurrences >= 2, `href should appear at least twice, got ${occurrences}`);
   assert.match(html, /bgcolor="#1783ff"/); // the bulletproof button td fill
-  assert.match(html, /border-radius:8px/);
+  assert.match(html, /border-radius:10px/);
 });
 
 test("template: 双语关键串 + 标题 + 正文透传", () => {
@@ -88,9 +88,14 @@ test("template: title/label/footnote 转义,bodyHtml 信任透传", () => {
   assert.ok(!html.includes("<i>y</i>"));
 });
 
+const SAMPLE_HTML = renderBrandEmail(SAMPLE);
+
 test("template: 缺省 cta/footnote 时对应块不渲染;footnote 换行变 <br>", () => {
   const bare = renderBrandEmail({ title: "t", bodyHtml: "<p>x</p>" });
-  assert.ok(!bare.includes('bgcolor="#1783ff"'));
+  /* No card CTA = exactly one blue button remains (the footer's
+     "browse" CTA); SAMPLE (with a CTA) renders two. */
+  assert.equal(bare.split('bgcolor="#1783ff"').length - 1, 1);
+  assert.equal(SAMPLE_HTML.split('bgcolor="#1783ff"').length - 1, 2);
   assert.ok(!bare.includes("Paste this link"));
   const html = renderBrandEmail(SAMPLE);
   assert.ok(html.includes("即可。<br>If you didn't"));
@@ -100,8 +105,12 @@ test("template: eyebrow mono 小字标签渲染并转义;缺省不出现", () =>
   const html = renderBrandEmail({ ...SAMPLE, eyebrow: "KIMI.BUILDERS / SECURITY" });
   assert.ok(html.includes("KIMI.BUILDERS / SECURITY"));
   assert.ok(html.includes("ui-monospace,'SF Mono'"));
+  /* No eyebrow = the label itself is absent (the community footer also
+     uses the mono stack, so font-presence is no longer an eyebrow
+     signal). */
   const bare = renderBrandEmail({ title: "t", bodyHtml: "<p>x</p>" });
-  assert.ok(!bare.includes("ui-monospace"));
+  assert.ok(!bare.includes("KIMI.BUILDERS / SECURITY"));
+  assert.ok(!bare.includes("letter-spacing:0.12em"));
 });
 
 test("template: preheader 隐藏摘要缺省用 title,可覆盖", () => {
@@ -128,4 +137,56 @@ test("password reset mail: subject/text/html 齐备,双语文案 + 链接一致"
   assert.ok(mail.html.includes("Use the button below"));
   assert.ok(mail.html.includes("KIMI.BUILDERS / SECURITY"));
   assert.ok(mail.html.includes("<!doctype html>"));
+});
+
+test("template: 已知 locale 发单语邮件(标题/正文/CTA/脚注),未知 locale 回退双语", () => {
+  const en = renderPasswordResetMail({
+    resetUrl: "https://kimi.builders/login/reset?token=abc",
+    siteUrl: "https://kimi.builders",
+    locale: "en",
+  });
+  assert.ok(en.subject === "Reset your kimi.builders password");
+  assert.ok(en.html.includes("Reset your password</h1>"));
+  assert.ok(!en.html.includes("重置密码"));
+  assert.ok(en.text.includes("We received a request"));
+  assert.ok(!en.text.includes("我们收到了"));
+
+  const zh = renderPasswordResetMail({
+    resetUrl: "https://kimi.builders/login/reset?token=abc",
+    siteUrl: "https://kimi.builders",
+    locale: "zh",
+  });
+  assert.ok(zh.subject === "重置你的 kimi.builders 密码");
+  assert.ok(!zh.html.includes("Reset your password</h1>"));
+  assert.ok(!zh.text.includes("We received a request"));
+
+  const both = renderPasswordResetMail({
+    resetUrl: "https://kimi.builders/login/reset?token=abc",
+    siteUrl: "https://kimi.builders",
+    locale: null,
+  });
+  assert.ok(both.html.includes("重置密码 / Reset your password"));
+});
+
+test("template: hero 式社区 footer(tagline/lede/浏览 CTA/四块分区磁贴),locale 驱动文案", () => {
+  const html = renderBrandEmail(SAMPLE);
+  assert.ok(html.includes("Build with Kimi. Show your work."));
+  assert.ok(html.includes("看 Builder 做出的作品、亲自跑通的方法，以及自愿公开的用量。"));
+  assert.ok(html.includes("浏览社区 →"));
+  for (const [href, name, sub] of [
+    ['href="https://kimi.builders/community"', "社区", "讨论 · 晒作品"],
+    ['href="https://kimi.builders/explore"', "探索", "月刊 × Builder 实践"],
+    ['href="https://kimi.builders/works"', "作品", "成员作品墙"],
+    ['href="https://kimi.builders/awesome"', "Awesome", "生态项目"],
+  ] as const) {
+    assert.ok(html.includes(href), href);
+    assert.ok(html.includes(name));
+    assert.ok(html.includes(sub));
+  }
+  /* The hero block has no usage/GitHub entries — the mail mirrors it. */
+  assert.ok(!html.includes('href="https://kimi.builders/usage"'));
+  assert.ok(!html.includes("github.com/kimi-builders"));
+  const en = renderBrandEmail({ ...SAMPLE, locale: "en" });
+  assert.ok(en.includes("Browse the community →"));
+  assert.ok(en.includes("Discuss &amp; share"));
 });

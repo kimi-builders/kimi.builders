@@ -262,11 +262,13 @@ export interface EmailAccountRow {
   /* Drives the forgot-password gate: unverified mailboxes get a
      verification email instead of a reset link. */
   verified: boolean;
+  /* Account language preference ('' = unknown) for mail rendering. */
+  locale: string;
 }
 
 export async function findEmailAccount(email: string): Promise<EmailAccountRow | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT id, password_hash, email_verified_at FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1",
+    "SELECT id, password_hash, email_verified_at, locale FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1",
     [email],
   );
   const row = rows[0];
@@ -275,6 +277,7 @@ export async function findEmailAccount(email: string): Promise<EmailAccountRow |
     id: Number(row.id),
     passwordHash: row.password_hash === null ? null : String(row.password_hash),
     verified: row.email_verified_at !== null,
+    locale: row.locale === null ? "" : String(row.locale),
   };
 }
 
