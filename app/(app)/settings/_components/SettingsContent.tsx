@@ -12,6 +12,8 @@ import { getUserPasswordHash, isOwnAvatarUrl } from "@/src/lib/auth/users";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getLinkedAccounts, getOwnProfile } from "@/src/lib/users";
+import { listSessions } from "@/src/lib/auth/session";
+import { pendingEmailChange } from "@/src/lib/auth/email-verify";
 import { getUiPrefs } from "@/src/lib/prefs";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 import GithubIcon from "../../_components/GithubIcon";
@@ -21,6 +23,7 @@ import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
 import PasswordForm from "./PasswordForm";
 import DeleteAccountButton from "./DeleteAccountButton";
+import AccountSecurity from "./AccountSecurity";
 import ProfileForm from "./ProfileForm";
 import ProfilePrivacyForm from "./ProfilePrivacyForm";
 import SettingsTabs from "./SettingsTabs";
@@ -67,6 +70,9 @@ export default async function SettingsContent({
   linked,
   linkError,
   linkProvider,
+  verified,
+  emailChanged,
+  verifyFailed,
 }: {
   showTitle?: boolean;
   /* OAuth link receipt: ?linked=github / ?link_error=taken&p=github
@@ -74,6 +80,11 @@ export default async function SettingsContent({
   linked?: string;
   linkError?: string;
   linkProvider?: string;
+  /* Email verification / change receipts (?verified=1 etc. from the
+     one-time link endpoints). */
+  verified?: boolean;
+  emailChanged?: boolean;
+  verifyFailed?: boolean;
 }) {
   const user = await getSessionUser();
   const locale = await getLocale(user);
@@ -104,7 +115,7 @@ export default async function SettingsContent({
     );
   }
 
-  const [own, accounts, usageSettings, passwordHash, prefs] = await Promise.all([
+  const [own, accounts, usageSettings, passwordHash, prefs, sessions, pendingNewEmail] = await Promise.all([
     getOwnProfile(user.id),
     getLinkedAccounts(user.id),
     getUsageSettings(user.id),
@@ -113,6 +124,9 @@ export default async function SettingsContent({
     getUserPasswordHash(user.id),
     /* The motion seg's SSR initial value (the kb_motion cookie). */
     getUiPrefs(),
+    /* Device registry + in-flight email change (B3). */
+    listSessions(user.id),
+    pendingEmailChange(user.id),
   ]);
   if (!own) return null;
 
@@ -140,7 +154,7 @@ export default async function SettingsContent({
       <div className={showTitle ? "mt-6" : ""}>
         <SettingsTabs
           tabs={tabs}
-          initialKey={linked || linkError ? "account" : undefined}
+          initialKey={linked || linkError || verified || emailChanged || verifyFailed ? "account" : undefined}
           ariaLabel={t(locale, "set.tabsLabel")}
         >
           <Panel title={t(locale, "set.profile")} note={t(locale, "set.profileNote")}>
@@ -265,6 +279,21 @@ export default async function SettingsContent({
                 )}
               </p>
             )}
+            {verified && (
+              <p className="mb-3 rounded-lg border border-status-ok/40 bg-status-ok/10 px-3 py-2 text-xs text-status-ok">
+                {t(locale, "set.verifyOkBanner")}
+              </p>
+            )}
+            {emailChanged && (
+              <p className="mb-3 rounded-lg border border-status-ok/40 bg-status-ok/10 px-3 py-2 text-xs text-status-ok">
+                {t(locale, "set.emailChangedBanner")}
+              </p>
+            )}
+            {verifyFailed && (
+              <p className="mb-3 rounded-lg border border-line bg-moon px-3 py-2 text-xs text-paper">
+                {t(locale, "set.verifyFailBanner")}
+              </p>
+            )}
             <div className="divide-y divide-line">
               {own.email && (
                 <div className="flex items-center gap-3 py-4 first:pt-0">
@@ -334,6 +363,21 @@ export default async function SettingsContent({
                 <PasswordForm locale={locale} hasPassword={passwordHash !== null} />
               </div>
             </div>
+            {/* Email verification / change + device sessions (B3). */}
+            <AccountSecurity
+              locale={locale}
+              email={own.email}
+              verified={own.emailVerified}
+              hasPassword={passwordHash !== null}
+              pendingNewEmail={pendingNewEmail}
+              sessions={sessions.map((row) => ({
+                id: row.id,
+                ua: row.ua,
+                createdAt: row.createdAt.toISOString(),
+                lastSeenAt: row.lastSeenAt.toISOString(),
+                current: row.current,
+              }))}
+            />
             {/* Danger zone (B3): self-service deletion lives at the very
                 bottom of the account tab — present, discoverable, never
                 adjacent to routine controls. */}

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getPool } from "../src/lib/db";
 import { hashPassword, verifyPassword } from "../src/lib/auth/password";
-import { createSessionToken, verifySessionToken } from "../src/lib/auth/session";
+import { hashSessionToken, summarizeUserAgent } from "../src/lib/auth/session";
 import {
   createEmailUser,
   findEmailAccount,
@@ -43,10 +43,14 @@ async function main() {
     assert.equal(rows[0].handle, "auth_probe");
     assert.equal(rows[0].email, email);
 
-    // Session issue/verify.
-    const token = createSessionToken(userId);
-    assert.equal(verifySessionToken(token), userId);
-    assert.equal(verifySessionToken(`${token}x`), null);
+    // Session registry: hash is domain-separated and stable; the device
+    // summarizer maps common UAs.
+    const h1 = hashSessionToken("a".repeat(64));
+    assert.equal(h1, hashSessionToken("a".repeat(64)));
+    assert.notEqual(h1, hashSessionToken("b".repeat(64)));
+    assert.equal(summarizeUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"), "Chrome · macOS");
+    assert.equal(summarizeUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"), "Safari · iPhone");
+    assert.equal(summarizeUserAgent(""), "Unknown device");
 
     // Duplicate email hits the unique constraint.
     await assert.rejects(createEmailUser(email), /Duplicate entry/);

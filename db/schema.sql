@@ -573,6 +573,34 @@ CREATE TABLE IF NOT EXISTS work_comments (
 -- 只存 HMAC-SHA256(token, AUTH_SECRET),不落明文;签发新作废旧;原子消费防重放。
 -- ---------------------------------------------------------------------------
 
+-- 会话管理(B3-④)。由 20260915_sessions_email_verify.sql 引入,已有库执行该迁移。
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL COMMENT 'HMAC-SHA256 hex;不落明文',
+  ua VARCHAR(160) NOT NULL DEFAULT '' COMMENT '设备摘要,如 Chrome · macOS',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+  last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最近活跃(节流更新)',
+  UNIQUE KEY uq_session_token (token_hash),
+  KEY idx_session_user (user_id, last_seen_at),
+  CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 邮箱验证与换邮箱令牌(B3-②/③)。由 20260915_sessions_email_verify.sql 引入。
+CREATE TABLE IF NOT EXISTS email_verify_tokens (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  purpose ENUM('verify','change') NOT NULL,
+  new_email VARCHAR(190) NULL COMMENT 'change:待确认的新邮箱;verify 为 NULL',
+  token_hash CHAR(64) NOT NULL COMMENT 'HMAC-SHA256 hex;不落明文',
+  expires_at DATETIME NOT NULL COMMENT 'UTC,签发后 24 小时',
+  used_at DATETIME NULL COMMENT '消费/作废时间;NULL=未使用',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_email_token_hash (token_hash),
+  KEY idx_email_token_user (user_id, purpose),
+  CONSTRAINT fk_email_token_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,

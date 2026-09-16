@@ -15,8 +15,24 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ linked?: string; link_error?: string; p?: string }>;
+  searchParams: Promise<{
+    linked?: string;
+    link_error?: string;
+    p?: string;
+    verified?: string;
+    emailChanged?: string;
+    verifyFailed?: string;
+  }>;
 }) {
-  const { linked, link_error, p } = await searchParams;
-  return <SettingsContent linked={linked} linkError={link_error} linkProvider={p} />;
+  const { linked, link_error, p, verified, emailChanged, verifyFailed } = await searchParams;
+  return (
+    <SettingsContent
+      linked={linked}
+      linkError={link_error}
+      linkProvider={p}
+      verified={verified === "1" || undefined}
+      emailChanged={emailChanged === "1" || undefined}
+      verifyFailed={verifyFailed === "1" || undefined}
+    />
+  );
 }

@@ -12,6 +12,9 @@ import {
 } from "@/src/lib/auth/password";
 import { safeReturnTo } from "@/src/lib/auth/return-to";
 import { setSessionCookie } from "@/src/lib/auth/session";
+import { issueEmailToken } from "@/src/lib/auth/email-verify";
+import { renderEmailVerifyMail } from "@/src/lib/email-templates";
+import { sendMail } from "@/src/lib/mailer";
 import { createEmailUser, findEmailAccount, setUserPassword } from "@/src/lib/auth/users";
 import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
@@ -50,6 +53,24 @@ export async function POST(req: NextRequest) {
   const uid = await createEmailUser(email, name || undefined);
   await setUserPassword(uid, await hashPassword(password));
   await setSessionCookie(uid);
+
+  /* Verification mail rides along (login is never blocked on it): an
+     unverified mailbox only loses password recovery until confirmed.
+     Delivery failures fail soft — the server log carries them, the
+     signup still succeeds. */
+  try {
+    const token = await issueEmailToken(uid, "verify");
+    const siteUrl = canonicalOrigin(req);
+    const mail = renderEmailVerifyMail({
+      verifyUrl: `${siteUrl}/api/auth/email/verify?token=${token}`,
+      email,
+      siteUrl,
+    });
+    const sent = await sendMail({ to: email, ...mail });
+    if (!sent.ok) console.error(`signup verify mail to user ${uid} failed: ${sent.error}`);
+  } catch (e) {
+    console.error(`signup verify mail to user ${uid} failed:`, e);
+  }
 
   const next = safeReturnTo(new URL(req.url).searchParams.get("next"));
   return NextResponse.redirect(new URL(next === "/" ? "/community" : next, canonicalOrigin(req)), 303);

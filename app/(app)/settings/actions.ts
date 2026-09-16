@@ -4,15 +4,29 @@
    URL) and AI reply preferences. Everything passes the session first,
    then field validation; handle uniqueness excludes self at the query
    layer. */
-import { updateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { isAllowedAvatarUrl } from "@/src/lib/avatar-urls";
+import { issueEmailToken } from "@/src/lib/auth/email-verify";
+import {
+  isValidEmail,
+  normalizeEmail,
+} from "@/src/lib/auth/password";
 import {
   hashPassword,
   passwordPolicyError,
   verifyPassword,
 } from "@/src/lib/auth/password";
-import { getSessionUser } from "@/src/lib/auth/session";
+import {
+  destroyAllSessions,
+  destroyOtherSessions,
+  getSessionUser,
+  revokeSession,
+} from "@/src/lib/auth/session";
+import { renderEmailChangeMail, renderEmailVerifyMail } from "@/src/lib/email-templates";
+import { sendMail } from "@/src/lib/mailer";
+import { findEmailAccount } from "@/src/lib/auth/users";
+import { getOwnProfile } from "@/src/lib/users";
 import {
   deleteOwnAccount,
   getUserPasswordHash,
@@ -28,6 +42,15 @@ import { normalizeVibe } from "@/src/lib/vibe";
 import { updateAiPrefs, updateProfile, updateProfilePrivacy } from "@/src/lib/users";
 
 const PREF_COOKIE = { path: "/", maxAge: 365 * 86400, sameSite: "lax" } as const;
+
+/* Email links need the canonical origin (never the request host — see
+   src/lib/auth/origin.ts); NEXT_PUBLIC_SITE_URL covers prod, local dev
+   falls back to localhost. */
+async function getSiteOrigin(): Promise<string> {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  ).replace(/\/+$/, "");
+}
 
 /* Explicit theme/language selection (the no-JS backstop for the
    settings seg and theme cards; the client already flipped optimally,
@@ -166,6 +189,10 @@ export async function changePasswordAction(
   if (hash !== null && (await verifyPassword(next, hash)))
     return { error: t(locale, "err.pwSame") };
   await setUserPassword(user.id, await hashPassword(next));
+  /* A new password invalidates every other device's session (this
+   device stays signed in — that's the device that just proved the old
+   password). */
+  await destroyOtherSessions(user.id);
   return { ok: true };
 }
 
@@ -206,5 +233,102 @@ export async function deleteAccountAction(
   const ok = await deleteOwnAccount(user.id);
   if (!ok) return { error: t(locale, "err.generic") };
   updateTag(PUBLIC_USERS_CACHE_TAG);
+  return { ok: true };
+}
+
+/* ---- Email verification / change / sessions (B3 remaining) ---- */
+
+/* Resend the verification mail (rate-limited by the token issuer's
+   one-live-token rule: re-issuing invalidates the previous link). */
+export async function resendVerifyEmailAction(): Promise<{
+  ok?: boolean;
+  error?: string;
+}> {
+  const user = await getSessionUser();
+  if (!user) return { error: "auth" };
+  const locale = await getLocale(user);
+  const own = await getOwnProfile(user.id);
+  if (!own?.email) return { error: t(locale, "set.noEmail") };
+  if (own.emailVerified) return { ok: true };
+  try {
+    const token = await issueEmailToken(user.id, "verify");
+    const origin = await getSiteOrigin();
+    const mail = renderEmailVerifyMail({
+      verifyUrl: `${origin}/api/auth/email/verify?token=${token}`,
+      email: own.email,
+      siteUrl: origin,
+    });
+    const sent = await sendMail({ to: own.email, ...mail });
+    if (!sent.ok) console.error(`resend verify mail user ${user.id}: ${sent.error}`);
+  } catch (e) {
+    console.error(`resend verify mail user ${user.id} failed:`, e);
+  }
+  /* Mail delivery itself is fail-soft: the answer is always ok — a
+     failure detail would leak nothing but confusion. */
+  return { ok: true };
+}
+
+/* Start an email change: password-gated (email accounts), validated
+   against the usual rules, then a confirmation mail goes to the NEW
+   address — the swap only happens when that mailbox answers. */
+export async function changeEmailAction(
+  _prev: { error?: string; ok?: boolean } | null,
+  formData: FormData,
+): Promise<{ error?: string; ok?: boolean }> {
+  const user = await getSessionUser();
+  if (!user) return { error: "auth" };
+  const locale = await getLocale(user);
+  const newEmail = normalizeEmail(String(formData.get("email") ?? ""));
+  if (!isValidEmail(newEmail)) return { error: t(locale, "login.errEmail") };
+  const own = await getOwnProfile(user.id);
+  if (!own) return { error: t(locale, "err.generic") };
+  if (newEmail === own.email) return { error: t(locale, "set.emailSame") };
+  if (await findEmailAccount(newEmail)) return { error: t(locale, "set.emailTaken") };
+  /* Password proof for accounts that have one (OAuth-only accounts have
+     none to prove — their provider identity already vouched). */
+  const hash = await getUserPasswordHash(user.id);
+  if (hash !== null) {
+    const current = String(formData.get("current_password") ?? "");
+    if (!(await verifyPassword(current, hash)))
+      return { error: t(locale, "login.errCredentials") };
+  }
+  try {
+    const token = await issueEmailToken(user.id, "change", newEmail);
+    const origin = await getSiteOrigin();
+    const mail = renderEmailChangeMail({
+      confirmUrl: `${origin}/api/auth/email/verify?token=${token}`,
+      newEmail,
+      siteUrl: origin,
+    });
+    const sent = await sendMail({ to: newEmail, ...mail });
+    if (!sent.ok) {
+      console.error(`change-email mail user ${user.id}: ${sent.error}`);
+      return { error: t(locale, "set.mailFailed") };
+    }
+  } catch (e) {
+    console.error(`change-email mail user ${user.id} failed:`, e);
+    return { error: t(locale, "set.mailFailed") };
+  }
+  return { ok: true };
+}
+
+/* Revoke one other device from the account tab. */
+export async function revokeSessionAction(
+  formData: FormData,
+): Promise<void> {
+  const user = await getSessionUser();
+  if (!user) return;
+  const sessionId = Number(formData.get("session_id"));
+  if (!Number.isSafeInteger(sessionId) || sessionId <= 0) return;
+  await revokeSession(user.id, sessionId);
+  revalidatePath("/settings");
+}
+
+/* "Log out everywhere": drops every session row including the current
+   one; the client clears its own cookie and lands on the facade. */
+export async function logoutEverywhereAction(): Promise<{ ok: boolean }> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
+  await destroyAllSessions(user.id);
   return { ok: true };
 }

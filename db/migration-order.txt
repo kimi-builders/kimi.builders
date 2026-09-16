@@ -46,3 +46,4 @@
 20260906_analytics_events_collation.sql
 20260915_feedback.sql
 20260915_users_deleted_at.sql
+20260915_sessions_email_verify.sql

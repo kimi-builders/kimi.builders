@@ -7,9 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { canonicalOrigin } from "@/src/lib/auth/origin";
 import { isValidEmail, normalizeEmail } from "@/src/lib/auth/password";
 import { issuePasswordResetToken } from "@/src/lib/auth/password-reset";
+import { issueEmailToken } from "@/src/lib/auth/email-verify";
 import { safeReturnTo } from "@/src/lib/auth/return-to";
 import { findEmailAccount } from "@/src/lib/auth/users";
-import { renderPasswordResetMail } from "@/src/lib/email-templates";
+import { renderEmailVerifyMail, renderPasswordResetMail } from "@/src/lib/email-templates";
 import { sendMail } from "@/src/lib/mailer";
 import { isSameOrigin } from "@/src/lib/usage/http";
 import { consumeUsageRateLimit, requestIdentity } from "@/src/lib/usage/rate-limit";
@@ -46,10 +47,21 @@ export async function POST(req: NextRequest) {
   const account = isValidEmail(email) ? await findEmailAccount(email) : null;
 
   if (account) {
-    const token = await issuePasswordResetToken(account.id);
     const siteUrl = canonicalOrigin(req);
-    const resetUrl = `${siteUrl}/login/reset?token=${token}${next === "/" ? "" : `&next=${encodeURIComponent(next)}`}`;
-    const mail = renderPasswordResetMail({ resetUrl, siteUrl });
+    /* Verification gates reset: an unverified mailbox may belong to
+       someone else, and a reset link would hand them the account — so
+       the first email they get is the verification one. The response
+       stays the same opaque "sent" (no account-state leak). */
+    const mail = account.verified
+      ? renderPasswordResetMail({
+          resetUrl: `${siteUrl}/login/reset?token=${await issuePasswordResetToken(account.id)}${next === "/" ? "" : `&next=${encodeURIComponent(next)}`}`,
+          siteUrl,
+        })
+      : renderEmailVerifyMail({
+          verifyUrl: `${siteUrl}/api/auth/email/verify?token=${await issueEmailToken(account.id, "verify")}`,
+          email,
+          siteUrl,
+        });
     const sent = await sendMail({ to: email, ...mail });
     if (!sent.ok) console.error(`forgot password: mail to user ${account.id} failed: ${sent.error}`);
   }

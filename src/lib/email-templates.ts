@@ -198,3 +198,97 @@ export function renderPasswordResetMail({
     html,
   };
 }
+
+/* Email-verification mail: sent at signup (and on resend / on a
+   forgot-password request from an unverified account — verifying is the
+   prerequisite for resetting, so the takeover of an unowned-but-
+   registered mailbox can never mint a working reset link). */
+export function renderEmailVerifyMail({
+  verifyUrl,
+  email,
+  siteUrl,
+}: {
+  verifyUrl: string;
+  email: string;
+  siteUrl: string;
+}): TransactionalMail {
+  const text = [
+    "你好 / Hello,",
+    "",
+    `确认这封邮箱属于你,完成 kimi.builders 账号(${email})的验证。链接 24 小时内有效、只能用一次:`,
+    `Confirm this mailbox is yours to finish verifying your kimi.builders account (${email}). The link is valid for 24 hours and works once:`,
+    "",
+    verifyUrl,
+    "",
+    "验证后才能通过这封邮箱找回密码。",
+    "Password recovery through this mailbox works only after verification.",
+    "",
+    "如果这不是你注册的账号,忽略本邮件即可,不会有任何变化。",
+    "If you never signed up, just ignore this email — nothing changes.",
+    "",
+    "— kimi.builders",
+  ].join("\n");
+  const html = renderBrandEmail({
+    siteUrl,
+    eyebrow: "KIMI.BUILDERS / EMAIL",
+    title: "验证你的邮箱 / Verify your email",
+    preheader: "验证链接 24 小时内有效 / Your verification link is valid for 24 hours",
+    bodyHtml: [
+      `<p style="margin:0 0 12px;">确认 <strong style="color:${PAPER};">${escapeEmailHtml(email)}</strong> 属于你,完成 kimi.builders 账号验证——链接 24 小时内有效、只能用一次。验证后才能通过这封邮箱找回密码。</p>`,
+      `<p style="margin:0;color:${GREY};">Confirm that <strong style="color:${BODY};">${escapeEmailHtml(email)}</strong> is yours to finish verifying your kimi.builders account — the link is valid for 24 hours and works once. Password recovery through this mailbox unlocks after verification.</p>`,
+    ].join(""),
+    cta: { label: "验证邮箱 / Verify email", href: verifyUrl },
+    footnote:
+      "如果这不是你注册的账号,忽略本邮件即可,不会有任何变化。\nIf you never signed up, just ignore this email — nothing changes.",
+  });
+  return {
+    subject: "验证你的 kimi.builders 邮箱 / Verify your kimi.builders email",
+    text,
+    html,
+  };
+}
+
+/* Email-change confirmation: delivered to the NEW address; clicking is
+   the only thing that swaps the account's email (and signs out every
+   other device). */
+export function renderEmailChangeMail({
+  confirmUrl,
+  newEmail,
+  siteUrl,
+}: {
+  confirmUrl: string;
+  newEmail: string;
+  siteUrl: string;
+}): TransactionalMail {
+  const text = [
+    "你好 / Hello,",
+    "",
+    "有人请求把 kimi.builders 账号的登录邮箱更换为这个地址。确认后账号将改用本邮箱,并登出其他设备。链接 24 小时内有效、只能用一次:",
+    "Someone asked to move a kimi.builders account's login email to this address. Confirming swaps the account to this mailbox and signs out all other devices. The link is valid for 24 hours and works once:",
+    "",
+    confirmUrl,
+    "",
+    "如果这不是你的操作,忽略本邮件即可,账号邮箱不会改变。",
+    "If this wasn't you, just ignore this email — the account keeps its current email.",
+    "",
+    "— kimi.builders",
+  ].join("\n");
+  const html = renderBrandEmail({
+    siteUrl,
+    eyebrow: "KIMI.BUILDERS / EMAIL",
+    title: "确认更换邮箱 / Confirm your new email",
+    preheader: "确认后账号改用本邮箱 / Confirming moves the account to this mailbox",
+    bodyHtml: [
+      `<p style="margin:0 0 12px;">收到把 kimi.builders 账号登录邮箱更换为 <strong style="color:${PAPER};">${escapeEmailHtml(newEmail)}</strong> 的请求。点击下方按钮确认——确认后账号改用本邮箱,并<strong style="color:${PAPER};">登出其他所有设备</strong>。链接 24 小时内有效、只能用一次。</p>`,
+      `<p style="margin:0;color:${GREY};">A kimi.builders account asked to move its login email to <strong style="color:${BODY};">${escapeEmailHtml(newEmail)}</strong>. Confirm below — the account switches to this mailbox and <strong style="color:${BODY};">every other device is signed out</strong>. The link is valid for 24 hours and works once.</p>`,
+    ].join(""),
+    cta: { label: "确认更换 / Confirm change", href: confirmUrl },
+    footnote:
+      "如果这不是你的操作,忽略本邮件即可,账号邮箱不会改变。\nIf this wasn't you, just ignore this email — the account keeps its current email.",
+  });
+  return {
+    subject: "确认更换 kimi.builders 登录邮箱 / Confirm your new kimi.builders email",
+    text,
+    html,
+  };
+}

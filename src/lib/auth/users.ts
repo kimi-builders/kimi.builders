@@ -141,6 +141,13 @@ export async function findOrCreateUser(
           [uid, provider, profile.providerAccountId],
         );
         await syncProviderAvatar(pool, uid, profile.avatarUrl);
+        /* The provider just vouched for the mailbox: a provider-verified
+           email satisfies verification on the spot (first OAuth login
+           after an email signup lights the flag). */
+        await pool.query(
+          "UPDATE users SET email_verified_at = COALESCE(email_verified_at, UTC_TIMESTAMP()) WHERE id = ?",
+          [uid],
+        );
         return uid;
       }
       emailTaken = true;
@@ -149,7 +156,8 @@ export async function findOrCreateUser(
 
   const handle = await uniqueHandle(pool, profile.handle || profile.name || "builder");
   const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO users (handle, name, email, avatar_url) VALUES (?, ?, ?, ?)",
+    `INSERT INTO users (handle, name, email, avatar_url, email_verified_at)
+     VALUES (?, ?, ?, ?, ${profile.emailVerified && !emailTaken ? "UTC_TIMESTAMP()" : "NULL"})`,
     [
       handle,
       profile.name.slice(0, 64),
@@ -251,11 +259,14 @@ export async function unlinkProviderAccount(
 export interface EmailAccountRow {
   id: number;
   passwordHash: string | null;
+  /* Drives the forgot-password gate: unverified mailboxes get a
+     verification email instead of a reset link. */
+  verified: boolean;
 }
 
 export async function findEmailAccount(email: string): Promise<EmailAccountRow | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT id, password_hash FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1",
+    "SELECT id, password_hash, email_verified_at FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1",
     [email],
   );
   const row = rows[0];
@@ -263,6 +274,7 @@ export async function findEmailAccount(email: string): Promise<EmailAccountRow |
   return {
     id: Number(row.id),
     passwordHash: row.password_hash === null ? null : String(row.password_hash),
+    verified: row.email_verified_at !== null,
   };
 }
 

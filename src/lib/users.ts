@@ -82,6 +82,7 @@ export function profileDisplay(
    bio/email). */
 export interface OwnProfile extends UserProfile {
   email: string | null;
+  emailVerified: boolean;
   locale: string;
   aiRepliesEnabled: boolean;
   showAiReplies: boolean;
@@ -91,7 +92,7 @@ export async function getOwnProfile(userId: number): Promise<OwnProfile | null> 
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT id, handle, name, avatar_url, bio,
             profile_show_avatar, profile_show_name, profile_show_bio,
-            role, created_at, email, locale, ai_replies_enabled, show_ai_replies
+            role, created_at, email, email_verified_at, locale, ai_replies_enabled, show_ai_replies
      FROM users WHERE id = ? LIMIT 1`,
     [userId],
   );
@@ -109,6 +110,7 @@ export async function getOwnProfile(userId: number): Promise<OwnProfile | null> 
     role: r.role,
     createdAt: r.created_at,
     email: r.email ?? null,
+    emailVerified: r.email_verified_at !== null,
     locale: r.locale,
     aiRepliesEnabled: !!r.ai_replies_enabled,
     showAiReplies: !!r.show_ai_replies,
