@@ -24,7 +24,6 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           message: error.message || "render error",
           stack: error.digest ? `digest: ${error.digest}` : (error.stack ?? ""),
           url: window.location.pathname.slice(0, 500),
-          release: "",
         }),
         keepalive: true,
         credentials: "same-origin",

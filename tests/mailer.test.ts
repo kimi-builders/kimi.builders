@@ -110,6 +110,45 @@ test("mailer: MAIL_FROM 覆盖默认发件人", async () => {
   }
 });
 
+test("mailer: idempotency key uses Resend's retry-safe request header", async () => {
+  const restoreEnv = withEnv("RESEND_API_KEY", "re_test_key");
+  const stub = stubFetch(async () => new Response("{}", { status: 200 }));
+  try {
+    const res = await sendMail({
+      to: "u@example.com",
+      subject: "s",
+      text: "t",
+      idempotencyKey: "error-digest/2026-09-15/admin-7",
+    });
+    assert.deepEqual(res, { ok: true });
+    assert.equal(
+      new Headers(stub.calls[0].init?.headers).get("idempotency-key"),
+      "error-digest/2026-09-15/admin-7",
+    );
+  } finally {
+    stub.restore();
+    restoreEnv();
+  }
+});
+
+test("mailer: invalid idempotency keys fail before any provider request", async () => {
+  const restoreEnv = withEnv("RESEND_API_KEY", "re_test_key");
+  const stub = stubFetch(async () => new Response("{}", { status: 200 }));
+  try {
+    const res = await sendMail({
+      to: "u@example.com",
+      subject: "s",
+      text: "t",
+      idempotencyKey: "bad key with spaces",
+    });
+    assert.deepEqual(res, { ok: false, error: "invalid_idempotency_key" });
+    assert.equal(stub.calls.length, 0);
+  } finally {
+    stub.restore();
+    restoreEnv();
+  }
+});
+
 test("mailer: 非 2xx → http_<status> + 响应文本截断 200 字", async () => {
   const restoreEnv = withEnv("RESEND_API_KEY", "re_test_key");
   const stub = stubFetch(async () => new Response("x".repeat(500), { status: 422 }));

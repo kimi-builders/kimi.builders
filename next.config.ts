@@ -21,9 +21,7 @@ const nextConfig: NextConfig = {
   async headers() {
     /* CSP ships Report-Only first; HSTS is conservative on purpose
        (see src/lib/security-headers.ts). */
-    const { csp, hsts } = securityHeaders({
-      r2PublicBaseUrl: process.env.R2_PUBLIC_BASE_URL,
-    });
+    const { csp, hsts } = securityHeaders();
     return [
       {
         source: "/:path*",

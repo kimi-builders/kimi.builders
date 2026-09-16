@@ -7,15 +7,21 @@
 import { useEffect } from "react";
 
 const REPORT_ENDPOINT = "/api/error";
+const reported = new Set<string>();
 
 function report(source: "client", message: string, stack?: string): void {
   try {
+    const cappedMessage = message.slice(0, 500);
+    const cappedStack = stack?.slice(0, 8000) ?? "";
+    const fingerprint = `${source}\0${cappedMessage}\0${cappedStack.slice(0, 240)}`;
+    if (reported.has(fingerprint)) return;
+    if (reported.size >= 100) reported.clear();
+    reported.add(fingerprint);
     const body = JSON.stringify({
       source,
-      message: message.slice(0, 500),
-      stack: stack?.slice(0, 8000) ?? "",
+      message: cappedMessage,
+      stack: cappedStack,
       url: window.location.pathname.slice(0, 500),
-      release: "",
     });
     /* keepalive: the page may be unloading while we report. */
     void fetch(REPORT_ENDPOINT, {
@@ -36,14 +42,18 @@ export default function ErrorReporter() {
       report("client", event.message || "window error", event.error?.stack);
     };
     const onRejection = (event: PromiseRejectionEvent) => {
-      const reason = event.reason;
-      const message =
-        reason instanceof Error
-          ? reason.message
-          : typeof reason === "string"
-            ? reason
-            : `unhandled rejection: ${String(reason).slice(0, 200)}`;
-      report("client", message, reason instanceof Error ? reason.stack : undefined);
+      try {
+        const reason = event.reason;
+        const message =
+          reason instanceof Error
+            ? reason.message
+            : typeof reason === "string"
+              ? reason
+              : `unhandled rejection: ${String(reason).slice(0, 200)}`;
+        report("client", message, reason instanceof Error ? reason.stack : undefined);
+      } catch {
+        report("client", "unhandled rejection");
+      }
     };
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);

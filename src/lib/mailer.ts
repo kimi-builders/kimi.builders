@@ -14,6 +14,7 @@ export async function sendMail({
   subject,
   text,
   html,
+  idempotencyKey,
 }: {
   to: string;
   subject: string;
@@ -21,16 +22,25 @@ export async function sendMail({
   /* Brand HTML (templates in src/lib/email-templates.ts); text is the
      required fallback, html optional. */
   html?: string;
+  /* Resend retains keys for 24 hours. Use only for a deterministic
+     request whose payload remains stable across retries. */
+  idempotencyKey?: string;
 }): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "not_configured" };
+  const key = idempotencyKey?.trim();
+  if (key && (key.length > 256 || !/^[\x21-\x7e]+$/.test(key))) {
+    return { ok: false, error: "invalid_idempotency_key" };
+  }
   try {
+    const headers = new Headers({
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    });
+    if (key) headers.set("Idempotency-Key", key);
     const res = await fetch(RESEND_ENDPOINT, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         from: process.env.MAIL_FROM || DEFAULT_FROM,
         to,

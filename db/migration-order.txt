@@ -48,3 +48,4 @@
 20260915_users_deleted_at.sql
 20260915_sessions_email_verify.sql
 20260916_error_events.sql
+20260916_error_events_hardening.sql

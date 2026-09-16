@@ -1,7 +1,7 @@
 /* Terms of service (/terms): community ground rules and disclaimers.
    Same shape as /privacy — flat (app) page, all copy through i18n so
    the zh/en pair lives in one place. The terms mirror the site's
-   existing public claims: member-built, unofficial, non-commercial,
+   existing public claims: member-built, non-commercial at this stage,
    verifiable proof over promises, and moderation with notice. */
 import type { Metadata } from "next";
 import { t, type I18nKey } from "@/src/lib/i18n";
@@ -16,7 +16,6 @@ export async function generateMetadata(): Promise<Metadata> {
 /* Section keys rendered in order. */
 const SECTIONS = [
   "service",
-  "unofficial",
   "account",
   "content",
   "moderation",

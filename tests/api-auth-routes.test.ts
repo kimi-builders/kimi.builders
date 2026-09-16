@@ -139,7 +139,12 @@ test("logout: POST-only + 同源校验,撤销服务端会话并删 cookie", () =
 /* ---- Cron Bearer auth (constant-time compare + a uniform 401 for
    the unconfigured case) ---- */
 
-for (const cron of ["cron/ai-reply-retry", "cron/usage-retention", "cron/analytics-retention"]) {
+for (const cron of [
+  "cron/ai-reply-retry",
+  "cron/usage-retention",
+  "cron/analytics-retention",
+  "cron/error-digest",
+]) {
   test(`${cron}: cronAuthorized 恒时鉴权,拒绝一律 401(不区分未配置/凭据错误)`, () => {
     const src = sourceOf(cron);
     assert.match(src, /import \{ cronAuthorized \} from "@\/src\/lib\/cron-auth"/);

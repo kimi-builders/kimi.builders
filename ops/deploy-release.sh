@@ -47,8 +47,8 @@ shared_verifier="$shared_dir/verify-deploy-state.mjs"
 mkdir -p "$releases_dir" "$incoming_dir" "$shared_dir" "$env_dir"
 chmod 700 "$shared_dir" "$env_dir"
 
-# Serialize the release switch with the deep-health reader. The monitor uses a
-# non-blocking lock and skips this minute while deployment owns the window.
+# Serialize the release switch with the health and digest monitor. The monitor
+# uses a non-blocking lock and skips while deployment owns the switch window.
 command -v flock >/dev/null 2>&1 || die "flock is not installed or not on PATH"
 deploy_health_lock="$shared_dir/deploy-health.lock"
 exec 9>"$deploy_health_lock"
@@ -373,6 +373,9 @@ install_deep_health_monitor() {
       printf '%s\n' "$start_marker"
       printf '* * * * * %q %q %q >> %q 2>&1\n' \
         "$monitor_script" "$deploy_root" "$app_port" "$shared_dir/deep-health.log"
+      printf '17 9,10,11 * * * %q %q %q %q >> %q 2>&1\n' \
+        "$monitor_script" "$deploy_root" "$app_port" "error-digest" \
+        "$shared_dir/error-digest.log"
       printf '%s\n' "$end_marker"
     } >> "$cron_dir/next"
     crontab "$cron_dir/next"

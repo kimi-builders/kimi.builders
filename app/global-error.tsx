@@ -25,7 +25,6 @@ export default function GlobalErrorPage({
           message: error.message || "global error",
           stack: error.digest ? `digest: ${error.digest}` : (error.stack ?? ""),
           url: window.location.pathname.slice(0, 500),
-          release: "",
         }),
         keepalive: true,
         credentials: "same-origin",

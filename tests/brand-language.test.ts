@@ -116,6 +116,14 @@ test("about and Awesome state scope without unverifiable promotion", () => {
   assert.equal(t("zh", "home.joinAwesome"), "符合收录口径的项目，可由成员推荐。");
 });
 
+test("legal pages keep the shared disclaimer bounded and time-scope commerce status", () => {
+  assert.equal(t("zh", "legal.eyebrow"), "— 政策与条款");
+  assert.equal(t("en", "legal.eyebrow"), "— Policies & terms");
+  assert.match(t("zh", "terms.s.service.body"), /现阶段非商业/);
+  assert.match(t("en", "terms.s.service.body"), /non-commercial at this stage/);
+  assert.doesNotMatch(i18n, /terms\.s\.unofficial/);
+});
+
 test("work token claims disclose aggregate caps and per-project limits", () => {
   /* The works lede is a one-line positioning sentence; the full
      boundary lives once per viewport — the rail's claimNote (xl+) and

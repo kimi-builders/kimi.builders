@@ -1,4 +1,4 @@
-/* POST /api/error — client/server error reports. Same-origin only,
+/* POST /api/error — client-rendering error reports. Same-origin only,
    IP-rate-limited, body capped at 16 KiB. Validation outcomes answer a
    bare 204 (never leak why a report was dropped; an error reporter
    must not become a second error surface); only an oversized body is
@@ -17,6 +17,11 @@ function empty(status = 204): Response {
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return empty();
+  const contentType = (request.headers.get("content-type") ?? "")
+    .toLowerCase()
+    .split(";")[0]
+    .trim();
+  if (contentType !== "application/json") return empty();
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (Number.isFinite(declared) && declared > ERROR_BODY_MAX_BYTES) return empty(413);
 

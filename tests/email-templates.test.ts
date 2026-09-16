@@ -5,7 +5,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { renderBrandEmail, renderPasswordResetMail } from "../src/lib/email-templates";
+import {
+  renderBrandEmail,
+  renderErrorDigestMail,
+  renderPasswordResetMail,
+} from "../src/lib/email-templates";
 
 const SAMPLE = {
   title: "重置密码 / Reset your password",
@@ -139,6 +143,22 @@ test("password reset mail: subject/text/html 齐备,双语文案 + 链接一致"
   assert.ok(mail.html.includes("Use the button below"));
   assert.ok(mail.html.includes("KIMI.BUILDERS / SECURITY"));
   assert.ok(mail.html.includes("<!doctype html>"));
+});
+
+test("error digest mail is stable per UTC window and escapes stored messages", () => {
+  const mail = renderErrorDigestMail({
+    windowKey: "2026-09-15",
+    total: 23,
+    topSource: "client",
+    topMessage: '<script>alert("x")</script>',
+    topCount: 17,
+    siteUrl: "https://kimi.builders",
+  });
+  assert.equal(mail.subject, "[kimi.builders] 2026-09-15 error digest: 23");
+  assert.match(mail.text, /Top \(client\).*× 17/);
+  assert.ok(mail.html.includes("2026-09-15（UTC）"));
+  assert.ok(mail.html.includes("&lt;script&gt;"));
+  assert.ok(!mail.html.includes('<script>alert("x")</script>'));
 });
 
 test("template: 已知 locale 发单语邮件(标题/正文/CTA/脚注),未知 locale 回退双语", () => {

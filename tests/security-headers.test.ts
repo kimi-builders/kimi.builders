@@ -13,18 +13,13 @@ test("CSP is report-only shaped: self defaults, inline for Next, frame allowlist
   assert.match(csp, /style-src 'self' 'unsafe-inline'/);
   assert.match(csp, /font-src 'self' data:/);
   assert.match(csp, /connect-src 'self'/);
-  assert.match(csp, /frame-src https:\/\/player\.bilibili\.com https:\/\/www\.youtube-nocookie\.com/);
+  assert.match(csp, /img-src 'self' data: https:/);
+  assert.match(csp, /frame-src 'self' https:/);
   assert.match(csp, /frame-ancestors 'none'/);
   assert.match(csp, /base-uri 'self'/);
   assert.match(csp, /form-action 'self'/);
   assert.match(csp, /object-src 'none'/);
   assert.match(csp, /report-uri \/api\/csp-report/);
-});
-
-test("img-src starts with self/data/https and appends trimmed extra origins", () => {
-  const withR2 = buildCspReportOnly({ imageOrigins: ["https://pub.example.com/", ""] });
-  assert.match(withR2, /img-src 'self' data: https: https:\/\/pub\.example\.com/);
-  assert.ok(!withR2.includes("pub.example.com//"));
 });
 
 test("hsts is conservative: capped max-age, no subdomains, no preload", () => {
@@ -33,9 +28,9 @@ test("hsts is conservative: capped max-age, no subdomains, no preload", () => {
   assert.ok(!HSTS_HEADER.includes("preload"));
 });
 
-test("securityHeaders composes env-driven R2 origin and hsts", () => {
-  const headers = securityHeaders({ r2PublicBaseUrl: "https://r2.example.org" });
-  assert.match(headers.csp, /img-src 'self' data: https: https:\/\/r2\.example\.org/);
+test("securityHeaders composes the report-only policy and hsts", () => {
+  const headers = securityHeaders();
+  assert.match(headers.csp, /img-src 'self' data: https:/);
   assert.equal(headers.hsts, HSTS_HEADER);
 });
 

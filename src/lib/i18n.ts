@@ -1394,8 +1394,8 @@ const DICT = {
      Honest, non-overpromising copy aligned with the product's real
      behavior: local-first usage collection, private by default,
      opt-in leaderboard, user-configurable retention, account
-     deletion exists, unofficial & non-commercial. */
-  "legal.eyebrow": { zh: "— 社区自建 · 非官方", en: "— Member-built · unofficial" },
+     deletion exists, and the community is non-commercial at this stage. */
+  "legal.eyebrow": { zh: "— 政策与条款", en: "— Policies & terms" },
   "legal.privacy": { zh: "隐私政策", en: "Privacy" },
   "legal.terms": { zh: "服务条款", en: "Terms" },
   "legal.accountNote": {
@@ -1430,8 +1430,8 @@ const DICT = {
   },
   "privacy.s.analytics.title": { zh: "站内统计", en: "On-site analytics" },
   "privacy.s.analytics.body": {
-    zh: "我们记录少量第一方聚合事件（如页面浏览、精选点击），不使用第三方分析脚本，不建立跨站画像。浏览器与页面错误会上报到站内（页面路径、错误摘要与浏览器标识，不关联账号，保留 90 天），仅用于排查故障。",
-    en: "We record a small set of first-party aggregate events (page views, featured clicks). No third-party analytics scripts, no cross-site profiles. Browser and page errors are reported to the site (page path, error summary, and browser identifier — never tied to an account, kept for 90 days) purely for diagnosing failures.",
+    zh: "我们记录少量第一方聚合事件（如页面浏览、精选点击），不使用第三方分析脚本，不建立跨站画像。浏览器与页面错误会上报到站内（页面路径、错误摘要、截断的堆栈与 User-Agent，不关联账号，保留 90 天），仅用于排查故障。",
+    en: "We record a small set of first-party aggregate events (page views, featured clicks). No third-party analytics scripts, no cross-site profiles. Browser and page errors are reported to the site (page path, error summary, truncated stack, and User-Agent — never tied to an account, kept for 90 days) purely for diagnosing failures.",
   },
   "privacy.s.cookies.title": { zh: "Cookie", en: "Cookies" },
   "privacy.s.cookies.body": {
@@ -1461,13 +1461,8 @@ const DICT = {
   "terms.updated": { zh: "更新于 2026-09-16", en: "Updated 2026-09-16" },
   "terms.s.service.title": { zh: "服务性质", en: "The service" },
   "terms.s.service.body": {
-    zh: "kimi.builders 是 Kimi 用户自建自运营的非商业社区网站，提供讨论区、作品墙、实践收录与用量统计展示。",
-    en: "kimi.builders is a non-commercial, user-run community website for Kimi users, offering discussions, a works wall, practice collections, and usage statistics.",
-  },
-  "terms.s.unofficial.title": { zh: "非官方声明", en: "Unofficial status" },
-  "terms.s.unofficial.body": {
-    zh: "本站与 Moonshot AI（月之暗面）无隶属、赞助、背书或授权关系。「Kimi」「Moonshot AI」等名称与商标归其权利人所有，本站仅作事实性指称。站内 AI 助手的回复不代表 Moonshot AI 官方立场。",
-    en: 'This site is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). "Kimi", "Moonshot AI" and related marks belong to their owners and are referenced factually. Replies from the on-site AI assistant do not represent Moonshot AI.',
+    zh: "kimi.builders 是 Kimi 用户自建自运营、现阶段非商业的社区网站，提供讨论区、作品墙、实践收录与用量统计展示。",
+    en: "kimi.builders is a user-run community website for Kimi users and operates as non-commercial at this stage, offering discussions, a works wall, practice collections, and usage statistics.",
   },
   "terms.s.account.title": { zh: "账号", en: "Accounts" },
   "terms.s.account.body": {

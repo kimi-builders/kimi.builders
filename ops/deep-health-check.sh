@@ -8,11 +8,14 @@ die() {
 
 deploy_root="${1:-}"
 app_port="${2:-}"
+task="${3:-deep-health}"
 [[ "$deploy_root" == /* && "$deploy_root" != "/" && ${#deploy_root} -gt 5 ]] ||
   die "DEPLOY_PATH must be a safe absolute path"
 [[ "$deploy_root" =~ ^[A-Za-z0-9._/-]+$ ]] ||
   die "DEPLOY_PATH contains unsupported characters"
 deploy_root="$(cd "$deploy_root" && pwd -P)" || die "DEPLOY_PATH is unavailable"
+[[ "$task" == "deep-health" || "$task" == "error-digest" ]] ||
+  die "task must be deep-health or error-digest"
 
 shared_dir="$deploy_root/shared"
 state_dir="$shared_dir/health"
@@ -27,7 +30,6 @@ command -v flock >/dev/null 2>&1 || die "flock is not installed or not on PATH"
 exec 9>"$lock_file"
 flock --nonblock 9 || exit 0
 
-[[ -f "$verifier" ]] || die "$verifier is missing"
 [[ "$app_port" =~ ^[0-9]{2,5}$ ]] || die "APP_PORT is invalid"
 (( app_port >= 1024 && app_port <= 65535 )) || die "APP_PORT is out of range"
 current_release="$(readlink -f "$deploy_root/current" || true)"
@@ -47,6 +49,27 @@ alert_webhook="${HEALTH_ALERT_WEBHOOK_URL:-}"
 [[ ${#cron_secret} -ge 32 ]] || die "CRON_SECRET is missing or too short"
 [[ -z "$alert_webhook" || "$alert_webhook" =~ ^https:// ]] ||
   die "HEALTH_ALERT_WEBHOOK_URL must use https"
+
+# Older rollback releases do not expose the digest route. The release marker
+# keeps their retained shared monitor from calling an endpoint they lack.
+if [[ "$task" == "error-digest" ]]; then
+  [[ -f "$current_release/ERROR_DIGEST_ENABLED" ]] || exit 0
+  body=""
+  if body="$(curl --fail --silent --show-error \
+    --connect-timeout 2 --max-time 20 \
+    -H "Authorization: Bearer $cron_secret" \
+    "http://127.0.0.1:${app_port}/api/cron/error-digest")" &&
+    printf '%s' "$body" | node -e '
+      const body = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
+      if (body.ok !== true) process.exit(1);
+    '; then
+    exit 0
+  fi
+  echo "error-digest: request failed" >&2
+  exit 1
+fi
+
+[[ -f "$verifier" ]] || die "$verifier is missing"
 
 mkdir -p "$state_dir"
 chmod 700 "$state_dir"

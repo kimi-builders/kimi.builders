@@ -2,32 +2,24 @@
    Report-Only on purpose — the site ships inline styles/scripts in a
    few legitimate places (OG image routes, email-adjacent templates),
    so enforcement waits until real reports prove the policy complete.
-   The img-src includes the R2 public origin derived from the env so
-   media embeds keep working across environments. HSTS stays
-   conservative (no subdomains/preload) because Cloudflare fronts the
-   origin and other services may live on subdomains. */
+   Images and curated deck embeds currently accept HTTPS origins at the
+   product layer, so the report-only policy mirrors that contract until
+   those fields gain a stricter host allowlist. HSTS stays conservative
+   (no subdomains/preload) because Cloudflare fronts the origin and
+   other services may live on subdomains. */
 
 export const CSP_REPORT_URI = "/api/csp-report";
 
-export interface CspOptions {
-  /* Extra origins for img-src, e.g. the R2 public base. */
-  imageOrigins?: string[];
-}
-
-export function buildCspReportOnly(options: CspOptions = {}): string {
-  const extraImages = (options.imageOrigins ?? [])
-    .map((o) => o.replace(/\/+$/, ""))
-    .filter((o) => o.length > 0);
-  const imgSrc = ["'self'", "data:", "https:", ...extraImages].join(" ");
+export function buildCspReportOnly(): string {
   return [
     "default-src 'self'",
     /* Next.js needs inline scripts for hydration bootstrap. */
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    `img-src ${imgSrc}`,
+    "img-src 'self' data: https:",
     "font-src 'self' data:",
     "connect-src 'self'",
-    "frame-src https://player.bilibili.com https://www.youtube-nocookie.com",
+    "frame-src 'self' https:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -41,13 +33,9 @@ export function buildCspReportOnly(options: CspOptions = {}): string {
 export const HSTS_HEADER =
   "max-age=15552000";
 
-export function securityHeaders(env: {
-  r2PublicBaseUrl?: string;
-} = {}): { csp: string; hsts: string } {
+export function securityHeaders(): { csp: string; hsts: string } {
   return {
-    csp: buildCspReportOnly(
-      env.r2PublicBaseUrl ? { imageOrigins: [env.r2PublicBaseUrl] } : {},
-    ),
+    csp: buildCspReportOnly(),
     hsts: HSTS_HEADER,
   };
 }

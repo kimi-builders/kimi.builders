@@ -649,22 +649,22 @@ CREATE TABLE IF NOT EXISTS analytics_events (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
--- 错误可观测性(迁移 20260916):客户端/服务端错误上报最小闭环。
--- 只存排障字段;无原始 IP,user_agent 截断;90 天保留随 retention 清理。
--- 与迁移文件逐字段一致(db-compare-schemas 校验新装/重放终态一致)。
+-- Error observability: minimal client/global/CSP diagnostics.
+-- Store no raw IP or account id; truncate user_agent; retain for 90 days.
+-- Keep this terminal shape aligned with the ordered migration replay.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS error_events (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  source VARCHAR(16) NOT NULL COMMENT 'client/server/global/csp',
-  `release` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'DEPLOYMENT_VERSION(git SHA)',
+  source VARCHAR(16) NOT NULL COMMENT 'client/global/csp',
+  `release` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'Server-owned deployment git SHA',
+  fingerprint CHAR(64) NOT NULL COMMENT 'SHA-256 diagnostic grouping key',
   url VARCHAR(500) NOT NULL DEFAULT '',
   message VARCHAR(500) NOT NULL,
   stack TEXT NULL,
-  user_id BIGINT UNSIGNED NULL COMMENT '上报时登录用户(可空;账号删除后置 NULL)',
   user_agent VARCHAR(200) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_error_time (created_at),
   KEY idx_error_source (source, created_at),
-  CONSTRAINT fk_error_event_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+  KEY idx_error_fingerprint (fingerprint, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   chmodSync,
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -86,6 +87,61 @@ test("legacy rollback keeps the compatible shared verifier for deep health", () 
     writeFileSync(fakeCurl, "#!/bin/sh\nexit 99\n");
     chmodSync(fakeCurl, 0o755);
     assert.equal(run().status, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("error digest mode uses the live release secret and is rollback-safe", () => {
+  const root = mkdtempSync(join(tmpdir(), "kb-error-digest-"));
+  const release = "b".repeat(40);
+  const shared = join(root, "shared");
+  const releaseDir = join(root, "releases", release);
+  const bin = join(root, "bin");
+  const fakeCurl = join(bin, "curl");
+  const curlArgs = join(root, "curl-args");
+  const currentSecret = "d".repeat(32);
+  try {
+    mkdirSync(shared, { recursive: true });
+    mkdirSync(releaseDir, { recursive: true });
+    mkdirSync(bin, { recursive: true });
+    symlinkSync(releaseDir, join(root, "current"));
+    writeFileSync(join(releaseDir, ".env.production"), `CRON_SECRET='${currentSecret}'\n`);
+    writeFileSync(join(releaseDir, "ERROR_DIGEST_ENABLED"), "enabled\n");
+    writeFileSync(join(bin, "flock"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    writeFileSync(
+      fakeCurl,
+      "#!/bin/sh\nprintf '%s\\n' \"$*\" > \"$FAKE_CURL_ARGS\"\nprintf '%s' '{\"ok\":true}'\n",
+      { mode: 0o755 },
+    );
+
+    const run = () =>
+      spawnSync("bash", [monitor, root, "3210", "error-digest"], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          FAKE_CURL_ARGS: curlArgs,
+          PATH: `${bin}:${process.env.PATH}`,
+        },
+      });
+
+    const sent = run();
+    assert.equal(sent.status, 0, `stdout=${sent.stdout}\nstderr=${sent.stderr}`);
+    assert.match(readFileSync(curlArgs, "utf8"), new RegExp(currentSecret));
+    assert.match(readFileSync(curlArgs, "utf8"), /\/api\/cron\/error-digest/);
+
+    writeFileSync(
+      fakeCurl,
+      "#!/bin/sh\nprintf '%s' '{\"ok\":false}'\n",
+      { mode: 0o755 },
+    );
+    assert.equal(run().status, 1);
+
+    rmSync(join(releaseDir, "ERROR_DIGEST_ENABLED"));
+    rmSync(curlArgs, { force: true });
+    writeFileSync(fakeCurl, "#!/bin/sh\nexit 99\n", { mode: 0o755 });
+    assert.equal(run().status, 0);
+    assert.equal(existsSync(curlArgs), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
