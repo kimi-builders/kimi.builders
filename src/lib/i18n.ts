@@ -27,10 +27,11 @@ const DICT = {
   "nav.gatedPost": { zh: "登录后发帖", en: "Log in to post" },
   "nav.lockHint": { zh: "登录后可用", en: "Sign-in required" },
   /* One phrase per locale for SR names; the bilingual concatenation
-     made screen readers read both languages on every focus. The nav
-     toggle is icon-only (rail brand row), so the same phrase doubles
-     as its tooltip. */
-  "nav.collapseOrExpand": { zh: "收起或展开导航", en: "Collapse or expand navigation" },
+     made screen readers read both languages on every focus. The two
+     nav-collapse keys are icon-only (rail brand row), so the phrase
+     doubles as the tooltip; each names the action its state performs. */
+  "nav.collapse": { zh: "收起导航", en: "Collapse navigation" },
+  "nav.expand": { zh: "展开导航", en: "Expand navigation" },
   "nav.menu": { zh: "打开功能导航", en: "Open navigation" },
   "nav.closeMenu": { zh: "关闭功能导航", en: "Close navigation" },
   /* ---- Global search ---- */

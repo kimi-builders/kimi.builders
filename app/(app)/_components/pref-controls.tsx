@@ -142,12 +142,16 @@ export function LocaleToggle({
 }
 
 /* Nav collapse/expand: pure client (cookie-only); visibility rules
-   live in globals.css's html[data-nav] block. The control borrows the
-   brand spot (the ChatGPT sidebar-header grammar): the logo tile shows
-   at rest, the panel icon surfaces on hover/focus-visible — icon
-   direction follows the state via only-nav-*. The radius class comes
+   live in globals.css's html[data-nav] block. The radius class comes
    from the caller and rides --radius-*, so the button and its hover
    background read square in poster and rounded in soft. */
+/* Collapsed-rail expand key: the brand tile doubles as the toggle (it
+   is the icon track's single candidate; hover swaps the tile for the
+   open-panel glyph). Rendered only while collapsed — the caller owns
+   the only-nav-collapsed class. Tip: below the key, left-aligned to
+   its left edge ([data-tip-align="left"]) — centered placement would
+   run past the viewport's left edge, and right-popping would paint
+   under the top bar (the sticky aside caps the row's stacking). */
 export function NavToggle({
   locale,
   className,
@@ -159,30 +163,58 @@ export function NavToggle({
     <form action={toggleNavAction}>
       <button
         type="submit"
-        data-tip={t(locale, "nav.collapseOrExpand")}
+        data-tip={t(locale, "nav.expand")}
         data-tip-side="bottom"
-        aria-label={t(locale, "nav.collapseOrExpand")}
+        data-tip-align="left"
+        aria-label={t(locale, "nav.expand")}
         onClick={(e) => {
           e.preventDefault();
           flipNav();
         }}
         className={`group relative ${className ?? ""}`}
       >
-        {/* Small-size tile mark (enlarged crescent + two stars): clear edges and distinguishable stars on dark theme */}
+        {/* Small-size tile mark (enlarged crescent + two stars): clear
+            edges and distinguishable stars on dark theme */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/logo-tile.svg"
           alt=""
-          className="absolute inset-0 m-auto h-7 w-7 rounded-md transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0"
-        />
-        <PanelLeftClose
-          size={15}
-          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 only-nav-full"
+          className="absolute inset-0 m-auto h-7 w-7 rounded-lg transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0"
         />
         <PanelLeftOpen
           size={15}
-          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 only-nav-collapsed"
+          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         />
+      </button>
+    </form>
+  );
+}
+
+/* Expanded-state collapse key: sits at the brand row's right end (the
+   GitHub/Linear spot) so the control stays visible without hovering —
+   the brand tile beside the wordmark remains a plain home link. */
+export function NavCollapseKey({
+  locale,
+  className,
+}: {
+  locale: Locale;
+  className?: string;
+}) {
+  return (
+    <form action={toggleNavAction}>
+      <button
+        type="submit"
+        data-tip={t(locale, "nav.collapse")}
+        data-tip-side="bottom"
+        data-tip-align="right"
+        aria-label={t(locale, "nav.collapse")}
+        onClick={(e) => {
+          e.preventDefault();
+          flipNav();
+        }}
+        className={`group relative ${className ?? ""}`}
+      >
+        <PanelLeftClose size={15} className="shrink-0" />
       </button>
     </form>
   );

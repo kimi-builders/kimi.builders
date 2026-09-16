@@ -484,6 +484,13 @@ html[lang="en"] .only-zh {
   right: 0;
   transform: none;
 }
+/* Left-edge keys (the rail's brand tile): the tip grows rightward from
+   the key's left edge — centered placement would clip past the
+   viewport's left edge. */
+[data-tip-align="left"]::after {
+  left: 0;
+  transform: none;
+}
 [data-tip-side="right"]::after {
   left: calc(100% + 8px);
   bottom: auto;
@@ -566,22 +573,21 @@ html:not([data-nav="1"]) .only-nav-collapsed {
 /* Brand row (rail top): the row's negative margin escapes the rail's
    side padding so its bottom hairline spans the full rail width and
    continues the content top bar's seam across the viewport.
-   Collapsed, the logo link folds away and the expand toggle centers
-   alone in the icon track (the collapsed-sidebar grammar of
-   ChatGPT/GitHub/Reddit). */
+   Expanded, the row is the brand link (logo tile + wordmark) plus the
+   collapse key at its right end; collapsed, it folds to the icon track
+   where the brand tile doubles as the expand key (the collapsed-sidebar
+   grammar of ChatGPT/GitHub/Reddit — the track's single candidate). */
 .brand-row {
   margin-inline: -0.75rem;
   padding-inline: 0.75rem;
 }
 html[data-nav="1"] .leftnav .brand-row {
-  /* -0.75rem keeps canceling the rail's side padding (the row must
-     span the full track so the hairline runs edge to edge); only the
-     row's own padding drops so the toggle centers in the 56px track. */
+  /* The negative margin must cancel the collapsed rail's own 0.5rem
+     side padding exactly — anything larger pushes the row's hairline
+     past the rail's edges. */
+  margin-inline: -0.5rem;
   padding-inline: 0;
   justify-content: center;
-}
-html[data-nav="1"] .leftnav .brand-link {
-  display: none;
 }
 
 /* Right-rail hiding: structure always rendered, pure CSS retraction,

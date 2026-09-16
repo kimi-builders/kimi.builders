@@ -32,7 +32,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 import type { WorksSource } from "@/src/lib/works-view";
 import GithubIcon from "./GithubIcon";
-import { NavToggle, SidebarToggle } from "./pref-controls";
+import { NavCollapseKey, NavToggle, SidebarToggle } from "./pref-controls";
 import useWorksSource from "./useWorksSource";
 
 /* hidden: entries for sections not shipping soon (NAV_HIDDEN) never
@@ -136,23 +136,38 @@ export default function LeftNav({
           viewport. Sticky inside the rail's own scroll so it stays put
           when the nav overflows on short viewports; the negative-margin
           escape (globals.css .brand-row) spans the hairline full-width.
-          The collapse toggle owns the logo spot (logo at rest, panel
-          icon on hover); the wordmark stays a plain home link.
-          Collapsed, the wordmark folds away and the toggle centers
-          alone in the icon track. */}
+          Tips on the row's keys stay below the top bar's band on
+          purpose: the aside is sticky (its own stacking context), so
+          anything popping past the rail's right edge at header height
+          would paint under the bar.
+          Expanded: the brand tile + wordmark are one plain home link and
+          the collapse key sits at the row's right end (the GitHub/Linear
+          spot) — a control that is visible without hovering. Collapsed,
+          the row folds to the icon track where the brand tile doubles as
+          the expand key (NavToggle, only-nav-collapsed). */}
       <div className="brand-row sticky top-0 z-10 flex h-14 shrink-0 items-center border-b border-line bg-bg">
         <NavToggle
           locale={locale}
-          className="flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+          className="only-nav-collapsed flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
         />
         <Link prefetch={false}
           href="/"
-          className="brand-link ml-1 flex min-w-0 flex-1 items-center font-mono text-sm font-semibold tracking-wide"
+          className="only-nav-full brand-link ml-1 flex min-w-0 flex-1 items-center gap-2 font-mono text-sm font-semibold tracking-wide"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/logo-tile.svg"
+            alt=""
+            className="h-7 w-7 shrink-0 rounded-lg"
+          />
           <span className="truncate">
             kimi<span className="text-ui-blue">.</span>builders
           </span>
         </Link>
+        <NavCollapseKey
+          locale={locale}
+          className="only-nav-full ml-auto flex size-10 shrink-0 items-center justify-center rounded-lg text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        />
       </div>
 
       {/* Every tipped link also carries an explicit aria-label: collapsed
