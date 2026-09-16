@@ -502,9 +502,13 @@ html:not([data-nav="1"]) .rail-tip[data-tip]:focus-visible::after {
 }
 /* Icon-track mode releases the left rail's scroll clipping so
    right-popping tips don't get cut; the track holds icons only and
-   won't overflow vertically in normal viewports. */
+   won't overflow vertically in normal viewports. Side padding drops
+   to 0.5rem so the icon track widens to 2.5rem — the square-key
+   geometry below needs the room, and 8px gutters keep the keys off
+   the hairlines. */
 html[data-nav="1"] .leftnav {
   overflow: visible;
+  padding-inline: 0.5rem;
 }
 
 /* Left-rail collapse: structure always rendered, pure CSS retraction —
@@ -525,18 +529,31 @@ html[data-nav="1"] {
 html[data-nav="1"] .leftnav .nav-label {
   display: none;
 }
+/* Collapsed, every nav key (section links, the post CTA — both carry
+   .nav-item) becomes one square icon key: fixed 2.5rem box, centered
+   glyph, radius riding --radius-lg so the key reads square in the
+   sharp vibe and softly rounded in the classic one (hover/active
+   patches inherit the radius from the element itself). The 2px active
+   left bar stays as the expanded grammar's echo. */
 html[data-nav="1"] .leftnav .nav-item {
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  gap: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border-radius: var(--radius-lg);
 }
-/* The interface pair's bordered keys center their icons the same way
-   when collapsed: the label hides, and justify-start's left-hugging
-   icon sat off-center inside the full-width border. */
+/* The interface pair's bordered key collapses to the same square key
+   so the rail reads as one key system top to bottom. */
 html[data-nav="1"] .leftnav .panel-pair button {
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  gap: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding-inline: 0;
+  border-radius: var(--radius-lg);
 }
 /* The collapse/expand button's own icon swaps by state. */
 html[data-nav="1"] .only-nav-full {
