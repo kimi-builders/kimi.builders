@@ -14,7 +14,7 @@ import { usageHmac } from "./usage/crypto";
 
 type Queryable = Pool | PoolConnection;
 
-export type CommunityRateAction = "post" | "comment" | "vote" | "upload" | "ai_summon" | "work";
+export type CommunityRateAction = "post" | "comment" | "vote" | "upload" | "ai_summon" | "work" | "feedback";
 
 export interface CommunityRateResult {
   allowed: boolean;
@@ -25,7 +25,8 @@ export interface CommunityRateResult {
 
 /* Limits: posts 10/h, comments 30/h, votes 120/h, uploads 30/h, @kimi
    summons 20/h, work creation 10/h (same tier as posts, consumed before
-   the write). Fixed one-hour windows. */
+   the write), reports 20/h (bulk-flagging guard). Fixed one-hour
+   windows. */
 export const COMMUNITY_RATE_WINDOW_SECONDS = 60 * 60;
 
 export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
@@ -35,6 +36,7 @@ export const COMMUNITY_RATE_LIMITS: Record<CommunityRateAction, number> = {
   upload: 30,
   ai_summon: 20,
   work: 10,
+  feedback: 20,
 };
 
 /* Rate-limit key: scope = community:<action>; each action counts

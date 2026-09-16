@@ -25,6 +25,8 @@ import {
 } from "@/app/(app)/_components/summon-pending";
 import { useRouter } from "next/navigation";
 import { ArrowBigUp, ChevronDown, ChevronUp, X } from "lucide-react";
+import FeedbackButton from "@/app/(app)/_components/FeedbackButton";
+import { useConfirm, usePrompt } from "@/components/useConfirm";
 import { visibleReplyCount } from "@/src/lib/community-draft";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
@@ -101,6 +103,8 @@ export default function CommentSection({
   const formRef = useRef<HTMLFormElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+  const { confirm, node } = useConfirm(locale);
+  const { prompt, node: promptNode } = usePrompt(locale);
   const loggedIn = meId !== null;
   /* @kimi summon wait feedback: on success a placeholder row +
      polling auto-refreshes when the reply lands. */
@@ -212,7 +216,7 @@ export default function CommentSection({
   /* Delete (confirm, then soft). */
   const remove = async (id: number) => {
     if (busyId !== null) return;
-    if (!window.confirm(t(locale, "post.commentDeleteConfirm"))) return;
+    if (!(await confirm({ body: t(locale, "post.commentDeleteConfirm"), danger: true }))) return;
     setBusyId(id);
     try {
       const fd = new FormData();
@@ -235,8 +239,14 @@ export default function CommentSection({
      (the public side drops it immediately). */
   const hideAsMod = async (id: number) => {
     if (busyId !== null) return;
-    const reason = window.prompt(t(locale, "mod.hidePrompt"), "");
-    if (reason === null) return;
+    const reason = await prompt({
+      title: t(locale, "mod.hidePromptTitle"),
+      label: t(locale, "mod.hidePromptLabel"),
+      placeholder: t(locale, "mod.hidePrompt"),
+      required: true,
+      maxLength: 280,
+    });
+    if (reason === null || reason.trim().length === 0) return;
     setBusyId(id);
     try {
       const fd = new FormData();
@@ -313,13 +323,17 @@ export default function CommentSection({
             size={13}
           />
         ) : (
-          <span
-            className="inline-flex items-center gap-1 text-grey"
-            title={t(locale, "post.loginToUpvote")}
+          /* Same signed-out gate fix as the post vote cluster: carries
+             the visitor to login and back, not a hint-only span. */
+          <Link
+            href={`/login?next=${encodeURIComponent(`/community/${postId}#comment-${c.id}`)}`}
+            data-tip={t(locale, "post.loginToUpvote")}
+            aria-label={t(locale, "post.loginToUpvote")}
+            className="inline-flex items-center gap-1 rounded px-1 text-grey transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            <ArrowBigUp size={13} />
+            <ArrowBigUp size={13} aria-hidden="true" />
             {c.score}
-          </span>
+          </Link>
         )}
         {loggedIn && (
           <button
@@ -360,6 +374,18 @@ export default function CommentSection({
           >
             {t(locale, "mod.hide")}
           </button>
+        )}
+        {/* Report entry (members): flagging your own comment is noise,
+            so own rows stay clean. */}
+        {!mine && (
+          <FeedbackButton
+            locale={locale}
+            targetType="comment"
+            targetId={c.id}
+            compact
+            loggedIn={loggedIn}
+            returnTo={`/community/${postId}#comment-${c.id}`}
+          />
         )}
       </div>
     );
@@ -449,6 +475,7 @@ export default function CommentSection({
   );
 
   return (
+    <>
     <section className="mt-6 rounded-2xl border border-line bg-card p-4 sm:p-5">
       {/* Section title in the site's quiet mono eyebrow grammar; the
           #comments anchor (post action bar / notifications) stays. */}
@@ -499,20 +526,17 @@ export default function CommentSection({
           </button>
         </form>
       ) : (
+        /* Signed out: the single login entry (a modal with return
+           redirect), the site-wide pattern — no bare OAuth links (the
+           login page itself carries every auth method). */
         <p className="mt-3 text-sm text-grey">
           {t(locale, "post.loginToComment")}
-          <a
-            href="/api/auth/github"
+          <Link
+            href={`/login?next=${encodeURIComponent(`/community/${postId}#comments`)}`}
             className="ml-2 text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
           >
-            GitHub
-          </a>
-          <a
-            href="/api/auth/google"
-            className="ml-3 text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
-          >
-            Google
-          </a>
+            {t(locale, "auth.login")}
+          </Link>
         </p>
       )}
 
@@ -535,5 +559,8 @@ export default function CommentSection({
         </button>
       )}
     </section>
+    {node}
+    {promptNode}
+    </>
   );
 }

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
+import { useConfirm, usePrompt } from "@/components/useConfirm";
 import {
   muteUserAction,
   resetProfileAction,
@@ -32,6 +33,8 @@ export default function UserModControls({
   locale: Locale;
 }) {
   const router = useRouter();
+  const { confirm, node } = useConfirm(locale);
+  const { prompt, node: promptNode } = usePrompt(locale);
   const [busy, setBusy] = useState(false);
   const [days, setDays] = useState("7");
 
@@ -57,9 +60,15 @@ export default function UserModControls({
     }
   };
 
-  const mute = () => {
-    const reason = window.prompt(t(locale, "admin.mutePrompt"), "");
-    if (reason === null) return;
+  const mute = async () => {
+    const reason = await prompt({
+      title: t(locale, "admin.mutePromptTitle"),
+      label: t(locale, "admin.mutePromptLabel"),
+      placeholder: t(locale, "admin.mutePrompt"),
+      required: true,
+      maxLength: 280,
+    });
+    if (reason === null || reason.trim().length === 0) return;
     const fd = new FormData();
     fd.set("user_id", String(userId));
     fd.set("duration", days);
@@ -73,16 +82,16 @@ export default function UserModControls({
     void run(unmuteUserAction, fd, t(locale, "admin.toastUnmuted"));
   };
 
-  const resetProfile = () => {
-    if (!window.confirm(t(locale, "admin.resetConfirm"))) return;
+  const resetProfile = async () => {
+    if (!(await confirm({ body: t(locale, "admin.resetConfirm"), danger: true }))) return;
     const fd = new FormData();
     fd.set("user_id", String(userId));
     fd.set("reason", "profile reset");
     void run(resetProfileAction, fd, t(locale, "admin.toastReset"));
   };
 
-  const setRole = (next: "member" | "mod") => {
-    if (!window.confirm(t(locale, next === "mod" ? "admin.grantConfirm" : "admin.revokeConfirm"))) return;
+  const setRole = async (next: "member" | "mod") => {
+    if (!(await confirm({ body: t(locale, next === "mod" ? "admin.grantConfirm" : "admin.revokeConfirm") }))) return;
     const fd = new FormData();
     fd.set("user_id", String(userId));
     fd.set("role", next);
@@ -93,6 +102,7 @@ export default function UserModControls({
     "inline-flex min-h-8 items-center rounded-lg border border-line px-2.5 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-40";
 
   return (
+    <>
     <span className="flex flex-wrap items-center gap-1.5">
       <select
         value={days}
@@ -129,5 +139,8 @@ export default function UserModControls({
         </button>
       )}
     </span>
+    {node}
+    {promptNode}
+    </>
   );
 }

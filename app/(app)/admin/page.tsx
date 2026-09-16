@@ -30,9 +30,11 @@ import {
   type ModContentState,
   type ModTargetType,
 } from "@/src/lib/moderation";
+import { listOpenFeedback } from "@/src/lib/feedback";
 import {
   loadMoreAdminContentAction,
   loadMoreAdminLogAction,
+  resolveFeedbackAction,
 } from "./actions";
 import { renderContentRows, renderLogRows } from "./_components/admin-lists";
 import AnalyticsInsights from "./_components/AnalyticsInsights";
@@ -112,6 +114,10 @@ export default async function AdminPage({
 
       {activeTab === "content" && (
         <section className="mt-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
+          {/* Open member reports (B2): the self-cleaning channel's
+              landing spot — resolved ones leave, targets are handled
+              with the regular tools below. */}
+          <OpenFeedback locale={locale} />
           <div className="flex flex-wrap items-center gap-2.5">
             <div className={SEG_WRAP}>
               {CONTENT_TYPES.map((x) => (
@@ -206,8 +212,7 @@ async function AdminContentList({
 }: {
   type: ModTargetType;
   state: ModContentState;
-  locale: "zh" | "en";
-  isAdmin: boolean;
+  locale: "zh" | "en";  isAdmin: boolean;
 }) {
   const data = await getModerationContent({ type, state });
   if (data.rows.length === 0) {
@@ -320,6 +325,66 @@ async function AdminLogList({ locale }: { locale: "zh" | "en" }) {
         load={loadMoreAdminLogAction}
         locale={locale}
       />
+    </div>
+  );
+}
+
+/* Open member feedback (B2): newest first, capped. The target link goes
+   straight to the flagged object (comment rows anchor to the exact
+   comment); resolving is one click and leaves an audit row. Nothing
+   open = the block renders nothing (no empty-state noise above the
+   content tools). */
+async function OpenFeedback({ locale }: { locale: "zh" | "en" }) {
+  const rows = await listOpenFeedback(50);
+  if (rows.length === 0) return null;
+  return (
+    <div className="mb-5 rounded-xl border border-status-warn/40 p-3 sm:p-4">
+      <h2 className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+        {t(locale, "admin.openFeedback")}
+        <span className="rounded-md border border-status-warn/60 px-1.5 py-px text-paper">
+          {rows.length}
+        </span>
+      </h2>
+      <ul className="mt-3 space-y-2">
+        {rows.map((r) => (
+          <li
+            key={r.id}
+            className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-line px-3 py-2 text-sm"
+          >
+            {r.targetHref ? (
+              <Link
+                href={r.targetHref}
+                className="font-mono text-xs text-paper underline decoration-ui-blue/60 underline-offset-4 hover:text-ui-blue"
+              >
+                {t(locale, `feedback.target.${r.targetType}`)} #{r.targetId}
+              </Link>
+            ) : (
+              <span className="font-mono text-xs text-grey">
+                {t(locale, `feedback.target.${r.targetType}`)} #{r.targetId}
+              </span>
+            )}
+            <span className="rounded-md border border-line px-1.5 py-px font-mono text-xs text-grey">
+              {t(locale, `feedback.reason.${r.reason}`)}
+            </span>
+            <span className="font-mono text-xs text-grey">@{r.reporterHandle}</span>
+            <span className="font-mono text-xs text-grey/70">
+              {relTime(r.createdAt, locale)}
+            </span>
+            {r.note && (
+              <span className="w-full text-xs leading-5 text-grey">{r.note}</span>
+            )}
+            <form action={resolveFeedbackAction} className="ml-auto">
+              <input type="hidden" name="feedback_id" value={r.id} />
+              <button
+                type="submit"
+                className="rounded-lg border border-line px-3 py-1.5 font-mono text-xs text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+              >
+                {t(locale, "admin.resolveFeedback")}
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

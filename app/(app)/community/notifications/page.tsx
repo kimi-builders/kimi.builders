@@ -81,14 +81,29 @@ export default async function NotificationsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-paper">
-                    <span className="font-medium">
-                      {n.actorHandle ? `@${n.actorHandle}` : BOT_NAME}
-                    </span>{" "}
-                    <span className="text-grey">
-                      {isWork
-                        ? t(locale, "notif.workReply", { name: n.workName ?? "" })
-                        : t(locale, n.type === "reply" ? "notif.reply" : "notif.comment")}
-                    </span>
+                    {n.type === "mod_hidden" ? (
+                      /* Moderation notices have no actor row: shown under
+                         the governance name, never the bot's. */
+                      <>
+                        <span className="font-medium">
+                          {t(locale, "notif.moderation")}
+                        </span>{" "}
+                        <span className="text-grey">
+                          {t(locale, "notif.modHidden")}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-medium">
+                          {n.actorHandle ? `@${n.actorHandle}` : BOT_NAME}
+                        </span>{" "}
+                        <span className="text-grey">
+                          {isWork
+                            ? t(locale, n.type === "work_comment" ? "notif.workComment" : "notif.workReply", { name: n.workName ?? "" })
+                            : t(locale, n.type === "reply" ? "notif.reply" : "notif.comment")}
+                        </span>
+                      </>
+                    )}
                   </p>
                   <p className="mt-1 truncate font-mono text-xs text-grey">
                     {isWork ? n.workName : n.postTitle}

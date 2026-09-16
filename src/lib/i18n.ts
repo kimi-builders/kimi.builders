@@ -37,6 +37,14 @@ const DICT = {
   "search.open": { zh: "搜索站内内容", en: "Search the site" },
   "search.placeholder": { zh: "搜索社区、作品、实践…", en: "Search community, work, practices…" },
   "search.jumpTo": { zh: "快速前往", en: "Jump to" },
+  /* Content-search group headings + states; the jump entries demote to
+     their own heading once the visitor is typing a real query. */
+  "search.resultsJump": { zh: "前往分区", en: "Go to section" },
+  "search.groupPosts": { zh: "社区帖子", en: "Community posts" },
+  "search.groupWorks": { zh: "作品", en: "Works" },
+  "search.groupArticles": { zh: "文章与月刊", en: "Articles & monthly" },
+  "search.groupUsers": { zh: "成员", en: "Members" },
+  "search.searching": { zh: "搜索中…", en: "Searching…" },
   "search.results": { zh: "搜索结果", en: "Results" },
   "search.empty": { zh: "没有匹配的页面", en: "No matching page" },
   /* Empty-state suggestion words must stay inside the search catalog:
@@ -336,6 +344,32 @@ const DICT = {
   "post.showReplies": { zh: "展开另外 {n} 条回复", en: "Show {n} more replies" },
   "post.hideReplies": { zh: "收起回复", en: "Hide replies" },
   /* ---- Notifications ---- */
+  /* ---- Content feedback (B2) ---- */
+  /* Vocabulary: this is "feedback", not "reporting" — a small community
+     flags what feels off, moderators clean or hide; no accusation
+     framing anywhere the member can see. */
+  "feedback.flag": { zh: "反馈", en: "Feedback" },
+  "feedback.title": { zh: "反馈这条内容", en: "Send feedback about this content" },
+  "feedback.reasonLabel": { zh: "反馈原因", en: "What's off?" },
+  "feedback.reason.spam": { zh: "垃圾营销", en: "Spam" },
+  "feedback.reason.abuse": { zh: "不友好或攻击", en: "Unfriendly or abusive" },
+  "feedback.reason.offtopic": { zh: "无关内容", en: "Off-topic" },
+  "feedback.reason.privacy": { zh: "隐私泄露", en: "Privacy leak" },
+  "feedback.reason.other": { zh: "其他", en: "Something else" },
+  "feedback.noteLabel": { zh: "补充说明（可选）", en: "Note (optional)" },
+  "feedback.notePh": { zh: "一句话说明情况…", en: "A sentence about what's off…" },
+  "feedback.submit": { zh: "提交反馈", en: "Send feedback" },
+  "feedback.submitting": { zh: "提交中…", en: "Sending…" },
+  "feedback.done": { zh: "已收到反馈，谢谢你帮社区保持清爽。", en: "Feedback received — thanks for keeping the community clean." },
+  "feedback.dup": { zh: "你已反馈过这条内容，处理中。", en: "You already sent feedback about this; it's being handled." },
+  "feedback.cancel": { zh: "取消", en: "Cancel" },
+  /* Admin console row labels (target families share the member copy). */
+  "feedback.target.post": { zh: "帖子", en: "Post" },
+  "feedback.target.comment": { zh: "评论", en: "Comment" },
+  "feedback.target.work": { zh: "作品", en: "Work" },
+  "feedback.target.work_comment": { zh: "作品评论", en: "Work comment" },
+  "admin.openFeedback": { zh: "待处理反馈", en: "Open feedback" },
+  "admin.resolveFeedback": { zh: "标记已处理", en: "Mark resolved" },
   "notif.title": { zh: "消息", en: "Notifications" },
   "notif.empty": {
     zh: "还没有消息。有人评论你关注的帖子、或回复你的评论时，会出现在这里。",
@@ -350,6 +384,21 @@ const DICT = {
     zh: "回复了你在《{name}》的召唤",
     en: "answered your summon on “{name}”",
   },
+  /* Human comment on my work (the engagement loop the work page was
+     missing: the author never learned anyone came). */
+  "notif.workComment": {
+    zh: "评论了你的作品《{name}》",
+    en: "commented on your work “{name}”",
+  },
+  /* Moderation notice (B5): the author learns their content was
+     hidden and can appeal from the banner. */
+  "notif.moderation": { zh: "站务", en: "Moderation" },
+  "notif.modHidden": {
+    zh: "隐藏了你发布的内容，点开可查看原因与申诉方式",
+    en: "hid your content — open it to see the reason and appeal",
+  },
+  "mod.appeal": { zh: "有异议？邮件申诉", en: "Disagree? Appeal by email" },
+
   "notif.loginRequired": { zh: "登录后查看消息：", en: "Log in to see notifications:" },
   /* ---- New post ---- */
   "form.pageTitle": { zh: "发帖", en: "New post" },
@@ -471,6 +520,19 @@ const DICT = {
   "login.errCredentials": { zh: "邮箱或密码不正确", en: "Incorrect email or password." },
   "login.errToken": { zh: "重置链接无效或已过期，请重新发起", en: "This reset link is invalid or expired — request a new one." },
   "modal.close": { zh: "关闭", en: "Close" },
+  /* useConfirm/usePrompt (components/useConfirm.tsx): shared
+     title/buttons; the body copy always comes from the caller's
+     specific keys. */
+  "modal.confirmTitle": { zh: "请确认", en: "Please confirm" },
+  "modal.confirm": { zh: "确认", en: "Confirm" },
+  "modal.cancel": { zh: "取消", en: "Cancel" },
+  "modal.required": { zh: "必填", en: "Required" },
+  /* Reason prompts (usePrompt): the moderation hide/mute reasons —
+     native window.prompt was unlocalizable and invisible to automation. */
+  "mod.hidePromptTitle": { zh: "屏蔽这条内容", en: "Hide this content" },
+  "mod.hidePromptLabel": { zh: "原因（展示给作者并记入审计）", en: "Reason (shown to the author and logged)" },
+  "admin.mutePromptTitle": { zh: "禁言该成员", en: "Mute this member" },
+  "admin.mutePromptLabel": { zh: "原因（记入审计）", en: "Reason (goes to the audit log)" },
   "modal.dirtyTitle": {
     zh: "放弃已填写的内容？",
     en: "Discard what you've written?",
@@ -720,6 +782,26 @@ const DICT = {
   "set.linkedSince": { zh: "绑定于 {d}", en: "linked {d}" },
   "set.email": { zh: "邮箱", en: "Email" },
   "set.unlink": { zh: "解绑", en: "Unlink" },
+  /* Danger zone (B3): soft delete + anonymize; typed-handle confirm is
+     enforced server-side too. */
+  "set.dangerZone": { zh: "危险区", en: "Danger zone" },
+  "set.deleteHint": {
+    zh: "注销会立即禁用登录并清空资料；已发布的内容保留，作者显示为已注销。",
+    en: "Deleting signs you out everywhere and scrubs your profile; published content stays under a deleted-byline.",
+  },
+  "set.deleteAccount": { zh: "删除账号", en: "Delete account" },
+  "set.deleteTitle": { zh: "删除账号", en: "Delete account" },
+  "set.deleteBody": {
+    zh: "此操作不可撤销：账号立即禁用登录，昵称、头像、简介与邮箱将被清空；已发布的内容保留，作者显示为已注销。",
+    en: "This cannot be undone: the account is disabled immediately, your name, avatar, bio, and email are scrubbed; published content stays under a deleted byline.",
+  },
+  "set.deleteConfirmHint": {
+    zh: "输入你的 handle（{h}）确认：",
+    en: "Type your handle ({h}) to confirm:",
+  },
+  "set.deleteConfirm": { zh: "确认注销", en: "Delete my account" },
+  "set.deleteSubmitting": { zh: "注销中…", en: "Deleting…" },
+  "set.deleteMismatch": { zh: "输入的 handle 不匹配，未执行注销。", en: "Handle mismatch — deletion was not performed." },
   "set.unlinkConfirm": {
     zh: "解绑后不能再用 {p} 登录。确定解绑？",
     en: "You won't be able to sign in with {p} anymore. Unlink?",
@@ -1230,6 +1312,10 @@ const DICT = {
   "about.whatCommunity": {
     zh: "社区 —— 问答、讨论、踩坑与经验。",
     en: "Community — Q&A, discussions, pitfalls and lessons.",
+  },
+  "about.whatExplore": {
+    zh: "探索 —— 月刊评鉴与 Builder 亲自跑通的实践，按章、产品、职业浏览。",
+    en: "Explore — the Monthly and practices Builders actually ran, browsable by chapter, product, and role.",
   },
   "about.whatWorks": {
     zh: "作品墙 —— Builder 发布的 Kimi 相关作品；可附链接、源码和声明 Token。",

@@ -44,6 +44,7 @@ import FeaturedToggle from "../_components/FeaturedToggle";
 import ModMenu from "../_components/ModMenu";
 import PollVoteForm from "../_components/PollVoteForm";
 import PostOwnerActions from "../_components/PostOwnerActions";
+import FeedbackButton from "../../_components/FeedbackButton";
 import SubscribeButton from "../_components/SubscribeButton";
 import VoteCluster from "../_components/VoteCluster";
 import ModToolbar from "../../admin/_components/ModToolbar";
@@ -66,6 +67,9 @@ export async function generateMetadata({
     path: `/community/${id}`,
     locale,
     type: "article",
+    /* The share poster endpoint is public-context guarded (private or
+       deleted posts 404 there), matching the canViewPost gate above. */
+    image: `/api/share/post/${post.id}?locale=${locale}`,
   });
 }
 
@@ -106,6 +110,18 @@ export default async function PostPage({
         <p className="mb-4 rounded-xl border border-status-danger/30 bg-status-danger/[0.06] px-3 py-2 text-xs leading-relaxed text-status-danger-fg">
           {t(locale, "mod.hiddenBanner")}
           {post.hiddenReason ? ` — ${post.hiddenReason}` : ""}
+          {" "}
+          {/* Appeal exit (B5): a disagreement needs a channel, not a dead
+              end; the ops mailbox is the standing channel for a site this
+              size. */}
+          <a
+            href={`mailto:hi@kimi.builders?subject=${encodeURIComponent(
+              `[appeal] /community/${post.id}`,
+            )}`}
+            className="underline decoration-status-danger-fg/50 underline-offset-4 hover:decoration-status-danger-fg"
+          >
+            {t(locale, "mod.appeal")}
+          </a>
         </p>
       )}
       {/* Breadcrumb line stays a path: back + category + visibility
@@ -256,13 +272,18 @@ export default async function PostPage({
             size={16}
           />
         ) : (
-          <span
-            className="inline-flex items-center gap-1.5 font-mono text-xs text-grey"
-            title={t(locale, "post.loginToUpvote")}
+          /* Signed-out vote gate: carries the visitor to the login modal
+             and back — a hint-only control that reacts to nothing is a
+             dead end. data-tip per the icon-only-control convention. */
+          <Link
+            href={`/login?next=${encodeURIComponent(`/community/${post.id}`)}`}
+            data-tip={t(locale, "post.loginToUpvote")}
+            aria-label={t(locale, "post.loginToUpvote")}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-xs text-grey transition-colors hover:bg-card hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
-            <ArrowBigUp size={16} />
+            <ArrowBigUp size={16} aria-hidden="true" />
             {post.score}
-          </span>
+          </Link>
         )}
         {user && (
           <SubscribeButton
@@ -301,7 +322,7 @@ export default async function PostPage({
             />
           </ModMenu>
         )}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-1">
           <ShareButton
             path={`/community/${post.id}`}
             title={post.title || plainExcerpt(post.bodyMd, 60)}
@@ -311,6 +332,17 @@ export default async function PostPage({
             posterHref={post.visibility === "public" ? `/api/share/post/${post.id}?locale=${locale}` : undefined}
             posterSurface={post.visibility === "public" ? "post" : undefined}
           />
+          {/* Report entry: anyone's post but your own (flagging your
+              own submission is noise). */}
+          {!isOwner && (
+            <FeedbackButton
+              locale={locale}
+              targetType="post"
+              targetId={post.id}
+              loggedIn={!!user}
+              returnTo={`/community/${post.id}`}
+            />
+          )}
         </span>
       </div>
       </article>

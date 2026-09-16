@@ -7,6 +7,12 @@ interface DetailMetadataInput {
   path: `/${string}`;
   locale: Locale;
   type?: "article" | "website";
+  /* Poster endpoint path (/api/share/…). When present the card upgrades
+     to summary_large_image with the poster as og:image — a "Show your
+     work" product must never share out as a text-only card while its
+     poster pipeline is live. Relative URLs resolve against the root
+     metadataBase. */
+  image?: `/${string}`;
 }
 
 /* A fallback article keeps its original-language title. The language
@@ -34,6 +40,7 @@ export function detailMetadata({
   path,
   locale,
   type = "website",
+  image,
 }: DetailMetadataInput): Metadata {
   return {
     title,
@@ -46,11 +53,13 @@ export function detailMetadata({
       type,
       url: path,
       locale: locale === "zh" ? "zh_CN" : "en_US",
+      ...(image ? { images: [{ url: image }] } : {}),
     },
     twitter: {
-      card: "summary",
+      card: image ? "summary_large_image" : "summary",
       title,
       description,
+      ...(image ? { images: [image] } : {}),
     },
   };
 }

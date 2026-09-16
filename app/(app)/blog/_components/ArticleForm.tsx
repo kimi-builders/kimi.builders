@@ -20,6 +20,7 @@ import {
 } from "@/components/form-classes";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
+import { useConfirm } from "@/components/useConfirm";
 import { KB_CHAPTERS } from "@/src/lib/kb-chapters";
 import { KB_PRODUCTS } from "@/src/lib/kb-products";
 import { KB_ROLES } from "@/src/lib/kb-roles";
@@ -268,6 +269,7 @@ export default function ArticleForm({
 }) {
   const zh = locale === "zh";
   const router = useRouter();
+  const { confirm, node } = useConfirm(locale);
   const [kind, setKind] = useState<string>(initial?.kind ?? "guide");
   /* The payload's initial value parses once (a direct call, not via
      ref — compiler rules forbid reading refs during render). */
@@ -316,7 +318,8 @@ export default function ArticleForm({
       : assembleGuidePayload(guide);
 
   const del = async () => {
-    if (!initial || deleting || !window.confirm(t(locale, "artf.deleteConfirm")))
+    if (!initial || deleting) return;
+    if (!(await confirm({ body: t(locale, "artf.deleteConfirm"), danger: true })))
       return;
     setDeleting(true);
     try {
@@ -357,6 +360,7 @@ export default function ArticleForm({
   ];
 
   return (
+    <>
     <form action={formAction} className="mt-6 space-y-6">
       {initial && <input type="hidden" name="id" value={initial.id} />}
       {/* payload assembles live from the structured fields; server-side validation is unchanged */}
@@ -867,5 +871,7 @@ export default function ArticleForm({
         </div>
       </Section>
     </form>
+    {node}
+    </>
   );
 }

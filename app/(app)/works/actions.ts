@@ -10,6 +10,7 @@
    operations at the bottom are editorial (admin/mod) rulings without
    ownership checks (weekly featured v0). */
 import { revalidatePath, updateTag } from "next/cache";
+import { cookies } from "next/headers";
 import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
 import { isCoverTone } from "@/src/lib/cover-tones";
 import { isWorkKind } from "@/src/lib/work-kinds";
@@ -47,6 +48,7 @@ import {
   getWork,
   isWorkLogoKey,
   isWorkMediaKey,
+  notifyOnWorkHumanComment,
   parseClaimInput,
   parseWorkImageKeysInput,
   toggleWorkVote,
@@ -263,6 +265,15 @@ export async function createWorkAction(
   updateTag(PUBLIC_WORKS_CACHE_TAG);
   revalidatePath("/works");
   revalidatePath("/awesome");
+  /* List context follows what was just published, not the list the
+     visitor arrived from: entering from /awesome then switching to
+     "My work" must not strand the fresh detail page on "Back to
+     Awesome". Same session-cookie shape the proxy writes for list
+     visits. */
+  (await cookies()).set("kb-works-src", f.authorLabel ? "awesome" : "works", {
+    path: "/",
+    sameSite: "lax",
+  });
   /* Land on the detail page: no redirect() in the action (the modal
      slot doesn't follow); the client router.pushes. */
   return { ok: true, workId: newWorkId };
@@ -423,11 +434,11 @@ export async function loadMoreWorksAction(
    ---- Supports are purely optimistic (write only, no path
    invalidation — same as community votes); after a comment mutation the
    client router.refresh()es for fresh page data while revalidatePath
-   here drops the detail page's prefetched cache. Human comments never
-   notify (kept simple); an @kimi summon queues an AI job whose reply
-   notifies the summoner + the work author when it lands; delete
-   permissions (comment author / work author / moderation) are pinned in
-   SQL. */
+   here drops the detail page's prefetched cache. Human comments notify
+   the work author (notifyOnWorkHumanComment; duplicates never do); an
+   @kimi summon queues an AI job whose reply notifies the summoner +
+   the work author when it lands; delete permissions (comment author /
+   work author / moderation) are pinned in SQL. */
 
 export async function toggleWorkVoteAction(
   formData: FormData,
@@ -485,6 +496,15 @@ export async function createWorkCommentAction(
      transaction — no more check-then-write. */
   const created = await createWorkComment(user, workId, body);
   if (!created) return { ok: false, error: t(locale, "err.generic") };
+  /* Human comments notify the work author (duplicates never do — a
+     network retry must not stack notifications either). */
+  if (!created.duplicate) {
+    await notifyOnWorkHumanComment({
+      workId,
+      workCommentId: created.id,
+      actorId: user.id,
+    });
+  }
   /* @kimi summon (same semantics as community): duplicates never
      trigger (a network retry must not double the AI replies); territory
      = the work's ai_reply switch (read under the lock and carried back;

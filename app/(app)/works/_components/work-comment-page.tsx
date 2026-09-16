@@ -20,6 +20,7 @@ import { canModerate } from "@/src/lib/featured";
 import { relTime } from "@/src/lib/format";
 import { t, type Locale } from "@/src/lib/i18n";
 import { getWorkCommentsPage } from "@/src/lib/works";
+import FeedbackButton from "@/app/(app)/_components/FeedbackButton";
 import WorkCommentDelete from "./WorkCommentDelete";
 
 export interface WorkCommentPageData {
@@ -87,6 +88,20 @@ export async function loadWorkComments(
               </span>
             )}
             <span>{relTime(c.createdAt, locale)}</span>
+            {/* Report entry: own/AI rows stay clean (AI rows are
+                governed through the moderation tools instead). */}
+            {!c.isAi && c.userId !== user?.id && (
+              <span className={canDelete ? "" : "ml-auto"}>
+                <FeedbackButton
+                  locale={locale}
+                  targetType="work_comment"
+                  targetId={c.id}
+                  compact
+                  loggedIn={!!user}
+                  returnTo={`/works/${workId}#work-comment-${c.id}`}
+                />
+              </span>
+            )}
             {canDelete && (
               <span className="ml-auto">
                 <WorkCommentDelete

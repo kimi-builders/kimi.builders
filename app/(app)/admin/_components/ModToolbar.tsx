@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
+import { useConfirm, usePrompt } from "@/components/useConfirm";
 import {
   adminDeleteAction,
   hardDeleteAction,
@@ -39,6 +40,8 @@ export default function ModToolbar({
   redirectAfter?: string;
 }) {
   const router = useRouter();
+  const { confirm, node } = useConfirm(locale);
+  const { prompt, node: promptNode } = usePrompt(locale);
   const [busy, setBusy] = useState(false);
 
   const run = async (
@@ -72,9 +75,15 @@ export default function ModToolbar({
     return fd;
   };
 
-  const hide = () => {
-    const reason = window.prompt(t(locale, "mod.hidePrompt"), "");
-    if (reason === null) return;
+  const hide = async () => {
+    const reason = await prompt({
+      title: t(locale, "mod.hidePromptTitle"),
+      label: t(locale, "mod.hidePromptLabel"),
+      placeholder: t(locale, "mod.hidePrompt"),
+      required: true,
+      maxLength: 280,
+    });
+    if (reason === null || reason.trim().length === 0) return;
     const fd = base();
     fd.set("reason", reason);
     void run(hideContentAction, fd, t(locale, "mod.toastHidden"));
@@ -83,15 +92,15 @@ export default function ModToolbar({
   const unhide = () =>
     void run(unhideContentAction, base(), t(locale, "mod.toastUnhidden"));
 
-  const softDelete = () => {
-    if (!window.confirm(t(locale, "mod.softConfirm"))) return;
+  const softDelete = async () => {
+    if (!(await confirm({ body: t(locale, "mod.softConfirm"), danger: true }))) return;
     void run(adminDeleteAction, base(), t(locale, "toast.deleted"));
   };
 
-  const hardDelete = () => {
+  const hardDelete = async () => {
     /* Second confirmation; both state the irreversibility. */
-    if (!window.confirm(t(locale, "mod.hardConfirm1"))) return;
-    if (!window.confirm(t(locale, "mod.hardConfirm2"))) return;
+    if (!(await confirm({ body: t(locale, "mod.hardConfirm1"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "mod.hardConfirm2"), danger: true }))) return;
     void run(hardDeleteAction, base(), t(locale, "toast.deleted"), () => {
       if (redirectAfter) router.push(redirectAfter);
       else router.refresh();
@@ -101,6 +110,7 @@ export default function ModToolbar({
   const btn =
     "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-ui-blue disabled:opacity-40";
   return (
+    <>
     <span className="inline-flex items-center gap-4">
       {hidden ? (
         <button type="button" onClick={unhide} disabled={busy} className={btn}>
@@ -133,5 +143,8 @@ export default function ModToolbar({
         </button>
       )}
     </span>
+    {node}
+    {promptNode}
+    </>
   );
 }

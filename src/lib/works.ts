@@ -1384,6 +1384,32 @@ export async function notifyOnWorkComment(input: {
   );
 }
 
+/* Notification after a human work comment: the work author (when not
+   the commenter themselves; awesome external entries have no author)
+   learns their work got a comment — the engagement loop the old "kept
+   simple" note used to skip. Work comments are single-level, so there
+   is no parent-author branch; the caller skips duplicate resubmissions.
+   type='work_comment' renders as its own line in the notifications
+   page (distinct from the AI summon's type='reply'). */
+export async function notifyOnWorkHumanComment(input: {
+  workId: number;
+  workCommentId: number;
+  actorId: number;
+}): Promise<void> {
+  const pool = getPool();
+  const [wrows] = await pool.query<RowDataPacket[]>(
+    "SELECT user_id FROM works WHERE id = ? LIMIT 1",
+    [input.workId],
+  );
+  const authorId = wrows[0]?.user_id;
+  if (authorId === null || authorId === undefined || Number(authorId) === input.actorId)
+    return;
+  await pool.query(
+    "INSERT INTO notifications (user_id, actor_id, type, work_id, work_comment_id) VALUES ?",
+    [[[Number(authorId), input.actorId, "work_comment", input.workId, input.workCommentId]]],
+  );
+}
+
 /* Delete comment (soft): the comment author or the work author may
    delete, permission pinned in WHERE (c.user_id or w.user_id); one
    multi-table UPDATE also decrements works.comment_count.

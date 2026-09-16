@@ -48,16 +48,44 @@ export async function syncProviderAvatar(
   return res.affectedRows > 0;
 }
 
-/* Provider account -> bound user id; null when unbound. */
+/* Provider account -> bound user id; null when unbound. Deleted
+   accounts never resolve (soft-deleted users cannot log back in). */
 export async function findLinkedUserId(
   provider: Provider,
   providerAccountId: string,
 ): Promise<number | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_account_id = ? LIMIT 1",
+    `SELECT o.user_id FROM oauth_accounts o
+     JOIN users u ON u.id = o.user_id
+     WHERE o.provider = ? AND o.provider_account_id = ?
+       AND u.deleted_at IS NULL
+     LIMIT 1`,
     [provider, providerAccountId],
   );
   return rows[0] ? Number(rows[0].user_id) : null;
+}
+
+/* Self-service account deletion (B3): soft delete + anonymize in one
+   statement. The handle becomes deleted-<id> (releases the visible
+   handle while staying unique), email/password are cleared (frees the
+   address for re-registration; password login dies with the hash), and
+   the content stays for FK integrity. Login paths all filter
+   deleted_at (session / email / OAuth), so the stale signed cookie
+   becomes inert on the next request. */
+export async function deleteOwnAccount(userId: number): Promise<boolean> {
+  const [res] = await getPool().query<ResultSetHeader>(
+    `UPDATE users SET
+       deleted_at = NOW(),
+       handle = CONCAT('deleted-', id),
+       name = '',
+       bio = '',
+       avatar_url = '',
+       email = NULL,
+       password_hash = NULL
+     WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
+  );
+  return res.affectedRows > 0;
 }
 
 /* Post-login linking (initiated from settings): idempotent ok when
@@ -227,7 +255,7 @@ export interface EmailAccountRow {
 
 export async function findEmailAccount(email: string): Promise<EmailAccountRow | null> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT id, password_hash FROM users WHERE email = ? LIMIT 1",
+    "SELECT id, password_hash FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1",
     [email],
   );
   const row = rows[0];

@@ -7,6 +7,11 @@ import { createPortal } from "react-dom";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { searchSiteItems, type SiteSearchItem } from "@/src/lib/site-search";
+import {
+  isSearchableQuery,
+  type ContentHit,
+  type ContentSearchResults,
+} from "@/src/lib/site-content-search";
 import { NAV_HIDDEN, UPCOMING } from "@/src/lib/upcoming";
 
 /* Not-yet-ready sections: search results keep the entry but tag it
@@ -94,11 +99,64 @@ export default function GlobalSearch({
   );
   /* Arrow-key selection: the first item preselected, Enter opens the
      selection; resets when the query changes; clamps into range when
-     results shrink. */
+     results shrink. The flat list spans section-jump entries and every
+     content hit, so one axis of navigation covers the whole modal. */
   const [active, setActive] = useState(0);
   const items = useMemo(() => catalog(locale), [locale]);
   const results = useMemo(() => searchSiteItems(items, query), [items, query]);
-  const activeIndex = Math.min(active, Math.max(results.length - 1, 0));
+  /* Content search (posts/works/articles/members): debounced, aborted
+     on retype; only fires once the trimmed query clears the shared
+     length gate. Results carry the query they answer — a stale answer
+     (retype mid-flight) is dropped by comparison, not by a reset.
+     Failures keep the previous results — the modal stays usable as a
+     section jumper. */
+  const [fetched, setFetched] = useState<{
+    q: string;
+    results: ContentSearchResults;
+  } | null>(null);
+  const trimmed = query.trim();
+  const content = fetched && fetched.q === trimmed ? fetched.results : null;
+  useEffect(() => {
+    if (!isSearchableQuery(trimmed)) return;
+    const ac = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, {
+          signal: ac.signal,
+        });
+        if (res.ok) {
+          const results = (await res.json()) as ContentSearchResults;
+          setFetched({ q: trimmed, results });
+        }
+      } catch {
+        /* aborted mid-flight or offline; keep the jump list */
+      }
+    }, 220);
+    return () => {
+      window.clearTimeout(timer);
+      ac.abort();
+    };
+  }, [trimmed]);
+  const contentGroups = useMemo(
+    () =>
+      content
+        ? ([
+            [t(locale, "search.groupPosts"), content.posts],
+            [t(locale, "search.groupWorks"), content.works],
+            [t(locale, "search.groupArticles"), content.articles],
+            [t(locale, "search.groupUsers"), content.users],
+          ] as [string, ContentHit[]][]).filter(([, hits]) => hits.length > 0)
+        : [],
+    [content, locale],
+  );
+  const flat: { href: string; label: string; description: string }[] = useMemo(
+    () => [
+      ...results,
+      ...contentGroups.flatMap(([, hits]) => hits),
+    ],
+    [results, contentGroups],
+  );
+  const activeIndex = Math.min(active, Math.max(flat.length - 1, 0));
 
   const open = () => {
     dialogRef.current?.showModal();
@@ -125,14 +183,14 @@ export default function GlobalSearch({
      never touching page-level shortcuts. */
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      if (results.length === 0) return;
+      if (flat.length === 0) return;
       event.preventDefault();
       const dir = event.key === "ArrowDown" ? 1 : -1;
-      setActive((activeIndex + dir + results.length) % results.length);
+      setActive((activeIndex + dir + flat.length) % flat.length);
       return;
     }
     if (event.key === "Enter") {
-      const item = results[activeIndex];
+      const item = flat[activeIndex];
       if (!item) return;
       event.preventDefault();
       go(item.href);
@@ -207,36 +265,77 @@ export default function GlobalSearch({
             <X size={17} aria-hidden="true" />
           </button>
         </div>
-        <div className="max-h-[min(62vh,32rem)] overflow-y-auto p-2">
-          <h2 id={`${mode}-search-title`} className="px-3 pb-2 pt-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
-            {query ? t(locale, "search.results") : t(locale, "search.jumpTo")}
-          </h2>
-          {results.length > 0 ? (
-            <div className="space-y-1" role="listbox" aria-label={t(locale, "search.results")}>
-              {results.map((item, i) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={close}
-                  onMouseEnter={() => setActive(i)}
-                  role="option"
-                  aria-selected={i === activeIndex}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
-                    i === activeIndex ? "bg-moon" : ""
-                  }`}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-mono text-sm font-semibold text-paper">{item.label}</span>
-                    <span className="mt-0.5 block truncate text-xs text-grey">{item.description}</span>
-                  </span>
-                  <ArrowUpRight size={16} className={`shrink-0 text-grey transition-colors ${i === activeIndex ? "text-ui-blue" : "group-hover:text-ui-blue"}`} aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
-          ) : (
+        <div className="max-h-[min(62vh,32rem)] overflow-y-auto p-2" role="listbox" aria-label={t(locale, "search.results")}>
+          {results.length > 0 && (
+            <>
+              <h2 id={`${mode}-search-title`} className="px-3 pb-2 pt-1 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+                {query ? t(locale, "search.resultsJump") : t(locale, "search.jumpTo")}
+              </h2>
+              <div className="space-y-1">
+                {results.map((item, i) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={close}
+                    onMouseEnter={() => setActive(i)}
+                    role="option"
+                    aria-selected={i === activeIndex}
+                    className={`group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                      i === activeIndex ? "bg-moon" : ""
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-mono text-sm font-semibold text-paper">{item.label}</span>
+                      <span className="mt-0.5 block truncate text-xs text-grey">{item.description}</span>
+                    </span>
+                    <ArrowUpRight size={16} className={`shrink-0 text-grey transition-colors ${i === activeIndex ? "text-ui-blue" : "group-hover:text-ui-blue"}`} aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
+          {/* Content hits: appended under their family headings; the
+              flat index continues from the jump entries so arrow keys
+              walk the whole modal in visual order. */}
+          {contentGroups.map(([label, hits], gi) => {
+            const base = results.length + contentGroups.slice(0, gi).reduce((n, [, h]) => n + h.length, 0);
+            return (
+              <div key={label} role="group" aria-label={label}>
+                <h2 className="px-3 pb-2 pt-3 font-mono text-xs uppercase tracking-[0.08em] text-grey">
+                  {label}
+                </h2>
+                <div className="space-y-1">
+                  {hits.map((item, i) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={close}
+                      onMouseEnter={() => setActive(base + i)}
+                      role="option"
+                      aria-selected={base + i === activeIndex}
+                      className={`group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue ${
+                        base + i === activeIndex ? "bg-moon" : ""
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-mono text-sm font-semibold text-paper">{item.label}</span>
+                        <span className="mt-0.5 block truncate text-xs text-grey">{item.description}</span>
+                      </span>
+                      <ArrowUpRight size={16} className={`shrink-0 text-grey transition-colors ${base + i === activeIndex ? "text-ui-blue" : "group-hover:text-ui-blue"}`} aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {flat.length === 0 && (
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <Search size={24} className="text-grey/60" aria-hidden="true" />
-              <p className="mt-3 font-mono text-sm text-paper">{t(locale, "search.empty")}</p>
+              <p className="mt-3 font-mono text-sm text-paper">
+                {content === null && isSearchableQuery(trimmed)
+                  ? t(locale, "search.searching")
+                  : t(locale, "search.empty")}
+              </p>
               <p className="mt-1 text-xs text-grey">{t(locale, "search.emptyHint")}</p>
             </div>
           )}

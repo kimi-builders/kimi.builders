@@ -23,6 +23,7 @@ import LoadMore from "@/components/LoadMore";
 import Markdown from "@/components/Markdown";
 import ModelIcon from "@/components/ModelIcon";
 import ShareButton from "@/components/ShareButton";
+import FeedbackButton from "../../_components/FeedbackButton";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import { agentName } from "@/src/lib/agents";
 import { trackEvent } from "@/src/lib/analytics";
@@ -74,6 +75,9 @@ export async function generateMetadata({
       work.tagline || plainExcerpt(work.descriptionMd, 160) || t(locale, "metaDesc.works"),
     path: `/works/${id}`,
     locale,
+    /* Poster endpoint is anonymous-public guarded (canViewWork inside
+       the snapshot); no private preview can leak via the card. */
+    image: `/api/share/work/${work.id}?locale=${locale}`,
   });
 }
 
@@ -156,6 +160,17 @@ export default async function WorkPage({
         <p className="mb-4 rounded-xl border border-status-danger/30 bg-status-danger/[0.06] px-3 py-2 text-xs leading-relaxed text-status-danger-fg">
           {t(locale, "mod.hiddenBanner")}
           {work.hiddenReason ? ` — ${work.hiddenReason}` : ""}
+          {" "}
+          {/* Appeal exit (B5, post-detail grammar): a disagreement needs
+              a channel, not a dead end. */}
+          <a
+            href={`mailto:hi@kimi.builders?subject=${encodeURIComponent(
+              `[appeal] /works/${work.id}`,
+            )}`}
+            className="underline decoration-status-danger-fg/50 underline-offset-4 hover:decoration-status-danger-fg"
+          >
+            {t(locale, "mod.appeal")}
+          </a>
         </p>
       )}
       {/* Breadcrumb: back-only (post-detail grammar) — the remembered
@@ -310,13 +325,18 @@ export default async function WorkPage({
               locale={locale}
             />
           ) : (
-            <span
-              className="inline-flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-line px-2 font-mono text-xs whitespace-nowrap text-grey sm:gap-1.5 sm:px-3 sm:text-sm"
-              title={t(locale, "works.loginToSupport")}
+            /* Signed-out support gate: same login-with-return pattern as
+               the comment gates — a bordered button that actually goes
+               somewhere instead of a hint-only span. */
+            <Link
+              href={`/login?next=${encodeURIComponent(`/works/${work.id}`)}`}
+              data-tip={t(locale, "works.loginToSupport")}
+              aria-label={t(locale, "works.loginToSupport")}
+              className="inline-flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-line px-2 font-mono text-xs whitespace-nowrap text-grey transition-colors hover:border-ui-blue hover:text-ui-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue sm:gap-1.5 sm:px-3 sm:text-sm"
             >
-              <Heart size={13} />
+              <Heart size={13} aria-hidden="true" />
               {t(locale, "works.support")} · {work.voteCount}
-            </span>
+            </Link>
           )}
         </div>
         <span className="ml-auto flex items-center gap-3">
@@ -372,6 +392,17 @@ export default async function WorkPage({
             }
             posterSurface={work.visibility === "public" ? "work" : undefined}
           />
+          {/* Report entry: member works only — awesome external entries
+              have no author to flag through this flow. */}
+          {work.source !== "awesome" && !(user && work.userId === user.id) && (
+            <FeedbackButton
+              locale={locale}
+              targetType="work"
+              targetId={work.id}
+              loggedIn={!!user}
+              returnTo={`/works/${work.id}`}
+            />
+          )}
         </span>
       </div>
 

@@ -22,8 +22,28 @@ CREATE TABLE IF NOT EXISTS users (
   role VARCHAR(16) NOT NULL DEFAULT 'member' COMMENT 'member/mod/admin',
   -- muted_until 由 20260830_moderation.sql 引入,已有库执行该迁移
   muted_until DATETIME NULL COMMENT '禁言截止;NULL=未禁言,9999-12-31=永久;到期自动解除',
+  -- deleted_at 由 20260915_users_deleted_at.sql 引入,已有库执行该迁移
+  deleted_at DATETIME NULL COMMENT '注销时间;NULL=正常,置位=禁登+脱敏',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 内容反馈(B2):成员就地反馈;审核台只处理 open。由 20260915_feedback.sql 引入。
+CREATE TABLE IF NOT EXISTS feedback (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  reporter_id BIGINT UNSIGNED NOT NULL COMMENT '反馈人',
+  target_type ENUM('post','comment','work','work_comment') NOT NULL COMMENT '被反馈对象',
+  target_id BIGINT UNSIGNED NOT NULL COMMENT '对象 id(多态,无 FK:目标可能先被删)',
+  reason VARCHAR(24) NOT NULL COMMENT 'spam/abuse/offtopic/privacy/other',
+  note VARCHAR(500) NULL COMMENT '补充说明(可空)',
+  status ENUM('open','resolved') NOT NULL DEFAULT 'open',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  resolved_at DATETIME NULL,
+  resolver_id BIGINT UNSIGNED NULL COMMENT '处理人(admin/mod)',
+  KEY idx_feedback_open (status, created_at),
+  KEY idx_feedback_target (target_type, target_id),
+  CONSTRAINT fk_feedback_reporter FOREIGN KEY (reporter_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_feedback_resolver FOREIGN KEY (resolver_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- OAuth 账号绑定(GitHub / Google …,一个用户可绑多个)
@@ -445,7 +465,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL COMMENT '接收者',
   actor_id BIGINT UNSIGNED NULL COMMENT '触发者;NULL=AI/系统',
-  type VARCHAR(16) NOT NULL DEFAULT 'comment' COMMENT 'comment/reply',
+  type VARCHAR(16) NOT NULL DEFAULT 'comment' COMMENT 'comment/reply/work_comment',
   post_id BIGINT UNSIGNED NULL,
   comment_id BIGINT UNSIGNED NULL COMMENT '触达锚点 /community/<post>#comment-<id>',
   work_id BIGINT UNSIGNED NULL COMMENT '作品通知目标(post 通知为 NULL)',

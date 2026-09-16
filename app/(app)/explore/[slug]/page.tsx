@@ -84,6 +84,9 @@ export async function generateMetadata({
       path: `/explore/${slug}`,
       locale,
       type: "article",
+      /* Only letters have a poster pipeline (/api/share/letter);
+         guides keep the text card rather than a dead image URL. */
+      image: `/api/share/letter/${slug}?locale=${locale}`,
     });
   }
   const guide = await getTutorialBySlug(slug, locale);

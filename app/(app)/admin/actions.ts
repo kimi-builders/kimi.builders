@@ -27,6 +27,7 @@ import {
   hardDeletePost,
   hardDeleteWork,
   hideContent,
+  logModeration,
   muteUntilFor,
   muteUser,
   requireAdmin,
@@ -37,6 +38,7 @@ import {
   unmuteUser,
   type ModTargetType,
 } from "@/src/lib/moderation";
+import { resolveFeedback } from "@/src/lib/feedback";
 
 export interface ModResult {
   ok: boolean;
@@ -267,4 +269,21 @@ export async function loadMoreAdminLogAction(
     nodes: renderLogRows(data.rows, locale),
     nextCursor: data.nextCursor,
   };
+}
+
+/* Resolve an open member feedback flag (B2): the row leaves the
+   console's open list; the target itself is acted on through the
+   regular moderation tools before/after resolving. */
+export async function resolveFeedbackAction(
+  formData: FormData,
+): Promise<void> {
+  const user = await requireModerator();
+  if (!user) return;
+  const feedbackId = Number(formData.get("feedback_id"));
+  if (!Number.isSafeInteger(feedbackId) || feedbackId <= 0) return;
+  const ok = await resolveFeedback(feedbackId, user.id);
+  if (ok) {
+    await logModeration(user.id, "resolve_feedback", "feedback", feedbackId, "member feedback resolved");
+    revalidatePath("/admin");
+  }
 }

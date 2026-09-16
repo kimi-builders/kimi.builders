@@ -88,10 +88,13 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   }
   if (!uid) return null;
   try {
+    /* deleted_at gate: soft-deleted accounts are logged out everywhere
+       at once (stateless cookie + this one filter) and can never obtain
+       a working session again. */
     const [rows] = await getPool().query<RowDataPacket[]>(
       `SELECT id, handle, name, avatar_url, locale, role,
               ai_replies_enabled, show_ai_replies
-       FROM users WHERE id = ? LIMIT 1`,
+       FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`,
       [uid],
     );
     const r = rows[0];

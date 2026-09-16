@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
+import { useConfirm } from "@/components/useConfirm";
 import { deleteWorkAction } from "../actions";
 
 export default function WorkOwnerActions({
@@ -33,10 +34,11 @@ export default function WorkOwnerActions({
 }) {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
+  const { confirm, node } = useConfirm(locale);
 
   const remove = async () => {
     if (busy) return;
-    if (!window.confirm(t(locale, "works.deleteConfirm"))) return;
+    if (!(await confirm({ body: t(locale, "works.deleteConfirm"), danger: true }))) return;
     setBusy(true);
     try {
       const fd = new FormData();
@@ -94,6 +96,7 @@ export default function WorkOwnerActions({
           <span>{t(locale, "post.delete")}</span>
         </button>
       </div>
+      {node}
     </details>
   );
 }

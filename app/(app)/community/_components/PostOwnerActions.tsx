@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
+import { useConfirm } from "@/components/useConfirm";
 import { deletePostAction, setPostSolvedAction, setPostVisibilityAction } from "../actions";
 
 export default function PostOwnerActions({
@@ -25,6 +26,7 @@ export default function PostOwnerActions({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<"vis" | "del" | "solved" | null>(null);
+  const { confirm, node } = useConfirm(locale);
 
   const toggleSolved = async () => {
     if (busy) return;
@@ -73,7 +75,7 @@ export default function PostOwnerActions({
 
   const remove = async () => {
     if (busy) return;
-    if (!window.confirm(t(locale, "post.deleteConfirm"))) return;
+    if (!(await confirm({ body: t(locale, "post.deleteConfirm"), danger: true }))) return;
     setBusy("del");
     try {
       const fd = new FormData();
@@ -95,6 +97,7 @@ export default function PostOwnerActions({
   const btn =
     "inline-flex items-center font-mono text-xs text-grey transition-colors hover:text-ui-blue disabled:opacity-40";
   return (
+    <>
     <span className="inline-flex items-center gap-4">
       <Link href={`/community/${postId}/edit`} className={btn}>
         {t(locale, "post.edit")}
@@ -131,5 +134,7 @@ export default function PostOwnerActions({
         {busy === "del" ? t(locale, "post.submitting") : t(locale, "post.delete")}
       </button>
     </span>
+    {node}
+    </>
   );
 }

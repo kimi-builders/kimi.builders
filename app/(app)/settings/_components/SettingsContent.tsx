@@ -20,6 +20,7 @@ import { LocaleSeg, MotionSeg, NavToggle, SidebarToggle, ThemeCards, VibeCards }
 import UsagePrivacyForm from "../../usage/_components/UsagePrivacyForm";
 import AiPrefsForm from "./AiPrefsForm";
 import PasswordForm from "./PasswordForm";
+import DeleteAccountButton from "./DeleteAccountButton";
 import ProfileForm from "./ProfileForm";
 import ProfilePrivacyForm from "./ProfilePrivacyForm";
 import SettingsTabs from "./SettingsTabs";
@@ -331,6 +332,20 @@ export default async function SettingsContent({
               </p>
               <div className="mt-3 max-w-sm">
                 <PasswordForm locale={locale} hasPassword={passwordHash !== null} />
+              </div>
+            </div>
+            {/* Danger zone (B3): self-service deletion lives at the very
+                bottom of the account tab — present, discoverable, never
+                adjacent to routine controls. */}
+            <div className="mt-6 rounded-xl border border-status-danger/30 p-4">
+              <h3 className="text-sm font-semibold text-paper">
+                {t(locale, "set.dangerZone")}
+              </h3>
+              <p className="mt-1 max-w-lg text-xs leading-relaxed text-grey">
+                {t(locale, "set.deleteHint")}
+              </p>
+              <div className="mt-3">
+                <DeleteAccountButton locale={locale} handle={user.handle} />
               </div>
             </div>
           </Panel>

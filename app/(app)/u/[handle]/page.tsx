@@ -111,6 +111,7 @@ export async function generateMetadata({
       (locale === "zh" ? `@${p.handle} 的公开成员主页。` : `Public member profile for @${p.handle}.`),
     path: `/u/${p.handle}`,
     locale,
+    image: `/api/share/u/${p.handle}?locale=${locale}`,
   });
 }
 

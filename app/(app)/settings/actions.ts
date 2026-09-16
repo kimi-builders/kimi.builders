@@ -14,6 +14,7 @@ import {
 } from "@/src/lib/auth/password";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
+  deleteOwnAccount,
   getUserPasswordHash,
   setUserLocale,
   setUserPassword,
@@ -184,5 +185,26 @@ export async function unlinkProviderAction(
   const r = await unlinkProviderAccount(user.id, provider);
   if (r === "last_method") return { error: t(locale, "err.lastMethod") };
   if (r !== "ok") return { error: t(locale, "err.generic") };
+  return { ok: true };
+}
+
+/* Self-service account deletion (B3): soft delete + anonymize. The
+   typed-handle confirmation is enforced server-side too (a stray click
+   or a crafted form must not delete an account); after the row flips,
+   the stale session cookie turns inert (getSessionUser filters
+   deleted_at). The client clears its cookie and lands on the home
+   facade. */
+export async function deleteAccountAction(
+  _prev: { error?: string; ok?: boolean } | null,
+  formData: FormData,
+): Promise<{ error?: string; ok?: boolean }> {
+  const user = await getSessionUser();
+  if (!user) return { error: "auth" };
+  const locale = await getLocale(user);
+  const typed = String(formData.get("confirm_handle") ?? "").trim();
+  if (typed !== user.handle) return { error: t(locale, "set.deleteMismatch") };
+  const ok = await deleteOwnAccount(user.id);
+  if (!ok) return { error: t(locale, "err.generic") };
+  updateTag(PUBLIC_USERS_CACHE_TAG);
   return { ok: true };
 }

@@ -1,13 +1,14 @@
 "use client";
 
 /* Unlink button (the settings "account" tab, on each bound provider
-   row): a confirm before submit; the last-login-method guard is
+   row): an in-app confirm before submit; the last-login-method guard is
    re-checked in the server transaction. Success -> toast +
    router.refresh(); failure -> inline error. */
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/src/lib/i18n";
 import { toast } from "@/src/lib/toast";
+import { useConfirm } from "@/components/useConfirm";
 import { unlinkProviderAction, type SettingsState } from "../actions";
 
 export default function UnlinkButton({
@@ -24,6 +25,7 @@ export default function UnlinkButton({
     FormData
   >(unlinkProviderAction, null);
   const router = useRouter();
+  const { confirm, node } = useConfirm(locale);
 
   useEffect(() => {
     if (state?.ok) {
@@ -36,9 +38,11 @@ export default function UnlinkButton({
     <form
       action={formAction}
       className="ml-auto shrink-0"
-      onSubmit={(e) => {
-        if (!window.confirm(t(locale, "set.unlinkConfirm", { p: providerName })))
-          e.preventDefault();
+      onSubmit={async (e) => {
+        const ok = await confirm({
+          body: t(locale, "set.unlinkConfirm", { p: providerName }),
+        });
+        if (!ok) e.preventDefault();
       }}
     >
       <input type="hidden" name="provider" value={provider} />
@@ -54,6 +58,7 @@ export default function UnlinkButton({
           {state.error}
         </p>
       )}
+      {node}
     </form>
   );
 }

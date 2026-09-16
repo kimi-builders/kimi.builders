@@ -86,12 +86,15 @@ export type ModAction =
   | "unmute"
   | "profile_reset"
   | "role_grant"
-  | "role_revoke";
+  | "role_revoke"
+  /* Resolving a member feedback flag is an audit-worthy moderation
+     action too (B2); the target is the feedback row itself. */
+  | "resolve_feedback";
 
 export async function logModeration(
   actorId: number,
   action: ModAction,
-  targetType: ModTargetType | "user",
+  targetType: ModTargetType | "user" | "feedback",
   targetId: number,
   reason = "",
   db: Queryable = getPool(),
@@ -184,6 +187,44 @@ export async function hideContent(
          WHERE id = ?`,
         [target.post_id],
       );
+    }
+    /* Author notification (B5): hiding silently made content "vanish"
+       for its author. Notifies inside the same transaction — actor_id
+       NULL keeps the semantics "system/moderation", and the reason
+       rides the notification's own anchor page (the banner shows
+       reason + appeal). Posts anchor via post_id; works via work_id
+       (hidden works stay viewable to their author + mods, same as
+       posts). */
+    if (type === "post" || type === "comment") {
+      const [authors] = await conn.query<RowDataPacket[]>(
+        `SELECT user_id${type === "post" ? ", id AS post_id" : ", post_id"} FROM ${TABLE[type]} WHERE id = ? LIMIT 1`,
+        [id],
+      );
+      const a = authors[0];
+      /* AI comments (user_id NULL) have no one to notify. */
+      if (a && a.user_id !== null && Number(a.user_id) !== actorId) {
+        await conn.query(
+          `INSERT INTO notifications (user_id, actor_id, type, post_id${type === "comment" ? ", comment_id" : ""})
+           VALUES (?, NULL, 'mod_hidden', ?${type === "comment" ? ", ?" : ""})`,
+          type === "comment"
+            ? [Number(a.user_id), a.post_id, id]
+            : [Number(a.user_id), id],
+        );
+      }
+    }
+    if (type === "work") {
+      const [authors] = await conn.query<RowDataPacket[]>(
+        `SELECT user_id FROM works WHERE id = ? LIMIT 1`,
+        [id],
+      );
+      const a = authors[0];
+      if (a && a.user_id !== null && Number(a.user_id) !== actorId) {
+        await conn.query(
+          `INSERT INTO notifications (user_id, actor_id, type, work_id)
+           VALUES (?, NULL, 'mod_hidden', ?)`,
+          [Number(a.user_id), id],
+        );
+      }
     }
     await logModeration(actorId, "hide", type, id, reason, conn);
     return true;
@@ -287,7 +328,10 @@ async function deleteReactions(
 
 /* Post hard delete: comments/poll/subscriptions/ai_jobs/notifications go
    via ON DELETE CASCADE; reactions are polymorphic with no FK and are
-   cleaned for the post and its comments by hand. */
+   cleaned for the post and its comments by hand. No deleted_at guard:
+   the console's "hard delete" exists precisely for rows already
+   soft-deleted (the author's own delete) — guarding on deleted_at IS
+   NULL made every soft-deleted row permanently stuck. */
 export async function hardDeletePost(
   actorId: number,
   postId: number,
@@ -295,7 +339,7 @@ export async function hardDeletePost(
 ): Promise<boolean> {
   return withModerationTransaction(async (conn) => {
     const [posts] = await conn.query<RowDataPacket[]>(
-      "SELECT id FROM posts WHERE id = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE",
+      "SELECT id FROM posts WHERE id = ? LIMIT 1 FOR UPDATE",
       [postId],
     );
     if (!posts[0]) return false;
