@@ -216,7 +216,7 @@ export default function CommentSection({
   /* Delete (confirm, then soft). */
   const remove = async (id: number) => {
     if (busyId !== null) return;
-    if (!(await confirm({ body: t(locale, "post.commentDeleteConfirm"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "post.commentDeleteConfirm")}))) return;
     setBusyId(id);
     try {
       const fd = new FormData();

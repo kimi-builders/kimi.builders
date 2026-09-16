@@ -93,14 +93,14 @@ export default function ModToolbar({
     void run(unhideContentAction, base(), t(locale, "mod.toastUnhidden"));
 
   const softDelete = async () => {
-    if (!(await confirm({ body: t(locale, "mod.softConfirm"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "mod.softConfirm")}))) return;
     void run(adminDeleteAction, base(), t(locale, "toast.deleted"));
   };
 
   const hardDelete = async () => {
     /* Second confirmation; both state the irreversibility. */
-    if (!(await confirm({ body: t(locale, "mod.hardConfirm1"), danger: true }))) return;
-    if (!(await confirm({ body: t(locale, "mod.hardConfirm2"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "mod.hardConfirm1")}))) return;
+    if (!(await confirm({ body: t(locale, "mod.hardConfirm2")}))) return;
     void run(hardDeleteAction, base(), t(locale, "toast.deleted"), () => {
       if (redirectAfter) router.push(redirectAfter);
       else router.refresh();

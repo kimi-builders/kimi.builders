@@ -319,7 +319,7 @@ export default function ArticleForm({
 
   const del = async () => {
     if (!initial || deleting) return;
-    if (!(await confirm({ body: t(locale, "artf.deleteConfirm"), danger: true })))
+    if (!(await confirm({ body: t(locale, "artf.deleteConfirm")})))
       return;
     setDeleting(true);
     try {

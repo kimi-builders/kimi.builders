@@ -83,7 +83,7 @@ export default function UserModControls({
   };
 
   const resetProfile = async () => {
-    if (!(await confirm({ body: t(locale, "admin.resetConfirm"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "admin.resetConfirm")}))) return;
     const fd = new FormData();
     fd.set("user_id", String(userId));
     fd.set("reason", "profile reset");

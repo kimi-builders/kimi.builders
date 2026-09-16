@@ -38,7 +38,7 @@ export default function WorkOwnerActions({
 
   const remove = async () => {
     if (busy) return;
-    if (!(await confirm({ body: t(locale, "works.deleteConfirm"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "works.deleteConfirm")}))) return;
     setBusy(true);
     try {
       const fd = new FormData();

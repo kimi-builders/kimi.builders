@@ -27,7 +27,7 @@ export default function WorkCommentDelete({
   const remove = async () => {
     if (busy) return;
     if (
-      !(await confirm({ body: t(locale, "post.commentDeleteConfirm"), danger: true }))
+      !(await confirm({ body: t(locale, "post.commentDeleteConfirm")}))
     )
       return;
     setBusy(true);

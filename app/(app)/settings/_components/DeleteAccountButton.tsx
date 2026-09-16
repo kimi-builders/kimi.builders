@@ -115,7 +115,7 @@ export default function DeleteAccountButton({
                 <button
                   type="submit"
                   disabled={pending || typed !== handle}
-                  className="rounded-lg bg-status-danger-fg px-5 py-2 font-mono text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="rounded-lg bg-blue px-5 py-2 font-mono text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   {pending
                     ? t(locale, "set.deleteSubmitting")

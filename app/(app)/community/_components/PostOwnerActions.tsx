@@ -75,7 +75,7 @@ export default function PostOwnerActions({
 
   const remove = async () => {
     if (busy) return;
-    if (!(await confirm({ body: t(locale, "post.deleteConfirm"), danger: true }))) return;
+    if (!(await confirm({ body: t(locale, "post.deleteConfirm")}))) return;
     setBusy("del");
     try {
       const fd = new FormData();
