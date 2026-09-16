@@ -30,6 +30,7 @@ import {
   type CommunityDraft,
 } from "@/src/lib/community-draft";
 import { t, type Locale } from "@/src/lib/i18n";
+import { relTime } from "@/src/lib/format";
 import { notifyModalDirtyReset } from "../../_components/RouteModal";
 import { createPostAction, type PostFormState } from "../actions";
 import MarkdownEditor from "../../_components/MarkdownEditor";
@@ -83,6 +84,7 @@ export default function PostForm({
   const [body, setBody] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const submittingRef = useRef(false);
@@ -123,6 +125,7 @@ export default function PostForm({
         setBody(draft.body);
         setOptions(draft.options.length >= 2 ? draft.options : ["", ""]);
         setDraftRestored(true);
+        setDraftSavedAt(draft.savedAt);
         setDraftSaved(true);
       }
       setDraftLoaded(true);
@@ -191,7 +194,13 @@ export default function PostForm({
     >
       {draftRestored && (
         <div className="flex items-center gap-3 rounded-xl border border-line bg-moon px-3 py-2.5 text-xs text-grey">
-          <span className="min-w-0 flex-1">{t(locale, "form.draftRestored")}</span>
+          <span className="min-w-0 flex-1">
+            {draftSavedAt !== null
+              ? t(locale, "form.draftRestoredAge", {
+                  age: relTime(new Date(draftSavedAt), locale),
+                })
+              : t(locale, "form.draftRestored")}
+          </span>
           <button
             type="button"
             onClick={clearDraft}

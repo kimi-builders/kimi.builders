@@ -470,6 +470,13 @@ const DICT = {
     zh: "已恢复上次未发布的草稿，内容会继续自动保存在此设备。",
     en: "Your unpublished draft was restored and will keep saving on this device.",
   },
+  /* Draft banner with age: {age} = relTime(savedAt) — an old draft
+     restored without a timestamp reads like fresh text and gets posted
+     by accident (product review C5). */
+  "form.draftRestoredAge": {
+    zh: "已恢复 {age}保存的未发布草稿，内容会继续自动保存在此设备。",
+    en: "Unpublished draft saved {age} was restored and keeps saving on this device.",
+  },
   "form.clearDraft": { zh: "清空草稿", en: "Clear draft" },
   "form.draftSaved": { zh: "草稿已自动保存到此设备", en: "Draft saved on this device" },
   "post.official": { zh: "站务账号", en: "Site team" },
@@ -1070,8 +1077,8 @@ const DICT = {
   },
   "works.repo": { zh: "源码", en: "Source" },
   "works.deleteConfirm": {
-    zh: "确定删除这个作品？",
-    en: "Delete this work?",
+    zh: "确定删除这个作品？删除后不可恢复。",
+    en: "Delete this work? This cannot be undone.",
   },
   "works.newTitle": { zh: "发布作品", en: "Publish work" },
   "works.editTitle": { zh: "编辑作品", en: "Edit work" },
@@ -1382,6 +1389,120 @@ const DICT = {
   "about.disclaimer": {
     zh: "kimi.builders 由 Kimi 用户自建自运营，现阶段为非商业社区。本站与 Moonshot AI（月之暗面）无隶属、赞助、背书或授权关系；「Kimi」「Moonshot AI」等名称与商标归其权利人所有，本站仅作事实性指称。站内 AI 助手「小筑」由社区部署、通过公开接口调用模型，其回复不代表 Moonshot AI 官方立场。",
     en: "kimi.builders is built and run by Kimi users and operates as a non-commercial community at this stage. It is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). \"Kimi\", \"Moonshot AI\" and related marks belong to their respective owners and are referenced here only factually. The on-site AI assistant Xiaozhu is operated by the community over public APIs; its replies do not represent Moonshot AI.",
+  },
+  /* ---- Legal pages (/privacy, /terms) ----
+     Honest, non-overpromising copy aligned with the product's real
+     behavior: local-first usage collection, private by default,
+     opt-in leaderboard, user-configurable retention, account
+     deletion exists, unofficial & non-commercial. */
+  "legal.eyebrow": { zh: "— 社区自建 · 非官方", en: "— Member-built · unofficial" },
+  "legal.privacy": { zh: "隐私政策", en: "Privacy" },
+  "legal.terms": { zh: "服务条款", en: "Terms" },
+  "legal.accountNote": {
+    zh: "继续使用即表示你已阅读隐私政策与服务条款。",
+    en: "By continuing you acknowledge the Privacy Policy and Terms of Service.",
+  },
+  "privacy.title": { zh: "隐私政策", en: "Privacy Policy" },
+  "privacy.lede": {
+    zh: "这份政策说明 kimi.builders 收集哪些信息、哪些数据始终留在你的设备上，以及哪些共享完全出于自愿。我们尽量少收：没有行为广告，不出售数据。",
+    en: "This policy explains what kimi.builders collects, what stays on your device, and what sharing is entirely optional. We collect as little as possible: no behavioral advertising, no data sales.",
+  },
+  "privacy.updated": { zh: "更新于 2026-09-16", en: "Updated 2026-09-16" },
+  "privacy.s.scope.title": { zh: "适用范围", en: "Scope" },
+  "privacy.s.scope.body": {
+    zh: "本政策适用于 kimi.builders 网站（kimi.builders）及其用量采集 CLI。用量 CLI 在你的设备本地运行，其行为单独在本节「用量数据」中说明。",
+    en: "This policy covers the kimi.builders website and its usage CLI. The usage CLI runs locally on your device; its behavior is described separately under Usage data below.",
+  },
+  "privacy.s.account.title": { zh: "账号信息", en: "Account information" },
+  "privacy.s.account.body": {
+    zh: "注册需要邮箱或 OAuth（GitHub / Google）资料。我们保存你的邮箱（或 OAuth 提供的用户标识与头像）、显示名和密码哈希（仅邮箱注册；使用 scrypt 单向散列，不保存明文）。找回密码与邮箱验证邮件通过第三方邮件服务 Resend 发送。",
+    en: "Signing up requires an email address or an OAuth (GitHub / Google) profile. We store your email (or the OAuth provider identity and avatar), display name, and a password hash (email signups only; scrypt one-way hash, never plaintext). Password reset and verification emails are sent through the third-party mail service Resend.",
+  },
+  "privacy.s.content.title": { zh: "你发布的内容", en: "Content you publish" },
+  "privacy.s.content.body": {
+    zh: "你发布的帖子、评论、作品与个人资料是公开内容（帖子可设为私密）。你上传的图片经转码后存储在 Cloudflare R2 对象存储。删除内容即从公开面移除；账号注销会脱敏你的身份资料并禁止登录。",
+    en: "Posts, comments, works, and profile details you publish are public content (posts can be private). Images you upload are transcoded and stored on Cloudflare R2 object storage. Deleting content removes it from public surfaces; account deletion anonymizes your identity and disables sign-in.",
+  },
+  "privacy.s.usage.title": { zh: "用量数据（本地优先）", en: "Usage data (local-first)" },
+  "privacy.s.usage.body": {
+    zh: "用量 CLI 从你本机已有日志汇总 Token、活跃时间、模型与项目分布——采集与查看完全在本地，无需账号。同步到你的用量面板是显式动作：上传按会话的汇总记录（时长、消息数、模型、时段分布），仅自己可见；项目名与设备信息默认不上传，各自可在设置中单独开启。「参与社区榜」需另外主动开启，榜单只读取总 Token 等聚合数字。个人用量默认私密。你可以在隐私设置中配置保留期，或一键删除全部用量数据。",
+    en: "The usage CLI aggregates tokens, active time, models, and project distribution from logs already on your machine — collection and viewing happen locally, no account needed. Syncing to your usage dashboard is an explicit action: it uploads per-session summaries (duration, message counts, models, time-of-day distribution), visible only to you; project names and device details stay off by default and each can be enabled separately in settings. The community leaderboard is a separate opt-in and only reads aggregate numbers like total tokens. Personal usage is private by default. You can configure retention or delete all your usage data in privacy settings.",
+  },
+  "privacy.s.analytics.title": { zh: "站内统计", en: "On-site analytics" },
+  "privacy.s.analytics.body": {
+    zh: "我们记录少量第一方聚合事件（如页面浏览、精选点击），不使用第三方分析脚本，不建立跨站画像。浏览器与页面错误会上报到站内（页面路径、错误摘要与浏览器标识，不关联账号，保留 90 天），仅用于排查故障。",
+    en: "We record a small set of first-party aggregate events (page views, featured clicks). No third-party analytics scripts, no cross-site profiles. Browser and page errors are reported to the site (page path, error summary, and browser identifier — never tied to an account, kept for 90 days) purely for diagnosing failures.",
+  },
+  "privacy.s.cookies.title": { zh: "Cookie", en: "Cookies" },
+  "privacy.s.cookies.body": {
+    zh: "仅使用必要 Cookie：登录会话、语言 / 主题 / 视觉气质偏好，以及临时的列表返回上下文。不设广告或追踪 Cookie。",
+    en: "Only essential cookies: sign-in session, language / theme / vibe preferences, and a transient list-context cookie. No advertising or tracking cookies.",
+  },
+  "privacy.s.retention.title": { zh: "保留与删除", en: "Retention & deletion" },
+  "privacy.s.retention.body": {
+    zh: "用量数据按你设置的保留期自动清理；站内统计事件保留 90 天。你可以删除自己的内容、在设置中注销账号，或在用量隐私设置中一键删除全部用量数据；注销后登录凭据立即失效。",
+    en: "Usage data is cleaned up automatically per your retention setting; on-site analytics events are kept for 90 days. You can delete your own content, delete your account in settings, or wipe all your usage data from privacy settings; account deletion disables your credentials immediately.",
+  },
+  "privacy.s.thirdParty.title": { zh: "第三方服务", en: "Third-party services" },
+  "privacy.s.thirdParty.body": {
+    zh: "本站使用：Cloudflare（CDN 与对象存储）、Resend（事务邮件）、GitHub / Google（OAuth 登录）、Moonshot API（社区 AI 助手小筑）。这些服务仅接触履行其功能所必需的数据。",
+    en: "This site uses: Cloudflare (CDN and object storage), Resend (transactional email), GitHub / Google (OAuth sign-in), and the Moonshot API (the community AI assistant Xiaozhu). Each service only receives what is necessary for its function.",
+  },
+  "privacy.s.contact.title": { zh: "联系方式", en: "Contact" },
+  "privacy.s.contact.body": {
+    zh: "与隐私相关的问题或请求，联系 we@kimi.builders。",
+    en: "For privacy questions or requests, contact we@kimi.builders.",
+  },
+  "terms.title": { zh: "服务条款", en: "Terms of Service" },
+  "terms.lede": {
+    zh: "使用 kimi.builders 即表示你接受以下条款。这是一份社区公约，不是法律文件范本：我们用平实的语言写清楚规则与边界。",
+    en: "By using kimi.builders you agree to the terms below. This is a community compact, not legal boilerplate: plain language, clear rules and boundaries.",
+  },
+  "terms.updated": { zh: "更新于 2026-09-16", en: "Updated 2026-09-16" },
+  "terms.s.service.title": { zh: "服务性质", en: "The service" },
+  "terms.s.service.body": {
+    zh: "kimi.builders 是 Kimi 用户自建自运营的非商业社区网站，提供讨论区、作品墙、实践收录与用量统计展示。",
+    en: "kimi.builders is a non-commercial, user-run community website for Kimi users, offering discussions, a works wall, practice collections, and usage statistics.",
+  },
+  "terms.s.unofficial.title": { zh: "非官方声明", en: "Unofficial status" },
+  "terms.s.unofficial.body": {
+    zh: "本站与 Moonshot AI（月之暗面）无隶属、赞助、背书或授权关系。「Kimi」「Moonshot AI」等名称与商标归其权利人所有，本站仅作事实性指称。站内 AI 助手的回复不代表 Moonshot AI 官方立场。",
+    en: 'This site is not affiliated with, sponsored, endorsed, or authorized by Moonshot AI (月之暗面). "Kimi", "Moonshot AI" and related marks belong to their owners and are referenced factually. Replies from the on-site AI assistant do not represent Moonshot AI.',
+  },
+  "terms.s.account.title": { zh: "账号", en: "Accounts" },
+  "terms.s.account.body": {
+    zh: "你对账号下的活动负责，请保管好凭据。冒用他人身份注册的账号会被移除。你可以在设置中注销账号；注销会脱敏身份资料并使凭据失效。",
+    en: "You are responsible for activity under your account; keep your credentials safe. Accounts impersonating others will be removed. You can delete your account in settings; deletion anonymizes your identity and invalidates your credentials.",
+  },
+  "terms.s.content.title": { zh: "内容与行为准则", en: "Content & conduct" },
+  "terms.s.content.body": {
+    zh: "你对自己发布的内容负责并保留权利。请勿发布违法内容、垃圾信息、骚扰或侵犯隐私的内容；请尊重版权与他人在其他地方发布的作品。推荐站外项目时保留原作者与来源。",
+    en: "You are responsible for and keep the rights to what you publish. Do not post illegal content, spam, harassment, or privacy-invading material; respect copyright and work published elsewhere. When recommending external projects, keep the original author and source.",
+  },
+  "terms.s.moderation.title": { zh: "治理与申诉", en: "Moderation & appeals" },
+  "terms.s.moderation.body": {
+    zh: "社区设有内容反馈（举报）与版主治理：违规内容可能被隐藏或删除，作者会收到通知并可通过邮件申诉。我们倾向最小干预，但保留为保护社区移除内容的最终责任。",
+    en: "The community has content feedback (reporting) and moderator governance: rule-breaking content may be hidden or removed, the author is notified and can appeal by email. We prefer minimal intervention but retain final responsibility for removing content to protect the community.",
+  },
+  "terms.s.claims.title": { zh: "数据与声明口径", en: "Data & claims" },
+  "terms.s.claims.body": {
+    zh: "站内用量与声明 Token 由成员自报或本地日志汇总，系统仅做封顶与一致性校验；它们不是精确计量，也不构成能力认证。请基于证据自行判断他人的声明。",
+    en: "Usage figures and declared tokens are self-reported or aggregated from local logs; the system only caps and cross-checks them. They are not precise measurement and not certification. Judge others' claims on the evidence.",
+  },
+  "terms.s.liability.title": { zh: "免责与责任边界", en: "Disclaimers & liability" },
+  "terms.s.liability.body": {
+    zh: "服务按「现状」提供，不承诺可用性或适销性。在法律允许范围内，社区维护者不对间接损失承担责任；对社区发布内容造成的损失，责任归于发布者本人。",
+    en: "The service is provided \"as is\", without warranties of availability or merchantability. To the extent permitted by law, the maintainers are not liable for indirect damages; liability for published community content rests with its publisher.",
+  },
+  "terms.s.changes.title": { zh: "条款变更", en: "Changes" },
+  "terms.s.changes.body": {
+    zh: "条款如有实质变更会在站内公告。继续使用即表示接受变更；不同意请停止使用并注销账号。",
+    en: "Material changes will be announced on-site. Continued use means acceptance; if you disagree, stop using the site and delete your account.",
+  },
+  "terms.s.contact.title": { zh: "联系方式", en: "Contact" },
+  "terms.s.contact.body": {
+    zh: "条款相关问题联系 we@kimi.builders；安全问题请参照 SECURITY.md。",
+    en: "For questions about these terms contact we@kimi.builders; for security issues see SECURITY.md.",
   },
   /* ---- aria ---- */
   "aria.toLight": { zh: "切换到亮色主题", en: "Switch to light theme" },
@@ -2077,6 +2198,16 @@ const DICT = {
   "meta.leaderboard": { zh: "社区用量榜 — kimi.builders", en: "Community leaderboard — kimi.builders" },
   "meta.device": { zh: "连接用量设备 — kimi.builders", en: "Connect device — kimi.builders" },
   "meta.about": { zh: "关于 — kimi.builders", en: "About — kimi.builders" },
+  "meta.privacy": { zh: "隐私政策 — kimi.builders", en: "Privacy Policy — kimi.builders" },
+  "meta.terms": { zh: "服务条款 — kimi.builders", en: "Terms of Service — kimi.builders" },
+  "metaDesc.privacy": {
+    zh: "kimi.builders 隐私政策：收集什么、什么留在本地、什么出于自愿。",
+    en: "kimi.builders privacy policy: what we collect, what stays local, and what is optional.",
+  },
+  "metaDesc.terms": {
+    zh: "kimi.builders 服务条款：社区公约、内容准则与责任边界。",
+    en: "kimi.builders terms of service: the community compact, content rules, and boundaries.",
+  },
   "meta.login": { zh: "登录 — kimi.builders", en: "Sign in — kimi.builders" },
   "meta.settings": { zh: "设置 — kimi.builders", en: "Settings — kimi.builders" },
   "meta.notifications": { zh: "消息 — kimi.builders", en: "Notifications — kimi.builders" },

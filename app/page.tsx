@@ -420,6 +420,15 @@ export default async function Home({
           <div className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed">
             <p className="text-grey">{t(locale, "home.footerLine1")}</p>
             <p className="mt-1 text-grey/70">{t(locale, "home.footerLine2")}</p>
+            <p className="mt-3 font-mono">
+              <Link href="/privacy" className="text-grey/70 underline decoration-line underline-offset-4 transition-colors hover:text-ui-blue">
+                {t(locale, "legal.privacy")}
+              </Link>
+              <span className="mx-2 text-grey/40" aria-hidden="true">·</span>
+              <Link href="/terms" className="text-grey/70 underline decoration-line underline-offset-4 transition-colors hover:text-ui-blue">
+                {t(locale, "legal.terms")}
+              </Link>
+            </p>
           </div>
         </div>
       </footer>

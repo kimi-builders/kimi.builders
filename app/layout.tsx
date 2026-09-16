@@ -5,6 +5,7 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { getUiPrefs } from "@/src/lib/prefs";
 import Toaster from "@/components/Toaster";
+import ErrorReporter from "@/components/ErrorReporter";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import "./globals.css";
 
@@ -72,6 +73,7 @@ export default async function RootLayout({
         {children}
         {/* Interception-route modal slot (@modal lives at the root level so (app)/template cannot wrap the parallel slot) */}
         {modal}
+        <ErrorReporter />
         <Toaster />
         {/* Global shortcut layer (listener + help panel; the buttons live in TopBar/home) */}
         <KeyboardShortcuts locale={locale} />

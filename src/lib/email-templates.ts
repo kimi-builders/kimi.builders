@@ -443,3 +443,36 @@ export function renderEmailChangeMail({
     html,
   };
 }
+
+/* Ops digest for the daily error cron: bilingual one-pager with the
+   24h error count and the top message. Plain numbers only — no URLs,
+   stacks, or user identifiers leave the server in email. */
+export function renderErrorDigestMail({
+  total,
+  topMessage,
+  topCount,
+  siteUrl,
+}: {
+  total: number;
+  topMessage: string | null;
+  topCount: number;
+  siteUrl: string;
+}): TransactionalMail {
+  const top = topMessage
+    ? `Top: ${topMessage.slice(0, 160)} × ${topCount}`
+    : "Top: —";
+  const subject = `[kimi.builders] 24h error digest: ${total}`;
+  const bodyHtml = `<p style="margin:0;font-size:14px;line-height:1.8;">过去 24 小时收到 ${total} 条错误上报。/ ${total} error reports in the last 24h.</p>
+<p style="margin:12px 0 0;font-family:${MONO_STACK};font-size:12px;line-height:1.7;color:${GREY};">${escapeEmailHtml(top)}</p>`;
+  return {
+    subject,
+    text: `${subject}\n\n${top}\n${siteUrl}`,
+    html: renderBrandEmail({
+      title: "错误摘要 / Error digest",
+      eyebrow: "KIMI.BUILDERS / OPS",
+      bodyHtml,
+      footnote: "每日定时发送,低于阈值时静默。/ Daily cron; silent below threshold.",
+      siteUrl,
+    }),
+  };
+}

@@ -45,6 +45,23 @@ test("relTime clamps future timestamps to just now", () => {
   assert.equal(relFromSeconds(-120), "刚刚");
 });
 
+/* The post-draft restore banner feeds a stored savedAt (epoch ms from
+   the localStorage draft) through relTime with the clock injected —
+   the pure path, no Date.now patching. These pins hold the exact
+   wording the banner interpolates into form.draftRestoredAge. */
+test("relTime with an injected clock renders the draft-saved age buckets", () => {
+  const savedAt = (secondsAgo: number) => NOW - secondsAgo * 1000;
+  assert.equal(relTime(new Date(savedAt(60)), "zh", NOW), "1 分钟前");
+  assert.equal(relTime(new Date(savedAt(5 * 60)), "en", NOW), "5m ago");
+  assert.equal(relTime(new Date(savedAt(3 * 3600)), "zh", NOW), "3 小时前");
+  assert.equal(relTime(new Date(savedAt(2 * 86400)), "en", NOW), "2d ago");
+  /* A month-old draft shows the absolute date (the banner copy then
+     reads "restored the draft saved on 2026-08-13") instead of
+     pretending to be fresh. */
+  assert.equal(relTime(new Date(savedAt(30 * 86400)), "zh", NOW), "2026-08-13");
+  assert.equal(relTime(new Date(savedAt(30 * 86400)), "en", NOW), "2026-08-13");
+});
+
 /* ---- stripDuplicateLeadingHeading: render-boundary guard only. An
    opening ATX H1 equal to the page title (whitespace-normalized) is
    removed; nothing else is. Stored bodies are never rewritten. ---- */

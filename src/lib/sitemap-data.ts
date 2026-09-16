@@ -29,6 +29,8 @@ export const SITEMAP_STATIC_PATHS = [
   "/usage",
   "/usage/leaderboard",
   "/about",
+  "/privacy",
+  "/terms",
 ] as const;
 
 export interface SitemapData {

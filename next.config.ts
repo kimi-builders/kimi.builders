@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { securityHeaders } from "./src/lib/security-headers";
 
 const nextConfig: NextConfig = {
   // 自托管生产用 Next 的最小 Node server;部署流水线把 public/ 与
@@ -18,6 +19,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["mysql2"],
 
   async headers() {
+    /* CSP ships Report-Only first; HSTS is conservative on purpose
+       (see src/lib/security-headers.ts). */
+    const { csp, hsts } = securityHeaders({
+      r2PublicBaseUrl: process.env.R2_PUBLIC_BASE_URL,
+    });
     return [
       {
         source: "/:path*",
@@ -25,6 +31,8 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Content-Security-Policy-Report-Only", value: csp },
+          { key: "Strict-Transport-Security", value: hsts },
         ],
       },
       {

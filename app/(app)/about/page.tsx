@@ -29,6 +29,8 @@ export default async function AboutPage() {
     { href: "https://github.com/kimi-builders", label: "GitHub" },
     { href: "https://github.com/kimi-builders/awesome-kimi-builders", label: "Awesome" },
     { href: "mailto:hi@kimi.builders", label: "hi@kimi.builders" },
+    { href: "/privacy", label: t(locale, "legal.privacy") },
+    { href: "/terms", label: t(locale, "legal.terms") },
   ];
 
   return (
@@ -71,16 +73,29 @@ export default async function AboutPage() {
         {t(locale, "about.linksTitle")}
       </h2>
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 font-mono text-xs">
-        {links.map((l) => (
-          <a
-            key={l.href}
-            href={l.href}
-            {...(l.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="text-paper underline decoration-ui-blue/50 underline-offset-4 transition-colors hover:text-ui-blue"
-          >
-            {l.label}
-          </a>
-        ))}
+        {links.map((l) =>
+          /* In-site legal pages navigate client-side; external links open
+             in a new tab. */
+          l.href.startsWith("/") ? (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="text-paper underline decoration-ui-blue/50 underline-offset-4 transition-colors hover:text-ui-blue"
+            >
+              {l.label}
+            </Link>
+          ) : (
+            <a
+              key={l.href}
+              href={l.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-paper underline decoration-ui-blue/50 underline-offset-4 transition-colors hover:text-ui-blue"
+            >
+              {l.label}
+            </a>
+          ),
+        )}
       </div>
 
       {/* Page closer: About is the last page the hesitant read — end with an

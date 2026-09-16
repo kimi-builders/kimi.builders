@@ -174,5 +174,7 @@ export const config = {
        visibility:hidden (the trap explore hit before). */
     "/about/:path*",
     "/login/:path*",
+    "/privacy/:path*",
+    "/terms/:path*",
   ],
 };

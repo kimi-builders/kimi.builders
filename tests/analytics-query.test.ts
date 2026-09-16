@@ -4,6 +4,7 @@ import type { Pool } from "mysql2/promise";
 import {
   ANALYTICS_RATE_LIMIT_RETENTION_SQL,
   ANALYTICS_RETENTION_SQL,
+  ERROR_EVENTS_RETENTION_SQL,
   ANALYTICS_TOP_LIMIT,
   analyticsCutoff,
   applyAnalyticsRetention,
@@ -125,15 +126,17 @@ test("analytics retention deletes only rows older than 90 days", async () => {
   const db = {
     async query(sql: string) {
       calls.push(sql);
-      return [{ affectedRows: calls.length === 1 ? 12 : 4 }];
+      return [{ affectedRows: [12, 4, 2][calls.length - 1] ?? 0 }];
     },
   } as unknown as Pool;
   assert.deepEqual(await applyAnalyticsRetention(db), {
     deleted: 12,
     rateLimitDeleted: 4,
+    errorEventsDeleted: 2,
   });
   assert.deepEqual(calls, [
     ANALYTICS_RETENTION_SQL,
     ANALYTICS_RATE_LIMIT_RETENTION_SQL,
+    ERROR_EVENTS_RETENTION_SQL,
   ]);
 });

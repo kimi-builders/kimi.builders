@@ -28,6 +28,22 @@ jobs:
     concurrency:
       group: kimi-builders-ci-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
+    # Integration suites hit a real MySQL, mirroring db-validate.yml's
+    # fresh-install provisioning (same image, same schema bootstrap) so a
+    # PR cannot pass unit gates while breaking a DB suite.
+    services:
+      mysql:
+        image: mysql:8.0.43
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: kbu-mysql
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h127.0.0.1 -uroot -proot"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 20
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -41,6 +57,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Provision test database
+        run: |
+          set -Eeuo pipefail
+          mysql -h127.0.0.1 -uroot -proot kbu-mysql < db/schema.sql
+          DATABASE_URL='mysql://root:root@127.0.0.1:3306/kbu-mysql' \
+            node scripts/db-migrate.mjs init-ledger --fresh-schema
+          DATABASE_URL='mysql://root:root@127.0.0.1:3306/kbu-mysql' \
+            node scripts/db-migrate.mjs status --strict --require-clean
+
       - name: Test
         run: npm test
 
@@ -49,6 +74,18 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Database integration suites
+        env:
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/kbu-mysql
+          USAGE_KEY_PEPPER: ci-only-usage-pepper-at-least-32-characters
+        run: |
+          set -Eeuo pipefail
+          npm run test:usage-db
+          npm run test:analytics-db
+          npm run test:auth-db
+          npm run test:works-db
+          npm run test:moderation-db
 
       - name: Build
         env:

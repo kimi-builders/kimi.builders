@@ -13,6 +13,25 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   );
   useEffect(() => {
     console.error(error);
+    /* Fire-and-forget report; the endpoint is same-origin, capped, and
+       rate-limited, and it swallows everything itself. */
+    try {
+      void fetch("/api/error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "client",
+          message: error.message || "render error",
+          stack: error.digest ? `digest: ${error.digest}` : (error.stack ?? ""),
+          url: window.location.pathname.slice(0, 500),
+          release: "",
+        }),
+        keepalive: true,
+        credentials: "same-origin",
+      }).catch(() => undefined);
+    } catch {
+      /* never let reporting break the error page */
+    }
   }, [error]);
   const locale: Locale = hydrated && document.documentElement.lang === "en" ? "en" : "zh";
 

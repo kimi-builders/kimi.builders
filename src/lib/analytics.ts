@@ -428,10 +428,16 @@ export const ANALYTICS_RETENTION_SQL =
   "DELETE FROM analytics_events WHERE created_at < UTC_TIMESTAMP() - INTERVAL 90 DAY";
 export const ANALYTICS_RATE_LIMIT_RETENTION_SQL =
   "DELETE FROM usage_rate_limits WHERE scope = 'analytics-event' AND window_start < UTC_TIMESTAMP() - INTERVAL 90 DAY";
+export const ERROR_EVENTS_RETENTION_SQL =
+  "DELETE FROM error_events WHERE created_at < UTC_TIMESTAMP() - INTERVAL 90 DAY";
 
 export async function applyAnalyticsRetention(
   db: Queryable = getPool(),
-): Promise<{ deleted: number; rateLimitDeleted: number }> {
+): Promise<{
+  deleted: number;
+  rateLimitDeleted: number;
+  errorEventsDeleted: number;
+}> {
   const [result] = await db.query<ResultSetHeader>(ANALYTICS_RETENTION_SQL);
   /* identity_hash rows in the rate-limit table are a second HMAC over
      the viewer and obey the same 90-day lifecycle; the scope condition
@@ -439,8 +445,14 @@ export async function applyAnalyticsRetention(
   const [rateLimitResult] = await db.query<ResultSetHeader>(
     ANALYTICS_RATE_LIMIT_RETENTION_SQL,
   );
+  /* Error reports (error_events) follow the same 90-day lifecycle so
+     the observability table cannot grow unbounded. */
+  const [errorResult] = await db.query<ResultSetHeader>(
+    ERROR_EVENTS_RETENTION_SQL,
+  );
   return {
     deleted: result.affectedRows,
     rateLimitDeleted: rateLimitResult.affectedRows,
+    errorEventsDeleted: errorResult.affectedRows,
   };
 }

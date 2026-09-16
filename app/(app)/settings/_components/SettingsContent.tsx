@@ -5,6 +5,7 @@
    panel cards (title + right-side fine print); row controls (title +
    description left, switch/segment/cards right) share the usage
    page's Kimi Design grammar. */
+import Link from "next/link";
 import { AtSign } from "lucide-react";
 import GoogleColor from "@lobehub/icons/es/Google/components/Color";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -391,6 +392,16 @@ export default async function SettingsContent({
               <div className="mt-3">
                 <DeleteAccountButton locale={locale} handle={user.handle} />
               </div>
+              <p className="mt-4 font-mono text-[11px] text-grey/70">
+                {t(locale, "legal.accountNote")}{" "}
+                <Link href="/privacy" className="underline decoration-line underline-offset-4 hover:text-ui-blue">
+                  {t(locale, "legal.privacy")}
+                </Link>
+                {" · "}
+                <Link href="/terms" className="underline decoration-line underline-offset-4 hover:text-ui-blue">
+                  {t(locale, "legal.terms")}
+                </Link>
+              </p>
             </div>
           </Panel>
         </SettingsTabs>

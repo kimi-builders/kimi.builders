@@ -3,14 +3,17 @@
 /* Relative time: "just now" under a minute, then minutes/hours/days,
    YYYY-MM-DD from 7 days on. The 7-day cutoff keeps one list from
    mixing "27 days ago" with absolute dates; every surface reusing
-   relTime (community lists, details, comments, notifications) shares
-   the rule. */
+   relTime (community lists, details, comments, notifications, the
+   post-draft restore banner) shares the rule. `now` is injectable so
+   a stored timestamp (draft savedAt) renders a pure, testable age
+   without monkey-patching the clock. */
 export function relTime(
   d: Date | string,
   locale: "zh" | "en" = "zh",
+  now: number = Date.now(),
 ): string {
   const t = typeof d === "string" ? new Date(d) : d;
-  const s = Math.max(0, (Date.now() - t.getTime()) / 1000);
+  const s = Math.max(0, (now - t.getTime()) / 1000);
   if (s < 60) return locale === "en" ? "just now" : "刚刚";
   if (s < 3600) {
     const n = Math.floor(s / 60);
