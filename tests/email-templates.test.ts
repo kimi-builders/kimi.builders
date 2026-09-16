@@ -23,6 +23,8 @@ test("template: CTA href 同时出现在按钮与明文兜底链接", () => {
   assert.ok(occurrences >= 2, `href should appear at least twice, got ${occurrences}`);
   assert.match(html, /bgcolor="#1783ff"/); // the bulletproof button td fill
   assert.match(html, /border-radius:10px/);
+  // Fixed hero width (w-72): zh/en buttons render identically wide.
+  assert.match(html, /width:288px;max-width:100%/);
 });
 
 test("template: 双语关键串 + 标题 + 正文透传", () => {

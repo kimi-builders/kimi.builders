@@ -91,7 +91,7 @@ export function renderBrandEmail(input: BrandEmailInput): string {
     ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:28px 0 4px;">
               <tr>
                 <td align="center" bgcolor="${BRAND_BLUE}" style="border-radius:10px;">
-                  <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="display:inline-block;padding:13px 38px;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeEmailHtml(input.cta.label)}</a>
+                  <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:13px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeEmailHtml(input.cta.label)}</a>
                 </td>
               </tr>
             </table>
@@ -124,13 +124,16 @@ export function renderBrandEmail(input: BrandEmailInput): string {
                   <a href="${escapeEmailHtml(href)}" target="_blank" style="display:block;font-family:${MONO_STACK};font-size:13px;letter-spacing:0.08em;color:${PAPER};text-decoration:none;">${escapeEmailHtml(t(navLocale, nameKey))}</a>
                   <span style="display:block;margin-top:5px;font-family:${MONO_STACK};font-size:11px;color:${GREY};">${escapeEmailHtml(t(navLocale, subKey))}</span>
                 </td>`;
+  /* Hero-centered column: tagline / lede / CTA all center-aligned
+     (the facade hero is a centered column); the CTA shares the card
+     button's fixed 288px width so zh/en render identically. */
   const footerNavBlock = `
-              <p style="margin:22px 0 0;font-family:${FONT_STACK};font-size:17px;font-weight:600;line-height:1.5;color:${PAPER};">${escapeEmailHtml(t(navLocale, "home.tagline"))}</p>
-              <p style="margin:6px 0 0;font-family:${FONT_STACK};font-size:13px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t(navLocale, "home.heroSub"))}</p>
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+              <p style="margin:22px 0 0;text-align:center;font-family:${FONT_STACK};font-size:17px;font-weight:600;line-height:1.5;color:${PAPER};">${escapeEmailHtml(t(navLocale, "home.tagline"))}</p>
+              <p style="margin:6px 0 0;text-align:center;font-family:${FONT_STACK};font-size:13px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t(navLocale, "home.heroSub"))}</p>
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:18px auto 4px;">
                 <tr>
                   <td align="center" bgcolor="${BRAND_BLUE}" style="border-radius:10px;">
-                    <a href="${siteUrl}/community" target="_blank" style="display:inline-block;padding:13px 40px;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeEmailHtml(t(navLocale, "home.cta"))} →</a>
+                    <a href="${siteUrl}/community" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:13px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeEmailHtml(t(navLocale, "home.cta"))} →</a>
                   </td>
                 </tr>
               </table>
