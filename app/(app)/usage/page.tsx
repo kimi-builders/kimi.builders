@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { BarChart3, Clock3, Link2, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import ModelIcon from "@/components/ModelIcon";
 import { ChartHeader, MetricCard } from "@/components/data-display";
 import UsageInsightPanel from "@/components/UsageInsightPanel";
 import UsageAttributionSummary from "@/components/UsageAttributionSummary";
@@ -35,6 +36,7 @@ import {
   weekWindowFor,
 } from "@/src/lib/usage/week";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
+import { usageModelIconId } from "@/src/lib/usage/model-meta";
 import { buildUsageInsights } from "@/src/lib/usage/insights";
 import { captureUsageOperation } from "@/src/lib/usage/observability";
 import {
@@ -1223,6 +1225,9 @@ export default async function UsagePage({
           zh={zh}
           ccy={ccy}
           labelOf={(row) => (row.key === "__other__" ? otherLabel : row.label)}
+          iconOf={(row) => row.key === "__other__" ? null : (
+            <ModelIcon id={usageModelIconId({ model: row.key })} context="chart" />
+          )}
         />
         <DistributionCard
           title={zh ? "项目" : "Projects"}

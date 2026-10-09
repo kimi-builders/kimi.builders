@@ -21,9 +21,15 @@ import {
   countByRoles,
   deriveFormats,
   filterExploreItems,
+  isExploreListType,
+  resolveStarters,
   roleLandingEligible,
+  searchExploreItems,
+  seriesShelves,
+  typeCounts,
   type ExploreItem,
 } from "../src/lib/explore";
+import { LEARN_SERIES } from "../src/lib/learn-series";
 import {
   guidePayloadFromDb,
   validateGuidePayload,
@@ -291,4 +297,92 @@ test("roleLandingEligible: landing page needs ≥3 published units", () => {
   assert.equal(roleLandingEligible(LENS_ITEMS, "software"), true);
   assert.equal(roleLandingEligible(LENS_ITEMS, "lawyer"), false);
   assert.equal(roleLandingEligible([], "software"), false);
+});
+
+/* ---- List types / path shelves / starter curation / shelf search ---- */
+
+test("typeCounts / filterExploreItems: content-shape tabs partition the shelf", () => {
+  const typed = [
+    item({ slug: "ep1", series: "kimi-best-practice" }),
+    item({ slug: "ep2", series: "swarm-field-notes" }),
+    item({ slug: "solo", kind: "guide" }),
+    item({ slug: "issue", kind: "letter" }),
+  ];
+  assert.deepEqual(typeCounts(typed), { paths: 2, practices: 1, letters: 1 });
+  assert.deepEqual(
+    filterExploreItems(typed, { type: "paths" }).map((i) => i.slug),
+    ["ep1", "ep2"],
+  );
+  assert.deepEqual(
+    filterExploreItems(typed, { type: "practices" }).map((i) => i.slug),
+    ["solo"],
+  );
+  assert.deepEqual(
+    filterExploreItems(typed, { type: "letters" }).map((i) => i.slug),
+    ["issue"],
+  );
+  /* The type composes with the lenses (an episode matched by product is
+     still a path episode). */
+  assert.deepEqual(
+    filterExploreItems([item({ slug: "ep", series: "s", products: ["kimi-code"] })], {
+      type: "paths",
+      product: "kimi-code",
+    }).map((i) => i.slug),
+    ["ep"],
+  );
+  assert.equal(isExploreListType("paths"), true);
+  assert.equal(isExploreListType("all"), false);
+  assert.equal(isExploreListType(undefined), false);
+});
+
+test("seriesShelves: registered series with episodes only, registry order", () => {
+  const firstSlug = LEARN_SERIES[0]?.slug ?? null;
+  const lastSlug = LEARN_SERIES[LEARN_SERIES.length - 1]?.slug ?? null;
+  const shelves = seriesShelves([
+    item({ slug: "solo", kind: "guide" }),
+    item({ slug: "ep2", series: lastSlug }),
+    item({ slug: "issue", kind: "letter" }),
+    item({ slug: "ep1", series: firstSlug }),
+  ]);
+  /* Registry order (first series first), unattached content never
+     manufactures a shelf. */
+  assert.deepEqual(
+    shelves.map((s) => s.series.slug),
+    [firstSlug, lastSlug],
+  );
+  assert.deepEqual(
+    shelves[0]?.episodes.map((e) => e.slug),
+    ["ep1"],
+  );
+  assert.equal(seriesShelves([item({ slug: "solo" })]).length, 0);
+});
+
+test("resolveStarters: curation order, capped at 3, unpublished slugs drop", () => {
+  const starters = resolveStarters([
+    item({ slug: "filler-a" }),
+    item({ slug: "lens-kbp-02", title: "second" }),
+    item({ slug: "filler-b" }),
+    item({ slug: "lens-kbp-01", title: "first" }),
+  ]);
+  /* Curation order wins over list order; the retired slug
+     (lens-swarm-01, unpublished here) drops; the cap is 3 but two
+     resolved. */
+  assert.deepEqual(starters.map((i) => i.slug), ["lens-kbp-01", "lens-kbp-02"]);
+  assert.equal(resolveStarters([]).length, 0);
+});
+
+test("searchExploreItems: case-insensitive across title/summary/tags, blank never filters", () => {
+  const hay = [
+    item({ slug: "a", title: "用 Kimi Code 起项目", tags: ["kimi-code"] }),
+    item({ slug: "b", title: "周报", summary: "表格 × PPT 的最后一公里" }),
+    item({ slug: "c", title: "Swarm", tags: ["Automation"] }),
+  ];
+  assert.deepEqual(searchExploreItems(hay, "").map((i) => i.slug), ["a", "b", "c"]);
+  assert.deepEqual(searchExploreItems(hay, "   ").map((i) => i.slug), ["a", "b", "c"]);
+  assert.deepEqual(searchExploreItems(hay, "kimi code").map((i) => i.slug), ["a"]);
+  assert.deepEqual(searchExploreItems(hay, "最后一公里").map((i) => i.slug), ["b"]);
+  /* Tags match case-insensitively; a miss yields an empty array (the
+     page offers the combined empty state). */
+  assert.deepEqual(searchExploreItems(hay, "automation").map((i) => i.slug), ["c"]);
+  assert.deepEqual(searchExploreItems(hay, "nope"), []);
 });

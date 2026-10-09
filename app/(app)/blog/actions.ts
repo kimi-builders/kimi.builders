@@ -31,6 +31,7 @@ import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
 import { parseLetterPayload } from "@/src/lib/monthly";
 import { parseGuidePayload } from "@/src/lib/tutorials";
+import { resolveGuideMedia } from "@/src/lib/guide-media";
 
 export interface ArticleFormState {
   /* Success state: the form layer navigates on it (publish -> detail;
@@ -84,7 +85,7 @@ export async function saveArticleAction(
      (letter -> monthly.ts, guide -> tutorials.ts), errors shown
      inline. */
   let payload: string | null = null;
-  let guideHasVideo = false;
+  let guideHasMedia = false;
   /* The guide's series slug: series pages invalidate with the write
      (letters have no series). */
   let seriesSlug: string | null = null;
@@ -100,14 +101,16 @@ export async function saveArticleAction(
     payload = Object.keys(parsed.payload).length
       ? JSON.stringify(parsed.payload)
       : null;
-    guideHasVideo = !!parsed.payload.video;
+    guideHasMedia = !!(parsed.payload.video || parsed.payload.deck);
+    const media = await resolveGuideMedia(!!bodyMd, parsed.payload);
+    if (publish && parsed.payload.deck && !media.payload.deck) {
+      return { error: t(locale, "err.artDeckUnavailable") };
+    }
     seriesSlug = parsed.payload.series ?? null;
   }
-  /* A letter's three layers assemble from data (src/lib/monthly.ts) so
-     its body may be empty; a video-first guide may leave the text empty
-     (the detail shows "video-first episode"), everything else stays
-     required. */
-  if (!bodyMd && kind !== "letter" && !guideHasVideo) return { error: t(locale, "err.artBody") };
+  /* A guide may use video or slides as its primary content. Static
+     slide assets must exist before publishing; drafts can precede them. */
+  if (!bodyMd && kind !== "letter" && !guideHasMedia) return { error: t(locale, "err.artBody") };
 
   const input = { slug, kind, locale: artLocale, title, summary, bodyMd, sortOrder, payload };
   /* Fetch old values (slug/series) before the update: after a rename or

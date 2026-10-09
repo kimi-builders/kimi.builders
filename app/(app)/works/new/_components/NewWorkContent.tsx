@@ -69,8 +69,8 @@ export default async function NewWorkContent({
     getClaimAllowance(user.id),
     /* Create-intent default follows the source list: entering from
        Awesome's submit entry lands the form directly on "recommend
-       external" — the server reads kb-works-src (written by proxy on
-       list pages) and renders it directly, no hydration jump; the same
+       external" — the server reads kb-works-src (written after a list
+       visit commits) and renders it directly, no hydration jump; the same
        source of truth as the rail highlight and the detail page's
        "back". */
     getWorksSource(),

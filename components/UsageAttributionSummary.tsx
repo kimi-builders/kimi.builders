@@ -1,7 +1,9 @@
 import AgentIcon from "@/components/AgentIcon";
+import ModelIcon from "@/components/ModelIcon";
 import { ChartHeader, CoverageBadge, MetricCard } from "@/components/data-display";
 import { compactNumber } from "@/src/lib/format";
 import type { UsageAttribution, UsageTotals } from "@/src/lib/usage/query";
+import { usageModelIconId } from "@/src/lib/usage/model-meta";
 
 function pct(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
@@ -60,7 +62,7 @@ export default function UsageAttributionSummary({
           label: zh ? "模型" : "Model",
           value: topModel.label,
           share: topModel.share,
-          icon: null,
+          icon: <ModelIcon id={usageModelIconId({ model: topModel.key })} context="chart" />,
         }
       : null,
     topProject

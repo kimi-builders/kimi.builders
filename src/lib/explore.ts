@@ -15,9 +15,10 @@ import { KB_CHAPTERS } from "./kb-chapters";
 import { KB_PRODUCTS } from "./kb-products";
 import { KB_ROLES } from "./kb-roles";
 import { getPool } from "./db";
-import { LEARN_SERIES } from "./learn-series";
+import { LEARN_SERIES, type LearnSeries } from "./learn-series";
 import { letterPayloadFromDb } from "./monthly";
 import { guidePayloadFromDb } from "./tutorials";
+import { resolveGuideMedia } from "./guide-media";
 
 /* ---- Display types ---- */
 
@@ -171,6 +172,74 @@ export function countByChapter(items: ExploreItem[]): TaxonomyCount[] {
   }));
 }
 
+/* List types (the catalog's content-shape tabs): paths = episodes
+   attached to a registered series; practices = standalone guides;
+   letters = the monthly. "All" is the absence of the param, not a
+   value — a type with no content never renders its tab, and an absent
+   type never filters. */
+export type ExploreListType = "paths" | "practices" | "letters";
+
+export function isExploreListType(v: string | undefined): v is ExploreListType {
+  return v === "paths" || v === "practices" || v === "letters";
+}
+
+export interface TypeCounts {
+  paths: number;
+  practices: number;
+  letters: number;
+}
+
+export function typeCounts(items: ExploreItem[]): TypeCounts {
+  return {
+    paths: items.filter((i) => i.series !== null).length,
+    practices: items.filter((i) => i.kind === "guide" && i.series === null).length,
+    letters: items.filter((i) => i.kind === "letter").length,
+  };
+}
+
+/* The landing's path shelves: registered series with at least one
+   published episode, registry order; episodes keep the list's
+   newest-first order (the series page re-sorts by episode number). */
+export function seriesShelves(
+  items: ExploreItem[],
+): { series: LearnSeries; episodes: ExploreItem[] }[] {
+  return LEARN_SERIES.map((series) => ({
+    series,
+    episodes: items.filter((i) => i.series === series.slug),
+  })).filter((shelf) => shelf.episodes.length > 0);
+}
+
+/* Editorial "start here" curation (code-curated, same discipline as
+   LEARN_SERIES): resolved against published items in curation order;
+   unpublished/retired slugs drop silently, an empty result hides the
+   section. Capped at three — the promise is a starting point, not a
+   second shelf. */
+export const STARTER_SLUGS: readonly string[] = [
+  "lens-kbp-01",
+  "lens-kbp-02",
+  "lens-swarm-01",
+];
+
+export function resolveStarters(items: ExploreItem[]): ExploreItem[] {
+  return STARTER_SLUGS.flatMap((slug) => {
+    const hit = items.find((i) => i.slug === slug);
+    return hit ? [hit] : [];
+  }).slice(0, 3);
+}
+
+/* Shelf search (pure, SSR via ?q=): case-insensitive substring across
+   title, summary, and tags. A blank query never filters. */
+export function searchExploreItems(items: ExploreItem[], q: string): ExploreItem[] {
+  const needle = q.trim().toLowerCase();
+  if (needle.length === 0) return items;
+  return items.filter(
+    (i) =>
+      i.title.toLowerCase().includes(needle) ||
+      i.summary.toLowerCase().includes(needle) ||
+      i.tags.some((t) => t.toLowerCase().includes(needle)),
+  );
+}
+
 /* Archive: year desc -> month desc -> within a month by publish time desc
    (UTC, consistent with published_at). */
 export function groupByArchive(items: ExploreItem[]): ArchiveYear[] {
@@ -210,6 +279,9 @@ export interface ExploreSelection {
      absent). */
   product?: string;
   role?: string;
+  /* Content-shape tab (single-select; clicking again clears = param
+     absent). */
+  type?: ExploreListType;
   /* Format filter: a unit matches only if the format is available (the
      page no longer exposes the filter; the lib keeps the capability). */
   format?: GuideFormat;
@@ -227,6 +299,9 @@ export function filterExploreItems(
     if (sel.chapter && i.chapter !== sel.chapter) return false;
     if (sel.product && !i.products.includes(sel.product)) return false;
     if (sel.role && !i.roles.includes(sel.role)) return false;
+    if (sel.type === "paths" && i.series === null) return false;
+    if (sel.type === "practices" && !(i.kind === "guide" && i.series === null)) return false;
+    if (sel.type === "letters" && i.kind !== "letter") return false;
     if (sel.format && !i.formats.includes(sel.format)) return false;
     return true;
   });
@@ -312,7 +387,16 @@ export const listExploreItems = cache(async function listExploreItems(
      WHERE a.kind IN ('letter', 'guide') AND a.published_at IS NOT NULL AND a.deleted_at IS NULL
      ORDER BY a.published_at DESC, a.id DESC`,
   );
-  return pickLocaleVersions(rows.map(mapExploreRow), uiLocale);
+  const preferredRows = new Map<string, RowDataPacket>();
+  for (const row of rows) {
+    if (!preferredRows.has(row.slug) || row.locale === uiLocale) preferredRows.set(row.slug, row);
+  }
+  const readyRows = await Promise.all([...preferredRows.values()].map(async (row) => {
+    if (row.kind !== "guide") return row;
+    const media = await resolveGuideMedia(!!row.has_body, guidePayloadFromDb(row.payload));
+    return media.unavailable ? null : { ...row, payload: media.payload } as RowDataPacket;
+  }));
+  return pickLocaleVersions(readyRows.filter((row): row is RowDataPacket => row !== null).map(mapExploreRow), uiLocale);
 });
 
 /* Article detail rail (ArticleRail) metadata: single lookup by slug,
@@ -332,7 +416,13 @@ export const getArticleRailMeta = cache(
       [slug],
     );
     if (rows.length === 0) return null;
-    const item = mapExploreRow(rows[0]);
+    const row = rows[0];
+    if (row.kind === "guide") {
+      const media = await resolveGuideMedia(!!row.has_body, guidePayloadFromDb(row.payload));
+      if (media.unavailable) return null;
+      row.payload = media.payload;
+    }
+    const item = mapExploreRow(row);
     return { ...item, fallback: item.locale !== uiLocale };
   },
 );

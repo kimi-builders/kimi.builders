@@ -75,6 +75,7 @@ export interface ArticleListItem {
   sortOrder: number;
   fallback: boolean;
   payloadRaw: unknown;
+  hasBody: boolean;
 }
 
 export interface ArticleDetail extends ArticleListItem {
@@ -97,7 +98,8 @@ export interface ArticleForEdit {
 }
 
 const LIST_COLS = `a.id, a.slug, a.locale, a.title, a.summary, a.sort_order, a.published_at,
-         a.payload, u.handle AS author_handle`;
+         a.payload, (a.body_md IS NOT NULL AND TRIM(a.body_md) <> '') AS has_body,
+         u.handle AS author_handle`;
 
 /* List: published entries of both languages fetched together; language
    dedup happens in JS (pickArticleVersions). Letters order by publish
@@ -259,6 +261,7 @@ function mapListRow(r: RowDataPacket): Omit<ArticleListItem, "fallback"> {
     publishedAt: r.published_at,
     sortOrder: Number(r.sort_order) || 0,
     payloadRaw: r.payload ?? null,
+    hasBody: !!r.has_body,
   };
 }
 

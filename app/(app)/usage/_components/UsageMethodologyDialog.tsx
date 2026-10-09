@@ -104,7 +104,9 @@ export default function UsageMethodologyDialog({
           <div>
             <h2 id={titleId} className="font-mono text-sm font-semibold tracking-[0.06em]">{title}</h2>
             <p className="mt-1 text-xs text-grey">
-              {zh ? `${tzLabel} · 所有金额先按 USD 标准 API 价格计算` : `${tzLabel} · all costs start from standard USD API prices`}
+              {zh
+                ? `${tzLabel} · 金额以 USD 作 API 等价估算；原币种与换算依据见计价说明`
+                : `${tzLabel} · API-equivalent estimates in USD; original currency and conversions are disclosed in pricing notes`}
             </p>
           </div>
           <button
@@ -264,9 +266,14 @@ export default function UsageMethodologyDialog({
                                     : assumption === "cache-write-ttl"
                                       ? (zh ? "缓存 TTL 未知" : "cache TTL unknown")
                                       : assumption === "provisional-price"
-                                        ? (zh ? "官方价格未公布 · 当前为临时价" : "official price unpublished · provisional rate")
+                                        ? (zh ? "临时估算 · 详见计价说明" : "provisional estimate · see pricing note")
                                       : assumption,
                                 ).join(" · ")}
+                              </span>
+                            ) : null}
+                            {row.pricingNote ? (
+                              <span className="mt-1 block max-w-72 whitespace-normal text-xs leading-relaxed text-grey">
+                                {zh ? row.pricingNote.zh : row.pricingNote.en}
                               </span>
                             ) : null}
                           </td>

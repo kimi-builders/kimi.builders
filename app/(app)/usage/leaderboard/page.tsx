@@ -40,7 +40,7 @@ import {
   getPublicUsageLeaderboardSnapshot,
 } from "@/src/lib/usage/public-leaderboard-cache";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
-import { usageModelDisplayName } from "@/src/lib/usage/model-meta";
+import { usageModelDisplayName, usageModelIconId } from "@/src/lib/usage/model-meta";
 import { getUsageSettings } from "@/src/lib/usage/settings";
 
 /* Board filters are information-dense: the selected state uses a light
@@ -73,22 +73,6 @@ function fmtCost(micros: number): string {
 
 type BoardEntry = UsageLeaderboardEntry & { costMicros?: number };
 type BoardKind = "overall" | "source" | "model";
-
-function modelIconId(model: string): string {
-  const id = model.toLowerCase();
-  if (id.startsWith("kimi-") || id === "k3") return "kimi";
-  if (id.startsWith("claude-")) return "claude";
-  if (id.startsWith("gpt-") || id.startsWith("codex-")) return "openai";
-  if (id.startsWith("gemini-")) return "gemini";
-  if (id.startsWith("deepseek-")) return "deepseek";
-  if (id.startsWith("qwen-")) return "qwen";
-  if (id.startsWith("grok-")) return "grok";
-  if (id.startsWith("minimax-")) return "minimax";
-  if (id.startsWith("glm-")) return "glm";
-  if (id.startsWith("doubao")) return "doubao";
-  if (id.startsWith("ernie") || id.startsWith("wenxin")) return "wenxin";
-  return "";
-}
 
 function modelLabel(model: string): string {
   return usageModelDisplayName({ model, modelCanonical: model });
@@ -378,7 +362,7 @@ export default async function UsageLeaderboardPage({
               {kind === "source" ? (
                 <AgentIcon id={item} size={14} />
               ) : (
-                <ModelIcon id={modelIconId(item)} size={14} />
+                <ModelIcon id={usageModelIconId({ model: item })} size={14} />
               )}
               {display}
             </Link>

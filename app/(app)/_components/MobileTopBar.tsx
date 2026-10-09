@@ -10,6 +10,7 @@ import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import HoverPrefetchLink from "@/components/HoverPrefetchLink";
 import { t, type Locale } from "@/src/lib/i18n";
+import type { WorksSource } from "@/src/lib/works-view";
 import MobileNavDrawer from "./MobileNavDrawer";
 import GlobalSearch from "./GlobalSearch";
 
@@ -19,6 +20,7 @@ export default function MobileTopBar({
   profileHref,
   moderator = false,
   loggedIn = false,
+  worksSrc = null,
 }: {
   locale: Locale;
   unread?: number;
@@ -26,6 +28,7 @@ export default function MobileTopBar({
   /* admin/mod: the drawer gains an "admin" entry. */
   moderator?: boolean;
   loggedIn?: boolean;
+  worksSrc?: WorksSource | null;
 }) {
   return (
     <div className="sticky top-0 z-20 flex min-h-16 items-center gap-2 border-b border-line bg-bg/95 px-2 backdrop-blur lg:hidden">
@@ -36,6 +39,7 @@ export default function MobileTopBar({
         moderator={moderator}
         account={<AuthChip />}
         loggedIn={loggedIn}
+        worksSrc={worksSrc}
       />
       <Link
         href="/"

@@ -244,6 +244,40 @@ const DICT = {
     en: "Open for submissions · {tagline}",
   },
   "explore.filterAria": { zh: "探索筛选", en: "Explore filters" },
+  /* Landing (destination page): the manifesto replaces the lens-list
+     lede — the page promises practices with method/evidence/sources,
+     and the count line states real numbers, never projections. */
+  "explore.manifesto": {
+    zh: "跑通的方法，可验的证据，署名的出处。",
+    en: "Methods actually run, evidence that checks out, sources with names.",
+  },
+  "explore.countLine": {
+    zh: "{practices} 篇实践 · {paths} 条路径 · {letters} 期月刊",
+    en: "PRACTICES {practices} · PATHS {paths} · THE MONTHLY {letters}",
+  },
+  "explore.searchPlaceholder": { zh: "搜索实践…", en: "Search practices…" },
+  "explore.searchAria": { zh: "搜索探索区", en: "Search Explore" },
+  "explore.clearSearch": { zh: "清除搜索", en: "Clear search" },
+  "explore.browseAll": { zh: "浏览全部内容 ↓", en: "Browse all content ↓" },
+  "explore.reverifyPending": { zh: "验证已过期，等待重验", en: "Verification expired; recheck pending" },
+  "explore.mediaUnavailable": { zh: "这篇实践的正文素材尚未就绪，暂不推荐。可以先浏览其他内容。", en: "This practice's main content is not ready, so it is temporarily unlisted. Browse other content for now." },
+  "explore.startHere": { zh: "从这里开始", en: "START HERE" },
+  "explore.paths": { zh: "路径", en: "PATHS" },
+  "explore.monthly": { zh: "月刊", en: "THE MONTHLY" },
+  "explore.byChapter": { zh: "按章逛", en: "BROWSE BY CHAPTER" },
+  "explore.allContent": { zh: "全部内容", en: "ALL CONTENT" },
+  "explore.typeAll": { zh: "全部", en: "All" },
+  "explore.typePaths": { zh: "路径内", en: "In paths" },
+  "explore.typePractices": { zh: "独立实践", en: "Standalone" },
+  "explore.typeLetters": { zh: "月刊", en: "Monthly" },
+  "explore.enterIssue": { zh: "阅读本期 →", en: "Read this issue →" },
+  "explore.pastIssues": { zh: "往期", en: "Past issues" },
+  /* Episode position on the guide detail (series context) + its
+     prev/next footer. */
+  "explore.episodePos": { zh: "第 {n} / {m} 集", en: "EP {n} / {m}" },
+  "explore.episodeNav": { zh: "集导航", en: "Episode navigation" },
+  "explore.epPrev": { zh: "上一集", en: "Previous" },
+  "explore.epNext": { zh: "下一集", en: "Next" },
   /* Article-detail rail vocabulary (ArticleRail): the rail carries
      structural attributes only — author/publish date live in the page
      byline, so they have no keys here. */
@@ -1724,6 +1758,7 @@ const DICT = {
     en: "Summary too long (500 chars max)",
   },
   "err.artBody": { zh: "正文不能为空", en: "Body cannot be empty" },
+  "err.artDeckUnavailable": { zh: "演示稿文件尚未就绪，请先补齐文件或保存为草稿。", en: "The slides file is not ready. Add the file first or save a draft." },
   "err.artMeta": { zh: "类型或语言不合法", en: "Invalid kind or language" },
   /* ---- Profile yearly usage history (own section to shrink merge
      conflicts) ---- */

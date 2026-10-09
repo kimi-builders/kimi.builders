@@ -142,16 +142,11 @@ export async function proxy(
     request: { headers: requestHeaders },
     status: missingSeries || missingDetail ? 404 : 200,
   });
-  const src = pathname === "/awesome" ? "awesome" : pathname === "/works" ? "works" : null;
-  if (src) {
-    /* Session cookie (no maxAge): "back" is the current visit's
-       navigation context, not a lasting preference — a 30-day memory
-       would send someone arriving from an external link back to a list
-       they browsed days ago. */
-    response.cookies.set("kb-works-src", src, {
-      path: "/",
-      sameSite: "lax",
-    });
+  /* Full document navigations retain the no-JS backstop. RSC/prefetch
+     responses never write visit memory; client transitions commit it. */
+  const src = pathname === "/works" ? "works" : pathname === "/awesome" ? "awesome" : null;
+  if (src && request.headers.get("sec-fetch-dest") === "document") {
+    response.cookies.set("kb-works-src", src, { path: "/", sameSite: "lax" });
   }
   return response;
 }

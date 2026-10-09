@@ -195,7 +195,11 @@ test("Explore format labels and chapter English avoid literal translation", () =
   assert.doesNotMatch(chapters, /Turn judgment into things you made|Turn results into standing and self/);
   assert.match(monthlyDetail, /label: zh \? "文稿" : "Article"/);
   assert.match(monthlyDetail, /label: zh \? "演示稿" : "Slides"/);
-  assert.match(seriesDetail, /zh \? "文稿" : "ARTICLE"/);
+  assert.match(seriesDetail, /deriveFormats\(ep\.hasBody, ep\.payload\)/);
+  for (const key of ["explore.formatRead", "explore.formatVideo", "explore.formatDeck"] as const) {
+    assert.ok(seriesDetail.includes(`"${key}"`));
+    assert.ok(t("zh", key) && t("en", key));
+  }
   assert.doesNotMatch(monthlyDetail, /label: zh \? "文稿" : "Read"|label: zh \? "演示稿" : "Deck"/);
 });
 

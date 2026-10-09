@@ -5,10 +5,11 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import AgentIcon from "@/components/AgentIcon";
+import ModelIcon from "@/components/ModelIcon";
 import { compactNumber } from "@/src/lib/format";
 import { usageCacheHitRate } from "@/src/lib/usage-contract";
 import { usageSourceLabel } from "@/src/lib/usage/labels";
-import { usageModelDetail } from "@/src/lib/usage/model-meta";
+import { usageModelDetail, usageModelIconId } from "@/src/lib/usage/model-meta";
 import type { UsageRecordGrain } from "@/src/lib/usage/filters";
 import type { UsageOverview, UsageRecordRow } from "@/src/lib/usage/query";
 import RecordsColumnsMenu, {
@@ -185,11 +186,14 @@ export default function UsageRecordsSection({
         modelProvider: row.modelProvider,
       }),
       cell: (row) => (
-        <span>
-          <span className="block truncate">{row.modelDisplayName}</span>
-          {row.modelDisplayName !== row.model && (
-            <span className="block truncate text-xs text-grey">{row.model}</span>
-          )}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <ModelIcon id={usageModelIconId(row)} size={12} />
+          <span className="min-w-0">
+            <span className="block truncate">{row.modelDisplayName}</span>
+            {row.modelDisplayName !== row.model && (
+              <span className="block truncate text-xs text-grey">{row.model}</span>
+            )}
+          </span>
         </span>
       ),
     },
@@ -402,7 +406,7 @@ export default function UsageRecordsSection({
                   <span className="flex min-w-0 items-center gap-1.5 text-xs text-paper">
                     <AgentIcon id={row.source} size={12} />
                     <span
-                      className="truncate"
+                      className="inline-flex min-w-0 items-center gap-1.5"
                       title={`${usageSourceLabel(row.source)} · ${usageModelDetail({
                         source: row.source,
                         model: row.model,
@@ -410,7 +414,9 @@ export default function UsageRecordsSection({
                         modelProvider: row.modelProvider,
                       })}`}
                     >
-                      {usageSourceLabel(row.source)} · {row.modelDisplayName}
+                      <span className="shrink-0">{usageSourceLabel(row.source)} ·</span>
+                      <ModelIcon id={usageModelIconId(row)} size={12} />
+                      <span className="truncate">{row.modelDisplayName}</span>
                     </span>
                   </span>
                 </div>

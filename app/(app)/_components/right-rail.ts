@@ -101,18 +101,17 @@ export function railFor(pathname: string): RailDecision {
   if (p === "/works") return decision("works");
 
   if (p === "/awesome") return decision("awesome");
-  /* Explore: the catalog and series pages use the explore rail;
-     article detail (/explore/<slug>, non-series) uses the article rail
-     (metadata in the rail, slug in the decision key for shell
-     re-evaluation). While the section isn't ready (UPCOMING.explore)
-     everything falls back to community; the legacy /blog and /learn
-     routes are 308s with no rail branches. */
+  /* Explore: the landing is a destination page — full-width canvas, no
+     rail (the rail's shelf widgets live on as landing sections).
+     Series pages use the explore rail; article detail (/explore/<slug>,
+     non-series) uses the article rail (metadata in the rail, slug in
+     the decision key for shell re-evaluation). While the section isn't
+     ready (UPCOMING.explore) everything falls back to community; the
+     legacy /blog and /learn routes are 308s with no rail branches. */
   if (!UPCOMING.explore && (p === "/explore" || p.startsWith("/explore/"))) {
+    if (p === "/explore") return decision("none", { wide: true });
     if (p.startsWith("/explore/series/")) return decision("explore");
-    if (p !== "/explore") {
-      return decision("article", { slug: p.slice("/explore/".length) });
-    }
-    return decision("explore");
+    return decision("article", { slug: p.slice("/explore/".length) });
   }
 
   /* Fallback: the community feed and every unlisted route

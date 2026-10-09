@@ -30,6 +30,8 @@ import { isKbRoleId } from "./kb-roles";
 import { isCoverTone } from "./cover-tones";
 import { findLearnSeries } from "./learn-series";
 import { normalizeTags } from "./monthly";
+import { resolveGuideMedia } from "./guide-media";
+import { cache } from "react";
 
 /* ---- Payload contract and validation ---- */
 
@@ -366,6 +368,8 @@ export interface Tutorial {
   /* Owning series (resolved at render; unregistered = null, the episode
      stays readable). */
   series: string | null;
+  hasBody: boolean;
+  mediaUnavailable?: boolean;
 }
 
 export interface TutorialDetail extends Tutorial {
@@ -384,8 +388,21 @@ function toTutorial(a: ArticleListItem): Tutorial {
     episode: a.sortOrder,
     payload,
     series: payload.series ?? null,
+    hasBody: a.hasBody,
   };
 }
+
+async function resolveTutorial(a: ArticleListItem): Promise<Tutorial> {
+  const tutorial = toTutorial(a);
+  const media = await resolveGuideMedia(a.hasBody, tutorial.payload);
+  return { ...tutorial, payload: media.payload, mediaUnavailable: media.unavailable };
+}
+
+const listReadableTutorials = cache(async (locale: "zh" | "en") => {
+  const articles = await listArticles("guide", locale);
+  const tutorials = await Promise.all(articles.map(resolveTutorial));
+  return tutorials.filter((tutorial) => !tutorial.mediaUnavailable);
+});
 
 /* Episode ordering: number ascending, unnumbered (0) last, then by
    publish time. */
@@ -402,8 +419,7 @@ export async function getChannelOverview(uiLocale: "zh" | "en"): Promise<{
   bySeries: Map<string, Tutorial[]>;
   latest: Tutorial[];
 }> {
-  const articles = await listArticles("guide", uiLocale);
-  const tutorials = articles.map(toTutorial);
+  const tutorials = await listReadableTutorials(uiLocale);
   const bySeries = new Map<string, Tutorial[]>();
   for (const t of tutorials) {
     if (!t.series) continue;
@@ -423,9 +439,8 @@ export async function getSeriesTutorials(
   seriesSlug: string,
   uiLocale: "zh" | "en",
 ): Promise<Tutorial[]> {
-  const articles = await listArticles("guide", uiLocale);
-  return articles
-    .map(toTutorial)
+  const tutorials = await listReadableTutorials(uiLocale);
+  return tutorials
     .filter((t) => t.series === seriesSlug)
     .sort(compareTutorials);
 }
@@ -439,7 +454,7 @@ export async function getTutorial(
 ): Promise<{ tutorial: TutorialDetail; seriesTutorials: Tutorial[] } | null> {
   const article = await getArticleBySlug("guide", episodeSlug, uiLocale);
   if (!article) return null;
-  const tutorial = toTutorial(article);
+  const tutorial = await resolveTutorial(article);
   if (tutorial.series !== seriesSlug) return null;
   const seriesTutorials = await getSeriesTutorials(seriesSlug, uiLocale);
   return {
@@ -459,7 +474,7 @@ export async function getTutorialBySlug(
   const article = await getArticleBySlug("guide", episodeSlug, uiLocale);
   if (!article) return null;
   const tutorial: TutorialDetail = {
-    ...toTutorial(article),
+    ...await resolveTutorial(article),
     bodyMd: (article as ArticleDetail).bodyMd ?? "",
   };
   const seriesTutorials = tutorial.series

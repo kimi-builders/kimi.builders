@@ -20,6 +20,7 @@ import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { t, type Locale } from "@/src/lib/i18n";
+import { changeFilterQuery, mergeFilterQuery } from "@/src/lib/filter-query";
 import FilterDropdown, { type FilterOption } from "./FilterDropdown";
 
 export interface WorksFilterSpec {
@@ -48,14 +49,10 @@ export default function WorksFilterBar({
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const handleOpenChange = useCallback((id: string | null) => setOpenMenu(id), []);
+  const filterQuery = mergeFilterQuery(preservedQuery, selected);
 
   const pushParams = (changes: Record<string, string | null>) => {
-    const params = new URLSearchParams(preservedQuery);
-    for (const [key, value] of Object.entries(changes)) {
-      if (value === null) params.delete(key);
-      else params.set(key, value);
-    }
-    const text = params.toString();
+    const text = changeFilterQuery(filterQuery, changes);
     startTransition(() => {
       router.push(text ? `${basePath}?${text}` : basePath, { scroll: false });
     });
@@ -88,7 +85,7 @@ export default function WorksFilterBar({
               options={f.options}
               selected={selected[f.key] ?? []}
               basePath={basePath}
-              preservedQuery={preservedQuery}
+              preservedQuery={filterQuery}
               open={openMenu === f.key}
               onOpenChange={handleOpenChange}
               single={f.single}

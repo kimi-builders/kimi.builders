@@ -1,6 +1,6 @@
 /* Runtime contract of proxy.ts, executed rather than text-asserted:
-   legacy 308s leave before render, the works-source cookie rides only
-   on the two list pages, every (app) page path is covered by
+   legacy 308s leave before render, prefetches never write source-list
+   memory, every (app) page path is covered by
    config.matcher — a missing entry once hid the right rail with
    visibility:hidden (the 20260821 explore trap), so coverage is an
    invariant, not a style preference — and the detail-route soft-404
@@ -131,17 +131,23 @@ test("registered series retain normal rendering and legacy routes still redirect
   }
 });
 
-test("the works-source cookie rides only on the two list pages", async () => {
-  assert.equal(
-    (await proxy(fakeRequest("/awesome"), { query: liveRow })).cookies.get("kb-works-src")?.value,
-    "awesome",
-  );
-  assert.equal(
-    (await proxy(fakeRequest("/works"), { query: liveRow })).cookies.get("kb-works-src")?.value,
-    "works",
-  );
-  assert.equal((await proxy(fakeRequest("/works/7"), { query: liveRow })).cookies.get("kb-works-src"), undefined);
-  assert.equal((await proxy(fakeRequest("/community"), { query: liveRow })).cookies.get("kb-works-src"), undefined);
+test("only document visits write source-list memory; RSC/prefetches never do", async () => {
+  for (const path of ["/works", "/awesome", "/works/7", "/community"]) {
+    for (const prefetch of [false, true]) {
+      const request = fakeRequest(path);
+      if (prefetch) request.headers.set("next-router-prefetch", "1");
+      assert.equal(
+        (await proxy(request, { query: liveRow })).cookies.get("kb-works-src"),
+        undefined,
+        `${path}: prefetch=${prefetch}`,
+      );
+    }
+  }
+  for (const [path, source] of [["/works", "works"], ["/awesome", "awesome"]]) {
+    const request = fakeRequest(path);
+    request.headers.set("sec-fetch-dest", "document");
+    assert.equal((await proxy(request, { query: liveRow })).cookies.get("kb-works-src")?.value, source);
+  }
 });
 
 function appPageRoutes(): string[] {

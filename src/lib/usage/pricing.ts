@@ -6,8 +6,9 @@
    window prices by bucket time — never today's price for history.
    Pattern specificity is resolved before source eligibility, so a
    channel-only alias never falls through to a broader generic price.
-   Fallback chain: cacheWrite NULL -> input price (Moonshot/OpenAI bill no
-   separate cache write); reasoning NULL -> output price (OpenAI/Moonshot
+   Fallback chain: cacheWrite NULL -> input price when no explicit write
+   rate is cataloged; TTL-specific writes use their own rates when known.
+   Reasoning NULL -> output price (OpenAI/Moonshot
    count reasoning into output); cacheRead NULL -> category unpriced, tokens
    still counted but excluded from cost (model marked partial). */
 import type mysql from "mysql2/promise";
@@ -33,6 +34,7 @@ export interface UsageModelPrice {
   verifiedAt: string | null;
   pricingBasis: string;
   provisional?: boolean;
+  pricingNote?: { zh: string; en: string };
 }
 
 export interface UsageTokenBreakdown {
@@ -92,6 +94,7 @@ export async function loadModelPrices(
     verifiedAt: entry.verifiedAt || null,
     pricingBasis: entry.basis,
     provisional: entry.provisional === true,
+    pricingNote: entry.note,
   }));
 }
 
@@ -259,7 +262,10 @@ export function estimateCostMicros(
     assumptions.push("short-context");
     assumedTokens += totalTokens;
   }
-  if (price.provisional) assumptions.push("provisional-price");
+  if (price.provisional) {
+    assumptions.push("provisional-price");
+    assumedTokens += totalTokens;
+  }
   if (
     unclassifiedCacheWrite > 0 &&
     price.cacheWrite5mPerMtok !== null &&

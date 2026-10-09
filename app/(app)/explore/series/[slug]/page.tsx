@@ -21,7 +21,7 @@ import { findKbRole } from "@/src/lib/kb-roles";
 import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
 import { detailMetadata } from "@/src/lib/page-metadata";
 import { availableExploreFilters } from "@/src/lib/explore-filters";
-import { countByChapter, countByProduct, countByRoles, countTags, groupByArchive, listExploreItems } from "@/src/lib/explore";
+import { countByChapter, countByProduct, countByRoles, countTags, deriveFormats, groupByArchive, listExploreItems } from "@/src/lib/explore";
 import { getSeriesTutorials, type Tutorial } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
 import PageHeader from "@/components/PageHeader";
@@ -73,7 +73,9 @@ function EpisodeRow({
         </span>
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-grey">
-            <span>{ep.payload.video ? (zh ? "视频" : "VIDEO") : zh ? "文稿" : "ARTICLE"}</span>
+            {deriveFormats(ep.hasBody, ep.payload).map((format) => (
+              <span key={format}>{t(zh ? "zh" : "en", format === "read" ? "explore.formatRead" : format === "video" ? "explore.formatVideo" : "explore.formatDeck")}</span>
+            ))}
             {ep.payload.durationMin && (
               <span className="flex items-center gap-1 normal-case tracking-normal">
                 <Clock3 size={12} aria-hidden="true" />
@@ -217,7 +219,7 @@ export default async function ExploreSeriesPage({
             </span>
             {stale && (
               <span className="rounded-md border border-status-warn/40 px-1.5 py-px normal-case tracking-normal text-status-warn-fg">
-                {zh ? "待重验:模型已换代,编辑尚未重走" : "re-verify pending: model generation moved on"}
+                {t(locale, "explore.reverifyPending")}
               </span>
             )}
           </p>

@@ -22,6 +22,30 @@ const KIMI_ALIASES = new Map([
 ]);
 
 const MODEL_LABELS = new Map([
+  ["mimo-v2.6-pro", "MiMo V2.6 Pro"],
+  ["mimo-v2.6-flash", "MiMo V2.6 Flash"],
+  ["mimo-v2.6-pro-ultraspeed", "MiMo V2.6 Pro UltraSpeed"],
+  ["step-5-preview", "Step 5 Preview"],
+  ["step-3.7-flash", "Step 3.7 Flash"],
+  ["step-3.5-flash", "Step 3.5 Flash"],
+  ["step-3.5-flash-2603", "Step 3.5 Flash 2603"],
+  ["step-1o-turbo-vision", "Step 1o Turbo Vision"],
+  ["stepaudio-3-realtime-preview", "StepAudio 3 Realtime Preview"],
+  ["stepaudio-3-chat-preview", "StepAudio 3 Chat Preview"],
+  ["gpt-6.1-sol", "GPT-6.1 Sol"],
+  ["gpt-6-sol", "GPT-6 Sol"],
+  ["gpt-6-luna", "GPT-6 Luna"],
+  ["claude-opus-5-5", "Claude Opus 5.5"],
+  ["claude-sonnet-5-5", "Claude Sonnet 5.5"],
+  ["claude-haiku-5-5", "Claude Haiku 5.5"],
+  ["deepseek-flash", "DeepSeek V4.1 Flash"],
+  ["deepseek-v4.1-flash", "DeepSeek V4.1 Flash"],
+  ["grok-4.7", "Grok 4.7"],
+  ["glm-5.3-flash", "GLM-5.3 Flash"],
+  ["glm-5.3-flashx", "GLM-5.3 FlashX"],
+  ["qwen3.8-flash", "Qwen3.8 Flash"],
+  ["minimax-m2.7-highspeed", "MiniMax M2.7 Highspeed"],
+  ["minimax-m2.5-highspeed", "MiniMax M2.5 Highspeed"],
   ["kimi-k3", "Kimi K3"],
   ["kimi-k3-256k", "Kimi K3 256K"],
   ["kimi-k2.7-code", "Kimi K2.7 Code"],
@@ -66,7 +90,28 @@ export function canonicalUsageModel(identity: UsageModelIdentity): string {
 export function usageModelDisplayName(identity: UsageModelIdentity): string {
   const raw = value(identity.model) || "unknown";
   const canonical = canonicalUsageModel(identity);
-  return MODEL_LABELS.get(canonical) ?? raw;
+  const slug = canonical.slice(canonical.lastIndexOf("/") + 1).toLowerCase();
+  return MODEL_LABELS.get(canonical) ?? MODEL_LABELS.get(slug) ?? raw;
+}
+
+/* Vendor marks describe the model family, never the Agent or API reseller. */
+export function usageModelIconId(identity: UsageModelIdentity): string {
+  const canonical = canonicalUsageModel(identity).toLowerCase();
+  const id = canonical.slice(canonical.lastIndexOf("/") + 1).replace(/[\s_]+/g, "-");
+  if (id.startsWith("kimi-") || ["k3", "k3-256", "k3-256k"].includes(id)) return "kimi";
+  if (id.startsWith("claude-")) return "claude";
+  if (id.startsWith("gpt-") || id.startsWith("codex-") || /^o\d(?:-|$)/.test(id)) return "openai";
+  if (id.startsWith("gemini-")) return "gemini";
+  if (id.startsWith("deepseek-")) return "deepseek";
+  if (/^qwen(?:-|\d)/.test(id)) return "qwen";
+  if (id.startsWith("grok-")) return "grok";
+  if (id.startsWith("minimax-")) return "minimax";
+  if (id.startsWith("glm-")) return "glm";
+  if (id.startsWith("doubao")) return "doubao";
+  if (id.startsWith("ernie") || id.startsWith("wenxin")) return "wenxin";
+  if (/^mimo-v\d/.test(id)) return "xiaomimimo";
+  if (/^(?:step-(?:\d|audio-|tts-|asr|image-)|stepaudio-\d)/.test(id)) return "stepfun";
+  return "";
 }
 
 export function usageModelDetail(identity: UsageModelIdentity): string {

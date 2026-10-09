@@ -81,8 +81,48 @@ export interface LearnSeries {
 }
 
 /* Registered series (a curated registry, few and heavy). 0-episode
-   series stay unlisted — register here when real content lands. */
-export const LEARN_SERIES: LearnSeries[] = [];
+   series stay unlisted — register here when real content lands. A
+   series slug is the join key for guide payloads (payload.series) and
+   works.source_path graduation; registering a slug activates the
+   series page, shelf cards, and the verification stamp together. */
+export const LEARN_SERIES: LearnSeries[] = [
+  {
+    slug: "kimi-best-practice",
+    code: "PATH-01",
+    title: { zh: "Kimi 最佳实践", en: "Kimi Best Practices" },
+    chapter: "build",
+    tagline: {
+      zh: "从起项目到周报，亲自跑通的工作流。",
+      en: "Hand-run workflows, from project setup to the weekly report.",
+    },
+    summary: {
+      zh: "用 Kimi Code 从零起一个项目、用 Kimi Design 出一版能用的视觉稿、表格 × PPT 打通周报最后一公里——每篇附方法、证据与出处。",
+      en: "Start a project from zero with Kimi Code, get a usable visual draft out of Kimi Design, and close the weekly-report loop with sheets × slides — each with its method, evidence, and sources.",
+    },
+    editorHandle: "aklmans",
+    verifiedModel: "kimi-latest",
+    verifiedAt: "2026-08",
+    reverifyLog: [],
+  },
+  {
+    slug: "swarm-field-notes",
+    code: "PATH-02",
+    title: { zh: "Swarm 实战笔记", en: "Swarm Field Notes" },
+    chapter: "build",
+    tagline: {
+      zh: "把一组 agent 排上岗，再把夜班也交出去。",
+      en: "Put a swarm on the job, then hand it the night shift.",
+    },
+    summary: {
+      zh: "两条 Swarm 落地实践：编排一次竞品调研、用定时任务让 Swarm 值夜班——分工、验证与交付全程留痕。",
+      en: "Two field-tested Swarm practices: orchestrating a competitive scan, and putting Swarm on the night shift with scheduled patrols — division of labor, verification, and delivery all on the record.",
+    },
+    editorHandle: "aklmans",
+    verifiedModel: "kimi-latest",
+    verifiedAt: "2026-08",
+    reverifyLog: [],
+  },
+];
 
 export function findLearnSeries(slug: string): LearnSeries | undefined {
   return LEARN_SERIES.find((s) => s.slug === slug);

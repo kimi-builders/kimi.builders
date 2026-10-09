@@ -44,14 +44,14 @@ export default function SeriesGridCard({
       <Link
         href={`/explore/series/${series.slug}`}
         aria-label={zh ? series.title.zh : series.title.en}
-        className="absolute inset-0 z-0 rounded-2xl"
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-blue"
       />
-      <div className="overflow-hidden border-b border-line">
+      <div className="pointer-events-none overflow-hidden border-b border-line">
         <div className="aspect-video transition-transform duration-300 group-hover:scale-[1.02]">
           <SeriesCover series={series} zh={zh} className="h-full w-full" />
         </div>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col p-4">
+      <div className="pointer-events-none flex min-w-0 flex-1 flex-col p-4">
         <h2 className="truncate text-base font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">
           {zh ? series.title.zh : series.title.en}
         </h2>
@@ -63,7 +63,7 @@ export default function SeriesGridCard({
           {chapter && (
             <Link
               href={`/explore?chapter=${chapter.id}`}
-              className="shrink-0 rounded-md border border-line px-1.5 py-px text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+              className="pointer-events-auto relative z-10 shrink-0 rounded-md border border-line px-1.5 py-px text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
               title={zh ? chapter.tagline.zh : chapter.tagline.en}
             >
               {zh ? chapter.zh : chapter.en}

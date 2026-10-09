@@ -41,20 +41,20 @@ export default function SeriesRowCard({
       <Link
         href={`/explore/series/${series.slug}`}
         aria-label={zh ? series.title.zh : series.title.en}
-        className="absolute inset-0 z-0 rounded-2xl"
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-blue"
       />
       {/* Cover: full-width above on mobile, fixed width on the left from sm+ (same shape as the row-style WorkCard) */}
-      <div className="overflow-hidden border-b border-line sm:w-56 sm:shrink-0 sm:border-b-0 sm:border-r">
+      <div className="pointer-events-none overflow-hidden border-b border-line sm:w-56 sm:shrink-0 sm:border-b-0 sm:border-r">
         <div className="aspect-video h-full transition-transform duration-300 group-hover:scale-[1.02] sm:aspect-auto">
           <SeriesCover series={series} zh={zh} className="h-full w-full" />
         </div>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col p-4">
+      <div className="pointer-events-none flex min-w-0 flex-1 flex-col p-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
           {chapter && (
             <Link
               href={`/explore?chapter=${chapter.id}`}
-              className="mr-2 rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
+              className="pointer-events-auto relative z-10 mr-2 rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
               title={zh ? chapter.tagline.zh : chapter.tagline.en}
             >
               {zh ? chapter.zh : chapter.en}

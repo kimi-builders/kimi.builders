@@ -24,6 +24,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
 import { awesomeScopeOf, type WorkRow } from "@/src/lib/works";
+import { workDetailHref, type WorksSource } from "@/src/lib/works-view";
 import AgentIcon from "@/components/AgentIcon";
 import WorkKindIcon from "@/components/WorkKindIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
@@ -105,6 +106,7 @@ export default function WorkCard({
   canFeature = false,
   claimBadge = null,
   claimPaused = false,
+  listSource,
 }: {
   work: WorkRow;
   locale: Locale;
@@ -112,6 +114,7 @@ export default function WorkCard({
   canFeature?: boolean;
   claimBadge?: number | null;
   claimPaused?: boolean;
+  listSource?: WorksSource;
 }) {
   const kindLabel = workKindLabel(w.kind, locale === "zh");
   const statusLabel = statusLabelOf(w.status, locale);
@@ -127,11 +130,11 @@ export default function WorkCard({
     }`}>
       {/* Whole card links to the detail page (absolute overlay link); interactive elements below lift z-10 to keep their own navigation */}
       <Link
-        href={`/works/${w.id}`}
+        href={workDetailHref(w.id, listSource)}
         aria-label={w.name}
-        className="absolute inset-0 z-0 rounded-2xl"
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-blue"
       />
-      <div className="kb-work-card-cover shrink-0 border-b border-line sm:w-[232px] sm:self-stretch sm:border-b-0 sm:border-r">
+      <div className="kb-work-card-cover pointer-events-none shrink-0 border-b border-line sm:w-[232px] sm:self-stretch sm:border-b-0 sm:border-r">
         {/* Cover = the dedicated uploaded cover (cover_key; never the first
             gallery image); without one, fall back to the legacy
             screenshot_url external link, and if that is empty too,

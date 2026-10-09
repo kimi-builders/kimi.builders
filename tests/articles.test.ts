@@ -104,6 +104,7 @@ test("locale fallback: UI locale preferred per slug, missing language falls back
     publishedAt: new Date(Date.UTC(2026, 7, 1)),
     sortOrder: 0,
     payloadRaw: null,
+    hasBody: false,
   });
   const rows = [
     row("a", "zh", "甲"), // both languages exist

@@ -39,9 +39,11 @@ import {
 } from "@/src/lib/monthly";
 import { getCachedMonthlyStatsSnapshot } from "@/src/lib/monthly-stats-cache";
 import {
+  episodeNeighbors,
   getTutorialBySlug,
   GUIDE_RESOURCE_KINDS,
   type GuideResourceKind,
+  type Tutorial,
   type TutorialDetail,
 } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
@@ -51,6 +53,7 @@ import ShareButton from "@/components/ShareButton";
 import VideoEmbed from "@/components/VideoEmbed";
 import DeckEmbed from "../_components/DeckEmbed";
 import SoonPanel from "../../_components/SoonPanel";
+import EmptyState from "@/components/EmptyState";
 import { ArticleKeys } from "../_components/ExploreKeys";
 import { decisionChip } from "../../blog/_components/chips";
 
@@ -97,13 +100,14 @@ export async function generateMetadata({
     guide.tutorial.locale,
     guide.tutorial.fallback,
   );
-  return detailMetadata({
+  const metadata = detailMetadata({
     title: `${title} — kimi.builders`,
     description: guide.tutorial.summary || t(locale, "metaDesc.explore"),
     path: `/explore/${slug}`,
     locale,
     type: "article",
   });
+  return guide.tutorial.mediaUnavailable ? { ...metadata, robots: { index: false, follow: true } } : metadata;
 }
 
 /* Section share buttons: copy the section permalink + download its
@@ -478,12 +482,17 @@ function LetterDetail({
 
 async function GuideDetail({
   tutorial,
+  seriesTutorials,
   initialTab,
   locale,
   canEdit,
   chapterBrowsable,
 }: {
   tutorial: TutorialDetail;
+  /* The owning series' published episodes (empty for standalone
+     pieces): drives the breadcrumb's series link, the episode position,
+     and the prev/next footer. */
+  seriesTutorials: Tutorial[];
   initialTab?: string;
   locale: "zh" | "en";
   canEdit: boolean;
@@ -493,6 +502,26 @@ async function GuideDetail({
   chapterBrowsable: boolean;
 }) {
   const zh = locale === "zh";
+  if (tutorial.mediaUnavailable) {
+    return (
+      <article>
+        <h1 className="kb-h1">{tutorial.title}</h1>
+        <div className="mt-8">
+          <EmptyState message={t(locale, "explore.mediaUnavailable")} actions={
+            <Link href="/explore" className="inline-flex min-h-11 items-center text-ui-blue hover:underline">{t(locale, "explore.backToExplore")}</Link>
+          } />
+        </div>
+        {canEdit && <Link href={`/blog/admin/${tutorial.slug}/edit?locale=${tutorial.locale}`} className="mt-6 inline-flex min-h-11 items-center text-ui-blue">{t(locale, "post.edit")}</Link>}
+      </article>
+    );
+  }
+  /* Series context (registered series only): the breadcrumb links the
+     series page; position comes from the episode order (compareTutorials).
+     Unregistered payload.series values render no series chrome — the
+     piece stays readable, the registry decides what vouches. */
+  const seriesDef = tutorial.series ? findLearnSeries(tutorial.series) : undefined;
+  const epIdx = seriesTutorials.findIndex((e) => e.slug === tutorial.slug);
+  const inSeries = !!seriesDef && epIdx >= 0;
   /* Byline source: the rail-meta query is React-cached — the Article
      rail's own call dedupes with this one (no extra SQL). */
   const railMeta = await getArticleRailMeta(tutorial.slug, locale);
@@ -506,7 +535,7 @@ async function GuideDetail({
   const chapter = chapterSlug ? findKbChapter(chapterSlug) : undefined;
 
   const tabs: DetailTab[] = [];
-  if (tutorial.bodyMd) {
+  if (tutorial.bodyMd.trim()) {
     tabs.push({
       id: "read",
       label: zh ? "文稿" : "Article",
@@ -643,12 +672,18 @@ async function GuideDetail({
     });
   }
 
+  /* Episode footer navigation (series pieces only, same grammar as the
+     letter's issue nav; standalone guides keep the shelf's <- -> keys
+     only). <- older / -> newer, matching ArticleKeys' direction. */
+  const episodeNav = inSeries ? episodeNeighbors(seriesTutorials, tutorial.slug) : null;
+
   return (
     <article>
       <header>
         {/* Breadcrumb: back to the explore shelf, same grammar as the
-            work detail's top row (back pill + truncated name). */}
-        <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-grey">
+            work detail's top row (back pill + truncated name). In a
+            series the path runs through it: back / series / episode n/m. */}
+        <div className="flex min-w-0 flex-wrap items-center gap-2 font-mono text-sm tracking-wider text-grey">
           <Link
             href="/explore"
             aria-label={t(locale, "explore.backToExplore")}
@@ -657,7 +692,20 @@ async function GuideDetail({
             <ArrowLeft size={13} aria-hidden="true" />
             {t(locale, "nav.explore")}
           </Link>
-          <span className="truncate">{tutorial.title}</span>
+          {inSeries && (
+            <>
+              <Link
+                href={`/explore/series/${seriesDef!.slug}`}
+                className="min-w-0 flex-1 truncate rounded-lg px-2 py-1 transition-colors hover:bg-moon hover:text-paper"
+              >
+                {zh ? seriesDef!.title.zh : seriesDef!.title.en}
+              </Link>
+              <span className="shrink-0 text-grey/70">
+                {t(locale, "explore.episodePos", { n: epIdx + 1, m: seriesTutorials.length })}
+              </span>
+            </>
+          )}
+          <span className={inSeries ? "min-w-0 basis-full truncate" : "min-w-0 flex-1 truncate"}>{tutorial.title}</span>
         </div>
         {/* Byline above the title, same grammar as the letter/post/work
             details; the old meta row duplicated the rail's
@@ -715,6 +763,38 @@ async function GuideDetail({
           {zh ? "AI 参与披露:" : "AI involvement disclosed: "}
           {tutorial.payload.aiNote}
         </p>
+      )}
+
+      {/* Prev/next episode navigation: rendered only when a neighbor
+          exists — an empty nav landmark is noise for screen readers. */}
+      {episodeNav && (episodeNav.prev || episodeNav.next) && (
+        <nav
+          aria-label={t(locale, "explore.episodeNav")}
+          className="mt-6 flex items-stretch justify-between gap-4 border-t border-line pt-6"
+        >
+          {episodeNav.prev && (
+            <Link href={`/explore/${episodeNav.prev.slug}`} className="kb-navlink group min-w-0">
+              <span className="flex items-center gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
+                <ArrowLeft size={13} aria-hidden="true" />
+                {t(locale, "explore.epPrev")}
+              </span>
+              <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
+                {episodeNav.prev.title}
+              </span>
+            </Link>
+          )}
+          {episodeNav.next && (
+            <Link href={`/explore/${episodeNav.next.slug}`} className="kb-navlink group ml-auto min-w-0 text-right">
+              <span className="flex items-center justify-end gap-1.5 font-mono text-[11px] text-grey transition-colors group-hover:text-ui-blue">
+                {t(locale, "explore.epNext")}
+                <ArrowRight size={13} aria-hidden="true" />
+              </span>
+              <span className="mt-1.5 block truncate font-mono text-[11px] text-paper/80 transition-colors group-hover:text-ui-blue">
+                {episodeNav.next.title}
+              </span>
+            </Link>
+          )}
+        </nav>
       )}
 
       {/* Back lives in the top breadcrumb (work-detail grammar); this row
@@ -777,14 +857,22 @@ export default async function ExploreDetailPage({
   }
   const guide = await getTutorialBySlug(slug, locale);
   if (!guide) notFound();
-  /* Guides have no issues: <- -> walk the full list (new -> old) for
-     neighbors, same direction as letters (<- older / -> newer); the
-     single query goes through React cache, deduped per request (the
+  /* The single query goes through React cache, deduped per request (the
      ArticleRail's lens availability reads the same list). */
   const guideList = await listExploreItems(locale);
-  const guideIdx = guideList.findIndex((i) => i.slug === slug);
-  const guidePrev = guideIdx >= 0 ? guideList[guideIdx + 1] : undefined;
-  const guideNext = guideIdx > 0 ? guideList[guideIdx - 1] : undefined;
+  /* <- -> keys: series pieces walk their own series (episode order);
+     standalone guides walk the full shelf (new -> old). Same direction
+     as letters (<- older / -> newer). */
+  const guideNeighbors = (() => {
+    if (guide.tutorial.series && guide.seriesTutorials.length > 0) {
+      return episodeNeighbors(guide.seriesTutorials, slug);
+    }
+    const idx = guideList.findIndex((i) => i.slug === slug);
+    return {
+      prev: idx >= 0 ? guideList[idx + 1] : undefined,
+      next: idx > 0 ? guideList[idx - 1] : undefined,
+    };
+  })();
   /* Chapter chip linkability: the /explore chapter seg renders (and
      honors ?chapter=) only with >=2 content-bearing chapters. */
   const chapterBrowsable =
@@ -808,11 +896,12 @@ export default async function ExploreDetailPage({
   return (
     <>
       <ArticleKeys
-        prev={guidePrev ? `/explore/${guidePrev.slug}` : undefined}
-        next={guideNext ? `/explore/${guideNext.slug}` : undefined}
+        prev={guideNeighbors.prev ? `/explore/${guideNeighbors.prev.slug}` : undefined}
+        next={guideNeighbors.next ? `/explore/${guideNeighbors.next.slug}` : undefined}
       />
       <GuideDetail
         tutorial={guide.tutorial}
+        seriesTutorials={guide.seriesTutorials}
         initialTab={guideTab}
         locale={locale}
         canEdit={canEdit}

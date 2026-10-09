@@ -10,6 +10,7 @@ import { ChevronDown, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import CheckboxControl from "@/components/CheckboxControl";
+import { changeFilterQuery } from "@/src/lib/filter-query";
 
 export interface FilterOption {
   value: string;
@@ -68,10 +69,9 @@ export default function FilterDropdown({
   }, [open, onOpenChange]);
 
   const apply = (values: string[]) => {
-    const params = new URLSearchParams(preservedQuery);
-    if (values.length > 0) params.set(paramKey, values.join(","));
-    else params.delete(paramKey);
-    const text = params.toString();
+    const text = changeFilterQuery(preservedQuery, {
+      [paramKey]: values.length ? values.join(",") : null,
+    });
     onOpenChange(null);
     startTransition(() => {
       router.push(text ? `${basePath}?${text}` : basePath, { scroll: false });

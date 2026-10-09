@@ -105,17 +105,18 @@ function WorkGone({ locale, href, label }: { locale: Locale; href: string; label
 
 export default async function WorkPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const { id } = await params;
   const workId = Number(id);
   const user = await getSessionUser();
   const locale = await getLocale(user);
-  /* Source-list memory (kb-works-src, written by proxy): "back"
-     returns to the list the user came from; with a work loaded it
-     falls back to work.source, otherwise only /works remains. */
-  const fromList = await getWorksSource();
+  /* Explicit browsing context survives prefetch/cache races; direct
+     links retain the visit-memory and work.source fallbacks. */
+  const fromList = await getWorksSource((await searchParams).from);
   const goneHref = fromList === "awesome" ? "/awesome" : "/works";
   const goneLabel = t(
     locale,

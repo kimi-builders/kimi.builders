@@ -45,12 +45,22 @@ test("railFor: post/work detail get contextual rails with route id", () => {
 test("railFor: awesome / explore sections", () => {
   assert.deepEqual(railFor("/awesome"), { kind: "awesome", id: null, wide: false });
   /* While a section isn't ready (src/lib/upcoming.ts), its dedicated rail
-     falls back to community; it returns once ready. */
-  const exploreRail = UPCOMING.explore ? "community" : "explore";
-  assert.deepEqual(railFor("/explore"), { kind: exploreRail, id: null, wide: false });
-  /* Series pages share the explore rail (series stay unshown for now,
-     routes kept). */
-  assert.deepEqual(railFor("/explore/series/kimi-code-in-action"), { kind: exploreRail, id: null, wide: false });
+     falls back to community; once ready the landing is a destination
+     page — full-width canvas, no rail (the rail's shelf widgets live on
+     as landing sections). */
+  assert.deepEqual(
+    railFor("/explore"),
+    UPCOMING.explore
+      ? { kind: "community", id: null, wide: false }
+      : { kind: "none", id: null, wide: true },
+  );
+  /* Series pages share the explore rail (curated series shelves render
+     on the landing; the series page keeps its rail). */
+  assert.deepEqual(railFor("/explore/series/kimi-best-practice"), {
+    kind: UPCOMING.explore ? "community" : "explore",
+    id: null,
+    wide: false,
+  });
   /* Article detail has its own article rail: metadata in the rail, the
      slug enters the decision. */
   if (!UPCOMING.explore) {
@@ -64,7 +74,7 @@ test("railFor: awesome / explore sections", () => {
        their rails independently, no shared shell cache. */
     const keyFor = (pathname: string) => railDecisionKey(railFor(pathname));
     assert.notEqual(keyFor("/explore/issue-a"), keyFor("/explore/issue-b"));
-    /* Also a different key from the catalog page. */
+    /* Also a different key from the landing page. */
     assert.notEqual(keyFor("/explore"), keyFor("/explore/2026-08-letter"));
   }
   /* Legacy routes are 301s (handled at the page layer); the rail still

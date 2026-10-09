@@ -57,7 +57,7 @@ export default async function AppLayout({
   const railKey = railDecisionKey(rail);
   return (
     <div>
-      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} loggedIn={!!user} />
+      <MobileTopBar locale={locale} unread={unread} profileHref={profileHref} moderator={moderator} loggedIn={!!user} worksSrc={worksSrc} />
       {/* Fixed desktop top bar (>=lg); the content area yields via lg:pt-14 */}
       <TopBar locale={locale} unread={unread} loggedIn={!!user} />
       {/* Edge-flush shell: the left rail hugs the viewport's left edge

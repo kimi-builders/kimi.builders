@@ -14,10 +14,12 @@ import {
   X,
 } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
+import type { WorksSource } from "@/src/lib/works-view";
 import UnreadBadge from "@/components/UnreadBadge";
 import GithubIcon from "./GithubIcon";
 import { SECTIONS } from "./LeftNav";
 import { LocaleToggle, ThemeToggle, VibeToggle } from "./pref-controls";
+import useWorksSource from "./useWorksSource";
 
 export default function MobileNavDrawer({
   locale,
@@ -26,6 +28,7 @@ export default function MobileNavDrawer({
   moderator = false,
   account,
   loggedIn = false,
+  worksSrc = null,
 }: {
   locale: Locale;
   unread?: number;
@@ -38,8 +41,16 @@ export default function MobileNavDrawer({
   /* Signed out: gated items (post/usage/notifications/settings) link
      straight to /login?next=... */
   loggedIn?: boolean;
+  worksSrc?: WorksSource | null;
 }) {
   const pathname = usePathname();
+  const source = useWorksSource(worksSrc);
+  const fromAwesome = pathname.startsWith("/works") && source === "awesome";
+  const isSectionActive = (href: string) => {
+    if (href === "/works") return pathname.startsWith("/works") && !fromAwesome;
+    if (href === "/awesome") return pathname.startsWith("/awesome") || fromAwesome;
+    return pathname.startsWith(href);
+  };
   const dialogRef = useRef<HTMLDialogElement>(null);
   /* Targets for gated entries when signed out (the login modal carries
      the redirect). */
@@ -117,7 +128,7 @@ export default function MobileNavDrawer({
                   no longer lead the list. */}
               {SECTIONS.filter((section) => !section.hidden && !section.soon).map((section) => {
                 const Icon = section.icon;
-                const active = pathname.startsWith(section.href);
+                const active = isSectionActive(section.href);
                 return (
                   <Link
                     key={section.href}
@@ -137,7 +148,7 @@ export default function MobileNavDrawer({
               <nav aria-label={t(locale, "nav.soon")} className="mt-2 space-y-1 border-t border-line pt-2">
                 {SECTIONS.filter((section) => !section.hidden && section.soon).map((section) => {
                   const Icon = section.icon;
-                  const active = pathname.startsWith(section.href);
+                  const active = isSectionActive(section.href);
                   return (
                     <Link
                       key={section.href}

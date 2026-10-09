@@ -57,6 +57,7 @@ export interface UsagePricingMatch {
   cacheWrite1hPerMtok: number | null;
   assumptions: string[];
   pricingSourceUrl: string | null;
+  pricingNote?: { zh: string; en: string };
   verifiedAt: string | null;
   pricingBasis: string | null;
   cacheWriteFallback: boolean;

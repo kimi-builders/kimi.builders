@@ -21,11 +21,18 @@ export function isMobileUA(ua: string): boolean {
   return /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 
-/* Source-list memory: /works and /awesome share detail pages and forms;
-   "back" uses this to return to the right list. Written by proxy on list
-   pages, read server-side. */
+/* Explicit link context wins over visit memory; prefetches must never
+   change the user's active source list. */
 export const WORKS_SRC_COOKIE = "kb-works-src";
 export type WorksSource = "works" | "awesome";
+
+export function parseWorksSource(value: unknown): WorksSource | null {
+  return value === "works" || value === "awesome" ? value : null;
+}
+
+export function workDetailHref(id: number, source?: WorksSource): string {
+  return `/works/${id}${source ? `?from=${source}` : ""}`;
+}
 
 export function readWorksSourceCookie(cookie: string): WorksSource | null {
   const match = cookie.match(

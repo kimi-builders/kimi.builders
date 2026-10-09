@@ -69,15 +69,8 @@ export default function LeftNav({
   worksSrc?: WorksSource | null;
 }) {
   const pathname = usePathname();
-  /* The (app) layout doesn't re-render on soft navigation, so the prop
-     is only the first-paint value; on route changes read the latest
-     cookie (written by proxy into /works and /awesome list responses —
-     already effective by the time the detail page arrives). Same
-     source of truth as the detail page's "back" link (fromList) — the
-     two entries always point at the same list. Cookies have no change
-     events, so the subscribe is a no-op: the snapshot rereads on every
-     render, and a pathname change (soft navigation) re-renders and
-     picks up the new source (same pattern as app/error.tsx). */
+  /* Layouts survive soft navigation; explicit link context and committed
+     visit memory keep this highlight aligned with the detail breadcrumb. */
   const src = useWorksSource(worksSrc);
   /* Detail-page ownership: /works/* arrived at from Awesome highlights
      Awesome, otherwise works. */

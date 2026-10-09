@@ -88,6 +88,7 @@ export async function loadWorksCards(
         work={w}
         locale={locale}
         meId={user?.id ?? null}
+        listSource={scope.awesome ? "awesome" : "works"}
         canFeature={canFeature}
         claimBadge={claimBadgeOf(w, totals, claimSums)}
         claimPaused={myPaused}

@@ -16,6 +16,7 @@ import { t, type Locale } from "@/src/lib/i18n";
 import { mediaUrl } from "@/src/lib/storage";
 import { workKindLabel } from "@/src/lib/work-kinds";
 import { awesomeScopeOf, type WorkRow } from "@/src/lib/works";
+import { workDetailHref, type WorksSource } from "@/src/lib/works-view";
 import AgentIcon from "@/components/AgentIcon";
 import WorkFeaturedToggle from "./WorkFeaturedToggle";
 import WorkCardFooter from "./WorkCardFooter";
@@ -29,6 +30,7 @@ export default function WorkGridCard({
   canFeature = false,
   claimBadge = null,
   claimPaused = false,
+  listSource,
 }: {
   work: WorkRow;
   locale: Locale;
@@ -36,6 +38,7 @@ export default function WorkGridCard({
   canFeature?: boolean;
   claimBadge?: number | null;
   claimPaused?: boolean;
+  listSource?: WorksSource;
 }) {
   const kindLabel = workKindLabel(w.kind, locale === "zh");
   const statusLabel = statusLabelOf(w.status, locale);
@@ -44,11 +47,11 @@ export default function WorkGridCard({
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-[border-color,translate] duration-base ease-standard hover:-translate-y-0.5 hover:border-paper/30">
       {/* Whole card links to the detail page; interactive elements below lift z-10 to keep their own navigation */}
       <Link
-        href={`/works/${w.id}`}
+        href={workDetailHref(w.id, listSource)}
         aria-label={w.name}
-        className="absolute inset-0 z-0 rounded-2xl"
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-blue"
       />
-      <div className="border-b border-line">
+      <div className="pointer-events-none border-b border-line">
         <WorkScreenshot
           url={w.coverKey ? mediaUrl(w.coverKey) : w.screenshotUrl}
           name={w.name}

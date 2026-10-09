@@ -949,6 +949,7 @@ export async function getUsageOverview(
       reasoningFallback: matched !== null && matched.reasoningPerMtok === null,
       assumptions: estimate.assumptions,
       pricingSourceUrl: matched?.pricingSourceUrl || null,
+      pricingNote: matched?.pricingNote,
       verifiedAt: matched?.verifiedAt ?? null,
       pricingBasis: matched?.pricingBasis ?? null,
       effectiveFrom: matched?.effectiveFrom.toISOString() ?? null,

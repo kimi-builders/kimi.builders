@@ -185,6 +185,7 @@ function tut(slug: string, episode: number, publishedAt: string): Tutorial {
     episode,
     payload: {},
     series: "s",
+    hasBody: false,
   };
 }
 

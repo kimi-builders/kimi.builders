@@ -29,11 +29,8 @@ export default function SeriesCover({
       className={`grid h-full w-full place-items-center bg-moon p-4 ${className}`}
     >
       <div className="text-center">
-        <p className="font-mono text-[10px] tracking-[0.3em] text-ui-blue">
+        <p className="font-mono text-xl tracking-[0.14em] text-ui-blue">
           {series.code}
-        </p>
-        <p className="mt-2 line-clamp-3 text-balance text-sm font-semibold leading-snug tracking-tight text-paper">
-          {zh ? series.title.zh : series.title.en}
         </p>
       </div>
     </div>

@@ -6,6 +6,7 @@ import {
   WORKS_SRC_COOKIE,
   WORKS_VIEW_COOKIE,
   isMobileUA,
+  parseWorksSource,
   type WorksSource,
   type WorksView,
 } from "./works-view";
@@ -27,11 +28,12 @@ export async function getWorksView(): Promise<WorksView> {
   return store.get(WORKS_VIEW_COOKIE)?.value === "grid" ? "grid" : "list";
 }
 
-/* Source list (proxy writes it on the /works and /awesome list pages):
-   null = no memory (opened a detail page directly); callers fall back to
-   work.source. */
-export async function getWorksSource(): Promise<WorksSource | null> {
+/* Canonical detail URLs remain source-neutral; explicit browsing context
+   takes precedence over the last committed visit's cookie. */
+export async function getWorksSource(explicit?: unknown): Promise<WorksSource | null> {
+  const source = parseWorksSource(explicit);
+  if (source) return source;
   const store = await cookies();
   const value = store.get(WORKS_SRC_COOKIE)?.value;
-  return value === "awesome" || value === "works" ? value : null;
+  return parseWorksSource(value);
 }

@@ -106,11 +106,17 @@ test("explore lens deep links honor the one availability judgment on every issui
   assert.match(page, /lensAvailable\("year"\) \? first\(sp\.year\)/);
 });
 
-test("explore lede names exactly the lenses that render this request", () => {
+test("explore hero promises the content contract, not a lens list", () => {
   const page = read("app/(app)/explore/page.tsx");
-  assert.match(page, /explore\.ledeLenses/);
-  assert.match(page, /explore\.ledeBase/);
-  assert.doesNotMatch(page, /explore\.lede"/);
+  /* The destination-page redesign retires the lens-enumeration lede
+     (the key stays in DICT for rails, but the page must not promise a
+     lens row it may not render); the lede is the manifesto. */
+  assert.match(page, /explore\.manifesto/);
+  assert.doesNotMatch(page, /explore\.ledeLenses/);
+  /* The count line states real numbers derived from the published
+     list — never hand-written projections. */
+  assert.match(page, /typeCounts\(items\)/);
+  assert.match(page, /explore\.countLine/);
 });
 
 test("monthly issue navigation renders only when a neighbor exists", () => {

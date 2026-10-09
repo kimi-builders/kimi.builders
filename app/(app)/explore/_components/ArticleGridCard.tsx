@@ -39,52 +39,57 @@ export default function ArticleGridCard({
       <Link
         href={`/explore/${item.slug}`}
         aria-label={item.title}
-        className="absolute inset-0 z-0 rounded-2xl"
-      />
-      <div className="overflow-hidden border-b border-line">
-        <div className="aspect-video transition-transform duration-base group-hover:scale-[1.02]">
-          <ArticleCover item={item} zh={zh} />
+        className="flex h-full flex-1 flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-blue"
+      >
+        <div className="overflow-hidden border-b border-line">
+          <div className="aspect-video transition-transform duration-base group-hover:scale-[1.02]">
+            {/* Wall variant: the brick carries the title, so the card body
+               repeats it only when a real cover image occupies the brick. */}
+            <ArticleCover item={item} zh={zh} variant="wall" />
+          </div>
         </div>
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col p-4">
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-grey">
-          {chapter && <span>{zh ? chapter.zh : chapter.en}</span>}
-          <span>· {monthLabel(item.publishedAt)}</span>
-          <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
-            {shownProducts.map((id) => {
-              const p = findKbProduct(id);
-              if (!p) return null;
-              const Icon = p.icon;
-              return (
-                <span key={id} title={zh ? p.zh : p.en}>
-                  <Icon size={12} aria-hidden="true" />
-                </span>
-              );
-            })}
-            {item.formats.map((f) => {
-              const Icon = FORMAT_ICON[f];
-              return (
-                <span key={f} title={t(locale, FORMAT_LABEL_KEY[f])}>
-                  <Icon size={12} aria-hidden="true" className="text-grey/70" />
-                </span>
-              );
-            })}
-          </span>
-          {item.fallback && (
-            <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
-              {t(locale, item.locale === "zh" ? "art.langZh" : "art.langEn")}
+        <div className="flex min-w-0 flex-1 flex-col p-4">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.08em] text-grey">
+            {chapter && <span>{zh ? chapter.zh : chapter.en}</span>}
+            <span>· {monthLabel(item.publishedAt)}</span>
+            <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
+              {shownProducts.map((id) => {
+                const p = findKbProduct(id);
+                if (!p) return null;
+                const Icon = p.icon;
+                return (
+                  <span key={id} data-tip={zh ? p.zh : p.en} aria-label={zh ? p.zh : p.en}>
+                    <Icon size={12} aria-hidden="true" />
+                  </span>
+                );
+              })}
+              {item.formats.map((f) => {
+                const Icon = FORMAT_ICON[f];
+                return (
+                  <span key={f} data-tip={t(locale, FORMAT_LABEL_KEY[f])} aria-label={t(locale, FORMAT_LABEL_KEY[f])}>
+                    <Icon size={12} aria-hidden="true" className="text-grey/70" />
+                  </span>
+                );
+              })}
             </span>
-          )}
-        </p>
-        <h3 className="kb-h3 mt-2 line-clamp-2 break-words transition-colors group-hover:text-ui-blue">
-          {item.title}
-        </h3>
-        {item.summary && (
-          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-grey">
-            {item.summary}
+            {item.fallback && (
+              <span className="rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper">
+                {t(locale, item.locale === "zh" ? "art.langZh" : "art.langEn")}
+              </span>
+            )}
           </p>
-        )}
-      </div>
+          {item.cover && (
+            <h3 className="kb-h3 mt-2 line-clamp-2 break-words transition-colors group-hover:text-ui-blue">
+              {item.title}
+            </h3>
+          )}
+          {item.summary && (
+            <p className={`line-clamp-2 text-sm leading-relaxed text-grey ${item.cover ? "mt-1.5" : "mt-2"}`}>
+              {item.summary}
+            </p>
+          )}
+        </div>
+      </Link>
     </article>
   );
 }

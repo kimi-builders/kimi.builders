@@ -9,6 +9,7 @@
 import type { RowDataPacket } from "mysql2/promise";
 import { getPool } from "./db";
 import { LEARN_SERIES } from "./learn-series";
+import { listExploreItems } from "./explore";
 
 const ORIGIN = "https://kimi.builders";
 
@@ -124,10 +125,16 @@ export async function getSitemapData(): Promise<SitemapData> {
       return rows.map((r) => String(r.series_slug)).filter((s) => s && s !== "null");
     }, [] as string[]),
   ]);
+  const readable = await tryQuery(async () => {
+    const [zh, en] = await Promise.all([listExploreItems("zh"), listExploreItems("en")]);
+    return [...zh, ...en];
+  }, []);
+  const readableSlugs = new Set(readable.map((item) => item.slug));
+  const readableSeries = new Set(readable.flatMap((item) => item.series ? [item.series] : []));
   return {
     postIds,
     workIds,
-    articleSlugs,
-    seriesSlugs: sitemapSeriesSlugs(episodeSeries),
+    articleSlugs: articleSlugs.filter((slug) => readableSlugs.has(slug)),
+    seriesSlugs: sitemapSeriesSlugs(episodeSeries).filter((slug) => readableSeries.has(slug)),
   };
 }

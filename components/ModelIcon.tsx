@@ -14,6 +14,8 @@ import MinimaxColor from "@lobehub/icons/es/Minimax/components/Color";
 import GLMVColor from "@lobehub/icons/es/GLMV/components/Color";
 import DoubaoColor from "@lobehub/icons/es/Doubao/components/Color";
 import WenxinColor from "@lobehub/icons/es/Wenxin/components/Color";
+import StepfunMono from "@lobehub/icons/es/Stepfun/components/Mono";
+import XiaomiMiMoMono from "@lobehub/icons/es/XiaomiMiMo/components/Mono";
 
 const ICONS: Record<string, typeof KimiMono> = {
   kimi: KimiMono,
@@ -27,16 +29,25 @@ const ICONS: Record<string, typeof KimiMono> = {
   glm: GLMVColor,
   doubao: DoubaoColor,
   wenxin: WenxinColor,
+  stepfun: StepfunMono,
+  xiaomimimo: XiaomiMiMoMono,
 };
 
 export default function ModelIcon({
   id,
   size = 14,
+  context = "inline",
 }: {
   id: string;
   size?: number;
+  context?: "inline" | "chart";
 }) {
   const Icon = ICONS[id];
   if (!Icon) return null;
-  return <Icon size={size} />;
+  const glyph = <Icon size={size} aria-hidden="true" focusable="false" />;
+  return context === "chart" ? (
+    <span aria-hidden="true" className="inline-grid size-4 shrink-0 place-items-center text-paper">
+      {glyph}
+    </span>
+  ) : glyph;
 }
