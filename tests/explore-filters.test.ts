@@ -1,12 +1,40 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  availableExploreChapters,
   availableExploreFilters,
   joinLensWords,
 } from "../src/lib/explore-filters";
 import { t } from "../src/lib/i18n";
 
 /* ---- The one lens availability judgment ---- */
+
+test("availableExploreChapters: zero or one populated chapter stays unbrowsable", () => {
+  assert.deepEqual(availableExploreChapters([]), []);
+  assert.deepEqual(availableExploreChapters([{ value: "build", count: 12 }]), []);
+  assert.deepEqual(availableExploreChapters([
+    { value: "build", count: 12 },
+    { value: "build", count: 2 },
+    { value: "learn", count: 0 },
+    { value: "gain", count: -1 },
+    { value: "unknown", count: 5 },
+  ]), []);
+});
+
+test("availableExploreChapters: two or more populated registered chapters follow registry order", () => {
+  assert.deepEqual(availableExploreChapters([
+    { value: "gain", count: 3 },
+    { value: "learn", count: 1 },
+    { value: "build", count: 0 },
+  ]), ["learn", "gain"]);
+  assert.deepEqual(availableExploreChapters([
+    { value: "become", count: 2 },
+    { value: "build", count: 10 },
+    { value: "learn", count: 1 },
+    { value: "build", count: 1 },
+    { value: "unknown", count: 99 },
+  ]), ["learn", "build", "become"]);
+});
 
 test("availableExploreFilters: empty dimensions stay closed everywhere", () => {
   assert.deepEqual(

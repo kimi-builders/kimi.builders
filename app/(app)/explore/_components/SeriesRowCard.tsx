@@ -18,11 +18,13 @@ export default function SeriesRowCard({
   series,
   episodes,
   zh,
+  chapterBrowsable,
   matched,
 }: {
   series: LearnSeries;
   episodes: ExploreItem[];
   zh: boolean;
+  chapterBrowsable: boolean;
   matched?: { hit: number; total: number };
 }) {
   const stale = isPathStale(series);
@@ -51,7 +53,7 @@ export default function SeriesRowCard({
       </div>
       <div className="pointer-events-none flex min-w-0 flex-1 flex-col p-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-grey/70">
-          {chapter && (
+          {chapter && (chapterBrowsable ? (
             <Link
               href={`/explore?chapter=${chapter.id}`}
               className="pointer-events-auto relative z-10 mr-2 rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
@@ -59,7 +61,11 @@ export default function SeriesRowCard({
             >
               {zh ? chapter.zh : chapter.en}
             </Link>
-          )}
+          ) : (
+            <span className="mr-2 rounded-md border border-line px-1.5 py-px normal-case tracking-normal text-paper/80">
+              {zh ? chapter.zh : chapter.en}
+            </span>
+          ))}
           — {zh ? "系列" : "Series"} · {series.code}
         </p>
         <h2 className="mt-1.5 truncate text-base font-semibold leading-snug text-paper transition-colors group-hover:text-ui-blue">

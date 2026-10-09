@@ -26,13 +26,13 @@ test("public pricing catalog exposes a cacheable versioned contract", async () =
 });
 
 test("canonical catalog is synchronized with the current Usage release", () => {
-  assert.equal(USAGE_PRICE_CATALOG.revision, 7);
+  assert.equal(USAGE_PRICE_CATALOG.revision, 8);
   assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-10-08");
   assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-10-08T00:00:00.000Z");
   assert.equal(USAGE_PRICE_CATALOG.entries.length, 167);
   assert.equal(
     USAGE_PRICE_CATALOG.integrity.digest,
-    "ecf9647ec7bc992ba98b5b3926614e0330c1edb6d3dfe4a298a60db9f2b4e09a",
+    "6fbe5158fe6b744a18825a715884c64a4fe220653c58e7b672dc88f24882ac00",
   );
 });
 
@@ -135,7 +135,7 @@ test("previous catalog revision ETags cannot mask the MiMo and StepFun update", 
     { headers: { "If-None-Match": '"sha256-68422f74682967c3f0e09a0bae9a77e1c8779270c9a6e2b1758d094441a7e8ec"' } },
   ));
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).revision, 7);
+  assert.equal((await response.json()).revision, 8);
 });
 
 test("public pricing catalog honors If-None-Match", async () => {
@@ -358,6 +358,28 @@ test("DeepSeek Flash API aliases adopt the new rates without overwriting old buc
   assert.equal(matchModelPrice(prices, "deepseek-v4-pro", current)?.inputPerMtok, 1.32);
 });
 
+test("Kimi K3 selects historical and current prices by bucket time, not catalog order", async () => {
+  const prices = await loadModelPrices();
+  for (const ordered of [prices, [...prices].reverse()]) {
+    for (const [timestamp, version, write, ttl1h] of [
+      ["2026-08-01T10:00:00.000Z", "2026-08-19", null, null],
+      ["2026-10-07T23:59:59.999Z", "2026-08-19", null, null],
+      ["2026-10-08T00:00:00.000Z", "2026-10-08", 3, 6],
+    ] as const) {
+      const price = matchModelPrice(ordered, "kimi-k3", new Date(timestamp), "kimi-code");
+      assert.ok(price);
+      assert.equal(price.version, version);
+      assert.equal(price.modelPattern, "kimi-k3");
+      assert.equal(price.cacheWritePerMtok, write);
+      assert.equal(price.cacheWrite1hPerMtok, ttl1h);
+      assert.equal(estimateCostMicros({
+        inputTokens: 150, cacheWriteInputTokens: 20, cacheReadInputTokens: 40,
+        outputTokens: 15, reasoningOutputTokens: 0,
+      }, price).micros, 747);
+    }
+  }
+});
+
 test("Kimi highspeed and TTL pricing no longer inherit the base Code rate", async () => {
   const prices = await loadModelPrices();
   const at = new Date("2026-10-08T12:00:00.000Z");
@@ -406,20 +428,28 @@ test("current Grok GLM and MiniMax variants select their own rate rows", async (
   assert.equal(matchModelPrice(prices, "minimax-m2.5", new Date("2026-10-07T23:59:59.999Z"))?.cacheReadPerMtok, 0.06);
 });
 
-test("Qwen Flash leaves unverified cache reads unpriced without inferring a provider from an Agent tool", async () => {
+test("Qwen Flash uses verified Global cache rates without inferring a provider from an Agent tool", async () => {
   const prices = await loadModelPrices();
   const at = new Date("2026-10-08T12:00:00.000Z");
   const global = matchModelPrice(prices, "qwen3.8-flash", at, "claude-code");
   const opencode = matchModelPrice(prices, "qwen3.8-flash", at, "opencode");
-  assert.deepEqual([global?.inputPerMtok, global?.cacheReadPerMtok, global?.cacheWritePerMtok, global?.outputPerMtok], [0.113, null, 0.14125, 0.382]);
+  assert.deepEqual([global?.inputPerMtok, global?.cacheReadPerMtok, global?.cacheWritePerMtok, global?.outputPerMtok], [0.113, 0.014, 0.177, 0.382]);
+  assert.equal(global?.pricingSourceUrl, "https://www.alibabacloud.com/help/en/model-studio/qwen3-8-flash");
   assert.deepEqual(opencode, global);
-  const estimate = estimateCostMicros({
-    inputTokens: 0, cacheWriteInputTokens: 0, cacheReadInputTokens: 1_000_000,
-    outputTokens: 0, reasoningOutputTokens: 0,
-  }, global);
-  assert.equal(estimate.status, "partial");
-  assert.equal(estimate.micros, 0);
-  assert.equal(estimate.unpricedTokens, 1_000_000);
+  for (const [write, read, micros] of [
+    [1_000_000, 0, 177_000],
+    [0, 1_000_000, 14_000],
+    [1_000_000, 1_000_000, 191_000],
+  ]) {
+    const estimate = estimateCostMicros({
+      inputTokens: 0, cacheWriteInputTokens: write, cacheReadInputTokens: read,
+      outputTokens: 0, reasoningOutputTokens: 0,
+    }, global);
+    assert.equal(estimate.status, "priced");
+    assert.ok(Math.abs(estimate.micros - micros) < 0.000001);
+    assert.equal(estimate.pricedTokens, write + read);
+    assert.equal(estimate.unpricedTokens, 0);
+  }
 });
 
 test("catalog windows do not overlap for the same model source and pricing tier", () => {
@@ -447,5 +477,21 @@ test("old catalog ETags receive the new revision instead of a false 304", async 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
   const body = await response.json();
-  assert.equal(body.revision, 7);
+  assert.equal(body.revision, 8);
+});
+
+test("the corrected Qwen catalog invalidates the previous revision's ETag", async () => {
+  const previousETag = '"sha256-ecf9647ec7bc992ba98b5b3926614e0330c1edb6d3dfe4a298a60db9f2b4e09a"';
+  assert.notEqual(USAGE_PRICE_CATALOG_ETAG, previousETag);
+  const response = await GET(new NextRequest(
+    "https://kimi.builders/api/public/usage-pricing/v1/catalog",
+    { headers: { "If-None-Match": previousETag } },
+  ));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
+  const body = await response.json();
+  assert.equal(body.revision, 8);
+  const qwen = body.entries.find((entry: { pattern: string }) => entry.pattern === "qwen3.8-flash");
+  assert.equal(qwen.cacheWrite, "0.177");
+  assert.equal(qwen.cacheRead, "0.014");
 });

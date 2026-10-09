@@ -21,11 +21,13 @@ export default function SeriesGridCard({
   series,
   episodes,
   zh,
+  chapterBrowsable,
   matched,
 }: {
   series: LearnSeries;
   episodes: ExploreItem[];
   zh: boolean;
+  chapterBrowsable: boolean;
   matched?: { hit: number; total: number };
 }) {
   const stale = isPathStale(series);
@@ -60,7 +62,7 @@ export default function SeriesGridCard({
         </p>
         <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-grey">
           <span className="shrink-0">{series.code}</span>
-          {chapter && (
+          {chapter && (chapterBrowsable ? (
             <Link
               href={`/explore?chapter=${chapter.id}`}
               className="pointer-events-auto relative z-10 shrink-0 rounded-md border border-line px-1.5 py-px text-paper/80 transition-colors hover:border-ui-blue/50 hover:text-ui-blue"
@@ -68,7 +70,11 @@ export default function SeriesGridCard({
             >
               {zh ? chapter.zh : chapter.en}
             </Link>
-          )}
+          ) : (
+            <span className="shrink-0 rounded-md border border-line px-1.5 py-px text-paper/80">
+              {zh ? chapter.zh : chapter.en}
+            </span>
+          ))}
           {seriesProducts.length > 0 && (
             <span className="inline-flex shrink-0 items-center gap-1">
               {seriesProducts.map((id) => {

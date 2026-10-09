@@ -28,6 +28,7 @@ import { getLocale } from "@/src/lib/i18n-server";
 import { findKbChapter } from "@/src/lib/kb-chapters";
 import { detailMetadata, languageTaggedTitle } from "@/src/lib/page-metadata";
 import { getArticleRailMeta, countByChapter, listExploreItems } from "@/src/lib/explore";
+import { availableExploreChapters } from "@/src/lib/explore-filters";
 import Avatar from "@/components/Avatar";
 import { findLearnSeries } from "@/src/lib/learn-series";
 import {
@@ -875,8 +876,10 @@ export default async function ExploreDetailPage({
   })();
   /* Chapter chip linkability: the /explore chapter seg renders (and
      honors ?chapter=) only with >=2 content-bearing chapters. */
-  const chapterBrowsable =
-    countByChapter(guideList).filter((c) => c.count > 0).length >= 2;
+  const guideChapter = guideList.find((item) => item.slug === slug)?.chapter;
+  const chapterBrowsable = availableExploreChapters(countByChapter(guideList)).some(
+    (id) => id === guideChapter,
+  );
   /* Format preference fallback order: an explicit ?tab= wins -> the
      kb_fmt cookie (only when this piece has that format) -> the first
      tab; the cookie is written by DetailTabs' remember. */

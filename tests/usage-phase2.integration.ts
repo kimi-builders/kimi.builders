@@ -20,7 +20,7 @@ import {
 import { exportUsageData } from "../src/lib/usage/export";
 import { parseUsageFilters } from "../src/lib/usage/filters";
 import { ingestUsage } from "../src/lib/usage/ingest";
-import { USAGE_PRICE_CATALOG } from "../src/lib/usage/price-catalog";
+import { loadModelPrices, matchModelPrice } from "../src/lib/usage/pricing";
 import { getUsageDashboard, getUsageOverview } from "../src/lib/usage/query";
 import { getUsageSettings, updateUsageSettings } from "../src/lib/usage/settings";
 import { validateUsageIngest } from "../src/lib/usage/validation";
@@ -318,12 +318,18 @@ async function main() {
     const kimiMatch = overview.meta.pricingMatches.find(
       (row) => row.model === "kimi-code/k3",
     );
-    const kimiCatalogEntry = USAGE_PRICE_CATALOG.entries.find(
-      (row) => row.pattern === "kimi-k3" && row.source === null,
+    const kimiBucket = FIXTURE.buckets.find((row) => row.model === "kimi-code/k3");
+    assert.ok(kimiBucket);
+    const kimiPrice = matchModelPrice(
+      await loadModelPrices(),
+      "kimi-k3",
+      new Date(String(kimiBucket.bucketStart)),
+      String(kimiBucket.source),
     );
-    assert.ok(kimiCatalogEntry);
-    assert.ok(overview.meta.pricingVersions.includes(kimiCatalogEntry.version));
-    assert.equal(kimiMatch?.version, kimiCatalogEntry.version);
+    assert.ok(kimiPrice);
+    assert.equal(kimiPrice.version, "2026-08-19");
+    assert.ok(overview.meta.pricingVersions.includes(kimiPrice.version));
+    assert.equal(kimiMatch?.version, kimiPrice.version);
     assert.equal(kimiMatch?.modelCanonical, "kimi-k3");
     assert.equal(kimiMatch?.matchedPattern, "kimi-k3");
     // claude-opus-4: 300x5 + 105x6.25 + 50x0.5 + 30x25 = 2931.25 micros

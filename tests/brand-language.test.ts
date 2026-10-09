@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { BOT_NAME } from "../src/lib/bot-identity";
+import { availableExploreChapters } from "../src/lib/explore-filters";
 import { articleLanguageLabel, t } from "../src/lib/i18n";
 import { detailMetadata, languageTaggedTitle } from "../src/lib/page-metadata";
 import { normalizePosterLocale } from "../src/lib/poster-locale";
@@ -163,11 +164,17 @@ test("detail metadata replaces root social fields and keeps route canonicals", (
 });
 
 test("Explore hides sparse chapter dimensions and uses a wrapping control", () => {
-  assert.match(explorePage, /chapterFilterVisible = activeChapters\.length >= 2/);
+  assert.deepEqual(availableExploreChapters([{ value: "build", count: 12 }]), []);
+  assert.deepEqual(availableExploreChapters([
+    { value: "build", count: 12 }, { value: "learn", count: 1 },
+  ]), ["learn", "build"]);
+  assert.match(explorePage, /browsableChapterIds = availableExploreChapters\(chapterCounts\)/);
+  assert.match(explorePage, /chapterFilterVisible = activeChapters\.length > 0/);
   assert.match(explorePage, /SEG_WRAP_FLOW/);
   assert.match(explorePage, /activeChapters\.map/);
   assert.doesNotMatch(explorePage, /KB_CHAPTERS\.map|zero-count chapters grey/);
-  assert.match(exploreRail, /activeChapters\.length >= 2/);
+  assert.match(exploreRail, /browsableChapterIds = availableExploreChapters\(chapterCounts\)/);
+  assert.match(exploreRail, /activeChapters\.length > 0/);
   assert.match(exploreRail, /Methods, evidence, and sources\./);
   assert.doesNotMatch(exploreRail, /every piece ships|KB_CHAPTERS\.map/);
 });

@@ -6,9 +6,19 @@
    doesn't even render its dropdown). The page, the rails, and the
    URL-param parser all read this one function, so a deep link can never
    filter by a lens the reader can't see or clear, and rail links never
-   produce dead or invisible filters. Chapters are not a lens here: the
-   chapter seg has its own ">=2 comparable chapters" rule (see the
-   explore page). */
+   produce dead or invisible filters. Chapters have a separate
+   ">=2 comparable chapters" availability judgment shared by every
+   chapter link and the URL channel. */
+import { KB_CHAPTERS, type ChapterId } from "./kb-chapters";
+
+/* Only distinct, registered, content-bearing chapters are comparable. */
+export function availableExploreChapters(
+  counts: readonly { value: string; count: number }[],
+): ChapterId[] {
+  const populated = new Set(counts.filter((row) => row.count > 0).map((row) => row.value));
+  const chapters = KB_CHAPTERS.filter((chapter) => populated.has(chapter.id));
+  return chapters.length >= 2 ? chapters.map((chapter) => chapter.id) : [];
+}
 
 export type ExploreFilterKey = "product" | "role" | "tag" | "year";
 

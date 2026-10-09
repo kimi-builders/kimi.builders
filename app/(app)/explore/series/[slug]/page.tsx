@@ -20,7 +20,7 @@ import { findKbProduct } from "@/src/lib/kb-products";
 import { findKbRole } from "@/src/lib/kb-roles";
 import { findLearnSeries, isPathStale } from "@/src/lib/learn-series";
 import { detailMetadata } from "@/src/lib/page-metadata";
-import { availableExploreFilters } from "@/src/lib/explore-filters";
+import { availableExploreChapters, availableExploreFilters } from "@/src/lib/explore-filters";
 import { countByChapter, countByProduct, countByRoles, countTags, deriveFormats, groupByArchive, listExploreItems } from "@/src/lib/explore";
 import { getSeriesTutorials, type Tutorial } from "@/src/lib/tutorials";
 import { UPCOMING } from "@/src/lib/upcoming";
@@ -155,13 +155,11 @@ export default async function ExploreSeriesPage({
   /* Chapter mark: paths hang on chapters; the meta row's leading chip
      links back to the chapter view (only when the seg renders there:
      >=2 content-bearing chapters, this one included). */
-  const chapterCounts = countByChapter(allItems);
-  const activeChapterCount = chapterCounts.filter((c) => c.count > 0).length;
+  const browsableChapterIds = availableExploreChapters(countByChapter(allItems));
   const seriesChapter = series.chapter ? findKbChapter(series.chapter) : undefined;
   const chapterBrowsable =
     !!seriesChapter &&
-    activeChapterCount >= 2 &&
-    chapterCounts.some((c) => c.value === series.chapter && c.count > 0);
+    browsableChapterIds.includes(seriesChapter.id);
 
   return (
     <div>

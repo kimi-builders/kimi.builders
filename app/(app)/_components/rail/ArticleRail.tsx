@@ -15,7 +15,7 @@
 import Link from "next/link";
 import { Clock3 } from "lucide-react";
 import { countByChapter, countByProduct, countByRoles, countTags, getArticleRailMeta, groupByArchive, listExploreItems } from "@/src/lib/explore";
-import { availableExploreFilters } from "@/src/lib/explore-filters";
+import { availableExploreChapters, availableExploreFilters } from "@/src/lib/explore-filters";
 import { findKbProduct } from "@/src/lib/kb-products";
 import { KB_ROLES } from "@/src/lib/kb-roles";
 import { articleLanguageLabel, t, type Locale } from "@/src/lib/i18n";
@@ -56,12 +56,10 @@ export default async function ArticleRail({
     tag: countTags(allItems).length,
     year: groupByArchive(allItems).length,
   });
-  const chapterCounts = countByChapter(allItems);
-  const activeChapterCount = chapterCounts.filter((c) => c.count > 0).length;
+  const browsableChapterIds = availableExploreChapters(countByChapter(allItems));
   const chapterBrowsable =
     !!item.chapter &&
-    activeChapterCount >= 2 &&
-    (chapterCounts.find((c) => c.value === item.chapter)?.count ?? 0) > 0;
+    browsableChapterIds.some((id) => id === item.chapter);
 
   const chapter = item.chapter ? findKbChapter(item.chapter) : undefined;
 

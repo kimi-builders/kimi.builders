@@ -15,15 +15,16 @@ import {
 } from "@/src/lib/explore";
 import { KB_CHAPTERS } from "@/src/lib/kb-chapters";
 import { findKbProduct } from "@/src/lib/kb-products";
-import { availableExploreFilters } from "@/src/lib/explore-filters";
+import { availableExploreChapters, availableExploreFilters } from "@/src/lib/explore-filters";
 import Widget from "./Widget";
 
 export default async function ExploreRail({ locale }: { locale: Locale }) {
   const zh = locale === "zh";
   const items = await listExploreItems(locale);
   const chapterCounts = countByChapter(items);
+  const browsableChapterIds = availableExploreChapters(chapterCounts);
   const activeChapters = KB_CHAPTERS.filter(
-    (chapter) => (chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0) > 0,
+    (chapter) => browsableChapterIds.includes(chapter.id),
   );
   const chapterMax = Math.max(
     1,
@@ -52,7 +53,7 @@ export default async function ExploreRail({ locale }: { locale: Locale }) {
       </p>
 
       {/* A single populated chapter is not a meaningful distribution. */}
-      {activeChapters.length >= 2 && (
+      {activeChapters.length > 0 && (
         <Widget title={zh ? "章" : "CHAPTERS"} note={zh ? "按内容计数" : "By content"}>
           <ul className="space-y-2.5">
             {activeChapters.map((chapter) => {

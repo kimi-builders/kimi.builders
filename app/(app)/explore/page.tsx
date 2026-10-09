@@ -33,6 +33,7 @@ import { KB_CHAPTERS, findKbChapter, isKbChapterId } from "@/src/lib/kb-chapters
 import { findKbProduct, isKbProductId } from "@/src/lib/kb-products";
 import { KB_ROLES, isKbRoleId } from "@/src/lib/kb-roles";
 import {
+  availableExploreChapters,
   availableExploreFilters,
   type ExploreFilterKey,
 } from "@/src/lib/explore-filters";
@@ -132,10 +133,11 @@ export default async function ExplorePage({
 
   const items = await listExploreItems(locale);
   const chapterCounts = countByChapter(items);
+  const browsableChapterIds = availableExploreChapters(chapterCounts);
   const activeChapters = KB_CHAPTERS.filter(
-    (chapter) => (chapterCounts.find((x) => x.value === chapter.id)?.count ?? 0) > 0,
+    (chapter) => browsableChapterIds.includes(chapter.id),
   );
-  const chapterFilterVisible = activeChapters.length >= 2;
+  const chapterFilterVisible = activeChapters.length > 0;
   const productCounts = countByProduct(items);
   const roleCounts = countByRoles(items);
   const tagCounts = countTags(items);
@@ -404,7 +406,13 @@ export default async function ExplorePage({
               <SectionHead label={t(locale, "explore.paths")} />
               <div className="mt-5 grid gap-4 lg:grid-cols-2">
                 {shelves.map(({ series, episodes }) => (
-                  <SeriesGridCard key={series.slug} series={series} episodes={episodes} zh={zh} />
+                  <SeriesGridCard
+                    key={series.slug}
+                    series={series}
+                    episodes={episodes}
+                    zh={zh}
+                    chapterBrowsable={!!series.chapter && browsableChapterIds.includes(series.chapter)}
+                  />
                 ))}
               </div>
             </section>
@@ -474,7 +482,7 @@ export default async function ExplorePage({
             </section>
           )}
 
-          {!anyFilter && activeChapters.length > 0 && (
+          {!anyFilter && chapterFilterVisible && (
             <section className="mt-12">
               <SectionHead label={t(locale, "explore.byChapter")} />
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

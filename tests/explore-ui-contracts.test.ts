@@ -5,6 +5,22 @@ import { t } from "../src/lib/i18n";
 
 const source = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 
+test("chapter landing, controls, URL selection and detail links share one availability judgment", () => {
+  const page = source("app/(app)/explore/page.tsx");
+  assert.match(page, /browsableChapterIds = availableExploreChapters\(chapterCounts\)/);
+  assert.match(page, /chapterFilterVisible && activeChapters\.some/);
+  assert.match(page, /!anyFilter && chapterFilterVisible &&/);
+  assert.match(page, /chapterBrowsable=\{!!series\.chapter && browsableChapterIds\.includes\(series\.chapter\)\}/);
+  for (const file of [
+    "app/(app)/explore/[slug]/page.tsx",
+    "app/(app)/explore/series/[slug]/page.tsx",
+    "app/(app)/_components/rail/ArticleRail.tsx",
+    "app/(app)/_components/rail/ExploreRail.tsx",
+  ]) {
+    assert.match(source(file), /availableExploreChapters\(countByChapter\(|availableExploreChapters\(chapterCounts\)/, file);
+  }
+});
+
 test("external search changes reset the draft while unrelated lens changes preserve it", () => {
   const page = source("app/(app)/explore/page.tsx");
   assert.match(page, /<ExploreSearch key=\{selQ \?\? ""\}/);

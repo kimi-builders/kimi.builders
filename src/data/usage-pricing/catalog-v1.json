@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "matcherVersion": 1,
-  "revision": 7,
+  "revision": 8,
   "catalogVersion": "2026-10-08",
   "publishedAt": "2026-10-08T00:00:00.000Z",
   "currency": "USD",
@@ -1152,19 +1152,19 @@
       "effectiveFrom": "2026-10-08T00:00:00.000Z",
       "effectiveTo": null,
       "input": "0.113",
-      "cacheWrite": "0.14125",
+      "cacheWrite": "0.177",
       "cacheWrite5m": null,
       "cacheWrite1h": null,
-      "cacheRead": null,
+      "cacheRead": "0.014",
       "output": "0.382",
       "reasoning": null,
-      "sourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+      "sourceUrl": "https://www.alibabacloud.com/help/en/model-studio/qwen3-8-flash",
       "verifiedAt": "2026-10-08",
       "version": "2026-10-08",
       "basis": "standard-api",
       "note": {
-        "zh": "按 Alibaba Cloud Model Studio Global 部署公开标准价估算；缓存读取价格需在控制台核实，暂不计价；地区专属价与促销不在此条目内。",
-        "en": "Estimated at public standard rates for Alibaba Cloud Model Studio Global deployment. Cache-read rates require console verification and remain unpriced; regional rates and promotions are excluded."
+        "zh": "按 Alibaba Cloud Model Studio Global 部署公开标准价估算，缓存写入采用显式缓存创建价，缓存读取采用公开命中价；地区专属价与促销不在此条目内。",
+        "en": "Estimated at public standard rates for Alibaba Cloud Model Studio Global deployment, using explicit cache creation and published cache-hit rates. Regional rates and promotions are excluded."
       }
     },
     {
@@ -3475,6 +3475,6 @@
   ],
   "integrity": {
     "algorithm": "sha256",
-    "digest": "ecf9647ec7bc992ba98b5b3926614e0330c1edb6d3dfe4a298a60db9f2b4e09a"
+    "digest": "6fbe5158fe6b744a18825a715884c64a4fe220653c58e7b672dc88f24882ac00"
   }
 }

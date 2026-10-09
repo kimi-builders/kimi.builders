@@ -7,9 +7,9 @@
    measure (artifact -> value), establish (value -> position and self).
    Chapters live in a code registry (a permanent frame, capped at 3-5);
    series hang on chapters; monthly letters never do — chapters are the
-   language of "paths", periodicals are orthogonal. Rendering counts
-   published content; zero-count chapters grey out in the segmented
-   control (always visible). */
+   language of "paths", periodicals are orthogonal. Only populated
+   chapters are browsable, and only when at least two are comparable
+   (the shared judgment lives in explore-filters.ts). */
 import type { L10n } from "./learn-series";
 
 export type ChapterId = "learn" | "build" | "gain" | "become";
