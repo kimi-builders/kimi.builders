@@ -25,8 +25,8 @@ test("template: CTA href 同时出现在按钮与明文兜底链接", () => {
   const html = renderBrandEmail(SAMPLE);
   const occurrences = html.split(SAMPLE.cta.href).length - 1;
   assert.ok(occurrences >= 2, `href should appear at least twice, got ${occurrences}`);
-  assert.match(html, /bgcolor="#1783ff"/); // the bulletproof button td fill
-  assert.match(html, /border-radius:10px/);
+  assert.match(html, /bgcolor="#007cff"/); // the bulletproof button td fill (brand focus blue)
+  assert.match(html, /border-radius:0/); // poster-vibe angular edges
   // Fixed hero width (w-72): zh/en buttons render identically wide.
   assert.match(html, /width:288px;max-width:100%/);
 });
@@ -51,6 +51,9 @@ test("template: 无 script / 无外部样式表 / 无 flex/grid,纯 table + 内�
   assert.ok(!html.includes("class="));
   assert.ok(html.includes("<table"));
   assert.ok(html.includes("style="));
+  // Signature 0/1 backdrop band (three fading tints).
+  assert.ok(html.includes("#12305e"));
+  assert.ok(html.includes("#0f2450"));
 });
 
 test("template: 外层深底(bgcolor+style 双写)+ 深卡 hairline 圆角 + 560px 居中", () => {
@@ -59,8 +62,8 @@ test("template: 外层深底(bgcolor+style 双写)+ 深卡 hairline 圆角 + 560
   assert.ok(html.includes("background-color:#0e0e13"));
   assert.ok(html.includes('bgcolor="#16161f"')); // the raised panel card
   assert.ok(html.includes("border:1px solid rgba(255,255,255,0.12)"));
-  assert.ok(html.includes("width:560px;max-width:100%"));
-  assert.ok(html.includes("border-radius:16px"));
+  assert.ok(html.includes("width:600px;max-width:100%"));
+  assert.ok(html.includes("border-radius:0")); // poster-vibe angular edges
   // Dark email: warm-white primary text + secondary grey; no near-black
   // text on dark.
   assert.ok(html.includes("color:#efe8dc"));
@@ -100,8 +103,8 @@ test("template: 缺省 cta/footnote 时对应块不渲染;footnote 换行变 <br
   const bare = renderBrandEmail({ title: "t", bodyHtml: "<p>x</p>" });
   /* No card CTA = exactly one blue button remains (the footer's
      "browse" CTA); SAMPLE (with a CTA) renders two. */
-  assert.equal(bare.split('bgcolor="#1783ff"').length - 1, 1);
-  assert.equal(SAMPLE_HTML.split('bgcolor="#1783ff"').length - 1, 2);
+  assert.equal(bare.split('bgcolor="#007cff"').length - 1, 1);
+  assert.equal(SAMPLE_HTML.split('bgcolor="#007cff"').length - 1, 2);
   assert.ok(!bare.includes("Paste this link"));
   const html = renderBrandEmail(SAMPLE);
   assert.ok(html.includes("即可。<br>If you didn't"));
@@ -190,11 +193,12 @@ test("template: 已知 locale 发单语邮件(标题/正文/CTA/脚注),未知 l
   assert.ok(both.html.includes("重置密码 / Reset your password"));
 });
 
-test("template: hero 式社区 footer(tagline/lede/浏览 CTA/四块分区磁贴),locale 驱动文案", () => {
+test("template: hero 式社区 footer(tagline/lede/双语 CTA/四块分区磁贴),恒双语", () => {
   const html = renderBrandEmail(SAMPLE);
   assert.ok(html.includes("Build with Kimi. Show your work."));
   assert.ok(html.includes("看 Builder 做出的作品、亲自跑通的方法，以及自愿公开的用量。"));
-  assert.ok(html.includes("浏览社区 →"));
+  /* The facade footer is locale-independent bilingual (v3 design). */
+  assert.ok(html.includes("浏览社区 / Browse the community →"));
   for (const [href, name, sub] of [
     ['href="https://kimi.builders/community"', "社区", "讨论 · 晒作品"],
     ['href="https://kimi.builders/explore"', "探索", "月刊 × Builder 实践"],

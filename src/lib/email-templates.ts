@@ -77,6 +77,27 @@ export interface BrandEmailInput {
   locale?: MailLocale;
 }
 
+/* Signature 0/1 field rows for the poster-facade band: fixed literal
+   strings (deterministic by construction, no runtime randomness), in
+   three fading tints toward the brand blue. Pure text — every mail
+   client renders them. */
+const BINARY_ROWS: ReadonlyArray<{ text: string; color: string }> = [
+  {
+    text: "0 1 1 0 1 0 0 1 1 0 1 1 0 0 1 0 1 1 0 1 0 0 1 1 0 1 0 1 1 0 0 1 1 0 1 0 1 0 0 1 1 0",
+    color: "#12305e",
+  },
+  {
+    text: "1 0 0 1 0 1 1 0 0 1 1 0 1 0 0 1 0 1 1 0 0 1 1 0 1 0 1 1 0 0 1 0 1 1 0 1 0 0 1 0 1 1",
+    color: "#0f2450",
+  },
+  {
+    text: "0 1 1 0 1 0 0 1 1 0 1 1 0 0 1 0 1 1 0 1 0 0 1 1 0 1 0 1 1 0 0 1 1 0 1 0 1 0 0 1 1 0",
+    color: "#0c1c40",
+  },
+];
+
+const BRAND_BLUE_FOCUS = "#007cff";
+
 export function renderBrandEmail(input: BrandEmailInput): string {
   const siteUrl = (input.siteUrl || DEFAULT_SITE_URL).replace(/\/+$/, "");
   const logoUrl = `${siteUrl}${EMAIL_LOGO_PATH}`;
@@ -84,20 +105,20 @@ export function renderBrandEmail(input: BrandEmailInput): string {
   const preheader = escapeEmailHtml(input.preheader ?? input.title);
 
   const eyebrowBlock = input.eyebrow
-    ? `<p style="margin:0 0 10px;font-family:${MONO_STACK};font-size:11px;letter-spacing:0.12em;color:${GREY};">${escapeEmailHtml(input.eyebrow)}</p>`
+    ? `<p style="margin:0 0 12px;text-align:center;font-family:${MONO_STACK};font-size:11px;letter-spacing:0.14em;color:${GREY};"><span style="color:${BRAND_BLUE_FOCUS};">●</span> ${escapeEmailHtml(input.eyebrow)}</p>`
     : "";
 
   const ctaBlock = input.cta
-    ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:28px 0 4px;">
+    ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:30px auto 6px;">
               <tr>
-                <td align="center" bgcolor="${BRAND_BLUE}" style="border-radius:10px;">
-                  <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:13px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeEmailHtml(input.cta.label)}</a>
+                <td align="center" bgcolor="${BRAND_BLUE_FOCUS}" style="border-radius:0;">
+                  <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:14px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:0;">${escapeEmailHtml(input.cta.label)}</a>
                 </td>
               </tr>
             </table>
-            <p style="margin:12px 0 0;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">
-              按钮没反应?复制链接到浏览器打开 / Button not working? Paste this link into your browser:<br>
-              <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="color:${BRAND_BLUE};text-decoration:underline;word-break:break-all;">${escapeEmailHtml(input.cta.href)}</a>
+            <p style="margin:14px 0 0;text-align:center;font-family:${MONO_STACK};font-size:11px;line-height:1.8;color:#6d6d78;">
+              按钮没反应?复制链接到浏览器打开 / Button not working? Paste this link:<br>
+              <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="color:${BRAND_BLUE_FOCUS};text-decoration:underline;word-break:break-all;">${escapeEmailHtml(input.cta.href)}</a>
             </p>`
     : "";
 
@@ -105,35 +126,29 @@ export function renderBrandEmail(input: BrandEmailInput): string {
     ? `${escapeEmailHtml(input.footnote).replace(/\n/g, "<br>")}<br><br>`
     : "";
 
-  /* Community footer, mirroring the home facade's hero block: brand
-     tagline as the heading, the hero sub line, the blue mono "browse"
-     CTA, and the four bordered section tiles (name + sub line, exactly
-     the hero's four — usage/GitHub stay out, same as there). Identity
-     words stay untranslated per the brand rules; the rest follows the
-     mail locale (zh by default when unknown). All table/inline markup:
-     mail-client safe. */
-  const footerDisclaimer =
-    input.locale === "en"
-      ? "A user-run community for Builders using Kimi (unofficial)"
-      : input.locale === "zh"
-        ? "Kimi 用户自建的非商业 Builder 社区(非官方)"
-        : "Kimi 用户自建的非商业 Builder 社区(非官方)/ A user-run community for Builders using Kimi (unofficial)";
-  const navLocale: Locale = input.locale ?? "zh";
-  const tile = (nameKey: Parameters<typeof t>[1], subKey: Parameters<typeof t>[1], href: string) =>
-    `<td width="50%" align="center" valign="top" bgcolor="${PANEL}" style="background-color:${PANEL};border:1px solid ${HAIRLINE};border-radius:10px;padding:14px 10px;">
-                  <a href="${escapeEmailHtml(href)}" target="_blank" style="display:block;font-family:${MONO_STACK};font-size:13px;letter-spacing:0.08em;color:${PAPER};text-decoration:none;">${escapeEmailHtml(t(navLocale, nameKey))}</a>
-                  <span style="display:block;margin-top:5px;font-family:${MONO_STACK};font-size:11px;color:${GREY};">${escapeEmailHtml(t(navLocale, subKey))}</span>
+  /* Bilingual community footer (locale-independent): the facade voice is
+     always zh+en side by side, whatever language the card body uses.
+     Tile names combine both; subs join with a slash; the disclaimer is
+     the fixed bilingual line. */
+  const tile = (nameKey: Parameters<typeof t>[1], subKey: Parameters<typeof t>[1], href: string) => {
+    const nameZh = t("zh", nameKey);
+    const nameEn = t("en", nameKey);
+    const name = nameZh === nameEn ? nameZh : `${nameZh} ${nameEn}`;
+    const sub = `${t("zh", subKey)} / ${t("en", subKey)}`;
+    return `<td width="50%" align="center" bgcolor="${PANEL}" style="background-color:${PANEL};border:1px solid ${HAIRLINE};border-radius:0;padding:14px 10px;">
+                  <a href="${escapeEmailHtml(href)}" target="_blank" style="display:block;font-family:${MONO_STACK};font-size:12px;letter-spacing:0.08em;color:${PAPER};text-decoration:none;">${escapeEmailHtml(name)}</a>
+                  <span style="display:block;margin-top:5px;font-family:${MONO_STACK};font-size:10px;color:${GREY};">${escapeEmailHtml(sub)}</span>
                 </td>`;
-  /* Hero-centered column: tagline / lede / CTA all center-aligned
-     (the facade hero is a centered column); the CTA shares the card
-     button's fixed 288px width so zh/en render identically. */
+  };
+  const browseLabel = `${t("zh", "home.cta")} / ${t("en", "home.cta")} →`;
   const footerNavBlock = `
-              <p style="margin:22px 0 0;text-align:center;font-family:${FONT_STACK};font-size:17px;font-weight:600;line-height:1.5;color:${PAPER};">${escapeEmailHtml(t(navLocale, "home.tagline"))}</p>
-              <p style="margin:6px 0 0;text-align:center;font-family:${FONT_STACK};font-size:13px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t(navLocale, "home.heroSub"))}</p>
+              <p style="margin:22px 0 0;text-align:center;font-family:${FONT_STACK};font-size:16px;font-weight:600;line-height:1.5;color:${PAPER};">${escapeEmailHtml(t("en", "home.tagline"))}</p>
+              <p style="margin:6px 0 0;text-align:center;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t("zh", "home.heroSub"))}</p>
+              <p style="margin:4px 0 0;text-align:center;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t("en", "home.heroSub"))}</p>
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:18px auto 4px;">
                 <tr>
-                  <td align="center" bgcolor="${BRAND_BLUE}" style="border-radius:10px;">
-                    <a href="${siteUrl}/community" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:13px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeEmailHtml(t(navLocale, "home.cta"))} →</a>
+                  <td align="center" bgcolor="${BRAND_BLUE_FOCUS}" style="border-radius:0;">
+                    <a href="${siteUrl}/community" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:13px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:0;">${escapeEmailHtml(browseLabel)}</a>
                   </td>
                 </tr>
               </table>
@@ -141,6 +156,9 @@ export function renderBrandEmail(input: BrandEmailInput): string {
                 <tr>${tile("nav.community", "home.subCommunity", `${siteUrl}/community`)}${tile("nav.explore", "home.subExplore", `${siteUrl}/explore`)}</tr>
                 <tr>${tile("nav.works", "home.subWorks", `${siteUrl}/works`)}${tile("nav.awesome", "home.subAwesome", `${siteUrl}/awesome`)}</tr>
               </table>`;
+
+  const footerDisclaimer =
+    "Kimi 用户自建的非商业 Builder 社区(非官方)/ A user-run community for Builders using Kimi (unofficial)";
 
   return `<!doctype html>
 <html lang="zh" xmlns="http://www.w3.org/1999/xhtml">
@@ -154,14 +172,22 @@ export function renderBrandEmail(input: BrandEmailInput): string {
   <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${preheader}</div>
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${INK}" style="background-color:${INK};">
     <tr>
-      <td align="center" style="padding:40px 16px;">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="560" style="width:560px;max-width:100%;">
+      <td align="center" style="padding:36px 16px 40px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width:600px;max-width:100%;">
           <tr>
-            <td style="padding:0 8px 18px;">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+            <td style="padding:0 2px;">
+              ${BINARY_ROWS.map(
+                (row) =>
+                  `<div style="font-family:${MONO_STACK};font-size:11px;line-height:17px;letter-spacing:1px;color:${row.color};white-space:nowrap;overflow:hidden;">${row.text}</div>`,
+              ).join("")}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 2px 22px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
                 <tr>
                   <td width="28" style="width:28px;">
-                    <img src="${logoUrl}" width="28" height="28" alt="kimi.builders 标志:月之暗面与双星 / logo" style="display:block;border:0;border-radius:6px;">
+                    <img src="${logoUrl}" width="28" height="28" alt="kimi.builders 标志:月之暗面与双星 / logo" style="display:block;border:0;border-radius:0;">
                   </td>
                   <td style="padding-left:10px;font-family:${FONT_STACK};font-size:15px;font-weight:600;line-height:1;color:${PAPER};">
                     kimi.builders
@@ -171,17 +197,18 @@ export function renderBrandEmail(input: BrandEmailInput): string {
             </td>
           </tr>
           <tr>
-            <td bgcolor="${PANEL}" style="background-color:${PANEL};border:1px solid ${HAIRLINE};border-radius:16px;padding:36px;">
+            <td bgcolor="${PANEL}" style="background-color:${PANEL};border:1px solid ${HAIRLINE};border-radius:0;padding:32px 34px;">
               ${eyebrowBlock}
-              <h1 style="margin:0 0 16px;font-family:${FONT_STACK};font-size:21px;font-weight:700;line-height:1.4;color:${PAPER};">${title}</h1>
-              <div style="font-family:${FONT_STACK};font-size:14px;line-height:1.8;color:${BODY};">${input.bodyHtml}</div>
+              <h1 style="margin:0 0 18px;font-family:${FONT_STACK};font-size:24px;font-weight:700;line-height:1.3;text-align:center;color:${PAPER};">${title}</h1>
+              <div style="font-family:${FONT_STACK};font-size:14px;line-height:1.85;color:${BODY};text-align:center;">${input.bodyHtml}</div>
               ${ctaBlock}
+              ${footnoteBlock ? `<p style="margin:22px 0 0;text-align:center;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">${footnoteBlock}</p>` : ""}
             </td>
           </tr>
           <tr>
-            <td style="padding:24px 8px 0;">
-              <div style="border-top:1px solid ${HAIRLINE};padding-top:20px;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">
-                ${footnoteBlock}<a href="${siteUrl}" target="_blank" style="color:${GREY};text-decoration:underline;">kimi.builders</a>
+            <td style="padding:30px 2px 0;">
+              <div style="border-top:1px solid ${HAIRLINE};padding-top:24px;text-align:center;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">
+                <a href="${siteUrl}" target="_blank" style="color:${GREY};text-decoration:underline;">kimi.builders</a>
                 &nbsp;·&nbsp;${footerDisclaimer}
               </div>
               ${footerNavBlock}
