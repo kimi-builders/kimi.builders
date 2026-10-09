@@ -8,6 +8,7 @@ import test from "node:test";
 import {
   renderBrandEmail,
   renderErrorDigestMail,
+  renderEmailVerifyMail,
   renderPasswordResetMail,
 } from "../src/lib/email-templates";
 
@@ -27,8 +28,33 @@ test("template: CTA href 同时出现在按钮与明文兜底链接", () => {
   assert.ok(occurrences >= 2, `href should appear at least twice, got ${occurrences}`);
   assert.match(html, /bgcolor="#007cff"/); // the bulletproof button td fill (brand focus blue)
   assert.match(html, /border-radius:0/); // poster-vibe angular edges
-  // Fixed hero width (w-72): zh/en buttons render identically wide.
-  assert.match(html, /width:288px;max-width:100%/);
+  // Both CTAs are bounded fluid tables, not padding-expanded minimum widths.
+  assert.equal(html.split("width:100%;max-width:336px;table-layout:fixed").length - 1, 2);
+});
+
+test("transactional CTA styles keep padding inside the available width in every locale", () => {
+  for (const locale of ["zh", "en", null] as const) {
+    const mails = [
+      renderPasswordResetMail({ resetUrl: SAMPLE.cta.href, siteUrl: "https://kimi.builders", locale }),
+      renderEmailVerifyMail({ verifyUrl: SAMPLE.cta.href, email: "qa@example.invalid", siteUrl: "https://kimi.builders", locale }),
+    ];
+    for (const mail of mails) {
+      const buttonStyles = [...mail.html.matchAll(/<a\b[^>]*style="([^"]*color:#ffffff;[^"]*)"/g)]
+        .map((match) => new Map(match[1].split(";").filter(Boolean).map((entry) => {
+          const colon = entry.indexOf(":");
+          return [entry.slice(0, colon), entry.slice(colon + 1)];
+        })));
+      assert.equal(buttonStyles.length, 2);
+      for (const style of buttonStyles) {
+        assert.equal(style.get("box-sizing"), "border-box");
+        assert.equal(style.get("width"), "100%");
+        assert.equal(style.get("display"), "block");
+        assert.equal(style.has("min-width"), false);
+        assert.notEqual(style.get("white-space"), "nowrap");
+        assert.equal(style.get("overflow-wrap"), "anywhere");
+      }
+    }
+  }
 });
 
 test("template: 双语关键串 + 标题 + 正文透传", () => {
@@ -62,7 +88,10 @@ test("template: 外层深底(bgcolor+style 双写)+ 深卡 hairline 圆角 + 560
   assert.ok(html.includes("background-color:#0e0e13"));
   assert.ok(html.includes('bgcolor="#16161f"')); // the raised panel card
   assert.ok(html.includes("border:1px solid rgba(255,255,255,0.12)"));
-  assert.ok(html.includes("width:600px;max-width:100%"));
+  /* Responsive skeleton: width follows the outer cell (390-safe), the
+     604px cap only engages on desktop, fixed layout keeps the 0/1 band
+     from expanding narrow viewports. */
+  assert.ok(html.includes("width:100%;max-width:604px;table-layout:fixed"));
   assert.ok(html.includes("border-radius:0")); // poster-vibe angular edges
   // Dark email: warm-white primary text + secondary grey; no near-black
   // text on dark.

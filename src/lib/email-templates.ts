@@ -98,6 +98,19 @@ const BINARY_ROWS: ReadonlyArray<{ text: string; color: string }> = [
 
 const BRAND_BLUE_FOCUS = "#007cff";
 
+/* The width includes padding and shrinks with the parent cell. Both
+   CTAs share this contract; longer bilingual labels may wrap instead
+   of forcing the fixed-layout email wider than the viewport. */
+function renderEmailButton(label: string, href: string, margin: string): string {
+  return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" width="100%" style="width:100%;max-width:336px;table-layout:fixed;margin:${margin};">
+              <tr>
+                <td align="center" bgcolor="${BRAND_BLUE_FOCUS}" style="border-radius:0;">
+                  <a href="${escapeEmailHtml(href)}" target="_blank" style="display:block;box-sizing:border-box;width:100%;padding:14px 16px;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1.5;color:#ffffff;text-decoration:none;border-radius:0;overflow-wrap:anywhere;word-break:break-word;">${escapeEmailHtml(label)}</a>
+                </td>
+              </tr>
+            </table>`;
+}
+
 export function renderBrandEmail(input: BrandEmailInput): string {
   const siteUrl = (input.siteUrl || DEFAULT_SITE_URL).replace(/\/+$/, "");
   const logoUrl = `${siteUrl}${EMAIL_LOGO_PATH}`;
@@ -109,13 +122,7 @@ export function renderBrandEmail(input: BrandEmailInput): string {
     : "";
 
   const ctaBlock = input.cta
-    ? `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:30px auto 6px;">
-              <tr>
-                <td align="center" bgcolor="${BRAND_BLUE_FOCUS}" style="border-radius:0;">
-                  <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:14px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:0;">${escapeEmailHtml(input.cta.label)}</a>
-                </td>
-              </tr>
-            </table>
+    ? `${renderEmailButton(input.cta.label, input.cta.href, "30px auto 6px")}
             <p style="margin:14px 0 0;text-align:center;font-family:${MONO_STACK};font-size:11px;line-height:1.8;color:#6d6d78;">
               按钮没反应?复制链接到浏览器打开 / Button not working? Paste this link:<br>
               <a href="${escapeEmailHtml(input.cta.href)}" target="_blank" style="color:${BRAND_BLUE_FOCUS};text-decoration:underline;word-break:break-all;">${escapeEmailHtml(input.cta.href)}</a>
@@ -145,13 +152,7 @@ export function renderBrandEmail(input: BrandEmailInput): string {
               <p style="margin:22px 0 0;text-align:center;font-family:${FONT_STACK};font-size:16px;font-weight:600;line-height:1.5;color:${PAPER};">${escapeEmailHtml(t("en", "home.tagline"))}</p>
               <p style="margin:6px 0 0;text-align:center;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t("zh", "home.heroSub"))}</p>
               <p style="margin:4px 0 0;text-align:center;font-family:${FONT_STACK};font-size:12px;line-height:1.7;color:${GREY};">${escapeEmailHtml(t("en", "home.heroSub"))}</p>
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:18px auto 4px;">
-                <tr>
-                  <td align="center" bgcolor="${BRAND_BLUE_FOCUS}" style="border-radius:0;">
-                    <a href="${siteUrl}/community" target="_blank" style="display:inline-block;width:288px;max-width:100%;padding:13px 0;text-align:center;font-family:${MONO_STACK};font-size:13px;font-weight:600;letter-spacing:0.1em;line-height:1;color:#ffffff;text-decoration:none;border-radius:0;">${escapeEmailHtml(browseLabel)}</a>
-                  </td>
-                </tr>
-              </table>
+              ${renderEmailButton(browseLabel, `${siteUrl}/community`, "18px auto 4px")}
               <table role="presentation" border="0" cellpadding="0" cellspacing="10" width="100%" style="width:100%;border-collapse:separate;">
                 <tr>${tile("nav.community", "home.subCommunity", `${siteUrl}/community`)}${tile("nav.explore", "home.subExplore", `${siteUrl}/explore`)}</tr>
                 <tr>${tile("nav.works", "home.subWorks", `${siteUrl}/works`)}${tile("nav.awesome", "home.subAwesome", `${siteUrl}/awesome`)}</tr>
@@ -173,12 +174,12 @@ export function renderBrandEmail(input: BrandEmailInput): string {
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${INK}" style="background-color:${INK};">
     <tr>
       <td align="center" style="padding:36px 16px 40px;">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width:600px;max-width:100%;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:604px;table-layout:fixed;">
           <tr>
             <td style="padding:0 2px;">
               ${BINARY_ROWS.map(
                 (row) =>
-                  `<div style="font-family:${MONO_STACK};font-size:11px;line-height:17px;letter-spacing:1px;color:${row.color};white-space:nowrap;overflow:hidden;">${row.text}</div>`,
+                  `<div style="width:0;min-width:100%;font-family:${MONO_STACK};font-size:11px;line-height:17px;letter-spacing:1px;color:${row.color};white-space:nowrap;overflow:hidden;">${row.text}</div>`,
               ).join("")}
             </td>
           </tr>

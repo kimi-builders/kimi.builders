@@ -18,20 +18,9 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { MODAL_DIRTY_EVENT, MODAL_DIRTY_RESET_EVENT } from "@/components/modal-dirty";
 
-/* The dirty flag lives here (this component owns the close flow). A
-   form that drops its unsaved state in place — the post form's
-   "clear draft" — must tell the modal, or the confirm bar would keep
-   claiming a draft will survive a close that actually discards
-   nothing. The event bubbles from any element inside the modal body
-   to the body container's listener below. */
-export const MODAL_DIRTY_RESET_EVENT = "kb:modal-dirty-reset";
-
-export function notifyModalDirtyReset(source: HTMLElement | null) {
-  source?.dispatchEvent(
-    new CustomEvent(MODAL_DIRTY_RESET_EVENT, { bubbles: true }),
-  );
-}
+export { notifyModalDirtyReset } from "@/components/modal-dirty";
 
 export default function RouteModal({
   title,
@@ -63,6 +52,7 @@ export default function RouteModal({
   const bodyRef = useRef<HTMLDivElement>(null);
   const [dirty, setDirty] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const hasDirtyGuard = Boolean(dirtyGuard);
   /* The URL at mount (modal open = the URL sits on the intercepted
      route); silent marks a programmatic close — no router.back(), the
      background has already navigated. */
@@ -74,19 +64,26 @@ export default function RouteModal({
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
-  /* Unsaved state dropped in place (notifyModalDirtyReset): the guard
-     reason is gone — close directly again and take a standing confirm
-     bar down with it. */
+  /* Custom fields notify the body directly; React onChange only covers
+     native form inputs. A reset removes both the guard reason and any
+     standing confirmation. Listeners stay scoped to this modal. */
   useEffect(() => {
     const body = bodyRef.current;
     if (!body) return;
+    const markDirty = () => {
+      if (hasDirtyGuard) setDirty(true);
+    };
     const reset = () => {
       setDirty(false);
       setConfirming(false);
     };
+    body.addEventListener(MODAL_DIRTY_EVENT, markDirty);
     body.addEventListener(MODAL_DIRTY_RESET_EVENT, reset);
-    return () => body.removeEventListener(MODAL_DIRTY_RESET_EVENT, reset);
-  }, []);
+    return () => {
+      body.removeEventListener(MODAL_DIRTY_EVENT, markDirty);
+      body.removeEventListener(MODAL_DIRTY_RESET_EVENT, reset);
+    };
+  }, [hasDirtyGuard]);
 
   /* Close backstop: a server action's redirect() moves only the
      background page — the intercepted @modal slot doesn't unmount with

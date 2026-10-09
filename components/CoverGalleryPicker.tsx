@@ -7,6 +7,7 @@
    only shows while a gallery pick is active (uploaded covers are
    cleared by their own remove button). */
 import { COVER_GALLERY } from "@/src/lib/cover-gallery";
+import { notifyModalDirty } from "@/components/modal-dirty";
 import { X } from "lucide-react";
 
 export default function CoverGalleryPicker({
@@ -32,7 +33,11 @@ export default function CoverGalleryPicker({
           <button
             key={cover.id}
             type="button"
-            onClick={() => onPick(cover.src)}
+            onClick={(event) => {
+              if (value === cover.src) return;
+              notifyModalDirty(event.currentTarget);
+              onPick(cover.src);
+            }}
             aria-pressed={value === cover.src}
             aria-label={zh ? cover.zh : cover.en}
             title={zh ? cover.zh : cover.en}
@@ -54,7 +59,10 @@ export default function CoverGalleryPicker({
         {active && onClear && (
           <button
             type="button"
-            onClick={onClear}
+            onClick={(event) => {
+              notifyModalDirty(event.currentTarget);
+              onClear();
+            }}
             className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-line px-3 font-mono text-xs text-grey transition-colors hover:border-paper/30 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
           >
             <X size={12} aria-hidden="true" /> {zh ? "清除封面" : "Clear cover"}
