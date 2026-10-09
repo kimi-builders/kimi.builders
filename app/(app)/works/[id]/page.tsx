@@ -14,6 +14,7 @@
    .kb-h1/.kb-h2 primitives, attribute chips drop to label scale
    (text-xs), spacing back on the 4px ladder. */
 import type { Metadata } from "next";
+import { workAuthor, workProvenance, localizeWork, catalogSourceUrl, AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { ArrowLeft, ExternalLink, Heart, MessageCircle, Shell } from "lucide-react";
@@ -61,7 +62,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const work = await getWork(Number(id) || 0);
+  const originalWork = await getWork(Number(id) || 0);
+  const work = originalWork ? localizeWork(originalWork,await getLocale()) : null;
   if (!work) return { title: "kimi.builders" };
   /* Private works never leak their title to non-authors; hidden works
      never leak it to non-authors/non-mods (tab titles and share
@@ -124,13 +126,15 @@ export default async function WorkPage({
   );
   if (!Number.isInteger(workId) || workId <= 0)
     return <WorkGone locale={locale} href={goneHref} label={goneLabel} />;
-  const work = await getWorkDetail(workId);
+  const originalWork = await getWorkDetail(workId);
+  const work = originalWork ? localizeWork(originalWork,locale) : null;
   /* Private works read as "missing" to others; hidden works open only
      for the author and admin/mod (moderation review) — everyone else
      gets the same friendly copy as deleted/missing, so the page is
      never an existence oracle. */
   if (!work || !canViewWork(work, user))
     return <WorkGone locale={locale} href={goneHref} label={goneLabel} />;
+  const author = workAuthor(work);
   const requestHeaders = await headers();
   trackEvent("work_view", { kind: "work", id: workId }, { headers: requestHeaders });
 
@@ -202,23 +206,19 @@ export default async function WorkPage({
           kind/scope/status/declaration, repeating them here tripled the
           metadata. */}
       <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-xs leading-5 text-grey">
-        {work.source === "awesome" && work.authorLabel ? (
+        {work.source === "awesome" && author.name ? (
           <>
-            {/* The original author links to the GitHub profile when
-                handle-shaped, otherwise degrades to plain text; the
-                recommender is kept on the detail page (list cards omit
-                it). */}
-            {/^[A-Za-z0-9-]{1,39}$/.test(work.authorLabel) ? (
+            {author.href ? (
               <a
-                href={`https://github.com/${work.authorLabel}`}
+                href={author.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-paper transition-colors hover:text-ui-blue"
               >
-                {t(locale, "awesome.by", { name: work.authorLabel })}
+                {t(locale, "awesome.by", { name: author.name })}
               </a>
             ) : (
-              <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
+              <span>{t(locale, "awesome.by", { name: author.name })}</span>
             )}
             {work.handle && (
               <span className="inline-flex items-center gap-1.5">
@@ -244,9 +244,12 @@ export default async function WorkPage({
             </Link>
           </span>
         ) : (
-          <span>{t(locale, "awesome.by", { name: work.authorLabel })}</span>
+          <span>{t(locale, "awesome.by", { name: author.name })}</span>
         )}
         <span>· {relTime(work.createdAt, locale)}</span>
+        {(work.source === "awesome" || work.alsoAwesome) && (
+          <span>· {t(locale, `awesome.provenance.${workProvenance(work)}`)}</span>
+        )}
         {work.visibility === "private" && (
           <span className="inline-block rounded-md border border-line px-1.5 py-px font-mono text-xs font-medium text-grey">
             {t(locale, "works.private")}
@@ -296,6 +299,13 @@ export default async function WorkPage({
           works with a body never showed their tagline anywhere on the
           detail page. */}
       {work.tagline && <p className="kb-lede mt-3 max-w-2xl">{work.tagline}</p>}
+      {work.catalog && work.catalog.publication === 'published' && (
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-grey">
+          <a href={catalogSourceUrl(work.catalog)} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{t(locale,'awesome.sourceEntry')}</a>
+          <a href={AWESOME_CONTRIBUTE_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{t(locale,'awesome.suggestEdit')}</a>
+          {work.catalog.entry.recommendation && <a href={work.catalog.entry.recommendation.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{t(locale,'awesome.githubRecommendation',{name:work.catalog.entry.recommendation.githubLogin})}</a>}
+        </p>
+      )}
 
       {/* Action bar (above media): try and support share one equal-width,
           equal-height track at every viewport; share and owner/moderation
@@ -489,7 +499,7 @@ export default async function WorkPage({
             )}
             {work.agents.length > 0 && (
               <div className="flex items-center justify-between gap-3 border-b border-line py-3">
-                <dt className="shrink-0 text-grey">{t(locale, "works.agents")}</dt>
+                <dt className="shrink-0 text-grey">{t(locale, work.catalog?.ownership === "external" ? "awesome.agents" : "works.agents")}</dt>
                 <dd className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-paper">
                   {work.agents.map((a) => (
                     <span key={a} className="inline-flex items-center gap-1">

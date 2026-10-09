@@ -167,6 +167,9 @@ jobs:
           install -m 644 ops/ecosystem.config.cjs .release/ecosystem.config.cjs
           install -m 755 ops/deploy-release.sh .release/ops/deploy-release.sh
           install -m 755 ops/deep-health-check.sh .release/ops/deep-health-check.sh
+          install -m 755 ops/awesome-cron.sh .release/ops/awesome-cron.sh
+          install -m 644 ops/awesome-bindings.json .release/ops/awesome-bindings.json
+          printf '%s\n' enabled > .release/AWESOME_SYNC_ENABLED
           install -m 755 ops/db-backup.sh .release/ops/db-backup.sh
           install -m 644 ops/verify-deploy-state.mjs .release/ops/verify-deploy-state.mjs
           printf '%s\n' "$GITHUB_SHA" > .release/RELEASE
@@ -276,6 +279,7 @@ jobs:
           USAGE_KEY_PEPPER: ${{ secrets.USAGE_KEY_PEPPER }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           HEALTH_ALERT_WEBHOOK_URL: ${{ secrets.HEALTH_ALERT_WEBHOOK_URL }}
+          AWESOME_GITHUB_READ_TOKEN: ${{ secrets.AWESOME_GITHUB_READ_TOKEN }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -356,6 +360,9 @@ jobs:
             printf 'AUTH_SECRET=%q\n' "$AUTH_SECRET"
             printf 'USAGE_KEY_PEPPER=%q\n' "$USAGE_KEY_PEPPER"
             printf 'CRON_SECRET=%q\n' "$CRON_SECRET"
+            if [[ -n "$AWESOME_GITHUB_READ_TOKEN" ]]; then
+              printf 'AWESOME_GITHUB_READ_TOKEN=%q\n' "$AWESOME_GITHUB_READ_TOKEN"
+            fi
             if [[ -n "$HEALTH_ALERT_WEBHOOK_URL" ]]; then
               printf 'HEALTH_ALERT_WEBHOOK_URL=%q\n' "$HEALTH_ALERT_WEBHOOK_URL"
             fi

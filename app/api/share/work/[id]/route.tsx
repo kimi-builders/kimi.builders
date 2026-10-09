@@ -34,7 +34,7 @@ export async function GET(
   const snapshot = preview
     ? mockWorkShareSnapshot()
     : Number.isInteger(workId) && workId > 0
-      ? await getWorkShareSnapshot(workId)
+      ? await getWorkShareSnapshot(workId,locale)
       : null;
   if (!snapshot) {
     return Response.json({ ok: false, error: "Not found" }, { status: 404 });

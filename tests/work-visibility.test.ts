@@ -20,7 +20,7 @@ test("worksPageQuery: anonymous sees public, non-hidden only (wall and awesome)"
   /* The Awesome listing: recommended entries UNION member works whose
      authors checked "also list". */
   const awesome = worksPageQuery({ source: "awesome" });
-  assert.match(awesome.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL AND \(w\.source = 'awesome' OR w\.also_awesome = 1\)/);
+  assert.match(awesome.sql, /WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL.*AND \(w\.source = 'awesome' OR w\.also_awesome = 1\)/);
   assert.deepEqual(awesome.args, []);
 });
 
@@ -38,7 +38,7 @@ test("worksPageQuery: viewer additionally sees their own private/hidden entries"
 test("relatedWorksQuery is a public context (never leaks private/hidden works)", () => {
   const q = relatedWorksQuery({ id: 9, userId: 3, agents: ["kimi"] });
   assert.ok(q);
-  assert.match(q.sql, /w\.id <> \? AND w\.visibility = 'public' AND w\.hidden_at IS NULL AND \(/);
+  assert.match(q.sql, /w\.id <> \? AND w\.visibility = 'public' AND w\.hidden_at IS NULL.*AND \(/);
 });
 
 test("featuredWorksQuery excludes private works from featured slots", () => {

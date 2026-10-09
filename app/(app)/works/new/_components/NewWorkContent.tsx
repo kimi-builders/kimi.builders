@@ -11,7 +11,6 @@ import { getSessionUser } from "@/src/lib/auth/session";
 import LoginGate from "@/app/(app)/_components/LoginGate";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
-import { getWorksSource } from "@/src/lib/works-view-server";
 import { getClaimAllowance } from "@/src/lib/works";
 import { findLearnSeries, normalizePathSlug } from "@/src/lib/learn-series";
 import { createWorkAction } from "../../actions";
@@ -65,16 +64,7 @@ export default async function NewWorkContent({
     );
   }
 
-  const [allowance, src] = await Promise.all([
-    getClaimAllowance(user.id),
-    /* Create-intent default follows the source list: entering from
-       Awesome's submit entry lands the form directly on "recommend
-       external" — the server reads kb-works-src (written after a list
-       visit commits) and renders it directly, no hydration jump; the same
-       source of truth as the rail highlight and the detail page's
-       "back". */
-    getWorksSource(),
-  ]);
+  const allowance = await getClaimAllowance(user.id);
 
   return (
     <div className={showTitle ? "rounded-2xl border border-line bg-card p-4 sm:p-6" : ""}>
@@ -90,7 +80,7 @@ export default async function NewWorkContent({
         action={createWorkAction}
         locale={locale}
         modal={!showTitle}
-        defaultKind={src === "awesome" ? "awesome" : "site"}
+        defaultKind="site"
         sourcePath={
           sourcePath && sourceSlug
             ? {

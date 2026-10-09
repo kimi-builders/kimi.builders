@@ -1,3 +1,4 @@
+import { AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 /* Awesome: member-recommended external Kimi ecosystem projects. Header
    copy + a sort seg +
    filter dropdowns (agent / kind / scope); cards share WorkCard with
@@ -108,6 +109,7 @@ export default async function AwesomePage({
         eyebrow={t(locale, "awesome.eyebrow")}
         title={t(locale, "nav.awesome")}
         lede={t(locale, "awesome.intro")}
+        actions={<a href={AWESOME_CONTRIBUTE_URL} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-line px-4 py-2 text-sm text-paper hover:border-ui-blue">{t(locale,'awesome.recommend')}</a>}
       />
 
       {/* items-start: the sort seg and filter dropdowns stay aligned at the
@@ -140,7 +142,7 @@ export default async function AwesomePage({
           filters={[
             {
               key: "agent",
-              label: t(locale, "works.agents"),
+              label: t(locale, "awesome.agents"),
               options: AGENTS.map((a) => ({
                 value: a.id,
                 label: a.name,

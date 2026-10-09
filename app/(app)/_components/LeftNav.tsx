@@ -1,4 +1,5 @@
 "use client";
+import { AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 
 /* Site-wide left rail (the function menu): a brand row (logo-tile +
    wordmark + the nav collapse toggle, the muscle-memory spot in
@@ -88,8 +89,8 @@ export default function LeftNav({
       : locale === "zh"
         ? `登录后${label}`
         : `Log in to ${label.toLowerCase()}`;
-  const createAction = pathname.startsWith("/awesome")
-    ? { href: "/works/new", label: gatedLabel(t(locale, "awesome.recommend")) }
+  const createAction = pathname.startsWith("/awesome") || (fromAwesome && !pathname.startsWith("/works/new"))
+    ? { href: AWESOME_CONTRIBUTE_URL, label: t(locale, "awesome.recommend") }
     : pathname.startsWith("/works")
       ? { href: "/works/new", label: gatedLabel(t(locale, "works.submit")) }
       : { href: "/community/new", label: gatedLabel(t(locale, "nav.post")) };
@@ -167,7 +168,7 @@ export default function LeftNav({
           mode hides .nav-label via display:none, and the tooltip's
           alt-discarded ::after no longer contributes a name. */}
       <Link prefetch={false}
-        href={gate(createAction.href)}
+        href={createAction.href === AWESOME_CONTRIBUTE_URL ? createAction.href : gate(createAction.href)}
         data-tip={createAction.label}
         data-tip-side="right"
         aria-label={createAction.label}

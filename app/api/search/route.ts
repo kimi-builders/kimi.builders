@@ -48,7 +48,7 @@ async function contentSearch(q: string): Promise<ContentSearchResults> {
     pool.query<RowDataPacket[]>(
       `SELECT id, name, tagline
        FROM works
-       WHERE hidden_at IS NULL AND visibility = 'public'
+       WHERE hidden_at IS NULL AND NOT EXISTS (SELECT 1 FROM awesome_entries ax WHERE ax.work_id=works.id AND ax.ownership='external' AND ax.publication='withdrawn') AND visibility = 'public'
          AND (name LIKE ? OR tagline LIKE ?)
        ORDER BY id DESC LIMIT ${PER_TYPE_LIMIT}`,
       [like, like],

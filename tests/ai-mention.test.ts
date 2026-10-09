@@ -259,7 +259,7 @@ test("认领查询带存活谓词(纯函数钉形态):posts deleted/hidden;works
   const work = aiReplyWorkClaimSql();
   assert.match(
     work,
-    /WHERE w\.id = \? AND w\.hidden_at IS NULL AND w\.visibility = 'public' LIMIT 1/,
+    /WHERE w\.id = \? AND w\.hidden_at IS NULL AND w\.visibility = 'public' AND NOT EXISTS \(SELECT 1 FROM awesome_entries ax WHERE ax\.work_id=w\.id AND ax\.ownership='external' AND ax\.publication='withdrawn'\) LIMIT 1/,
   );
 });
 

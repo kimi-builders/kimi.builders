@@ -179,6 +179,6 @@ test("relatedWorksQuery: no author and no agents → null (caller skips the quer
 
 test("awesomeSourceStatsQuery: group by source for site/external counts (public only)", () => {
   const { sql, args } = awesomeSourceStatsQuery();
-  assert.match(sql, /SELECT w\.source, COUNT\(\*\) AS n FROM works w WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL GROUP BY w\.source/);
+  assert.match(sql, /SELECT w\.source, COUNT\(\*\) AS n FROM works w WHERE w\.visibility = 'public' AND w\.hidden_at IS NULL.*GROUP BY w\.source/);
   assert.deepEqual(args, []);
 });

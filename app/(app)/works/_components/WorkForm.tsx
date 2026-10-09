@@ -1,4 +1,5 @@
 "use client";
+import { AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 
 /* Shared submit/edit form for works: name required, link/repo at least
    one, at least one participating agent (server-validated).
@@ -496,6 +497,13 @@ export default function WorkForm({
     ? CLAIM_LADDER.filter((v) => v <= claim.remaining)
     : [];
 
+  if (!workId && kind === 'awesome') return (
+    <div className="mt-6 rounded-xl border border-line bg-card p-6 text-sm text-grey">
+      <p>{t(locale,'awesome.repoOwned')}</p>
+      <a href={AWESOME_CONTRIBUTE_URL} className="mt-4 inline-block underline">{t(locale,'awesome.recommend')}</a>
+      <button type="button" onClick={() => setKind('site')} className="ml-4 underline">{t(locale,'works.kindSite')}</button>
+    </div>
+  );
   return (
     <form action={formAction} className="mt-6 space-y-6">
       {workId && <input type="hidden" name="work_id" value={workId} />}

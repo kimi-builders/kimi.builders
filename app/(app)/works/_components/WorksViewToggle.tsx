@@ -60,6 +60,7 @@ export default function WorksViewToggle({
           aria-label={label}
           data-tip={label}
           data-tip-side="bottom"
+          data-tip-align="right"
           onClick={() => pick(key)}
           className={`${BTN} ${view === key ? SEG_ITEM_ACTIVE : SEG_ITEM_IDLE}`}
         >

@@ -1,5 +1,5 @@
 /* Work card bottom row (shared by row/grid cards): author (awesome
-   entries link the GitHub original author externally; member works link
+   entries link the original author externally; member works link
    @handle internally) + support/visit/source + owner actions.
    compact = grid card: visit/source keep icons only — the shared
    data-tip convention explains icon-only links (native title never
@@ -8,6 +8,7 @@
    pair site-wide. Interactive elements carry relative z-10 above
    the card's overlay link. */
 import Link from "next/link";
+import { workAuthor } from "@/src/lib/awesome/presentation";
 import { Code, ExternalLink, Heart } from "lucide-react";
 import { t, type Locale } from "@/src/lib/i18n";
 import type { WorkRow } from "@/src/lib/works";
@@ -25,28 +26,26 @@ export default function WorkCardFooter({
   meId: number | null;
   compact?: boolean;
 }) {
+  const author = workAuthor(w);
   return (
     <div
       className={`mt-auto flex items-center border-t border-line pt-3 text-xs text-grey ${
         compact ? "gap-2" : "gap-3"
       }`}
     >
-      {w.source === "awesome" && w.authorLabel ? (
+      {w.source === "awesome" && author.name ? (
         <span className="min-w-0 truncate">
-          {/* Original author = GitHub author/org: handle-shaped values link
-              to the GitHub profile, free-form text degrades to plain text.
-              The recommender is deliberately not shown here. */}
-          {/^[A-Za-z0-9-]{1,39}$/.test(w.authorLabel) ? (
+          {author.href ? (
             <a
-              href={`https://github.com/${w.authorLabel}`}
+              href={author.href}
               target="_blank"
               rel="noopener noreferrer"
               className="relative z-10 inline-flex min-h-9 items-center rounded-lg px-2 transition-colors hover:bg-moon hover:text-ui-blue"
             >
-              {t(locale, "awesome.by", { name: w.authorLabel })}
+              {t(locale, "awesome.by", { name: author.name })}
             </a>
           ) : (
-            t(locale, "awesome.by", { name: w.authorLabel })
+            t(locale, "awesome.by", { name: author.name })
           )}
         </span>
       ) : w.handle ? (
@@ -59,7 +58,7 @@ export default function WorkCardFooter({
         </Link>
       ) : (
         <span className="truncate">
-          {t(locale, "awesome.by", { name: w.authorLabel })}
+          {t(locale, "awesome.by", { name: author.name })}
         </span>
       )}
       <span

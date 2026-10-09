@@ -1,4 +1,5 @@
 "use client";
+import { AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 
 /* The <lg bottom tab bar (the standard app layout): community /
    explore / works / post / usage / me. Full features, notifications,
@@ -49,8 +50,8 @@ export default function MobileTabBar({
      project; works -> publish work; else post). Mobile labels use the
      short-tag keys: "Publish work" wraps at 390px, "Publish" doesn't. */
   const contextualCreate: { href: string; key: I18nKey } =
-    pathname.startsWith("/awesome")
-      ? { href: "/works/new", key: "awesome.recommend" }
+    awesomeLens
+      ? { href: AWESOME_CONTRIBUTE_URL, key: "awesome.recommend" }
       : pathname.startsWith("/works")
         ? { href: "/works/new", key: "works.submitShort" }
         : { href: "/community/new", key: "nav.post" };
@@ -80,7 +81,7 @@ export default function MobileTabBar({
         (pathname.startsWith("/works") && !pathname.startsWith("/works/new")),
     },
     {
-      href: gate(contextualCreate.href),
+      href: contextualCreate.href === AWESOME_CONTRIBUTE_URL ? contextualCreate.href : gate(contextualCreate.href),
       icon: SquarePen,
       key: contextualCreate.key,
       active:
@@ -110,6 +111,7 @@ export default function MobileTabBar({
               key={tab.href}
               href={tab.href}
               aria-current={tab.active ? "page" : undefined}
+              aria-label={tab.key === "awesome.recommend" ? t(locale, "awesome.recommendAccessible") : tab.key === "nav.community" ? t(locale, "nav.communityAccessible") : undefined}
               /* Tab labels use the system sans: JetBrains Mono has no CJK
                  glyphs and mixed-fallback Chinese misaligns the baseline;
                  tab copy is bilingual, sans is stable for both. */
@@ -126,7 +128,9 @@ export default function MobileTabBar({
               >
                 <Icon size={19} />
               </span>
-              {t(locale, tab.key)}
+              <span className="max-w-full whitespace-nowrap">
+                {t(locale, tab.key === "awesome.recommend" ? "awesome.recommendShort" : tab.key === "nav.community" ? "nav.communityShort" : tab.key)}
+              </span>
             </Link>
           );
         })}

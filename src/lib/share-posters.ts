@@ -19,6 +19,7 @@
      total, internal definition in usage/verifiable.ts) fails = null =
      the hero never renders. */
 import type { RowDataPacket } from "mysql2";
+import { localizeWork } from "./awesome/presentation";
 import { agentName } from "./agents";
 import { categoryLabel } from "./categories";
 import { getPool } from "./db";
@@ -220,7 +221,7 @@ export function buildWorkShareSnapshot(
   };
 }
 
-export async function getWorkShareSnapshot(id: number): Promise<WorkShareSnapshot | null> {
+export async function getWorkShareSnapshot(id: number, locale: "zh" | "en" = "zh"): Promise<WorkShareSnapshot | null> {
   const work = await getWork(id);
   /* Private works -> null (route 404s, same as private posts); posters
      are an anonymous public context, viewer is always null. */
@@ -229,7 +230,7 @@ export async function getWorkShareSnapshot(id: number): Promise<WorkShareSnapsho
     getVerifiableTokenTotals([work.userId]),
     getWorkClaimSums([work.userId]),
   ]);
-  return buildWorkShareSnapshot(work, totals, claimSums);
+  return buildWorkShareSnapshot(localizeWork(work,locale), totals, claimSums);
 }
 
 /* ---- Profile poster ---- */

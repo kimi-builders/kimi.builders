@@ -112,8 +112,8 @@ test("about and Awesome state scope without unverifiable promotion", () => {
   );
   assert.match(t("zh", "about.who"), /核验线索，不构成官方认证/);
   assert.match(t("en", "about.who"), /verification clues; they are not official certification/);
-  assert.match(t("zh", "awesome.intro"), /成员推荐的站外 Kimi 生态项目/);
-  assert.match(t("en", "awesome.intro"), /External Kimi ecosystem projects recommended by members/);
+  assert.match(t("zh", "awesome.intro"), /Kimi 生态项目：仓库收录、历史推荐/);
+  assert.match(t("en", "awesome.intro"), /Kimi ecosystem projects from the community repository, legacy recommendations/);
   assert.equal(t("zh", "home.joinAwesome"), "符合收录口径的项目，可由成员推荐。");
 });
 

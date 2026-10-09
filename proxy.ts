@@ -76,12 +76,12 @@ export async function detailLooksMissing(
         return (r.visibility !== "public" || r.hidden_at !== null) && !hasSession;
       }
       const rows = await query(
-        "SELECT visibility, hidden_at FROM works WHERE id = ? LIMIT 1",
+        "SELECT visibility, hidden_at, EXISTS(SELECT 1 FROM awesome_entries ax WHERE ax.work_id=works.id AND ax.ownership='external' AND ax.publication='withdrawn') AS catalog_withdrawn FROM works WHERE id = ? LIMIT 1",
         [id],
       );
       const r = rows[0];
       if (!r) return true;
-      return (r.visibility !== "public" || r.hidden_at !== null) && !hasSession;
+      return (r.visibility !== "public" || r.hidden_at !== null || !!r.catalog_withdrawn) && !hasSession;
     }
     if (segments.length === 2 && segments[0] === "explore") {
       /* Bilingual rows share a slug; the page is live when any locale

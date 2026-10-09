@@ -1,0 +1,7 @@
+# Install only after independent acceptance and a successful manual publication.
+# Replace /srv/kimi-builders and port 3000 with the reviewed deployment values.
+CRON_TZ=UTC
+27 3 * * 1 /srv/kimi-builders/shared/awesome-cron.sh /srv/kimi-builders 3000 sync >> /srv/kimi-builders/shared/awesome-sync.log 2>&1
+# Conditional retries publish only while a request is pending; maximum 8 attempts.
+*/15 * * * * /srv/kimi-builders/shared/awesome-cron.sh /srv/kimi-builders 3000 retry >> /srv/kimi-builders/shared/awesome-sync.log 2>&1
+37 3 * * * /srv/kimi-builders/shared/awesome-cron.sh /srv/kimi-builders 3000 health >> /srv/kimi-builders/shared/awesome-sync.log 2>&1

@@ -7,6 +7,7 @@
    enabled upload_project and a project label matches the work name
    (pure convenience). When a shrunk total puts the sum of claims over
    it, the author sees the redistribution hint here. */
+import { AWESOME_CONTRIBUTE_URL, catalogSourceUrl } from "@/src/lib/awesome/presentation";
 import { getSessionUser } from "@/src/lib/auth/session";
 import { t } from "@/src/lib/i18n";
 import { getLocale } from "@/src/lib/i18n-server";
@@ -33,6 +34,9 @@ export default async function EditWorkContent({
   const locale = await getLocale(user);
   const work = await getWork(Number(id) || 0);
 
+  if (work?.catalog?.ownership === 'external') {
+    return <div className="mt-6 rounded-xl border border-line bg-card p-6 text-sm text-grey"><p>{t(locale,'awesome.repoOwned')}</p><a href={catalogSourceUrl(work.catalog)} className="mt-4 inline-block underline">{t(locale,'awesome.sourceEntry')}</a><a href={AWESOME_CONTRIBUTE_URL} className="ml-4 underline">{t(locale,'awesome.suggestEdit')}</a></div>;
+  }
   if (!user || !work || work.userId !== user.id) {
     return (
       <p className="mt-12 rounded-2xl border border-line bg-card p-8 text-center text-sm text-grey">

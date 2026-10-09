@@ -14,6 +14,7 @@ import { cookies } from "next/headers";
 import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
 import { isGalleryCoverSrc } from "@/src/lib/cover-gallery";
 import { isCoverTone } from "@/src/lib/cover-tones";
+import { workEditFieldsAllowed } from "@/src/lib/work-edit";
 import { isWorkKind } from "@/src/lib/work-kinds";
 import { getSessionUser } from "@/src/lib/auth/session";
 import {
@@ -244,6 +245,7 @@ export async function createWorkAction(
   const mutedWork = await getActiveMute(user.id);
   if (mutedWork) return { error: muteMessage(locale, mutedWork) };
   const f = readFields(formData);
+  if (f.authorLabel || formData.get('kind') === 'awesome') return {error:t(locale,'awesome.repoOwned')};
   const err = validate(locale, f);
   if (err) return { error: err };
   const claim = await resolveClaim(user.id, locale, formData, {
@@ -294,11 +296,19 @@ export async function updateWorkAction(
   if (mutedWork) return { error: muteMessage(locale, mutedWork) };
   const workId = Number(formData.get("work_id"));
   if (!workId) return { error: t(locale, "err.generic") };
+  const existing = await getWork(workId);
+  if (!existing || existing.userId !== user.id || existing.catalog?.ownership === "external") {
+    return { error: t(locale, "err.notOwnerWork") };
+  }
   const f = readFields(formData);
+  if (String(formData.get("kind") || "site") !== existing.source ||
+      !workEditFieldsAllowed(existing.source, f)) {
+    return { error: t(locale, "err.notOwnerWork") };
+  }
   const err = validate(locale, f);
   if (err) return { error: err };
   const claim = await resolveClaim(user.id, locale, formData, {
-    awesome: !!f.authorLabel,
+    awesome: existing.source === "awesome",
     excludeWorkId: workId,
   });
   if ("error" in claim) return { error: claim.error };

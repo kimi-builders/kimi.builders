@@ -81,6 +81,7 @@ export function featuredWorksQuery(limit: number): {
           LEFT JOIN users u ON u.id = w.user_id
           LEFT JOIN users e ON e.id = w.featured_by
           WHERE w.featured_at IS NOT NULL AND w.visibility = 'public' AND w.hidden_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM awesome_entries ax WHERE ax.work_id=w.id AND ax.ownership='external' AND ax.publication='withdrawn')
           ORDER BY w.featured_at DESC, w.id DESC LIMIT ?`,
     args: [limit],
   };

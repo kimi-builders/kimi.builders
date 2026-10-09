@@ -1,4 +1,5 @@
 "use client";
+import { AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 
 /* Global keyboard shortcut layer: one keydown listener + a help panel.
    Keys — global: / · Cmd+K search (GlobalSearch's own listener) / ?
@@ -175,9 +176,10 @@ export default function KeyboardShortcuts({ locale }: { locale: Locale }) {
         case "n": {
           event.preventDefault();
           /* The same section awareness as the left rail's post button:
-             works/Awesome goes to /works/new, everything else posts. */
+             Awesome opens the contribution guide; works opens the member form. */
+          if (pathname.startsWith('/awesome')) { window.location.assign(AWESOME_CONTRIBUTE_URL); return; }
           const compose =
-            pathname.startsWith("/works") || pathname.startsWith("/awesome")
+            pathname.startsWith("/works")
               ? "/works/new"
               : "/community/new";
           router.push(compose);

@@ -37,7 +37,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { PoolConnection } from "mysql2/promise";
 import { getPool } from "./db";
 import { notifyOnComment } from "./posts";
-import { notifyOnWorkComment } from "./works";
+import { CATALOG_PUBLIC, notifyOnWorkComment } from "./works";
 
 /* Identity constants are defined once in ./bot-identity (client-safe);
    re-exported here for legacy imports. */
@@ -391,7 +391,7 @@ export function aiReplyWorkClaimSql(): string {
   return `SELECT w.user_id, w.name, w.tagline, w.kind, w.agents, w.description_md,
               w.ai_reply, u.ai_replies_enabled
        FROM works w LEFT JOIN users u ON u.id = w.user_id
-       WHERE w.id = ? AND w.hidden_at IS NULL AND w.visibility = 'public' LIMIT 1`;
+       WHERE w.id = ? AND w.hidden_at IS NULL AND w.visibility = 'public' AND ${CATALOG_PUBLIC} LIMIT 1`;
 }
 
 /* Work summon execution: gating (work ai_reply + author
@@ -493,6 +493,24 @@ async function processAiWorkMention(
     );
     let workReplyId = 0;
     await commitAiReplyWrite(async (conn) => {
+      /* Match the synchronizer's mapping -> work lock order. Current
+         locking reads close the model-call withdrawal/moderation window. */
+      await conn.query("SELECT entry_id FROM awesome_entries WHERE work_id = ? FOR UPDATE", [workId]);
+      const [currentRows] = await conn.query<RowDataPacket[]>(`${aiReplyWorkClaimSql()} FOR UPDATE`, [workId]);
+      const current = currentRows[0];
+      const [jobs] = await conn.query<RowDataPacket[]>("SELECT status FROM ai_reply_jobs WHERE id = ? FOR UPDATE", [jobId]);
+      if (jobs[0]?.status !== "pending") return;
+      const [triggers] = await conn.query<RowDataPacket[]>(
+        "SELECT id FROM work_comments WHERE id = ? AND work_id = ? AND deleted_at IS NULL AND is_ai = 0 FOR UPDATE",
+        [workCommentId, workId],
+      );
+      if (!current || !triggers.length || !aiWorkReplySwitchesAllow({
+        aiReply: current.ai_reply,
+        authorEnabled: current.user_id === null ? null : current.ai_replies_enabled,
+      })) {
+        await conn.query("UPDATE ai_reply_jobs SET status = 'skipped', error = 'work or trigger no longer eligible', processed_at = NOW() WHERE id = ?", [jobId]);
+        return;
+      }
       const [ins] = await conn.query<ResultSetHeader>(
         "INSERT INTO work_comments (work_id, user_id, is_ai, body) VALUES (?, NULL, 1, ?)",
         [workId, reply.slice(0, 5000)],
@@ -507,6 +525,7 @@ async function processAiWorkMention(
         [jobId],
       );
     });
+    if (!workReplyId) return;
     await notifyOnWorkComment({
       workId,
       workCommentId: workReplyId,

@@ -17,6 +17,7 @@
    (unclaimed / paused over cap — no negative signaling). claimPaused
    (true only for the author) shows a redistribution hint on their own
    cards. */
+import { workProvenance } from "@/src/lib/awesome/presentation";
 import { awesomeCover } from "@/src/lib/cover-gallery";
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
@@ -85,6 +86,9 @@ export function WorkMetaChips({
         </span>
       )}
       {statusLabel && <span className="shrink-0">· {statusLabel}</span>}
+      {(w.source === "awesome" || w.alsoAwesome) && (
+        <span>{t(locale, `awesome.provenance.${workProvenance(w)}`)}</span>
+      )}
     </>
   );
 }
@@ -182,7 +186,7 @@ export default function WorkCard({
           </span>
           {w.agents.length > 0 && (
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="shrink-0 text-grey/55">{t(locale, "works.metaAgents")}</span>
+              <span className="shrink-0 text-grey/55">{t(locale, w.catalog?.ownership === "external" ? "awesome.metaAgents" : "works.metaAgents")}</span>
               {w.agents.slice(0, 2).map((a) => (
                 <span key={a} className="inline-flex shrink-0 items-center gap-1">
                   <AgentIcon id={a} size={11} />

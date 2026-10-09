@@ -2,6 +2,7 @@
    Only finite, request-independent first-page scopes are admitted. Dates are
    converted to ISO strings before Next serializes the cached payload. */
 import { AGENTS } from "./agents";
+import type { WorkCatalog } from "./awesome/presentation";
 import { WORK_KINDS } from "./work-kinds";
 import type { WorkRow, WorksPage } from "./works";
 
@@ -68,6 +69,7 @@ export function publicWorksCacheScope(
 }
 
 export interface PublicWorkDto {
+  catalog?: WorkCatalog | null;
   id: number;
   name: string;
   tagline: string;
@@ -119,6 +121,7 @@ function publicWorkDto(work: WorkRow): PublicWorkDto | null {
   if (work.visibility !== "public" || work.hiddenAt !== null) return null;
   return {
     id: work.id,
+    catalog: work.catalog ?? null,
     name: work.name,
     tagline: work.tagline,
     url: work.url,

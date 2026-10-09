@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   // 自托管生产用 Next 的最小 Node server;部署流水线把 public/ 与
   // .next/static 拷到 standalone 产物旁边再上传(参照 kimi-cookbook)。
   output: "standalone",
+  outputFileTracingIncludes: { "/api/cron/awesome-sync": ["./ops/awesome-bindings.json"] },
 
   // Next sends X-Powered-By by default; it only aids fingerprinting.
   poweredByHeader: false,

@@ -8,12 +8,14 @@
    through React cache so the detail page and the rail metadata card share
    one query per request (degrades to a plain call without a dispatcher). */
 import { cache } from "react";
+import { parseWorkCatalog, type WorkCatalog } from "./awesome/presentation";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { Pool, PoolConnection } from "mysql2/promise";
 import { AGENTS } from "./agents";
 import { getPool } from "./db";
 import { canModerate } from "./featured";
 import { getVerifiableTokenTotals, type ClaimProjectTotal } from "./usage/verifiable";
+import { workEditFieldsAllowed } from "./work-edit";
 import { WORK_KINDS } from "./work-kinds";
 
 type Queryable = Pool | PoolConnection;
@@ -89,6 +91,7 @@ export interface WorkRow {
   /* Graduation attribution: the learn-series slug this work came from
      (written at publish, never edited); null = not path-sourced. */
   sourcePath: string | null;
+  catalog?: WorkCatalog | null;
 }
 
 /* Member work explicitly listed on Awesome qualifies through Kimi-agent
@@ -155,6 +158,7 @@ function mapWork(r: RowDataPacket): WorkRow {
     coverFit: r.cover_fit === "contain" ? "contain" : "cover",
     aiReply: !!r.ai_reply,
     sourcePath: r.source_path ?? null,
+    catalog: parseWorkCatalog(r.catalog),
   };
 }
 
@@ -163,7 +167,9 @@ const WORK_COLUMNS = `w.id, w.user_id, w.name, w.tagline, w.url, w.repo_url,
        w.author_label, w.created_at,
        w.featured_at, w.featured_reason, w.vote_count, w.comment_count, w.claimed_tokens,
        w.status, w.models, w.kind, w.description_md, w.scope, w.also_awesome, w.logo_key, w.image_keys,
-       w.cover_key, w.cover_tone, w.cover_fit, w.ai_reply, w.source_path`;
+       w.cover_key, w.cover_tone, w.cover_fit, w.ai_reply, w.source_path,
+       (SELECT JSON_OBJECT('entry',a.entry_json,'revision',a.source_revision,'publication',a.publication,'ownership',a.ownership)
+        FROM awesome_entries a WHERE a.work_id=w.id) AS catalog`;
 
 /* Visibility predicates: private = visible to the author only. Public
    contexts (rail/featured/posters/stats) always use PUBLIC_ONLY; lists and
@@ -174,6 +180,7 @@ const VISIBILITY_PUBLIC = "w.visibility = 'public'";
 /* Moderation-hidden predicate: always filtered in public contexts; the
    author's own view admits it separately. */
 const HIDDEN_PUBLIC = "w.hidden_at IS NULL";
+export const CATALOG_PUBLIC = "NOT EXISTS (SELECT 1 FROM awesome_entries ax WHERE ax.work_id=w.id AND ax.ownership='external' AND ax.publication='withdrawn')";
 
 /* Awesome listing predicate: recommended entries (source=awesome) plus
    member works whose author checked "also list" (also_awesome=1). Shared
@@ -184,9 +191,10 @@ const AWESOME_LISTED = "(w.source = 'awesome' OR w.also_awesome = 1)";
    hidden -> author or admin/mod only (moderation review needs it);
    otherwise public or owner. */
 export function canViewWork(
-  work: { visibility: string; userId: number | null; hiddenAt: Date | null },
+  work: { visibility: string; userId: number | null; hiddenAt: Date | null; catalog?: WorkCatalog | null },
   viewer: { id: number; role: string } | null,
 ): boolean {
+  if (work.catalog?.ownership === 'external' && work.catalog.publication === 'withdrawn') return !!viewer && canModerate(viewer.role);
   if (work.hiddenAt) {
     return !!viewer && (work.userId === viewer.id || canModerate(viewer.role));
   }
@@ -306,6 +314,7 @@ export function worksPageQuery(opts: {
       args.push(cursor.id);
     }
   }
+  where.push(CATALOG_PUBLIC);
   const size = opts.source === "site" ? WORKS_PAGE_SIZE : AWESOME_PAGE_SIZE;
   const order = sort === "hot" ? "w.vote_count DESC, w.id DESC" : "w.id DESC";
   return {
@@ -390,7 +399,7 @@ export async function getUserWorks(
   self = false,
 ): Promise<WorkRow[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORKS} WHERE w.source = 'site' AND w.user_id = ? ${self ? "" : `AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`} ORDER BY w.created_at DESC LIMIT 50`,
+    `${SELECT_WORKS} WHERE w.source = 'site' AND w.user_id = ? ${self ? "" : `AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}`} ORDER BY w.created_at DESC LIMIT 50`,
     [userId],
   );
   return rows.map(mapWork);
@@ -410,7 +419,7 @@ export function pathGraduatesQuery(
 ): { sql: string; args: string[] } {
   const n = Math.max(1, Math.min(24, Math.floor(limit)));
   return {
-    sql: `${SELECT_WORKS} WHERE w.source = 'site' AND w.source_path = ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} ORDER BY w.id DESC LIMIT ${n}`,
+    sql: `${SELECT_WORKS} WHERE w.source = 'site' AND w.source_path = ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC} ORDER BY w.id DESC LIMIT ${n}`,
     args: [slug],
   };
 }
@@ -429,7 +438,7 @@ export async function getPathGraduates(
 export function pathGraduationCountsQuery(): { sql: string; args: string[] } {
   return {
     sql: `SELECT w.source_path, COUNT(*) AS n FROM works w
-     WHERE w.source = 'site' AND w.source_path IS NOT NULL AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}
+     WHERE w.source = 'site' AND w.source_path IS NOT NULL AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}
      GROUP BY w.source_path`,
     args: [],
   };
@@ -619,8 +628,9 @@ export interface WorkFields {
   screenshotUrl: string;
   tags: string[];
   agents: string[];
-  authorLabel: string; // non-empty -> source=awesome (recommended
-                        // external project)
+  authorLabel: string;
+  /* Optional form intent is checked against the stored source on edit. */
+  intent?: string;
   /* public/private; the action layer pins the enum (anything but
      'private' is public). */
   visibility: "public" | "private";
@@ -657,6 +667,7 @@ export interface WorkFields {
      createWork only — attribution is fixed at publish, updateWork never
      touches it. */
   sourcePath: string | null;
+  catalog?: WorkCatalog | null;
 }
 
 /* ---- Work media key validation ---- Implemented in
@@ -737,13 +748,17 @@ export async function updateWork(
   workId: number,
   f: WorkFields,
 ): Promise<boolean> {
-  const source = f.authorLabel ? "awesome" : "site";
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT source FROM works WHERE id = ? AND user_id = ?", [workId, userId],
+  );
+  const source = rows[0]?.source;
+  if (!workEditFieldsAllowed(source, f)) return false;
   const [res] = await getPool().query<ResultSetHeader>(
     `UPDATE works SET name = ?, tagline = ?, url = ?, repo_url = ?, screenshot_url = ?,
-       tags = ?, agents = ?, source = ?, visibility = ?, author_label = ?, claimed_tokens = ?,
+       tags = ?, agents = ?, visibility = ?, author_label = ?, claimed_tokens = ?,
        status = ?, models = ?, kind = ?, description_md = ?, scope = ?, also_awesome = ?,
        logo_key = ?, image_keys = ?, cover_key = ?, cover_tone = ?, cover_fit = ?, ai_reply = ?
-     WHERE id = ? AND user_id = ?`,
+     WHERE id = ? AND user_id = ? AND source = ? AND NOT EXISTS (SELECT 1 FROM awesome_entries ae WHERE ae.work_id=works.id AND ae.ownership='external')`,
     [
       f.name.slice(0, 120),
       f.tagline.slice(0, 300),
@@ -752,7 +767,6 @@ export async function updateWork(
       f.screenshotUrl.slice(0, 500),
       JSON.stringify(f.tags.slice(0, 5)),
       JSON.stringify(f.agents.slice(0, 10)),
-      source,
       f.visibility === "private" ? "private" : "public",
       f.authorLabel.slice(0, 120),
       source === "awesome" ? null : f.claimedTokens,
@@ -774,6 +788,7 @@ export async function updateWork(
       f.aiReply ? 1 : 0,
       workId,
       userId,
+      source,
     ],
   );
   return res.affectedRows > 0;
@@ -784,7 +799,7 @@ export async function deleteWork(
   workId: number,
 ): Promise<boolean> {
   const [res] = await getPool().query<ResultSetHeader>(
-    "DELETE FROM works WHERE id = ? AND user_id = ?",
+    "DELETE FROM works WHERE id = ? AND user_id = ? AND NOT EXISTS (SELECT 1 FROM awesome_entries ae WHERE ae.work_id=works.id AND ae.ownership='external')",
     [workId, userId],
   );
   return res.affectedRows > 0;
@@ -865,7 +880,7 @@ export function relatedWorksQuery(
     args.push(work.userId);
   }
   return {
-    sql: `${SELECT_WORKS} WHERE w.id <> ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND (${conds.join(" OR ")})
+    sql: `${SELECT_WORKS} WHERE w.id <> ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC} AND (${conds.join(" OR ")})
      ORDER BY ${order} LIMIT ${n}`,
     args,
   };
@@ -888,14 +903,14 @@ export async function getRelatedWorks(
 export async function getTopWorks(limit = 5): Promise<WorkRow[]> {
   const n = Math.max(1, Math.min(20, Math.floor(limit)));
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `${SELECT_WORKS} WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} ORDER BY w.vote_count DESC, w.id DESC LIMIT ${n}`,
+    `${SELECT_WORKS} WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC} ORDER BY w.vote_count DESC, w.id DESC LIMIT ${n}`,
   );
   return rows.map(mapWork);
 }
 
 export function awesomeSourceStatsQuery(): { sql: string; args: string[] } {
   return {
-    sql: `SELECT w.source, COUNT(*) AS n FROM works w WHERE ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.source`,
+    sql: `SELECT w.source, COUNT(*) AS n FROM works w WHERE ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC} GROUP BY w.source`,
     args: [],
   };
 }
@@ -930,7 +945,7 @@ export async function getWorksWallStats(): Promise<{
     `SELECT COUNT(*) AS works, COUNT(DISTINCT w.user_id) AS authors,
             COALESCE(SUM(w.claimed_tokens), 0) AS claimed_sum,
             COALESCE(SUM(CASE WHEN w.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END), 0) AS weekly_new
-     FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
+     FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}`,
   );
   const r = rows[0] ?? {};
   return {
@@ -950,8 +965,8 @@ export async function getWorksAgentStats(
 ): Promise<{ agent: string; count: number }[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     source === "site"
-      ? `SELECT w.agents FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`
-      : `SELECT w.agents FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
+      ? `SELECT w.agents FROM works w WHERE w.source = 'site' AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}`
+      : `SELECT w.agents FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}`,
   );
   const counts = new Map<string, number>();
   for (const r of rows) {
@@ -974,7 +989,7 @@ export async function getAwesomeStats(): Promise<{
   recommenders: number;
 }> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}`,
+    `SELECT w.agents, w.user_id, w.created_at FROM works w WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}`,
   );
   const agentSet = new Set<string>();
   const recommenderSet = new Set<number>();
@@ -1007,7 +1022,7 @@ export async function getAwesomeScopeStats(): Promise<{
        ELSE w.scope
      END AS effective_scope, COUNT(*) AS n
      FROM works w
-     WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC}
+     WHERE ${AWESOME_LISTED} AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC}
      GROUP BY effective_scope`,
   );
   const out = { base: 0, eco: 0, part: 0 };
@@ -1030,7 +1045,7 @@ export async function getWorksKindStats(
   source: "site" | "awesome",
 ): Promise<{ kind: string; count: number }[]> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT w.kind, COUNT(*) AS n FROM works w WHERE w.source = ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} GROUP BY w.kind ORDER BY n DESC`,
+    `SELECT w.kind, COUNT(*) AS n FROM works w WHERE w.source = ? AND ${VISIBILITY_PUBLIC} AND ${HIDDEN_PUBLIC} AND ${CATALOG_PUBLIC} GROUP BY w.kind ORDER BY n DESC`,
     [source],
   );
   return rows.map((r) => ({ kind: String(r.kind), count: Number(r.n) }));
@@ -1271,12 +1286,14 @@ export async function getVisibleWorkAccess(
   lock = false,
 ): Promise<{ id: number; aiReply: boolean } | null> {
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT w.id, w.visibility, w.hidden_at, w.user_id, w.ai_reply
+    `SELECT w.id, w.visibility, w.hidden_at, w.user_id, w.ai_reply,
+       (SELECT publication FROM awesome_entries ax WHERE ax.work_id=w.id AND ax.ownership='external') AS catalog_publication
      FROM works w WHERE w.id = ? LIMIT 1${lock ? " FOR UPDATE" : ""}`,
     [workId],
   );
   const r = rows[0];
   if (!r) return null;
+  if (r.catalog_publication === 'withdrawn' && !canModerate(viewer.role)) return null;
   const visible = canViewWork(
     {
       visibility: String(r.visibility),

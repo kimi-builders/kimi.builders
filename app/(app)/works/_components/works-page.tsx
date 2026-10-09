@@ -26,6 +26,7 @@ import {
   getWorksPage,
 } from "@/src/lib/works";
 import WorkCard from "./WorkCard";
+import { localizeWork } from "@/src/lib/awesome/presentation";
 import WorkGridCard from "./WorkGridCard";
 
 export interface WorksPageData {
@@ -85,7 +86,7 @@ export async function loadWorksCards(
     nodes: page.works.map((w) => (
       <Card
         key={w.id}
-        work={w}
+        work={localizeWork(w,locale)}
         locale={locale}
         meId={user?.id ?? null}
         listSource={scope.awesome ? "awesome" : "works"}

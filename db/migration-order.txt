@@ -49,3 +49,5 @@
 20260915_sessions_email_verify.sql
 20260916_error_events.sql
 20260916_error_events_hardening.sql
+20261009_awesome_catalog.sql
+20261009_awesome_member_delete.sql

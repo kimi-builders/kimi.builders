@@ -1,6 +1,7 @@
+import { AWESOME_CONTRIBUTE_URL } from "@/src/lib/awesome/presentation";
 /* /awesome rail: listing stats + scopes (with counts, click a row to
    filter) + agent distribution + recommendation rules (original
-   author required / never on the works wall / no badge) + the
+   author required / repository imports stay external / no claim badge) + the
    recommendation entry. */
 import Link from "next/link";
 import { SquarePen } from "lucide-react";
@@ -19,10 +20,8 @@ const SCOPES = [
 
 export default async function AwesomeRail({
   locale,
-  loggedIn,
 }: {
   locale: Locale;
-  loggedIn: boolean;
 }) {
   const { stats, scopeStats, agents } = await getPublicAwesomeRail();
   const agentMax = Math.max(1, ...agents.map((a) => a.count));
@@ -105,15 +104,13 @@ export default async function AwesomeRail({
         <p className="text-xs leading-relaxed text-grey">
           {t(locale, "awesome.rulesBody")}
         </p>
-        {loggedIn && (
-          <Link
-            href="/works/new"
-            className="mt-3 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
-          >
-            <SquarePen size={13} aria-hidden="true" />
-            {t(locale, "awesome.recommend")}
-          </Link>
-        )}
+        <Link
+          href={AWESOME_CONTRIBUTE_URL}
+          className="mt-3 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-blue font-mono text-xs font-semibold text-blue transition-colors hover:bg-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+        >
+          <SquarePen size={13} aria-hidden="true" />
+          {t(locale, "awesome.recommend")}
+        </Link>
       </Widget>
     </>
   );

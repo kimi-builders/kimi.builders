@@ -521,7 +521,7 @@ export function letterIssueMetas(
 export function communityWorksCountQuery(): { sql: string; args: never[] } {
   return {
     sql: `SELECT COUNT(*) AS n FROM works
-          WHERE visibility = 'public' AND hidden_at IS NULL`,
+          WHERE visibility = 'public' AND hidden_at IS NULL AND NOT EXISTS (SELECT 1 FROM awesome_entries ax WHERE ax.work_id=works.id AND ax.ownership='external' AND ax.publication='withdrawn')`,
     args: [],
   };
 }
@@ -562,6 +562,7 @@ export function monthFeaturedWorksQuery(window: {
           LEFT JOIN users e ON e.id = w.featured_by
           WHERE w.featured_at IS NOT NULL AND w.visibility = 'public' AND w.hidden_at IS NULL
                 AND w.featured_at >= ? AND w.featured_at < ?
+                AND NOT EXISTS (SELECT 1 FROM awesome_entries ax WHERE ax.work_id=w.id AND ax.ownership='external' AND ax.publication='withdrawn')
           ORDER BY w.featured_at ASC, w.id ASC`,
     args: [window.start, window.end],
   };

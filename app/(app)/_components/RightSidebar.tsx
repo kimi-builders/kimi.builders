@@ -36,7 +36,7 @@ export default function RightSidebar({
         ) : decision.kind === "works" ? (
           <WorksRail locale={locale} loggedIn={loggedIn} />
         ) : decision.kind === "awesome" ? (
-          <AwesomeRail locale={locale} loggedIn={loggedIn} />
+          <AwesomeRail locale={locale} />
         ) : decision.kind === "explore" ? (
           <ExploreRail locale={locale} />
         ) : decision.kind === "article" && decision.slug ? (

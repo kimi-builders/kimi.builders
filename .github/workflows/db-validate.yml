@@ -108,6 +108,7 @@ jobs:
           npm run test:auth-db
           npm run test:works-db
           npm run test:moderation-db
+          npm run test:awesome-db
 
   upgrade-path:
     name: Upgrade and schema parity

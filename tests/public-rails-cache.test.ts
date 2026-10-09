@@ -158,7 +158,8 @@ test("rail renderers keep session, locale, and interactive state outside cache",
   assert.match(works, /getPublicWorksRail\(\)/);
   assert.match(works, /loggedIn &&/);
   assert.match(awesome, /getPublicAwesomeRail\(\)/);
-  assert.match(awesome, /loggedIn &&/);
+  assert.doesNotMatch(awesome, /loggedIn &&/);
+  assert.match(awesome, /href=\{AWESOME_CONTRIBUTE_URL\}/);
 });
 
 test("featured mutations invalidate their independent tag after successful writes", () => {

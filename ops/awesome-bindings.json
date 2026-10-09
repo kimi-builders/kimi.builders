@@ -1,0 +1,12 @@
+[
+  {
+    "entryId": "entry-wjt0321-kimi-code-desktop",
+    "workId": 6,
+    "expectedUrl": "https://github.com/wjt0321/kimi-code-desktop"
+  },
+  {
+    "entryId": "entry-yann-up-kimi-code-desktop",
+    "workId": 5,
+    "expectedUrl": "https://github.com/Yann-Up/kimi-code-desktop"
+  }
+]

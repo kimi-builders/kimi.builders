@@ -8,6 +8,8 @@ export type Locale = "zh" | "en";
 const DICT = {
   /* ---- Left rail / top bar navigation ---- */
   "nav.community": { zh: "社区", en: "Community" },
+  "nav.communityShort": { zh: "社区", en: "Discuss" },
+  "nav.communityAccessible": { zh: "社区", en: "Discuss in the community" },
   "nav.explore": { zh: "探索", en: "Explore" },
   "nav.works": { zh: "作品", en: "Works" },
   "nav.usage": { zh: "用量", en: "Usage" },
@@ -1213,10 +1215,20 @@ const DICT = {
   },
   /* ---- Awesome ---- */
   "awesome.intro": {
-    zh: "成员推荐的站外 Kimi 生态项目。符合任一收录口径即可：以 Kimi 为基座、服务 Kimi 生态，或由 Kimi 系 Agent 参与开发；卡片会标明收录口径与参与 Agent。",
-    en: "External Kimi ecosystem projects recommended by members. An item qualifies if it is built on Kimi, supports the ecosystem, or was developed with a Kimi agent; each card shows the scope and agents involved.",
+    zh: "Kimi 生态项目：仓库收录、历史推荐，以及作者选择加入 Awesome 的成员作品。",
+    en: "Kimi ecosystem projects from the community repository, legacy recommendations, and member work whose authors choose to list it here.",
   },
   "awesome.recommend": { zh: "推荐项目", en: "Recommend" },
+  "awesome.recommendShort": { zh: "推荐", en: "Suggest" },
+  "awesome.recommendAccessible": { zh: "通过 GitHub 推荐项目", en: "Suggest a project on GitHub" },
+  "awesome.provenance.repository": { zh: "仓库收录", en: "Repository entry" },
+  "awesome.provenance.legacy": { zh: "历史推荐", en: "Legacy recommendation" },
+  "awesome.provenance.member": { zh: "成员作品", en: "Member work" },
+  "awesome.sourceEntry": { zh: "仓库资料", en: "Repository entry" },
+  "awesome.suggestEdit": { zh: "建议修改", en: "Suggest an edit" },
+  "awesome.githubRecommendation": { zh: "GitHub 推荐：{name}", en: "Recommended on GitHub by {name}" },
+  "awesome.repoOwned": { zh: "项目资料由社区仓库维护，请通过 GitHub 提出修改。", en: "Project information is maintained in the community repository. Suggest changes on GitHub." },
+
   "awesome.all": { zh: "全部", en: "All" },
   "awesome.empty": {
     zh: "这个过滤条件下还没有项目。",
@@ -1298,7 +1310,7 @@ const DICT = {
   "awesome.scopeEcoHint": { zh: "扩展、SDK、集成、周边工具", en: "Extensions, SDKs, integrations, tools" },
   "awesome.scopePartHint": { zh: "Kimi 系 Agent 参与开发，不要求 100%", en: "Kimi agents took part; 100% not required" },
   "awesome.statsTitle": { zh: "收录统计", en: "AWESOME STATS" },
-  "awesome.statsNote": { zh: "站外项目 · 成员推荐", en: "external · member-recommended" },
+  "awesome.statsNote": { zh: "仓库收录 · 历史推荐 · 成员作品", en: "repository entries · legacy recommendations · member work" },
   "awesome.statItems": { zh: "收录项目", en: "items" },
   "awesome.statAgents": { zh: "参与 Agent", en: "agents" },
   "awesome.statWeeklyNew": { zh: "本周新增", en: "new this week" },
@@ -1307,10 +1319,12 @@ const DICT = {
   "awesome.scopeNote": { zh: "满足任一即可", en: "any one qualifies" },
   "awesome.rulesTitle": { zh: "推荐规则", en: "RULES" },
   "awesome.rulesBody": {
-    zh: "推荐站外项目时必须填写原作者/团队（可点跳到其 GitHub 主页）；Awesome 项目不进你的作品墙，也不显示 Token 声明。社区成员自己做的项目请去作品墙创建发布。",
-    en: "External recommendations must name the original author/team (linked to their GitHub profile). Awesome entries never appear on your works wall and carry no claim badge. Built it yourself? Create and publish it on the works wall.",
+    zh: "通过 GitHub PR 推荐站外项目，注明原作者和 Kimi 关联。仓库收录的站外项目不进你的作品墙，也不显示 Token 声明。自己的作品继续在站内发布，并可选择加入 Awesome。",
+    en: "Recommend external projects through a GitHub PR with the original author and Kimi connection. Repository imports do not appear on your works wall or carry claim badges. Publish your own work on the site and choose whether to list it in Awesome.",
   },
   "awesome.agentDist": { zh: "Agent 分布", en: "AGENT BREAKDOWN" },
+  "awesome.agents": { zh: "关联 Agent", en: "Associated agents" },
+  "awesome.metaAgents": { zh: "关联 Agent", en: "AGENTS" },
   "awesome.recommenderShort": { zh: "推荐人", en: "rec. by" },
   "awesome.agentDistNote": { zh: "按参与项目数", en: "by items" },
   /* ---- Editorial featuring (weekly featured v0) ---- */

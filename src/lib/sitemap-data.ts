@@ -71,6 +71,7 @@ export function sitemapPostsQuery(): string {
 export function sitemapWorksQuery(): string {
   return `SELECT id FROM works
           WHERE visibility = 'public' AND hidden_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM awesome_entries ax WHERE ax.work_id=works.id AND ax.ownership='external' AND ax.publication='withdrawn')
           ORDER BY id DESC LIMIT ${SITEMAP_DYNAMIC_CAP}`;
 }
 
