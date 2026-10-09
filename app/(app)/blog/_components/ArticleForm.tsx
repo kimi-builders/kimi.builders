@@ -27,6 +27,7 @@ import { KB_ROLES } from "@/src/lib/kb-roles";
 import { LEARN_SERIES } from "@/src/lib/learn-series";
 import MarkdownEditor from "../../_components/MarkdownEditor";
 import ArticleCoverField from "./ArticleCoverField";
+import CoverGalleryPicker from "@/components/CoverGalleryPicker";
 import {
   deleteArticleAction,
   saveArticleAction,
@@ -511,6 +512,14 @@ export default function ArticleForm({
               onUrlChange={(v) => (kind === "letter" ? setL({ cover: v }) : setG({ cover: v }))}
               onToneChange={(v) => (kind === "letter" ? setL({ coverTone: v }) : setG({ coverTone: v }))}
             />
+            <div className="mt-2">
+              <CoverGalleryPicker
+                value={coverUrl}
+                zh={zh}
+                onPick={(src) => (kind === "letter" ? setL({ cover: src }) : setG({ cover: src }))}
+                onClear={() => (kind === "letter" ? setL({ cover: "" }) : setG({ cover: "" }))}
+              />
+            </div>
           </div>
         </div>
       </Section>

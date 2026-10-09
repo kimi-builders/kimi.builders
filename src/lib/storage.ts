@@ -42,8 +42,11 @@ export function mediaBucket(): string {
 }
 
 /* key -> public URL. Storage keeps keys only; URLs are assembled at
-   render/response time, so changing domains never touches stored data. */
+   render/response time, so changing domains never touches stored data.
+   Root-relative keys (the curated cover gallery under /covers) are
+   their own public URLs — the CDN base only applies to bucket keys. */
 export function mediaUrl(key: string): string {
+  if (key.startsWith("/")) return key;
   const base = (
     process.env.R2_PUBLIC_BASE_URL || "https://cdn.kimi.builders"
   ).replace(/\/+$/, "");

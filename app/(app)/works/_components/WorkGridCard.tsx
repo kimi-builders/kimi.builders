@@ -9,6 +9,7 @@
    matches the row card: brighter border + slight cover zoom + blue
    title (group). The card-spanning link + z-10 interactive elements
    pattern matches the row card. */
+import { awesomeCover } from "@/src/lib/cover-gallery";
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
@@ -53,7 +54,12 @@ export default function WorkGridCard({
       />
       <div className="pointer-events-none border-b border-line">
         <WorkScreenshot
-          url={w.coverKey ? mediaUrl(w.coverKey) : w.screenshotUrl}
+          url={
+          w.coverKey
+            ? mediaUrl(w.coverKey)
+            : w.screenshotUrl ||
+              (listSource === "awesome" ? awesomeCover(w.name).src : "")
+        }
           name={w.name}
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={kindLabel}

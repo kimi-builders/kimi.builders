@@ -17,6 +17,7 @@
    (unclaimed / paused over cap — no negative signaling). claimPaused
    (true only for the author) shows a redistribution hint on their own
    cards. */
+import { awesomeCover } from "@/src/lib/cover-gallery";
 import Link from "next/link";
 import { agentName } from "@/src/lib/agents";
 import { compactNumber } from "@/src/lib/format";
@@ -142,7 +143,12 @@ export default function WorkCard({
             user's chosen tint/theme, Awesome entries the type family or
             chosen tint). */}
         <WorkScreenshot
-          url={w.coverKey ? mediaUrl(w.coverKey) : w.screenshotUrl}
+          url={
+            w.coverKey
+              ? mediaUrl(w.coverKey)
+              : w.screenshotUrl ||
+                (listSource === "awesome" ? awesomeCover(w.name).src : "")
+          }
           name={w.name}
           logoUrl={w.logoKey ? mediaUrl(w.logoKey) : ""}
           kindLabel={kindLabel}

@@ -12,6 +12,7 @@
    with it (the server forces awesome entries empty anyway — belt and
    suspenders). Uploads all go to POST /api/upload (kind=logo|image);
    cropping/drag-sort are hand-written, no third-party library. */
+import CoverGalleryPicker from "@/components/CoverGalleryPicker";
 import { useEffect, useRef, useState } from "react";
 import {
   GripVertical,
@@ -494,9 +495,19 @@ export default function WorkMediaFields({
             />
           )}
           {coverMode === "image" && (
-            <span className="mt-1 block text-xs leading-relaxed text-grey/80">
-              {t(locale, "works.coverHint")}
-            </span>
+            <>
+              <div className="mt-3">
+                <CoverGalleryPicker
+                  value={cover?.key ?? ""}
+                  zh={locale === "zh"}
+                  onPick={(src) => setCover({ key: src, url: src })}
+                  onClear={() => setCover(null)}
+                />
+              </div>
+              <span className="mt-1 block text-xs leading-relaxed text-grey/80">
+                {t(locale, "works.coverHint")}
+              </span>
+            </>
           )}
         </div>
         <input

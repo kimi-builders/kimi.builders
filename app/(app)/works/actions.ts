@@ -12,6 +12,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { sanitizeAgentIds, AGENTS } from "@/src/lib/agents";
+import { isGalleryCoverSrc } from "@/src/lib/cover-gallery";
 import { isCoverTone } from "@/src/lib/cover-tones";
 import { isWorkKind } from "@/src/lib/work-kinds";
 import { getSessionUser } from "@/src/lib/auth/session";
@@ -199,7 +200,8 @@ function validate(
     return t(locale, "err.workImageKeys");
   if (
     f.coverKey !== "" &&
-    !(isWorkMediaKey(f.coverKey) && f.coverKey.startsWith("image/"))
+    !(isWorkMediaKey(f.coverKey) && f.coverKey.startsWith("image/")) &&
+    !isGalleryCoverSrc(f.coverKey)
   )
     return t(locale, "err.workImageKeys");
   return null;
