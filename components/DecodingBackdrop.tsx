@@ -1,7 +1,7 @@
 "use client";
 
-/* De-coding binary backdrop for the home poster hero: a deterministic
-   0/1 character grid (mulberry32, fixed seed) in the technical typeface,
+/* Brand-letter backdrop for the home poster hero: a deterministic
+   k/i character grid (mulberry32, fixed seed) in the technical typeface,
    tinted toward the brand blue via color-mix on existing tokens, with a
    bottom fade into the poster ground. Purely presentational: no state,
    no network, no layout impact (absolute, z -1 inside the isolated
@@ -35,14 +35,14 @@ export default function DecodingBackdrop() {
     const fill = () => {
       const rect = el.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
-      // ~7.2px advance per "0 " pair at 12px mono; cap keeps huge
+      // ~7.2px advance per glyph at 12px mono; cap keeps huge
       // viewports from building an unbounded string.
       const cols = Math.ceil(rect.width / 7.2);
       const rows = Math.ceil(rect.height / 18);
       const n = Math.min(Math.ceil(cols * rows * 1.15), MAX_CELLS);
       const rand = mulberry32(SEED);
       const parts = new Array<string>(n);
-      for (let i = 0; i < n; i++) parts[i] = rand() < 0.5 ? "0" : "1";
+      for (let i = 0; i < n; i++) parts[i] = rand() < 0.5 ? "k" : "i";
       el.textContent = parts.join(" ");
     };
     fill();

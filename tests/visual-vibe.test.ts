@@ -80,14 +80,38 @@ test("vibe surfaces: toggle in topbar/drawer, cards in settings, no-JS fallbacks
 test("reduced motion keeps the endless twin-star brand orbit as the single exception", () => {
   const home = read("app/page.tsx");
   const loading = read("components/BrandLoading.tsx");
+  const routeLoading = read("app/(app)/_components/RouteLoading.tsx");
   const css = read("app/globals.css");
   const logo = read("public/brand/logo-animated.svg");
 
   assert.match(home, /src="\/brand\/logo-animated\.svg"/);
   assert.match(loading, /src="\/brand\/logo-animated\.svg"/);
+  assert.match(routeLoading, /src="\/brand\/logo-animated\.svg"/);
+  assert.doesNotMatch(routeLoading, /src="\/brand\/logo-tile\.svg"/);
   assert.match(css, /single reduced-motion exception/);
   assert.doesNotMatch(css, /kb-brand-logo-static/);
   assert.match(logo, /<animateMotion[^>]*repeatCount="indefinite"/);
+});
+
+test("root and in-shell loading marks share the home hero size without changing retry behavior", () => {
+  for (const path of ["app/page.tsx", "components/BrandLoading.tsx", "app/(app)/_components/RouteLoading.tsx"]) {
+    assert.match(read(path), /\bh-44 w-44\b/, path);
+  }
+  const routeLoading = read("app/(app)/_components/RouteLoading.tsx");
+  assert.match(routeLoading, /setTimeout\(\(\) => setSlow\(true\), 5000\)/);
+  assert.match(routeLoading, /return \(\) => clearTimeout\(id\)/);
+  assert.match(routeLoading, /onClick=\{\(\) => router\.refresh\(\)\}/);
+});
+
+test("home hero texture uses lowercase brand letters with the existing decorative safeguards", () => {
+  const backdrop = read("components/DecodingBackdrop.tsx");
+  const css = read("app/globals.css");
+
+  assert.match(backdrop, /rand\(\) < 0\.5 \? "k" : "i"/);
+  assert.doesNotMatch(backdrop, /\? "0" : "1"/);
+  assert.match(backdrop, /const MAX_CELLS = 36000/);
+  assert.match(backdrop, /aria-hidden="true" className="decode-backdrop"/);
+  assert.match(css, /\.decode-backdrop\s*\{[^}]*pointer-events: none;[^}]*user-select: none;/);
 });
 
 test("home entries fit Chinese subcopy and work-card owner menus open inside clipped cards", () => {

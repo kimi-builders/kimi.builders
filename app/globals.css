@@ -1308,7 +1308,7 @@ html[data-motion="reduce"] .usage-late {
   animation: none;
 }
 
-/* ---- Decoding backdrop (home poster hero): the 0/1 character field
+/* ---- Decoding backdrop (home poster hero): the k/i character field
    rendered by components/DecodingBackdrop.tsx. The ink tint derives
    from existing tokens only (blue pulled toward the poster ground), so
    both poster skins (night / daytime paper) get a legible-but-quiet

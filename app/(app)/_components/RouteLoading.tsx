@@ -4,10 +4,10 @@
    boundary — the three-column shell (top/left/right) keeps its face
    during soft navigation and only the main column enters the loading
    state, replacing the old root-level BrandLoading full-page swap that
-   flashed a fullscreen logo. Same visual family as BrandLoading (small
-   tile mark + LOADING.) at in-column component density; first visits
-   and direct URLs still hit the root-level BrandLoading poster via the
-   outer boundary. Slow-load self-help: past 5s a "retry" appears
+   flashed a fullscreen logo. The mark shares the home hero's size and
+   endless twin-star orbit; first visits and direct URLs still hit the
+   root-level BrandLoading poster via the outer boundary. Slow-load
+   self-help: past 5s a "retry" appears
    (router.refresh re-fetches the route) — the loading state is never a
    dead end. */
 import { useEffect, useState } from "react";
@@ -28,9 +28,11 @@ export default function RouteLoading({ locale }: { locale: Locale }) {
     <div className="flex min-h-[50vh] w-full flex-col items-center justify-center px-6 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/brand/logo-tile.svg"
+        src="/brand/logo-animated.svg"
         alt="kimi.builders"
-        className="h-12 w-12 rounded-lg"
+        width={176}
+        height={176}
+        className="h-44 w-44 rounded-2xl"
       />
       <p className="mt-5 font-mono text-xs tracking-[0.08em] text-grey">
         LOADING<span className="text-ui-blue">.</span>

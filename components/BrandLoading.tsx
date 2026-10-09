@@ -14,7 +14,9 @@ export default function BrandLoading({ locale }: { locale: Locale }) {
       <img
         src="/brand/logo-animated.svg"
         alt="kimi.builders"
-        className="h-36 w-36 rounded-3xl border border-line"
+        width={176}
+        height={176}
+        className="h-44 w-44 rounded-3xl border border-line"
       />
       <p className="mt-6 font-mono text-xs tracking-[0.08em] text-grey">
         LOADING<span className="text-ui-blue">.</span>
