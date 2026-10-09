@@ -1,5 +1,5 @@
 import { POSTER_ALPHA, POSTER_HEAT_SCALE, POSTER_HEAT_STEPS, POSTER_PALETTE } from "@/src/lib/brand-palette";
-import { compactNumber } from "@/src/lib/format";
+import { compactNumber, niceAxisMax } from "@/src/lib/format";
 import type { UsageShareFlow, UsageShareSnapshot } from "@/src/lib/usage/share";
 import {
   POSTER_FONT_FAMILY,
@@ -157,13 +157,17 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
      dashed line is 30d-only. */
   const stacked = main.kind === "stacked" || main.kind === "hours";
   const width = CONTENT_WIDTH;
-  const padL = 46;
+  /* 64px gutter: the widest zh tick (5000wan at 11px) needs ~38px and
+     must never wrap into two lines; 46px clipped it. */
+  const padL = 64;
   const padR = 4;
   const padT = 8;
   const padB = 26;
   const plotH = 228;
   const height = padT + plotH + padB;
-  const maximum = Math.max(1, ...cells.map((cell) => cell.tokens));
+  /* Axis ceiling quarters into clean ticks (shared with the usage
+     center); stacked segments stay under the data maximum. */
+  const maximum = niceAxisMax(Math.max(1, ...cells.map((cell) => cell.tokens)));
   const slot = (width - padL - padR) / n;
   const barW = Math.max(3, Math.round(slot * 0.62));
   const y = (value: number) => padT + plotH - (value / maximum) * plotH;
@@ -289,6 +293,7 @@ function TrendChart({ snapshot }: { snapshot: UsageShareSnapshot }) {
                 justifyContent: "flex-end",
                 color: palette.muted,
                 fontSize: 11,
+                whiteSpace: "nowrap",
               }}
             >
               {tickLabels[tickIndex]}

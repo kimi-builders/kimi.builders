@@ -1250,3 +1250,98 @@ body > main p {
     min-height: 2.75rem;
   }
 }
+
+/* ---- Poster facade wordmark: the home h1 is the mono wordmark, not
+   an article headline — the global main h1 article scale (clamped at
+   30px) does not apply. Unlayered like main h1 itself so it wins the
+   cascade the same way; wide tracking keeps the poster mono voice. ---- */
+[data-theme-scope="poster"] h1 {
+  font-size: clamp(2rem, 1.4rem + 2vw, 3rem);
+  line-height: 1.1;
+  /* 0.025em = the tracking-wide utility's value; redeclared here because
+     the unlayered main h1 rule (-0.025em article tracking) would
+     otherwise beat the layered utility. */
+  letter-spacing: 0.025em;
+}
+
+/* ---- Usage chart reveal: bars grow from the zero axis with the
+   brand ease, then the 7-day average and the peak label fade in
+   (two-phase, per the motion token section). Bars keep their full
+   layout height (scaleY only, fill-box origin), so hover hit-tests
+   and the tooltip never move. Static under reduced motion. ---- */
+@keyframes kb-bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes kb-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.usage-bar {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: kb-bar-grow var(--transition-duration-reveal) var(--ease-grow) both;
+}
+
+.usage-late {
+  animation: kb-fade-in var(--transition-duration-fast) var(--ease-standard)
+    var(--transition-duration-reveal) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usage-bar,
+  .usage-late {
+    animation: none;
+  }
+}
+
+/* Manual reduce-motion parks the reveal too (lockstep with the system
+   branch): the global opt-out collapses durations but never delays, so
+   without this the 900ms reveal delay survives and the average line /
+   peak label land late. The twin-star logo keeps its brand exception. */
+html[data-motion="reduce"] .usage-bar,
+html[data-motion="reduce"] .usage-late {
+  animation: none;
+}
+
+/* ---- Decoding backdrop (home poster hero): the 0/1 character field
+   rendered by components/DecodingBackdrop.tsx. The ink tint derives
+   from existing tokens only (blue pulled toward the poster ground), so
+   both poster skins (night / daytime paper) get a legible-but-quiet
+   field without new color values. Sits at z -1 inside the isolated
+   poster section: above the section's own (transparent) ground, below
+   every content child. The ::after fade settles the field into the
+   ground so the stats strip below reads as a new breath, not a cut. ---- */
+.decode-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-technical);
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: color-mix(in srgb, var(--color-blue) 26%, var(--color-bg));
+  opacity: 0.55;
+}
+
+.decode-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 34%;
+  background: linear-gradient(to bottom, transparent, var(--color-bg));
+}
+
+[data-theme="light"] [data-theme-scope="poster"] .decode-backdrop {
+  color: color-mix(in srgb, var(--color-blue) 30%, var(--color-bg));
+  opacity: 0.4;
+}

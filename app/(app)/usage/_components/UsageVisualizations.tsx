@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type CSSProperties, type FocusEvent, type MouseEvent, type ReactNode } from "react";
-import { compactNumber } from "@/src/lib/format";
+import { compactNumber, niceAxisMax } from "@/src/lib/format";
 import type { UsageGranularity, UsageMetric, UsageRangeLabel } from "@/src/lib/usage/filters";
 import {
   heatGridFor,
@@ -176,7 +176,11 @@ function TrendCore({
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<{ index: number; left: number; top: number; arrowX: number } | null>(null);
-  const max = Math.max(0, ...trend.map((item) => metricValue(item, metric)));
+  /* Axis ceiling is quartered for ticks, so it rounds up to a quarter-
+     friendly value (niceAxisMax); the peak label still reads the raw
+     data maximum. */
+  const dataMax = Math.max(0, ...trend.map((item) => metricValue(item, metric)));
+  const max = niceAxisMax(dataMax);
   if (max <= 0) {
     return (
       <div className="flex h-52 items-center justify-center text-xs text-grey">
@@ -254,7 +258,7 @@ function TrendCore({
                     textAnchor="end"
                     style={{ fill: "var(--color-viz-axis)", font: `10px ${monoFont}` }}
                   >
-                    {axisTickText(metric, tick, zh, currency)}
+                    {axisTickText(metric, tick, zh, currency).replace(/\.00$/, "")}
                   </text>
                 </g>
               ))}
@@ -275,6 +279,7 @@ function TrendCore({
                   return (
                     <rect
                       key={item.day}
+                      className="usage-bar"
                       x={x}
                       y={y(0) - h}
                       width={barW}
@@ -289,6 +294,7 @@ function TrendCore({
                 return (
                   <rect
                     key={item.day}
+                    className="usage-bar"
                     x={x}
                     y={y(0) - h}
                     width={barW}
@@ -306,15 +312,16 @@ function TrendCore({
                 );
               })}
               {trend.map((item, index) =>
-                metricValue(item, metric) === max && max > 0 ? (
+                metricValue(item, metric) === dataMax && dataMax > 0 ? (
                   <text
                     key={`peak-${item.day}`}
                     x={padL + index * slot + slot / 2}
-                    y={Math.max(10, y(max) - 5)}
+                    y={Math.max(10, y(dataMax) - 5)}
                     textAnchor="middle"
+                    className="usage-late"
                     style={{ fill: "var(--color-paper)", font: `600 10px ${monoFont}` }}
                   >
-                    {axisTickText(metric, max, zh, currency)}
+                    {axisTickText(metric, dataMax, zh, currency)}
                   </text>
                 ) : null,
               )}
@@ -324,6 +331,7 @@ function TrendCore({
                   fill="none"
                   strokeWidth={1.6}
                   strokeDasharray="5 5"
+                  className="usage-late"
                   style={{ stroke: "var(--color-viz-neutral-muted)" }}
                 />
               )}

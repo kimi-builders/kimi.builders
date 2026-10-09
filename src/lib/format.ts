@@ -86,3 +86,16 @@ export function monthLabel(d: Date | string): string {
   const t = typeof d === "string" ? new Date(d) : d;
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`;
 }
+
+/* Chart axis ceiling: round a raw data maximum up to the nearest value
+   whose quarters are still round (1/2/4/8 x 10^k). Quartering a raw
+   maximum (usage trend y-axis) produced division dregs (79.7M on a 159.9M peak);
+   every chart that splits its axis into four shares this ceiling. */
+export function niceAxisMax(value: number): number {
+  if (!(value > 0)) return 0;
+  const exponent = Math.floor(Math.log10(value));
+  const base = 10 ** exponent;
+  const fraction = value / base; // [1, 10)
+  const nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 4 ? 4 : fraction <= 8 ? 8 : 10;
+  return nice * base;
+}

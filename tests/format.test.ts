@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { relTime, stripDuplicateLeadingHeading } from "../src/lib/format";
+import { niceAxisMax, relTime, stripDuplicateLeadingHeading } from "../src/lib/format";
 
 /* ---- relTime: near-relative, then absolute from 7 days on. One rule
    for every surface reusing relTime (community lists, details,
@@ -121,4 +121,23 @@ test("degenerate inputs are returned unchanged", () => {
   assert.equal(stripDuplicateLeadingHeading("# Untitled", ""), "# Untitled");
   // A body that is only the duplicated H1 collapses to empty.
   assert.equal(stripDuplicateLeadingHeading("# Solo", "Solo"), "");
+});
+
+/* ---- niceAxisMax: quarter-friendly axis ceilings. Quartering a raw
+   maximum produced division dregs (79.7M) on the usage trend
+   y-axis; the ceiling is shared by the usage center and the share
+   poster. ---- */
+
+test("niceAxisMax: 0 and negatives stay 0", () => {
+  assert.equal(niceAxisMax(0), 0);
+  assert.equal(niceAxisMax(-5), 0);
+});
+
+test("niceAxisMax: rounds up to the 1/2/4/8 x 10^k ladder", () => {
+  assert.equal(niceAxisMax(1.5993e8), 2e8); // zh ticks: 0/50M/100M/150M/200M
+  assert.equal(niceAxisMax(3.7e7), 4e7);
+  assert.equal(niceAxisMax(6.3e6), 8e6);
+  assert.equal(niceAxisMax(9.1e6), 1e7);
+  assert.equal(niceAxisMax(5234.56), 8000); // cost in micros
+  assert.equal(niceAxisMax(1), 1);
 });

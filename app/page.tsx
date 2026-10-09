@@ -25,6 +25,7 @@ import { headers } from "next/headers";
 import { Bell } from "lucide-react";
 import AuthChip from "@/components/AuthChip";
 import CountUpStat from "@/components/CountUpStat";
+import DecodingBackdrop from "@/components/DecodingBackdrop";
 import { DataMeta } from "@/components/data-display";
 import HoverPrefetchLink from "@/components/HoverPrefetchLink";
 import UnreadBadge from "@/components/UnreadBadge";
@@ -70,7 +71,7 @@ function FeaturedCard({
     </Link>
   );
   return (
-    <article className="rounded-2xl border border-line bg-card p-5 text-left">
+    <article className="rounded-2xl border border-line bg-card p-5 text-left transition-[border-color,translate] duration-200 hover:-translate-y-0.5 hover:border-paper/25 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <div className="flex items-center gap-2 font-mono text-xs">
         <span className="rounded-md border border-line px-1.5 py-px text-grey">
           {t(locale, f.kind === "post" ? "featured.kindPost" : "featured.kindWork")}
@@ -149,7 +150,8 @@ export default async function Home({
   return (
     <main data-theme-scope="poster" className="bg-bg">
       {/* ---- Poster zone: hero + primary CTA (the page's visual anchor) ---- */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 text-center">
+        <DecodingBackdrop />
         {/* Top-right controls: same set, order, and iconBtn shape as the
             in-shell TopBar; flex-wrap absorbs ultra-narrow viewports. The
             theme toggle flips <html data-theme>, re-skinning the poster
@@ -208,7 +210,7 @@ export default async function Home({
           aria-hidden="true"
           className="only-light h-44 w-44 rounded-2xl"
         />
-        <h1 className="mt-10 font-mono text-4xl font-semibold tracking-wide">
+        <h1 className="mt-10 font-mono font-semibold tracking-wide">
           kimi<span className="text-ui-blue">.</span>builders
         </h1>
         <p className="mt-5 text-lg font-medium">{t(locale, "home.tagline")}</p>
@@ -259,7 +261,7 @@ export default async function Home({
                     : ""
                 }`}
               >
-                <div className={`font-mono text-3xl font-semibold tracking-wide ${index === 3 ? "text-ui-blue" : ""}`}>
+                <div className={`font-mono text-3xl font-semibold tracking-wide tabular-nums ${index === 3 ? "text-ui-blue" : ""}`}>
                   <CountUpStat value={s.n} locale={locale} />
                 </div>
                 <div className="mt-2 font-mono text-xs tracking-[0.08em] text-grey">
@@ -342,7 +344,7 @@ export default async function Home({
               href="https://github.com/kimi-builders"
               target="_blank"
               rel="noopener noreferrer"
-              className="group rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20"
+              className="group rounded-2xl border border-line bg-card p-5 transition-[border-color,translate] duration-200 hover:-translate-y-0.5 hover:border-paper/25 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 GitHub
@@ -367,7 +369,7 @@ export default async function Home({
               href="https://github.com/kimi-builders/awesome-kimi-builders"
               target="_blank"
               rel="noopener noreferrer"
-              className="group rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20"
+              className="group rounded-2xl border border-line bg-card p-5 transition-[border-color,translate] duration-200 hover:-translate-y-0.5 hover:border-paper/25 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 Awesome Kimi Builders
@@ -390,7 +392,7 @@ export default async function Home({
           >
             <a
               href="mailto:hi@kimi.builders"
-              className="group rounded-2xl border border-line bg-card p-5 transition-colors hover:border-paper/20"
+              className="group rounded-2xl border border-line bg-card p-5 transition-[border-color,translate] duration-200 hover:-translate-y-0.5 hover:border-paper/25 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               <h3 className="font-mono text-sm text-paper transition-colors group-hover:text-ui-blue">
                 hi@kimi.builders

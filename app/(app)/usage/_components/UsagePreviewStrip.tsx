@@ -56,7 +56,7 @@ export default async function UsagePreviewStrip({
       className="usage-hero rounded-2xl bg-transparent p-5"
       label={label}
       value={value}
-      valueClassName="!text-3xl tracking-[-0.5px] text-paper"
+      valueClassName="!text-3xl tracking-[-0.5px] text-paper tabular-nums"
       description={caption}
     />
   );
