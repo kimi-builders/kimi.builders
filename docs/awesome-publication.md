@@ -2,7 +2,35 @@
 
 Production scheduling is not enabled by this implementation. The existing site
 works and member `also_awesome` rules remain authoritative for member content.
-External project fields come from the fixed community repository's approved main.
+Repository-managed external project fields come from the fixed community repository's
+approved main. Unmapped historical recommendations retain their existing ownership;
+they are not evidence of repository review.
+
+## Collection scope
+
+Awesome selects interesting, useful projects that meet real user needs. Projects may
+be developed with any Agent and need a verifiable connection under at least one of
+three alternative scopes:
+
+- **Built on Kimi** (`base`): Kimi models or APIs power the project's core capability
+  at runtime, regardless of the Agent used for development.
+- **For Kimi ecosystem** (`eco`): tools, integrations, or resources explicitly serve
+  Kimi users or its ecosystem; Kimi need not participate in development.
+- **Kimi helped build** (`part`): Kimi actually participated in development; the
+  finished project need not use Kimi at runtime.
+
+Do not require all three scopes or make Kimi-assisted development a prerequisite for
+`base` or `eco`. Reviewers choose the supported scope using first-party evidence and
+record Agent participation accurately; runtime or ecosystem compatibility alone does
+not establish which Agent developed a project. Use the content repository's
+[contribution guide](https://github.com/kimi-builders/awesome-kimi-builders/blob/main/CONTRIBUTING.md)
+and [entry schema](https://github.com/kimi-builders/awesome-kimi-builders/blob/main/data/README.md)
+for the full criteria and field definitions.
+
+This scope clarification changes neither the publication protocol nor ownership.
+New external entries still require repository review; historical recommendations
+remain distinguishable; member work appears only through its existing opt-in. It
+also does not publish pending entries or establish missing evidence on their behalf.
 
 ## Before first activation
 

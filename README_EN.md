@@ -34,10 +34,30 @@ product, role, tag, and archive lenses appear only when content exists for them.
 
 - **Works** is the wall for work members made with Kimi, with optional links, source,
   media, and declared tokens;
-- **Awesome** contains external Kimi-related projects recommended by members, keeping
-  the original author, source, and collection scope visible;
+- **Awesome** brings together repository-listed external projects, legacy external
+  recommendations, and member work whose authors choose to include it. Original
+  authors, provenance, and collection scope remain visible;
 - both use the same project detail and discussion system, without presenting external
-  projects as member work.
+  projects as member work or legacy recommendations as repository-reviewed entries.
+
+Awesome looks for interesting, useful projects that meet real user needs. A project
+may be developed with any Agent; it does not have to be developed with Kimi. It must
+have a verifiable connection under **at least one** of these three scopes:
+
+| Scope | What qualifies |
+|---|---|
+| **Built on Kimi** (`base`) | Kimi models or APIs power the project's core capability at runtime, regardless of which Agent helped develop it. |
+| **For Kimi ecosystem** (`eco`) | Tools, integrations, or resources explicitly serve Kimi users or the Kimi ecosystem; development with Kimi is not required. |
+| **Kimi helped build** (`part`) | Kimi actually participated in development; the finished project need not use Kimi at runtime. |
+
+These are alternative ways to qualify, not three requirements to satisfy together.
+For example, a Kimi integration developed with Codex or Claude Code can qualify under
+`eco`, while an app developed with Kimi can qualify under `part` even if it runs
+without Kimi. Record the Agents actually involved and evidence for the selected scope;
+do not infer development tools from a project's runtime or ecosystem compatibility.
+See the [Awesome contribution guide](https://github.com/kimi-builders/awesome-kimi-builders/blob/main/CONTRIBUTING.md)
+for review and submission requirements. New external recommendations go through that
+repository; existing member work remains an author-controlled opt-in.
 
 Declared tokens are Builder-reported and only capped by synced aggregate usage. They
 are not exact per-project consumption, a skill credential, or an official endorsement.
