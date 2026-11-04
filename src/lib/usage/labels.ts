@@ -16,6 +16,7 @@ const SOURCE_LABELS: Record<string, string> = {
   qoder: "Qoder",
   "qoder-cn": "Qoder CN",
   dsh: "DeepSeek Harness",
+  stepcode: "StepCode",
   cursor: "Cursor",
   zcode: "Zcode",
   workbuddy: "WorkBuddy",

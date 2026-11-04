@@ -28,7 +28,8 @@ test("device identity route requires the settings scope and returns no-store JSO
 });
 
 test("new Beta usage sources are accepted with distinct labels without billing-tier aliases", () => {
-  for (const id of ["qoder", "qoder-cn", "dsh"]) assert.equal(isUsageSourceId(id), true);
+  for (const id of ["qoder", "qoder-cn", "dsh", "stepcode"]) assert.equal(isUsageSourceId(id), true);
   assert.equal(isUsageSourceId("qoder-auto"), false);
   assert.deepEqual(["qoder", "qoder-cn", "dsh"].map(usageSourceLabel), ["Qoder", "Qoder CN", "DeepSeek Harness"]);
+  assert.equal(usageSourceLabel("stepcode"), "StepCode");
 });

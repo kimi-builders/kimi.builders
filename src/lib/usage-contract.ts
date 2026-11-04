@@ -19,7 +19,7 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "dimagent", tier: "beta" },
   { id: "openclaw", tier: "beta" },
   { id: "omp", tier: "beta" },
-  { id: "pi-coding-agent", tier: "stable" },
+  { id: "pi-coding-agent", tier: "beta" },
   { id: "qwen-code", tier: "beta" },
   { id: "amp", tier: "beta" },
   { id: "droid", tier: "beta" },
@@ -32,10 +32,11 @@ export const USAGE_SOURCE_CATALOG = [
   { id: "qoder", tier: "beta" },
   { id: "qoder-cn", tier: "beta" },
   { id: "dsh", tier: "beta" },
+  { id: "stepcode", tier: "beta" },
   { id: "cline", tier: "beta" },
   { id: "roo-code", tier: "stable" },
-  { id: "zcode", tier: "stable" },
-  { id: "workbuddy", tier: "stable" },
+  { id: "zcode", tier: "beta" },
+  { id: "workbuddy", tier: "beta" },
 ] as const;
 
 export type UsageSource = (typeof USAGE_SOURCE_CATALOG)[number];

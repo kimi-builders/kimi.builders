@@ -24,6 +24,7 @@ import MinimaxColor from "@lobehub/icons/es/Minimax/components/Color";
 import GrokMono from "@lobehub/icons/es/Grok/components/Mono";
 import KiroColor from "@lobehub/icons/es/Kiro/components/Color";
 import DeepSeekColor from "@lobehub/icons/es/DeepSeek/components/Color";
+import StepfunMono from "@lobehub/icons/es/Stepfun/components/Mono";
 
 const ICONS = {
   kimi: KimiMono,
@@ -53,6 +54,7 @@ const ICONS = {
   qoder: QoderColor,
   "qoder-cn": QoderColor,
   dsh: DeepSeekColor,
+  stepcode: StepfunMono,
   /* Zhipu Z.ai / Tencent / Pi: ZAI and Pi are Mono-only (currentColor
      follows the theme); WorkBuddy has no dedicated mark yet and
      reuses the sibling CodeBuddy brand mark. */

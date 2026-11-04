@@ -26,14 +26,42 @@ test("public pricing catalog exposes a cacheable versioned contract", async () =
 });
 
 test("canonical catalog is synchronized with the current Usage release", () => {
-  assert.equal(USAGE_PRICE_CATALOG.revision, 8);
-  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-10-08");
-  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-10-08T00:00:00.000Z");
-  assert.equal(USAGE_PRICE_CATALOG.entries.length, 167);
+  assert.equal(USAGE_PRICE_CATALOG.revision, 10);
+  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-10-29");
+  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-10-29T00:00:00.000Z");
+  assert.equal(USAGE_PRICE_CATALOG.entries.length, 175);
   assert.equal(
     USAGE_PRICE_CATALOG.integrity.digest,
-    "6fbe5158fe6b744a18825a715884c64a4fe220653c58e7b672dc88f24882ac00",
+    "1afaea28762e774467c1ebf99c271f2442bba37349a9c902559b9e69bbc4e6ab",
   );
+});
+
+test("new model prices, historical boundaries and unknown cache TTL remain explicit", async () => {
+  const prices = await loadModelPrices();
+  const at = new Date("2026-10-29T12:00:00Z");
+  for (const [model, input, read, output] of [
+    ["kimi-k3.1-pro", 2, .2, 10], ["kimi-k3.1-pro-highspeed", 4, .2, 20],
+    ["gpt-6.1-terra", 1, .05, 5], ["gemini-4-argon", 2, .1, 10],
+  ] as const) {
+    const price = matchModelPrice(prices, `vendor/${model}`, at);
+    assert.deepEqual([price?.inputPerMtok, price?.cacheReadPerMtok, price?.outputPerMtok], [input, read, output]);
+  }
+  assert.equal(matchModelPrice(prices, "gpt-6.1-terra", at, undefined, "long")?.inputPerMtok, 2);
+  assert.equal(matchModelPrice(prices, "kimi-k3.1-pro", new Date("2026-10-23T15:59:59Z")), null);
+  assert.equal(matchModelPrice(prices, "kimi-k3.1-pro", new Date("2026-10-23T16:00:00Z"))?.inputPerMtok, 2);
+  assert.equal(matchModelPrice(prices, "kimi-k3.1-pro-highspeed", new Date("2026-10-23T16:00:00Z"))?.inputPerMtok, 4);
+  assert.equal(matchModelPrice(prices, "kimi-k3.1-unknown", at), null);
+  assert.equal(matchModelPrice(prices, "gemini-4", at), null);
+  assert.equal(matchModelPrice(prices, "gemini-4-argon", new Date("2026-12-01T00:00:00Z"))?.inputPerMtok, 4);
+  const price = matchModelPrice(prices, "kimi-k3.1-pro", at);
+  const partial = estimateCostMicros({ inputTokens: 0, cacheWriteInputTokens: 1_000_000,
+    cacheWrite1hInputTokens: 1_000_000, cacheReadInputTokens: 0, outputTokens: 0, reasoningOutputTokens: 0 }, price);
+  assert.equal(partial.status, "partial");
+  assert.equal(partial.unpricedTokens, 1_000_000);
+  const assumed = estimateCostMicros({ inputTokens: 0, cacheWriteInputTokens: 1_000_000,
+    cacheReadInputTokens: 0, outputTokens: 0, reasoningOutputTokens: 0 }, price);
+  assert.equal(assumed.micros, 2_000_000);
+  assert.ok(assumed.assumptions.includes("cache-write-ttl"));
 });
 
 test("MiMo V2.6 keeps Pro, Flash, UltraSpeed and explicit Batch tariffs separate", async () => {
@@ -135,7 +163,18 @@ test("previous catalog revision ETags cannot mask the MiMo and StepFun update", 
     { headers: { "If-None-Match": '"sha256-68422f74682967c3f0e09a0bae9a77e1c8779270c9a6e2b1758d094441a7e8ec"' } },
   ));
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).revision, 8);
+  assert.equal((await response.json()).revision, 10);
+});
+
+test("the Kimi launch boundary correction invalidates revision 9", async () => {
+  const previousETag = '"sha256-3562c2c34bf0a46bcabcefbbfa61d364ffb4dd13f95099830df1511a8ef287ef"';
+  const response = await GET(new NextRequest(
+    "https://kimi.builders/api/public/usage-pricing/v1/catalog",
+    { headers: { "If-None-Match": previousETag } },
+  ));
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).revision, 10);
+  assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
 });
 
 test("public pricing catalog honors If-None-Match", async () => {
@@ -477,7 +516,7 @@ test("old catalog ETags receive the new revision instead of a false 304", async 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
   const body = await response.json();
-  assert.equal(body.revision, 8);
+  assert.equal(body.revision, 10);
 });
 
 test("the corrected Qwen catalog invalidates the previous revision's ETag", async () => {
@@ -490,7 +529,7 @@ test("the corrected Qwen catalog invalidates the previous revision's ETag", asyn
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
   const body = await response.json();
-  assert.equal(body.revision, 8);
+  assert.equal(body.revision, 10);
   const qwen = body.entries.find((entry: { pattern: string }) => entry.pattern === "qwen3.8-flash");
   assert.equal(qwen.cacheWrite, "0.177");
   assert.equal(qwen.cacheRead, "0.014");

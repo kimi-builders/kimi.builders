@@ -169,7 +169,8 @@ function matchExactOrPrefix(
     .filter((price) => {
       const patternMatches = price.matchKind === "exact"
         ? price.modelPattern === name
-        : name.startsWith(price.modelPattern);
+        : name.startsWith(price.modelPattern) &&
+          !(price.modelPattern === "kimi-k3" && name.startsWith("kimi-k3."));
       return patternMatches &&
         inWindow(price) &&
         contextRank(price) >= 0 &&
@@ -246,7 +247,8 @@ export function estimateCostMicros(
     ],
     [
       cacheWrite1h,
-      price.cacheWrite1hPerMtok ?? price.cacheWritePerMtok ?? price.inputPerMtok,
+      price.cacheWrite1hPerMtok ?? (price.cacheWrite5mPerMtok !== null
+        ? null : price.cacheWritePerMtok ?? price.inputPerMtok),
     ],
     [tokens.cacheReadInputTokens, price.cacheReadPerMtok],
     [tokens.outputTokens, price.outputPerMtok],
@@ -269,7 +271,6 @@ export function estimateCostMicros(
   if (
     unclassifiedCacheWrite > 0 &&
     price.cacheWrite5mPerMtok !== null &&
-    price.cacheWrite1hPerMtok !== null &&
     price.cacheWrite5mPerMtok !== price.cacheWrite1hPerMtok
   ) {
     assumptions.push("cache-write-ttl");

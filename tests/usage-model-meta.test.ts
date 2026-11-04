@@ -88,9 +88,26 @@ test("K3 context-window variants remain separate", () => {
   assert.equal(canonicalUsageModel({ model: "kimi-k2.5" }), "kimi-k2.5");
 });
 
+test("K3.1 aliases retain their distinct model, vendor and display identity", () => {
+  for (const [model, canonical, label] of [
+    ["kimi-code/k3.1-pro", "kimi-k3.1-pro", "Kimi K3.1 Pro"],
+    ["k3.1-pro-highspeed", "kimi-k3.1-pro-highspeed", "Kimi K3.1 Pro Highspeed"],
+  ]) {
+    const identity = { source: "kimi-code", model };
+    assert.equal(canonicalUsageModel(identity), canonical);
+    assert.equal(usageModelDisplayName(identity), label);
+    assert.equal(usageModelIconId(identity), "kimi");
+    assert.match(usageModelDetail(identity), /canonical: kimi-k3\.1-pro/);
+  }
+  assert.equal(canonicalUsageModel({ source: "codex", model: "k3.1-pro" }), "k3.1-pro");
+});
+
 test("current model labels preserve raw IDs and stored canonical versions", () => {
   for (const [model, label] of [
     ["gpt-6.1-sol", "GPT-6.1 Sol"],
+    ["gpt-6.1-terra", "GPT-6.1 Terra"],
+    ["gemini-4-argon", "Gemini 4 Argon"],
+    ["gemini-3.6-flash", "Gemini 3.6 Flash"],
     ["gpt-6-sol", "GPT-6 Sol"],
     ["gpt-6-luna", "GPT-6 Luna"],
     ["claude-opus-5-5", "Claude Opus 5.5"],
