@@ -1022,6 +1022,14 @@ const DICT = {
     zh: "同步工具只在本机读取各 Agent 的统计日志。上传前会展示字段预览；对话内容、完整路径和供应商凭据不会离开设备。",
     en: "The sync tool reads statistical logs from your agents locally. You preview the fields before upload; conversations, full paths, and provider credentials never leave the device.",
   },
+  "usage.cursorCsvSource": {
+    zh: "Cursor（需导入 CSV）",
+    en: "Cursor (CSV import)",
+  },
+  "usage.kimiWorkSource": {
+    zh: "Kimi Work 桌面用量默认只在本机统计。单独开启桌面同步后，可在 Kimi Code 下查看。",
+    en: "Kimi Work desktop usage stays local by default. Enable desktop sync to include it under Kimi Code.",
+  },
   "usage.daemonNote": {
     zh: "以当前用户身份运行，不需要管理员权限；设备休眠或离线时不工作。升级同步工具后执行一次「重启」。",
     en: "Runs as your user, no admin needed; pauses when the device sleeps or is offline. Restart once after upgrading the sync tool.",

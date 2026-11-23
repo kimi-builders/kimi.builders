@@ -642,6 +642,33 @@ async function main() {
     // Period-over-period: the previous window (Mar-Apr, no data) is
     // zero.
     assert.equal(weekly.previous.totalTokens, 0);
+
+    // Re-syncing the same requests from either CLI generation must not inflate OpenCode usage.
+    const oldBucket = {
+      source: "opencode", model: "openai/gpt-6.2-sol", modelProvider: "openai",
+      bucketStart: "2026-11-20T10:00:00.000Z", inputTokens: 400_000, outputTokens: 0,
+      cacheWriteInputTokens: 0, cacheReadInputTokens: 0, reasoningOutputTokens: 0,
+      requestCount: 2, measurement: "exact",
+    };
+    const splitBuckets = [
+      { ...oldBucket, contextTier: "short", inputTokens: 100_000, requestCount: 1 },
+      { ...oldBucket, contextTier: "long", inputTokens: 300_000, requestCount: 1 },
+    ];
+    const syncOpenCode = (buckets: (typeof oldBucket)[]) => ingestUsage(deviceA.principal,
+      validateUsageIngest({ protocolVersion: 2, client: clientMeta(), buckets, sessions: [] }, settings));
+    const mixedFirstSync = await syncOpenCode([oldBucket, ...splitBuckets]);
+    assert.deepEqual([mixedFirstSync.buckets, mixedFirstSync.protectedBuckets], [0, 3]);
+    await syncOpenCode([oldBucket]);
+    assert.equal((await syncOpenCode([splitBuckets[0]])).protectedBuckets, 1);
+    await syncOpenCode(splitBuckets);
+    await syncOpenCode(splitBuckets);
+    assert.equal((await syncOpenCode([oldBucket])).protectedBuckets, 1);
+    const upgraded = await getUsageOverview(userId, parseUsageFilters({
+      from: "2026-11-20", to: "2026-11-20", sources: "opencode",
+    }, { uploadProject: true, now: new Date("2026-11-21T00:00:00Z") }));
+    assert.deepEqual([upgraded.totals.totalTokens, upgraded.totals.requests, upgraded.totals.costMicros],
+      [400_000, 2, 1_400_000]);
+    assert.equal(upgraded.distributions.model.rows[0].label, "GPT-6.2 Sol");
   } finally {
     await pool.query("DELETE FROM users WHERE id IN (?, ?)", [userId, otherUserId]);
     await pool.end();

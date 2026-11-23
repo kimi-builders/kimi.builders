@@ -8,6 +8,7 @@ import {
   usageInitMeaning,
   usageSyncMeaning,
 } from "@/src/lib/usage/device-onboarding";
+import { LOCAL_USAGE_AGENTS } from "@/src/lib/usage/labels";
 import CopyUsageCommandButton from "./CopyUsageCommandButton";
 import UsageMethodologyDialog from "./UsageMethodologyDialog";
 
@@ -26,12 +27,6 @@ export function UsageFirstRun({
 }) {
   const locale: Locale = zh ? "zh" : "en";
   const command = hasAuthorizedDevice ? USAGE_SYNC_COMMAND : USAGE_INIT_COMMAND;
-  /* Matches the usage-cli README's "supported local sources": 11
-     auto-scanned + Cursor with explicit opt-in. */
-  const sources = [
-    "Kimi Code", "Claude Code", "Codex", "OpenCode", "Gemini CLI", "Antigravity",
-    "Copilot CLI", "Roo Code", "Pi Agent", "ZCode", "WorkBuddy",
-  ];
 
   return (
     <section className="mt-6 rounded-2xl border border-blue/35 bg-blue/5 p-5 sm:p-6" aria-labelledby="usage-first-run-title">
@@ -50,15 +45,15 @@ export function UsageFirstRun({
             {t(locale, "usage.firstRunBody")}
           </p>
           <div className="mt-3 flex max-w-3xl flex-wrap gap-1.5">
-            {sources.map((s) => (
-              <span key={s} className="rounded-md border border-line bg-bg px-2 py-1 font-mono text-xs text-grey">
-                {s}
+            {Object.entries(LOCAL_USAGE_AGENTS).map(([id, label]) => (
+              <span key={id} className={id === "cursor"
+                ? "rounded-md border border-dashed border-line px-2 py-1 font-mono text-xs text-grey/80"
+                : "rounded-md border border-line bg-bg px-2 py-1 font-mono text-xs text-grey"}>
+                {id === "cursor" ? t(locale, "usage.cursorCsvSource") : label}
               </span>
             ))}
-            <span className="rounded-md border border-dashed border-line px-2 py-1 font-mono text-xs text-grey/80">
-              {zh ? "Cursor(CSV 显式启用)" : "Cursor (explicit CSV)"}
-            </span>
           </div>
+          <p className="mt-2 text-xs leading-relaxed text-grey">{t(locale, "usage.kimiWorkSource")}</p>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <div>

@@ -3,6 +3,7 @@ import test from "node:test";
 import { NextRequest } from "next/server";
 
 import { GET } from "../app/api/public/usage-pricing/v1/catalog/route";
+import { canonicalUsageModel } from "../src/lib/usage/model-meta";
 import {
   USAGE_PRICE_CATALOG,
   USAGE_PRICE_CATALOG_ETAG,
@@ -26,13 +27,13 @@ test("public pricing catalog exposes a cacheable versioned contract", async () =
 });
 
 test("canonical catalog is synchronized with the current Usage release", () => {
-  assert.equal(USAGE_PRICE_CATALOG.revision, 10);
-  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-10-29");
-  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-10-29T00:00:00.000Z");
-  assert.equal(USAGE_PRICE_CATALOG.entries.length, 175);
+  assert.equal(USAGE_PRICE_CATALOG.revision, 13);
+  assert.equal(USAGE_PRICE_CATALOG.catalogVersion, "2026-11-23");
+  assert.equal(USAGE_PRICE_CATALOG.publishedAt, "2026-11-23T00:00:00.000Z");
+  assert.equal(USAGE_PRICE_CATALOG.entries.length, 204);
   assert.equal(
     USAGE_PRICE_CATALOG.integrity.digest,
-    "1afaea28762e774467c1ebf99c271f2442bba37349a9c902559b9e69bbc4e6ab",
+    "f389ad7bdd12b5c55f343f24a1ce1308838be03fdafd5938739c1371a7599cb7",
   );
 });
 
@@ -163,7 +164,7 @@ test("previous catalog revision ETags cannot mask the MiMo and StepFun update", 
     { headers: { "If-None-Match": '"sha256-68422f74682967c3f0e09a0bae9a77e1c8779270c9a6e2b1758d094441a7e8ec"' } },
   ));
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).revision, 10);
+  assert.equal((await response.json()).revision, USAGE_PRICE_CATALOG.revision);
 });
 
 test("the Kimi launch boundary correction invalidates revision 9", async () => {
@@ -173,7 +174,7 @@ test("the Kimi launch boundary correction invalidates revision 9", async () => {
     { headers: { "If-None-Match": previousETag } },
   ));
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).revision, 10);
+  assert.equal((await response.json()).revision, USAGE_PRICE_CATALOG.revision);
   assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
 });
 
@@ -184,6 +185,53 @@ test("public pricing catalog honors If-None-Match", async () => {
   ));
   assert.equal(response.status, 304);
   assert.equal(await response.text(), "");
+});
+
+test("November rows reprice stored KFC identities and separate GPT-6.2 contexts", async () => {
+  const prices = await loadModelPrices();
+  const at = new Date("2026-11-23T00:00:00Z");
+  const source = "kimi-code";
+  const model = "KFC/k3.1-pro";
+  const identity = canonicalUsageModel({ source, model, modelCanonical: model.toLowerCase(), bucketStart: at });
+  const price = matchModelPrice(prices, identity, at, source);
+  assert.equal(price?.modelPattern, "kimi-k3.1-pro");
+  assert.equal(matchModelPrice(prices, model, at, source)?.inputPerMtok, 2);
+  for (const name of ["k3.1-pro", "ABC/k3.1-pro", "org/配置 A/K3.1-PRO"]) {
+    assert.equal(matchModelPrice(prices, name, at, "opencode")?.modelPattern, "kimi-k3.1-pro");
+    assert.equal(matchModelPrice(prices, name + "-highspeed", at)?.inputPerMtok, 4);
+  }
+  assert.equal(matchModelPrice(prices, "gpt-5.6-sol/ABC/gpt-6.2-astra", at)?.modelPattern, "gpt-6.2-astra");
+  for (const name of ["gpt-5.6-sol/unknown", "gpt-5.6-sol/", "ABC/k3.1-pro-custom"]) {
+    assert.equal(matchModelPrice(prices, name, at), null);
+  }
+  const cost = estimateCostMicros({ inputTokens: 1_000_000, outputTokens: 1_000_000, cacheReadInputTokens: 1_000_000,
+    cacheWriteInputTokens: 0, reasoningOutputTokens: 0 }, price);
+  assert.deepEqual([cost.status, cost.micros], ["priced", 12_200_000]);
+  for (const [id, short, long] of [["gpt-6.2-astra", 8, 16], ["gpt-6.2-sol", 2, 4]] as const) {
+    assert.equal(matchModelPrice(prices, id, at, "codex", "short")?.inputPerMtok, short);
+    assert.equal(matchModelPrice(prices, id, at, "codex", "long")?.inputPerMtok, long);
+    assert.equal(matchModelPrice(prices, id + "-law", at), null);
+  }
+  assert.equal(matchModelPrice(prices, "anthropic/claude-fable-5.2", at)?.cacheReadPerMtok, .2);
+  assert.equal(matchModelPrice(prices, "Claude Fable 5.2", new Date("2026-11-08T12:00:00Z")), null);
+  assert.equal(matchModelPrice(prices, "gemini-4-carbon", new Date("2026-12-01T00:00:00Z"))?.cacheReadPerMtok, .2);
+  assert.equal(matchModelPrice(prices, "minimax-m3.1-flash", at, "codex", "long")?.inputPerMtok, .15);
+});
+
+test("Ultrafast catalog rates change at the promotion cutoff for both request sizes", async () => {
+  const prices = await loadModelPrices();
+  const cutoff = new Date("2027-03-01T08:00:00Z");
+  for (const [model, context, input, output] of [
+    ["gpt-6.2-astra", "short", 24, 120],
+    ["gpt-6.2-astra", "long", 48, 180],
+    ["gpt-6.2-sol", "short", 6, 30],
+    ["gpt-6.2-sol", "long", 12, 45],
+  ] as const) {
+    const promo = matchModelPrice(prices, model, new Date(cutoff.getTime() - 1), "codex", context, "ultrafast");
+    const regular = matchModelPrice(prices, model, cutoff, "codex", context, "ultrafast");
+    assert.deepEqual([promo?.inputPerMtok, promo?.outputPerMtok], [input, output]);
+    assert.deepEqual([regular?.inputPerMtok, regular?.outputPerMtok], [input * 2, output * 2]);
+  }
 });
 
 test("site pricing uses the canonical catalog and processing tier", async () => {
@@ -516,7 +564,7 @@ test("old catalog ETags receive the new revision instead of a false 304", async 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
   const body = await response.json();
-  assert.equal(body.revision, 10);
+  assert.equal(body.revision, USAGE_PRICE_CATALOG.revision);
 });
 
 test("the corrected Qwen catalog invalidates the previous revision's ETag", async () => {
@@ -529,7 +577,7 @@ test("the corrected Qwen catalog invalidates the previous revision's ETag", asyn
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("etag"), USAGE_PRICE_CATALOG_ETAG);
   const body = await response.json();
-  assert.equal(body.revision, 10);
+  assert.equal(body.revision, USAGE_PRICE_CATALOG.revision);
   const qwen = body.entries.find((entry: { pattern: string }) => entry.pattern === "qwen3.8-flash");
   assert.equal(qwen.cacheWrite, "0.177");
   assert.equal(qwen.cacheRead, "0.014");

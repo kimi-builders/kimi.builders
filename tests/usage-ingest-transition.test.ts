@@ -134,3 +134,74 @@ test("pricing metadata replaces a request-metadata-only aggregate", async () => 
   assert.equal(planned.protectedCount, 0);
   assert.equal(db.sql.some((statement) => statement.startsWith("DELETE")), true);
 });
+
+test("GPT-6.2 prompt-length splits cannot coexist with a former single-tier row or erase another variant", async () => {
+  const model = "gpt-6.2-astra";
+  const old = { ...existing(100), model, processing_tier: "standard" };
+  const incoming = [bucket(60, { model, processingTier: "standard", contextTier: "short" }),
+    bucket(40, { model, processingTier: "standard", contextTier: "long" })];
+  const ok = connection([old]);
+  assert.deepEqual((await prepareBucketMetadataTransition(ok.value, principal, incoming)).accepted, incoming);
+  assert.ok(ok.sql.some(s => s.startsWith("DELETE")));
+  for (const other of [{ input_tokens: 101 }, { reasoning_effort: "high" }]) {
+    const db = connection([{ ...old, ...other }]);
+    assert.equal((await prepareBucketMetadataTransition(db.value, principal, incoming)).protectedCount, 2);
+    assert.ok(!db.sql.some(s => s.startsWith("DELETE")));
+  }
+  const split = connection([{ ...old, context_tier: "long" }]);
+  assert.equal((await prepareBucketMetadataTransition(split.value, principal, [bucket(100, { model })])).protectedCount, 1);
+  assert.ok(!split.sql.some(s => s.startsWith("DELETE")));
+  const formerFast = connection([{ ...old, input_tokens: 60 }, { ...old, input_tokens: 40, processing_tier: "" }]);
+  const upgraded = [incoming[0], { ...incoming[1], processingTier: "priority" as const }];
+  assert.deepEqual((await prepareBucketMetadataTransition(formerFast.value, principal, upgraded)).accepted, upgraded);
+  assert.ok(formerFast.sql.some(s => s.startsWith("DELETE")));
+});
+
+test("OpenCode context upgrades protect old totals and ignore later unsplit replays", async () => {
+  for (const model of ["openai/gpt-6.2-astra", "gpt-6.2-sol", "gpt-5.6-sol", "gpt-6-astra"]) {
+    const source = "opencode";
+    const old = { ...existing(100), source, model, model_provider: "openai" };
+    const base = { source, model, modelProvider: "openai" } as const;
+    const split = [
+      bucket(60, { ...base, contextTier: "short" }),
+      bucket(40, { ...base, contextTier: "long" }),
+    ];
+    for (const incomplete of [[split[0]], [split[0], bucket(50, base)]]) {
+      const db = connection([old]);
+      const result = await prepareBucketMetadataTransition(db.value, principal, incomplete);
+      assert.equal(result.protectedCount, incomplete.length);
+      assert.deepEqual(result.accepted, []);
+      assert.ok(!db.sql.some(s => s.startsWith("DELETE")));
+    }
+    const db = connection([old]);
+    assert.deepEqual((await prepareBucketMetadataTransition(db.value, principal, split)).accepted, split);
+    assert.ok(db.sql.some(s => s.startsWith("DELETE")));
+    const replay = connection([{ ...old, input_tokens: 60, context_tier: "short" }]);
+    assert.equal((await prepareBucketMetadataTransition(replay.value, principal, [bucket(100, base)])).protectedCount, 1);
+    assert.ok(!replay.sql.some(s => s.startsWith("DELETE")));
+  }
+});
+
+test("first sync cannot store both an unsplit total and its context breakdown", async () => {
+  const model = "gpt-6.2-sol";
+  const separate = bucket(5, { model: "other" });
+  const mixed = [bucket(100, { model }), bucket(100, { model, contextTier: "short" })];
+  const db = connection([]);
+  const result = await prepareBucketMetadataTransition(db.value, principal, [...mixed, separate]);
+  assert.deepEqual(result, { accepted: [separate], protectedCount: 2 });
+});
+
+test("a bare legacy replay cannot replace a priced tier while awaiting a context upgrade", async () => {
+  const model = "gpt-6.2-astra";
+  const plain = bucket(100, { model });
+  const priority = { ...existing(100), model, processing_tier: "priority" };
+  const db = connection([priority]);
+  assert.deepEqual(await prepareBucketMetadataTransition(db.value, principal, [plain]),
+    { accepted: [], protectedCount: 1 });
+  assert.ok(!db.sql.some(s => s.startsWith("DELETE")));
+  const hasBoth = connection([priority, { ...existing(20), model }]);
+  const update = bucket(25, { model });
+  assert.deepEqual(await prepareBucketMetadataTransition(hasBoth.value, principal, [update]),
+    { accepted: [update], protectedCount: 0 });
+  assert.ok(!hasBoth.sql.some(s => s.startsWith("DELETE")));
+});

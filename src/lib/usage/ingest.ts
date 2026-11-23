@@ -3,7 +3,7 @@ import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getPool } from "../db";
 import { projectLabelHash } from "./crypto";
 import type { UsageKeyPrincipal } from "./auth";
-import { canonicalUsageModel } from "./model-meta";
+import { canonicalUsageModel, modelLeaf } from "./model-meta";
 
 interface ExistingBucketRow extends RowDataPacket {
   source: string;
@@ -33,6 +33,8 @@ export function canonicalBucketModel(
 function incomingBucketKey(
   bucket: UsageIngestRequestV2["buckets"][number],
   projectHash = projectLabelHash(bucket.project),
+  contextTier: string | undefined = bucket.contextTier,
+  processingTier: string | undefined = bucket.processingTier,
 ): string {
   return [
     bucket.source.toLowerCase(),
@@ -40,22 +42,22 @@ function incomingBucketKey(
     (bucket.modelProvider ?? "").toLowerCase(),
     (bucket.reasoningEffort ?? "").toLowerCase(),
     (bucket.agentVersion ?? "").toLowerCase(),
-    (bucket.contextTier ?? "").toLowerCase(),
-    (bucket.processingTier ?? "").toLowerCase(),
+    (contextTier ?? "").toLowerCase(),
+    (processingTier ?? "").toLowerCase(),
     projectHash.toString("hex"),
     bucket.bucketStart,
   ].join("\u0000");
 }
 
-function existingBucketKey(row: ExistingBucketRow): string {
+function existingBucketKey(row: ExistingBucketRow, contextTier = row.context_tier, processingTier = row.processing_tier): string {
   return [
     row.source.toLowerCase(),
     row.model.toLowerCase(),
     String(row.model_provider).toLowerCase(),
     String(row.reasoning_effort).toLowerCase(),
     String(row.agent_version).toLowerCase(),
-    String(row.context_tier).toLowerCase(),
-    String(row.processing_tier).toLowerCase(),
+    String(contextTier).toLowerCase(),
+    String(processingTier).toLowerCase(),
     String(row.project_hash).toLowerCase(),
     row.bucket_start.toISOString(),
   ].join("\u0000");
@@ -113,6 +115,14 @@ function hasPricingMetadata(bucket: UsageIngestRequestV2["buckets"][number]): bo
   );
 }
 
+function gainsRequestContextTier(source: string, model: string): boolean {
+  if (source !== "opencode" && source !== "codex") return false;
+  const leaf = modelLeaf(model).toLowerCase();
+  if (/^gpt-6\.2-(?:astra|sol)$/.test(leaf)) return true;
+  // Codex already split these families before OpenCode added request context.
+  return source === "opencode" && (leaf.startsWith("gpt-5.6") || leaf.startsWith("gpt-6-astra"));
+}
+
 /* v2 additive metadata expands a former base bucket into request-metadata
    variants. On the first upgraded sync, atomically replace the old unsplit row
    only when the complete incoming variant group is at least as large. A
@@ -126,16 +136,19 @@ export async function prepareBucketMetadataTransition(
   accepted: UsageIngestRequestV2["buckets"][number][];
   protectedCount: number;
 }> {
-  const candidateBuckets = buckets.filter(hasRequestMetadata);
+  const candidateBuckets = buckets.filter((b) => hasRequestMetadata(b) || gainsRequestContextTier(b.source, b.model));
   if (candidateBuckets.length === 0) return { accepted: [...buckets], protectedCount: 0 };
 
   const candidateByBase = new Map<string, {
     bucket: UsageIngestRequestV2["buckets"][number];
     projectHash: Buffer;
+    hasMetadata: boolean;
   }>();
   for (const bucket of candidateBuckets) {
     const projectHash = projectLabelHash(bucket.project);
-    candidateByBase.set(incomingBucketBaseKey(bucket, projectHash), { bucket, projectHash });
+    const key = incomingBucketBaseKey(bucket, projectHash);
+    const hasMetadata = hasRequestMetadata(bucket) || candidateByBase.get(key)?.hasMetadata === true;
+    candidateByBase.set(key, { bucket, projectHash, hasMetadata });
   }
   const tuples = [...candidateByBase.values()];
   const placeholders = tuples.map(() => "(?, ?, ?, ?)").join(", ");
@@ -163,6 +176,9 @@ export async function prepareBucketMetadataTransition(
     total: number;
     hasMetadata: boolean;
     hasPricingMetadata: boolean;
+    hasContext: boolean;
+    hasPlainRow: boolean;
+    byVariant: Map<string, number>;
   }>();
   for (const row of rows) {
     const key = existingBucketBaseKey(row);
@@ -170,32 +186,80 @@ export async function prepareBucketMetadataTransition(
       total: 0,
       hasMetadata: false,
       hasPricingMetadata: false,
+      hasContext: false,
+      hasPlainRow: false,
+      byVariant: new Map<string, number>(),
     };
     current.total += existingTokenTotal(row);
-    current.hasMetadata ||= Boolean(
+    const requestMetadata = Boolean(
       row.model_provider || row.reasoning_effort || row.agent_version,
     );
-    current.hasPricingMetadata ||= Boolean(
+    const pricingMetadata = Boolean(
       row.context_tier || row.processing_tier ||
       Number(row.cache_write_5m_input_tokens) || Number(row.cache_write_1h_input_tokens),
     );
+    current.hasMetadata ||= requestMetadata;
+    current.hasPricingMetadata ||= pricingMetadata;
+    current.hasPlainRow ||= !requestMetadata && !pricingMetadata;
+    current.hasContext ||= Boolean(row.context_tier);
+    if (gainsRequestContextTier(row.source, row.model)) {
+      // An old unlabelled tier can become Fast; protect the whole parent plus
+      // each explicitly recorded tier without requiring the blank tier to survive.
+      for (const tier of row.processing_tier ? ["*", row.processing_tier] : ["*"]) {
+        const variant = existingBucketKey(row, "", tier);
+        current.byVariant.set(variant, (current.byVariant.get(variant) ?? 0) + existingTokenTotal(row));
+      }
+    }
     existingByBase.set(key, current);
   }
   const incomingTotals = new Map<string, number>();
+  const incomingVariants = new Map<string, number>();
+  const withoutContext = new Set<string>();
+  const withContext = new Set<string>();
+  const withPricing = new Set<string>();
   for (const bucket of buckets) {
     const key = incomingBucketBaseKey(bucket);
     incomingTotals.set(key, (incomingTotals.get(key) ?? 0) + incomingTokenTotal(bucket));
+    if (bucket.contextTier) withContext.add(key);
+    else withoutContext.add(key);
+    if (hasPricingMetadata(bucket)) withPricing.add(key);
+    if (gainsRequestContextTier(bucket.source, bucket.model)) {
+      for (const tier of bucket.processingTier ? ["*", bucket.processingTier] : ["*"]) {
+        const variant = incomingBucketKey(bucket, undefined, "", tier);
+        incomingVariants.set(variant, (incomingVariants.get(variant) ?? 0) + incomingTokenTotal(bucket));
+      }
+    }
   }
 
   const replaceBases = new Set<string>();
   const blockedBases = new Set<string>();
-  for (const key of candidateByBase.keys()) {
+  for (const [key, candidate] of candidateByBase) {
+    // An explicitly recorded service tier does not mean the old rows were
+    // already split by prompt length. Apply the same guarded upgrade when the
+    // entire incoming group has that additional dimension for the first time.
+    const { source, model } = candidate.bucket;
+    const splitModel = gainsRequestContextTier(source, model);
     const existing = existingByBase.get(key);
+    if (splitModel && existing?.hasContext) continue;
+    const addsContext = splitModel && withContext.has(key);
+    if (addsContext && withoutContext.has(key)) {
+      blockedBases.add(key);
+      continue;
+    }
     if (!existing) continue;
-    const incomingNeedsPricingMetadata = buckets.some(
-      (bucket) => incomingBucketBaseKey(bucket) === key && hasPricingMetadata(bucket),
-    );
-    if (incomingNeedsPricingMetadata ? existing.hasPricingMetadata : existing.hasMetadata) continue;
+    // A bare replay can update its own legacy row, but cannot replace a
+    // richer historical breakdown or insert a second copy alongside it.
+    if (splitModel && !candidate.hasMetadata) {
+      if (!existing.hasPlainRow) blockedBases.add(key);
+      continue;
+    }
+    if (addsContext && (existing.hasPricingMetadata || existing.hasMetadata) && [...existing.byVariant].some(
+      ([variant, total]) => (incomingVariants.get(variant) ?? 0) < total,
+    )) {
+      blockedBases.add(key);
+      continue;
+    }
+    if (!addsContext && (withPricing.has(key) ? existing.hasPricingMetadata : existing.hasMetadata)) continue;
     if ((incomingTotals.get(key) ?? 0) >= existing.total) replaceBases.add(key);
     else blockedBases.add(key);
   }
@@ -217,10 +281,12 @@ export async function prepareBucketMetadataTransition(
     );
   }
 
-  return {
-    accepted: buckets.filter((bucket) => !blockedBases.has(incomingBucketBaseKey(bucket))),
-    protectedCount: buckets.filter((bucket) => blockedBases.has(incomingBucketBaseKey(bucket))).length,
-  };
+  const accepted = buckets.filter((bucket) => {
+    const key = incomingBucketBaseKey(bucket);
+    return !blockedBases.has(key) && !(gainsRequestContextTier(bucket.source, bucket.model)
+      && !bucket.contextTier && existingByBase.get(key)?.hasContext);
+  });
+  return { accepted, protectedCount: buckets.length - accepted.length };
 }
 
 async function protectLargerExistingBuckets(

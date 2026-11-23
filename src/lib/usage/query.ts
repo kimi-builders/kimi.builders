@@ -963,38 +963,10 @@ export async function getUsageOverview(
   );
 
   // ---- distributions (tokens + cost, top 6 + others) ----
-  interface DistInput {
-    device_id?: unknown;
-    project_label?: unknown;
-    source: unknown;
-    model: unknown;
-    model_canonical?: unknown;
-    model_provider?: unknown;
-    context_tier?: unknown;
-    processing_tier?: unknown;
-    sample_at: unknown;
-    input_tokens: unknown;
-    cache_write_input_tokens: unknown;
-    cache_write_5m_input_tokens?: unknown;
-    cache_write_1h_input_tokens?: unknown;
-    cache_read_input_tokens: unknown;
-    output_tokens: unknown;
-    reasoning_output_tokens: unknown;
-    stored_cost_micros: unknown;
-  }
-  const distTokens = (row: DistInput): UsageTokenBreakdown => ({
-    inputTokens: num(row.input_tokens),
-    cacheWriteInputTokens: num(row.cache_write_input_tokens),
-    cacheWrite5mInputTokens: num(row.cache_write_5m_input_tokens),
-    cacheWrite1hInputTokens: num(row.cache_write_1h_input_tokens),
-    cacheReadInputTokens: num(row.cache_read_input_tokens),
-    outputTokens: num(row.output_tokens),
-    reasoningOutputTokens: num(row.reasoning_output_tokens),
-  });
   const buildDistribution = (
-    rows: DistInput[],
-    keyOf: (row: DistInput) => string,
-    labelOf: (row: DistInput) => string,
+    rows: RowDataPacket[],
+    keyOf: (row: RowDataPacket) => string,
+    labelOf: (row: RowDataPacket, key: string) => string,
   ): UsageDistribution => {
     interface Acc {
       label: string;
@@ -1007,7 +979,7 @@ export async function getUsageOverview(
     let totalCostMicros = 0;
     for (const row of rows) {
       const key = keyOf(row);
-      const tokens = distTokens(row);
+      const tokens = tokensOf(row);
       const model = String(row.model);
       const stored = num(row.stored_cost_micros);
       let estimated = 0;
@@ -1015,13 +987,13 @@ export async function getUsageOverview(
       // definition; mark unpriced so $0.00 never masquerades as accurate.
       let unpriced = model === LEGACY_MODEL;
       if (model !== LEGACY_MODEL) {
-        const estimate = estimateRow(row as unknown as RowDataPacket, tokens);
+        const estimate = estimateRow(row, tokens);
         estimated = estimate.micros;
         unpriced = estimate.status !== "priced";
       }
       let acc = map.get(key);
       if (!acc) {
-        acc = { label: labelOf(row), tokens: 0, costMicros: 0, hasUnpriced: false };
+        acc = { label: labelOf(row, key), tokens: 0, costMicros: 0, hasUnpriced: false };
         map.set(key, acc);
       }
       const rowTokens = totalOf(tokens);
@@ -1062,18 +1034,18 @@ export async function getUsageOverview(
     /* source/model both derive from the main fact row set — no second scan
        of the same range. */
     source: buildDistribution(
-      bucketRows as unknown as DistInput[],
+      bucketRows,
       (row) => String(row.source),
       (row) => String(row.source),
     ),
     model: { rows: [], totalTokens: 0, totalCostMicros: 0 },
     project: buildDistribution(
-      (filters.projectsEnabled ? bucketRows : []) as unknown as DistInput[],
+      filters.projectsEnabled ? bucketRows : [],
       (row) => String(row.project_label ?? ""),
       (row) => String(row.project_label ?? ""),
     ),
     device: buildDistribution(
-      bucketRows.filter((row) => deviceById.has(String(row.device_id))) as unknown as DistInput[],
+      bucketRows.filter((row) => deviceById.has(String(row.device_id))),
       (row) => String(deviceById.get(String(row.device_id))?.public_id),
       (row) => {
         const device = deviceById.get(String(row.device_id));
@@ -1096,22 +1068,9 @@ export async function getUsageOverview(
   // never merge across price windows first and then apply the earliest
   // price.
   distributions.model = buildDistribution(
-    bucketRows as unknown as DistInput[],
-    (row) => canonicalUsageModel({
-      source: row.source,
-      model: row.model,
-      modelCanonical: row.model_canonical,
-      modelProvider: row.model_provider,
-    }),
-    (row) => {
-      const model = canonicalUsageModel({
-        source: row.source,
-        model: row.model,
-        modelCanonical: row.model_canonical,
-        modelProvider: row.model_provider,
-      });
-      return usageModelDisplayName({ model, modelCanonical: model });
-    },
+    bucketRows,
+    canonicalModelOf,
+    (_row, model) => usageModelDisplayName({ model, modelCanonical: model }),
   );
 
   // ---- joint attribution: reuses the current full fact row set; cannot

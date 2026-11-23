@@ -13,6 +13,7 @@
    still counted but excluded from cost (model marked partial). */
 import type mysql from "mysql2/promise";
 import { USAGE_PRICE_CATALOG } from "./price-catalog";
+import { canonicalUsageModel, modelLeaf, normalizedModelLeaf } from "./model-meta";
 
 export interface UsageModelPrice {
   modelPattern: string;
@@ -101,9 +102,7 @@ export async function loadModelPrices(
 /* Pick the best row effective at "at": exact > longest prefix >
    source-scoped > latest effective_from. Source eligibility applies only
    within the winning pattern to prevent channel-only alias fallthrough.
-   Normalization: match as-is first,
-   then retry the segment after the last slash (openrouter/moonshotai/kimi-k3
-   -> kimi-k3; aggregator prefixes are the common source of that shape). */
+   Only the terminal model name enters price matching, never a profile prefix. */
 export function matchModelPrice(
   prices: readonly UsageModelPrice[],
   model: string,
@@ -112,23 +111,15 @@ export function matchModelPrice(
   contextTier?: string,
   processingTier = "standard",
 ): UsageModelPrice | null {
-  const name = model.trim();
+  const name = modelLeaf(canonicalUsageModel({ model, timestamp: at }));
   if (!name) return null;
   // Phase 1/2 rows predate processing-tier collection and persist an empty
   // string. Treat that historical absence as the standard API tier; otherwise
   // switching to the canonical catalog would silently make all old rows
   // unpriced because every catalog entry names its tier explicitly.
   const resolvedProcessingTier = processingTier.trim() || "standard";
-  const slash = name.lastIndexOf("/");
-  const rawCandidates =
-    slash > 0 && slash < name.length - 1 ? [name, name.slice(slash + 1)] : [name];
-  const candidates = [...new Set(rawCandidates.flatMap((candidate) => {
-    const normalized = candidate.toLowerCase().replace(/[\s_]+/g, "-");
-    const claudeAlias = normalized.startsWith("claude-")
-      ? normalized.replace(/-(\d+)\.(\d+)(?=-|$)/g, "-$1-$2")
-      : normalized;
-    return [candidate, normalized, claudeAlias];
-  }))];
+  const normalized = name.toLowerCase().replace(/[\s_]+/g, "-");
+  const candidates = new Set([normalizedModelLeaf(name), normalized]);
   for (const candidate of candidates) {
     const hit = matchExactOrPrefix(
       prices,
@@ -170,7 +161,8 @@ function matchExactOrPrefix(
       const patternMatches = price.matchKind === "exact"
         ? price.modelPattern === name
         : name.startsWith(price.modelPattern) &&
-          !(price.modelPattern === "kimi-k3" && name.startsWith("kimi-k3."));
+          !(["kimi-k3", "minimax-m3", "claude-fable-5"].includes(price.modelPattern) && name.startsWith(price.modelPattern + ".")) &&
+          !(price.modelPattern === "claude-fable-5" && /^claude-fable-5-\d{1,2}(?:-|$)/.test(name));
       return patternMatches &&
         inWindow(price) &&
         contextRank(price) >= 0 &&

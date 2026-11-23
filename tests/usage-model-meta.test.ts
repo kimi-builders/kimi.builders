@@ -91,15 +91,23 @@ test("K3 context-window variants remain separate", () => {
 test("K3.1 aliases retain their distinct model, vendor and display identity", () => {
   for (const [model, canonical, label] of [
     ["kimi-code/k3.1-pro", "kimi-k3.1-pro", "Kimi K3.1 Pro"],
+    ["KFC/k3.1-pro", "kimi-k3.1-pro", "Kimi K3.1 Pro"],
+    ["ABC/k3.1-pro", "kimi-k3.1-pro", "Kimi K3.1 Pro"],
+    ["org/私有网关/K3.1-PRO", "kimi-k3.1-pro", "Kimi K3.1 Pro"],
+    ["kfc/K3.1-Pro-Highspeed", "kimi-k3.1-pro-highspeed", "Kimi K3.1 Pro Highspeed"],
     ["k3.1-pro-highspeed", "kimi-k3.1-pro-highspeed", "Kimi K3.1 Pro Highspeed"],
   ]) {
     const identity = { source: "kimi-code", model };
     assert.equal(canonicalUsageModel(identity), canonical);
+    assert.equal(canonicalUsageModel({ ...identity, modelCanonical: model.toLowerCase() }), canonical);
     assert.equal(usageModelDisplayName(identity), label);
     assert.equal(usageModelIconId(identity), "kimi");
     assert.match(usageModelDetail(identity), /canonical: kimi-k3\.1-pro/);
   }
-  assert.equal(canonicalUsageModel({ source: "codex", model: "k3.1-pro" }), "k3.1-pro");
+  assert.equal(canonicalUsageModel({ source: "codex", model: "k3.1-pro" }), "kimi-k3.1-pro");
+  assert.equal(canonicalUsageModel({ source: "opencode", model: "ABC/k3.1-pro" }), "kimi-k3.1-pro");
+  assert.equal(canonicalUsageModel({ model: "custom", modelCanonical: "ABC/kimi-for-coding",
+    bucketStart: "2026-09-10T23:59:59Z" }), "kimi-k2.7-code");
 });
 
 test("current model labels preserve raw IDs and stored canonical versions", () => {
@@ -138,4 +146,23 @@ test("current model labels preserve raw IDs and stored canonical versions", () =
     usageModelDisplayName({ model: "gpt-6.1-sol-2026-09-29" }),
     "gpt-6.1-sol-2026-09-29",
   );
+});
+
+test("November model labels follow the priced variant and preserve the logged identifier", () => {
+  for (const [raw, label, vendor] of [
+    ["openai/gpt-6.2-astra", "GPT-6.2 Astra", "openai"],
+    ["openai/gpt-6.2-sol", "GPT-6.2 Sol", "openai"],
+    ["anthropic/claude-mythos-5-2", "Claude Mythos 5.2", "claude"],
+    ["anthropic/claude-fable-5.2", "Claude Fable 5.2", "claude"],
+    ["Claude Fable 5.2", "Claude Fable 5.2", "claude"],
+    ["google/gemini-4-carbon", "Gemini 4 Carbon", "gemini"],
+    ["google/gemini-4-neon", "Gemini 4 Neon", "gemini"],
+    ["google/gemini-4-hydrogen", "Gemini 4 Hydrogen", "gemini"],
+    ["MiniMax/MiniMax-M3.1-Flash", "MiniMax M3.1 Flash", "minimax"],
+  ]) {
+    const identity = { model: raw };
+    assert.equal(usageModelDisplayName(identity), label);
+    assert.equal(usageModelIconId(identity), vendor);
+    assert.ok(usageModelDetail(identity).startsWith(raw));
+  }
 });

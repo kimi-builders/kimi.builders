@@ -12,6 +12,7 @@ import CopilotColor from "@lobehub/icons/es/Copilot/components/Color";
 import WindsurfMono from "@lobehub/icons/es/Windsurf/components/Mono";
 import TraeColor from "@lobehub/icons/es/Trae/components/Color";
 import ClineMono from "@lobehub/icons/es/Cline/components/Mono";
+import RooCodeMono from "@lobehub/icons/es/RooCode/components/Mono";
 import GeminiColor from "@lobehub/icons/es/Gemini/components/Color";
 import GeminiCliColor from "@lobehub/icons/es/GeminiCLI/components/Color";
 import OpenCodeMono from "@lobehub/icons/es/OpenCode/components/Mono";
@@ -38,6 +39,8 @@ const ICONS = {
   "claude-code": ClaudeCodeColor,
   codex: CodexColor,
   "gemini-cli": GeminiCliColor,
+  "copilot-cli": CopilotColor,
+  "roo-code": RooCodeMono,
   opencode: OpenCodeMono,
   antigravity: AntigravityColor,
   grok: GrokMono,
