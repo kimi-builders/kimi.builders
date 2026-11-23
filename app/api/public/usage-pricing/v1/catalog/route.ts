@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     ETag: USAGE_PRICE_CATALOG_ETAG,
     "X-Content-Type-Options": "nosniff",
   };
-  if (request.headers.get("if-none-match") === USAGE_PRICE_CATALOG_ETAG) {
+  // Compression can weaken the ETag on the wire. GET revalidation compares opaque tags.
+  const validators = request.headers.get("if-none-match");
+  if (validators === "*" || validators?.split(",").some(
+    (tag) => tag.trim().replace(/^W\//, "") === USAGE_PRICE_CATALOG_ETAG,
+  )) {
     return new NextResponse(null, { status: 304, headers });
   }
   return NextResponse.json(USAGE_PRICE_CATALOG, { headers });

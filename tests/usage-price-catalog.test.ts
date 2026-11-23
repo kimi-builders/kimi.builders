@@ -187,6 +187,19 @@ test("public pricing catalog honors If-None-Match", async () => {
   assert.equal(await response.text(), "");
 });
 
+test("catalog revalidation accepts the proxy's weak ETag and distinguishes stale revisions", async () => {
+  const weak = `W/${USAGE_PRICE_CATALOG_ETAG}`;
+  for (const [value, expected] of [
+    [weak, 304], [`"old", ${weak}`, 304], ["*", 304], ['W/"old"', 200],
+  ] as const) {
+    const response = await GET(new NextRequest("https://kimi.builders/api/public/usage-pricing/v1/catalog", {
+      headers: { "If-None-Match": value },
+    }));
+    assert.equal(response.status, expected);
+    if (expected === 304) assert.equal(await response.text(), "");
+  }
+});
+
 test("November rows reprice stored KFC identities and separate GPT-6.2 contexts", async () => {
   const prices = await loadModelPrices();
   const at = new Date("2026-11-23T00:00:00Z");
